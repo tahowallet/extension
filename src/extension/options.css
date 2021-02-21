@@ -1,0 +1,65 @@
+html {
+	min-width: 550px;
+	overflow-x: hidden; /* Required to hide horizontal scroll on Firefox */
+}
+
+/* For use with screen readers */
+.sr-only {
+	display: none;
+}
+
+/* Hide spinbox for number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+input[type='number'] {
+	-moz-appearance: textfield;
+}
+
+input[type='number'],
+input[type='text'] {
+	padding: 0.25rem 0.375rem;
+}
+
+.color-picker {
+	display: flex;
+}
+
+.color-inputs {
+	flex: 1;
+}
+
+.color-input {
+	display: flex;
+	padding: 0.25rem;
+	align-items: center;
+}
+
+.color-input input[type='range'] {
+	flex: 1;
+	margin: 0 0.5rem;
+}
+
+.color-input input[type='number'] {
+	width: calc(3ch + 1rem);
+}
+
+.color-output {
+	width: 86px;
+	height: 86px;
+	margin: 0.5rem;
+}
+
+/* Firefox only */
+.only-firefox {
+	display: none;
+}
+
+@-moz-document url-prefix('') {
+	.only-firefox {
+		display: block;
+	}
+}

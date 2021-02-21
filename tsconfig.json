@@ -1,0 +1,10 @@
+{
+    "extends": "@sindresorhus/tsconfig",
+    "compilerOptions": {
+        "target": "esnext",
+        "declaration": false
+    },
+    "include": [
+        "src"
+    ]
+}
