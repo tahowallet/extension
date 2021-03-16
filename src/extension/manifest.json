@@ -5,6 +5,7 @@
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
   "manifest_version": 2,
+  "default_locale": "en",
   "minimum_chrome_version": "74",
   "applications": {
     "gecko": {

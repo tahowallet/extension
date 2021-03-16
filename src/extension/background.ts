@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/no-unassigned-import
 // import './options-storage'
-//
+
 // TODO set up our data connections
 // TODO manage account watchers
 
@@ -14,8 +14,7 @@ import appSaga from '../sagas'
 // TODO set up redux saga
 // TODO store persistence via saga
 
-
-const [store, sagaMiddleware] = configureBackgroundStore({})
+const [store, sagaMiddleware] = configureBackgroundStore(loadState())
 
 type State = ReturnType<typeof store.getState>
 

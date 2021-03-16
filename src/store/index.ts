@@ -23,8 +23,13 @@ export function configureBackgroundStore(preloadedState) :
   return [store, sagaMiddleware]
 }
 
-export const configureProxyStore = (preloadedState) => _configureProxyStore({
-  state: preloadedState,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
-  portName: 'tally.port.name',
-})
+export const configureProxyStore = (preloadedState) => {
+  const store =_configureProxyStore({
+    state: preloadedState,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
+    portName: 'tally.port.name',
+  })
+  // const oldGetState = store.getState
+  // store.getState = () => store.state.metamask || {}
+  return store
+}

@@ -11,7 +11,7 @@ module.exports = {
 	entry: {
 		background: './src/extension/background',
 		// options: './src/extension/options',
-		// ui: './src/ui'
+		app: './src/app/entry'
 	},
   module: {
     rules: [
@@ -61,8 +61,19 @@ module.exports = {
             ]
           },
         }
-      }
-    ],
+			},
+			{
+				test: /\.s[ac]ss$/i,
+				use: [
+					"style-loader",
+					// CSS to CJS, ignoring URLs so images and whatnot can be resolved from the
+          // final build
+					"css-loader?url=false",
+					// SCSS to CSS
+					"sass-loader",
+				],
+			},
+		],
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
@@ -82,6 +93,14 @@ module.exports = {
     }),
 		new SizePlugin(),
 		new CopyWebpackPlugin([
+			{
+        from: 'node_modules/@mechamittens/extension/app/_locales',
+        to: '_locales/'
+			},
+			{
+        from: 'node_modules/@mechamittens/extension/app/images/**/*',
+        to: 'images/'
+			},
 			{
 				from: '**/*',
 				context: 'src/extension',
