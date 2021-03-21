@@ -9,23 +9,29 @@ import { all, spawn } from 'redux-saga/effects'
 import { configureBackgroundStore } from '../store'
 import appSaga from '../sagas'
 
-// TODO load up state from persistence or get new extension state
+import initialMechamittensState from './exampleState.json'
 
-// TODO set up redux saga
+// TODO load up state from persistence or get new extension state
 // TODO store persistence via saga
 
 const [store, sagaMiddleware] = configureBackgroundStore(loadState())
 
 type State = ReturnType<typeof store.getState>
 
+function loadState() : State {
+  // TODO get JSON from the local extension storage
+  // TODO state versioning
+
+  return {
+    mechamittens: initialMechamittensState
+  }
+}
+
 function* persistStoreSaga() {
-  // todo every second, save the state
+  // TODO every second, save the state
 }
 
 function persistState(state : State) {
-}
-
-function loadState() : State {
 }
 
 function* rootSaga() {

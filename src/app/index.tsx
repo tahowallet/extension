@@ -10,11 +10,11 @@ import { Root } from './components'
 // export type AppDispatch = typeof store.dispatch
 // export const useAppDispatch = () => useDispatch<AppDispatch>()
 
-export async function startApp(initialState : any, container: any) {
-  // get store data from the background script store
-  const store = configureProxyStore(initialState)
+export async function startApp(container: any) {
+  const store = configureProxyStore()
 
-  render(<Root store={store} />, container)
-
-  return store
+  // render once data from the background script store is loaded
+  store.ready().then(() => {
+    render(<Root store={store} />, container)
+  })
 }

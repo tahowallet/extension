@@ -3,7 +3,9 @@
         "target": "esnext",
         "declaration": false,
 	    "moduleResolution": "node",
-        "jsx": "react-jsx"
+        "jsx": "react-jsx",
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true
     },
     "include": [
         "src"

@@ -1,7 +1,7 @@
 import logger from 'redux-logger'
 import createSagaMiddleware from 'redux-saga'
 
-import { configureBackgroundStore as _configureBackgroundStore, configureProxyStore as _configureProxyStore } from '@tallyho/webext-redux-toolkit'
+import { configureBackgroundStore as _configureBackgroundStore, configureScopedProxyStore as _configureProxyStore } from '@tallyho/webext-redux-toolkit'
 
 import mechamittensReducer from '@mechamittens/extension/ui/app/ducks'
 
@@ -16,20 +16,15 @@ export function configureBackgroundStore(preloadedState) :
       mechamittens: mechamittensReducer,
     },
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger).concat(sagaMiddleware),
-    state: preloadedState,
-    portName: 'tally.port.name',
-    extensionId: null,
+    preloadedState,
   })
   return [store, sagaMiddleware]
 }
 
-export const configureProxyStore = (preloadedState) => {
-  const store =_configureProxyStore({
-    state: preloadedState,
+export const configureProxyStore = () => {
+  const store = _configureProxyStore({
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
-    portName: 'tally.port.name',
+    scope: 'mechamittens',
   })
-  // const oldGetState = store.getState
-  // store.getState = () => store.state.metamask || {}
   return store
 }
