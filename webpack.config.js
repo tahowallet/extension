@@ -32,12 +32,16 @@ module.exports = {
       {
         test: /\.jsx?$/,
         include: [
-          path.resolve(__dirname, 'node_modules', '@mechamittens', 'extension', 'ui'),
-          path.resolve(__dirname, 'node_modules', '@mechamittens', 'extension', 'app')
+          path.resolve(__dirname, 'node_modules', '@mechamittens', 'ui'),
+          path.resolve(__dirname, 'node_modules', '@mechamittens', 'app'),
         ],
         use: {
           loader: 'babel-loader',
           options: {
+            'exclude': [
+              /node_modules[\\\/]core-js/,
+              /node_modules[\\\/]webpack[\\\/]buildin/,
+            ],
             presets: [
               '@babel/react',
               [
@@ -49,6 +53,8 @@ module.exports = {
                       'firefox >= 56.2',
                     ],
                   },
+                  useBuiltIns: 'entry',
+                  corejs: '3.8',
                 },
               ],
             ],
@@ -58,6 +64,7 @@ module.exports = {
               '@babel/plugin-proposal-object-rest-spread',
               '@babel/plugin-proposal-optional-chaining',
               '@babel/plugin-proposal-nullish-coalescing-operator',
+              '@babel/plugin-transform-object-set-prototype-of-to-assign',
             ]
           },
         }
@@ -65,12 +72,12 @@ module.exports = {
 			{
 				test: /\.s[ac]ss$/i,
 				use: [
-					"style-loader",
+					'style-loader',
 					// CSS to CJS, ignoring URLs so images and whatnot can be resolved from the
           // final build
-					"css-loader?url=false",
+					'css-loader?url=false',
 					// SCSS to CSS
-					"sass-loader",
+					'sass-loader',
 				],
 			},
 		],
@@ -78,7 +85,7 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
     alias: {
-      stream: "stream-browserify",
+      stream: 'stream-browserify',
     }
   },
 	output: {
@@ -94,11 +101,11 @@ module.exports = {
 		new SizePlugin(),
 		new CopyWebpackPlugin([
 			{
-        from: 'node_modules/@mechamittens/extension/app/_locales',
+        from: 'node_modules/@mechamittens/app/_locales',
         to: '_locales/'
 			},
 			{
-        from: 'node_modules/@mechamittens/extension/app/images/**/*',
+        from: 'node_modules/@mechamittens/app/images/**/*',
         to: 'images/'
 			},
 			{

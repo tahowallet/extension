@@ -3,7 +3,7 @@ import createSagaMiddleware from 'redux-saga'
 
 import { configureBackgroundStore as _configureBackgroundStore, configureScopedProxyStore as _configureProxyStore } from '@tallyho/webext-redux-toolkit'
 
-import mechamittensReducer from '@mechamittens/extension/ui/app/ducks'
+import mechamittensReducer from '@mechamittens/ui/app/ducks'
 
 export type MechaMittensState = ReturnType<typeof mechamittensReducer>
 

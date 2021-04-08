@@ -1,9 +1,9 @@
 import { createElement } from 'react'
 import { render } from 'react-dom'
-import { useDispatch } from 'react-redux'
+import { Provider, useDispatch } from 'react-redux'
 
 import { configureProxyStore } from '../store'
-import { Root } from './components'
+import { App } from './components'
 
 // const store = configureStore({})
 
@@ -15,6 +15,11 @@ export async function startApp(container: any) {
 
   // render once data from the background script store is loaded
   store.ready().then(() => {
-    render(<Root store={store} />, container)
+    render(
+      <Provider store={store}>
+        <App />
+      </Provider>,
+      container
+    )
   })
 }
