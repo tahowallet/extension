@@ -15,61 +15,34 @@
     "dapp"
   ],
   "scripts": {
-    "build": "webpack --mode=production",
-    "lint": "run-p lint:*",
-    "lint-fix": "run-p 'lint:* -- --fix'",
-    "lint:css": "stylelint src/**/*.css",
-    "lint:js": "xo",
-    "test": "run-p lint:* build",
-    "watch": "webpack --mode=development --watch"
-  },
-  "xo": {
-    "envs": [
-      "browser"
-    ],
-    "globals": [
-      "browser"
-    ]
+    "start": "DEV_MODE=true yarn build:platforms:chrome",
+    "build": "echo STILL NEED BUILD",
+    "dist": "yarn build prod",
+    "prebuild": "bash build-scripts/prebuild.sh",
+    "build:development": "node dev/build/index.js",
+    "build:prod": "echo STILL NEED BUILD",
+    "build:frontend": "echo STILL NEED BUILD",
+    "build:background": "node build-scripts/background",
+    "build:manifest": "node build-scripts/manifest",
+    "build:platforms:all": "yarn build:platforms:chrome && yarn build:platforms:safari && build:platforms:firefox && build:platforms:opera",
+    "build:platforms:chrome": "PLATFORM_BUILD=chrome yarn prebuild platform chrome && yarn build:manifest && yarn build:background",
+    "build:platforms:firefox": " PLATFORM_BUILD=firefox yarn prebuild platform firefox && PLATFORM_BUILD=firefox yarn build:manifest && yarn build:background",
+    "build:platforms:safari": " PLATFORM_BUILD=safari yarn prebuild platform safari && PLATFORM_BUILD=safari yarn build:manifest && yarn build:background",
+    "build:platforms:opera": " PLATFORM_BUILD=opera yarn prebuild platform opera && PLATFORM_BUILD=opera yarn build:manifes && yarn build:background"
   },
   "stylelint": {
     "extends": "stylelint-config-xo"
   },
-  "dependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.2",
-    "@mechamittens/extension": "0.0.4",
-    "@reduxjs/toolkit": "^1.5.0",
-    "@sindresorhus/tsconfig": "^0.9.0",
-    "@tallyho/webext-redux-toolkit": "^0.1.2",
-    "@types/firefox-webext-browser": "^82.0.0",
-    "buffer": "^6.0.3",
-    "css-loader": "^5.1.3",
-    "redux": "^4.0.5",
-    "redux-logger": "^3.0.6",
-    "redux-saga": "^1.1.3",
-    "sass": "^1.32.8",
-    "sass-loader": "^11.0.1",
-    "style-loader": "^2.0.0",
-    "webext-options-sync": "^2.0.1",
-    "webextension-polyfill": "^0.7.0"
-  },
   "devDependencies": {
-    "@babel/core": "^7.13.1",
-    "@babel/preset-env": "^7.13.5",
-    "@babel/preset-react": "^7.12.13",
-    "babel-loader": "^8.2.2",
-    "copy-webpack-plugin": "^5.0.3",
-    "install": "^0.13.0",
-    "npm": "^7.5.6",
-    "npm-run-all": "^4.1.5",
-    "remote-redux-devtools": "^0.5.16",
-    "size-plugin": "^1.2.0",
-    "stylelint": "^13.10.0",
-    "stylelint-config-xo": "^0.20.0",
-    "terser-webpack-plugin": "^5.1.1",
-    "ts-loader": "^8.0.17",
-    "typescript": "^4.2.2",
-    "webpack": "^5.24.2",
-    "webpack-cli": "4.5.0",
-    "xo": "^0.37.1"
+    "@babel/core": "^7.14.0",
+    "@babel/preset-env": "^7.14.0",
+    "babelify": "^10.0.0",
+    "browserify": "^17.0.0",
+    "browserify-livereload": "^1.0.10",
+    "envify": "^4.1.0",
+    "watchify": "^4.0.0"
+  },
+  "dependencies": {
+    "@babel/plugin-transform-typescript": "^7.13.0"
   }
 }
