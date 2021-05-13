@@ -3,12 +3,6 @@ yarn-error.log
 node_modules
 package-lock.json
 
-audit.json
-
-app/bower_components
-test/bower_components
-package
-
 # IDEs
 .idea
 .vscode
@@ -32,16 +26,8 @@ dist
 builds/
 builds.zip
 
-test-artifacts
-test-builds
-build-artifacts
-
-#ignore css output and sourcemaps
-ui/app/css/output/
 
 notes.txt
 
-.coveralls.yml
-.nyc_output
 
-.metamaskrc
+
