@@ -1,0 +1,1 @@
+console.log('hello in', process.env.NODE_ENV)

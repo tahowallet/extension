@@ -1,0 +1,64 @@
+{
+  "name": "Tally",
+  "short_name": "Tally",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "author": "https://tally.cash",
+  "description": "Tally is a community owned and operated Web3 wallet.",
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "windows": "Alt+Shift+T",
+        "mac": "Alt+Shift+T",
+        "chromeos": "Alt+Shift+T",
+        "linux": "Alt+Shift+T"
+      }
+    }
+  },
+  "icons": {
+  },
+  "background": {
+    "scripts": [
+      "bg-libs.js",
+      "background.js"
+    ],
+    "persistent": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "file://*/*",
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "clipboardWrite",
+    "http://localhost:8545/",
+    "https://*.infura.io/",
+    "https://*.alchemyapi.io/",
+    "activeTab",
+    "webRequest",
+    "*://*.eth/",
+    "notifications"
+  ],
+  "web_accessible_resources": [
+    "inpage.js"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://taslly.cash/*"
+    ],
+    "ids": [
+      "*"
+    ]
+  }
+}
