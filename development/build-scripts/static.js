@@ -39,6 +39,7 @@ const copyTargets = [
 // }
 
 const copyTargetsDev = [
+  ...copyTargets,
   {
     src: './development/',
     pattern: '/chromereload.js',

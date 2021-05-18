@@ -1,10 +1,17 @@
 {
   "name": "Tally",
-  "short_name": "Tally",
-  "version": "0.0.1",
-  "manifest_version": 2,
+  "version": "0.0.0",
+  "description": "The community owned and operated Web3 wallet.",
+  "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
-  "description": "Tally is a community owned and operated Web3 wallet.",
+  "manifest_version": 2,
+  "minimum_chrome_version": "74",
+  "applications": {
+    "gecko": {
+      "id": "webextension@tally.cash",
+      "strict_min_version": "67.0"
+    }
+  },
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {
@@ -15,50 +22,30 @@
       }
     }
   },
-  "icons": {
+  "browser_action": {
+    "default_title": "Tally",
+    "default_popup": "public/popup.html"
   },
-  "background": {
-    "scripts": [
-      "bg-libs.js",
-      "background.js"
-    ],
-    "persistent": true
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "file://*/*",
-        "http://*/*",
-        "https://*/*"
-      ],
-      "js": [
-        "content-script.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true
-    }
-  ],
   "permissions": [
     "storage",
     "unlimitedStorage",
-    "clipboardWrite",
     "http://localhost:8545/",
     "https://*.infura.io/",
-    "https://*.alchemyapi.io/",
     "activeTab",
     "webRequest",
     "*://*.eth/",
+    "tabs",
+    "clipboardWrite",
+    "clipboardRead",
     "notifications"
   ],
   "web_accessible_resources": [
     "inpage.js"
   ],
-  "externally_connectable": {
-    "matches": [
-      "https://taslly.cash/*"
-    ],
-    "ids": [
-      "*"
+  "background": {
+    "persistent": true,
+    "scripts": [
+      "background.js"
     ]
   }
 }
