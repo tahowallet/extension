@@ -1,0 +1,1 @@
+export const platform = window.chrome || window.browser
