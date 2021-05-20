@@ -248,13 +248,6 @@ function createScriptTasks ({ browserPlatforms, livereload }) {
       // Transpile any dependencies using the object spread/rest operator
       // because it is incompatible with `esprima`, which is used by `envify`
       // See https://github.com/jquery/esprima/issues/1927
-      .transform('babelify', {
-        only: [
-          './**/node_modules/libp2p',
-        ],
-        global: true,
-        plugins: ['@babel/plugin-proposal-object-rest-spread'],
-      })
       .transform('brfs')
 
     if (opts.buildLib) {
