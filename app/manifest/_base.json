@@ -45,6 +45,7 @@
   "background": {
     "persistent": true,
     "scripts": [
+      "bg-libs.js",
       "background.js"
     ]
   }
