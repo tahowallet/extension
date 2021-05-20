@@ -2,20 +2,18 @@ import  { connectToBackgroundApi } from './extension-scripts/lib/connect'
 
 const background = connectToBackgroundApi({ name: 'ui' })
 
-function test () {
-  background.send({
+function async test () {
+  let test = background.send({
+    route: '/test',
+    method: 'GET',
+  })
+  console.log(test)
+  test = await background.send({
     route: '/test',
     method: 'PUT',
-    params: [1],
-  }).then(console.log)
-
-
-
-background.send({
-  route: '/test',
-  method: 'GET',
-  params: [],
-}).then(console.log)
+    params: [2],
+  })
+  console.log(test)
 }
 
 test()
