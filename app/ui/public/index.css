@@ -1,0 +1,36 @@
+body {
+	width: 384px;
+	height: 600px;
+	margin: 0;
+	font-family: 'Segment', -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+		sans-serif;
+	position: relative;
+	color: #fff;
+	font-size: 16px;
+	background-color: #002522;
+}
+
+.standard_width {
+	width: 352px;
+	padding: 0px 8px;
+	box-sizing: border-box;
+}
+
+a {
+	text-decoration: none;
+}
+
+button {
+	all: unset;
+	cursor: pointer;
+}
+
+input {
+	all: unset;
+}
+
+* {
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+	-font-smoothing: antialiased;
+}
