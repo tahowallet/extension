@@ -68,3 +68,5 @@ function Wallet() {
 }
 
 registerRoute('wallet', Wallet);
+
+export default Wallet
