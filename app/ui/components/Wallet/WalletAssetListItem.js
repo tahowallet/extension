@@ -54,7 +54,7 @@ export default function WalletAssetListItem() {
             justify-content: center;
           }
           .icon_eth {
-            background: url('/assets/img/eth@2x.png');
+            background: url('./images/eth@2x.png');
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -90,13 +90,13 @@ export default function WalletAssetListItem() {
             line-height: 16px;
           }
           .icon_send_asset {
-            background: url('/assets/img/send_asset.svg');
+            background: url('./images/send_asset.svg');
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
           }
           .icon_swap_asset {
-            background: url('/assets/img/swap_asset.svg');
+            background: url('./images/swap_asset.svg');
             background-size: 12px 12px;
             width: 12px;
             height: 12px;

@@ -15,7 +15,7 @@ export default function TopMenuProfileButton() {
             height: 32px;
             background-color: white;
             margin-left: 8px;
-            background: url('/assets/img/portrait.png');
+            background: url('./images/portrait.png');
           }
           .wrap {
             flex-shrink: 0;

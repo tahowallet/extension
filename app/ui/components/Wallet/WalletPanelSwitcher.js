@@ -68,5 +68,5 @@ export default function WalletPanelSwitcher(props) {
 
 WalletPanelSwitcher.propTypes = {
   setPanelNum: PropTypes.func.isRequired,
-  panelNum: PropTypes.bool.isRequired,
+  panelNum: PropTypes.number.isRequired,
 };

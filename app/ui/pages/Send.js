@@ -45,7 +45,7 @@ function Send() {
             width: 352px;
           }
           .icon_activity_send_medium {
-            background: url('/assets/img/activity_send_medium@2x.png');
+            background: url('./images/activity_send_medium@2x.png');
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
