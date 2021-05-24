@@ -38,7 +38,7 @@ export default function SharedSlideUpMenu(props) {
             box-sizing: border-box;
           }
           .icon_close {
-            background: url('/assets/img/close.svg');
+            background: url('./images/close.svg');
             background-size: 12px 12px;
             width: 12px;
             height: 12px;

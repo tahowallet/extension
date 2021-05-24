@@ -15,7 +15,7 @@ export default function TabBarIcon(props) {
       <style jsx>
         {`
           .icon {
-            background: url('/assets/img/${name}.svg');
+            background: url('./images/${name}.svg');
             background-size: 24px 24px;
             width: 24px;
             height: 24px;

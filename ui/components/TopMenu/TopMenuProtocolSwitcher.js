@@ -16,7 +16,7 @@ export default function TopMenuProtocolSwitcher() {
             cursor: pointer;
           }
           .icon_chevron_down {
-            background: url('/assets/img/chevron_down.svg');
+            background: url('./images/chevron_down.svg');
             background-size: 15px 8px;
             width: 15px;
             height: 8px;

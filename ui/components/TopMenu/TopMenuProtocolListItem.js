@@ -38,7 +38,7 @@ export default function TopMenuProtocolListItem(props) {
             margin-left: 8px;
           }
           .icon_eth {
-            background: url('/assets/img/eth@2x.png');
+            background: url('./images/eth@2x.png');
             background-size: 18px 29px;
             width: 18px;
             height: 29px;

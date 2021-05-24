@@ -28,7 +28,7 @@ export default function WalletActivityListItem() {
       <style jsx>
         {`
           .activity_icon {
-            background: url('/assets/img/activity_send@2x.png');
+            background: url('./images/activity_send@2x.png');
             background-size: 14px 14px;
             width: 14px;
             height: 14px;
@@ -81,7 +81,7 @@ export default function WalletActivityListItem() {
             justify-content: center;
           }
           .icon_eth {
-            background: url('/assets/img/eth@2x.png');
+            background: url('./images/eth@2x.png');
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -116,13 +116,13 @@ export default function WalletActivityListItem() {
             line-height: 16px;
           }
           .icon_send_asset {
-            background: url('/assets/img/send_asset.svg');
+            background: url('./images/send_asset.svg');
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
           }
           .icon_swap_asset {
-            background: url('/assets/img/swap_asset.svg');
+            background: url('./images/swap_asset.svg');
             background-size: 12px 12px;
             width: 12px;
             height: 12px;

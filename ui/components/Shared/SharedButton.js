@@ -29,7 +29,7 @@ export default function SharedButton(props) {
             padding: 0 17px;
           }
           .icon_button {
-            background: url('/assets/img/${label}@2x.png');
+            background: url('./images/${label}@2x.png');
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
