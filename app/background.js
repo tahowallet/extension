@@ -1,1 +1,1 @@
-console.log('hello in', process.env.NODE_ENV)
+console.log('hello in belugaland', process.env.NODE_ENV)

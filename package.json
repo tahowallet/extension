@@ -35,11 +35,31 @@
   "stylelint": {
     "extends": "stylelint-config-xo"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.2",
+    "@reduxjs/toolkit": "^1.5.0",
+    "@sindresorhus/tsconfig": "^0.9.0",
+    "react": "<17",
+    "react-chrome-extension-router": "^1.2.0",
+    "react-dnd": "^3.0.2",
+    "react-dnd-html5-backend": "^7.4.4",
+    "react-dom": "<17",
+    "react-idle-timer": "4.2.5",
+    "react-inspector": "^2.3.0",
+    "react-popper": "2.2.3",
+    "react-router-dom": "^5.2.0",
+    "react-select": "^1.0.0",
+    "react-simple-file-input": "^2.0.0",
+    "react-tippy": "^1.2.2",
+    "react-toggle-button": "2.2.0",
+    "react-transition-group": "^1.2.1",
+    "styled-jsx": "^3.4.4"
+  },
   "devDependencies": {
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
     "@babel/preset-react": "^7.12.13",
+    "@babel/preset-typescript": "^7.13.0",
     "babel-loader": "^8.2.2",
     "babelify": "^10.0.0",
     "brfs": "^2.0.2",
