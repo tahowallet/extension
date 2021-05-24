@@ -258,11 +258,6 @@ function createScriptTasks ({ browserPlatforms, livereload }) {
       bundler = bundler.external(opts.externalDependencies)
     }
 
-    const environment = getEnvironment({ devMode: opts.devMode, test: opts.testing })
-    if (environment === 'production' && !process.env.SENTRY_DSN) {
-      throw new Error('Missing SENTRY_DSN environment variable')
-    }
-
     // Inject variables into bundle
     bundler.transform(envify({
       NODE_ENV: opts.devMode ? 'development' : 'production',
@@ -286,22 +281,4 @@ function createScriptTasks ({ browserPlatforms, livereload }) {
 
 function beep () {
   process.stdout.write('\x07')
-}
-
-function getEnvironment ({ devMode, test }) {
-  // get environment slug
-  if (devMode) {
-    return 'development'
-  } else if (test) {
-    return 'testing'
-  } else if (process.env.CIRCLE_BRANCH === 'master') {
-    return 'production'
-  } else if ((/^Version-v(\d+)[.](\d+)[.](\d+)/u).test(process.env.CIRCLE_BRANCH)) {
-    return 'release-candidate'
-  } else if (process.env.CIRCLE_BRANCH === 'develop') {
-    return 'staging'
-  } else if (process.env.CIRCLE_PULL_REQUEST) {
-    return 'pull-request'
-  }
-  return 'other'
 }
