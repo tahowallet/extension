@@ -6,7 +6,7 @@ import WalletAssetList from '../components/Wallet/WalletAssetList';
 import WalletActivityList from '../components/Wallet/WalletActivityList';
 import WalletAccountBalanceControl from '../components/Wallet/WalletAccountBalanceControl';
 
-function Wallet() {
+export default function Wallet() {
   const [panelNum, setPanelNum] = useState(0);
 
   return (
@@ -66,5 +66,3 @@ function Wallet() {
     </div>
   );
 }
-
-registerRoute('wallet', Wallet);
