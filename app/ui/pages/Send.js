@@ -4,7 +4,7 @@ import CorePageWithTabs from '../components/Core/CorePageWithTabs';
 import SharedAssetInput from '../components/Shared/SharedAssetInput';
 import SendFeeSelectButton from '../components/Send/SendFeeSelectButton';
 
-function Send() {
+export default function Send() {
   return (
     <>
       <CorePageWithTabs>
@@ -97,5 +97,3 @@ function Send() {
     </>
   );
 }
-
-registerRoute('send', Send);

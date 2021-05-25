@@ -2,7 +2,7 @@ import React from 'react';
 import { registerRoute } from '../config/routes';
 import CorePageWithTabs from '../components/Core/CorePageWithTabs';
 
-function Earn() {
+export default function Earn() {
   return (
     <>
       <CorePageWithTabs>
@@ -24,5 +24,3 @@ function Earn() {
     </>
   );
 }
-
-registerRoute('earn', Earn);
