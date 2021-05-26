@@ -32,7 +32,6 @@ export function createPortProxy (port) {
   const responseRegister = {}
   let idBase = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
   port.onMessage.addListener((msg) => {
-    console.log('msg!!!', msg)
     if (responseRegister[msg.id]) {
       if(responseRegister[msg.id].type === 'subscription') {
         if (msg.response.subscriptionTerminated) {

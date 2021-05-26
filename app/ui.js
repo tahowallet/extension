@@ -2,7 +2,9 @@ import  { connectToBackgroundApi } from './extension-scripts/lib/connect'
 
 const background = connectToBackgroundApi({ name: 'ui' })
 
-function async test () {
+test()
+
+async function test () {
   let test = background.send({
     route: '/test',
     method: 'GET',
@@ -11,9 +13,7 @@ function async test () {
   test = await background.send({
     route: '/test',
     method: 'PUT',
-    params: [2],
+    params: {value: 2},
   })
   console.log(test)
 }
-
-test()

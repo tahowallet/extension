@@ -22,7 +22,7 @@ export default class Main {
   */
   getApi () {
     return {
-      setTest: async (v) => {
+      setTest: async ({ value }) => {
         return !!(this.test = v)
       },
       getTest: async () => this.test
