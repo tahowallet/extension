@@ -26,7 +26,7 @@ export default function WalletAssetListItem() {
             width: 352px;
             height: 72px;
             border-radius: 16px;
-            background-color: #193330;
+            background-color: var(--green-95);
             display: flex;
             padding: 16px;
             box-sizing: border-box;
@@ -46,7 +46,7 @@ export default function WalletAssetListItem() {
           .token_icon_wrap {
             width: 40px;
             height: 40px;
-            background-color: #002522;
+            background-color: var(--hunter-green);
             border-radius: 80px;
             margin-right: 16px;
             display: flex;
@@ -82,7 +82,7 @@ export default function WalletAssetListItem() {
           .price {
             width: 58px;
             height: 17px;
-            color: #99a8a7;
+            color: var(--green-40);
             font-family: Segment;
             font-size: 14px;
             font-weight: 400;

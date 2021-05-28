@@ -30,13 +30,13 @@ export default function TopMenuProtocolList() {
           }
           .divider_line {
             width: 286px;
-            border-bottom: 1px solid #001413;
+            border-bottom: 1px solid var(--green-120);
             margin-left: 19px;
             position: absolute;
             right: 0px;
           }
           .divider_label {
-            color: #99a8a7;
+            color: var(--green-40);
             font-family: Segment;
             font-size: 16px;
             font-weight: 500;

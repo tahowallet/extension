@@ -37,7 +37,7 @@ export default function WalletActivityListItem() {
           }
           .top {
             height: 16px;
-            color: #99a8a7;
+            color: var(--green-40);
             font-family: Segment;
             font-size: 12px;
             font-weight: 500;
@@ -51,7 +51,7 @@ export default function WalletActivityListItem() {
             width: 352px;
             height: 72px;
             border-radius: 16px;
-            background-color: #193330;
+            background-color: var(--green-95);
             display: flex;
             flex-direction: column;
             padding: 13px 19px 8px 8px;
@@ -73,7 +73,7 @@ export default function WalletActivityListItem() {
           .token_icon_wrap {
             width: 32px;
             height: 32px;
-            background-color: #002522;
+            background-color: var(--hunter-green);
             border-radius: 80px;
             margin-right: 5px;
             display: flex;
@@ -108,7 +108,7 @@ export default function WalletActivityListItem() {
           .price {
             width: 58px;
             height: 17px;
-            color: #99a8a7;
+            color: var(--green-40);
             font-family: Segment;
             font-size: 14px;
             font-weight: 400;

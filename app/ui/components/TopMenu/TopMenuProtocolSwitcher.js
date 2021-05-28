@@ -10,7 +10,7 @@ export default function TopMenuProtocolSwitcher() {
       <style jsx>
         {`
           .wrap {
-            color: #99a8a7;
+            color: var(--green-40);
             display: flex;
             align-items: center;
             cursor: pointer;

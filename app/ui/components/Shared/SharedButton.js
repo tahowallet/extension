@@ -15,7 +15,7 @@ export default function SharedButton(props) {
           .wrap {
             height: 40px;
             border-radius: 4px;
-            background-color: #d08e39;
+            background-color: var(--trophy-gold);
             display: flex;
             align-items: center;
             justify-content: space-between;

@@ -24,13 +24,15 @@ export default function TabBar() {
           .wrap {
             width: 100vw;
             height: 56px;
-            background-color: #002522;
+            background-color: var(--hunter-green);
             display: flex;
             justify-content: space-around;
             padding: 0px 17px;
             box-sizing: border-box;
             align-items: center;
             flex-shrink: 0;
+            box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
+            z-index: 10;
           }
         `}
       </style>
