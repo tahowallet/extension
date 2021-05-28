@@ -47,7 +47,7 @@ export default function TopMenuProtocolListItem(props) {
             width: 40px;
             height: 40px;
             border-radius: 4px;
-            background-color: #002522;
+            background-color: var(--hunter-green);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -59,7 +59,7 @@ export default function TopMenuProtocolListItem(props) {
           .right {
             width: 80px;
             height: 24px;
-            color: #ccd3d3;
+            color: var(--green-5);
             font-family: Segment;
             font-size: 18px;
             font-weight: 600;
@@ -68,7 +68,7 @@ export default function TopMenuProtocolListItem(props) {
           .title {
             width: 80px;
             height: 24px;
-            color: #ccd3d3;
+            color: var(--green-5);
             font-family: Segment;
             font-size: 18px;
             font-weight: 600;
@@ -77,7 +77,7 @@ export default function TopMenuProtocolListItem(props) {
           .sub_title {
             width: 54px;
             height: 17px;
-            color: #667c7a;
+            color: var(--green-60);
             font-family: Segment;
             font-size: 14px;
             font-weight: 400;

@@ -32,7 +32,7 @@ export default function WalletPanelSwitcher(props) {
         {`
           .wrap {
             width: 100%;
-            border-bottom: 1px solid #001413;
+            border-bottom: 1px solid var(--green-120);
           }
           .wrap_inner {
             display: flex;
@@ -45,7 +45,7 @@ export default function WalletPanelSwitcher(props) {
           }
           .selected {
             font-weight: 500;
-            color: #d08e39;
+            color: var(--trophy-gold);
             text-align: center;
             display: flex;
             justify-content: center;
@@ -54,7 +54,7 @@ export default function WalletPanelSwitcher(props) {
             content: '';
             width: 18px;
             height: 2px;
-            background-color: #d08e39;
+            background-color: var(--trophy-gold);
             border-radius: 10px;
             position: absolute;
             display: block;
