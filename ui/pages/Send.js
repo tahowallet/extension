@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { registerRoute } from '../config/routes';
 import CorePageWithTabs from '../components/Core/CorePageWithTabs';
 import SharedAssetInput from '../components/Shared/SharedAssetInput';
+import SharedButton from '../components/Shared/SharedButton';
 import SendFeeSelectButton from '../components/Send/SendFeeSelectButton';
 
 export default function Send() {
+  const [selectedFee, setSelectedFee] = useState(0);
+
   return (
     <>
       <CorePageWithTabs>
@@ -15,33 +18,61 @@ export default function Send() {
           </div>
           <div className="form">
             <div className="form_input">
-              <div className="label">Asset / Amount</div>
+              <div className="label">
+                Asset / Amount <div className="label_right">Max</div>
+              </div>
               <SharedAssetInput />
             </div>
             <div className="form_input">
               <div className="label">Send To:</div>
-              <SharedAssetInput />
+              <SharedAssetInput isTypeDestination />
             </div>
             <div className="label">Network Fee/Speed</div>
             <div className="network_fee_group">
               <div className="network_fee_button">
-                <SendFeeSelectButton />
+                <SendFeeSelectButton
+                  isActive={selectedFee === 0 && true}
+                  onClick={() => {
+                    setSelectedFee(0);
+                  }}
+                />
               </div>
               <div className="network_fee_button">
-                <SendFeeSelectButton />
+                <SendFeeSelectButton
+                  isActive={selectedFee === 1 && true}
+                  onClick={() => {
+                    setSelectedFee(1);
+                  }}
+                />
               </div>
               <div className="network_fee_button">
-                <SendFeeSelectButton />
+                <SendFeeSelectButton
+                  isActive={selectedFee === 2 && true}
+                  onClick={() => {
+                    setSelectedFee(2);
+                  }}
+                />
               </div>
             </div>
             <div className="divider" />
+            <div className="total_footer standard_width">
+              <div className="total_amount">
+                <div className="total_label">Total</div>
+                <div className="total_amount_number">0.0</div>
+              </div>
+              <SharedButton
+                type="primary"
+                size="large"
+                label="Send"
+                isDisabled
+              />
+            </div>
           </div>
         </div>
       </CorePageWithTabs>
       <style jsx>
         {`
           .wrap {
-            height: 100vh;
             width: 352px;
           }
           .icon_activity_send_medium {
@@ -52,6 +83,7 @@ export default function Send() {
             margin-right: 8px;
           }
           .title {
+            width: 113px;
             height: 32px;
             color: #ffffff;
             font-family: Segment;
@@ -77,7 +109,7 @@ export default function Send() {
           }
           .label {
             height: 17px;
-            color: #667c7a;
+            color: var(--green-60);
             font-family: Segment;
             font-size: 14px;
             font-weight: 400;
@@ -85,15 +117,41 @@ export default function Send() {
             line-height: 16px;
             margin-bottom: 5px;
             margin-left: 7px;
+            display: flex;
+            justify-content: space-between;
           }
-          .divider {
-            width: 384px;
-            border-bottom: 1px solid #000000;
-            position: absolute;
-            left: 0px;
+          .label_right {
+            margin-right: 6px;
+          }
+          .total_amount_number {
+            width: 150px;
+            height: 32px;
+            color: #e7296d;
+            font-family: Segment;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+          }
+          .total_footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 21px;
+            padding-bottom: 20px;
+          }
+          .total_label {
+            width: 33px;
+            height: 17px;
+            color: var(--green-60);
+            font-family: Segment;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.42px;
+            line-height: 16px;
           }
         `}
       </style>
     </>
   );
 }
+
+registerRoute('send', Send);
