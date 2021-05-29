@@ -6,10 +6,19 @@ export default function Menu() {
   return (
     <>
       <CorePageWithTabs>
-        <span className="title">Menu</span>
+        <div className="wrap">
+          <span className="title">Menu</span>
+        </div>
       </CorePageWithTabs>
+
       <style jsx>
         {`
+          .wrap {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
           .title {
             width: 375px;
             height: 46px;
@@ -24,3 +33,5 @@ export default function Menu() {
     </>
   );
 }
+
+registerRoute('menu', Menu);

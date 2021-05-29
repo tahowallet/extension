@@ -6,10 +6,18 @@ export default function Accounts() {
   return (
     <>
       <CorePageWithTabs>
-        <span className="title">Accounts</span>
+        <div className="wrap">
+          <span className="title">Accounts</span>
+        </div>
       </CorePageWithTabs>
       <style jsx>
         {`
+          .wrap {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
           .title {
             width: 375px;
             height: 46px;
@@ -24,3 +32,5 @@ export default function Accounts() {
     </>
   );
 }
+
+registerRoute('accounts', Accounts);

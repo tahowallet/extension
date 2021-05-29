@@ -10,7 +10,7 @@ export default function Wallet() {
   const [panelNum, setPanelNum] = useState(0);
 
   return (
-    <div className="wrap">
+    <div className="App">
       <CorePageWithTabs>
         <div className="page_content">
           <div className="section">
@@ -29,7 +29,7 @@ export default function Wallet() {
       </CorePageWithTabs>
       <style jsx>
         {`
-          .wrap {
+          .App {
             height: 100vh;
             width: 100vw;
             display: flex;
@@ -38,7 +38,7 @@ export default function Wallet() {
             justify-content: space-between;
           }
           .page_content {
-            height: 100vh;
+            height: 100%;
             width: 100vw;
             display: flex;
             flex-direction: column;
@@ -66,3 +66,5 @@ export default function Wallet() {
     </div>
   );
 }
+
+registerRoute('wallet', Wallet);
