@@ -34,7 +34,7 @@ export default function TabBarIcon(props) {
 TabBarIcon.propTypes = {
   name: PropTypes.string.isRequired,
   isActive: PropTypes.bool,
-  component: PropTypes.node.isRequired,
+  component: PropTypes.func.isRequired,
 };
 
 TabBarIcon.defaultProps = {
