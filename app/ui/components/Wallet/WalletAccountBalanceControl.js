@@ -13,9 +13,20 @@ export default function WalletAccountBalanceControl() {
         </span>
         <div className="send_receive_button_wrap">
           <Link component={routes['send']}>
-            <SharedButton label="Send" />
+            <SharedButton
+              label="Send"
+              icon="send"
+              size="medium"
+              type="primary"
+            />
           </Link>
-          <SharedButton label="Receive" />
+          <SharedButton
+            label="Receive"
+            onClick={handleClick}
+            icon="receive"
+            size="medium"
+            type="primary"
+          />
         </div>
       </div>
       <style jsx>
