@@ -1,9 +1,16 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-export default function SharedAssetItem() {
+export default function SharedAssetItem(props) {
+  const { setSelectedTokenAndClose } = props;
+
+  function handleClick() {
+    setSelectedTokenAndClose({ name: true });
+  }
+
   return (
     <>
-      <div className="token_group">
+      <button type="button" className="token_group" onClick={handleClick}>
         <div className="left">
           <div className="token_icon_wrap">
             <div className="icon_eth" />
@@ -13,13 +20,18 @@ export default function SharedAssetItem() {
             <div className="token_subtitle">Ethereum</div>
           </div>
         </div>
-      </div>
+      </button>
       <style jsx>
         {`
           .token_group {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            width: 100%;
+            padding: 7.5px 0px;
+            padding-left: 24px;
+          }
+          .token_group:hover {
+            background-color: var(--hunter-green);
           }
           .token_icon_wrap {
             width: 40px;
@@ -31,7 +43,9 @@ export default function SharedAssetItem() {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: 24px;
+          }
+          .token_group:hover .token_icon_wrap {
+            background-color: var(--green-120);
           }
           .token_subtitle {
             width: 65px;
@@ -58,3 +72,11 @@ export default function SharedAssetItem() {
     </>
   );
 }
+
+SharedAssetItem.propTypes = {
+  setSelectedTokenAndClose: PropTypes.func,
+};
+
+SharedAssetItem.defaultProps = {
+  setSelectedTokenAndClose: () => {},
+};
