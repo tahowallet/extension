@@ -12,7 +12,7 @@ export default function SharedButton(props) {
           type === 'secondary' ? ' secondary' : ''
         }${isDisabled ? ' disabled' : ''}${
           type === 'tertiary' ? ' tertiary' : ''
-        }`}
+        }${type === 'tertiaryWhite' ? ' tertiary white' : ''}`}
         onClick={onClick}
       >
         {label}
@@ -86,6 +86,13 @@ export default function SharedButton(props) {
           .tertiary .icon_button {
             background-color: var(--trophy-gold);
           }
+          .white {
+            color: #ffffff;
+            font-weight: 500;
+          }
+          .white .icon_button {
+            background-color: #ffffff;
+          }
         `}
       </style>
     </>
@@ -94,7 +101,8 @@ export default function SharedButton(props) {
 
 SharedButton.propTypes = {
   label: PropTypes.string.isRequired,
-  type: PropTypes.oneOf(['primary', 'secondary', 'tertiary']).isRequired,
+  type: PropTypes.oneOf(['primary', 'secondary', 'tertiary', 'tertiaryWhite'])
+    .isRequired,
   size: PropTypes.oneOf(['medium', 'large']).isRequired,
   icon: PropTypes.string,
   iconSize: PropTypes.oneOf(['medium', 'large']),
