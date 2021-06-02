@@ -4,15 +4,98 @@ import SharedButton from './SharedButton';
 import SharedSlideUpMenu from './SharedSlideUpMenu';
 import SharedAssetItem from './SharedAssetItem';
 
+function SelectTokenMenuContent(props) {
+  const { setSelectedTokenAndClose } = props;
+
+  return (
+    <>
+      <div className="standard_width center_horizontal">
+        <div className="search_label">Select token</div>
+        <div className="search_wrap">
+          <input
+            type="text"
+            className="search_input"
+            placeholder="Search by name or address"
+          />
+          <div className="icon_search" />
+        </div>
+      </div>
+      <div className="divider" />
+      {['', '', '', '', '', '', '', '', '', '', '', '', ''].map(() => (
+        <>
+          <SharedAssetItem
+            setSelectedTokenAndClose={setSelectedTokenAndClose}
+          />
+        </>
+      ))}
+      <style jsx>
+        {`
+          .search_label {
+            height: 20px;
+            color: var(--green-60);
+            font-family: Segment;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            margin-bottom: 16px;
+            margin-top: -5px;
+          }
+          .search_wrap {
+            display: flex;
+          }
+          .search_input {
+            width: 336px;
+            height: 48px;
+            border-radius: 4px;
+            border: 1px solid var(--green-60);
+            padding-left: 16px;
+            box-sizing: border-box;
+            color: var(--green-40);
+          }
+          .search_input::placeholder {
+            color: var(--green-40);
+          }
+          .icon_search {
+            background: url('./images/search_large@2x.png');
+            background-size: 24px 24px;
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            right: 42px;
+            margin-top: 11px;
+          }
+          .divider {
+            width: 384px;
+            border-bottom: 1px solid var(--hunter-green);
+            margin-left: -24px;
+            margin-top: 15px;
+            margin-bottom: 8.5px;
+          }
+        `}
+      </style>
+    </>
+  );
+}
+
+SelectTokenMenuContent.propTypes = {
+  setSelectedTokenAndClose: PropTypes.func.isRequired,
+};
+
 export default function SharedAssetInput(props) {
   const { isTypeDestination } = props;
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false);
   const [isRunAnimation, setRunAnimation] = useState(false);
+  const [selectedToken, setSelectedToken] = useState({ name: false });
 
   function handleClick() {
     setOpenAssetMenu(!openAssetMenu);
     setRunAnimation(true);
+  }
+
+  function setSelectedTokenAndClose(token) {
+    setSelectedToken(token);
+    setOpenAssetMenu(false);
   }
 
   return (
@@ -22,19 +105,7 @@ export default function SharedAssetInput(props) {
         isRunAnimation={isRunAnimation}
         close={handleClick}
       >
-        <>
-          <div className="search_label">Select token</div>
-          <input
-            type="text"
-            className="search"
-            value="Search by name or address"
-          />
-          {['', '', '', '', '', '', '', '', '', '', '', '', ''].map(() => (
-            <>
-              <SharedAssetItem />
-            </>
-          ))}
-        </>
+        {SelectTokenMenuContent({ setSelectedTokenAndClose })}
       </SharedSlideUpMenu>
       <div className="wrap">
         {isTypeDestination ? (
@@ -50,40 +121,34 @@ export default function SharedAssetInput(props) {
           </>
         ) : (
           <>
-            <SharedButton
-              type="secondary"
-              size="medium"
-              label="Select token"
-              icon="chevron"
-              onClick={handleClick}
-            />
+            {!selectedToken.name ? (
+              <SharedButton
+                type="secondary"
+                size="medium"
+                label="Select token"
+                icon="chevron"
+                onClick={handleClick}
+              />
+            ) : (
+              <div className="token_group">
+                <div className="token_icon_wrap">
+                  <div className="icon_eth" />
+                </div>
+                <SharedButton
+                  type="tertiaryWhite"
+                  size="medium"
+                  label="ETH"
+                  icon="chevron"
+                  onClick={handleClick}
+                />
+              </div>
+            )}
             <input className="input_amount" type="text" placeholder="0.0" />
           </>
         )}
       </div>
       <style jsx>
         {`
-          .search_label {
-            height: 20px;
-            color: var(--green-60);
-            font-family: Segment;
-            font-size: 16px;
-            font-weight: 500;
-            line-height: 24px;
-            margin-left: 28px;
-            margin-bottom: 16px;
-          }
-          .search {
-            width: 336px;
-            height: 48px;
-            border-radius: 4px;
-            border: 1px solid #667c7a;
-            margin-left: 24px;
-            margin-bottom: 20px;
-            padding-left: 16px;
-            box-sizing: border-box;
-            color: var(--green-40);
-          }
           .wrap {
             width: 352px;
             height: 72px;
@@ -94,16 +159,6 @@ export default function SharedAssetInput(props) {
             justify-content: space-between;
             padding: 0px 16px;
             box-sizing: border-box;
-          }
-          .input_amount {
-            width: 98px;
-            height: 32px;
-            color: #fefefc;
-            font-family: Segment;
-            font-size: 22px;
-            font-weight: 500;
-            line-height: 32px;
-            text-align: right;
           }
           .token_input {
             width: 204px;
@@ -130,6 +185,37 @@ export default function SharedAssetInput(props) {
             width: 24px;
             height: 24px;
             margin-left: 8px;
+          }
+          .input_amount {
+            width: 98px;
+            height: 32px;
+            color: #fefefc;
+            font-family: Segment;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+            text-align: right;
+          }
+          .token_group {
+            display: flex;
+            align-items: center;
+          }
+          .token_icon_wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: 46px;
+            background-color: var(--hunter-green);
+            border-radius: 80px;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .icon_eth {
+            background: url('./images/eth@2x.png');
+            background-size: 18px 29px;
+            width: 18px;
+            height: 29px;
           }
         `}
       </style>
