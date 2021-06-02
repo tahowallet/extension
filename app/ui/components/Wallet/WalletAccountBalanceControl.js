@@ -1,11 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-chrome-extension-router';
 import { routes } from '../../config/routes';
 import SharedButton from '../Shared/SharedButton';
+import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
 
-export default function WalletAccountBalanceControl() {
+function Receive() {
   return (
     <>
+      <div className="wrap">
+        <div className="title">
+          <div className="icon_activity_send_medium" />
+          Receive address
+        </div>
+        <div className="sub_title">
+          Only send Ethereum Mainnet compatible assets to this address.
+        </div>
+        <div className="qr_code">
+          <div className="qr_code_image" />
+        </div>
+        <div className="copy_wrap">
+          <SharedButton
+            label="0x2A0e23...fdA0f6"
+            icon="copy"
+            size="medium"
+            iconSize="large"
+            type="primary"
+          />
+        </div>
+      </div>
+      <style jsx>
+        {`
+          .wrap {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            margin-top: 24px;
+          }
+          .title {
+            height: 32px;
+            color: #ffffff;
+            font-family: Segment;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+          }
+          .sub_title {
+            margin-top: 18px;
+            width: 281px;
+            height: 33px;
+            color: var(--green-20);
+            font-family: Segment;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.42px;
+            line-height: 16px;
+            text-align: center;
+          }
+          .qr_code {
+            width: 176px;
+            height: 176px;
+            border-radius: 16px;
+            background-color: #ffffff;
+            margin-top: 31px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .qr_code_image {
+            background: url('./images/qr_code@2x.png');
+            background-size: 128px 128px;
+            width: 128px;
+            height: 128px;
+          }
+          .copy_wrap {
+            width: 215px;
+            margin-top: 40px;
+          }
+          .icon_activity_send_medium {
+            background: url('./images/activity_receive_medium@2x.png');
+            background-size: 24px 24px;
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+          }
+        `}
+      </style>
+    </>
+  );
+}
+export default function WalletAccountBalanceControl() {
+  const [openTokenMenu, setOpenTokenMenu] = useState(false);
+  const [isRunAnimation, setRunAnimation] = useState(false);
+
+  function handleClick() {
+    setOpenTokenMenu(!openTokenMenu);
+    setRunAnimation(true);
+  }
+
+  return (
+    <>
+      <SharedSlideUpMenu
+        isOpen={openTokenMenu}
+        isRunAnimation={isRunAnimation}
+        close={handleClick}
+      >
+        {Receive()}
+      </SharedSlideUpMenu>
       <div className="wrap">
         <div className="balance_label">Total account balance</div>
         <span className="balance">
@@ -58,7 +161,7 @@ export default function WalletAccountBalanceControl() {
           .balance_label {
             width: 160px;
             height: 24px;
-            color: #99a8a7;
+            color: var(--green-40);
             font-family: Segment;
             font-size: 16px;
             font-weight: 400;
@@ -68,7 +171,7 @@ export default function WalletAccountBalanceControl() {
           .dollar_sign {
             width: 14px;
             height: 32px;
-            color: #99a8a7;
+            color: var(--green-40);
             font-family: Segment;
             font-size: 22px;
             font-weight: 500;
