@@ -148,6 +148,11 @@ export default function Send() {
             letter-spacing: 0.42px;
             line-height: 16px;
           }
+          .divider {
+            width: 384px;
+            border-bottom: 1px solid #000000;
+            margin-left: -16px;
+          }
         `}
       </style>
     </>

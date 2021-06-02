@@ -134,7 +134,7 @@ export default function WalletActivityListItem() {
           }
           .outcome {
             width: 115px;
-            color: #f1f6f6;
+            color: var(--green-5);
             font-family: Segment;
             font-size: 14px;
             font-weight: 400;
