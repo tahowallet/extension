@@ -67,8 +67,6 @@ input {
   box-sizing: border-box;
 }
 
-.divider {
-  width: 384px;
-  border-bottom: 1px solid #000000;
-  margin-left: -16px;
+.center_horizontal {
+  margin: 0 auto;
 }
