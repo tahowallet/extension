@@ -1,0 +1,32 @@
+{
+  "name": "@tallyho/tally-ui",
+  "version": "0.0.1",
+  "description": "Tally, the community owned and operated Web3 wallet: UI package.",
+  "main": "index.js",
+  "repository": "git@github.com:thesis/tally-extension.git",
+  "author": "Matt Luongo <matt@thesis.co>",
+  "license": "GPL-3.0",
+  "keywords": [
+    "ethereum",
+    "bitcoin",
+    "cryptocurrency",
+    "wallet",
+    "web3",
+    "dapp"
+  ],
+  "scripts": {
+    "build": "webpack --mode=production",
+    "lint": "run-p lint:*",
+    "lint-fix": "run-p 'lint:* -- --fix'",
+    "lint:js": "eslint .",
+    "test": "run-p lint:* build",
+    "watch": "webpack --mode=development --watch"
+  },
+  "dependencies": {
+    "@tallyho/tally-wallet": "0.0.1",
+    "prop-types": "^15.7.2",
+    "react": "^17.0.2",
+    "react-chrome-extension-router": "^1.2.0",
+    "react-dom": "^17.0.2"
+  }
+}
