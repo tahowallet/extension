@@ -4,13 +4,13 @@ const SizePlugin = require('size-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const webpack = require('webpack');
 const CopyPlugin = require("copy-webpack-plugin");
-const { merge: mergeWebpackConfig } = require("webpack-merge")
+const { merge: webpackMerge } = require("webpack-merge")
 const LiveReloadPlugin = require('webpack-livereload-plugin')
 
 const supportedBrowsers = ["firefox","brave","opera","chrome"]
 
 
-// Replicated for each target browser.
+// Replicated and adjusted for each target browser and the current build mode.
 const baseConfig = {
   devtool: 'source-map',
   stats: 'errors-only',
@@ -51,7 +51,6 @@ const baseConfig = {
       process: ['process']
     }),
     new SizePlugin(),
-    new LiveReloadPlugin({}),
     new CopyPlugin({
       patterns: [
         {
@@ -60,9 +59,6 @@ const baseConfig = {
         },
         {
           from: 'node_modules/@tallyho/tally-ui/public/',
-        },
-        {
-          from: 'chromereload.js'
         }
       ]
     })
@@ -84,47 +80,69 @@ const baseConfig = {
   }
 }
 
-// One config per supported browser.
-module.exports = supportedBrowsers.map(browser => {
-  const distPath = path.join(__dirname, 'dist', browser)
-  const extensionDataPath = path.join(__dirname, "extension")
-
-  // Allow per-browser adjustments to the manifest.
-  let manifestAdjustmentString = "{}"
-  try {
-    manifestAdjustmentString = fs.readFileSync(
-      path.join(extensionDataPath, "manifest", `${browser}-tweaks.json`),
-      { encoding: "utf8" }
-    )
-  } catch (e) {} // assume the exception is that the browser-specific tweaks don't exist
-
-  const manifestAdjustments = JSON.parse(manifestAdjustmentString)
-
-  return mergeWebpackConfig(baseConfig, {
-    output: {
-      path: distPath
-    },
+// Configuration adjustments for specific build modes.
+const modeConfigs = {
+  "development": {
     plugins: [
-      new CopyPlugin({
-        patterns: [
-        {
-          from: "manifest/manifest.json",
-          transform: (content, absolutePath) => {
-            const fullContent = content.toString("utf8")
-            const manifestJSON = JSON.parse(fullContent)
-            const finalManifestJSON = Object.assign(manifestJSON, manifestAdjustments)
-
-            return JSON.stringify(finalManifestJSON, null, 2)
-          }
-        },
-        ]
-      })
+      new LiveReloadPlugin({}),
+      new CopyPlugin({ patterns: ['chromereload.js'] })
     ],
-    devServer: {
-      contentBase: distPath,
-      compress: false,
-      hot: true,
-      port: 9000
-    }
+  },
+  "production": {
+    plugins: [
+      // something for ZIP files, eh?
+    ]
+  }
+}
+
+// One config per supported browser, adjusted by mode.
+module.exports = (_, { mode }) => supportedBrowsers.map(browser => {
+  const distPath = path.join(__dirname, 'dist', browser)
+
+  return webpackMerge(
+    baseConfig,
+    // Try to find a build mode config adjustment.
+    modeConfigs[mode] || {},
+    {
+      output: {
+        path: distPath
+      },
+      plugins: [
+        // Handle manifest adjustments. Adjustments are looked up and merged:
+        //  - by mode (`manifest.<mode>.json`)
+        //  - by browser (`manifest.<browser>.json`)
+        //  - by mode and browser both (`manifest.<mode>.<browser>.json`)
+        //
+        // Files that don't exist are ignored, while files with invalid data
+        // throw an exception. The merge order means that e.g. a mode+browser
+        // adjustment will override a browser adjustment, which will override a
+        // mode adjustment in turn.
+        //
+        // Merging currently only supports adding keys, overriding existing key
+        // values if their values are not arrays, or adding entries to arrays.
+        // It does not support removing keys or array values. webpackMerge is
+        // used for this.
+        new CopyPlugin({
+          patterns: [
+            {
+              from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
+              to: 'manifest.json',
+              transformAll: (assets) => {
+                const combinedManifest = webpackMerge(
+                  ...(
+                    assets
+                      .map(_ => _.data.toString('utf8'))
+                      // JSON.parse chokes on empty strings
+                      .filter(_ => _.trim().length > 0)
+                      .map(JSON.parse)
+                  )
+                )
+
+                return JSON.stringify(combinedManifest, null, 2)
+              }
+            },
+          ]
+        })
+      ],
   })
 })
