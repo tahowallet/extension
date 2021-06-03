@@ -39,8 +39,7 @@
   "background": {
     "persistent": true,
     "scripts": [
-      "background.js",
-      "chromereload.js"
+      "background.js"
     ]
   }
 }

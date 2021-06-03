@@ -85,7 +85,7 @@ const modeConfigs = {
   "development": {
     plugins: [
       new LiveReloadPlugin({}),
-      new CopyPlugin({ patterns: ['chromereload.js'] })
+      new CopyPlugin({ patterns: ['dev-utils/*.js'] })
     ],
   },
   "production": {
