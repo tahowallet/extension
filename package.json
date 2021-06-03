@@ -52,5 +52,6 @@
     "typescript": "4.2.2",
     "webpack": "^5.24.2",
     "webpack-cli": "4.5.0",
+    "webpack-livereload-plugin": "^3.0.1"
   }
 }

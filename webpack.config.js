@@ -1,18 +1,26 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-const path = require('path');
+const path = require('path')
+const fs = require('fs')
 const SizePlugin = require('size-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const webpack = require('webpack');
+const CopyPlugin = require("copy-webpack-plugin");
+const { merge: mergeWebpackConfig } = require("webpack-merge")
+const LiveReloadPlugin = require('webpack-livereload-plugin')
 
-module.exports = {
-	devtool: 'source-map',
-	stats: 'errors-only',
-	entry: {
-		background: './src/extension/background',
-		// options: './src/extension/options',
-		app: './src/app/entry'
-	},
+const supportedBrowsers = ["firefox","brave","opera","chrome"]
+
+
+// Replicated for each target browser.
+const baseConfig = {
+  devtool: 'source-map',
+  stats: 'errors-only',
+  entry: {
+    ui: './ui.js',
+    background: './background.js',
+    // Don't have these yet.....
+    // inpage: './inpage.js',
+    // "content-script": './content-script.js'
+  },
   module: {
     rules: [
       {
@@ -20,109 +28,103 @@ module.exports = {
         use: 'ts-loader'
       },
       {
-        test: /\.tsx?$/,
-        loader: 'ts-loader',
-        include: [
-          path.resolve(__dirname, 'node_modules','@reduxjs', 'toolkit')
-        ],
-        options: {
-          allowTsInNodeModules: true
-        }
-      },
-      {
         test: /\.jsx?$/,
-        include: [
-          path.resolve(__dirname, 'node_modules', '@mechamittens', 'extension', 'ui'),
-          path.resolve(__dirname, 'node_modules', '@mechamittens', 'extension', 'app')
-        ],
         use: {
           loader: 'babel-loader',
           options: {
             presets: [
               '@babel/react',
-              [
-                '@babel/preset-env',
-                {
-                  targets: {
-                    browsers: [
-                      'chrome >= 58',
-                      'firefox >= 56.2',
-                    ],
-                  },
-                },
-              ],
-            ],
-            plugins: [
-              '@babel/plugin-transform-runtime',
-              '@babel/plugin-proposal-class-properties',
-              '@babel/plugin-proposal-object-rest-spread',
-              '@babel/plugin-proposal-optional-chaining',
-              '@babel/plugin-proposal-nullish-coalescing-operator',
             ]
-          },
+          }
         }
-			},
-			{
-				test: /\.s[ac]ss$/i,
-				use: [
-					"style-loader",
-					// CSS to CJS, ignoring URLs so images and whatnot can be resolved from the
-          // final build
-					"css-loader?url=false",
-					// SCSS to CSS
-					"sass-loader",
-				],
-			},
-		],
+      }
+    ],
   },
-  resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
-    alias: {
-      stream: "stream-browserify",
-    }
+  output: {
+    // path: is set browser-specifically below
+    filename: '[name].js'
   },
-	output: {
-		path: path.join(__dirname, 'dist'),
-		filename: '[name].js'
-	},
-	plugins: [
+  plugins: [
     // polyfill the process and Buffer APIs
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
       process: ['process']
     }),
-		new SizePlugin(),
-		new CopyWebpackPlugin([
-			{
-        from: 'node_modules/@mechamittens/extension/app/_locales',
-        to: '_locales/'
-			},
-			{
-        from: 'node_modules/@mechamittens/extension/app/images/**/*',
-        to: 'images/'
-			},
-			{
-				from: '**/*',
-				context: 'src/extension',
-				ignore: ['*.js', '*.ts', '*.jsx', '*.tsx']
-			},
-			{
-				from: 'node_modules/webextension-polyfill/dist/browser-polyfill.min.js'
-			}
-		])
-	],
-	optimization: {
-		minimizer: [
-			new TerserPlugin({
-				terserOptions: {
-					mangle: false,
-					compress: false,
-					output: {
-						beautify: true,
-						indent_level: 2 // eslint-disable-line camelcase
-					}
-				}
-			})
-		]
-	}
-};
+    new SizePlugin(),
+    new LiveReloadPlugin({}),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: 'node_modules/@tallyho/tally-ui/_locales/',
+          to: '_locales/'
+        },
+        {
+          from: 'node_modules/@tallyho/tally-ui/public/',
+        },
+        {
+          from: 'chromereload.js'
+        }
+      ]
+    })
+  ],
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          mangle: false,
+          compress: false,
+          output: {
+            beautify: true,
+            indent_level: 2 // eslint-disable-line camelcase
+          }
+        }
+      })
+    ],
+    splitChunks: { automaticNameDelimiter: '-' }
+  }
+}
+
+// One config per supported browser.
+module.exports = supportedBrowsers.map(browser => {
+  const distPath = path.join(__dirname, 'dist', browser)
+  const extensionDataPath = path.join(__dirname, "extension")
+
+  // Allow per-browser adjustments to the manifest.
+  let manifestAdjustmentString = "{}"
+  try {
+    manifestAdjustmentString = fs.readFileSync(
+      path.join(extensionDataPath, "manifest", `${browser}-tweaks.json`),
+      { encoding: "utf8" }
+    )
+  } catch (e) {} // assume the exception is that the browser-specific tweaks don't exist
+
+  const manifestAdjustments = JSON.parse(manifestAdjustmentString)
+
+  return mergeWebpackConfig(baseConfig, {
+    output: {
+      path: distPath
+    },
+    plugins: [
+      new CopyPlugin({
+        patterns: [
+        {
+          from: "manifest/manifest.json",
+          transform: (content, absolutePath) => {
+            const fullContent = content.toString("utf8")
+            const manifestJSON = JSON.parse(fullContent)
+            const finalManifestJSON = Object.assign(manifestJSON, manifestAdjustments)
+
+            return JSON.stringify(finalManifestJSON, null, 2)
+          }
+        },
+        ]
+      })
+    ],
+    devServer: {
+      contentBase: distPath,
+      compress: false,
+      hot: true,
+      port: 9000
+    }
+  })
+})
