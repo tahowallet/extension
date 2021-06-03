@@ -790,11 +790,19 @@ window.LiveReloadOptions = { host: 'localhost' };
             return
           }
         }
-        return this.reloadPage()
+        return this.reloadPage(path)
       }
 
-      Reloader.prototype.reloadPage = function () {
-        return this.window.document.location.reload()
+      Reloader.prototype.reloadPage = function (path) {
+        const browser = window.browser || window.chrome
+        this.reloadRequests = this.reloadRequests || new Map()
+        const location = browser.runtime.getURL(path).toString()
+        clearTimeout(this.reloadRequests.get(location))
+        this.reloadRequests.set(location, setTimeout(() => {
+          browser.extension.getViews()
+            .filter(_ => _.window.document.location.toString() == location)
+            .forEach(_ => _.window.document.location.reload())
+        }, 300))
       }
 
       Reloader.prototype.reloadImages = function (path) {
