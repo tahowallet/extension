@@ -1,7 +1,7 @@
 # tally-extension
 
-Tally is a community owned and operated Web3 wallet and corresponding UI, built
-as a [WebExtension](https://browserext.github.io/browserext/).
+Tally is a community owned and operated Web3 wallet, built as a
+[WebExtension](https://browserext.github.io/browserext/).
 
 ## Package Structure, Build Structure, and Threat Model
 
@@ -20,13 +20,37 @@ builds.
 
 ## Building and Developing
 
-Builds are designed to be run from the top level of the repository:
+Builds are designed to be run from the top level of the repository.
+
+### Quickstart
 
 ```sh
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
                # scrypt node-gyp failures prevent the install from completing
 $ yarn start # start a continuous webpack build that will auto-update with changes
+```
+
+Once the continuous webpack build is running, you can install the extension in
+your dev browser of choice:
+
+- [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
+    * Note that these instructions are for Chrome, but substituting
+      `brave://extensions` or `opera://extensions` for `chrome://extensions`
+      depending on browser should get you to the same buttons.
+
+Extension bundles for each browser are in `dist/<browser>`.
+
+### Additional Scripts
+
+```sh
 $ yarn build # create a production build of the extension
+```
+
+The build script will generate a ZIP file for each browser bundle under the
+`dist/` directory.
+
+```sh
 $ yarn lint # lint all sources in all projects
 $ yarn test # run all tests in all projects
 ```
