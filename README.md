@@ -43,14 +43,16 @@ is managed in the `manifest/` subdirectory as described below (see the
 Here is a light guide to the directory structure:
 
 ```
-.github/          # GitHub-specific tooling
+.github/ # GitHub-specific tooling
 
-package.json        # private extension package
-webpack.config.js   # Webpack build for extension
-background.js       # entry file for the background extension script; should
-                    # be minimal and call in to @tallyho/tally-wallet
-ui.js               # entry file for the frontend UI; should be minimal and
-                    # bind the functionality in @tallyho/tally-ui
+package.json      # private extension package
+webpack.config.js # Webpack build for extension
+
+src/ # extension source files
+  background.js # entry file for the background extension script; should be
+                # minimal and call in to @tallyho/tally-wallet
+  ui.js         # entry file for the frontend UI; should be minimal and bind
+                # the functionality in @tallyho/tally-ui
 
 dist/ # output directory for builds
   brave/   # browser-specific

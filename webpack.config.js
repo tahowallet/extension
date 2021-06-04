@@ -15,11 +15,11 @@ const baseConfig = {
   devtool: 'source-map',
   stats: 'errors-only',
   entry: {
-    ui: './ui.js',
-    background: './background.js',
+    ui: './src/ui.js',
+    background: './src/background.js',
     // Don't have these yet.....
-    // inpage: './inpage.js',
-    // "content-script": './content-script.js'
+    // inpage: './src/inpage.js',
+    // "content-script": './src/content-script.js'
   },
   module: {
     rules: [
