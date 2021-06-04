@@ -1,8 +1,3 @@
-import React from "react"
-import ReactDOM from "react-dom"
-//import Popup from "@tallyho/tally-ui/pages/Popup"
+import ui from '@tallyho/tally-ui'
 
-ReactDOM.render(React.createElement(
-	/* Popup */ () => React.createElement("p", null, "ohai")),
-	document.getElementById("tally-root")
-)
+ui.attachToElement(document.getElementById("tally-root"))
