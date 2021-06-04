@@ -61,8 +61,7 @@ Extension content lives directly under the root directory alongside
 project-level configuration and utilities, including GitHub-specific
 functionality in `.github`. Extension content should be minimal, and
 largely simply glue together UI and wallet code. Manifest information
-is managed in the `manifest/` subdirectory as described below (see the
-[`build/merge-manifest.js`](./build/merge-manifest.js) helper).
+is managed in the `manifest/` subdirectory as described below.
 
 Here is a light guide to the directory structure:
 
@@ -82,8 +81,13 @@ dist/ # output directory for builds
   brave/   # browser-specific
   firefox/ # build
   chrome/  # directories
+  brave.zip   # browser-specific
+  firefox.zip # production
+  chrome.zip  # bundles
 
-build/            # build-related helpers, mostly used in webpack.config.js
+build-utils/ # build-related helpers, used in webpack.config.js
+  *.js
+dev-utils/          # dev-mode helpers for the extension
   extension-reload.js # LiveReload support for the extension.
 manifest/         # extension manifest data
   manifest.json             # common manifest data for all browsers
@@ -94,6 +98,6 @@ manifest/         # extension manifest data
 ui/ # @tallyho/tally-ui package
   package.json
 
-wallet/ # @tallyho/tally-wallet package with background script
+wallet/ # @tallyho/tally-wallet package with trusted wallet core
   package.json
 ```
