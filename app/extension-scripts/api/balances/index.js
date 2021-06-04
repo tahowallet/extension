@@ -1,4 +1,4 @@
-import ObsStore from ''
+import ObsStore from '../../lib/ob-store'
 import Etherum from './ethereum'
 
 const networks = {
@@ -30,5 +30,14 @@ export default class Balances {
         this.store.updateState(newChainState)
       })
     })
+  }
+
+  /*
+    Returns a object containing all api methods for use
+  */
+  getApi () {
+    return {
+
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 // mapping of ui msg methods to api friendly types
 export const UI_METHODS = {
-  PUT: 'set',
+  PUT: 'update',
   GET: 'get',
   DEL: 'delete',
 }

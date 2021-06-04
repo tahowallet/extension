@@ -1,4 +1,5 @@
-import { TransactionController } from 'mekamittens-controllers'
+// TODO: once build is properly set up dont use playground!!
+import { TransactionController } from '../playground/transactions'
 import ObsStore from '../../lib/ob-store'
 
 
@@ -8,7 +9,7 @@ export default class Transactions {
   }
 
   getApi() {
-
+    return {}
   }
 
 }
