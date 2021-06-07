@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function SendFeeSelectButton(props) {
+export default function SharedFeeSelectButton(props) {
   const { isActive, onClick } = props;
 
   return (
@@ -81,12 +81,12 @@ export default function SendFeeSelectButton(props) {
   );
 }
 
-SendFeeSelectButton.propTypes = {
+SharedFeeSelectButton.propTypes = {
   isActive: PropTypes.bool,
   onClick: PropTypes.func,
 };
 
-SendFeeSelectButton.defaultProps = {
+SharedFeeSelectButton.defaultProps = {
   isActive: false,
   onClick: () => {},
 };
