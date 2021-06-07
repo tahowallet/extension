@@ -1,13 +1,12 @@
 import React from 'react';
+import SharedAssetIcon from '../Shared/SharedAssetIcon';
 
 export default function WalletAssetListItem() {
   return (
     <>
       <div className="wrap">
         <div className="left">
-          <div className="token_icon_wrap">
-            <div className="icon_eth" />
-          </div>
+          <SharedAssetIcon />
           <div className="left_content">
             <div className="amount">
               <span className="bold_amount_count">2389.23</span>KEEP
@@ -42,22 +41,7 @@ export default function WalletAssetListItem() {
             flex-direction: column;
             height: 41px;
             justify-content: space-between;
-          }
-          .token_icon_wrap {
-            width: 40px;
-            height: 40px;
-            background-color: var(--hunter-green);
-            border-radius: 80px;
-            margin-right: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .icon_eth {
-            background: url('./images/eth@2x.png');
-            background-size: 18px 29px;
-            width: 18px;
-            height: 29px;
+            margin-left: 16px;
           }
           .amount {
             height: 17px;
