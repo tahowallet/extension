@@ -92,18 +92,18 @@ function Receive() {
   );
 }
 export default function WalletAccountBalanceControl() {
-  const [openTokenMenu, setOpenTokenMenu] = useState(false);
+  const [openReceiveMenu, setOpenReceiveMenu] = useState(false);
   const [isRunAnimation, setRunAnimation] = useState(false);
 
   function handleClick() {
-    setOpenTokenMenu(!openTokenMenu);
+    setOpenReceiveMenu(!openReceiveMenu);
     setRunAnimation(true);
   }
 
   return (
     <>
       <SharedSlideUpMenu
-        isOpen={openTokenMenu}
+        isOpen={openReceiveMenu}
         isRunAnimation={isRunAnimation}
         close={handleClick}
       >
