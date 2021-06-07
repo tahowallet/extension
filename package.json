@@ -25,13 +25,13 @@
   },
   "workspaces": [
     "ui",
-    "wallet"
+    "api"
   ],
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@mechamittens/extension": "0.0.4",
     "@tallyho/tally-ui": "0.0.1",
-    "@tallyho/tally-wallet": "0.0.1",
+    "@tallyho/tally-api": "0.0.1",
     "@types/firefox-webext-browser": "^82.0.0",
     "buffer": "^6.0.3",
     "webext-options-sync": "^2.0.1",
