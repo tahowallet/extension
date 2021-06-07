@@ -12,7 +12,8 @@ export default function SharedButton(props) {
           type === 'secondary' ? ' secondary' : ''
         }${isDisabled ? ' disabled' : ''}${
           type === 'tertiary' ? ' tertiary' : ''
-        }${type === 'tertiaryWhite' ? ' tertiary white' : ''}`}
+        }${type === 'tertiaryWhite' ? ' tertiary white' : ''}
+        ${type === 'tertiary' && isDisabled ? ' tertiary_disabled' : ''}`}
         onClick={onClick}
       >
         {label}
@@ -92,6 +93,12 @@ export default function SharedButton(props) {
           }
           .white .icon_button {
             background-color: #ffffff;
+          }
+          .tertiary_disabled {
+            color: var(--green-60);
+          }
+          .tertiary_disabled .icon_button {
+            background-color: var(--green-60);
           }
         `}
       </style>
