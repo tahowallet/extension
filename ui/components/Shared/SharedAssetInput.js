@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import SharedButton from './SharedButton';
 import SharedSlideUpMenu from './SharedSlideUpMenu';
 import SharedAssetItem from './SharedAssetItem';
+import SharedAssetIcon from './SharedAssetIcon';
 
 function SelectTokenMenuContent(props) {
   const { setSelectedTokenAndClose } = props;
@@ -82,7 +83,7 @@ SelectTokenMenuContent.propTypes = {
 };
 
 export default function SharedAssetInput(props) {
-  const { isTypeDestination } = props;
+  const { isTypeDestination, onClick } = props;
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false);
   const [isRunAnimation, setRunAnimation] = useState(false);
@@ -91,6 +92,7 @@ export default function SharedAssetInput(props) {
   function handleClick() {
     setOpenAssetMenu(!openAssetMenu);
     setRunAnimation(true);
+    onClick();
   }
 
   function setSelectedTokenAndClose(token) {
@@ -131,8 +133,8 @@ export default function SharedAssetInput(props) {
               />
             ) : (
               <div className="token_group">
-                <div className="token_icon_wrap">
-                  <div className="icon_eth" />
+                <div className="asset_icon_wrap">
+                  <SharedAssetIcon />
                 </div>
                 <SharedButton
                   type="tertiaryWhite"
@@ -189,33 +191,22 @@ export default function SharedAssetInput(props) {
           .input_amount {
             width: 98px;
             height: 32px;
-            color: #fefefc;
+            color: #ffffff;
             font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
             text-align: right;
           }
+          .input_amount::placeholder {
+            color: #ffffff;
+          }
           .token_group {
             display: flex;
             align-items: center;
           }
-          .token_icon_wrap {
-            width: 40px;
-            height: 40px;
-            border-radius: 46px;
-            background-color: var(--hunter-green);
-            border-radius: 80px;
+          .asset_icon_wrap {
             margin-right: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .icon_eth {
-            background: url('./images/eth@2x.png');
-            background-size: 18px 29px;
-            width: 18px;
-            height: 29px;
           }
         `}
       </style>
