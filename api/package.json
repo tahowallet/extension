@@ -1,0 +1,25 @@
+{
+  "name": "@tallyho/tally-api",
+  "version": "0.0.1",
+  "description": "Tally, the community owned and operated Web3 wallet: api implementation.",
+  "main": "index.js",
+  "repository": "git@github.com:thesis/tally-extension.git",
+  "author": "Matt Luongo <matt@thesis.co>",
+  "license": "GPL-3.0",
+  "keywords": [
+    "ethereum",
+    "bitcoin",
+    "cryptocurrency",
+    "wallet",
+    "web3",
+    "dapp"
+  ],
+  "scripts": {
+    "build": "webpack --mode=production",
+    "lint": "run-p lint:*",
+    "lint-fix": "run-p 'lint:* -- --fix'",
+    "lint:js": "eslint .",
+    "test": "run-p lint:* build",
+    "watch": "webpack --mode=development --watch"
+  }
+}

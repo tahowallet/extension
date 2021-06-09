@@ -1,5 +1,6 @@
 {
-  "name": "@thesis-co/tally-extension",
+  "name": "@tallyho/tally-extension",
+  "private": true,
   "version": "0.0.1",
   "description": "Tally, the community owned and operated Web3 wallet.",
   "main": "index.js",
@@ -15,67 +16,40 @@
     "dapp"
   ],
   "scripts": {
-    "start": "yarn build dev",
-    "build": "node development/build-scripts/index.js",
+    "start": "webpack --mode=development --watch",
+    "build": "webpack --mode=production",
     "lint": "run-p lint:*",
     "lint-fix": "run-p 'lint:* -- --fix'",
-    "lint:css": "stylelint src/**/*.css",
-    "lint:js": "xo",
-    "test": "run-p lint:* build",
-    "watch": "webpack --mode=development --watch"
+    "lint:js": "eslint .",
+    "test": "run-p lint:* build"
   },
-  "xo": {
-    "envs": [
-      "browser"
-    ],
-    "globals": [
-      "browser"
-    ]
+  "workspaces": [
+    "ui",
+    "api"
+  ],
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.2",
+    "@mechamittens/extension": "0.0.4",
+    "@tallyho/tally-ui": "0.0.1",
+    "@tallyho/tally-api": "0.0.1",
+    "@types/firefox-webext-browser": "^82.0.0",
+    "buffer": "^6.0.3",
+    "webext-options-sync": "^2.0.1",
+    "webextension-polyfill": "^0.7.0"
   },
-  "stylelint": {
-    "extends": "stylelint-config-xo"
-  },
-  "dependencies": {},
   "devDependencies": {
-    "@babel/core": "^7.5.5",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.10.4",
-    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
-    "@babel/plugin-proposal-optional-chaining": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
-    "@babel/preset-react": "^7.0.0",
-    "@babel/register": "^7.5.5",
+    "@babel/core": "^7.13.1",
+    "@babel/preset-react": "^7.12.13",
     "babel-loader": "^8.2.2",
-    "babel-preset-es2015": "^6.24.1",
-    "babelify": "^10.0.0",
-    "brfs": "^2.0.2",
-    "browserify": "^17.0.0",
-    "browserify-derequire": "^1.1.1",
-    "browserify-transform-tools": "^1.7.0",
-    "chalk": "^4.1.1",
-    "del": "^6.0.0",
-    "end-of-stream": "^1.4.4",
-    "envify": "^4.1.0",
-    "fancy-log": "^1.3.3",
-    "fast-glob": "^3.2.5",
-    "fs": "^0.0.1-security",
-    "fs-extra": "^10.0.0",
-    "gulp": "^4.0.2",
-    "gulp-livereload": "^4.0.2",
-    "gulp-sourcemaps": "^3.0.0",
-    "gulp-terser-js": "^5.2.2",
-    "gulp-watch": "^5.0.1",
-    "gulp-zip": "^5.1.0",
-    "lodash": "^4.17.21",
-    "path-extra": "^4.3.0",
-    "pify": "^5.0.0",
-    "pump": "^3.0.0",
-    "randomcolor": "^0.6.2",
-    "rc": "^1.2.8",
-    "react-devtools": "^4.13.2",
-    "vinyl-buffer": "^1.0.1",
-    "vinyl-source-stream": "^2.0.0",
-    "watchify": "^4.0.0"
+    "copy-webpack-plugin": "^9.0.0",
+    "install": "^0.13.0",
+    "npm": "^7.5.6",
+    "npm-run-all": "^4.1.5",
+    "size-plugin": "^1.2.0",
+    "terser-webpack-plugin": "^5.1.1",
+    "typescript": "4.2.2",
+    "webpack": "^5.24.2",
+    "webpack-cli": "4.5.0",
+    "webpack-livereload-plugin": "^3.0.1"
   }
 }

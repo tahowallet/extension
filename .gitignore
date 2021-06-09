@@ -1,34 +1,6 @@
 npm-debug.log
 yarn-error.log
 node_modules
-package-lock.json
-
-# IDEs
-.idea
-.vscode
-.sublime-project
-
-*.bak
-
-# VIM
-*.swp
-*.swo
-
-temp
-.tmp
-.sass-cache
-.DS_Store
-app/.DS_Store
-
-.out/
-coverage/
-dist
-builds/
-builds.zip
-
-
-notes.txt
-
-
+dist/
 
 app/extension-scripts/api/playground/
