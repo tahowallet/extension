@@ -24,7 +24,7 @@ export default class Main {
     this.accounts = new Accounts({
       getTransactionHistory: this.transactions.getHistory.bind(this.transactions),
       balances,
-      accountMetaData
+      accountsMetaData || [],
     })
 
   }

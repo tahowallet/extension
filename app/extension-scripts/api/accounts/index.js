@@ -1,32 +1,37 @@
 import ObsStore from '../../lib/ob-store'
 
 export default class Accounts {
-  constructor ({ getTransactionHistory, balances, accountMetaData }) {
+  constructor ({ getTransactionHistory, balances, accountsMetaData }) {
     this.balances = balances
     this.getTransactionHistory = getTransactionHistory
-    this.store =  new ObsStore({ accountMetaData })
+    this.store =  new ObsStore({ accountsMetaData })
   }
+
 
   getApi () {
     return {
       getAccounts: this.getAccounts.bind(this),
-      updateAccount: this.updateAccount.bind(this),
-      getAccount: this.getAccount.bind(this),
-      updateSelctedAccount: this.setSelctedAccount.bind(this),
+      putAccounts: this.updateAccount.bind(this),
+      putSelctedAccount: this.setSelctedAccount.bind(this),
       getSelctedAccount: this.getSelctedAccount.bind(this),
     }
   }
 
-  getAccounts (address) {
-    return this.store.getState().accountMetaData
+  async getAccounts({ address }) {
+    if (address) return this.getAccount(address)
+    return this._getAccounts()
+  }
+
+  async _getAccounts (address) {
+    return this.store.getState().accountsMetaData
   }
 
   getAccountMetaDate(address) {
-    return this.store.getState().accountMetaData
+    return this.store.getState().accountsMetaData
     .find(account => account.address === address)
   }
 
-  async getAccount (address) {
+  async _getAccount (address) {
     account = this.getAccountMetaDate(address)
     const balances = await this.balances.get(address)
     const fiatTotal = balances.reduce((fiatTotal, tokenBalance) => {
@@ -46,17 +51,17 @@ export default class Accounts {
 
   updateAccount (newAccountData) {
     let found
-    const accountMetaData = this.store.getState().accountMetaData.map((account) => {
+    const accountsMetaData = this.store.getState().accountsMetaData.map((account) => {
       if (account.address === newAccountData.address ) {
         found = true
         return { ...account, ...newAccountData}
       }
       return account
     })
-    this.store.putState({ accountMetaData })
+    this.store.putState({ accountsMetaData })
   }
 
-  setSelctedAccount (address) {
+  setSelctedAccount ({ address }) {
     this.selctedAccount = this.getAccount(address)
   }
 

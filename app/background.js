@@ -53,11 +53,32 @@ platform.runtime.onConnect.addListener((port) => {
 
 
 
+// TODO: grab address from path
+//
 function uiRouteToApi (route, method, api) {
-  return route.split('/').reduce((apiMethod, path, index, source) => {
+  const { schema } = UI_METHODS
+  // extract inline params such as addresses or anything that could be
+  // considered a ID
+  const methodInfo = route.split('/').reduce((agg, str, index, source) => {
+    if (!str) return agg
+    if(str.includes('0x')) agg.inlineParam.push(str)
+    else agg.path = agg.path.concat(`/${str}`)
+  }, {path: '', inlineParam: []})
+
+  // find api method
+  return methodInfo.path.route.split('/').reduce((apiMethod, path, index, source) => {
     if (!path) return apiMethod
     if (index === source.length - 1) {
       const finalPath = `${UI_METHODS[method]}${path.charAt(0).toUpperCase()}${path.slice(1)}`
+      if(schema[methodInfo.path] && schema[methodInfo.path].optionalPathParam) {
+        const paramMap = schema[methodInfo.path].pathParamKeys.reduce((agg, key, index) => {
+          agg[key] = methodInfo.inlineParam[index]
+          return agg
+        }, {})
+        return (params) => {
+          return apiMethod({ ...params, ...paramMap })
+        }
+      }
       return apiMethod[finalPath]
     }
     return apiMethod[path]
