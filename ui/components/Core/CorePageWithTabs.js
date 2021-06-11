@@ -8,16 +8,14 @@ import TabBar from '../TabBar/TabBar';
 export default function CorePageWithTabs(props) {
   const { children } = props;
 
-  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
+  const [isProtocolListOpen, setIsProtocolListOpen] = useState(false);
 
   return (
     <>
       <SharedSlideUpMenu
-        isOpen={isSlideUpMenuOpen}
-        isRunAnimation={isRunAnimation}
+        isOpen={isProtocolListOpen}
         close={() => {
-          setIsSlideUpMenuOpen(false);
+          setIsProtocolListOpen(false);
         }}
       >
         <TopMenuProtocolList />
@@ -27,8 +25,7 @@ export default function CorePageWithTabs(props) {
           type="button"
           className="trigger"
           onClick={() => {
-            setIsSlideUpMenuOpen(!isSlideUpMenuOpen);
-            setRunAnimation(true);
+            setIsProtocolListOpen(!isProtocolListOpen);
           }}
         >
           <TopMenu />
