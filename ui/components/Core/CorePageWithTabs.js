@@ -11,7 +11,7 @@ export default function CorePageWithTabs(props) {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false);
 
   return (
-    <>
+    <main>
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         close={() => {
@@ -20,7 +20,7 @@ export default function CorePageWithTabs(props) {
       >
         <TopMenuProtocolList />
       </SharedSlideUpMenu>
-      <div className="wrap">
+      <div className="page">
         <button
           type="button"
           className="trigger"
@@ -35,7 +35,7 @@ export default function CorePageWithTabs(props) {
       </div>
       <style jsx>
         {`
-          .wrap {
+          .page {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -52,7 +52,7 @@ export default function CorePageWithTabs(props) {
           }
         `}
       </style>
-    </>
+    </main>
   );
 }
 

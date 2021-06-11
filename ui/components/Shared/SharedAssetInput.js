@@ -18,17 +18,19 @@ function SelectTokenMenuContent(props) {
             className="search_input"
             placeholder="Search by name or address"
           />
-          <div className="icon_search" />
+          <span className="icon_search" />
         </div>
       </div>
       <div className="divider" />
-      {['', '', '', '', '', '', '', '', '', '', '', '', ''].map(() => (
-        <>
-          <SharedAssetItem
-            setSelectedTokenAndClose={setSelectedTokenAndClose}
-          />
-        </>
-      ))}
+      <ul>
+        {['', '', '', '', '', '', '', '', '', '', '', '', ''].map(() => (
+          <>
+            <SharedAssetItem
+              setSelectedTokenAndClose={setSelectedTokenAndClose}
+            />
+          </>
+        ))}
+      </ul>
       <style jsx>
         {`
           .search_label {
@@ -68,7 +70,6 @@ function SelectTokenMenuContent(props) {
           .divider {
             width: 384px;
             border-bottom: 1px solid var(--hunter-green);
-            margin-left: -24px;
             margin-top: 15px;
             margin-bottom: 8.5px;
           }
@@ -109,7 +110,7 @@ export default function SharedAssetInput(props) {
       >
         {SelectTokenMenuContent({ setSelectedTokenAndClose })}
       </SharedSlideUpMenu>
-      <div className="wrap">
+      <div className="asset_input">
         {isTypeDestination ? (
           <>
             <input className="token_input" type="text" value="0x..." />
@@ -151,7 +152,7 @@ export default function SharedAssetInput(props) {
       </div>
       <style jsx>
         {`
-          .wrap {
+          .asset_input {
             width: 352px;
             height: 72px;
             border-radius: 4px;

@@ -6,24 +6,22 @@ export default function SwapApprovalStep(props) {
   const { isDone, label } = props;
 
   return (
-    <>
-      <div className="wrap">
-        <div className="left">
-          <div className={`icon_check${isDone ? ' icon_green' : ''}`} />
-          {label}
-        </div>
-        <SharedButton
-          type="tertiary"
-          size="medium"
-          label="Etherscan"
-          icon="external"
-          iconSize="large"
-          isDisabled={!isDone}
-        />
+    <li>
+      <div className="left">
+        <div className={`icon_check${isDone ? ' icon_green' : ''}`} />
+        {label}
       </div>
+      <SharedButton
+        type="tertiary"
+        size="medium"
+        label="Etherscan"
+        icon="external"
+        iconSize="large"
+        isDisabled={!isDone}
+      />
       <style jsx>
         {`
-          .wrap {
+          li {
             width: 100%;
             display: flex;
             justify-content: space-between;
@@ -52,7 +50,7 @@ export default function SwapApprovalStep(props) {
           }
         `}
       </style>
-    </>
+    </li>
   );
 }
 

@@ -6,16 +6,20 @@ export default function TopMenuProtocolList() {
     <>
       <div className="wrap standard_width">
         <TopMenuProtocolListItem isSelected />
-        {['', '', ''].map(() => (
-          <TopMenuProtocolListItem />
-        ))}
+        <ul>
+          {['', '', ''].map(() => (
+            <TopMenuProtocolListItem />
+          ))}
+        </ul>
         <div className="divider">
           <div className="divider_label">Testnet</div>
           <div className="divider_line" />
         </div>
-        {['', '', '', ''].map(() => (
-          <TopMenuProtocolListItem />
-        ))}
+        <ul>
+          {['', '', '', ''].map(() => (
+            <TopMenuProtocolListItem />
+          ))}
+        </ul>
       </div>
       <style jsx>
         {`

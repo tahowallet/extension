@@ -2,10 +2,8 @@ import React from 'react';
 
 export default function SharedAssetIcon() {
   return (
-    <>
-      <div className="token_icon_wrap">
-        <div className="icon_eth" />
-      </div>
+    <div className="token_icon_wrap">
+      <span className="icon_eth" />
       <style jsx>
         {`
           .token_icon_wrap {
@@ -25,6 +23,6 @@ export default function SharedAssetIcon() {
           }
         `}
       </style>
-    </>
+    </div>
   );
 }

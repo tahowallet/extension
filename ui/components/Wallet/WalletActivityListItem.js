@@ -2,31 +2,42 @@ import React from 'react';
 
 export default function WalletActivityListItem() {
   return (
-    <>
-      <div className="wrap">
-        <div className="top">
-          <div className="left">
-            <div className="activity_icon" />
-            Send
-          </div>
-          <div className="right">Apr 15</div>
+    <li>
+      <div className="top">
+        <div className="left">
+          <div className="activity_icon" />
+          Send
         </div>
-        <div className="bottom">
-          <div className="left">
-            <div className="token_icon_wrap">
-              <div className="icon_eth" />
-            </div>
-            <div className="amount">
-              <span className="bold_amount_count">12800</span>KEEP
-            </div>
+        <div className="right">Apr 15</div>
+      </div>
+      <div className="bottom">
+        <div className="left">
+          <div className="token_icon_wrap">
+            <span className="icon_eth" />
           </div>
-          <div className="right">
-            <div className="outcome">To: 0xb34f...23rr</div>
+          <div className="amount">
+            <span className="bold_amount_count">12800</span>KEEP
           </div>
+        </div>
+        <div className="right">
+          <div className="outcome">To: 0xb34f...23rr</div>
         </div>
       </div>
       <style jsx>
         {`
+          li {
+            width: 352px;
+            height: 72px;
+            border-radius: 16px;
+            background-color: var(--green-95);
+            display: flex;
+            flex-direction: column;
+            padding: 13px 19px 8px 8px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            justify-content: space-between;
+            align-items: center;
+          }
           .activity_icon {
             background: url('./images/activity_send@2x.png');
             background-size: 14px 14px;
@@ -45,19 +56,6 @@ export default function WalletActivityListItem() {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            align-items: center;
-          }
-          .wrap {
-            width: 352px;
-            height: 72px;
-            border-radius: 16px;
-            background-color: var(--green-95);
-            display: flex;
-            flex-direction: column;
-            padding: 13px 19px 8px 8px;
-            box-sizing: border-box;
-            margin-bottom: 16px;
-            justify-content: space-between;
             align-items: center;
           }
           .bottom {
@@ -143,6 +141,6 @@ export default function WalletActivityListItem() {
           }
         `}
       </style>
-    </>
+    </li>
   );
 }

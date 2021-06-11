@@ -4,7 +4,7 @@ import SharedAssetIcon from '../Shared/SharedAssetIcon';
 export default function SwapQuoteAssetCard() {
   return (
     <>
-      <div className="wrap">
+      <div className="card_wrap">
         <div className="top_label">You pay</div>
         <SharedAssetIcon />
         <div className="amount">0.342</div>
@@ -12,7 +12,7 @@ export default function SwapQuoteAssetCard() {
       </div>
       <style jsx>
         {`
-          .wrap {
+          .card_wrap {
             width: 164px;
             height: 152px;
             border-radius: 4px;
