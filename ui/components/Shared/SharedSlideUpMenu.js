@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 export default function SharedSlideUpMenu(props) {
-  const { isOpen, isRunAnimation, close, size, children } = props;
+  const { isOpen, close, size, children } = props;
 
   let menuHeight = '536px';
   if (size === 'large') {
@@ -16,9 +16,7 @@ export default function SharedSlideUpMenu(props) {
       <div
         className={`slide_up_menu
         ${size === 'large' ? ' large' : ''}
-        ${isRunAnimation && !isOpen ? ' closed_animate' : ''}
-        ${isRunAnimation && isOpen ? ' open_animate' : ''}
-        ${!isRunAnimation && !isOpen ? ' closed' : ''}`}
+        ${!isOpen ? ' closed' : ''}`}
       >
         <button
           type="button"
@@ -40,7 +38,8 @@ export default function SharedSlideUpMenu(props) {
             right: 0px;
             bottom: 0px;
             z-index: 999;
-            transform: translateY(${menuHeight});
+            transform: translateY(0); /* open by default */
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1) 0.445s;
             padding-top: 24px;
             box-sizing: border-box;
           }
@@ -63,27 +62,6 @@ export default function SharedSlideUpMenu(props) {
           .closed {
             transform: translateY(${menuHeight});
           }
-          .closed_animate {
-            transform: translateY(${menuHeight});
-            animation: slideDown linear 0.16s;
-            animation-direction: backward;
-          }
-          @keyframes slideUp {
-            0% {
-              transform: translateY(${menuHeight});
-            }
-            100% {
-              transform: translateY(0px);
-            }
-          }
-          @keyframes slideDown {
-            0% {
-              transform: translateY(0px);
-            }
-            100% {
-              transform: translateY(${menuHeight});
-            }
-          }
         `}
       </style>
     </>
@@ -92,7 +70,6 @@ export default function SharedSlideUpMenu(props) {
 
 SharedSlideUpMenu.propTypes = {
   isOpen: PropTypes.bool.isRequired,
-  isRunAnimation: PropTypes.bool.isRequired,
   close: PropTypes.func.isRequired,
   children: PropTypes.node.isRequired,
   size: PropTypes.oneOf(['small', 'medium', 'large']),
