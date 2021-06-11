@@ -1,7 +1,7 @@
 {
   "extends": ["airbnb", "plugin:prettier/recommended"],
   "globals": {
-    "chrome": "readonly"
+    "browser": "readonly"
   },
   "rules": {
     "react/jsx-one-expression-per-line": [0],
