@@ -30,7 +30,7 @@ export default function CorePageWithTabs(props) {
         >
           <TopMenu />
         </button>
-        <div className="children_wrap">{children}</div>
+        <div className="page_content">{children}</div>
         <TabBar />
       </div>
       <style jsx>
@@ -43,7 +43,7 @@ export default function CorePageWithTabs(props) {
             height: 100vh;
             width: 100vw;
           }
-          .children_wrap {
+          .page_content {
             height: 480px;
             overflow: scroll;
             width: 100vw;
