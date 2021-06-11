@@ -1,11 +1,14 @@
+// @ts-check
+
 const path = require('path')
-const fs = require('fs')
+const webpack = require('webpack');
+const { merge: webpackMerge } = require("webpack-merge")
+
 const SizePlugin = require('size-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
-const webpack = require('webpack');
-const CopyPlugin = require("copy-webpack-plugin");
-const { merge: webpackMerge } = require("webpack-merge")
 const LiveReloadPlugin = require('webpack-livereload-plugin')
+const CopyPlugin = require("copy-webpack-plugin");
+const WebExtensionArchivePlugin = require('./build-utils/web-extension-archive-webpack-plugin.js')
 
 const supportedBrowsers = ["firefox","brave","opera","chrome"]
 
@@ -80,19 +83,22 @@ const baseConfig = {
   }
 }
 
-// Configuration adjustments for specific build modes.
+// Configuration adjustments for specific build modes, customized by browser.
+/** @type {{ [mode: string]: (browser: string) => object }} */
 const modeConfigs = {
-  "development": {
+  "development": () => ({
     plugins: [
       new LiveReloadPlugin({}),
       new CopyPlugin({ patterns: ['dev-utils/*.js'] })
     ],
-  },
-  "production": {
+  }),
+  "production": (browser) => ({
     plugins: [
-      // something for ZIP files, eh?
+      new WebExtensionArchivePlugin({
+        filename: browser
+      })
     ]
-  }
+  })
 }
 
 // One config per supported browser, adjusted by mode.
@@ -101,8 +107,8 @@ module.exports = (_, { mode }) => supportedBrowsers.map(browser => {
 
   return webpackMerge(
     baseConfig,
-    // Try to find a build mode config adjustment.
-    modeConfigs[mode] || {},
+    // Try to find a build mode config adjustment and call it with the browser.
+    (modeConfigs[mode] || (()=>({})))(browser),
     {
       output: {
         path: distPath
