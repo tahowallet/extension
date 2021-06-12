@@ -1,43 +1,38 @@
-import ObsStore from '../lib/ob-store'
-import Etherum from './ethereum'
+// import ObsStore from '../lib/ob-store.js'
+// import Etherum from './ethereum'
 
-const networks = {
-  ethereum: Etherum,
-}
+// const providedNetworks = {
+//   ethereum: Etherum,
+// }
 
-/*
-state = {
-  accounts:
-    [ { type: 'address'/'multiSig?', network: 'ethereum' } ]
-  assets: [
-      { symbol: 'ETH', lookup?: url, },
-      ...
-    ]
-  }
-}
-*/
-export default class Balances {
-  constructor ({ state, providers, chains }) {
-    this.store = new ObsStore(state)
-    chains.forEach((chain) => {
-      this[chain] = new networks[chain]({
-        state: state[chain],
-        provider: providers[chain]
-      })
-      this.chain.store.on('update', (state) => {
-        const newChainState = {}
-        newChainState[chain] = state
-        this.store.updateState(newChainState)
-      })
-    })
-  }
+// /*
+// state = {
+//   networks: []
+//   assets: [
+//       { symbol: 'ETH', lookup?: url, },
+//       ...
+//     ]
+//   }
+// }
+// */
+// export default class Balances extends ObsStore {
+//   constructor ({ state, providers, getAccounts }) {
+//     super(state)
+//     this.networks = []
+//     const { networks } = state
+//     networks.forEach((chain) => {
+//       this.networks.push(new providedNetworks[chain]({
+//         state: state[chain],
+//         provider: providers[chain]
+//       }))
+//     })
+//   }
 
-  /*
-    Returns a object containing all api methods for use
-  */
-  getApi () {
-    return {
+//   /*future behavior of this method is to take a list of accounts*/
+//   async get ({address}) {
+//     const balances = this.networks.reduce((agg, network) => {
+//       agg.push(network.getBalnces(address))
+//     }, [])
+//   }
 
-    }
-  }
-}
+// }

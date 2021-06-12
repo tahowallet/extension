@@ -3,7 +3,7 @@ import { platform } from '@tallyho/tally-api/lib/platform'
 import { UI_METHODS, STATE_KEY } from '@tallyho/tally-api/constants'
 import { getPersistedState, persistState } from '@tallyho/tally-api/lib/db'
 import { migrate } from '@tallyho/tally-api/migrations'
-import Main from  '@tallyho/tally-api/api'
+import Main from  '@tallyho/tally-api'
 // const persistedState = load state from idb
 
 // instantiate main api for background process

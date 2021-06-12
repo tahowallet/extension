@@ -20,6 +20,11 @@
     "lint-fix": "run-p 'lint:* -- --fix'",
     "lint:js": "eslint .",
     "test": "run-p lint:* build",
+    "test:unit": "node tests/index.js",
     "watch": "webpack --mode=development --watch"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
   }
 }
