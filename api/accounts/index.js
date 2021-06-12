@@ -42,7 +42,6 @@ export default class Accounts {
       tokens: balances,
       total_balance: {
         amount: balances[0].balance, // eth only for now
-        currency: this.userPrefernces.getState().fiatDisplay
       }
     }
 
