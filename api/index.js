@@ -18,7 +18,7 @@ export default class Main {
     // const balances = this.balances = new Balances({ state: balances, providers })
 
     // this is temporary
-    this.ethereumBalances = new EthereumBalances({ providers.selcted})
+    this.ethereumBalances = new EthereumBalances({ provider: providers.selcted })
 
     // this.userPrefernces = new ObsStore(state.userPrefernces || {})
 

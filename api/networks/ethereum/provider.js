@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
-import NETWORK_ERRORS from '../../constatnts'
-import { idGenerator } from '../lib/utils'
+import NETWORK_ERRORS from '../../constants'
+import { idGenerator } from '../../lib/utils'
 const getId = idGenerator()
 
 export default class Provider {
@@ -13,7 +13,7 @@ export default class Provider {
     const defaults = { id: getId().value, jsonrpc: this.jsonrpc}
     const formatedRequest = formatRequestForFetch({defaults, ...request})
     const {error, result} = await performFetch(formatedRequest)
-    if  (error) thrown new Error(error)
+    if  (error) throw new Error(error)
     return result
   }
 
@@ -57,7 +57,7 @@ function formatRequestForFetch ({ request, extraHeaders }) {
   // make sure their are no extra keys on the request
   const { id, jsonrpc, method, params } = request
   const headers = {
-    ...extraHeaders
+    ...extraHeaders,
     'Accept': 'application/json',
     'Content-Type': 'application/json',
   }

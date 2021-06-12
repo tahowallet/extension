@@ -24,7 +24,7 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
+    "node-fetch": "^2.6.1"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

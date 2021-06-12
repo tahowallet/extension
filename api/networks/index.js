@@ -31,13 +31,18 @@ export default class Network {
 
   async add (newNetwork) {
     const networks = this.store.getState()
-    if (!(newNetwork.type in providers)) throw new Error(NETWORK_ERRORS.UNSUPORTED_NETWORK)
+
+    if (!(newNetwork.type in providers)) {
+      throw new Error(NETWORK_ERRORS.UNSUPORTED_NETWORK)
+    }
     networks.push(newNetwork)
     try {
-      const { type, endpoint }
+      const { type, endpoint } = newNetwork
       if (!this.providers[type]) this.providers.type = {}
       this.providers[type][endpoint] = new providers[type]({ endpoint })
       this.providers[type].selcted = this.providers[type][endpoint]
+    } catch (e) {
+      console.error(e)
     }
     this.store.putState(networks)
   }
