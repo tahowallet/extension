@@ -25,17 +25,21 @@ platform.runtime.onConnect.addListener((port) => {
     // wait for main api to be ready ie determine network connectivity
     const { main } = await ready
 
-    const params = msg.params || []
-    const id = msg.id
+    const { id, route, method, params = {} } = msg
     try {
       let response
       // check port name if content-script forward msg to inpage provider
       // otherwise it goes to frontend api
       if (port.name === 'content-script') response = await main.inpageProvider.request(msg)
       else if (port.name === 'ui') {
-        // parse api method from route
-        const method = uiRouteToApi(msg.route, msg.method, main.getApi())
-        response = await method(params)
+        let strippedRoute, address
+        if (route.includes('0x')) {
+          const split = route.split('/')
+          address = split.pop()
+          strippedRoute = split.join('/')
+        }
+        // sloppy
+        response = await main.getApi(params)[strippedRoute || route][method]({ address, ...params[0]})
       }
       port.postMessage({
         id,
@@ -50,37 +54,3 @@ platform.runtime.onConnect.addListener((port) => {
     }
   })
 })
-
-
-
-// TODO: grab address from path
-//
-function uiRouteToApi (route, method, api) {
-  const { schema } = UI_METHODS
-  // extract inline params such as addresses or anything that could be
-  // considered a ID
-  const methodInfo = route.split('/').reduce((agg, str, index, source) => {
-    if (!str) return agg
-    if(str.includes('0x')) agg.inlineParam.push(str)
-    else agg.path = agg.path.concat(`/${str}`)
-  }, {path: '', inlineParam: []})
-
-  // find api method
-  return methodInfo.path.route.split('/').reduce((apiMethod, path, index, source) => {
-    if (!path) return apiMethod
-    if (index === source.length - 1) {
-      const finalPath = `${UI_METHODS[method]}${path.charAt(0).toUpperCase()}${path.slice(1)}`
-      if(schema[methodInfo.path] && schema[methodInfo.path].optionalPathParam) {
-        const paramMap = schema[methodInfo.path].pathParamKeys.reduce((agg, key, index) => {
-          agg[key] = methodInfo.inlineParam[index]
-          return agg
-        }, {})
-        return (params) => {
-          return apiMethod({ ...params, ...paramMap })
-        }
-      }
-      return apiMethod[finalPath]
-    }
-    return apiMethod[path]
-  }, api)
-}
