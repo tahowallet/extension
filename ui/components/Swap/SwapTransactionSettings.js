@@ -40,24 +40,22 @@ export default function SwapTransactionSettings() {
           </div>
         </div>
       </SharedSlideUpMenu>
-      <>
-        <div className="top_label label">
-          Transaction settings
-          <button type="button" onClick={handleClick}>
-            <span className="icon_cog" />
-          </button>
-        </div>
-        <div className="labels_wrap">
-          <label className="label">
-            Slippage tolerance
-            <div className="info">1%</div>
-          </label>
-          <label className="label">
-            Network Fee/Speed
-            <div className="info">{'$24 / Fast <1min'}</div>
-          </label>
-        </div>
-      </>
+      <div className="top_label label">
+        Transaction settings
+        <button type="button" onClick={handleClick}>
+          <span className="icon_cog" />
+        </button>
+      </div>
+      <div className="labels_wrap">
+        <label className="label">
+          Slippage tolerance
+          <div className="info">1%</div>
+        </label>
+        <label className="label">
+          Network Fee/Speed
+          <div className="info">{'$24 / Fast <1min'}</div>
+        </label>
+      </div>
       <style jsx>
         {`
           .labels_wrap {

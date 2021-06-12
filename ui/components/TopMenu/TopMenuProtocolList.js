@@ -3,29 +3,24 @@ import TopMenuProtocolListItem from './TopMenuProtocolListItem';
 
 export default function TopMenuProtocolList() {
   return (
-    <>
-      <div className="wrap standard_width">
-        <TopMenuProtocolListItem isSelected />
-        <ul>
-          {['', '', ''].map(() => (
-            <TopMenuProtocolListItem />
-          ))}
-        </ul>
-        <div className="divider">
-          <div className="divider_label">Testnet</div>
-          <div className="divider_line" />
-        </div>
-        <ul>
-          {['', '', '', ''].map(() => (
-            <TopMenuProtocolListItem />
-          ))}
-        </ul>
+    <div className="standard_width center_horizontal">
+      <TopMenuProtocolListItem isSelected />
+      <ul>
+        {['', '', ''].map(() => (
+          <TopMenuProtocolListItem />
+        ))}
+      </ul>
+      <div className="divider">
+        <div className="divider_label">Testnet</div>
+        <div className="divider_line" />
       </div>
+      <ul>
+        {['', '', '', ''].map(() => (
+          <TopMenuProtocolListItem />
+        ))}
+      </ul>
       <style jsx>
         {`
-          .wrap {
-            margin: 0 auto;
-          }
           .divider {
             display: flex;
             align-items: center;
@@ -48,6 +43,6 @@ export default function TopMenuProtocolList() {
           }
         `}
       </style>
-    </>
+    </div>
   );
 }
