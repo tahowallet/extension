@@ -1,24 +1,27 @@
 
 import Networks from './networks'
-// import Transactions from './transactions'
+import Transactions from './transactions'
 import Accounts from './accounts/'
 // import { Keys } from './keys'
-// import { Balances } from './balances'
+import EthereumBalances  from './balances/ethereum'
 import ObsStore from './lib/ob-store'
-import DEFAULT_STATE from './constants/default-state'
+import { DEFAULT_STATE } from './constants/default-state'
 
 
 export default class Main {
 
-  constructor (state) {
-    const { accountMetaData, balances, networks, supportedChains } = state
-    const { providers } = this.network = new Network({ networks })
-    // this.transactions = new Transactions(state.transactions || {})
+  constructor (state = DEFAULT_STATE) {
+    const { accountsMetaData, balances, networks, supportedChains, transactions } = state
+    const { providers } = this.network = new Networks({ networks })
+    this.transactions = new Transactions({
+      state: transactions,
+      provider: providers.ethereum.selcted,
+    })
     // this.keys = new Keys(state.keys || {})
     // const balances = this.balances = new Balances({ state: balances, providers })
 
     // this is temporary
-    this.ethereumBalances = new EthereumBalances({ provider: providers.selcted })
+    this.ethereumBalances = new EthereumBalances({ provider: providers.ethereum.selcted })
 
     // this.userPrefernces = new ObsStore(state.userPrefernces || {})
 

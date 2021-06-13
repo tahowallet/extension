@@ -5,8 +5,8 @@ import { createEthProviderWrapper } from '../lib/utils'
 
 export default class Transactions {
   constructor ({ state, provider }) {
-    this.state = new ObsStore(state)provider
-    this.query = createEthProviderWrapper()
+    this.state = new ObsStore(state)
+    this.query = createEthProviderWrapper(provider)
   }
 
   // temp history

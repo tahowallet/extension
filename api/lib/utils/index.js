@@ -1,7 +1,6 @@
-export function* idGenerator(start) {
+export function idGenerator(start) {
   let index = start || 0
-  while (true)
-    yield index++
+  return () => index++
 }
 
 

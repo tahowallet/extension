@@ -1,14 +1,14 @@
 import ObsStore from '../lib/ob-store.js'
 
 export default class Accounts {
-  constructor ({ getTransactionHistory, balances, accountsMetaData = [] }) {
+  constructor ({ getTransactionHistory, balances, accountsMetaData }) {
     this.balances = balances
     this.getTransactionHistory = getTransactionHistory
     this.store =  new ObsStore({ accountsMetaData })
   }
 
   async get({ address }) {
-    if (address) return this.getAccount(address)
+    if (address) return this._getAccount(address)
     return this._getAccounts()
   }
 

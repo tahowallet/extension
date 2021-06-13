@@ -4,12 +4,13 @@ import { EventEmitter } from 'events'
 
 export default class ObStore extends EventEmitter {
   constructor (initState = {}) {
+    super()
     this._state = initState
   }
 
   // returns current state
   getState () {
-    return this.state
+    return this._state
   }
 
   // replaces previous state with new state

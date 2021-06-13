@@ -6,9 +6,9 @@ const migrations = [
 ]
 
 
-export async function migrate (versionedState, migrations) {
-  return migrations.reduce(async (newVersionedState, migration) => {
+export async function migrate (versionedState) {
+  return migrations.reduce(async (newVersionedState, { migration }) => {
     const state = await newVersionedState
     return migration(state)
-  }, Promise.reolve(versionedState))
+  }, Promise.resolve(versionedState))
 }

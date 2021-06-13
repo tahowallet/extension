@@ -1,6 +1,7 @@
 import { NETWORK_TYPES } from './index.js'
 
 export const DEFAULT_STATE = {
+  accountsMetaData: [],
   networks: [
     {
       selcted: true,

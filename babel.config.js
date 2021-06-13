@@ -1,10 +1,17 @@
-
 module.exports = function (api) {
   api.cache(false)
   return {
     presets: [
       [
         '@babel/preset-env',
+        {
+          targets: {
+            browsers: [
+              'chrome >= 90',
+              'firefox >= 89',
+            ],
+          },
+        },
       ],
       '@babel/preset-react',
     ],
