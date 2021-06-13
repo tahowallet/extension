@@ -10,24 +10,27 @@ export default class Transactions {
   }
 
   // temp history
-  async getHistory (address,) {
-    const blockNumer = ParseInt(await this.query.eth_blockNumber())
-    // aprox. 3 weeks of blocks would be nice if we
+  async getHistory (address, toBlock = 'latest') {
+    const blockNumer = parseInt(await this.query.eth_blockNumber())
+    // aprox. 36 weeks of blocks would be nice if we
     // could just have creation time on accounts
-    const fromBlock =  blockNumer - 10e3
-    const toAddress = fromAddress = address
-    const toTransfers = this.query.alchemy_getAssetTransfers({
+    const fromBlock =  `0x${(blockNumer - (10e3 * 12)).toString(16)}`
+    const toAddress = address
+    const fromAddress = address
+    const toTransfers= await this.query.alchemy_getAssetTransfers({
       fromBlock,
       toBlock,
       toAddress,
+      excludeZeroValue: false,
     })
-    const fromTransfers = this.query.alchemy_getAssetTransfers({
+    const fromTransfers = await this.query.alchemy_getAssetTransfers({
       fromBlock,
       toBlock,
       fromAddress,
+      excludeZeroValue: false,
     })
-    return [...toTransfers, ...fromTransfers].sort((txA, txB) => {
-      return ParseInt(txA.blockNum) - ParseInt(txB.blockNum)
+    return [...toTransfers.transfers || [], ...fromTransfers.transfers || []].sort((txA, txB) => {
+      return parseInt(txA.blockNum) - parseInt(txB.blockNum)
     })
   }
 }

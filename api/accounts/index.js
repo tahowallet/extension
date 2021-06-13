@@ -25,11 +25,11 @@ export default class Accounts {
 
   getAccountMetaDate(address) {
     return this.store.getState().accountsMetaData
-    .find(account => account.address === address)
+    .find((account = {}) => account.address === address)
   }
 
   async _getAccount (address) {
-    account = this.getAccountMetaDate(address)
+    const account = this.getAccountMetaDate(address) || { address }
     const balances = await this.balances.get(address)
     // not availble yet
     // const fiatTotal = balances.reduce((fiatTotal, tokenBalance) => {

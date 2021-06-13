@@ -4,25 +4,24 @@ import { idGenerator } from '../../lib/utils'
 const getId = idGenerator()
 
 export default class Provider {
-  constructor ({ endpoint, jsonrpc = 2 }) {
+  constructor ({ endpoint, jsonrpc = '2.0' }) {
     this.endpoint = endpoint
     this.jsonrpc = jsonrpc
   }
 
   async request (request) {
     const defaults = { id: getId(), jsonrpc: this.jsonrpc}
-    const formatedRequest = formatRequestForFetch({defaults, ...request})
-    const {error, result} = await performFetch(formatedRequest)
-    if  (error) throw new Error(error)
+    const formatedRequest = formatRequestForFetch({request: {...defaults, ...request}})
+    const { error, result } = await this.performFetch(formatedRequest, request)
+    if  (error) throw new Error(error.message)
     return result
   }
 
 
 
 
-  async performFetch (formatedRequest) {
+  async performFetch (formatedRequest, { method }) {
     const response = await fetch(this.endpoint, formatedRequest)
-    const rawData = await response.text()
     // // handle errors
 
     //       throw new Error('RPC response not ok: 405 method not found')
@@ -38,13 +37,13 @@ export default class Provider {
     //       throw createInternalError(`rawData`)
     //   }
     // special case for now
-    if (req.method === 'eth_getBlockByNumber' && rawData === 'Not Found') {
-      res.result = null
-      return
+    if (method === 'eth_getBlockByNumber' && reseponse.data === 'Not Found') {
+
+      return { result: null }
     }
 
     // parse JSON
-    const { error, result } = JSON.parse(rawData)
+    const { error, result } = await response.json()
 
     // finally return result
 
@@ -63,10 +62,9 @@ function formatRequestForFetch ({ request, extraHeaders }) {
   }
 
   return {
-    fetchParams: {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({id, jsonrpc, method, params}),
-    },
+    method: 'POST',
+    headers,
+    body: JSON.stringify({id, jsonrpc, method, params}),
   }
+
 }

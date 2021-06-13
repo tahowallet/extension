@@ -20,17 +20,6 @@ const ready = constructApi()
 
 const state = getPersistedState()
 
-async function test (ready) {
-  const { main } = await ready
-  const api =main.getApi()
-  const result =     await api['/accounts/'].GET({address: '0x32d44db61df0b10Ccf0164Df3D9cbeE72E3dF02c'})
-  console.log(
-    '!!!!!',
-    result
-    )
-}
-
-test(ready)
 
 // add listener to extension api
 platform.runtime.onConnect.addListener((port) => {
