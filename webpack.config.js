@@ -35,12 +35,11 @@ const baseConfig = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: [
-              '@babel/react',
-            ]
-          }
-        }
-      }
+            plugins: ['styled-jsx/babel'],
+            presets: ['@babel/react'],
+          },
+        },
+      },
     ],
   },
   output: {

@@ -23,7 +23,7 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
-    "@tallyho/tally-wallet": "0.0.1",
+    "@tallyho/tally-api": "0.0.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-chrome-extension-router": "^1.2.0",

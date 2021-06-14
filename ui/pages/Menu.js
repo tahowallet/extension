@@ -24,3 +24,5 @@ export default function Menu() {
     </>
   );
 }
+
+registerRoute('menu', Menu);

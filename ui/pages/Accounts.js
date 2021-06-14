@@ -24,3 +24,5 @@ export default function Accounts() {
     </>
   );
 }
+
+registerRoute('accounts', Accounts);

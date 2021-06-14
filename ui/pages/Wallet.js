@@ -38,7 +38,6 @@ export default function Wallet() {
             justify-content: space-between;
           }
           .page_content {
-            height: 100vh;
             width: 100vw;
             display: flex;
             flex-direction: column;
@@ -66,3 +65,5 @@ export default function Wallet() {
     </div>
   );
 }
+
+registerRoute('wallet', Wallet);

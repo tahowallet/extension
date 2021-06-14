@@ -3,10 +3,10 @@ import { registerRoute } from '../config/routes';
 import CorePageWithTabs from '../components/Core/CorePageWithTabs';
 import SharedAssetInput from '../components/Shared/SharedAssetInput';
 import SharedButton from '../components/Shared/SharedButton';
-import SendFeeSelectButton from '../components/Send/SendFeeSelectButton';
+import SharedNetworkFeeGroup from '../components/Shared/SharedNetworkFeeGroup';
 
 export default function Send() {
-  const [selectedFee, setSelectedFee] = useState(0);
+  const [selectedCount, setSelectedCount] = useState(0);
 
   return (
     <>
@@ -21,51 +21,34 @@ export default function Send() {
               <div className="label">
                 Asset / Amount <div className="label_right">Max</div>
               </div>
-              <SharedAssetInput />
+              <SharedAssetInput
+                onClick={() => {
+                  setSelectedCount(1);
+                }}
+              />
             </div>
             <div className="form_input">
               <div className="label">Send To:</div>
               <SharedAssetInput isTypeDestination />
             </div>
             <div className="label">Network Fee/Speed</div>
-            <div className="network_fee_group">
-              <div className="network_fee_button">
-                <SendFeeSelectButton
-                  isActive={selectedFee === 0 && true}
-                  onClick={() => {
-                    setSelectedFee(0);
-                  }}
-                />
-              </div>
-              <div className="network_fee_button">
-                <SendFeeSelectButton
-                  isActive={selectedFee === 1 && true}
-                  onClick={() => {
-                    setSelectedFee(1);
-                  }}
-                />
-              </div>
-              <div className="network_fee_button">
-                <SendFeeSelectButton
-                  isActive={selectedFee === 2 && true}
-                  onClick={() => {
-                    setSelectedFee(2);
-                  }}
-                />
-              </div>
-            </div>
+            <SharedNetworkFeeGroup />
             <div className="divider" />
             <div className="total_footer standard_width">
               <div className="total_amount">
                 <div className="total_label">Total</div>
                 <div className="total_amount_number">0.0</div>
               </div>
-              <SharedButton
-                type="primary"
-                size="large"
-                label="Send"
-                isDisabled
-              />
+              {selectedCount > 0 ? (
+                <SharedButton type="primary" size="large" label="Send" />
+              ) : (
+                <SharedButton
+                  type="primary"
+                  size="large"
+                  label="Send"
+                  isDisabled
+                />
+              )}
             </div>
           </div>
         </div>
@@ -100,13 +83,6 @@ export default function Send() {
           .form_input {
             margin-bottom: 22px;
           }
-          .network_fee_group {
-            display: flex;
-            margin-bottom: 29px;
-          }
-          .network_fee_button {
-            margin-right: 16px;
-          }
           .label {
             height: 17px;
             color: var(--green-60);
@@ -126,7 +102,7 @@ export default function Send() {
           .total_amount_number {
             width: 150px;
             height: 32px;
-            color: #e7296d;
+            color: #ffffff;
             font-family: Segment;
             font-size: 22px;
             font-weight: 500;
