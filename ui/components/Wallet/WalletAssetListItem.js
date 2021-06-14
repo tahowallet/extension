@@ -64,7 +64,6 @@ export default function WalletAssetListItem() {
             color: #fefefc;
             font-size: 14px;
             font-weight: 400;
-            font-style: normal;
             letter-spacing: 0.42px;
             line-height: 16px;
             text-transform: uppercase;

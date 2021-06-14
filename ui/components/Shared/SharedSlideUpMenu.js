@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import TopMenuProtocolList from '../TopMenu/TopMenuProtocolList';
 
 export default function SharedSlideUpMenu(props) {
-  const { isOpen, isRunAnimation, close } = props;
+  const { isOpen, isRunAnimation, close, children } = props;
 
   return (
     <>
@@ -19,7 +18,7 @@ export default function SharedSlideUpMenu(props) {
           onClick={close}
           label="Close menu"
         />
-        <TopMenuProtocolList />
+        {children}
       </div>
       <style jsx>
         {`
@@ -27,7 +26,7 @@ export default function SharedSlideUpMenu(props) {
             width: 100vw;
             height: 536px;
             border-radius: 16px;
-            background-color: #193330;
+            background-color: var(--green-95);
             position: fixed;
             left: 0px;
             right: 0px;
@@ -84,4 +83,5 @@ SharedSlideUpMenu.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   isRunAnimation: PropTypes.bool.isRequired,
   close: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
 };
