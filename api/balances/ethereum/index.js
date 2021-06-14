@@ -26,7 +26,7 @@ export default class EthereumBalances {
 
   async get (address) {
     return [{
-        balance: await this.query.eth_getBalance(address, 'latest') / 1e18,
+        balance: await this.query.eth_getBalance(address, 'latest') / 10e17,
         symbol: 'ETH',
     }]
   }
