@@ -1,0 +1,74 @@
+:root {
+  --hunter-green: #002522;
+  --green-120: #001413;
+  --green-95: #193330;
+  --green-80: #33514e;
+  --green-60: #667c7a;
+  --green-40: #99a8a7;
+  --green-20: #ccd3d3;
+  --green-5: #f1f6f6;
+
+  --trophy-gold: #d08e39;
+  --gold-120: #b6792b;
+  --gold-80: #d9a561;
+  --gold-60: #e3bb88;
+  --gold-40: #ecd2b0;
+  --gold-20: #f6e8d7;
+  --gold-5: #faf8f1;
+  --white: #faf8f1;
+
+  --error: #e84855;
+  --error-20: #e9cfcf;
+
+  --success: #1b998b;
+  --success-20: #d2e9e8;
+
+  --attention: #1b998b;
+  --attention-20: #faf0cf;
+
+  --info: #5448c8;
+  --info-20: #d4e9f0;
+}
+
+body {
+  width: 384px;
+  height: 600px;
+  margin: 0;
+  font-family: 'Segment', -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+    sans-serif;
+  position: relative;
+  color: #fff;
+  font-size: 16px;
+  background-color: var(--hunter-green);
+}
+
+a {
+  text-decoration: none;
+}
+
+button {
+  all: unset;
+  cursor: pointer;
+}
+
+input {
+  all: unset;
+}
+
+* {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -font-smoothing: antialiased;
+}
+
+.standard_width {
+  width: 352px;
+  padding: 0px 8px;
+  box-sizing: border-box;
+}
+
+.divider {
+  width: 384px;
+  border-bottom: 1px solid #000000;
+  margin-left: -16px;
+}
