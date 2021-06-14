@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import _ from 'lodash';
 import SharedButton from '../Shared/SharedButton';
-import SwapAssetsHeader from './SwapAssetsHeader';
+import SharedAssetsHeader from '../Shared/SharedAssetsHeader';
 import SwapQuoteAssetCard from './SwapQuoteAssetCard';
 import SwapTransactionSettings from './SwapTransactionSettings';
 import SwapApprovalStep from './SwapApprovalStep';
@@ -24,7 +24,7 @@ export default function SwapQoute() {
 
   return (
     <section className="center_horizontal">
-      <SwapAssetsHeader />
+      <SharedAssetsHeader label="Swap Assets" icon="swap" />
       <div className="qoute_cards">
         <SwapQuoteAssetCard />
         <span className="icon_switch" />
