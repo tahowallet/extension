@@ -9,11 +9,11 @@ export default function SharedAssetItem(props) {
   }
 
   return (
-    <>
+    <li>
       <button type="button" className="token_group" onClick={handleClick}>
         <div className="left">
           <div className="token_icon_wrap">
-            <div className="icon_eth" />
+            <span className="icon_eth" />
           </div>
           <div className="right">
             <div className="name">ETH</div>
@@ -69,7 +69,7 @@ export default function SharedAssetItem(props) {
           }
         `}
       </style>
-    </>
+    </li>
   );
 }
 

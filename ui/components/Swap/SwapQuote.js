@@ -23,62 +23,60 @@ export default function SwapQoute() {
   }
 
   return (
-    <>
-      <div className="wrap center_horizontal">
-        <SwapAssetsHeader />
-        <div className="qoute_cards">
-          <SwapQuoteAssetCard />
-          <div className="icon_switch" />
-          <SwapQuoteAssetCard />
-        </div>
-        <div className="label label_right">1 ETH = 9,843 KEEP</div>
-        <div className="settings_wrap">
-          <SwapTransactionSettings />
-        </div>
-        {stepComplete > -1 ? (
-          <>
-            <div className="approval_steps">
-              <SwapApprovalStep
-                isDone={stepComplete >= 1}
-                label="Approve to spend ETH"
-              />
-              <SwapApprovalStep
-                isDone={stepComplete >= 2}
-                label="Approve to spend KEEP"
-              />
-              <SwapApprovalStep
-                isDone={stepComplete === 3}
-                label="Swap Approved"
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="exchange_section_wrap">
-              <div className="label">Exchange route</div>
-              <div className="exchange_content">
-                <div className="left">
-                  <div className="icon_uniswap" />
-                  Uniswap v3
-                </div>
-                <div>100%</div>
-              </div>
-            </div>
-            <div className="approve_button center_horizontal">
-              <SharedButton
-                type="primary"
-                size="large"
-                label="Aprove Assets & Swap"
-                disableIcon
-                onClick={handleApproveClick}
-              />
-            </div>
-          </>
-        )}
+    <section className="center_horizontal">
+      <SwapAssetsHeader />
+      <div className="qoute_cards">
+        <SwapQuoteAssetCard />
+        <span className="icon_switch" />
+        <SwapQuoteAssetCard />
       </div>
+      <label className="label label_right">1 ETH = 9,843 KEEP</label>
+      <div className="settings_wrap">
+        <SwapTransactionSettings />
+      </div>
+      {stepComplete > -1 ? (
+        <>
+          <ul className="approval_steps">
+            <SwapApprovalStep
+              isDone={stepComplete >= 1}
+              label="Approve to spend ETH"
+            />
+            <SwapApprovalStep
+              isDone={stepComplete >= 2}
+              label="Approve to spend KEEP"
+            />
+            <SwapApprovalStep
+              isDone={stepComplete === 3}
+              label="Swap Approved"
+            />
+          </ul>
+        </>
+      ) : (
+        <>
+          <div className="exchange_section_wrap">
+            <label className="label">Exchange route</label>
+            <div className="exchange_content">
+              <div className="left">
+                <span className="icon_uniswap" />
+                Uniswap v3
+              </div>
+              <div>100%</div>
+            </div>
+          </div>
+          <div className="approve_button center_horizontal">
+            <SharedButton
+              type="primary"
+              size="large"
+              label="Aprove Assets & Swap"
+              disableIcon
+              onClick={handleApproveClick}
+            />
+          </div>
+        </>
+      )}
       <style jsx>
         {`
-          .wrap {
+          section {
             width: 352px;
             margin-top: -24px;
           }
@@ -165,6 +163,6 @@ export default function SwapQoute() {
           }
         `}
       </style>
-    </>
+    </section>
   );
 }

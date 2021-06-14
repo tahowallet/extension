@@ -12,20 +12,18 @@ export default function SharedSlideUpMenu(props) {
   }
 
   return (
-    <>
-      <div
-        className={`slide_up_menu
+    <div
+      className={`slide_up_menu
         ${size === 'large' ? ' large' : ''}
         ${!isOpen ? ' closed' : ''}`}
-      >
-        <button
-          type="button"
-          className="icon_close"
-          onClick={close}
-          label="Close menu"
-        />
-        {children}
-      </div>
+    >
+      <button
+        type="button"
+        className="icon_close"
+        onClick={close}
+        label="Close menu"
+      />
+      {children}
       <style jsx>
         {`
           .slide_up_menu {
@@ -64,7 +62,7 @@ export default function SharedSlideUpMenu(props) {
           }
         `}
       </style>
-    </>
+    </div>
   );
 }
 

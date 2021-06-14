@@ -5,29 +5,27 @@ export default function SharedButton(props) {
   const { label, type, size, onClick, isDisabled, icon, iconSize } = props;
 
   return (
-    <>
-      <button
-        type="button"
-        className={`wrap${size === 'large' ? ' large' : ''}${
-          type === 'secondary' ? ' secondary' : ''
-        }${isDisabled ? ' disabled' : ''}${
-          type === 'tertiary' ? ' tertiary' : ''
-        }${type === 'tertiaryWhite' ? ' tertiary white' : ''}
+    <button
+      type="button"
+      className={`
+        ${size === 'large' ? ' large' : ''}
+        ${type === 'secondary' ? ' secondary' : ''}
+        ${isDisabled ? ' disabled' : ''}${
+        type === 'tertiary' ? ' tertiary' : ''
+      }
+        ${type === 'tertiaryWhite' ? ' tertiary white' : ''}
         ${type === 'tertiary' && isDisabled ? ' tertiary_disabled' : ''}`}
-        onClick={onClick}
-      >
-        {label}
-        {icon ? (
-          <div
-            className={`icon_button${
-              iconSize === 'large' ? ' icon_large' : ''
-            }`}
-          />
-        ) : null}
-      </button>
+      onClick={onClick}
+    >
+      {label}
+      {icon ? (
+        <span
+          className={`icon_button${iconSize === 'large' ? ' icon_large' : ''}`}
+        />
+      ) : null}
       <style jsx>
         {`
-          .wrap {
+          button {
             height: 40px;
             border-radius: 4px;
             background-color: var(--trophy-gold);
@@ -102,7 +100,7 @@ export default function SharedButton(props) {
           }
         `}
       </style>
-    </>
+    </button>
   );
 }
 

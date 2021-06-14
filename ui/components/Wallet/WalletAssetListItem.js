@@ -3,25 +3,23 @@ import SharedAssetIcon from '../Shared/SharedAssetIcon';
 
 export default function WalletAssetListItem() {
   return (
-    <>
-      <div className="wrap">
-        <div className="left">
-          <SharedAssetIcon />
-          <div className="left_content">
-            <div className="amount">
-              <span className="bold_amount_count">2389.23</span>KEEP
-            </div>
-            <div className="price">$238.99</div>
+    <li>
+      <div className="left">
+        <SharedAssetIcon />
+        <div className="left_content">
+          <div className="amount">
+            <span className="bold_amount_count">2389.23</span>KEEP
           </div>
+          <div className="price">$238.99</div>
         </div>
-        <div className="right">
-          <div className="icon_send_asset" />
-          <div className="icon_swap_asset" />
-        </div>
+      </div>
+      <div className="right">
+        <span className="icon_send_asset" />
+        <span className="icon_swap_asset" />
       </div>
       <style jsx>
         {`
-          .wrap {
+          li {
             width: 352px;
             height: 72px;
             border-radius: 16px;
@@ -92,6 +90,6 @@ export default function WalletAssetListItem() {
           }
         `}
       </style>
-    </>
+    </li>
   );
 }

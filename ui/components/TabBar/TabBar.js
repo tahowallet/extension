@@ -9,19 +9,17 @@ export default function TabBar() {
   const tabs = ['accounts', 'wallet', 'swap', 'earn', 'menu'];
 
   return (
-    <>
-      <div className="wrap">
-        {tabs.map((tabName) => (
-          <TabBarIcon
-            name={tabName}
-            component={routes[tabName]}
-            isActive={activeTabName === tabName}
-          />
-        ))}
-      </div>
+    <nav>
+      {tabs.map((tabName) => (
+        <TabBarIcon
+          name={tabName}
+          component={routes[tabName]}
+          isActive={activeTabName === tabName}
+        />
+      ))}
       <style jsx>
         {`
-          .wrap {
+          nav {
             width: 100vw;
             height: 56px;
             background-color: var(--hunter-green);
@@ -36,6 +34,6 @@ export default function TabBar() {
           }
         `}
       </style>
-    </>
+    </nav>
   );
 }

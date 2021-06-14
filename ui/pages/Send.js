@@ -12,15 +12,15 @@ export default function Send() {
     <>
       <CorePageWithTabs>
         <div className="wrap">
-          <div className="header">
-            <div className="icon_activity_send_medium" />
+          <h1 className="header">
+            <span className="icon_activity_send_medium" />
             <div className="title">Send Asset</div>
-          </div>
+          </h1>
           <div className="form">
             <div className="form_input">
-              <div className="label">
-                Asset / Amount <div className="label_right">Max</div>
-              </div>
+              <label className="label">
+                Asset / Amount <label className="label_right">Max</label>
+              </label>
               <SharedAssetInput
                 onClick={() => {
                   setSelectedCount(1);
@@ -28,10 +28,10 @@ export default function Send() {
               />
             </div>
             <div className="form_input">
-              <div className="label">Send To:</div>
+              <label className="label">Send To:</label>
               <SharedAssetInput isTypeDestination />
             </div>
-            <div className="label">Network Fee/Speed</div>
+            <label className="label">Network Fee/Speed</label>
             <SharedNetworkFeeGroup />
             <div className="divider" />
             <div className="total_footer standard_width">

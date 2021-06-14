@@ -40,27 +40,25 @@ export default function SwapTransactionSettings() {
           </div>
         </div>
       </SharedSlideUpMenu>
-      <>
-        <div className="top_label label">
-          Transaction settings
-          <button type="button" onClick={handleClick}>
-            <div className="icon_cog" />
-          </button>
-        </div>
-        <div className="wrap">
-          <div className="label">
-            Slippage tolerance
-            <div className="info">1%</div>
-          </div>
-          <div className="label">
-            Network Fee/Speed
-            <div className="info">{'$24 / Fast <1min'}</div>
-          </div>
-        </div>
-      </>
+      <div className="top_label label">
+        Transaction settings
+        <button type="button" onClick={handleClick}>
+          <span className="icon_cog" />
+        </button>
+      </div>
+      <div className="labels_wrap">
+        <label className="label">
+          Slippage tolerance
+          <div className="info">1%</div>
+        </label>
+        <label className="label">
+          Network Fee/Speed
+          <div className="info">{'$24 / Fast <1min'}</div>
+        </label>
+      </div>
       <style jsx>
         {`
-          .wrap {
+          .labels_wrap {
             width: 352px;
             height: 72px;
             border-radius: 4px;
@@ -98,6 +96,7 @@ export default function SwapTransactionSettings() {
             margin-bottom: 7px;
           }
           .icon_cog {
+            display: block;
             background: url('./images/cog@2x.png');
             background-size: 12px 12px;
             width: 12px;
