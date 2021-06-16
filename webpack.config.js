@@ -46,6 +46,13 @@ const baseConfig = {
     // path: is set browser-specifically below
     filename: '[name].js'
   },
+  // resolve stream
+  resolve: {
+    fallback: {
+      'stream': require.resolve('stream-browserify'),
+      'process': require.resolve('process/browser'),
+    }
+  },
   plugins: [
     // polyfill the process and Buffer APIs
     new webpack.ProvidePlugin({
