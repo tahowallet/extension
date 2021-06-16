@@ -5,44 +5,42 @@ export default function SharedNetworkFeeGroup() {
   const [selectedFee, setSelectedFee] = useState(0);
 
   return (
-    <>
-      <div className="network_fee_group">
-        <div className="network_fee_button">
-          <SharedFeeSelectButton
-            isActive={selectedFee === 0 && true}
-            onClick={() => {
-              setSelectedFee(0);
-            }}
-          />
-        </div>
-        <div className="network_fee_button">
-          <SharedFeeSelectButton
-            isActive={selectedFee === 1 && true}
-            onClick={() => {
-              setSelectedFee(1);
-            }}
-          />
-        </div>
-        <div className="network_fee_button">
-          <SharedFeeSelectButton
-            isActive={selectedFee === 2 && true}
-            onClick={() => {
-              setSelectedFee(2);
-            }}
-          />
-        </div>
-      </div>
+    <ul>
+      <li>
+        <SharedFeeSelectButton
+          isActive={selectedFee === 0}
+          onClick={() => {
+            setSelectedFee(0);
+          }}
+        />
+      </li>
+      <li>
+        <SharedFeeSelectButton
+          isActive={selectedFee === 1}
+          onClick={() => {
+            setSelectedFee(1);
+          }}
+        />
+      </li>
+      <li>
+        <SharedFeeSelectButton
+          isActive={selectedFee === 2}
+          onClick={() => {
+            setSelectedFee(2);
+          }}
+        />
+      </li>
       <style jsx>
         {`
-          .network_fee_group {
+          ul {
             display: flex;
             margin-bottom: 29px;
           }
-          .network_fee_button {
+          li {
             margin-right: 16px;
           }
         `}
       </style>
-    </>
+    </ul>
   );
 }

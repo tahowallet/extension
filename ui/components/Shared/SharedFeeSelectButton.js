@@ -5,24 +5,22 @@ export default function SharedFeeSelectButton(props) {
   const { isActive, onClick } = props;
 
   return (
-    <>
-      <button
-        type="button"
-        className={`wrap${isActive ? ' active' : ''}`}
-        onClick={onClick}
-      >
-        <div className="top">
-          Slow
-          <div className="time small">5h</div>
-        </div>
-        <div className="bottom">
-          0.00479 ETH
-          <div className="usd small">$20,99</div>
-        </div>
-      </button>
+    <button
+      type="button"
+      className={`${isActive ? ' active' : ''}`}
+      onClick={onClick}
+    >
+      <div className="top">
+        Slow
+        <div className="time small">5h</div>
+      </div>
+      <div className="bottom">
+        0.00479 ETH
+        <div className="usd small">$20,99</div>
+      </div>
       <style jsx>
         {`
-          .wrap {
+          button {
             width: 106px;
             height: 72px;
             border-radius: 4px;
@@ -77,7 +75,7 @@ export default function SharedFeeSelectButton(props) {
           }
         `}
       </style>
-    </>
+    </button>
   );
 }
 

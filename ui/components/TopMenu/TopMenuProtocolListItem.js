@@ -5,23 +5,21 @@ export default function TopMenuProtocolListItem(props) {
   const { isSelected } = props;
 
   return (
-    <>
-      <div className={`wrap${isSelected ? ' select' : ''}`}>
-        <div className="left">
-          <div className="icon_wrap">
-            <div className="icon_eth" />
-          </div>
+    <li className={`${isSelected ? ' select' : ''}`}>
+      <div className="left">
+        <div className="icon_wrap">
+          <span className="icon_eth" />
         </div>
-        <div className="right">
-          <div className="title">Ethereum</div>
-          <div className="sub_title">
-            Mainnet{isSelected && <span className="status">Connected</span>}
-          </div>
+      </div>
+      <div className="right">
+        <div className="title">Ethereum</div>
+        <div className="sub_title">
+          Mainnet{isSelected && <span className="status">Connected</span>}
         </div>
       </div>
       <style jsx>
         {`
-          .wrap {
+          li {
             display: flex;
             margin-bottom: 15px;
             cursor: pointer;
@@ -92,7 +90,7 @@ export default function TopMenuProtocolListItem(props) {
           }
         `}
       </style>
-    </>
+    </li>
   );
 }
 

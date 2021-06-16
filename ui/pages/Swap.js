@@ -37,16 +37,16 @@ export default function Swap() {
           <SwapAssetsHeader />
           <div className="form">
             <div className="form_input">
-              <div className="label">
-                Swap from: <div className="label_right">Max</div>
-              </div>
+              <label className="label">
+                Swap from: <label className="label_right">Max</label>
+              </label>
               <SharedAssetInput onClick={handleAssetSelect} />
             </div>
             <div className="icon_change" />
             <div className="form_input">
-              <div className="label">
-                Swap to: <div className="label_right">-</div>
-              </div>
+              <label className="label">
+                Swap to: <label className="label_right">-</label>
+              </label>
               <SharedAssetInput onClick={handleAssetSelect} />
             </div>
             <div className="settings_wrap">

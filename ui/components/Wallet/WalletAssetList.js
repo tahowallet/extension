@@ -3,12 +3,10 @@ import WalletAssetListItem from './WalletAssetListItem';
 
 export default function WalletAssetList() {
   return (
-    <>
-      <div className="wrap">
-        {['', '', '', '', ''].map(() => (
-          <WalletAssetListItem />
-        ))}
-      </div>
-    </>
+    <ul>
+      {['', '', '', '', ''].map(() => (
+        <WalletAssetListItem />
+      ))}
+    </ul>
   );
 }

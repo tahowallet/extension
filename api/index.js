@@ -5,6 +5,7 @@ import Accounts from './accounts/'
 // import { Keys } from './keys'
 import EthereumBalances  from './balances/ethereum'
 import ObsStore from './lib/ob-store'
+import getFiatValue from './lib/getFiatValues.js'
 import { DEFAULT_STATE } from './constants/default-state'
 
 
@@ -16,6 +17,7 @@ export default class Main {
     this.transactions = new Transactions({
       state: transactions,
       provider: providers.ethereum.selcted,
+      getFiatValue,
     })
     // this.keys = new Keys(state.keys || {})
     // const balances = this.balances = new Balances({ state: balances, providers })

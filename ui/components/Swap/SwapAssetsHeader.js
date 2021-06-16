@@ -2,18 +2,22 @@ import React from 'react';
 
 export default function SwapAssetsHeader() {
   return (
-    <>
-      <div className="header">
-        <div className="icon_activity_swap_medium" />
-        <div className="title">Swap assets</div>
-      </div>
+    <h1 className="header">
+      <span className="icon_activity_swap_medium" />
+      Swap assets
       <style jsx>
         {`
-          .header {
+          h1 {
             display: flex;
             align-items: center;
             margin-bottom: 25px;
             margin-top: 17px;
+            height: 32px;
+            color: #ffffff;
+            font-family: Segment;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
           }
           .icon_activity_swap_medium {
             background: url('./images/activity_swap_medium@2x.png');
@@ -22,16 +26,8 @@ export default function SwapAssetsHeader() {
             height: 24px;
             margin-right: 8px;
           }
-          .title {
-            height: 32px;
-            color: #ffffff;
-            font-family: Segment;
-            font-size: 22px;
-            font-weight: 500;
-            line-height: 32px;
-          }
         `}
       </style>
-    </>
+    </h1>
   );
 }

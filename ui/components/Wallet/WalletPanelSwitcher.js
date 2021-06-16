@@ -5,9 +5,9 @@ export default function WalletPanelSwitcher(props) {
   const { setPanelNum, panelNum } = props;
 
   return (
-    <>
-      <div className="wrap">
-        <div className="wrap_inner">
+    <nav>
+      <ul>
+        <li>
           <button
             type="button"
             onClick={() => {
@@ -17,6 +17,8 @@ export default function WalletPanelSwitcher(props) {
           >
             Assets
           </button>
+        </li>
+        <li>
           <button
             type="button"
             onClick={() => {
@@ -26,15 +28,15 @@ export default function WalletPanelSwitcher(props) {
           >
             Activity
           </button>
-        </div>
-      </div>
+        </li>
+      </ul>
       <style jsx>
         {`
-          .wrap {
+          nav {
             width: 100%;
             border-bottom: 1px solid var(--green-120);
           }
-          .wrap_inner {
+          ul {
             display: flex;
             padding-left: 24px;
             padding-bottom: 12px;
@@ -62,7 +64,7 @@ export default function WalletPanelSwitcher(props) {
           }
         `}
       </style>
-    </>
+    </nav>
   );
 }
 

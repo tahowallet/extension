@@ -4,14 +4,12 @@ import TopMenuProfileButton from './TopMenuProfileButton';
 
 export default function TopMenu() {
   return (
-    <>
-      <div className="wrap standard_width">
-        <TopMenuProtocolSwitcher />
-        <TopMenuProfileButton />
-      </div>
+    <nav className="standard_width">
+      <TopMenuProtocolSwitcher />
+      <TopMenuProfileButton />
       <style jsx>
         {`
-          .wrap {
+          nav {
             flex-shrink: 0;
             height: 64px;
             display: flex;
@@ -20,6 +18,6 @@ export default function TopMenu() {
           }
         `}
       </style>
-    </>
+    </nav>
   );
 }

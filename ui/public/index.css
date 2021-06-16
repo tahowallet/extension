@@ -55,6 +55,12 @@ input {
   all: unset;
 }
 
+ul,
+li {
+  all: unset;
+  list-style-type: none;
+}
+
 * {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;

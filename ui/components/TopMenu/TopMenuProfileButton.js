@@ -2,11 +2,9 @@ import React from 'react';
 
 export default function TopMenuProfileButton() {
   return (
-    <>
-      <div className="wrap">
-        Foxhunter
-        <div className="avatar" />
-      </div>
+    <button type="button" className="wrap">
+      Foxhunter
+      <div className="avatar" />
       <style jsx>
         {`
           .avatar {
@@ -25,6 +23,6 @@ export default function TopMenuProfileButton() {
           }
         `}
       </style>
-    </>
+    </button>
   );
 }

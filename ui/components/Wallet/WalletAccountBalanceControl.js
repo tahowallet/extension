@@ -6,37 +6,35 @@ import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
 
 function Receive() {
   return (
-    <>
-      <div className="wrap">
-        <div className="title">
-          <div className="icon_activity_send_medium" />
-          Receive address
-        </div>
-        <div className="sub_title">
-          Only send Ethereum Mainnet compatible assets to this address.
-        </div>
-        <div className="qr_code">
-          <div className="qr_code_image" />
-        </div>
-        <div className="copy_wrap">
-          <SharedButton
-            label="0x2A0e23...fdA0f6"
-            icon="copy"
-            size="medium"
-            iconSize="large"
-            type="primary"
-          />
-        </div>
+    <section>
+      <h1>
+        <span className="icon_activity_send_medium" />
+        Receive address
+      </h1>
+      <div className="sub_title">
+        Only send Ethereum Mainnet compatible assets to this address.
+      </div>
+      <div className="qr_code">
+        <div className="qr_code_image" />
+      </div>
+      <div className="copy_wrap">
+        <SharedButton
+          label="0x2A0e23...fdA0f6"
+          icon="copy"
+          size="medium"
+          iconSize="large"
+          type="primary"
+        />
       </div>
       <style jsx>
         {`
-          .wrap {
+          .receive_wrap {
             display: flex;
             align-items: center;
             flex-direction: column;
             margin-top: 24px;
           }
-          .title {
+          h1 {
             height: 32px;
             color: #ffffff;
             font-family: Segment;
@@ -88,7 +86,7 @@ function Receive() {
           }
         `}
       </style>
-    </>
+    </section>
   );
 }
 export default function WalletAccountBalanceControl() {

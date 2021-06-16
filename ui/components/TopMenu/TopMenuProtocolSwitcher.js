@@ -2,14 +2,12 @@ import React from 'react';
 
 export default function TopMenuProtocolSwitcher() {
   return (
-    <>
-      <div className="wrap">
-        Ethereum
-        <div className="icon_chevron_down" />
-      </div>
+    <button>
+      Ethereum
+      <span className="icon_chevron_down" />
       <style jsx>
         {`
-          .wrap {
+          button {
             color: var(--green-40);
             display: flex;
             align-items: center;
@@ -25,6 +23,6 @@ export default function TopMenuProtocolSwitcher() {
           }
         `}
       </style>
-    </>
+    </button>
   );
 }
