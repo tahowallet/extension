@@ -1,11 +1,13 @@
 import React from 'react';
 import WalletAssetListItem from './WalletAssetListItem';
 
-export default function WalletAssetList() {
+export default function WalletAssetList(props) {
+  const { assets } = props;
+  if (!assets) return false;
   return (
     <ul>
-      {['', '', '', '', ''].map(() => (
-        <WalletAssetListItem />
+      {assets.map((asset) => (
+        <WalletAssetListItem asset={asset} />
       ))}
     </ul>
   );

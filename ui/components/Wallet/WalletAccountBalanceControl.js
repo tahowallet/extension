@@ -89,7 +89,8 @@ function Receive() {
     </section>
   );
 }
-export default function WalletAccountBalanceControl() {
+export default function WalletAccountBalanceControl(props) {
+  const { balance } = props;
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false);
   const [isRunAnimation, setRunAnimation] = useState(false);
 
@@ -110,7 +111,8 @@ export default function WalletAccountBalanceControl() {
       <div className="wrap">
         <div className="balance_label">Total account balance</div>
         <span className="balance">
-          <span className="dollar_sign">$</span>12,973.44
+          <span className="dollar_sign">$</span>
+          {balance}
         </span>
         <div className="send_receive_button_wrap">
           <Link component={routes['send']}>
@@ -140,7 +142,6 @@ export default function WalletAccountBalanceControl() {
             flex-direction: column;
           }
           .balance {
-            width: 161px;
             height: 48px;
             color: #ffffff;
             font-family: Segment;

@@ -1,16 +1,27 @@
 import React from 'react';
 import SharedAssetIcon from '../Shared/SharedAssetIcon';
 
-export default function WalletAssetListItem() {
+export default function WalletAssetListItem(props) {
+  const { asset } = props;
+
+  // TODO: ETH price hard-coded for demo
   return (
     <li>
       <div className="left">
         <SharedAssetIcon />
         <div className="left_content">
           <div className="amount">
-            <span className="bold_amount_count">2389.23</span>KEEP
+            <span className="bold_amount_count">
+              {asset.balance.toFixed(5)}
+            </span>
+            {asset.symbol}
           </div>
-          <div className="price">$238.99</div>
+          <div className="price">
+            $
+            {`${(asset.balance * 2411.44).toLocaleString('en-US', {
+              maximumFractionDigits: 2,
+            })}`}
+          </div>
         </div>
       </div>
       <div className="right">
