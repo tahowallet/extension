@@ -23,7 +23,9 @@ export default function Wallet() {
       <CorePageWithTabs>
         <div className="page_content">
           <div className="section">
-            <WalletAccountBalanceControl />
+            <WalletAccountBalanceControl
+              balance={account?.total_balance?.usd_amount}
+            />
           </div>
           <div className="section">
             <WalletPanelSwitcher

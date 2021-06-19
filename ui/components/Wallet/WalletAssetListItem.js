@@ -16,12 +16,7 @@ export default function WalletAssetListItem(props) {
             </span>
             {asset.symbol}
           </div>
-          <div className="price">
-            $
-            {`${(asset.balance * 2411.44).toLocaleString('en-US', {
-              maximumFractionDigits: 2,
-            })}`}
-          </div>
+          <div className="price">${asset.usd_balance}</div>
         </div>
       </div>
       <div className="right">

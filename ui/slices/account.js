@@ -35,11 +35,23 @@ export function fetchAccount(address) {
   return async (dispatch) => {
     dispatch(getAccount());
     try {
-      const response = await api.send({
+      let account = await api.send({
         method: 'GET',
         route: `/accounts/${address}`,
       });
-      dispatch(getAccountSuccess(response));
+
+      // Temporarily fill in hard coded USD conversion
+      if (account?.total_balance?.amount) {
+        const usdAmount = (
+          account?.total_balance?.amount * 2411.44
+        ).toLocaleString('en-US', {
+          maximumFractionDigits: 2,
+        });
+        account.total_balance.usd_amount = usdAmount;
+        account.tokens[0].usd_balance = usdAmount;
+      }
+
+      dispatch(getAccountSuccess(account));
     } catch (error) {
       dispatch(getAccountFailure());
     }
