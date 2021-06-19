@@ -9,12 +9,10 @@ export default function TopMenuProtocolList() {
         {['', '', ''].map(() => (
           <TopMenuProtocolListItem />
         ))}
-      </ul>
-      <div className="divider">
-        <div className="divider_label">Testnet</div>
-        <div className="divider_line" />
-      </div>
-      <ul>
+        <li className="divider">
+          <div className="divider_label">Testnet</div>
+          <div className="divider_line" />
+        </li>
         {['', '', '', ''].map(() => (
           <TopMenuProtocolListItem />
         ))}
