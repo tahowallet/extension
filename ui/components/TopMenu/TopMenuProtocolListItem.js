@@ -28,7 +28,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 76px;
             height: 17px;
             color: #22c480;
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -58,7 +57,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 80px;
             height: 24px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -67,7 +65,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 80px;
             height: 24px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -76,7 +73,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 54px;
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;

@@ -28,7 +28,6 @@ export default function SwapApprovalStep(props) {
             align-items: center;
             height: 24px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 400;
             line-height: 24px;

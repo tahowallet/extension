@@ -116,7 +116,6 @@ export default function SwapQoute() {
           .label {
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -139,7 +138,6 @@ export default function SwapQoute() {
             border-radius: 4px;
             background-color: var(--green-95);
             color: var(--green-20);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;

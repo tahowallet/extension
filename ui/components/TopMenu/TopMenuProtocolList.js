@@ -36,7 +36,6 @@ export default function TopMenuProtocolList() {
           }
           .divider_label {
             color: var(--green-40);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;

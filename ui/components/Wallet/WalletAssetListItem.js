@@ -65,7 +65,6 @@ export default function WalletAssetListItem(props) {
             width: 70px;
             height: 24px;
             color: #fefefc;
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -75,7 +74,6 @@ export default function WalletAssetListItem(props) {
             width: 58px;
             height: 17px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;

@@ -37,7 +37,6 @@ function Receive() {
           h1 {
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -50,7 +49,6 @@ function Receive() {
             width: 281px;
             height: 33px;
             color: var(--green-20);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -144,7 +142,6 @@ export default function WalletAccountBalanceControl(props) {
           .balance {
             height: 48px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 36px;
             font-weight: 500;
             line-height: 48px;
@@ -161,7 +158,6 @@ export default function WalletAccountBalanceControl(props) {
             width: 160px;
             height: 24px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 400;
             line-height: 24px;
@@ -171,7 +167,6 @@ export default function WalletAccountBalanceControl(props) {
             width: 14px;
             height: 32px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
