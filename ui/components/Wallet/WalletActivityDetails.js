@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import SharedAssetsHeader from '../Shared/SharedAssetsHeader';
 import SharedButton from '../Shared/SharedButton';
 
@@ -6,17 +7,15 @@ function DetailRowItem(props) {
   const { label, value, valueDetail } = props;
 
   return (
-    <>
-      <li className="wrap">
-        {label}
-        <div className="right">
-          {value}
-          <div className="value_detail">{valueDetail}</div>
-        </div>
-      </li>
+    <li>
+      {label}
+      <div className="right">
+        {value}
+        <div className="value_detail">{valueDetail}</div>
+      </div>
       <style jsx>
         {`
-          .wrap {
+          li {
             width: 100%;
             border-bottom: 1px solid var(--hunter-green);
             display: flex;
@@ -32,7 +31,6 @@ function DetailRowItem(props) {
           }
           .value_detail {
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -41,21 +39,25 @@ function DetailRowItem(props) {
           }
         `}
       </style>
-    </>
+    </li>
   );
 }
 
+DetailRowItem.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  valueDetail: PropTypes.string.isRequired,
+};
+
 function DestinationCard() {
   return (
-    <>
-      <div className="wrap">
-        <div className="sub_info from">From:</div>
-        0x23kj...238y
-        <div className="sub_info name">Foxhunter</div>
-      </div>
+    <div className="card_wrap">
+      <div className="sub_info from">From:</div>
+      0x23kj...238y
+      <div className="sub_info name">Foxhunter</div>
       <style jsx>
         {`
-          .wrap {
+          .card_wrap {
             width: 160px;
             height: 96px;
             border-radius: 4px;
@@ -69,7 +71,6 @@ function DestinationCard() {
             width: 69px;
             height: 17px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -83,7 +84,7 @@ function DestinationCard() {
           }
         `}
       </style>
-    </>
+    </div>
   );
 }
 
@@ -129,9 +130,9 @@ export default function WalletActivityDetails() {
         />
       </div>
       <div className="destination_cards">
-        {DestinationCard()}
+        <DestinationCard />
         <div className="icon_change" />
-        {DestinationCard()}
+        <DestinationCard />
       </div>
       <ul>
         {DetailInfo.map((info) => {
@@ -189,7 +190,6 @@ export default function WalletActivityDetails() {
           .activity_log_title {
             height: 24px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -202,7 +202,6 @@ export default function WalletActivityDetails() {
             align-items: center;
             height: 24px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 400;
             line-height: 24px;
