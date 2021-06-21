@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-chrome-extension-router';
 import { routes } from '../../config/routes';
 import SharedButton from '../Shared/SharedButton';
@@ -179,3 +180,11 @@ export default function WalletAccountBalanceControl(props) {
     </>
   );
 }
+
+WalletAccountBalanceControl.propTypes = {
+  balance: PropTypes.string,
+};
+
+WalletAccountBalanceControl.defaultProps = {
+  balance: '',
+};

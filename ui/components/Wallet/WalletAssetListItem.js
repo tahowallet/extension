@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import SharedAssetIcon from '../Shared/SharedAssetIcon';
 
 export default function WalletAssetListItem(props) {
@@ -97,3 +98,8 @@ export default function WalletAssetListItem(props) {
     </li>
   );
 }
+
+// Could use PropTypes.shape when this gets solidified
+WalletAssetListItem.propTypes = {
+  asset: PropTypes.object.isRequired,
+};

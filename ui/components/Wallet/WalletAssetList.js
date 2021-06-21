@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import WalletAssetListItem from './WalletAssetListItem';
 
 export default function WalletAssetList(props) {
@@ -12,3 +13,7 @@ export default function WalletAssetList(props) {
     </ul>
   );
 }
+
+WalletAssetList.propTypes = {
+  assets: PropTypes.array.isRequired,
+};
