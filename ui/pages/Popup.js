@@ -5,6 +5,8 @@ import Wallet from './Wallet';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
 
+import OnboardingImportMetamask from '../components/Onboarding/OnboardingImportMetamask';
+import Onboarding from './Onboarding';
 import Accounts from './Accounts';
 import Earn from './Earn';
 import Menu from './Menu';
@@ -17,7 +19,7 @@ export default function Popup() {
   return (
     <Provider store={store}>
       <Router>
-        <Wallet />
+        <Onboarding />
       </Router>
     </Provider>
   );
