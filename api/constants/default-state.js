@@ -6,8 +6,8 @@ export const DEFAULT_STATE = {
     {
       selcted: true,
       type: NETWORK_TYPES.ethereum,
-      name: 'rinkeby',
-      endpoint: 'https://eth-mainnet.alchemyapi.io/v2/_Kk5gA_dGwpJYOkb8khCKS0GJI6seNrc',
+      name: 'Ethereum Main Net',
+      endpoint: 'wss://eth-mainnet.ws.alchemyapi.io/v2/8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa',
     }
   ],
 }

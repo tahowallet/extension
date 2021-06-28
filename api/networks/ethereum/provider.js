@@ -1,17 +1,21 @@
 import fetch from 'node-fetch'
+import { TRANSPORT_TYPES } from '../../constants'
 import { NETWORK_ERRORS } from '../../constants/errors.js'
 import { idGenerator } from '../../lib/utils'
 const getId = idGenerator()
 
+// TO DO SUBCRIPTIONS
+// check to see if subcription is already handle the subcriptions
+// in the subscription class so that we can have global subcription
 
 export default class Provider {
   constructor ({ endpoint, jsonrpc = '2.0' }) {
     this.register = {}
     this.endpoint = endpoint
-    if (endpoint.includes('wss://') || endpoint.includes('ws://')) this.type = 'ws'
-    else if (endpoint.includes('https://') || endpoint.includes('http://')) this.type = 'http'
+    if (endpoint.includes('wss://') || endpoint.includes('ws://')) this.type = TRANSPORT_TYPES.ws
+    else if (endpoint.includes('https://') || endpoint.includes('http://')) this.type = TRANSPORT_TYPES.http
     this.jsonrpc = jsonrpc
-    if (this.type === 'ws') {
+    if (this.type === TRANSPORT_TYPES.ws) {
       this.ready = new Promise((resolve, reject) => {
         this.isReady = resolve
         this.failedInConnection = reject
@@ -30,7 +34,7 @@ export default class Provider {
       const { error, result } = await this._performFetch(formatedRequest, request)
       if  (error) throw new Error(error.message)
       return result
-    } else if (this.type === 'ws') {
+    } else if (this.type === TRANSPORT_TYPES.ws) {
       if (!this.socket) {
         await this.connect()
       }
@@ -71,17 +75,17 @@ export default class Provider {
   }
 
   _addListeners () {
-    this.socket.addEventListener('message', this._onMessage.bind(this))
+    this.socket.addEventListener('message', this._onRpcStyleMessage.bind(this))
     this.socket.addEventListener('open', this._onOpen.bind(this))
     this.socket.addEventListener('error', this._onError.bind(this))
     this.socket.addEventListener('close', this._onClose.bind(this))
   }
 
    _removeListeners () {
-    this.socket.removeListener('message', this._onMessage.bind(this))
-    this.socket.removeListener('open', this._onOpen.bind(this))
-    this.socket.removeListener('error', this._onError.bind(this))
-    this.socket.removeListener('close', this._onClose.bind(this))
+    this.socket.removeEventListener('message', this._onRpcStyleMessage.bind(this))
+    this.socket.removeEventListener('open', this._onOpen.bind(this))
+    this.socket.removeEventListener('error', this._onError.bind(this))
+    this.socket.removeEventListener('close', this._onClose.bind(this))
   }
 
   _onOpen () {
@@ -105,7 +109,7 @@ export default class Provider {
     this.isClosed()
   }
 
-  _onMessage (message) {
+  _onRpcStyleMessage (message) {
     const response = JSON.parse(message.data)
     if (!response) return
     const { error, result, id } = response
@@ -155,7 +159,6 @@ export default class Provider {
     const { error, result } = await response.json()
 
     // finally return result
-
     return { error, result }
   }
 }

@@ -5,5 +5,7 @@ export const NETWORK_ERRORS = {
   // 504:
   // 504:
   // internal:
-  UNSUPORTED_NETWORK: 'Currently Tally does not support this network'
+  UNSUPORTED_NETWORK: 'Currently Tally does not support this network',
+  CONNECT_NOT_SUPPORTED: 'The provided endpoint does not suport soccet connections',
+  SOCKET_CLOSED: 'Connection with node is no longer open',
 }
