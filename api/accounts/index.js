@@ -1,8 +1,9 @@
 import ObsStore from '../lib/ob-store.js'
+import EthereumBalances  from './balances/ethereum'
 
 export default class Accounts {
-  constructor ({ getTransactionHistory, balances, accountsMetaData }) {
-    this.balances = balances
+  constructor ({ provider, getTransactionHistory, accountsMetaData }) {
+    this.balances = new EthereumBalances({provider})
     this.getTransactionHistory = getTransactionHistory
     this.store =  new ObsStore({ accountsMetaData })
   }
