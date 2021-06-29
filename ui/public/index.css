@@ -78,9 +78,15 @@ li {
   margin: 0 auto;
 }
 
+.center_text {
+  text-align: center;
+}
+
 .serif_header {
   color: #fefefc;
   font-family: 'Quincy CF';
   font-size: 38px;
   font-weight: 400;
+  padding: unset;
+  margin: unset;
 }
