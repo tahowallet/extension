@@ -12,28 +12,28 @@ const accountSlice = createSlice({
   name: 'account',
   initialState,
   reducers: {
-    getAccount: (state) => {
+    loadAccount: (state) => {
       state.accountLoading = true;
     },
-    getAccountSuccess: (state, { payload }) => {
+    loadAccountSuccess: (state, { payload }) => {
       state.account = payload;
       state.accountLoading = false;
     },
-    getAccountFailure: (state) => {
+    loadAccountFailure: (state) => {
       state.accountLoading = false;
       state.hasAccountError = true;
     },
   },
 });
 
-export const { getAccount, getAccountSuccess, getAccountFailure } =
+export const { loadAccount, loadAccountSuccess, loadAccountFailure } =
   accountSlice.actions;
 export const accountSelector = (state) => state.account;
 export default accountSlice.reducer;
 
 export function fetchAccount(address) {
   return async (dispatch) => {
-    dispatch(getAccount());
+    dispatch(loadAccount());
     try {
       let account = await api.send({
         method: 'GET',
@@ -51,9 +51,9 @@ export function fetchAccount(address) {
         account.tokens[0].usd_balance = usdAmount;
       }
 
-      dispatch(getAccountSuccess(account));
+      dispatch(loadAccountSuccess(account));
     } catch (error) {
-      dispatch(getAccountFailure());
+      dispatch(loadAccountFailure());
     }
   };
 }
