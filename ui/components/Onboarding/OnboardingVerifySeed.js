@@ -1,7 +1,52 @@
 import React, { useState } from 'react';
+import { Link } from 'react-chrome-extension-router';
+import { routes } from '../../config/routes';
 import SharedButton from '../Shared/SharedButton';
 import OnboardingStepsIndicator from './OnboardingStepsIndicator';
 import { titleStyle } from './titleStyle';
+
+function SuccessMessage() {
+  return (
+    <div className="success_wrap">
+      <span className="message">Congratulations!</span>
+      <div className="subtitle">You can now safely use your wallet</div>
+      <div className="button_container">
+        <Link component={routes['wallet']}>
+          <SharedButton
+            label="Take me to my wallet"
+            size="medium"
+            type="primary"
+          />
+        </Link>
+      </div>
+      <style jsx>
+        {`
+          .success_wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+          }
+          .message {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+          }
+          .subtitle {
+            color: #667c7a;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+          }
+          .button_container {
+            width: fit-content;
+          }
+        `}
+      </style>
+    </div>
+  );
+}
 
 export default function OnboardingVerifySeed() {
   const [isSelected, setIsSelected] = useState([]);
@@ -37,7 +82,7 @@ export default function OnboardingVerifySeed() {
       </ul>
       <ul className="standard_width button_group center_horizontal bottom">
         {isNotSelected.length === 0 ? (
-          <span>Congratulations!</span>
+          <SuccessMessage />
         ) : (
           isNotSelected.map(() => (
             <li className="button_spacing">
