@@ -11,15 +11,15 @@ async function constructApi () {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
-  const main = new Main(newVersionState.state)
-  console.log('heeeeeeeere')
+  const main = new Main({ state: newVersionState.state })
+  main.state.on('update', (state) => {
+    persistState(state)
+  })
   return { main }
 }
 
+
 const ready = constructApi()
-
-const state = getPersistedState()
-
 
 // add listener to extension api
 platform.runtime.onConnect.addListener((port) => {
