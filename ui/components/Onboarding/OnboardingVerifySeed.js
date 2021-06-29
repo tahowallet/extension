@@ -34,7 +34,7 @@ function SuccessMessage() {
             line-height: 32px;
           }
           .subtitle {
-            color: #667c7a;
+            color: var(--green-60);
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
