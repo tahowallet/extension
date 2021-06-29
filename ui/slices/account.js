@@ -5,7 +5,7 @@ const api = connectToBackgroundApi({ name: 'ui' });
 export const initialState = {
   accountLoading: false,
   hasAccountError: false,
-  account: {},
+  account: undefined,
 };
 
 const accountSlice = createSlice({
