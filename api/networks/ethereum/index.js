@@ -7,32 +7,34 @@ import { EventEmitter } from 'events'
   should do caching
 */
 
-
-
 export default class EthereumNetworkProvider extends Provider {
   constructor ({ endpoint }) {
     super({ endpoint })
+    this.cache = {}
     this.subscriptions = {}
+    this._subscriptionIds = {}
   }
 
   // handler only for unsubscrib
   async request (request, handler) {
+    const params = request.params
     if (request.method === 'eth_subscribe') {
-      const params = request.params
       const [ name ] = params
       const subscription = this.subscriptions[name]
       if (subscription) return subscription.id
       if (!this.socket) await this.connect()
 
       const id = await super.request(request)
+      this._subscriptionIds[id] = name
       this.subscriptions[name] = new Subscription({ name, id })
       this.socket.addEventListener('message', this.subscriptions[name].handler.bind(this.subscriptions[name]))
       return id
     } else if (request.method === 'eth_unsubscribe') {
       const params = request.params
-      const [ name ] = params
-      if (!this.subscriptions[name]) return
-      const subscription = this.subscriptions[name]
+      const [ id ] = params
+      const name = this._subscriptionIds[id]
+      if (!this.subscriptions[name]) return false
+      const subscription = Object.keys(this.subscriptions).map((name) => this.subscription)
       if (handler) subscription.removeListener('update', handler)
       if (!subscription.listeners('update').length) {
         this.socket.removeEventListener('message', subscription.handler.bind(subscription))
@@ -41,19 +43,43 @@ export default class EthereumNetworkProvider extends Provider {
       }
       return true
     } else {
-      return await super.request(request)
+      // cache response and return cache response
+      // cache is rest on every new head
+      let key
+      if (!params || !params.length) key = request.method
+      else key = [request.method, ...params].join('/')
+
+      if(!this.cache[key]) {
+        this.cache[key] = await super.request(request)
+      }
+
+      return this.cache[key]
     }
   }
 
   async connect () {
     const socket = await super.connect()
-    this.subscriptions
+    await this.request({
+      method: 'eth_subscribe',
+      params: ['newHeads'],
+    })
+    this.subscriptions.newHeads.on('update', (state) => {
+      this.cache = {
+        eth_blockNumber: state.number
+      }
+    })
     return socket
   }
 
   async close () {
     Object.keys(this.subscriptions).forEach((name) => {
-      this.socket.removeEventListener('message', this.subscriptions[name].handler.bind(this.subscriptions[name]))
+      try {
+        this.subscriptions[name].removeAllListners('update')
+        this.socket.removeEventListener('message', this.subscriptions[name].handler.bind(this.subscriptions[name]))
+        this.request({ method: 'eth_unsubscribe', params: [this.subscriptions[name].id] })
+      } catch (e) {
+        console.error(e)
+      }
     })
     await super.close()
   }

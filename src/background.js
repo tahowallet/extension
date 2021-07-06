@@ -20,13 +20,15 @@ async function constructApi () {
 
 
 const ready = constructApi()
+let connectionCount = 0
+
 
 // add listener to extension api
-platform.runtime.onConnect.addListener((port) => {
+platform.runtime.onConnect.addListener(async (port) => {
+  ++connectionCount
+  const { main } = await ready
   port.onMessage.addListener(async (msg) => {
     // wait for main api to be ready ie determine network connectivity
-    const { main } = await ready
-
     const { id, route, method, params = {} } = msg
     try {
       let response
@@ -54,5 +56,10 @@ platform.runtime.onConnect.addListener((port) => {
       })
 
     }
+  })
+
+  port.onDisconnect(() => {
+    --connectionCount
+    if (!connectionCount) main.disconnect
   })
 })

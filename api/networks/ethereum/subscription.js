@@ -20,7 +20,6 @@ export default class Subscription extends EventEmitter {
         const { subscription, result } = params
         if (subscription !== this.id) return
         if (!result) return
-        console.log('sub:', this.name)
         this.emit('update', result)
       }
     } catch (e) {

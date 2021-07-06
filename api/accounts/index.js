@@ -3,7 +3,7 @@ import EthereumBalances  from './balances/ethereum'
 
 export default class Accounts {
   constructor ({ provider, getTransactionHistory, accountsMetaData }) {
-    this.balances = new EthereumBalances({provider})
+    this.balances = new EthereumBalances({ provider })
     this.getTransactionHistory = getTransactionHistory
     this.store =  new ObsStore({ accountsMetaData })
   }
@@ -58,11 +58,11 @@ export default class Accounts {
     this.store.putState({ accountsMetaData })
   }
 
-  setSelctedAccount ({ address }) {
-    this.selctedAccount = this.getAccount(address)
+  setselectedAccount ({ address }) {
+    this.selectedAccount = this.getAccount(address)
   }
 
-  getSelctedAccount () {
-    return this.selctedAccount
+  getselectedAccount () {
+    return this.selectedAccount
   }
 }

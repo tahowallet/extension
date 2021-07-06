@@ -13,9 +13,10 @@ export default class Main {
     this.state = new ObsStore(state)
     const { accountsMetaData, balances, networks, supportedChains, transactions } = state
     const { providers } = this.network = new Networks({ networks })
+    const provider = providers.ethereum.selected
     this.transactions = new Transactions({
       state: transactions,
-      provider: providers.ethereum.selcted,
+      provider: providers.ethereum.selected,
       getFiatValue,
     })
     // this.keys = new Keys(state.keys || {})
@@ -26,8 +27,9 @@ export default class Main {
     // this.userPrefernces = new ObsStore(state.userPrefernces || {})
 
     this.accounts = new Accounts({
-      getTransactionHistory: this.transactions.getHistory.bind(this.transactions),
+      provider,
       accountsMetaData,
+      getTransactionHistory: this.transactions.getHistory.bind(this.transactions),
     })
     this._subscribeToStates()
   }
@@ -42,6 +44,16 @@ export default class Main {
         POST: this._import.bind(this),
       },
     }
+  }
+
+  // used to start and stop the ws connections for new head subscription
+
+  async connect () {
+    this.network.providers.ethereum.selected.connect()
+  }
+
+  async dissconect () {
+    this.network.providers.ethereum.selected.dissconect()
   }
 
   async _import ({ address, data, type, name}) {

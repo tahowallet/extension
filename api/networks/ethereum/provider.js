@@ -28,7 +28,7 @@ export default class Provider {
   }
 
   async request (request) {
-    const defaults = { id: getId(), jsonrpc: this.jsonrpc}
+    const defaults = { id: getId(), jsonrpc: this.jsonrpc, params: [] }
     if (this.type == 'http') {
       const formatedRequest = formatRequestForFetch({request: {...defaults, ...request}})
       const { error, result } = await this._performFetch(formatedRequest, request)

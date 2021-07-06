@@ -13,7 +13,7 @@ export const providers = {
 
   STATE:
   [
-      selcted: true,
+      selected: true,
       type: NETWORK_TYPES.ethereum,
       name: 'Ethereum Main Net',
       endpoint: 'wss://eth-mainnet.ws.alchemyapi.io/v2/8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa',
@@ -25,11 +25,11 @@ export const providers = {
 export default class Network {
   constructor ({ networks }) {
     this.state = new ObsStore(networks)
-    this.providers = networks.reduce((agg, { type, endpoint, selcted }) => {
+    this.providers = networks.reduce((agg, { type, endpoint, selected }) => {
       if (type in providers) {
         if (!agg[type]) agg[type] = {}
         agg[type][endpoint] = new providers[type]({ endpoint })
-        if (selcted) agg[type].selcted = agg[type][endpoint]
+        if (selected) agg[type].selected = agg[type][endpoint]
       }
       return agg
     }, {})
@@ -50,7 +50,7 @@ export default class Network {
       const { type, endpoint } = newNetwork
       if (!this.providers[type]) this.providers.type = {}
       this.providers[type][endpoint] = new providers[type]({ endpoint })
-      this.providers[type].selcted = this.providers[type][endpoint]
+      this.providers[type].selected = this.providers[type][endpoint]
     } catch (e) {
       console.error(e)
     }
