@@ -4,10 +4,6 @@ import { NETWORK_ERRORS } from '../../constants/errors.js'
 import { idGenerator } from '../../lib/utils'
 const getId = idGenerator()
 
-// TO DO SUBCRIPTIONS
-// check to see if subcription is already handle the subcriptions
-// in the subscription class so that we can have global subcription
-
 export default class Provider {
   constructor ({ endpoint, jsonrpc = '2.0' }) {
     this.register = {}
@@ -151,7 +147,6 @@ export default class Provider {
     //   }
     // special case for now
     if (method === 'eth_getBlockByNumber' && reseponse.data === 'Not Found') {
-
       return { result: null }
     }
 

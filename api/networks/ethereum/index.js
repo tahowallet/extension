@@ -15,7 +15,7 @@ export default class EthereumNetworkProvider extends Provider {
     this._subscriptionIds = {}
   }
 
-  // handler only for unsubscrib
+  // handler only for unsubscribe
   async request (request, handler) {
     const params = request.params
     if (request.method === 'eth_subscribe') {
@@ -25,7 +25,9 @@ export default class EthereumNetworkProvider extends Provider {
       if (!this.socket) await this.connect()
 
       const id = await super.request(request)
+      // map for subcription id's
       this._subscriptionIds[id] = name
+      // acctual subcription interface
       this.subscriptions[name] = new Subscription({ name, id })
       this.socket.addEventListener('message', this.subscriptions[name].handler.bind(this.subscriptions[name]))
       return id
@@ -35,6 +37,7 @@ export default class EthereumNetworkProvider extends Provider {
       const name = this._subscriptionIds[id]
       if (!this.subscriptions[name]) return false
       const subscription = Object.keys(this.subscriptions).map((name) => this.subscription)
+      // removes listener and if their are no subcriptions left unsubcribes from the node
       if (handler) subscription.removeListener('update', handler)
       if (!subscription.listeners('update').length) {
         this.socket.removeEventListener('message', subscription.handler.bind(subscription))
@@ -59,6 +62,7 @@ export default class EthereumNetworkProvider extends Provider {
 
   async connect () {
     const socket = await super.connect()
+    // subcscribe to new heads for caching purposes
     await this.request({
       method: 'eth_subscribe',
       params: ['newHeads'],

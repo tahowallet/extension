@@ -2,6 +2,18 @@ import { TRANSPORT_TYPES } from '../../constants'
 
 import { EventEmitter } from 'events'
 
+
+
+/*
+
+  this class is a handler for for managing subcription events
+
+*/
+
+
+
+
+
 export default class Subscription extends EventEmitter {
   constructor ({ name, id }) {
     super()
