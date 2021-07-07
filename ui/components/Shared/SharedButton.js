@@ -16,6 +16,7 @@ export default function SharedButton(props) {
         ${type === 'tertiaryWhite' ? ' tertiary white' : ''}
         ${type === 'tertiary' && isDisabled ? ' tertiary_disabled' : ''}
         ${type === 'specialDisabledWhite' ? ' special_disabled_white' : ''}
+        ${type === 'warning' ? ' warning' : ''}
       `}
       onClick={onClick}
     >
@@ -108,6 +109,15 @@ export default function SharedButton(props) {
           .small {
             padding: 0 12px;
             height: 32px;
+          }
+          .warning {
+            background-color: var(--attention);
+          }
+          .warning {
+            color: var(--hunter-green);
+          }
+          .warning .icon_button {
+            background-color: var(--hunter-green);
           }
         `}
       </style>
