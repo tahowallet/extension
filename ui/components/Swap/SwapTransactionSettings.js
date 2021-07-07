@@ -86,7 +86,6 @@ export default function SwapTransactionSettings() {
           .settings_label {
             height: 17px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -112,7 +111,6 @@ export default function SwapTransactionSettings() {
           }
           .label {
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -126,7 +124,6 @@ export default function SwapTransactionSettings() {
           }
           .info {
             color: var(--green-20);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;

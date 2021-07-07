@@ -1,16 +1,23 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import SharedAssetIcon from '../Shared/SharedAssetIcon';
 
-export default function WalletAssetListItem() {
+export default function WalletAssetListItem(props) {
+  const { asset } = props;
+
+  // TODO: ETH price hard-coded for demo
   return (
     <li>
       <div className="left">
         <SharedAssetIcon />
         <div className="left_content">
           <div className="amount">
-            <span className="bold_amount_count">2389.23</span>KEEP
+            <span className="bold_amount_count">
+              {asset.balance.toFixed(5)}
+            </span>
+            {asset.symbol}
           </div>
-          <div className="price">$238.99</div>
+          <div className="price">${asset.usd_balance}</div>
         </div>
       </div>
       <div className="right">
@@ -54,7 +61,6 @@ export default function WalletAssetListItem() {
             width: 70px;
             height: 24px;
             color: #fefefc;
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -64,7 +70,6 @@ export default function WalletAssetListItem() {
             width: 58px;
             height: 17px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -93,3 +98,8 @@ export default function WalletAssetListItem() {
     </li>
   );
 }
+
+// Could use PropTypes.shape when this gets solidified
+WalletAssetListItem.propTypes = {
+  asset: PropTypes.object.isRequired,
+};

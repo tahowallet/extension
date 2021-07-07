@@ -33,7 +33,6 @@ export default function SharedButton(props) {
             align-items: center;
             justify-content: space-between;
             color: #ffffff;
-            font-family: Segment;
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.48px;

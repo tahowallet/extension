@@ -35,7 +35,6 @@ export default function SharedFeeSelectButton(props) {
           .top {
             width: 33px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -55,7 +54,6 @@ export default function SharedFeeSelectButton(props) {
             width: 89px;
             height: 17px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -66,7 +64,6 @@ export default function SharedFeeSelectButton(props) {
             width: 23px;
             height: 16px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 12px;
             font-weight: 500;
             letter-spacing: 0.36px;

@@ -23,10 +23,12 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^1.6.0",
     "@tallyho/tally-api": "0.0.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-chrome-extension-router": "^1.2.0",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "react-redux": "^7.2.4"
   }
 }

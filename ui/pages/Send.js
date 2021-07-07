@@ -69,7 +69,6 @@ export default function Send() {
             width: 113px;
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -86,7 +85,6 @@ export default function Send() {
           .label {
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -103,7 +101,6 @@ export default function Send() {
             width: 150px;
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-chrome-extension-router';
 import { routes } from '../../config/routes';
 import SharedButton from '../Shared/SharedButton';
@@ -37,7 +38,6 @@ function Receive() {
           h1 {
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -50,7 +50,6 @@ function Receive() {
             width: 281px;
             height: 33px;
             color: var(--green-20);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -89,7 +88,8 @@ function Receive() {
     </section>
   );
 }
-export default function WalletAccountBalanceControl() {
+export default function WalletAccountBalanceControl(props) {
+  const { balance } = props;
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false);
   const [isRunAnimation, setRunAnimation] = useState(false);
 
@@ -110,7 +110,8 @@ export default function WalletAccountBalanceControl() {
       <div className="wrap">
         <div className="balance_label">Total account balance</div>
         <span className="balance">
-          <span className="dollar_sign">$</span>12,973.44
+          <span className="dollar_sign">$</span>
+          {balance}
         </span>
         <div className="send_receive_button_wrap">
           <Link component={routes['send']}>
@@ -140,10 +141,8 @@ export default function WalletAccountBalanceControl() {
             flex-direction: column;
           }
           .balance {
-            width: 161px;
             height: 48px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 36px;
             font-weight: 500;
             line-height: 48px;
@@ -160,7 +159,6 @@ export default function WalletAccountBalanceControl() {
             width: 160px;
             height: 24px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 400;
             line-height: 24px;
@@ -170,7 +168,6 @@ export default function WalletAccountBalanceControl() {
             width: 14px;
             height: 32px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -183,3 +180,11 @@ export default function WalletAccountBalanceControl() {
     </>
   );
 }
+
+WalletAccountBalanceControl.propTypes = {
+  balance: PropTypes.string,
+};
+
+WalletAccountBalanceControl.defaultProps = {
+  balance: '',
+};

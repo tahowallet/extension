@@ -49,7 +49,6 @@ export default function WalletActivityListItem() {
           .top {
             height: 16px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 12px;
             font-weight: 500;
             line-height: 16px;
@@ -97,7 +96,6 @@ export default function WalletActivityListItem() {
             width: 70px;
             height: 24px;
             color: #fefefc;
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -107,7 +105,6 @@ export default function WalletActivityListItem() {
             width: 58px;
             height: 17px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -133,7 +130,6 @@ export default function WalletActivityListItem() {
           .outcome {
             width: 115px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
