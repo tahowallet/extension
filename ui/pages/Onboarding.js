@@ -40,6 +40,9 @@ export default function Onboarding() {
           triggerNextStep={() => {
             setStep(step + 1);
           }}
+          triggerPreviousStep={() => {
+            setStep(step - 1);
+          }}
         />
       )}
       {step === 4 && (
