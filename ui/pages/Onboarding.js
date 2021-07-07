@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import OnboardingImportMetamask from '../components/Onboarding/OnboardingImportMetamask';
 import OnboardingCreatePassword from '../components/Onboarding/OnboardingCreatePassword';
 import OnboardingVerifySeed from '../components/Onboarding/OnboardingVerifySeed';
@@ -6,8 +7,9 @@ import OnboardingSaveSeed from '../components/Onboarding/OnboardingSaveSeed';
 import OnboardingStartTheHunt from '../components/Onboarding/OnboardingStartTheHunt';
 import { registerRoute } from '../config/routes';
 
-export default function Onboarding() {
-  const [step, setStep] = useState(0);
+export default function Onboarding(props) {
+  const { startPage } = props;
+  const [step, setStep] = useState(startPage);
 
   return (
     <>
@@ -55,5 +57,13 @@ export default function Onboarding() {
     </>
   );
 }
+
+Onboarding.propTypes = {
+  startPage: PropTypes.number,
+};
+
+Onboarding.defaultProps = {
+  startPage: 0,
+};
 
 registerRoute('onboarding', Onboarding);
