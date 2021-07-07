@@ -17,6 +17,7 @@ export default function OnboardingStartTheHunt(props) {
       <ul>
         <li className="label">Use an existing wallet</li>
         <li className="option">
+          <div className="icon metamask_icon" />
           <SharedButton
             type="tertiary"
             label="Import Metamask"
@@ -25,6 +26,7 @@ export default function OnboardingStartTheHunt(props) {
           />
         </li>
         <li className="option">
+          <div className="icon trezor_icon" />
           <SharedButton
             type="tertiary"
             label="Connect hardware wallet"
@@ -36,6 +38,7 @@ export default function OnboardingStartTheHunt(props) {
           <SharedTooltip label="Create a new wallet that you own the private keys for. You will need to save the recovery seed to keep it safe." />
         </li>
         <li className="option">
+          <div className="icon tally_icon" />
           <SharedButton
             type="secondary"
             label="Create new wallet"
@@ -86,12 +89,29 @@ export default function OnboardingStartTheHunt(props) {
             padding: 16px;
             box-sizing: border-box;
             margin-bottom: 24px;
+            justify-content: space-between;
           }
           .mascot {
             background: url('./images/mascot@2x.png');
             background-size: cover;
             width: 82px;
             height: 78px;
+          }
+          .icon {
+            width: 36px;
+            height: 36px;
+          }
+          .trezor_icon {
+            background: url('./images/trezor_icon@2x.png');
+            background-size: cover;
+          }
+          .tally_icon {
+            background: url('./images/tally_circle_icon@2x.png');
+            background-size: cover;
+          }
+          .metamask_icon {
+            background: url('./images/metamask_icon@2x.png');
+            background-size: cover;
           }
         `}
       </style>
