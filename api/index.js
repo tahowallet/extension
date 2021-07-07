@@ -2,15 +2,15 @@
 import Networks from './networks'
 import Transactions from './transactions'
 import Accounts from './accounts/'
-// import { Keys } from './keys'
+import createKeyContext from './keys'
 import EthereumBalances  from './balances/ethereum'
 import ObsStore from './lib/ob-store'
-import getFiatValue from './lib/getFiatValues.js'
+import getFiatValue from './lib/getFiatValues'
 import { DEFAULT_STATE } from './constants/default-state'
 
+const keys = createKeyContext()
 
 export default class Main {
-
   constructor (state = DEFAULT_STATE) {
     const { accountsMetaData, balances, networks, supportedChains, transactions } = state
     const { providers } = this.network = new Networks({ networks })
@@ -19,7 +19,6 @@ export default class Main {
       provider: providers.ethereum.selcted,
       getFiatValue,
     })
-    // this.keys = new Keys(state.keys || {})
     // const balances = this.balances = new Balances({ state: balances, providers })
 
     // this is temporary
@@ -48,8 +47,15 @@ export default class Main {
     }
   }
 
+
   async _import ({ address, data, type, name}) {
-    if (!data) return await this.accounts.add(address)
+    // read only accounts will just be an address and not have data fields
+    let newAddress
+    if (data) {
+      newAddress =  keys.import({ data, type, name })
+    }
+
+    return await this.accounts.add(newAddress || address)
   }
 
 
