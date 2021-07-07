@@ -10,6 +10,7 @@ export default function WalletAccountBalanceControl(props) {
   const { balance } = props;
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false);
   const [isRunAnimation, setRunAnimation] = useState(false);
+  const [hasSavedSeed, setHasSavedSeed] = useState(false);
 
   function handleClick() {
     setOpenReceiveMenu(!openReceiveMenu);
@@ -31,23 +32,38 @@ export default function WalletAccountBalanceControl(props) {
           <span className="dollar_sign">$</span>
           {balance}
         </span>
-        <div className="send_receive_button_wrap">
-          <Link component={routes['send']}>
+
+        {hasSavedSeed ? (
+          <div className="send_receive_button_wrap">
+            <Link component={routes['send']}>
+              <SharedButton
+                label="Send"
+                icon="send"
+                size="medium"
+                type="primary"
+              />
+            </Link>
             <SharedButton
-              label="Send"
-              icon="send"
+              label="Receive"
+              onClick={handleClick}
+              icon="receive"
               size="medium"
               type="primary"
             />
-          </Link>
-          <SharedButton
-            label="Receive"
-            onClick={handleClick}
-            icon="receive"
-            size="medium"
-            type="primary"
-          />
-        </div>
+          </div>
+        ) : (
+          <div className="save_seed_button_wrap">
+            <Link component={() => routes['onboarding']({ startPage: 2 })}>
+              <SharedButton
+                label="First, secure your recovery seed"
+                icon="arrow_right"
+                iconSize="large"
+                size="large"
+                type="warning"
+              />
+            </Link>
+          </div>
+        )}
       </div>
       <style jsx>
         {`
@@ -92,6 +108,9 @@ export default function WalletAccountBalanceControl(props) {
             text-align: center;
             margin-right: 4px;
             margin-left: -14px;
+          }
+          .save_seed_button_wrap {
+            margin-top: 16px;
           }
         `}
       </style>
