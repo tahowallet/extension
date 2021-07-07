@@ -9,12 +9,10 @@ export default function TopMenuProtocolList() {
         {['', '', ''].map(() => (
           <TopMenuProtocolListItem />
         ))}
-      </ul>
-      <div className="divider">
-        <div className="divider_label">Testnet</div>
-        <div className="divider_line" />
-      </div>
-      <ul>
+        <li className="divider">
+          <div className="divider_label">Testnet</div>
+          <div className="divider_line" />
+        </li>
         {['', '', '', ''].map(() => (
           <TopMenuProtocolListItem />
         ))}
@@ -36,7 +34,6 @@ export default function TopMenuProtocolList() {
           }
           .divider_label {
             color: var(--green-40);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;

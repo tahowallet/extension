@@ -51,7 +51,6 @@ export default function SharedAssetItem(props) {
             width: 65px;
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;

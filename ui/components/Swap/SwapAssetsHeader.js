@@ -14,7 +14,6 @@ export default function SwapAssetsHeader() {
             margin-top: 17px;
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

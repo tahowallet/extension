@@ -34,7 +34,6 @@ function SelectTokenMenuContent(props) {
           .search_label {
             height: 20px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
@@ -165,7 +164,6 @@ export default function SharedAssetInput(props) {
             width: 204px;
             height: 34px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
@@ -173,7 +171,6 @@ export default function SharedAssetInput(props) {
           .paste_button {
             height: 24px;
             color: var(--trophy-gold);
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -191,7 +188,6 @@ export default function SharedAssetInput(props) {
             width: 98px;
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

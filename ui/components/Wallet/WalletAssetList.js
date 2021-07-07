@@ -1,12 +1,19 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import WalletAssetListItem from './WalletAssetListItem';
 
-export default function WalletAssetList() {
+export default function WalletAssetList(props) {
+  const { assets } = props;
+  if (!assets) return false;
   return (
     <ul>
-      {['', '', '', '', ''].map(() => (
-        <WalletAssetListItem />
+      {assets.map((asset) => (
+        <WalletAssetListItem asset={asset} />
       ))}
     </ul>
   );
 }
+
+WalletAssetList.propTypes = {
+  assets: PropTypes.array.isRequired,
+};

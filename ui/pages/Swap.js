@@ -93,7 +93,6 @@ export default function Swap() {
           .label {
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -115,7 +114,6 @@ export default function Swap() {
             width: 150px;
             height: 32px;
             color: #e7296d;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -130,7 +128,6 @@ export default function Swap() {
             width: 33px;
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;

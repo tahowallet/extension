@@ -51,7 +51,8 @@ button {
   cursor: pointer;
 }
 
-input {
+input,
+textarea {
   all: unset;
 }
 
@@ -75,4 +76,11 @@ li {
 
 .center_horizontal {
   margin: 0 auto;
+}
+
+.serif_header {
+  color: #fefefc;
+  font-family: 'Quincy CF';
+  font-size: 38px;
+  font-weight: 400;
 }
