@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
+import CorePage from '../components/Core/CorePage';
 import SharedAssetInput from '../components/Shared/SharedAssetInput';
 import SharedButton from '../components/Shared/SharedButton';
 import SharedSlideUpMenu from '../components/Shared/SharedSlideUpMenu';
@@ -24,10 +24,9 @@ export default function Swap() {
 
   return (
     <>
-      <CorePageWithTabs>
+      <CorePage>
         <SharedSlideUpMenu
           isOpen={openTokenMenu}
-          isRunAnimation={isRunAnimation}
           close={handleClick}
           size="large"
         >
@@ -74,7 +73,7 @@ export default function Swap() {
             </div>
           </div>
         </div>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .wrap {

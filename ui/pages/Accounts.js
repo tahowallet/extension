@@ -1,13 +1,13 @@
 import React from 'react';
 import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
+import CorePage from '../components/Core/CorePage';
 
 export default function Accounts() {
   return (
     <>
-      <CorePageWithTabs>
+      <CorePage>
         <span className="title">Accounts</span>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .title {

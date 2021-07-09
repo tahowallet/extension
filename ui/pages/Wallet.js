@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
-import WalletPanelSwitcher from '../components/Wallet/WalletPanelSwitcher';
+import CorePage from '../components/Core/CorePage';
+import SharedPanelSwitcher from '../components/Shared/SharedPanelSwitcher';
 import WalletAssetList from '../components/Wallet/WalletAssetList';
 import WalletActivityList from '../components/Wallet/WalletActivityList';
 import WalletAccountBalanceControl from '../components/Wallet/WalletAccountBalanceControl';
@@ -20,7 +20,7 @@ export default function Wallet() {
 
   return (
     <div className="wrap">
-      <CorePageWithTabs>
+      <CorePage>
         <div className="page_content">
           <div className="section">
             <WalletAccountBalanceControl
@@ -41,7 +41,7 @@ export default function Wallet() {
             </div>
           </div>
         </div>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .wrap {
