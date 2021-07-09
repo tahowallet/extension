@@ -28,9 +28,10 @@ export default function Wallet() {
             />
           </div>
           <div className="section">
-            <WalletPanelSwitcher
+            <SharedPanelSwitcher
               setPanelNum={setPanelNum}
               panelNum={panelNum}
+              panelNames={['Assets', 'Activity']}
             />
             <div className="panel">
               {panelNum === 0 ? (
