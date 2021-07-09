@@ -9,21 +9,15 @@ import Receive from '../../pages/Receive';
 export default function WalletAccountBalanceControl(props) {
   const { balance } = props;
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
   const [hasSavedSeed, setHasSavedSeed] = useState(false);
 
   function handleClick() {
     setOpenReceiveMenu(!openReceiveMenu);
-    setRunAnimation(true);
   }
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={openReceiveMenu}
-        isRunAnimation={isRunAnimation}
-        close={handleClick}
-      >
+      <SharedSlideUpMenu isOpen={openReceiveMenu} close={handleClick}>
         {Receive()}
       </SharedSlideUpMenu>
       <div className="wrap">

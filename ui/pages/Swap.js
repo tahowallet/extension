@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { registerRoute } from '../config/routes';
 import CorePage from '../components/Core/CorePage';
 import SharedAssetInput from '../components/Shared/SharedAssetInput';
+import SharedTooltip from '../components/Shared/SharedTooltip';
 import SharedButton from '../components/Shared/SharedButton';
 import SharedSlideUpMenu from '../components/Shared/SharedSlideUpMenu';
 import SwapQoute from '../components/Swap/SwapQuote';
@@ -10,12 +11,10 @@ import SwapTransactionSettings from '../components/Swap/SwapTransactionSettings'
 
 export default function Swap() {
   const [openTokenMenu, setOpenTokenMenu] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
 
   function handleClick() {
     setOpenTokenMenu(!openTokenMenu);
-    setRunAnimation(true);
   }
 
   function handleAssetSelect() {

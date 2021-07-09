@@ -84,12 +84,10 @@ export default function SharedAssetInput(props) {
   const { isTypeDestination, onClick } = props;
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
   const [selectedToken, setSelectedToken] = useState({ name: false });
 
   function handleClick() {
     setOpenAssetMenu(!openAssetMenu);
-    setRunAnimation(true);
     onClick();
   }
 
@@ -100,11 +98,7 @@ export default function SharedAssetInput(props) {
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={openAssetMenu}
-        isRunAnimation={isRunAnimation}
-        close={handleClick}
-      >
+      <SharedSlideUpMenu isOpen={openAssetMenu} close={handleClick}>
         {SelectTokenMenuContent({ setSelectedTokenAndClose })}
       </SharedSlideUpMenu>
       <div className="asset_input">

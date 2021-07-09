@@ -5,18 +5,15 @@ import SharedNetworkFeeGroup from '../Shared/SharedNetworkFeeGroup';
 
 export default function SwapTransactionSettings() {
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
 
   function handleClick() {
     setIsSlideUpMenuOpen(!isSlideUpMenuOpen);
-    setRunAnimation(true);
   }
 
   return (
     <>
       <SharedSlideUpMenu
         isOpen={isSlideUpMenuOpen}
-        isRunAnimation={isRunAnimation}
         size="small"
         close={() => {
           setIsSlideUpMenuOpen(false);
