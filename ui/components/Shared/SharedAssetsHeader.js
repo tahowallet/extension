@@ -1,10 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-export default function SwapAssetsHeader() {
+export default function SharedAssetsHeader(props) {
+  const { label, icon } = props;
+
   return (
     <h1 className="header">
-      <span className="icon_activity_swap_medium" />
-      Swap assets
+      <span className="icon_activity" />
+      {label}
       <style jsx>
         {`
           h1 {
@@ -18,9 +21,9 @@ export default function SwapAssetsHeader() {
             font-weight: 500;
             line-height: 32px;
           }
-          .icon_activity_swap_medium {
-            background: url('./images/activity_swap_medium@2x.png');
-            background-size: 24px 24px;
+          .icon_activity {
+            background: url('./images/activity_${icon}_medium@2x.png');
+            background-size: cover;
             width: 24px;
             height: 24px;
             margin-right: 8px;
@@ -30,3 +33,8 @@ export default function SwapAssetsHeader() {
     </h1>
   );
 }
+
+SharedAssetsHeader.propTypes = {
+  label: PropTypes.string.isRequired,
+  icon: PropTypes.string.isRequired,
+};
