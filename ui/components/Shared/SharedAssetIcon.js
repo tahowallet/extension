@@ -1,8 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-export default function SharedAssetIcon() {
+export default function SharedAssetIcon(props) {
+  const { size } = props;
+
   return (
-    <div className="token_icon_wrap">
+    <div className={`token_icon_wrap ${size}`}>
       <span className="icon_eth" />
       <style jsx>
         {`
@@ -17,12 +20,28 @@ export default function SharedAssetIcon() {
           }
           .icon_eth {
             background: url('./images/eth@2x.png');
-            background-size: 18px 29px;
+            background-size: cover;
             width: 18px;
             height: 29px;
+          }
+          .small {
+            width: 32px;
+            height: 32px;
+          }
+          .small .icon_eth {
+            width: 16px;
+            height: 24px;
           }
         `}
       </style>
     </div>
   );
 }
+
+SharedAssetIcon.propTypes = {
+  size: PropTypes.oneOf(['small', 'medium']),
+};
+
+SharedAssetIcon.defaultProps = {
+  size: 'medium',
+};
