@@ -36,7 +36,7 @@ export default class EthereumNetworkProvider extends Provider {
       const [ id ] = params
       const name = this._subscriptionIds[id]
       if (!this.subscriptions[name]) return false
-      const subscription = Object.keys(this.subscriptions).map((name) => this.subscription)
+      const subscription = this.subscriptions[name]
       // removes listener and if their are no subcriptions left unsubcribes from the node
       if (handler) subscription.removeListener('update', handler)
       if (!subscription.listeners('update').length) {
