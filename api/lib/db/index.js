@@ -4,7 +4,11 @@
 // sort of a future proofing for indexdb
 
 export async function getPersistedState (key) {
-  return window.localStorage[key] ? JSON.parse(window.localStorage[key]) : undefined
+  if (window.localStorage[key]) {
+    try {
+      return JSON.parse(window.localStorage[key])
+    } catch (_) {/*do nothing for parse errors*/}
+  }
 }
 
 

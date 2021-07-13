@@ -60,6 +60,6 @@ platform.runtime.onConnect.addListener(async (port) => {
 
   port.onDisconnect(() => {
     --connectionCount
-    if (!connectionCount) main.disconnect
+    if (!connectionCount) main.disconnect()
   })
 })

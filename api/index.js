@@ -52,7 +52,7 @@ export default class Main {
     this.network.providers.ethereum.selected.connect()
   }
 
-  async dissconect () {
+  async disconnect () {
     this.network.providers.ethereum.selected.dissconect()
   }
 
