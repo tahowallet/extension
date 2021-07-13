@@ -13,7 +13,7 @@ STATE
 
 
 export default class Transactions {
-  constructor ({ state, provider, getFiatValue, getBlockNumber }) {
+  constructor ({ state, provider, getFiatValue }) {
     this.state = new ObsStore(state || {} )
     this.query = createEthProviderWrapper(provider)
     this.getFiatValue = getFiatValue
