@@ -76,11 +76,11 @@ export default class EthereumNetworkProvider extends Provider {
   }
 
   async close () {
-    Object.keys(this.subscriptions).forEach((name) => {
+    Object.values(this.subscriptions).forEach((subscription) => {
       try {
-        this.subscriptions[name].removeAllListners('update')
-        this.socket.removeEventListener('message', this.subscriptions[name].handler.bind(this.subscriptions[name]))
-        this.request({ method: 'eth_unsubscribe', params: [this.subscriptions[name].id] })
+        subscription.removeAllListners('update')
+        this.socket.removeEventListener('message',subscription.handler.bind(subscription))
+        this.request({ method: 'eth_unsubscribe', params: [subscription.id] })
       } catch (e) {
         console.error(e)
       }
