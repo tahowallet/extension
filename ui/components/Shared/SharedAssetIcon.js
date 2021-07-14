@@ -12,7 +12,7 @@ export default function SharedAssetIcon(props) {
           .token_icon_wrap {
             width: 40px;
             height: 40px;
-            background-color: var(--hunter-green);
+            background-color: var(--castle-black);
             border-radius: 80px;
             display: flex;
             align-items: center;
@@ -32,6 +32,10 @@ export default function SharedAssetIcon(props) {
             width: 16px;
             height: 24px;
           }
+          .large {
+            width: 48px;
+            height: 48px;
+          }
         `}
       </style>
     </div>
@@ -39,7 +43,7 @@ export default function SharedAssetIcon(props) {
 }
 
 SharedAssetIcon.propTypes = {
-  size: PropTypes.oneOf(['small', 'medium']),
+  size: PropTypes.oneOf(['small', 'medium', 'large']),
 };
 
 SharedAssetIcon.defaultProps = {
