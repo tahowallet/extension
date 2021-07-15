@@ -16,7 +16,7 @@ export default function Wallet() {
 
   useEffect(() => {
     dispatch(fetchAccount('0x176B8c8DD7657A011fcAc694364e69cF011980e9'));
-  }, [true]);
+  }, []);
 
   return (
     <div className="wrap">
