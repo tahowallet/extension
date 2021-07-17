@@ -23,11 +23,11 @@ function SelectTokenMenuContent(props) {
       </div>
       <div className="divider" />
       <ul>
-        {['', '', '', '', '', '', '', '', '', '', '', '', ''].map(() => (
-          <SharedAssetItem
-            setSelectedTokenAndClose={setSelectedTokenAndClose}
-          />
-        ))}
+        {Array(13)
+          .fill('')
+          .map(() => (
+            <SharedAssetItem onClick={setSelectedTokenAndClose} />
+          ))}
       </ul>
       <style jsx>
         {`
