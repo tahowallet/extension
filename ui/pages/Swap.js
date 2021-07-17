@@ -57,7 +57,6 @@ export default function Swap() {
                   size="large"
                   label="Review swap"
                   isDisabled
-                  disableIcon
                   onClick={handleClick}
                 />
               ) : (
@@ -65,7 +64,6 @@ export default function Swap() {
                   type="primary"
                   size="large"
                   label="Get final quote"
-                  disableIcon
                   onClick={handleClick}
                 />
               )}

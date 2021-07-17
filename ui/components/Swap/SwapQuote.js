@@ -68,7 +68,6 @@ export default function SwapQoute() {
               type="primary"
               size="large"
               label="Aprove Assets & Swap"
-              disableIcon
               onClick={handleApproveClick}
             />
           </div>
