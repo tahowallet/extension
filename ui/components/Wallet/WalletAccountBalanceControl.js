@@ -22,9 +22,13 @@ export default function WalletAccountBalanceControl(props) {
       </SharedSlideUpMenu>
       <div className="wrap">
         <div className="balance_label">Total account balance</div>
-        <span className="balance">
-          <span className="dollar_sign">$</span>
-          {balance}
+        <span className="balance_area">
+          {balance && (
+            <span className="balance fade_in">
+              <span className="dollar_sign">$</span>
+              {balance}
+            </span>
+          )}
         </span>
 
         {hasSavedSeed ? (
@@ -68,8 +72,10 @@ export default function WalletAccountBalanceControl(props) {
             align-items: center;
             flex-direction: column;
           }
-          .balance {
+          .balance_area {
             height: 48px;
+          }
+          .balance {
             color: #ffffff;
             font-size: 36px;
             font-weight: 500;
@@ -104,7 +110,7 @@ export default function WalletAccountBalanceControl(props) {
             margin-left: -14px;
           }
           .save_seed_button_wrap {
-            margin-top: 16px;
+            margin-top: 10px;
           }
         `}
       </style>
