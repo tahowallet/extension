@@ -49,9 +49,9 @@ export default function CorePage(props) {
             overflow-y: scroll;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             flex-grow: 1;
             margin: 0 auto;
+            align-items: center;
           }
         `}
       </style>
