@@ -1,11 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
 
 function OnboardingStep(props) {
   const { label, isActive } = props;
 
   return (
-    <li className={`${isActive ? 'active' : ''}`}>
+    <li className={classNames({ active: isActive })}>
       {label}
       <style jsx>
         {`

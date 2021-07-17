@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
 
 export default function SharedFeeSelectButton(props) {
   const { isActive, onClick } = props;
@@ -7,7 +8,7 @@ export default function SharedFeeSelectButton(props) {
   return (
     <button
       type="button"
-      className={`${isActive ? ' active' : ''}`}
+      className={classNames({ active: isActive })}
       onClick={onClick}
     >
       <div className="top">
