@@ -133,14 +133,10 @@ export default function WalletActivityDetails() {
       </div>
       <div className="destination_cards">
         <DestinationCard />
-        <div className="icon_change" />
+        <div className="icon_transfer" />
         <DestinationCard />
       </div>
-      <ul>
-        {DetailInfo.map((info) => {
-          return <>{DetailRowItem(info)}</>;
-        })}
-      </ul>
+      <ul>{DetailInfo.map(DetailRowItem)}</ul>
       <div className="activity_log_wrap">
         <div className="activity_log_title">Activity Log</div>
         <ul>
@@ -170,13 +166,16 @@ export default function WalletActivityDetails() {
           }
           .header {
             display: flex;
-            align-items: center;
+            align-items: top;
             justify-content: space-between;
             width: 304px;
           }
-          .icon_change {
-            background: url('./images/chevron_right@2x.png') center no-repeat;
-            background-size: 7px 10px;
+          .header_button {
+            margin-top: 14px;
+          }
+          .icon_transfer {
+            background: url('./images/transfer@2x.png') center no-repeat;
+            background-size: 11px 12px;
             width: 35px;
             height: 35px;
             border: 3px solid var(--green-95);
@@ -218,9 +217,14 @@ export default function WalletActivityDetails() {
           }
           .plus {
             mask-image: url('./images/plus@2x.png');
+            mask-size: cover;
+            width: 17px;
+            height: 17px;
+            transform: translateX(-2.5px);
+            margin-right: 3px;
           }
           .arrow {
-            mask-image: url('./images/arrow@2x.png');
+            mask-image: url('./images/send@2x.png');
           }
           .check {
             mask-image: url('./images/check@2x.png');
