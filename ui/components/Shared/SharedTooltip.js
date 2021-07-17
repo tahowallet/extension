@@ -5,19 +5,15 @@ export default function SharedTooltip(props) {
   const { label } = props;
   const [isShowingTooltip, setIsShowingTooltip] = useState(false);
 
-  function mouseEnter() {
-    setIsShowingTooltip(true);
-  }
-
-  function mouseLeave() {
-    setIsShowingTooltip(false);
-  }
-
   return (
     <div
       className="tooltip_wrap"
-      onMouseEnter={mouseEnter}
-      onMouseLeave={mouseLeave}
+      onMouseEnter={() => {
+        setIsShowingTooltip(true);
+      }}
+      onMouseLeave={() => {
+        setIsShowingTooltip(false);
+      }}
     >
       <div className="info_icon" />
       {isShowingTooltip ? <div className="tooltip">{label}</div> : null}
