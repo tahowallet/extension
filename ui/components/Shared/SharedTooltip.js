@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 export default function SharedTooltip(props) {
-  const { label } = props;
+  const { children } = props;
   const [isShowingTooltip, setIsShowingTooltip] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ export default function SharedTooltip(props) {
       }}
     >
       <div className="info_icon" />
-      {isShowingTooltip ? <div className="tooltip">{label}</div> : null}
+      {isShowingTooltip ? <div className="tooltip">{children}</div> : null}
       <style jsx>
         {`
           .tooltip_wrap {
@@ -53,5 +53,5 @@ export default function SharedTooltip(props) {
 }
 
 SharedTooltip.propTypes = {
-  label: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
 };
