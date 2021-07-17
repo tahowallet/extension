@@ -6,7 +6,7 @@ import SharedTooltip from '../components/Shared/SharedTooltip';
 import SharedButton from '../components/Shared/SharedButton';
 import SharedSlideUpMenu from '../components/Shared/SharedSlideUpMenu';
 import SwapQoute from '../components/Swap/SwapQuote';
-import SharedAssetsHeader from '../components/Shared/SharedAssetsHeader';
+import SharedActivityHeader from '../components/Shared/SharedActivityHeader';
 import SwapTransactionSettings from '../components/Swap/SwapTransactionSettings';
 
 export default function Swap() {
@@ -32,7 +32,7 @@ export default function Swap() {
           <SwapQoute />
         </SharedSlideUpMenu>
         <div className="wrap">
-          <SharedAssetsHeader label="Swap Assets" icon="swap" />
+          <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
               <label className="label">

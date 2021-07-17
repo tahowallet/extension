@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import SharedAssetsHeader from '../Shared/SharedAssetsHeader';
+import SharedActivityHeader from '../Shared/SharedActivityHeader';
 import SharedButton from '../Shared/SharedButton';
 
 function DetailRowItem(props) {
@@ -120,14 +120,16 @@ export default function WalletActivityDetails() {
   return (
     <div className="wrap center_horizontal">
       <div className="header">
-        <SharedAssetsHeader label="Send Asset" icon="send" />
-        <SharedButton
-          type="tertiary"
-          size="medium"
-          label="Etherscan"
-          icon="external"
-          iconSize="large"
-        />
+        <SharedActivityHeader label="Send Asset" activity="send" />
+        <div className="header_button">
+          <SharedButton
+            type="tertiary"
+            size="medium"
+            label="Etherscan"
+            icon="external"
+            iconSize="large"
+          />
+        </div>
       </div>
       <div className="destination_cards">
         <DestinationCard />
