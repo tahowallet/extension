@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { connectToBackgroundApi } from '@tallyho/tally-api/lib/connect';
+
 const api = connectToBackgroundApi({ name: 'ui' });
 
 export const initialState = {
@@ -34,6 +35,7 @@ export default accountSlice.reducer;
 export function fetchAccount(address) {
   return async (dispatch) => {
     dispatch(loadAccount());
+
     try {
       let account = await api.send({
         method: 'GET',
