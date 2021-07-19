@@ -6,7 +6,7 @@ import { EventEmitter } from 'events'
 
 /*
 
-  this class is a handler for for managing subcription events
+  This class is a handler for managing a single subscriptions events.
 
 */
 
