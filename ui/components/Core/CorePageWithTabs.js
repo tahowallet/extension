@@ -45,10 +45,11 @@ export default function CorePageWithTabs(props) {
           }
           .page_content {
             height: 480px;
-            overflow: scroll;
-            width: 100vw;
+            overflow-y: scroll;
             display: flex;
             justify-content: center;
+            flex-grow: 1;
+            margin: 0 auto;
           }
         `}
       </style>

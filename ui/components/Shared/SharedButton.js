@@ -9,12 +9,14 @@ export default function SharedButton(props) {
       type="button"
       className={`
         ${size === 'large' ? ' large' : ''}
+        ${size === 'small' ? ' small' : ''}
         ${type === 'secondary' ? ' secondary' : ''}
-        ${isDisabled ? ' disabled' : ''}${
-        type === 'tertiary' ? ' tertiary' : ''
-      }
+        ${isDisabled ? ' disabled' : ''}
+        ${type === 'tertiary' ? ' tertiary' : ''}
         ${type === 'tertiaryWhite' ? ' tertiary white' : ''}
-        ${type === 'tertiary' && isDisabled ? ' tertiary_disabled' : ''}`}
+        ${type === 'tertiary' && isDisabled ? ' tertiary_disabled' : ''}
+        ${type === 'specialDisabledWhite' ? ' special_disabled_white' : ''}
+      `}
       onClick={onClick}
     >
       {label}
@@ -97,6 +99,16 @@ export default function SharedButton(props) {
           .tertiary_disabled .icon_button {
             background-color: var(--green-60);
           }
+          .special_disabled_white {
+            color: #fff;
+          }
+          .special_disabled_white .icon_button {
+            background-color: #fff;
+          }
+          .small {
+            padding: 0 12px;
+            height: 32px;
+          }
         `}
       </style>
     </button>
@@ -105,11 +117,16 @@ export default function SharedButton(props) {
 
 SharedButton.propTypes = {
   label: PropTypes.string.isRequired,
-  type: PropTypes.oneOf(['primary', 'secondary', 'tertiary', 'tertiaryWhite'])
-    .isRequired,
+  type: PropTypes.oneOf([
+    'primary',
+    'secondary',
+    'tertiary',
+    'tertiaryWhite',
+    'specialDisabledWhite',
+  ]).isRequired,
   size: PropTypes.oneOf(['medium', 'large']).isRequired,
   icon: PropTypes.string,
-  iconSize: PropTypes.oneOf(['medium', 'large']),
+  iconSize: PropTypes.oneOf(['small', 'medium', 'large']),
   onClick: PropTypes.func,
   isDisabled: PropTypes.bool,
 };
