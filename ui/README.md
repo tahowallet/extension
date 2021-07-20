@@ -29,7 +29,7 @@ If you run into `The engine "node" is incompatible with this module.`, try addin
 Then, start up the dev server:
 
 ```bash
-yarn run start
+yarn start
 ```
 
 Load the unpacked extension for your web browser via the `/build` directory. Currently builds are tested to work on Chrome and Brave browser.
@@ -71,7 +71,7 @@ registerRoute('earn', Earn);
 ### How to link/navigate to a page
 
 1. Import the Link component which acts as an `a tag`/anchor element.
-2. In order to link to a page, `<Link/>` has a prop called `component` which is where to navigate to. Getting the component to navigate to is easy when you *import `routes` from the config folder*. 
+2. In order to link to a page, `<Link/>` has a prop called `component` which is where to navigate to. Getting the component to navigate to is easy when you **import `routes` from the config folder**.
 3. Implement link like so,
 
 ```
@@ -104,6 +104,3 @@ by the folder they're in.
 /slices
 # Reducers and actions consolidated as files here. Interacting with the project's background.js api and using its data to populate frontend's state happens here
 ```
-
-## License
-GPL v3.0
