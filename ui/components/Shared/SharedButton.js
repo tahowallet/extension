@@ -45,7 +45,7 @@ export default function SharedButton(props) {
           }
           .icon_button {
             mask-image: url('./images/${icon}@2x.png');
-            mask-size: 12px 12px;
+            mask-size: cover;
             width: 12px;
             height: 12px;
             margin-left: 9px;
@@ -57,7 +57,6 @@ export default function SharedButton(props) {
             padding: 0 24px;
           }
           .icon_large {
-            mask-size: 24px 24px;
             width: 24px;
             height: 24px;
             margin-left: 10px;
