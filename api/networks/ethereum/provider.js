@@ -1,70 +1,29 @@
-import fetch from 'node-fetch'
-import NETWORK_ERRORS from '../../constants'
+import { TRANSPORT_TYPES } from '../../constants'
+import { NETWORK_ERRORS } from '../../constants/errors.js'
 import { idGenerator } from '../../lib/utils'
+import WebSocketProvider from './transports/ws.js'
+import HttpProvider from './transports/http.js'
 const getId = idGenerator()
 
 export default class Provider {
   constructor ({ endpoint, jsonrpc = '2.0' }) {
     this.endpoint = endpoint
+    if (endpoint.includes('wss://') || endpoint.includes('ws://')) {
+      this.type = TRANSPORT_TYPES.ws
+      this.transport = new WebSocketProvider(endpoint)
+    } else if (endpoint.includes('https://') || endpoint.includes('http://')) {
+      this.type = TRANSPORT_TYPES.http
+      this.transport = new HttpProvider(endpoint)
+    } else {
+      throw new Error(NETWORK_ERRORS.UNSUPORTED_TRANSPORT)
+    }
     this.jsonrpc = jsonrpc
   }
 
   async request (request) {
-    const defaults = { id: getId(), jsonrpc: this.jsonrpc}
-    const formatedRequest = formatRequestForFetch({request: {...defaults, ...request}})
-    const { error, result } = await this.performFetch(formatedRequest, request)
-    if  (error) throw new Error(error.message)
-    return result
-  }
-
-
-
-
-  async performFetch (formatedRequest, { method }) {
-    const response = await fetch(this.endpoint, formatedRequest)
-    // // handle errors
-
-    //       throw new Error('RPC response not ok: 405 method not found')
-
-    //     case 429:
-    //       throw new Error('RPC response not ok: response.status')
-
-    //     case 503:
-    //     case 504:
-    //       throw createTimeoutError()
-
-    //     default:
-    //       throw createInternalError(`rawData`)
-    //   }
-    // special case for now
-    if (method === 'eth_getBlockByNumber' && reseponse.data === 'Not Found') {
-
-      return { result: null }
-    }
-
-    // parse JSON
-    const { error, result } = await response.json()
-
-    // finally return result
-
-    return { error, result }
+    const defaults = { id: getId(), jsonrpc: this.jsonrpc, params: [] }
+    return await this.transport.performSend({ ...defaults, ...request })
   }
 }
 
 
-function formatRequestForFetch ({ request, extraHeaders }) {
-  // make sure their are no extra keys on the request
-  const { id, jsonrpc, method, params } = request
-  const headers = {
-    ...extraHeaders,
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  }
-
-  return {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({id, jsonrpc, method, params}),
-  }
-
-}

@@ -10,16 +10,26 @@ export const providers = {
 
 /*
   manages all networks and currently selected networks
+
+  STATE:
+  [
+      selected: true,
+      type: NETWORK_TYPES.ethereum,
+      name: 'Ethereum Main Net',
+      endpoint: 'wss://eth-mainnet.ws.alchemyapi.io/v2/8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa',
+
+  ]
+
 */
 
 export default class Network {
   constructor ({ networks }) {
-    this.store = new ObsStore(networks)
-    this.providers = networks.reduce((agg, { type, endpoint, selcted }) => {
+    this.state = new ObsStore(networks)
+    this.providers = networks.reduce((agg, { type, endpoint, selected }) => {
       if (type in providers) {
         if (!agg[type]) agg[type] = {}
         agg[type][endpoint] = new providers[type]({ endpoint })
-        if (selcted) agg[type].selcted = agg[type][endpoint]
+        if (selected) agg[type].selected = agg[type][endpoint]
       }
       return agg
     }, {})
@@ -30,7 +40,7 @@ export default class Network {
   */
 
   async add (newNetwork) {
-    const networks = this.store.getState()
+    const networks = this.state.getState()
 
     if (!(newNetwork.type in providers)) {
       throw new Error(NETWORK_ERRORS.UNSUPORTED_NETWORK)
@@ -40,18 +50,18 @@ export default class Network {
       const { type, endpoint } = newNetwork
       if (!this.providers[type]) this.providers.type = {}
       this.providers[type][endpoint] = new providers[type]({ endpoint })
-      this.providers[type].selcted = this.providers[type][endpoint]
+      this.providers[type].selected = this.providers[type][endpoint]
     } catch (e) {
       console.error(e)
     }
-    this.store.putState(networks)
+    this.state.putState(networks)
   }
 
   /*
     returns a full list of all networks
   */
   async get () {
-    return this.store.getState()
+    return this.state.getState()
   }
 
   async delete () {
