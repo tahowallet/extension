@@ -1,3 +1,5 @@
+export { Transaction, UnsignedTransaction } from "@ethersproject/transactions"
+
 export interface AssetMetadata {
   coinGeckoURL?: string
   imageURL?: string

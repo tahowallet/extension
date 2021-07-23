@@ -24,6 +24,7 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
+    "@ethersproject/transactions": "^5.4.0",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {}
