@@ -10,7 +10,7 @@ const accountsResult = stub.accountsResult
 export const apiStubs = {
   './accounts/': {
     GET: async ({ address }) => {
-      if (!import) throw new Error('Must create or import a account first')
+      if (!importWasCalled) throw new Error('Must create or import a account first')
       return accountsResult
     },
     POST: async ({ data }) => {

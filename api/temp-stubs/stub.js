@@ -19,16 +19,16 @@ export const accountsResult = {
     "gas": "0x5208",
     "gasPrice": "0x3b9aca00",
     "to": "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
-    "value": "0.01"
-    "timeStamp": "0x60fa2a18"
+    "value": "0.01",
+    "timeStamp": "0x60fa2a18",
   }],
     "tokens": [
         {
             "balance": 0.01,
-            "symbol": "ETH"
+            "symbol": "ETH",
         }
     ],
     "total_balance": {
-        "amount": 0.01
+        "amount": 0.01,
     }
 }
