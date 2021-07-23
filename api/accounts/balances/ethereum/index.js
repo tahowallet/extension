@@ -1,4 +1,4 @@
-import { createEthProviderWrapper } from '../../lib/utils'
+import { createEthProviderWrapper } from '../../../lib/utils'
 
 /*
 

@@ -6,11 +6,11 @@
 
 
 this just provides a version state object with version 0
-should never run but encase it does wont cause a kaboom
-in the app if theirs no state
+if their is no state
+
 
 */
-
+import { DEFAULT_STATE } from '../constants/default-state.js'
 
 const version = 0
 
@@ -25,6 +25,6 @@ async function migration (versionedState) {
 
   return {
     version,
-    state: {}
+    state: DEFAULT_STATE
   }
 }

@@ -3,38 +3,37 @@ import Networks from './networks'
 import Transactions from './transactions'
 import Accounts from './accounts'
 import { apiStubs } from './temp-stubs'
-import EthereumBalances  from './balances/ethereum'
 import ObsStore from './lib/ob-store'
 import getFiatValue from './lib/getFiatValues.js'
 import { DEFAULT_STATE } from './constants/default-state'
 
-
 export default class Main {
 
-  constructor (state = DEFAULT_STATE) {
+  constructor ({ browser, state = DEFAULT_STATE}) {
+    this.state = new ObsStore(state)
     const { accountsMetaData, balances, networks, supportedChains, transactions } = state
     const { providers } = this.network = new Networks({ networks })
+    const provider = providers.ethereum.selected
     this.transactions = new Transactions({
       state: transactions,
-      provider: providers.ethereum.selcted,
+      provider: providers.ethereum.selected,
       getFiatValue,
     })
     // this.keys = new Keys(state.keys || {})
     // const balances = this.balances = new Balances({ state: balances, providers })
 
     // this is temporary
-    this.ethereumBalances = new EthereumBalances({ provider: providers.ethereum.selcted })
 
     // this.userPrefernces = new ObsStore(state.userPrefernces || {})
 
     this.accounts = new Accounts({
-      getTransactionHistory: this.transactions.getHistory.bind(this.transactions),
-      balances: this.ethereumBalances,
+      provider,
       accountsMetaData,
+      getTransactionHistory: this.transactions.getHistory.bind(this.transactions),
     })
     this._subscriptionIds = {}
+    this._subscribeToStates()
   }
-
 
   /*
     Returns a object containing all api methods for use
@@ -56,9 +55,29 @@ export default class Main {
     }
     this._subscriptionIds[`${route}${JSON.stringify(params)}`].push({handler, id})
   }
+
+  // used to start and stop the ws connections for new head subscription
+
+  async connect () {
+    this.network.providers.ethereum.selected.connect()
+  }
+
+  async disconnect () {
+    this.network.providers.ethereum.selected.dissconect()
+  }
+
   async _import ({ address, data, type, name}) {
     if (data) this.keys.import({type, data, name})
     if (!data) return await this.accounts.add(address)
+  }
+
+  _subscribeToStates () {
+    this.transactions.state.on('update', (state) => {
+      this.state.updateState({ transactions: state })
+    })
+    this.network.state.on('update', (state) => {
+      this.state.updateState({ networks: state })
+    })
   }
 
 
