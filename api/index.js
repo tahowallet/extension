@@ -1,8 +1,8 @@
 
 import Networks from './networks'
 import Transactions from './transactions'
-import Accounts from './accounts/'
-// import { Keys } from './keys'
+import Accounts from './accounts'
+import { apiStubs } from './temp-stubs'
 import EthereumBalances  from './balances/ethereum'
 import ObsStore from './lib/ob-store'
 import getFiatValue from './lib/getFiatValues.js'
@@ -32,7 +32,7 @@ export default class Main {
       balances: this.ethereumBalances,
       accountsMetaData,
     })
-
+    this._subscriptionIds = {}
   }
 
 
@@ -40,15 +40,24 @@ export default class Main {
     Returns a object containing all api methods for use
   */
   getApi () {
-    return {
-      '/accounts/': {
-        GET: this.accounts.get.bind(this.accounts),
-        POST: this._import.bind(this),
-      },
-    }
+    return apiStubs
+    // return {
+    //   '/accounts/': {
+    //     GET: this.accounts.get.bind(this.accounts),
+    //     POST: this._import.bind(this),
+    //     subscribe: this.accounts.subscribe.bind(this.accounts),
+    //   },
+    // }
   }
 
+  registerSubscription ({route, params, handler, id}) {
+    if (!this._subscriptionIds[`${route}${JSON.stringify(params)}`]) {
+      this._subscriptionIds[`${route}${JSON.stringify(params)}`] = []
+    }
+    this._subscriptionIds[`${route}${JSON.stringify(params)}`].push({handler, id})
+  }
   async _import ({ address, data, type, name}) {
+    if (data) this.keys.import({type, data, name})
     if (!data) return await this.accounts.add(address)
   }
 

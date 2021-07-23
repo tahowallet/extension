@@ -27,7 +27,7 @@ platform.runtime.onConnect.addListener((port) => {
     // wait for main api to be ready ie determine network connectivity
     const { main } = await ready
 
-    const { id, route, method, params = {} } = msg
+    const { type, id, route, method, params = {} } = msg
     try {
       let response
       // check port name if content-script forward msg to inpage provider
@@ -40,15 +40,29 @@ platform.runtime.onConnect.addListener((port) => {
           address = split.pop()
           strippedRoute = split.join('/')
         }
-        // sloppy
-        response = await main.getApi(params)[strippedRoute || route][method]({ address, ...params[0]})
+        if (type === 'subscription') {
+          const args = {
+            route,
+            params,
+            id
+          }
+          // register the subscription id
+          // and subscribe
+          response = await main.registerSubscription(args)
+          main.getApi()[strippedRoute || route][method]({ address, ...params[0]})
+        } else {
+          // sloppy
+          response = await main.getApi()[strippedRoute || route][method]({ address, ...params[0]})
+        }
       }
       port.postMessage({
+        type,
         id,
         response,
       })
     } catch (error) {
       port.postMessage({
+        type,
         id,
         error: error.message,
       })
