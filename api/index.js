@@ -56,6 +56,7 @@ export default class Main {
     this._subscriptionIds[`${route}${JSON.stringify(params)}`].push({handler, id})
   }
 
+
   // used to start and stop the ws connections for new head subscription
 
   async connect () {
@@ -63,7 +64,7 @@ export default class Main {
   }
 
   async disconnect () {
-    this.network.providers.ethereum.selected.dissconect()
+    this.network.providers.ethereum.selected.close()
   }
 
   async _import ({ address, data, type, name}) {
