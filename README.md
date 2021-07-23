@@ -25,6 +25,7 @@ Builds are designed to be run from the top level of the repository.
 ### Quickstart
 
 ```sh
+$ nvm use
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
                # scrypt node-gyp failures prevent the install from completing
 $ yarn start # start a continuous webpack build that will auto-update with changes
