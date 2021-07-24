@@ -11,24 +11,21 @@ async function constructApi () {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
-  const main = new Main({ state: newVersionState.state })
-  main.state.on('update', (state) => {
-    persistState(state)
-  })
+  const main = new Main(newVersionState.state)
   return { main }
 }
 
-
 const ready = constructApi()
-let connectionCount = 0
+
+const state = getPersistedState()
 
 
 // add listener to extension api
-platform.runtime.onConnect.addListener(async (port) => {
-  ++connectionCount
-  const { main } = await ready
+platform.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener(async (msg) => {
     // wait for main api to be ready ie determine network connectivity
+    const { main } = await ready
+
     const { id, route, method, params = {} } = msg
     try {
       let response
@@ -56,10 +53,5 @@ platform.runtime.onConnect.addListener(async (port) => {
       })
 
     }
-  })
-
-  port.onDisconnect(() => {
-    --connectionCount
-    if (!connectionCount) main.disconnect()
   })
 })

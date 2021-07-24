@@ -1,12 +1,12 @@
 {
-    "compilerOptions": {
-        "target": "esnext",
-        "declaration": false,
-	    "moduleResolution": "node",
-        "esModuleInterop": true,
-        "jsx": "react-jsx"
-    },
-    "include": [
-        "src"
-    ]
+  "compilerOptions": {
+    "target": "esnext",
+    "declaration": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+    "noEmit": true
+  },
+  "exclude": ["ui"]
 }
