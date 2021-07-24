@@ -8,5 +8,5 @@
     "jsx": "react-jsx",
     "noEmit": true
   },
-  "exclude": ["ui", "api"]
+  "exclude": ["ui"]
 }
