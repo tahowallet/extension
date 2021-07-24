@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     steps:
     - name: Read .nvmrc
       run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
