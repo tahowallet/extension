@@ -93,10 +93,14 @@ export default function SwapTransactionSettings() {
           }
           .icon_cog {
             display: block;
-            background: url('./images/cog@2x.png');
-            background-size: 12px 12px;
+            mask-image: url('./images/cog@2x.png');
+            mask-size: cover;
             width: 12px;
             height: 12px;
+            background-color: var(--green-60);
+          }
+          .icon_cog:hover {
+            background-color: #fff;
           }
           .settings_wrap {
             width: 384px;

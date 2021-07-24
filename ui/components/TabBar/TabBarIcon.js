@@ -8,22 +8,25 @@ export default function TabBarIcon(props) {
   return (
     <>
       <Link component={component}>
-        <div className={`wrap${isActive ? ' active' : ''}`}>
-          <div className="icon" />
+        <div>
+          <div className={`icon${isActive ? ' active' : ''}`} />
         </div>
       </Link>
       <style jsx>
         {`
           .icon {
-            background: url('./images/${name}.svg');
-            background-size: 24px 24px;
+            mask-image: url('./images/${name}.svg');
+            mask-size: 24px 24px;
             width: 24px;
             height: 24px;
             cursor: pointer;
+            background-color: var(--green-60);
+          }
+          .icon:not(.active):hover {
+            background-color: var(--green-20);
           }
           .active {
-            filter: brightness(0) saturate(100%) invert(64%) sepia(9%)
-              saturate(2395%) hue-rotate(354deg) brightness(89%) contrast(112%);
+            background-color: var(--trophy-gold);
           }
         `}
       </style>

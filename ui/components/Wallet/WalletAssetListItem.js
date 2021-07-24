@@ -38,6 +38,9 @@ export default function WalletAssetListItem(props) {
             justify-content: space-between;
             align-items: center;
           }
+          button:hover {
+            background-color: var(--green-80);
+          }
           .left {
             display: flex;
           }

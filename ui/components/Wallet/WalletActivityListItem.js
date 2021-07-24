@@ -43,6 +43,9 @@ export default function WalletActivityListItem(props) {
             justify-content: space-between;
             align-items: center;
           }
+          button:hover {
+            background-color: var(--green-80);
+          }
           .activity_icon {
             background: url('./images/activity_send@2x.png');
             background-size: 14px 14px;
