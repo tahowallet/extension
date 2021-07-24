@@ -1,5 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Link } from 'react-chrome-extension-router';
+import { routes } from '../../config/routes';
 import SharedAssetIcon from '../Shared/SharedAssetIcon';
 
 export default function WalletAssetListItem(props) {
@@ -8,25 +10,30 @@ export default function WalletAssetListItem(props) {
   // TODO: ETH price hard-coded for demo
   return (
     <li>
-      <div className="left">
-        <SharedAssetIcon />
-        <div className="left_content">
-          <div className="amount">
-            <span className="bold_amount_count">
-              {asset.balance.toFixed(5)}
-            </span>
-            {asset.symbol}
+      <Link component={routes['singleAsset']}>
+        <button type="button">
+          <div className="left">
+            <SharedAssetIcon />
+            <div className="left_content">
+              <div className="amount">
+                <span className="bold_amount_count">
+                  {asset.balance.toFixed(5)}
+                </span>
+                {asset.symbol}
+              </div>
+              <div className="price">${asset.usd_balance}</div>
+            </div>
           </div>
-          <div className="price">${asset.usd_balance}</div>
-        </div>
-      </div>
-      <div className="right">
-        <span className="icon_send_asset" />
-        <span className="icon_swap_asset" />
-      </div>
+          <div className="right">
+            <span className="icon_send_asset" />
+            <span className="icon_swap_asset" />
+          </div>
+        </button>
+      </Link>
+
       <style jsx>
         {`
-          li {
+          button {
             width: 352px;
             height: 72px;
             border-radius: 16px;
