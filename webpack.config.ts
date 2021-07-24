@@ -6,7 +6,7 @@ import SizePlugin from "size-plugin"
 import TerserPlugin from "terser-webpack-plugin"
 import LiveReloadPlugin from "webpack-livereload-plugin"
 import CopyPlugin, { ObjectPattern } from "copy-webpack-plugin"
-import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin.ts"
+import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 
 const supportedBrowsers = ["firefox", "brave", "opera", "chrome"]
 
@@ -24,14 +24,19 @@ const baseConfig: Configuration = {
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            plugins: ["styled-jsx/babel"],
-            presets: ["@babel/react"],
+        test: /\.tsx?$/,
+        exclude: /node_modules(?!\/@tallyho)|webpack/,
+        use: [
+          {
+            loader: "ts-loader",
+            options: { compilerOptions: { noEmit: false } },
           },
-        },
+        ],
+      },
+      {
+        test: /\.jsx?$/,
+        exclude: /node_modules(?!\/@tallyho)|webpack/,
+        use: "babel-loader",
       },
     ],
   },
@@ -137,14 +142,14 @@ export default (
               {
                 from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
                 to: "manifest.json",
-                transformAll: (assets: { data: Buffer }) => {
+                transformAll: (assets: { data: Buffer }[]) => {
                   const combinedManifest = webpackMerge(
                     {},
                     ...assets
                       .map((asset) => asset.data.toString("utf8"))
                       // JSON.parse chokes on empty strings
                       .filter((assetData) => assetData.trim().length > 0)
-                      .map(JSON.parse)
+                      .map((assetData) => JSON.parse(assetData))
                   )
 
                   return JSON.stringify(combinedManifest, null, 2)
