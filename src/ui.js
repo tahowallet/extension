@@ -1,3 +1,3 @@
-import { attachToElement } from '@tallyho/tally-ui';
+import ui from "@tallyho/tally-ui"
 
-attachToElement(document.getElementById('tally-root'));
+ui.attachToElement(document.getElementById("tally-root"))
