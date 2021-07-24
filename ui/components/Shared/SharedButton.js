@@ -43,6 +43,20 @@ export default function SharedButton(props) {
             text-align: center;
             padding: 0 17px;
           }
+          button:hover {
+            background-color: var(--gold-80);
+            color: var(--green-95);
+          }
+          button:hover .icon_button {
+            background-color: var(--green-95);
+          }
+          button:active {
+            background-color: var(--trophy-gold);
+            color: var(--green-120);
+          }
+          button:active .icon_button {
+            background-color: var(--green-120);
+          }
           .icon_button {
             mask-image: url('./images/${icon}@2x.png');
             mask-size: cover;
@@ -70,11 +84,32 @@ export default function SharedButton(props) {
           .secondary .icon_button {
             background-color: var(--trophy-gold);
           }
+          .secondary:hover {
+            border-color: var(--gold-80);
+          }
+          .secondary:active {
+            border-color: var(--trophy-gold);
+          }
           .disabled {
             background-color: var(--green-60);
             color: var(--green-80);
+            cursor: not-allowed;
           }
           .disabled .icon_button {
+            background-color: var(--green-80);
+          }
+          .disabled:hover {
+            background-color: var(--green-60);
+            color: var(--green-80);
+          }
+          .disabled:hover .icon_button {
+            background-color: var(--green-80);
+          }
+          .disabled:active {
+            background-color: var(--green-60);
+            color: var(--green-80);
+          }
+          .disabled:active .icon_button {
             background-color: var(--green-80);
           }
           .tertiary {
@@ -86,6 +121,20 @@ export default function SharedButton(props) {
           }
           .tertiary .icon_button {
             background-color: var(--trophy-gold);
+          }
+          .tertiary:hover {
+            background-color: unset;
+            color: var(--gold-40);
+          }
+          .tertiary:hover .icon_button {
+            background-color: var(--gold-40);
+          }
+          .tertiary:active {
+            background-color: unset;
+            color: var(--gold-80);
+          }
+          .tertiary:active .icon_button {
+            background-color: var(--gold-80);
           }
           .white {
             color: #ffffff;
