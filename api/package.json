@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@ethersproject/transactions": "^5.4.0",
+    "@uniswap/token-lists": "^1.0.0-beta.25",
+    "ajv": "^8.6.2",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {}

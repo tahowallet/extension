@@ -2,7 +2,7 @@ export { Transaction, UnsignedTransaction } from "@ethersproject/transactions"
 
 export interface AssetMetadata {
   coinGeckoURL?: string
-  imageURL?: string
+  logoURL?: string
   websiteURL?: string
 }
 
@@ -20,7 +20,7 @@ export type NetworkFamily = 'EVM' | 'BTC'
 
 export interface Network {
   name: string
-  baseAsset: Asset
+  baseAsset: FungibleAsset
   family: NetworkFamily
   chainId?: string
 }
