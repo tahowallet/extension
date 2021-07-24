@@ -34,6 +34,9 @@ export default function SharedPanelSwitcher(props) {
         {`
           nav {
             width: 100%;
+            position: relative;
+            display: block;
+            height: 31px;
             border-bottom: 1px solid var(--green-120);
           }
           ul {
