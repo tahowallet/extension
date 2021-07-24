@@ -35,7 +35,10 @@ export default function OnboardingStartTheHunt(props) {
         </li>
         <li className="label">
           Start Fresh
-          <SharedTooltip label="Create a new wallet that you own the private keys for. You will need to save the recovery seed to keep it safe." />
+          <SharedTooltip>
+            Create a n ew wallet that you own the private keys for. You will
+            need to save the recovery seed to keep it safe.
+          </SharedTooltip>
         </li>
         <li className="option">
           <div className="icon tally_icon" />
