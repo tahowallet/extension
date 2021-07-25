@@ -2,7 +2,7 @@
   "name": "@tallyho/tally-api",
   "version": "0.0.1",
   "description": "Tally, the community owned and operated Web3 wallet: api implementation.",
-  "main": "index.js",
+  "main": "index.ts",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",
   "license": "GPL-3.0",
