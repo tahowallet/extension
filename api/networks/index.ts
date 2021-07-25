@@ -17,17 +17,23 @@ export const providers = {
       endpoint: 'wss://eth-mainnet.ws.alchemyapi.io/v2/8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa',
 
   ]
-
 */
 
 export default class Network {
+  state : ObsStore
+  providers : any
+
   constructor ({ networks }) {
     this.state = new ObsStore(networks)
     this.providers = networks.reduce((agg, { type, endpoint, selected }) => {
       if (type in providers) {
-        if (!agg[type]) agg[type] = {}
+        if (!agg[type]) {
+          agg[type] = {}
+        }
         agg[type][endpoint] = new providers[type]({ endpoint })
-        if (selected) agg[type].selected = agg[type][endpoint]
+        if (selected) {
+          agg[type].selected = agg[type][endpoint]
+        }
       }
       return agg
     }, {})

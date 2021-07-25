@@ -12,19 +12,24 @@ STATE
 */
 
 export default class Transactions {
+  state : ObsStore
+  query : any
+  getFiatValue : () => void
+  lastBlock : number
+
   constructor({ state, provider, getFiatValue }) {
     this.state = new ObsStore(state || {})
     this.query = createEthProviderWrapper(provider)
     this.getFiatValue = getFiatValue
   }
 
-  async getHistory(address) {
-    const state = this.getState()
+  async getHistory(address : string) {
+    const state = this.state.getState()
     if (!state[address]) {
-      state[address] = { history: [], localTransctions: [] }
+      state[address] = { history: [], localTransactions: [] }
     }
     if (this.query.provider.endpoint.includes("mainnet.alchemyapi")) {
-      const newTransactions = await this._getTransfers(address, blockNumber)
+      const newTransactions = await this._getTransfers(address)
       state[address].history.push(newTransactions)
       state.lastBlock = this.lastBlock
       this.state.putState(state)
@@ -38,7 +43,7 @@ export default class Transactions {
     return orderdHistory
   }
 
-  async _getTransfers(address, toBlock = "latest") {
+  async _getTransfers(address : string, toBlock : string | number = "latest") {
     const blockNumber = parseInt(await this.query.eth_blockNumber())
     let fromBlock =
       this.lastBlock || `0x${(blockNumber - 10e3 * 3).toString(16)}`
@@ -61,7 +66,7 @@ export default class Transactions {
       excludeZeroValue: false,
     })
     // get actual transaction data for all transactions
-    const resolvedTxs = await Promise.allSettled(
+    const transactions = (await Promise.allSettled(
       [...(toTransfers.transfers || []), ...(fromTransfers.transfers || [])]
         .sort((txA, txB) => {
           return parseInt(txA.blockNum) - parseInt(txB.blockNum)
@@ -77,16 +82,14 @@ export default class Transactions {
             )
           } catch (e) {
             console.error(e)
+            throw e
           }
         })
-    )
+    )).filter((r) => r.status === "fulfilled").map((r) => (r as PromiseFulfilledResult<any>).value)
 
     // store last checked block for later
     this.lastBlock = blockNumber
 
-    // prepare final list
-    const transactions = []
-    resolvedTxs.forEach((ptx) => transactions.push(ptx.value))
     return transactions
   }
 }

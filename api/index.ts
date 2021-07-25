@@ -12,6 +12,11 @@ import ObsStore from './lib/ob-store'
 import getFiatValue from './lib/getFiatValues'
 
 export class Main {
+  state : ObsStore
+  network : Networks
+  transactions : Transactions
+  accounts : Accounts
+
   constructor ({ browser, state = DEFAULT_STATE}) {
     this.state = new ObsStore(state)
     const { accountsMetaData, balances, networks, supportedChains, transactions } = state
