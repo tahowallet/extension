@@ -2,8 +2,6 @@ import ObsStore from '../lib/ob-store'
 import EtherumNetworkProvider from './ethereum'
 import { NETWORK_ERRORS } from '../constants/errors'
 
-
-
 export const providers = {
   ethereum: EtherumNetworkProvider,
 }

@@ -1,9 +1,8 @@
+import { Runtime } from "webextension-polyfill-ts"
+
 /*
 
-
 port proxy makes it easier to conssue
-
-
 
 send({
   // 'controller/method'
@@ -25,19 +24,21 @@ route list:
 "POST"
 params: {id:number, ...edits}
 
-
 */
 
-export function createPortProxy (port) {
+export function createPortProxy (port : Runtime.Port) {
   const responseRegister = {}
+
   let idBase = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+
   port.onMessage.addListener((msg) => {
     if (responseRegister[msg.id]) {
       if(responseRegister[msg.id].type === 'subscription') {
         if (msg.response.subscriptionTerminated) {
           delete responseRegister[msg.id]
+        } else {
+          responseRegister[msg.id].handler(msg.response)
         }
-        responseRegister[msg.id].handler(msg.response)
       } else {
         if (msg.error){
           responseRegister[msg.id].reject(new Error(msg.error))
@@ -49,7 +50,12 @@ export function createPortProxy (port) {
     }
   })
 
-  function post (type, { route, method, params }, handler) {
+  function post (type : string, proxyDetails : { route? : string, method : string, params? : object}, handler?) {
+    const {
+      route,
+      method,
+      params
+    } = proxyDetails
     return new Promise((resolve, reject) => {
       const id = idBase++
       responseRegister[id] = {
@@ -67,19 +73,21 @@ export function createPortProxy (port) {
     })
   }
 
-  return new Proxy(port, {
+  return new Proxy<any>(port, {
     get: (_, key) => {
-      switch (key) {
-        case 'send': return post.bind(undefined, 'send')
-        case 'subscribe': return post.bind(undefined, 'subscription')
-        case 'unsubscribe': return (id) => post('subscription', { method: 'TERMINATE', params: {id} })
-        default: return port[key]
+      if (key == "send" || key == "subscriber") {
+        return post.bind(undefined, key)
       }
+
+      if (key == "unsubscribe") {
+        return (id) => post("subscription", { method: "TERMINATE", params: {id} })
+      }
+
+      return port[key]
     },
     set: () => {
-      throw new Error('Read Only')
+      throw new Error("Read Only")
     },
-
   })
 }
 

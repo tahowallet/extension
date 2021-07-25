@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events'
 
-
-
 export default class ObStore extends EventEmitter {
+  _state : any
+
   constructor (initState = {}) {
     super()
     this._state = initState

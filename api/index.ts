@@ -1,14 +1,17 @@
-
 import Networks from './networks'
 import Transactions from './transactions'
-import Accounts from './accounts/'
-// import { Keys } from './keys'
-import ObsStore from './lib/ob-store'
-import getFiatValue from './lib/getFiatValues.js'
+import Accounts from './accounts'
+import { STATE_KEY } from './constants'
 import { DEFAULT_STATE } from './constants/default-state'
+import { migrate } from './migrations'
 
-export default class Main {
+// import { Keys } from './keys'
 
+import { getPersistedState, persistState } from './lib/db'
+import ObsStore from './lib/ob-store'
+import getFiatValue from './lib/getFiatValues'
+
+export class Main {
   constructor ({ browser, state = DEFAULT_STATE}) {
     this.state = new ObsStore(state)
     const { accountsMetaData, balances, networks, supportedChains, transactions } = state
@@ -68,6 +71,14 @@ export default class Main {
       this.state.updateState({ networks: state })
     })
   }
+}
 
+export { connectToBackgroundApi } from './lib/connect'
 
+export default async function startApi() {
+  const rawState = await getPersistedState(STATE_KEY)
+  const newVersionState = await migrate(rawState)
+  persistState(STATE_KEY, newVersionState)
+  const main = new Main(newVersionState.state)
+  return { main }
 }

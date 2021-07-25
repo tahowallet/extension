@@ -1,5 +1,5 @@
 // import { TransactionController } from '@mekamittens/controllers/transactions'
-import ObsStore from "../lib/ob-store.js"
+import ObsStore from "../lib/ob-store"
 import { createEthProviderWrapper } from "../lib/utils"
 import { formatTransaction } from "./utils"
 

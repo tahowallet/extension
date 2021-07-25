@@ -1,5 +1,8 @@
-
-
+declare global {
+  interface Window {
+    localStorage: any
+  }
+}
 
 // sort of a future proofing for indexdb
 
