@@ -1,4 +1,4 @@
-// import ObsStore from '../lib/ob-store.js'
+// import ObsStore from '../lib/ob-store'
 // import Etherum from './ethereum'
 
 // const providedNetworks = {

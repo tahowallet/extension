@@ -1,4 +1,4 @@
-import { NETWORK_TYPES } from './index.js'
+import { NETWORK_TYPES } from './index'
 
 export const DEFAULT_STATE = {
   accountsMetaData: [],

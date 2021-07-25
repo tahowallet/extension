@@ -1,8 +1,8 @@
 import { TRANSPORT_TYPES } from '../../constants'
-import { NETWORK_ERRORS } from '../../constants/errors.js'
+import { NETWORK_ERRORS } from '../../constants/errors'
 import { idGenerator } from '../../lib/utils'
-import WebSocketProvider from './transports/ws.js'
-import HttpProvider from './transports/http.js'
+import WebSocketProvider from './transports/ws'
+import HttpProvider from './transports/http'
 const getId = idGenerator()
 
 export default class Provider {

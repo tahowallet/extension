@@ -10,7 +10,7 @@ if their is no state
 
 
 */
-import { DEFAULT_STATE } from '../constants/default-state.js'
+import { DEFAULT_STATE } from '../constants/default-state'
 
 const version = 0
 
