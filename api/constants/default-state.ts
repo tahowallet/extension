@@ -1,7 +1,7 @@
 import { NETWORK_TYPES } from './index'
 
 export const DEFAULT_STATE = {
-  accountsMetaData: [],
+  accounts: [],
   networks: [
     {
       selected: true,
@@ -10,4 +10,5 @@ export const DEFAULT_STATE = {
       endpoint: 'wss://eth-mainnet.ws.alchemyapi.io/v2/8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa',
     }
   ],
+  transactions: {}
 }

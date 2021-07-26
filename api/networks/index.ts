@@ -19,11 +19,20 @@ export const providers = {
   ]
 */
 
-export default class Network {
-  state : ObsStore
-  providers : any
+export interface NetworkInfo {
+  selected: boolean
+  type: string
+  name: string
+  endpoint: string
+}
 
-  constructor ({ networks }) {
+export type NetworksState = NetworkInfo[]
+
+export default class Network {
+  state : ObsStore<NetworksState>
+  providers : any // TODO replace with a generic provider type
+
+  constructor (networks : NetworkInfo[]) {
     this.state = new ObsStore(networks)
     this.providers = networks.reduce((agg, { type, endpoint, selected }) => {
       if (type in providers) {
@@ -40,10 +49,10 @@ export default class Network {
   }
 
   /*
-    add's network to state and creates a provider
+    adds network to state and creates a provider
   */
 
-  async add (newNetwork) {
+  async add(newNetwork : NetworkInfo) {
     const networks = this.state.getState()
 
     if (!(newNetwork.type in providers)) {
@@ -72,6 +81,5 @@ export default class Network {
   }
 
   async select () {
-
   }
 }

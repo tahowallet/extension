@@ -14,15 +14,13 @@ export function createEthProviderWrapper(provider : any) {
   })
 }
 
-export const weiToEth = new Proxy(function weiToEth (value : any) {
-  return (parseInt(value) / 10e17)
-}, {
-  get: (f : (any) => any, key : string) => {
-    switch(key) {
-      case 'transactionFee':
-        return (gasPrice, gas) => f((parseInt(gasPrice) * parseInt(gas)))
-      default:
-        return f
-    }
-  }
-})
+export function weiToEth(value : string | number) : number {
+  return (typeof value === 'number' ? value : parseInt(value)) / 10e17
+}
+
+export function transactionFee(gas : string | number, gasPrice: string | number) : number {
+  return (
+    (typeof gas === 'number' ? gas : parseInt(gas)) *
+    (typeof gasPrice === 'number' ? gasPrice : parseInt(gasPrice))
+  )
+}

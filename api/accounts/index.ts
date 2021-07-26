@@ -4,7 +4,7 @@ import EthereumBalances  from './balances/ethereum'
 /*
 STATE
 {
-  accountsMetaData: [{ address: "...", ... }]
+  accountsMetadata: [{ address: "...", ... }]
 }
 */
 
@@ -13,16 +13,18 @@ interface AccountMetadata {
   address: string
 }
 
+export type AccountsState = AccountMetadata[]
+
 export default class Accounts {
-  store: ObsStore
+  store: ObsStore<AccountsState>
   balances: EthereumBalances
   getTransactionHistory: any
   selectedAccount: AccountMetadata
 
-  constructor ({ provider, getTransactionHistory, accountsMetaData }) {
+  constructor (provider, getTransactionHistory, accounts : AccountsState) {
     this.balances = new EthereumBalances({ provider })
     this.getTransactionHistory = getTransactionHistory
-    this.store =  new ObsStore({ accountsMetaData })
+    this.store =  new ObsStore<AccountsState>(accounts)
   }
 
   async get(_ : { address? : string }) {
@@ -31,24 +33,24 @@ export default class Accounts {
     return this._getAccounts()
   }
 
-  async add(newAccountData) {
-    const accounts = this.store.getState().accountsMetaData
+  async add(newAccountData : AccountMetadata) {
+    const accounts = this.store.getState()
     accounts.push(newAccountData)
-    this.store.putState(newAccountData)
+    this.store.putState(accounts)
     return true
   }
 
   async _getAccounts() {
-    return this.store.getState().accountsMetaData
+    return this.store.getState()
   }
 
-  getAccountMetaData(address : string) {
-    return this.store.getState().accountsMetaData
+  getAccountMetadata(address : string) {
+    return this.store.getState()
     .find((account : any = {}) => account.address && account.address === address)
   }
 
-  async _getAccount (address) : Promise<AccountMetadata>{
-    const account = this.getAccountMetaData(address) || { address }
+  async _getAccount(address : string) : Promise<AccountMetadata>{
+    const account = this.getAccountMetadata(address) || { address }
     const balances = await this.balances.get(address)
     // not availble yet
     // const fiatTotal = balances.reduce((fiatTotal, tokenBalance) => {
@@ -65,14 +67,14 @@ export default class Accounts {
     }
   }
 
-  updateAccount (newAccountData : AccountMetadata) {
-    const accountsMetaData = this.store.getState().accountsMetaData.map((account) => {
+  updateAccount(newAccountData : AccountMetadata) {
+    const accounts = this.store.getState().map((account) => {
       if (account.address === newAccountData.address ) {
-        return { ...account, ...newAccountData}
+        return { ...account, ...newAccountData }
       }
       return account
     })
-    this.store.putState({ accountsMetaData })
+    this.store.putState(accounts)
   }
 
   async setSelectedAccount (account : AccountMetadata) {

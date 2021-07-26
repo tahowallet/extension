@@ -6,19 +6,27 @@ import { formatTransaction } from "./utils"
 /*
 STATE
 {
-  address: { history: [], localTransctions: [] }
-  lastBlock: '0x124'
+  address: { history: [], localTransactions: [] }
+  lastBlock: 1234
 }
 */
 
+export interface TransactionsState {
+  address?: {
+    history: any[],
+    localTransactions: any[]
+  }
+  lastBlock?: number
+}
+
 export default class Transactions {
-  state : ObsStore
+  state : ObsStore<TransactionsState>
   query : any
-  getFiatValue : () => void
+  getFiatValue : () => Promise<number>
   lastBlock : number
 
-  constructor({ state, provider, getFiatValue }) {
-    this.state = new ObsStore(state || {})
+  constructor(state : TransactionsState, provider : any, getFiatValue : () => Promise<number>) {
+    this.state = new ObsStore<TransactionsState>(state)
     this.query = createEthProviderWrapper(provider)
     this.getFiatValue = getFiatValue
   }
@@ -42,7 +50,7 @@ export default class Transactions {
     })
     return orderdHistory
   }
-
+  string
   async _getTransfers(address : string, toBlock : string | number = "latest") {
     const blockNumber = parseInt(await this.query.eth_blockNumber())
     let fromBlock =
