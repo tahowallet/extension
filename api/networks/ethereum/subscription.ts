@@ -2,26 +2,23 @@ import { TRANSPORT_TYPES } from '../../constants'
 
 import { EventEmitter } from 'events'
 
-
-
 /*
 
   This class is a handler for managing a single subscriptions events.
 
 */
 
-
-
-
-
 export default class Subscription extends EventEmitter {
-  constructor ({ name, id }) {
+  name : string
+  id : string
+
+  constructor (name : string, id : string) {
     super()
     this.id = id
     this.name = name
   }
 
-  handler (message) {
+  handler (message : { data : string } ) {
     try {
       const response = JSON.parse(message.data)
       if (!response) return
@@ -38,5 +35,4 @@ export default class Subscription extends EventEmitter {
       console.error(e)
     }
   }
-
 }
