@@ -33,6 +33,7 @@ export const apiStubs = {
         transaction.hash = `0x${(++number).toString(16)}`
         const value = transaction.value = Math.random() * 100
         accountsResult.total_balance.amount = accountsResult.total_balance.amount + value
+        accountsResult.activity.push(transaction)
         handler(accountsResult)
       }, time)
       window.tally_unsubscribe = () => clearInterval(id)
@@ -44,6 +45,7 @@ export const apiStubs = {
           transaction.hash = `0x${(++number).toString(16)}`
           const value = transaction.value = Math.random() * 100
           accountsResult.total_balance.amount = accountsResult.total_balance.amount + value
+          accountsResult.activity.push(transaction)
           handler(accountsResult)
         }, time)
       }
