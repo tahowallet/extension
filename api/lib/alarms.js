@@ -5,5 +5,4 @@ const { alarms }  = platform
 
 alarms.create()
 
-
 export const alarms = alarms

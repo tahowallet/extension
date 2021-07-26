@@ -10,16 +10,13 @@ async function constructApi () {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
-  const main = new Main({ state: newVersionState.state })
-  main.state.on('update', (state) => {
-    persistState(state)
-  })
+  const main = new Main(newVersionState.state)
   return { main }
 }
 
-
 const ready = constructApi()
-let connectionCount = 0
+
+const state = getPersistedState()
 
 
 // add listener to extension api
@@ -84,4 +81,5 @@ platform.runtime.onConnect.addListener(async (port) => {
     if (!connectionCount) main.disconnect()
     subscriptions.forEach((info) => main.getApi()[info.route].unsubscribe(id))
   })
+
 })
