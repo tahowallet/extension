@@ -14,13 +14,14 @@ export default class WebSocketProvider {
     })
 
     this._register = {}
-    if (!endpoint.includes('wss://') || !endpoint.includes('ws://')) {
-      throw new Error('Not a ws endpoint')
+    if (!endpoint.includes('wss://')) {
+     if (!endpoint.includes('ws://')) {
+        throw new Error('Not a ws endpoint')
+      }
     }
-
   }
 
-    async connect () {
+   async connect () {
     if (this.socket) {
       const { readyState, CLOSING, OPEN } = this.socket
       if (readyState === OPEN) {
@@ -41,6 +42,7 @@ export default class WebSocketProvider {
   }
 
   async close () {
+    if (!this.socket) return
     const register = Object.values(this._register)
     if (register.length) await Promise.allSettled(register)
     this.socket.close()

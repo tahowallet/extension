@@ -32,12 +32,13 @@ export function createPortProxy (port) {
   const responseRegister = {}
   let idBase = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
   port.onMessage.addListener((msg) => {
+    if (window.LOG_MSG) console.log('msg', msg)
     if (responseRegister[msg.id]) {
       if(responseRegister[msg.id].type === 'subscription') {
-        if (msg.response.subscriptionTerminated) {
-          delete responseRegister[msg.id]
+        if (msg.response) {
+          if (msg.response.subscriptionTerminated) delete responseRegister[msg.id]
+          responseRegister[msg.id].handler(msg.response)
         }
-        responseRegister[msg.id].handler(msg.response)
       } else {
         if (msg.error){
           responseRegister[msg.id].reject(new Error(msg.error))
@@ -50,13 +51,29 @@ export function createPortProxy (port) {
   })
 
   function post (type, { route, method, params }, handler) {
+    const id = idBase++
+    if (type === 'subscription') {
+      port.postMessage({
+        type,
+        id,
+        route,
+        method,
+        params,
+      })
+      responseRegister[id] = {
+        type,
+        handler,
+      }
+
+      return (id) => post('subscription', { method: 'TERMINATE', params: {id} })
+    }
+
+
     return new Promise((resolve, reject) => {
-      const id = idBase++
       responseRegister[id] = {
         resolve,
         reject,
         type,
-        handler,
       }
       port.postMessage({
         id,

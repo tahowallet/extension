@@ -87,6 +87,6 @@ export default class EthereumNetworkProvider extends Provider {
         console.error(e)
       }
     })
-    await super.close()
+    await this.transport.close()
   }
 }
