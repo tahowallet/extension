@@ -12,8 +12,10 @@ assetInfo = [{
 */
 
 export default class EthereumBalances {
-  constructor ({ provider, tokens }) {
-    this.query = new createEthProviderWrapper(provider)
+  query: any // TODO use a generic provider type
+
+  constructor (provider : any) {
+    this.query = createEthProviderWrapper(provider)
   }
 
   // async add ({ type, adress }) {

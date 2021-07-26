@@ -2,7 +2,7 @@
   "name": "@tallyho/tally-api",
   "version": "0.0.1",
   "description": "Tally, the community owned and operated Web3 wallet: api implementation.",
-  "main": "index.js",
+  "main": "index.ts",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",
   "license": "GPL-3.0",
@@ -27,7 +27,7 @@
     "@ethersproject/transactions": "^5.4.0",
     "@uniswap/token-lists": "^1.0.0-beta.25",
     "ajv": "^8.6.2",
-    "node-fetch": "^2.6.1"
+    "webextension-polyfill-ts": "^0.26.0"
   },
   "devDependencies": {}
 }

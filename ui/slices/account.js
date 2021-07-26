@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { connectToBackgroundApi } from '@tallyho/tally-api/lib/connect';
-const api = connectToBackgroundApi({ name: 'ui' });
+import { connectToBackgroundApi } from '@tallyho/tally-api';
+
+const api = connectToBackgroundApi('ui')
 
 export const initialState = {
   accountLoading: false,

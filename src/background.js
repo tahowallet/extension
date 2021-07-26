@@ -1,27 +1,9 @@
-import { createPortProxy } from '@tallyho/tally-api/lib/port-proxy'
-import { platform } from '@tallyho/tally-api/lib/platform'
-import { UI_METHODS, STATE_KEY } from '@tallyho/tally-api/constants'
-import { getPersistedState, persistState } from '@tallyho/tally-api/lib/db'
-import { migrate } from '@tallyho/tally-api/migrations'
-import Main from  '@tallyho/tally-api'
-// const persistedState = load state from idb
+import startApi, { browser } from '@tallyho/tally-api'
 
-// instantiate main api for background process
-async function constructApi () {
-  const rawState = await getPersistedState(STATE_KEY)
-  const newVersionState = await migrate(rawState)
-  persistState(STATE_KEY, newVersionState)
-  const main = new Main(newVersionState.state)
-  return { main }
-}
-
-const ready = constructApi()
-
-const state = getPersistedState()
-
+const ready = startApi()
 
 // add listener to extension api
-platform.runtime.onConnect.addListener((port) => {
+browser.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener(async (msg) => {
     // wait for main api to be ready ie determine network connectivity
     const { main } = await ready

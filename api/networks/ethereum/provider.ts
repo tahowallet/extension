@@ -1,12 +1,18 @@
 import { TRANSPORT_TYPES } from '../../constants'
-import { NETWORK_ERRORS } from '../../constants/errors.js'
+import { NETWORK_ERRORS } from '../../constants/errors'
 import { idGenerator } from '../../lib/utils'
-import WebSocketProvider from './transports/ws.js'
-import HttpProvider from './transports/http.js'
+import WebSocketProvider from './transports/ws'
+import HttpProvider from './transports/http'
+
 const getId = idGenerator()
 
 export default class Provider {
-  constructor ({ endpoint, jsonrpc = '2.0' }) {
+  endpoint : string
+  type : string // TODO move to enum
+  transport : any // TODO set up a provider hierarchy
+  jsonrpc : string
+
+  constructor (endpoint : string, jsonrpc : string = '2.0') {
     this.endpoint = endpoint
     if (endpoint.includes('wss://') || endpoint.includes('ws://')) {
       this.type = TRANSPORT_TYPES.ws
@@ -20,10 +26,10 @@ export default class Provider {
     this.jsonrpc = jsonrpc
   }
 
-  async request (request) {
+  async request (request : any) {
     const defaults = { id: getId(), jsonrpc: this.jsonrpc, params: [] }
     return await this.transport.performSend({ ...defaults, ...request })
   }
+
+  async close() {}
 }
-
-
