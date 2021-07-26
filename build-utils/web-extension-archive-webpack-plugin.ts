@@ -3,6 +3,8 @@ import path from "path"
 import archiver from "archiver"
 import { Compiler, Stats } from "webpack"
 
+const PLUGIN_NAME = "WebextArchive"
+
 type ArchiveOptions = {
   /** The filename for the archive, without a path or extension. */
   filename: string
@@ -23,6 +25,7 @@ function webextArchiveCreator(
   webpackCompiler: Compiler,
   { filename, outputDirectory }: ArchiveOptions
 ): (stats: Stats, pluginCompleted: (err: Error) => void) => void {
+  const logger = webpackCompiler.getInfrastructureLogger(PLUGIN_NAME)
   return (_: Stats, pluginCompleted: (err: Error) => void) => {
     const archiveSources = webpackCompiler.outputPath
     const outputPath =
@@ -35,7 +38,7 @@ function webextArchiveCreator(
       pluginCompleted(null)
     })
     outputStream.on("warning", (err) => {
-      console.warn(`While generating archive ${filename}.zip, got: ${err}.`)
+      logger.warn(`While generating archive ${filename}.zip, got: ${err}.`)
     })
     outputStream.on("error", (err) => {
       pluginCompleted(err)
@@ -54,9 +57,9 @@ function webextArchiveCreator(
 export default class WebextArchive {
   constructor(private options: ArchiveOptions) {}
 
-  apply(compiler: Compiler) {
+  apply(compiler: Compiler): void {
     compiler.hooks.done.tapAsync(
-      "WebextArchive",
+      PLUGIN_NAME,
       webextArchiveCreator(compiler, this.options)
     )
   }
