@@ -30,6 +30,6 @@ module.exports = {
     "no-useless-constructor": "off",
     "@typescript-eslint/no-useless-constructor": ["error"],
   },
-  ignorePatterns: "dist/",
+  ignorePatterns: ["dist/", "extension-reload.js"],
   parser: "@typescript-eslint/parser",
 }
