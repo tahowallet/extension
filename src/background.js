@@ -1,4 +1,4 @@
-import startApi, { browser } from '@tallyho/tally-api'
+import { browser, startApi} from '@tallyho/tally-api'
 
 const ready = startApi()
 
@@ -33,7 +33,6 @@ browser.runtime.onConnect.addListener((port) => {
         id,
         error: error.message,
       })
-
     }
   })
 })

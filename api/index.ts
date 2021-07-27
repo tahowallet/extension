@@ -17,7 +17,7 @@ export interface MainState {
   networks: NetworksState
 }
 
-export class Main {
+class Main {
   state : ObsStore<MainState>
   network : Networks
   transactions : Transactions
@@ -78,7 +78,7 @@ export class Main {
 
 export { connectToBackgroundApi } from './lib/connect'
 
-export default async function startApi() {
+export async function startApi() {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
