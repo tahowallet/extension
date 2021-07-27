@@ -1,8 +1,19 @@
 import { TRANSPORT_TYPES } from '../../../constants'
-
+import { NETWORK_ERRORS } from '../../../constants/errors'
 
 export default class WebSocketProvider {
-  constructor (endpoint) {
+  endpoint : string
+  type : string
+  ready : Promise<void>
+  isReady : () => void
+  failedInConnection : () => void
+  closed : Promise<void>
+  isClosed : () => void
+  failedInClose : () => void
+  _register : any
+  socket? : WebSocket
+
+  constructor (endpoint : string) {
     this.type = TRANSPORT_TYPES.ws
     this.ready = new Promise((resolve, reject) => {
       this.isReady = resolve
@@ -14,14 +25,12 @@ export default class WebSocketProvider {
     })
 
     this._register = {}
-    if (!endpoint.includes('wss://')) {
-     if (!endpoint.includes('ws://')) {
-        throw new Error('Not a ws endpoint')
-      }
+    if (!endpoint.includes('wss://') || !endpoint.includes('ws://')) {
+      throw new Error('Not a ws endpoint')
     }
   }
 
-   async connect () {
+  async connect () {
     if (this.socket) {
       const { readyState, CLOSING, OPEN } = this.socket
       if (readyState === OPEN) {
@@ -77,7 +86,7 @@ export default class WebSocketProvider {
   }
 
   _onClose () {
-    delete this.subcriptions
+    // TODO delete this.subcriptions
     this.ready = new Promise((resolve, reject) => {
       this.isReady = resolve
       this.failedInConnection = reject

@@ -44,8 +44,8 @@ const baseConfig: Configuration = {
     // path: is set browser-specifically below
     filename: "[name].js",
   },
-  // resolve stream
   resolve: {
+    extensions: ['.tsx', '.ts', '.js', '.jsx'],
     fallback: {
       stream: require.resolve("stream-browserify"),
       process: require.resolve("process/browser"),

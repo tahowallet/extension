@@ -2,22 +2,25 @@ import fetch from 'node-fetch'
 
 import { TRANSPORT_TYPES } from '../../../constants'
 
-
 export default class HttpProvider {
-  constructor (endpoint) {
+  type : string // TODO move to a proper enum
+  endpoint : string
+
+  constructor (endpoint : string) {
     this.type = TRANSPORT_TYPES.http
     if (!endpoint.includes('https://') || !endpoint.includes('http://')) {
       throw new Error('Not a http endpoint')
     }
+    this.endpoint = endpoint
   }
 
-  async performSend (request, { method }) {
+  async performSend (request : any, { method } : { method : string, [index : string] : any } ) {
 
-    const formatedRequest = formatRequestForFetch({request: {...defaults, ...request}})
+    const formattedRequest = formatRequestForFetch(request) // TODO add defaults
 
-    const response = await fetch(this.endpoint, formatedRequest)
+    const response = await fetch(this.endpoint, formattedRequest)
     // special case for now
-    if (method === 'eth_getBlockByNumber' && reseponse.data === 'Not Found') {
+    if (method === 'eth_getBlockByNumber' && response.data === 'Not Found') {
       return { result: null }
     }
 
@@ -32,7 +35,7 @@ export default class HttpProvider {
 
 }
 
-function formatRequestForFetch ({ request, extraHeaders }) {
+function formatRequestForFetch (request : any, extraHeaders : { [index : string] : any} = {}) {
   // make sure their are no extra keys on the request
   const { id, jsonrpc, method, params } = request
   const headers = {
@@ -46,5 +49,4 @@ function formatRequestForFetch ({ request, extraHeaders }) {
     headers,
     body: JSON.stringify({id, jsonrpc, method, params}),
   }
-
 }

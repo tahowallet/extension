@@ -1,26 +1,11 @@
-import { platform } from '@tallyho/tally-api/lib/platform'
-import { UI_METHODS, STATE_KEY } from '@tallyho/tally-api/constants'
-import { getPersistedState, persistState } from '@tallyho/tally-api/lib/db'
-import { migrate } from '@tallyho/tally-api/migrations'
-import Main from  '@tallyho/tally-api'
-// const persistedState = load state from idb
+import { browser, startApi} from '@tallyho/tally-api'
 
-// instantiate main api for background process
-async function constructApi () {
-  const rawState = await getPersistedState(STATE_KEY)
-  const newVersionState = await migrate(rawState)
-  persistState(STATE_KEY, newVersionState)
-  const main = new Main(newVersionState.state)
-  return { main }
-}
+let connectionCount = 0
 
-const ready = constructApi()
-
-const state = getPersistedState()
-
+const ready = startApi()
 
 // add listener to extension api
-platform.runtime.onConnect.addListener(async (port) => {
+browser.runtime.onConnect.addListener(async (port) => {
   ++connectionCount
   const { main } = await ready
   const subscriptions = []
@@ -72,7 +57,6 @@ platform.runtime.onConnect.addListener(async (port) => {
         id,
         error: error.message,
       })
-
     }
   })
 
