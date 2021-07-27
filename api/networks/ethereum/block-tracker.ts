@@ -1,16 +1,17 @@
 import { TRANSPORT_TYPES } from '../../constants'
 
 export default class BlockTracker {
-  constructor ({ provider, initStart }) {
-    this.provider = provider
-    if (initStart) this.start()
+  constructor (public provider : any, initStart : boolean) {
+    if (initStart) {
+      this.start()
+    }
   }
 
   start () {
-    if (provider.type === TRANSPORT_TYPES.ws) {}
+    if (this.provider.type === TRANSPORT_TYPES.ws) {}
   }
 
   stop () {
-    if (provider.type === TRANSPORT_TYPES.ws) {}
+    if (this.provider.type === TRANSPORT_TYPES.ws) {}
   }
 }
