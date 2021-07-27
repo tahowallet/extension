@@ -34,9 +34,10 @@ export function createPortProxy (port : Runtime.Port) {
   port.onMessage.addListener((msg) => {
     if (responseRegister[msg.id]) {
       if(responseRegister[msg.id].type === 'subscription') {
-        if (msg.response.subscriptionTerminated) {
-          delete responseRegister[msg.id]
-        } else {
+        if (msg.response) {
+          if (msg.response.subscriptionTerminated) {
+            delete responseRegister[msg.id]
+          }
           responseRegister[msg.id].handler(msg.response)
         }
       } else {
@@ -56,13 +57,29 @@ export function createPortProxy (port : Runtime.Port) {
       method,
       params
     } = proxyDetails
+    const id = idBase++
+
+    if (type === 'subscription') {
+      port.postMessage({
+        type,
+        id,
+        route,
+        method,
+        params,
+      })
+      responseRegister[id] = {
+        type,
+        handler,
+      }
+
+      return (id) => post('subscription', { method: 'TERMINATE', params: {id} })
+    }
+
     return new Promise((resolve, reject) => {
-      const id = idBase++
       responseRegister[id] = {
         resolve,
         reject,
         type,
-        handler,
       }
       port.postMessage({
         id,
