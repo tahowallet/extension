@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-chrome-extension-router';
 import { routes } from '../../config/routes';
 import SharedButton from '../Shared/SharedButton';
@@ -48,7 +49,8 @@ function SuccessMessage() {
   );
 }
 
-export default function OnboardingVerifySeed() {
+export default function OnboardingVerifySeed(props) {
+  const { triggerPreviousStep } = props;
   const [isSelected, setIsSelected] = useState([]);
   const [isNotSelected, setIsNotSelected] = useState(Array(12).fill(''));
 
@@ -59,6 +61,12 @@ export default function OnboardingVerifySeed() {
 
   return (
     <section>
+      <button
+        type="button"
+        className="back_button"
+        aria-label="Back"
+        onClick={triggerPreviousStep}
+      />
       <OnboardingStepsIndicator activeStep={2} />
       <h1 className="serif_header center_text title">
         Save and store your recovery seed
@@ -113,8 +121,21 @@ export default function OnboardingVerifySeed() {
             position: absolute;
             bottom: 0px;
           }
+          .back_button {
+            background: url('./images/back@2x.png');
+            background-size: cover;
+            width: 24px;
+            height: 24px;
+            position: absolute;
+            top: 24px;
+            left: 24px;
+          }
         `}
       </style>
     </section>
   );
 }
+
+OnboardingVerifySeed.propTypes = {
+  triggerPreviousStep: PropTypes.func.isRequired,
+};
