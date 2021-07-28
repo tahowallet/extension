@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
+import CorePage from '../components/Core/CorePage';
 import SharedAssetInput from '../components/Shared/SharedAssetInput';
 import SharedButton from '../components/Shared/SharedButton';
 import SharedNetworkFeeGroup from '../components/Shared/SharedNetworkFeeGroup';
@@ -10,7 +10,7 @@ export default function Send() {
 
   return (
     <>
-      <CorePageWithTabs>
+      <CorePage>
         <div className="wrap">
           <h1 className="header">
             <span className="icon_activity_send_medium" />
@@ -52,7 +52,7 @@ export default function Send() {
             </div>
           </div>
         </div>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .wrap {

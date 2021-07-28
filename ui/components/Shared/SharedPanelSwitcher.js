@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function WalletPanelSwitcher(props) {
-  const { setPanelNum, panelNum } = props;
+export default function SharedPanelSwitcher(props) {
+  const { setPanelNum, panelNum, panelNames } = props;
 
   return (
     <nav>
@@ -15,7 +15,7 @@ export default function WalletPanelSwitcher(props) {
             }}
             className={`option${panelNum === 0 ? ' selected' : ''}`}
           >
-            Assets
+            {panelNames[0]}
           </button>
         </li>
         <li>
@@ -26,7 +26,7 @@ export default function WalletPanelSwitcher(props) {
             }}
             className={`option${panelNum === 1 ? ' selected' : ''}`}
           >
-            Activity
+            {panelNames[1]}
           </button>
         </li>
       </ul>
@@ -68,7 +68,7 @@ export default function WalletPanelSwitcher(props) {
   );
 }
 
-WalletPanelSwitcher.propTypes = {
+SharedPanelSwitcher.propTypes = {
   setPanelNum: PropTypes.func.isRequired,
   panelNum: PropTypes.number.isRequired,
 };

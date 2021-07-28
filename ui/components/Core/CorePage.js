@@ -5,8 +5,8 @@ import TopMenuProtocolList from '../TopMenu/TopMenuProtocolList';
 import TopMenu from '../TopMenu/TopMenu';
 import TabBar from '../TabBar/TabBar';
 
-export default function CorePageWithTabs(props) {
-  const { children } = props;
+export default function CorePage(props) {
+  const { children, hasTabBar } = props;
 
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false);
 
@@ -31,7 +31,7 @@ export default function CorePageWithTabs(props) {
           <TopMenu />
         </button>
         <div className="page_content">{children}</div>
-        <TabBar />
+        {hasTabBar ? <TabBar /> : null}
       </div>
       <style jsx>
         {`
@@ -45,8 +45,10 @@ export default function CorePageWithTabs(props) {
           }
           .page_content {
             height: 480px;
+            width: 100%;
             overflow-y: scroll;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             flex-grow: 1;
             margin: 0 auto;
@@ -57,6 +59,11 @@ export default function CorePageWithTabs(props) {
   );
 }
 
-CorePageWithTabs.propTypes = {
+CorePage.propTypes = {
   children: PropTypes.node.isRequired,
+  hasTabBar: PropTypes.bool,
+};
+
+CorePage.defaultProps = {
+  hasTabBar: true,
 };

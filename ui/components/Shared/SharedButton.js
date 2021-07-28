@@ -66,6 +66,7 @@ export default function SharedButton(props) {
             background: unset;
             border: 2px solid var(--trophy-gold);
             color: var(--trophy-gold);
+            box-sizing: border-box;
           }
           .secondary .icon_button {
             background-color: var(--trophy-gold);
