@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    localStorage: any
-  }
-}
-
 // sort of a future proofing for indexdb
 
 export async function getPersistedState (key) {
@@ -13,7 +7,6 @@ export async function getPersistedState (key) {
     } catch (_) {/*do nothing for parse errors*/}
   }
 }
-
 
 export async function persistState (key, newState) {
   window.localStorage[key] = JSON.stringify(newState)

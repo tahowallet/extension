@@ -1,6 +1,7 @@
 import Networks, { NetworksState } from './networks'
 import Transactions, { TransactionsState } from './transactions'
 import Accounts, { AccountsState } from './accounts'
+import { apiStubs } from './temp-stubs'
 import { STATE_KEY } from './constants'
 import { DEFAULT_STATE } from './constants/default-state'
 import { migrate } from './migrations'
@@ -17,11 +18,13 @@ export interface MainState {
   networks: NetworksState
 }
 
-export class Main {
+class Main {
   state : ObsStore<MainState>
   network : Networks
   transactions : Transactions
   accounts : Accounts
+  _subscriptionIds : any
+  keys : any
 
   constructor (state : MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
@@ -37,6 +40,7 @@ export class Main {
     // this.userPrefernces = new ObsStore(state.userPrefernces || {})
 
     this.accounts = new Accounts(provider, accounts, this.transactions.getHistory.bind(this.transactions))
+    this._subscriptionIds = {}
     this._subscribeToStates()
   }
 
@@ -44,12 +48,14 @@ export class Main {
     Returns a object containing all api methods for use
   */
   getApi () {
-    return {
-      '/accounts/': {
-        GET: this.accounts.get.bind(this.accounts),
-        POST: this._import.bind(this),
-      },
+    return apiStubs
+  }
+
+  registerSubscription ({route, params, handler, id}) {
+    if (!this._subscriptionIds[`${route}${JSON.stringify(params)}`]) {
+      this._subscriptionIds[`${route}${JSON.stringify(params)}`] = []
     }
+    this._subscriptionIds[`${route}${JSON.stringify(params)}`].push({handler, id})
   }
 
   // used to start and stop the ws connections for new head subscription
@@ -59,11 +65,15 @@ export class Main {
   }
 
   async disconnect () {
-    this.network.providers.ethereum.selected.dissconect()
+    this.network.providers.ethereum.selected.close()
   }
 
   async _import ({ address, data, type, name}) {
-    if (!data) return await this.accounts.add(address)
+    if (data) {
+      this.keys.import({type, data, name})
+    } else {
+      return await this.accounts.add(address)
+    }
   }
 
   _subscribeToStates () {
@@ -78,7 +88,7 @@ export class Main {
 
 export { connectToBackgroundApi } from './lib/connect'
 
-export default async function startApi() {
+export async function startApi() {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)

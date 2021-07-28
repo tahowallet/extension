@@ -1,5 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Link } from 'react-chrome-extension-router';
+import { routes } from '../../config/routes';
 import SharedButton from '../Shared/SharedButton';
 import OnboardingStepsIndicator from './OnboardingStepsIndicator';
 import { titleStyle } from './titleStyle';
@@ -44,9 +46,12 @@ export default function OnboardingSaveSeed(props) {
             label="Copy and verify recovery seed"
             icon="arrow_right"
             iconSize="large"
+            onClick={triggerNextStep}
           />
         </div>
-        <SharedButton type="tertiary" size="medium" label="remind me later" />
+        <Link component={routes['wallet']}>
+          <SharedButton type="tertiary" size="medium" label="remind me later" />
+        </Link>
       </div>
       <style jsx>
         {`

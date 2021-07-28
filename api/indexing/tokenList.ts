@@ -1,4 +1,3 @@
-import { platform } from '../lib/platform'
 import { Network, NetworkFungibleAsset } from '../types'
 
 import Ajv from 'ajv'
