@@ -42,15 +42,19 @@ export default function SharedSlideUpMenu(props) {
             box-sizing: border-box;
           }
           .icon_close {
-            background: url('./images/close.svg');
-            background-size: 12px 12px;
+            mask-image: url('./images/close.svg');
+            mask-size: cover;
             width: 12px;
             height: 12px;
             position: absolute;
             right: 24px;
+            background-color: var(--green-20);
+          }
+          .icon_close:hover {
+            background-color: #fff;
           }
           .large {
-            background-color: #002522;
+            background-color: var(--hunter-green);
           }
           .open_animate {
             transform: translateY(0px);

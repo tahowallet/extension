@@ -6,6 +6,8 @@ import SharedPanelSwitcher from '../components/Shared/SharedPanelSwitcher';
 import SignTransactionSwapAssetBlock from '../components/SignTransaction/SignTransactionSwapAssetBlock';
 import SignTransactionApproveSpendAssetBlock from '../components/SignTransaction/SignTransactionApproveSpendAssetBlock';
 import SignTransactionNetworkAccountInfoTopBar from '../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar';
+import { Link } from 'react-chrome-extension-router';
+import Wallet from './Wallet';
 
 export default function SignTransaction(props) {
   const { approveSpendOrSwap } = props;
@@ -45,12 +47,14 @@ export default function SignTransaction(props) {
         </div>
       ) : null}
       <div className="footer_actions">
-        <SharedButton
-          label="Reject"
-          iconSize="large"
-          size="large"
-          type="secondary"
-        />
+        <Link component={Wallet}>
+          <SharedButton
+            label="Reject"
+            iconSize="large"
+            size="large"
+            type="secondary"
+          />
+        </Link>
         <SharedButton
           label="Confirm"
           type="primary"

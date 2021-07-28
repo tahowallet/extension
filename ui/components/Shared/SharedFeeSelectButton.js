@@ -33,6 +33,9 @@ export default function SharedFeeSelectButton(props) {
             align-items: flex-start;
             flex-direction: column;
           }
+          button:hover {
+            background-color: var(--green-80);
+          }
           .top {
             width: 33px;
             color: var(--green-5);

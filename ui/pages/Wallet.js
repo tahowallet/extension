@@ -68,8 +68,6 @@ export default function Wallet() {
           }
           .panel {
             height: 284px;
-            overflow: scroll;
-            scrollbar-width: none;
             padding-top: 16px;
             box-sizing: border-box;
           }

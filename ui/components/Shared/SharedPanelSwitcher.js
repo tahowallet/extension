@@ -34,6 +34,9 @@ export default function SharedPanelSwitcher(props) {
         {`
           nav {
             width: 100%;
+            position: relative;
+            display: block;
+            height: 31px;
             border-bottom: 1px solid var(--green-120);
           }
           ul {
@@ -45,12 +48,18 @@ export default function SharedPanelSwitcher(props) {
             margin-right: 16px;
             cursor: pointer;
           }
+          .option:hover {
+            color: var(--gold-40);
+          }
           .selected {
             font-weight: 500;
             color: var(--trophy-gold);
             text-align: center;
             display: flex;
             justify-content: center;
+          }
+          .selected:hover {
+            color: var(--trophy-gold);
           }
           .selected::after {
             content: '';

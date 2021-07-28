@@ -53,6 +53,9 @@ export default function CorePage(props) {
             margin: 0 auto;
             align-items: center;
           }
+          .trigger {
+            z-index: 10;
+          }
         `}
       </style>
     </main>
