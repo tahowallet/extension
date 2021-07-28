@@ -1,26 +1,18 @@
-module.exports = function (api) {
-  api.cache(false)
-  return {
-    presets: [
-      [
-        '@babel/preset-env',
-        {
-          targets: {
-            browsers: [
-              'chrome >= 90',
-              'firefox >= 89',
-            ],
-          },
+// Global config for all babel-affected Tally packages.
+module.exports = {
+  plugins: ["styled-jsx/babel"],
+  presets: [
+    [
+      "@babel/env",
+      {
+        targets: {
+          browsers: ["chrome >= 90", "firefox >= 89"],
         },
-      ],
-      '@babel/preset-react',
+      },
     ],
-    // plugins: [
-    //   '@babel/plugin-transform-runtime',
-    //   '@babel/plugin-proposal-class-properties',
-    //   '@babel/plugin-proposal-object-rest-spread',
-    //   '@babel/plugin-proposal-optional-chaining',
-    //   '@babel/plugin-proposal-nullish-coalescing-operator',
-    // ],
-  }
+    // Because babel is used by Webpack to load the Webpack config, which is
+    // TS.
+    "@babel/typescript",
+  ],
+  babelrcRoots: [".", "ui/*", "api/*"],
 }

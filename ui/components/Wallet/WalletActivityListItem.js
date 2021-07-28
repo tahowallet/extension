@@ -1,8 +1,9 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import PropTypes from "prop-types"
 
 export default function WalletActivityListItem(props) {
-  const { onClick } = props;
+  const { onClick } = props
 
   return (
     <li>
@@ -44,7 +45,7 @@ export default function WalletActivityListItem(props) {
             align-items: center;
           }
           .activity_icon {
-            background: url('./images/activity_send@2x.png');
+            background: url("./images/activity_send@2x.png");
             background-size: 14px 14px;
             width: 14px;
             height: 14px;
@@ -84,7 +85,7 @@ export default function WalletActivityListItem(props) {
             justify-content: center;
           }
           .icon_eth {
-            background: url('./images/eth@2x.png');
+            background: url("./images/eth@2x.png");
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -119,13 +120,13 @@ export default function WalletActivityListItem(props) {
             line-height: 16px;
           }
           .icon_send_asset {
-            background: url('./images/send_asset.svg');
+            background: url("./images/send_asset.svg");
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
           }
           .icon_swap_asset {
-            background: url('./images/swap_asset.svg');
+            background: url("./images/swap_asset.svg");
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
@@ -147,9 +148,9 @@ export default function WalletActivityListItem(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 WalletActivityListItem.propTypes = {
   onClick: PropTypes.func.isRequired,
-};
+}

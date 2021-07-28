@@ -1,8 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
 export default function SharedActivityHeader(props) {
-  const { label, activity } = props;
+  const { label, activity } = props
 
   return (
     <h1>
@@ -22,7 +22,7 @@ export default function SharedActivityHeader(props) {
             line-height: 32px;
           }
           .icon_activity {
-            background: url('./images/activity_${activity}_medium@2x.png');
+            background: url("./images/activity_${activity}_medium@2x.png");
             background-size: cover;
             width: 24px;
             height: 24px;
@@ -31,10 +31,10 @@ export default function SharedActivityHeader(props) {
         `}
       </style>
     </h1>
-  );
+  )
 }
 
 SharedActivityHeader.propTypes = {
   label: PropTypes.string.isRequired,
   activity: PropTypes.string.isRequired,
-};
+}
