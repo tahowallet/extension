@@ -2,10 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 export default function SharedAssetItem(props) {
-  const { setSelectedTokenAndClose } = props;
+  const { onClick } = props;
 
   function handleClick() {
-    setSelectedTokenAndClose({ name: true });
+    onClick({ name: true });
   }
 
   return (
@@ -73,9 +73,9 @@ export default function SharedAssetItem(props) {
 }
 
 SharedAssetItem.propTypes = {
-  setSelectedTokenAndClose: PropTypes.func,
+  onClick: PropTypes.func,
 };
 
 SharedAssetItem.defaultProps = {
-  setSelectedTokenAndClose: () => {},
+  onClick: () => {},
 };

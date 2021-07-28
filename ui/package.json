@@ -25,11 +25,13 @@
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.0",
     "@tallyho/tally-api": "0.0.1",
+    "classnames": "^2.3.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-chrome-extension-router": "^1.2.0",
     "react-dom": "^17.0.2",
-    "react-redux": "^7.2.4"
+    "react-redux": "^7.2.4",
+    "redux": "^4.1.0"
   },
   "devDependencies": {
     "@types/react-dom": "^17.0.9"

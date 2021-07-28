@@ -39,16 +39,12 @@ export default function Send() {
                 <div className="total_label">Total</div>
                 <div className="total_amount_number">0.0</div>
               </div>
-              {selectedCount > 0 ? (
-                <SharedButton type="primary" size="large" label="Send" />
-              ) : (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  label="Send"
-                  isDisabled
-                />
-              )}
+              <SharedButton
+                type="primary"
+                size="large"
+                label="Send"
+                isDisabled={selectedCount <= 0}
+              />
             </div>
           </div>
         </div>

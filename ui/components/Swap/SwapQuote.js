@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import _ from 'lodash';
 import SharedButton from '../Shared/SharedButton';
-import SharedAssetsHeader from '../Shared/SharedAssetsHeader';
+import SharedActivityHeader from '../Shared/SharedActivityHeader';
 import SwapQuoteAssetCard from './SwapQuoteAssetCard';
 import SwapTransactionSettings from './SwapTransactionSettings';
 import SwapApprovalStep from './SwapApprovalStep';
@@ -24,7 +24,7 @@ export default function SwapQoute() {
 
   return (
     <section className="center_horizontal">
-      <SharedAssetsHeader label="Swap Assets" icon="swap" />
+      <SharedActivityHeader label="Swap Assets" activity="swap" />
       <div className="qoute_cards">
         <SwapQuoteAssetCard />
         <span className="icon_switch" />
@@ -54,7 +54,7 @@ export default function SwapQoute() {
       ) : (
         <>
           <div className="exchange_section_wrap">
-            <label className="label">Exchange route</label>
+            <span className="label">Exchange route</span>
             <div className="exchange_content">
               <div className="left">
                 <span className="icon_uniswap" />
@@ -68,7 +68,6 @@ export default function SwapQoute() {
               type="primary"
               size="large"
               label="Aprove Assets & Swap"
-              disableIcon
               onClick={handleApproveClick}
             />
           </div>

@@ -35,6 +35,7 @@ export default accountSlice.reducer;
 export function fetchAccount(address) {
   return async (dispatch) => {
     dispatch(loadAccount());
+
     try {
       let account = await api.send({
         method: 'GET',

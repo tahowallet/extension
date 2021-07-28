@@ -1,11 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
 
 export default function TopMenuProtocolListItem(props) {
   const { isSelected } = props;
 
   return (
-    <li className={`${isSelected ? ' select' : ''}`}>
+    <li className={classNames({ select: isSelected })}>
       <div className="left">
         <div className="icon_wrap">
           <span className="icon_eth" />
