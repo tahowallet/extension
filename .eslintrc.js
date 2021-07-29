@@ -6,7 +6,6 @@ module.exports = {
     "plugin:prettier/recommended",
   ],
   globals: {
-    browser: "readonly",
     document: "readonly",
   },
   rules: {
