@@ -77,8 +77,4 @@ export default class Network {
   async get() {
     return this.state.getState()
   }
-
-  async delete() {}
-
-  async select() {}
 }

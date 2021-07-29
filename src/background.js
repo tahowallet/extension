@@ -6,7 +6,7 @@ const ready = startApi()
 
 // add listener to extension api
 browser.runtime.onConnect.addListener(async (port) => {
-  ++connectionCount
+  connectionCount += 1
   const { main } = await ready
   const subscriptions = []
   port.onMessage.addListener(async (msg) => {
@@ -67,7 +67,7 @@ browser.runtime.onConnect.addListener(async (port) => {
   })
 
   port.onDisconnect.addListener(() => {
-    --connectionCount
+    connectionCount -= 1
     if (!connectionCount) main.disconnect()
     subscriptions.forEach((info) => main.getApi()[info.route].unsubscribe(id))
   })

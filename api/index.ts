@@ -86,10 +86,9 @@ class Main {
 
   async _import({ address, data, type, name }) {
     if (data) {
-      this.keys.import({ type, data, name })
-    } else {
-      return await this.accounts.add(address)
+      return this.keys.import({ type, data, name })
     }
+    return this.accounts.add(address)
   }
 
   _subscribeToStates() {

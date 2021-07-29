@@ -11,8 +11,8 @@ export default function OnboardingStartTheHunt(props) {
       <div className="mascot" />
       <h1 className="serif_header">Start the hunt</h1>
       <div className="subtitle subtitle_hunt">
-        Let's set Tally up with a wallet. Select with what wallet you would like
-        to continue.
+        Let&apos;s set Tally up with a wallet. Select with what wallet you would
+        like to continue.
       </div>
       <ul>
         <li className="label">Use an existing wallet</li>

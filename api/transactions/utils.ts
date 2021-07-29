@@ -35,7 +35,7 @@ export function weiAmountToEthAndFiatAmount(
   amount: string | number,
   fiatPrice: number
 ): EthAndFiatAmount {
-  const wei = typeof amount === "number" ? amount : parseInt(amount)
+  const wei = typeof amount === "number" ? amount : parseInt(amount, 10)
   return {
     eth: weiToEth(wei).toString(8),
     fiat: (fiatPrice * weiToEth(wei)).toFixed(2),

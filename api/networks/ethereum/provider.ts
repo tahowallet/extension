@@ -31,7 +31,7 @@ export default class Provider {
 
   async request(request: any) {
     const defaults = { id: getId(), jsonrpc: this.jsonrpc, params: [] }
-    return await this.transport.performSend({ ...defaults, ...request })
+    return this.transport.performSend({ ...defaults, ...request })
   }
 
   async close() {}

@@ -2,6 +2,25 @@ import fetch from "node-fetch"
 
 import { TRANSPORT_TYPES } from "../../../constants"
 
+function formatRequestForFetch(
+  request: any,
+  extraHeaders: { [index: string]: any } = {}
+) {
+  // make sure their are no extra keys on the request
+  const { id, jsonrpc, method, params } = request
+  const headers = {
+    ...extraHeaders,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  }
+
+  return {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ id, jsonrpc, method, params }),
+  }
+}
+
 export default class HttpProvider {
   type: string // TODO move to a proper enum
 
@@ -34,24 +53,5 @@ export default class HttpProvider {
 
     // finally return result
     return result
-  }
-}
-
-function formatRequestForFetch(
-  request: any,
-  extraHeaders: { [index: string]: any } = {}
-) {
-  // make sure their are no extra keys on the request
-  const { id, jsonrpc, method, params } = request
-  const headers = {
-    ...extraHeaders,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  }
-
-  return {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ id, jsonrpc, method, params }),
   }
 }

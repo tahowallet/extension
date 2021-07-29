@@ -55,11 +55,16 @@ export function createPortProxy(port: Runtime.Port) {
 
   function post(
     type: string,
-    proxyDetails: { route?: string; method: string; params?: object },
+    proxyDetails: {
+      route?: string
+      method: string
+      params?: Record<string, unknown>
+    },
     handler?
   ) {
     const { route, method, params } = proxyDetails
-    const id = idBase++
+    const id = idBase
+    idBase += 1
 
     if (type === "subscription") {
       port.postMessage({
@@ -95,11 +100,11 @@ export function createPortProxy(port: Runtime.Port) {
 
   return new Proxy<any>(port, {
     get: (_, key) => {
-      if (key == "send" || key == "subscriber") {
+      if (key === "send" || key === "subscriber") {
         return post.bind(undefined, key)
       }
 
-      if (key == "unsubscribe") {
+      if (key === "unsubscribe") {
         return (id) =>
           post("subscription", { method: "TERMINATE", params: { id } })
       }

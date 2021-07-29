@@ -53,7 +53,7 @@ export default class Transactions {
       ...state[address].history,
       ...state[address].localTransctions,
     ].sort((txA, txB) => {
-      return parseInt(txA.blockNumber) - parseInt(txB.blockNumber)
+      return parseInt(txA.blockNumber, 10) - parseInt(txB.blockNumber, 10)
     })
     return orderdHistory
   }
@@ -61,7 +61,7 @@ export default class Transactions {
   string
 
   async _getTransfers(address: string, toBlock: string | number = "latest") {
-    const blockNumber = parseInt(await this.query.eth_blockNumber())
+    const blockNumber = parseInt(await this.query.eth_blockNumber(), 10)
     const fromBlock =
       this.lastBlock || `0x${(blockNumber - 10e3 * 3).toString(16)}`
 
@@ -87,7 +87,7 @@ export default class Transactions {
       await Promise.allSettled(
         [...(toTransfers.transfers || []), ...(fromTransfers.transfers || [])]
           .sort((txA, txB) => {
-            return parseInt(txA.blockNum) - parseInt(txB.blockNum)
+            return parseInt(txA.blockNum, 10) - parseInt(txB.blockNum, 10)
           })
           .map(async (transfer) => {
             try {
