@@ -13,17 +13,20 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    loadAccount: (state) => {
-      state.accountLoading = true
-    },
-    loadAccountSuccess: (state, { payload }) => {
-      state.account = payload
-      state.accountLoading = false
-    },
-    loadAccountFailure: (state) => {
-      state.accountLoading = false
-      state.hasAccountError = true
-    },
+    loadAccount: (state) => ({
+      ...state,
+      accountLoading: true,
+    }),
+    loadAccountSuccess: (state, { payload }) => ({
+      ...state,
+      account: payload,
+      accountLoading: false,
+    }),
+    loadAccountFailure: (state) => ({
+      ...state,
+      accountLoading: false,
+      hasAccountError: true,
+    }),
   },
 })
 

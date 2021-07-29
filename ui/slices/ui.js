@@ -8,9 +8,10 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    setShowingActivityDetail: (state, { payload: activityId }) => {
-      state.showingActivityDetail = activityId
-    },
+    setShowingActivityDetail: (state, { payload: activityId }) => ({
+      ...state,
+      showingActivityDetail: activityId,
+    }),
   },
 })
 
