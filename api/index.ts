@@ -27,7 +27,7 @@ class Main {
 
   accounts: Accounts
 
-  _subscriptionIds: any
+  private subscriptionIds: any
 
   keys: any
 
@@ -54,8 +54,8 @@ class Main {
       accounts,
       this.transactions.getHistory.bind(this.transactions)
     )
-    this._subscriptionIds = {}
-    this._subscribeToStates()
+    this.subscriptionIds = {}
+    this.subscribeToStates()
   }
 
   /*
@@ -68,10 +68,10 @@ class Main {
   }
 
   registerSubscription({ route, params, handler, id }) {
-    if (!this._subscriptionIds[`${route}${JSON.stringify(params)}`]) {
-      this._subscriptionIds[`${route}${JSON.stringify(params)}`] = []
+    if (!this.subscriptionIds[`${route}${JSON.stringify(params)}`]) {
+      this.subscriptionIds[`${route}${JSON.stringify(params)}`] = []
     }
-    this._subscriptionIds[`${route}${JSON.stringify(params)}`].push({
+    this.subscriptionIds[`${route}${JSON.stringify(params)}`].push({
       handler,
       id,
     })
@@ -87,14 +87,14 @@ class Main {
     this.network.providers.ethereum.selected.close()
   }
 
-  async _import({ address, data, type, name }) {
+  private async import({ address, data, type, name }) {
     if (data) {
       return this.keys.import({ type, data, name })
     }
     return this.accounts.add(address)
   }
 
-  _subscribeToStates() {
+  private subscribeToStates() {
     this.transactions.state.on("update", (state) => {
       this.state.updateState({ transactions: state })
     })

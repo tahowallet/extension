@@ -18,7 +18,7 @@ export default class WebSocketProvider {
 
   failedInClose: () => void
 
-  _register: any
+  private register: any
 
   socket?: WebSocket
 
@@ -33,7 +33,7 @@ export default class WebSocketProvider {
       this.failedInClose = reject
     })
 
-    this._register = {}
+    this.register = {}
     if (!endpoint.includes("wss://") || !endpoint.includes("ws://")) {
       throw new Error("Not a ws endpoint")
     }
@@ -52,38 +52,38 @@ export default class WebSocketProvider {
       this.socket = new WebSocket(this.endpoint)
     }
 
-    this._addListeners()
+    this.addListeners()
     await this.ready
     return this.socket
   }
 
   async close() {
     if (!this.socket) return
-    const register = Object.values(this._register)
+    const register = Object.values(this.register)
     if (register.length) await Promise.allSettled(register)
     this.socket.close()
   }
 
   // PRIVATE METHODS
 
-  _addListeners() {
-    this.socket.addEventListener("message", this._onRpcStyleMessage.bind(this))
-    this.socket.addEventListener("open", this._onOpen.bind(this))
-    this.socket.addEventListener("error", this._onError.bind(this))
-    this.socket.addEventListener("close", this._onClose.bind(this))
+  private addListeners() {
+    this.socket.addEventListener("message", this.onRpcStyleMessage.bind(this))
+    this.socket.addEventListener("open", this.onOpen.bind(this))
+    this.socket.addEventListener("error", this.onError.bind(this))
+    this.socket.addEventListener("close", this.onClose.bind(this))
   }
 
-  _removeListeners() {
+  private removeListeners() {
     this.socket.removeEventListener(
       "message",
-      this._onRpcStyleMessage.bind(this)
+      this.onRpcStyleMessage.bind(this)
     )
-    this.socket.removeEventListener("open", this._onOpen.bind(this))
-    this.socket.removeEventListener("error", this._onError.bind(this))
-    this.socket.removeEventListener("close", this._onClose.bind(this))
+    this.socket.removeEventListener("open", this.onOpen.bind(this))
+    this.socket.removeEventListener("error", this.onError.bind(this))
+    this.socket.removeEventListener("close", this.onClose.bind(this))
   }
 
-  _onOpen() {
+  private onOpen() {
     this.isReady()
     this.closed = new Promise((resolve, reject) => {
       this.isClosed = resolve
@@ -91,11 +91,11 @@ export default class WebSocketProvider {
     })
   }
 
-  _onError(error) {
+  private onError(error) {
     console.error(error)
   }
 
-  _onClose() {
+  private onClose() {
     // TODO delete this.subcriptions
     this.ready = new Promise((resolve, reject) => {
       this.isReady = resolve
@@ -104,28 +104,28 @@ export default class WebSocketProvider {
     this.isClosed()
   }
 
-  _onRpcStyleMessage(message) {
+  private onRpcStyleMessage(message) {
     const response = JSON.parse(message.data)
     if (!response) return
     const { error, result, id } = response
     if (!id) return
-    if (error) this._register[id].reject(error)
-    else this._register[id].resolve(result)
-    delete this._register.id
+    if (error) this.register[id].reject(error)
+    else this.register[id].resolve(result)
+    delete this.register.id
   }
 
-  _registerRequest(id) {
+  private registerRequest(id) {
     return new Promise((resolve, reject) => {
-      this._register[id] = { resolve, reject }
+      this.register[id] = { resolve, reject }
     })
   }
 
-  async _performSend(request) {
+  private async performSend(request) {
     if (!this.socket) {
       await this.connect()
     }
     await this.ready
-    const result = this._registerRequest(request.id)
+    const result = this.registerRequest(request.id)
     const { socket } = this
     const { readyState, CLOSING, CLOSED } = socket
     if (readyState === CLOSING || readyState === CLOSED)

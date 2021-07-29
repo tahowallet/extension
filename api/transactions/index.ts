@@ -44,7 +44,7 @@ export default class Transactions {
       state[address] = { history: [], localTransactions: [] }
     }
     if (this.query.provider.endpoint.includes("mainnet.alchemyapi")) {
-      const newTransactions = await this._getTransfers(address)
+      const newTransactions = await this.getTransfers(address)
       state[address].history.push(newTransactions)
       state.lastBlock = this.lastBlock
       this.state.putState(state)
@@ -58,9 +58,10 @@ export default class Transactions {
     return orderdHistory
   }
 
-  string
-
-  async _getTransfers(address: string, toBlock: string | number = "latest") {
+  private async getTransfers(
+    address: string,
+    toBlock: string | number = "latest"
+  ) {
     const blockNumber = parseInt(await this.query.eth_blockNumber(), 10)
     const fromBlock =
       this.lastBlock || `0x${(blockNumber - 10e3 * 3).toString(16)}`
