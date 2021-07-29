@@ -69,6 +69,8 @@ browser.runtime.onConnect.addListener(async (port) => {
   port.onDisconnect.addListener(() => {
     connectionCount -= 1
     if (!connectionCount) main.disconnect()
-    subscriptions.forEach((info) => main.getApi()[info.route].unsubscribe(id))
+    subscriptions.forEach((info) =>
+      main.getApi()[info.route].unsubscribe(info.id)
+    )
   })
 })
