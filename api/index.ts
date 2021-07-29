@@ -34,7 +34,8 @@ class Main {
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
     const { accounts, networks, transactions } = state
-    const { providers } = (this.network = new Networks(networks))
+    this.network = new Networks(networks)
+    const { providers } = this.network
     const provider = providers.ethereum.selected
     this.transactions = new Transactions(
       transactions,

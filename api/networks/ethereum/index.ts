@@ -47,8 +47,8 @@ export default class EthereumNetworkProvider extends Provider {
       return id
     }
     if (request.method === "eth_unsubscribe") {
-      const { params } = request
-      const [id] = params
+      const { params: unsubscribeParams } = request
+      const [id] = unsubscribeParams
       const name = this._subscriptionIds[id]
       if (!this.subscriptions[name]) return false
       const subscription = this.subscriptions[name]

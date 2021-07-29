@@ -79,8 +79,8 @@ export function createPortProxy(port: Runtime.Port) {
         handler,
       }
 
-      return (id) =>
-        post("subscription", { method: "TERMINATE", params: { id } })
+      return (requestId) =>
+        post("subscription", { method: "TERMINATE", params: { id: requestId } })
     }
 
     return new Promise((resolve, reject) => {
