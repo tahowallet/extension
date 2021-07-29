@@ -1,13 +1,11 @@
-// sort of a future proofing for indexdb
+import { browser } from "webextension-polyfill-ts"
 
-export async function getPersistedState (key) {
-  if (window.localStorage[key]) {
-    try {
-      return JSON.parse(window.localStorage[key])
-    } catch (_) {/*do nothing for parse errors*/}
-  }
+export async function getPersistedState (key : string) {
+  return await browser.storage.local.get(key)
 }
 
-export async function persistState (key, newState) {
-  window.localStorage[key] = JSON.stringify(newState)
+export async function persistState(key : string, newState : any) {
+  let params = {}
+  params[key] = newState
+  await browser.storage.local.set(params)
 }
