@@ -2,6 +2,8 @@ import { TRANSPORT_TYPES } from "../../../constants"
 import { NETWORK_ERRORS } from "../../../constants/errors"
 
 export default class WebSocketProvider {
+  logger: Console
+
   endpoint: string
 
   type: string
@@ -23,6 +25,7 @@ export default class WebSocketProvider {
   socket?: WebSocket
 
   constructor(endpoint: string) {
+    this.logger = console
     this.type = TRANSPORT_TYPES.ws
     this.ready = new Promise((resolve, reject) => {
       this.isReady = resolve
@@ -92,7 +95,7 @@ export default class WebSocketProvider {
   }
 
   private onError(error) {
-    console.error(error)
+    this.logger.error(error)
   }
 
   private onClose() {
