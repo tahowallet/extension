@@ -54,5 +54,5 @@ jobs:
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
-    - run: yarn build
+    - run: yarn install
     - run: yarn lint
