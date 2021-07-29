@@ -26,14 +26,16 @@ params: {id:number, ...edits}
 
 */
 
-export function createPortProxy (port : Runtime.Port) {
+// Disable default export while we reconsider how this might get consumed.
+// eslint-disable-next-line import/prefer-default-export
+export function createPortProxy(port: Runtime.Port) {
   const responseRegister = {}
 
   let idBase = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
 
   port.onMessage.addListener((msg) => {
     if (responseRegister[msg.id]) {
-      if(responseRegister[msg.id].type === 'subscription') {
+      if (responseRegister[msg.id].type === "subscription") {
         if (msg.response) {
           if (msg.response.subscriptionTerminated) {
             delete responseRegister[msg.id]
@@ -41,7 +43,7 @@ export function createPortProxy (port : Runtime.Port) {
           responseRegister[msg.id].handler(msg.response)
         }
       } else {
-        if (msg.error){
+        if (msg.error) {
           responseRegister[msg.id].reject(new Error(msg.error))
         } else {
           responseRegister[msg.id].resolve(msg.response)
@@ -51,15 +53,20 @@ export function createPortProxy (port : Runtime.Port) {
     }
   })
 
-  function post (type : string, proxyDetails : { route? : string, method : string, params? : object}, handler?) {
-    const {
-      route,
-      method,
-      params
-    } = proxyDetails
-    const id = idBase++
+  function post(
+    type: string,
+    proxyDetails: {
+      route?: string
+      method: string
+      params?: Record<string, unknown>
+    },
+    handler?
+  ) {
+    const { route, method, params } = proxyDetails
+    const id = idBase
+    idBase += 1
 
-    if (type === 'subscription') {
+    if (type === "subscription") {
       port.postMessage({
         type,
         id,
@@ -72,7 +79,8 @@ export function createPortProxy (port : Runtime.Port) {
         handler,
       }
 
-      return (id) => post('subscription', { method: 'TERMINATE', params: {id} })
+      return (requestId) =>
+        post("subscription", { method: "TERMINATE", params: { id: requestId } })
     }
 
     return new Promise((resolve, reject) => {
@@ -92,12 +100,13 @@ export function createPortProxy (port : Runtime.Port) {
 
   return new Proxy<any>(port, {
     get: (_, key) => {
-      if (key == "send" || key == "subscriber") {
+      if (key === "send" || key === "subscriber") {
         return post.bind(undefined, key)
       }
 
-      if (key == "unsubscribe") {
-        return (id) => post("subscription", { method: "TERMINATE", params: {id} })
+      if (key === "unsubscribe") {
+        return (id) =>
+          post("subscription", { method: "TERMINATE", params: { id } })
       }
 
       return port[key]
@@ -107,7 +116,3 @@ export function createPortProxy (port : Runtime.Port) {
     },
   })
 }
-
-
-
-

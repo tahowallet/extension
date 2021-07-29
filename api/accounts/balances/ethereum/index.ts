@@ -1,4 +1,4 @@
-import { createEthProviderWrapper } from '../../../lib/utils'
+import { createEthProviderWrapper } from "../../../lib/utils"
 
 /*
 
@@ -14,7 +14,7 @@ assetInfo = [{
 export default class EthereumBalances {
   query: any // TODO use a generic provider type
 
-  constructor (provider : any) {
+  constructor(provider: any) {
     this.query = createEthProviderWrapper(provider)
   }
 
@@ -26,11 +26,13 @@ export default class EthereumBalances {
     temporarily only returns eth balance
   */
 
-  async get (address) {
-    return [{
-        balance: await this.query.eth_getBalance(address, 'latest') / 10e17,
-        symbol: 'ETH',
-    }]
+  async get(address) {
+    return [
+      {
+        balance: (await this.query.eth_getBalance(address, "latest")) / 10e17,
+        symbol: "ETH",
+      },
+    ]
   }
 
   // start () {

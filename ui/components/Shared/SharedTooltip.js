@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState } from "react"
+import PropTypes from "prop-types"
 
 export default function SharedTooltip(props) {
-  const { children } = props;
-  const [isShowingTooltip, setIsShowingTooltip] = useState(false);
+  const { children } = props
+  const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
     <div
       className="tooltip_wrap"
       onMouseEnter={() => {
-        setIsShowingTooltip(true);
+        setIsShowingTooltip(true)
       }}
       onMouseLeave={() => {
-        setIsShowingTooltip(false);
+        setIsShowingTooltip(false)
       }}
     >
       <div className="info_icon" />
@@ -26,7 +26,7 @@ export default function SharedTooltip(props) {
             z-index: 20;
           }
           .info_icon {
-            background: url('./images/info@2x.png');
+            background: url("./images/info@2x.png");
             background-size: cover;
             width: 16px;
             height: 16px;
@@ -49,9 +49,9 @@ export default function SharedTooltip(props) {
         `}
       </style>
     </div>
-  );
+  )
 }
 
 SharedTooltip.propTypes = {
   children: PropTypes.node.isRequired,
-};
+}

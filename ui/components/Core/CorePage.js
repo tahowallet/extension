@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
-import TopMenuProtocolList from '../TopMenu/TopMenuProtocolList';
-import TopMenu from '../TopMenu/TopMenu';
-import TabBar from '../TabBar/TabBar';
+import React, { useState } from "react"
+import PropTypes from "prop-types"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
+import TopMenu from "../TopMenu/TopMenu"
+import TabBar from "../TabBar/TabBar"
 
 export default function CorePage(props) {
-  const { children, hasTabBar } = props;
+  const { children, hasTabBar } = props
 
-  const [isProtocolListOpen, setIsProtocolListOpen] = useState(false);
+  const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
 
   return (
     <main>
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         close={() => {
-          setIsProtocolListOpen(false);
+          setIsProtocolListOpen(false)
         }}
       >
         <TopMenuProtocolList />
@@ -25,7 +25,7 @@ export default function CorePage(props) {
           type="button"
           className="trigger"
           onClick={() => {
-            setIsProtocolListOpen(!isProtocolListOpen);
+            setIsProtocolListOpen(!isProtocolListOpen)
           }}
         >
           <TopMenu />
@@ -59,14 +59,14 @@ export default function CorePage(props) {
         `}
       </style>
     </main>
-  );
+  )
 }
 
 CorePage.propTypes = {
   children: PropTypes.node.isRequired,
   hasTabBar: PropTypes.bool,
-};
+}
 
 CorePage.defaultProps = {
   hasTabBar: true,
-};
+}

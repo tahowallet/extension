@@ -1,6 +1,5 @@
 // import { alarms } from '../../../lib/alarms'
 
-
 // export default class Poller extends EventEmitter {
 //   constructor ({ alarmName, periodInMinutes, method }) {
 //     this.time = time //|| figure out the time based on seconds?

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import SharedFeeSelectButton from './SharedFeeSelectButton';
+import React, { useState } from "react"
+import SharedFeeSelectButton from "./SharedFeeSelectButton"
 
 export default function SharedNetworkFeeGroup() {
-  const [selectedFee, setSelectedFee] = useState(0);
+  const [selectedFee, setSelectedFee] = useState(0)
 
   return (
     <ul>
@@ -10,7 +10,7 @@ export default function SharedNetworkFeeGroup() {
         <SharedFeeSelectButton
           isActive={selectedFee === 0}
           onClick={() => {
-            setSelectedFee(0);
+            setSelectedFee(0)
           }}
         />
       </li>
@@ -18,7 +18,7 @@ export default function SharedNetworkFeeGroup() {
         <SharedFeeSelectButton
           isActive={selectedFee === 1}
           onClick={() => {
-            setSelectedFee(1);
+            setSelectedFee(1)
           }}
         />
       </li>
@@ -26,7 +26,7 @@ export default function SharedNetworkFeeGroup() {
         <SharedFeeSelectButton
           isActive={selectedFee === 2}
           onClick={() => {
-            setSelectedFee(2);
+            setSelectedFee(2)
           }}
         />
       </li>
@@ -42,5 +42,5 @@ export default function SharedNetworkFeeGroup() {
         `}
       </style>
     </ul>
-  );
+  )
 }

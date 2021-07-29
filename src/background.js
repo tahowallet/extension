@@ -1,4 +1,4 @@
-import { browser, startApi} from '@tallyho/tally-api'
+import { browser, startApi } from "@tallyho/tally-api"
 
 let connectionCount = 0
 
@@ -6,7 +6,7 @@ const ready = startApi()
 
 // add listener to extension api
 browser.runtime.onConnect.addListener(async (port) => {
-  ++connectionCount
+  connectionCount += 1
   const { main } = await ready
   const subscriptions = []
   port.onMessage.addListener(async (msg) => {
@@ -16,16 +16,18 @@ browser.runtime.onConnect.addListener(async (port) => {
     try {
       // check port name if content-script forward msg to inpage provider
       // otherwise it goes to frontend api
-      if (port.name === 'content-script') response = await main.inpageProvider.request(msg)
-      else if (port.name === 'ui') {
-        let strippedRoute, address
-        if (route.includes('0x')) {
-          const split = route.split('/')
+      if (port.name === "content-script")
+        response = await main.inpageProvider.request(msg)
+      else if (port.name === "ui") {
+        let strippedRoute
+        let address
+        if (route.includes("0x")) {
+          const split = route.split("/")
           address = split.pop()
-          if (split.length) split.push('')
-          strippedRoute = split.join('/')
+          if (split.length) split.push("")
+          strippedRoute = split.join("/")
         }
-        if (type === 'subscription') {
+        if (type === "subscription") {
           const args = {
             route: strippedRoute || route,
             params,
@@ -36,14 +38,18 @@ browser.runtime.onConnect.addListener(async (port) => {
           subscriptions.push(args)
           // temp disabled
           // await main.registerSubscription(args)
-          main.getApi()[strippedRoute || route].subscribe((data) => port.postMessage({
-            id,
-            type,
-            response: data,
-          }))
+          main.getApi()[strippedRoute || route].subscribe((data) =>
+            port.postMessage({
+              id,
+              type,
+              response: data,
+            })
+          )
         }
-          // sloppy
-        response = await main.getApi()[strippedRoute || route][method]({ address, ...params})
+        // sloppy
+        response = await main
+          .getApi()
+          [strippedRoute || route][method]({ address, ...params })
       }
       port.postMessage({
         type,
@@ -61,9 +67,10 @@ browser.runtime.onConnect.addListener(async (port) => {
   })
 
   port.onDisconnect.addListener(() => {
-    --connectionCount
+    connectionCount -= 1
     if (!connectionCount) main.disconnect()
-    subscriptions.forEach((info) => main.getApi()[info.route].unsubscribe(id))
+    subscriptions.forEach((info) =>
+      main.getApi()[info.route].unsubscribe(info.id)
+    )
   })
-
 })

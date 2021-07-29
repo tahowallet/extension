@@ -1,11 +1,11 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import SharedInput from '../Shared/SharedInput';
-import SharedButton from '../Shared/SharedButton';
-import { titleStyle } from './titleStyle';
+import React from "react"
+import PropTypes from "prop-types"
+import SharedInput from "../Shared/SharedInput"
+import SharedButton from "../Shared/SharedButton"
+import titleStyle from "./titleStyle"
 
 export default function OnboardingCreatePassword(props) {
-  const { triggerNextStep } = props;
+  const { triggerNextStep } = props
 
   return (
     <section>
@@ -33,7 +33,7 @@ export default function OnboardingCreatePassword(props) {
         {`
           ${titleStyle}
           .full_logo {
-            background: url('./images/full_logo@2x.png');
+            background: url("./images/full_logo@2x.png");
             background-size: cover;
             width: 118px;
             height: 120px;
@@ -50,9 +50,9 @@ export default function OnboardingCreatePassword(props) {
         `}
       </style>
     </section>
-  );
+  )
 }
 
 OnboardingCreatePassword.propTypes = {
   triggerNextStep: PropTypes.func.isRequired,
-};
+}

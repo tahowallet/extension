@@ -1,20 +1,20 @@
-import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
-import WalletActivityDetails from './WalletActivityDetails';
-import WalletActivityListItem from './WalletActivityListItem';
-import { setShowingActivityDetail, uiSelector } from '../../slices/ui';
+import React from "react"
+import { useDispatch, useSelector } from "react-redux"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import WalletActivityDetails from "./WalletActivityDetails"
+import WalletActivityListItem from "./WalletActivityListItem"
+import { setShowingActivityDetail, uiSelector } from "../../slices/ui"
 
 export default function WalletActivityList() {
-  const dispatch = useDispatch();
-  const { showingActivityDetail } = useSelector(uiSelector);
+  const dispatch = useDispatch()
+  const { showingActivityDetail } = useSelector(uiSelector)
 
   function handleOpen(activityId) {
-    dispatch(setShowingActivityDetail(activityId));
+    dispatch(setShowingActivityDetail(activityId))
   }
 
   function handleClose() {
-    dispatch(setShowingActivityDetail(undefined));
+    dispatch(setShowingActivityDetail(undefined))
   }
 
   return (
@@ -26,11 +26,11 @@ export default function WalletActivityList() {
         {[1234123, 1532, 2362, 237345, 243623].map((activityId) => (
           <WalletActivityListItem
             onClick={() => {
-              handleOpen(activityId);
+              handleOpen(activityId)
             }}
           />
         ))}
       </ul>
     </>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import classNames from 'classnames';
+import React from "react"
+import PropTypes from "prop-types"
+import classNames from "classnames"
 
 export default function TopMenuProtocolListItem(props) {
-  const { isSelected } = props;
+  const { isSelected } = props
 
   return (
     <li className={classNames({ select: isSelected })}>
@@ -36,7 +36,7 @@ export default function TopMenuProtocolListItem(props) {
             margin-left: 8px;
           }
           .icon_eth {
-            background: url('./images/eth@2x.png');
+            background: url("./images/eth@2x.png");
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -88,13 +88,13 @@ export default function TopMenuProtocolListItem(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 TopMenuProtocolListItem.propTypes = {
   isSelected: PropTypes.bool,
-};
+}
 
 TopMenuProtocolListItem.defaultProps = {
   isSelected: false,
-};
+}

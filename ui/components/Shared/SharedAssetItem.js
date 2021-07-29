@@ -1,11 +1,11 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
 export default function SharedAssetItem(props) {
-  const { onClick } = props;
+  const { onClick } = props
 
   function handleClick() {
-    onClick({ name: true });
+    onClick({ name: true })
   }
 
   return (
@@ -58,7 +58,7 @@ export default function SharedAssetItem(props) {
             margin-top: 5px;
           }
           .icon_eth {
-            background: url('./images/eth@2x.png');
+            background: url("./images/eth@2x.png");
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -69,13 +69,16 @@ export default function SharedAssetItem(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 SharedAssetItem.propTypes = {
   onClick: PropTypes.func,
-};
+}
 
 SharedAssetItem.defaultProps = {
-  onClick: () => {},
-};
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
+}

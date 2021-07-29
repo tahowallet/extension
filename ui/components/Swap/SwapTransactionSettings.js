@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
-import SharedButton from '../Shared/SharedButton';
-import SharedNetworkFeeGroup from '../Shared/SharedNetworkFeeGroup';
+import React, { useState } from "react"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedButton from "../Shared/SharedButton"
+import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
 
 export default function SwapTransactionSettings() {
-  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false);
+  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
 
   function handleClick() {
-    setIsSlideUpMenuOpen(!isSlideUpMenuOpen);
+    setIsSlideUpMenuOpen(!isSlideUpMenuOpen)
   }
 
   return (
@@ -16,7 +16,7 @@ export default function SwapTransactionSettings() {
         isOpen={isSlideUpMenuOpen}
         size="small"
         close={() => {
-          setIsSlideUpMenuOpen(false);
+          setIsSlideUpMenuOpen(false)
         }}
       >
         <div className="settings_wrap">
@@ -50,7 +50,7 @@ export default function SwapTransactionSettings() {
         </label>
         <label className="label">
           Network Fee/Speed
-          <div className="info">{'$24 / Fast <1min'}</div>
+          <div className="info">{"$24 / Fast <1min"}</div>
         </label>
       </div>
       <style jsx>
@@ -93,7 +93,7 @@ export default function SwapTransactionSettings() {
           }
           .icon_cog {
             display: block;
-            mask-image: url('./images/cog@2x.png');
+            mask-image: url("./images/cog@2x.png");
             mask-size: cover;
             width: 12px;
             height: 12px;
@@ -134,5 +134,5 @@ export default function SwapTransactionSettings() {
         `}
       </style>
     </>
-  );
+  )
 }

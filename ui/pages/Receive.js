@@ -1,5 +1,5 @@
-import React from 'react';
-import SharedButton from '../components/Shared/SharedButton';
+import React from "react"
+import SharedButton from "../components/Shared/SharedButton"
 
 export default function Receive() {
   return (
@@ -69,7 +69,7 @@ export default function Receive() {
             justify-content: center;
           }
           .qr_code_image {
-            background: url('./images/qr_code@2x.png');
+            background: url("./images/qr_code@2x.png");
             background-size: 128px 128px;
             width: 128px;
             height: 128px;
@@ -79,7 +79,7 @@ export default function Receive() {
             margin-top: 40px;
           }
           .icon_activity_send_medium {
-            background: url('./images/activity_receive_medium@2x.png');
+            background: url("./images/activity_receive_medium@2x.png");
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
@@ -88,5 +88,5 @@ export default function Receive() {
         `}
       </style>
     </section>
-  );
+  )
 }

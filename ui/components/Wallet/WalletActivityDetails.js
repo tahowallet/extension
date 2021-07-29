@@ -1,10 +1,10 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import SharedActivityHeader from '../Shared/SharedActivityHeader';
-import SharedButton from '../Shared/SharedButton';
+import React from "react"
+import PropTypes from "prop-types"
+import SharedActivityHeader from "../Shared/SharedActivityHeader"
+import SharedButton from "../Shared/SharedButton"
 
 function DetailRowItem(props) {
-  const { label, value, valueDetail } = props;
+  const { label, value, valueDetail } = props
 
   return (
     <li>
@@ -40,14 +40,14 @@ function DetailRowItem(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 DetailRowItem.propTypes = {
   label: PropTypes.string.isRequired,
   value: PropTypes.string.isRequired,
   valueDetail: PropTypes.string.isRequired,
-};
+}
 
 function DestinationCard() {
   return (
@@ -85,36 +85,36 @@ function DestinationCard() {
         `}
       </style>
     </div>
-  );
+  )
 }
 
 const DetailInfo = [
   {
-    label: 'Timestamp',
-    value: '03:00:12 PM',
-    valueDetail: 'May-14-2021',
+    label: "Timestamp",
+    value: "03:00:12 PM",
+    valueDetail: "May-14-2021",
   },
   {
-    label: 'Amount',
-    value: '0.342 ETH',
-    valueDetail: '($1409.11)',
+    label: "Amount",
+    value: "0.342 ETH",
+    valueDetail: "($1409.11)",
   },
   {
-    label: 'Transaction Fee',
-    value: '0.00508 ETH',
-    valueDetail: '($28,11)',
+    label: "Transaction Fee",
+    value: "0.00508 ETH",
+    valueDetail: "($28,11)",
   },
   {
-    label: 'Gas Price',
-    value: '0.00000012 ETH',
-    valueDetail: '(120 Gwei)',
+    label: "Gas Price",
+    value: "0.00000012 ETH",
+    valueDetail: "(120 Gwei)",
   },
   {
-    label: 'Total',
-    value: '0.347 ETH',
-    valueDetail: '($1437.11)',
+    label: "Total",
+    value: "0.347 ETH",
+    valueDetail: "($1437.11)",
   },
-];
+]
 
 export default function WalletActivityDetails() {
   return (
@@ -174,7 +174,7 @@ export default function WalletActivityDetails() {
             margin-top: 14px;
           }
           .icon_transfer {
-            background: url('./images/transfer@2x.png') center no-repeat;
+            background: url("./images/transfer@2x.png") center no-repeat;
             background-size: 11px 12px;
             width: 35px;
             height: 35px;
@@ -216,7 +216,7 @@ export default function WalletActivityDetails() {
             background-color: var(--green-60);
           }
           .plus {
-            mask-image: url('./images/plus@2x.png');
+            mask-image: url("./images/plus@2x.png");
             mask-size: cover;
             width: 17px;
             height: 17px;
@@ -224,14 +224,14 @@ export default function WalletActivityDetails() {
             margin-right: 3px;
           }
           .arrow {
-            mask-image: url('./images/send@2x.png');
+            mask-image: url("./images/send@2x.png");
           }
           .check {
-            mask-image: url('./images/check@2x.png');
+            mask-image: url("./images/check@2x.png");
             background-color: #22c480;
           }
         `}
       </style>
     </div>
-  );
+  )
 }

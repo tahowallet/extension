@@ -1,6 +1,6 @@
-import React from 'react';
-import SharedAssetIcon from '../Shared/SharedAssetIcon';
-import SharedButton from '../Shared/SharedButton';
+import React from "react"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedButton from "../Shared/SharedButton"
 
 export default function SignTransactionApproveSpendAssetBlock() {
   return (
@@ -20,7 +20,7 @@ export default function SignTransactionApproveSpendAssetBlock() {
       <style jsx>
         {`
           .site_icon {
-            background: url('./images/uniswap_large@2x.png');
+            background: url("./images/uniswap_large@2x.png");
             background-size: cover;
             width: 48px;
             height: 48px;
@@ -70,5 +70,5 @@ export default function SignTransactionApproveSpendAssetBlock() {
         `}
       </style>
     </>
-  );
+  )
 }

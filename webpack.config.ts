@@ -45,7 +45,7 @@ const baseConfig: Configuration = {
     filename: "[name].js",
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx'],
+    extensions: [".tsx", ".ts", ".js", ".jsx"],
     fallback: {
       stream: require.resolve("stream-browserify"),
       process: require.resolve("process/browser"),

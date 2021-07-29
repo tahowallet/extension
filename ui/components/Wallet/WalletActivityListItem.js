@@ -1,6 +1,6 @@
 import React from "react"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import PropTypes from "prop-types"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
 export default function WalletActivityListItem(props) {
   const { onClick } = props

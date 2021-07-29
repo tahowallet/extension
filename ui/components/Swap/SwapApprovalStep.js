@@ -1,14 +1,14 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import SharedButton from '../Shared/SharedButton';
+import React from "react"
+import PropTypes from "prop-types"
+import SharedButton from "../Shared/SharedButton"
 
 export default function SwapApprovalStep(props) {
-  const { isDone, label } = props;
+  const { isDone, label } = props
 
   return (
     <li>
       <div className="left">
-        <div className={`icon_check${isDone ? ' icon_green' : ''}`} />
+        <div className={`icon_check${isDone ? " icon_green" : ""}`} />
         {label}
       </div>
       <SharedButton
@@ -33,7 +33,7 @@ export default function SwapApprovalStep(props) {
             line-height: 24px;
           }
           .icon_check {
-            mask-image: url('./images/check@2x.png');
+            mask-image: url("./images/check@2x.png");
             mask-size: 12px 12px;
             width: 12px;
             height: 12px;
@@ -50,14 +50,14 @@ export default function SwapApprovalStep(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 SwapApprovalStep.propTypes = {
   isDone: PropTypes.bool,
   label: PropTypes.string.isRequired,
-};
+}
 
 SwapApprovalStep.defaultProps = {
   isDone: false,
-};
+}
