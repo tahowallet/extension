@@ -1,3 +1,5 @@
+// since this is a temp file, disable linting
+/* eslint-disable */
 import * as stub from "./stub"
 
 let time = 1e3 * 15
@@ -26,7 +28,6 @@ export const apiStubs = {
       if (window.tally_unsubscribe) window.tall_unsubscribe()
     },
     subscribe: (handler) => {
-      let currentTime
       const id = setInterval(() => {
         const transaction = accountsResult.activity[0]
         transaction.hash = `0x${(++number).toString(16)}`

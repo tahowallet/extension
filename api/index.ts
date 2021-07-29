@@ -61,6 +61,8 @@ class Main {
   /*
     Returns a object containing all api methods for use
   */
+  // TODO Stubbed for now.
+  // eslint-disable-next-line class-methods-use-this
   getApi() {
     return apiStubs
   }

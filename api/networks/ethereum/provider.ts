@@ -34,5 +34,7 @@ export default class Provider {
     return this.transport.performSend({ ...defaults, ...request })
   }
 
+  // The below is a stub for subclasses to implement.
+  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-empty-function
   async close() {}
 }
