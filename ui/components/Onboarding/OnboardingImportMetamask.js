@@ -1,10 +1,10 @@
-import React from 'react';
-import SharedButton from '../Shared/SharedButton';
+import React from "react"
+import SharedButton from "../Shared/SharedButton"
 
 function TextArea() {
   return (
     <>
-      <textarea className="wrap center_horizontal"></textarea>
+      <textarea className="wrap center_horizontal" />
       <style jsx>{`
         textarea {
           width: 332px;
@@ -16,15 +16,15 @@ function TextArea() {
         }
       `}</style>
     </>
-  );
+  )
 }
 
 export default function OnboardingImportMetamask() {
   return (
     <section className="center_horizontal">
       <div className="portion top">
-        <div className="metamask_onboarding_image"></div>
-        <h1 className="serif_header">{`Metamask import`}</h1>
+        <div className="metamask_onboarding_image" />
+        <h1 className="serif_header">Metamask import</h1>
         <div className="info">
           Write down or copy paste the seed phrase from your Metamask account.
         </div>
@@ -53,7 +53,7 @@ export default function OnboardingImportMetamask() {
           height: 80px;
         }
         .metamask_onboarding_image {
-          background: url('./images/onboarding_metamask@2x.png');
+          background: url("./images/onboarding_metamask@2x.png");
           background-size: cover;
           width: 284px;
           height: 112px;
@@ -72,5 +72,5 @@ export default function OnboardingImportMetamask() {
         }
       `}</style>
     </section>
-  );
+  )
 }

@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
-import WalletPanelSwitcher from '../components/Wallet/WalletPanelSwitcher';
-import WalletAssetList from '../components/Wallet/WalletAssetList';
-import WalletActivityList from '../components/Wallet/WalletActivityList';
-import WalletAccountBalanceControl from '../components/Wallet/WalletAccountBalanceControl';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchAccount, accountSelector } from '../slices/account';
+import React, { useState, useEffect } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { registerRoute } from "../config/routes"
+import CorePage from "../components/Core/CorePage"
+import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import WalletAssetList from "../components/Wallet/WalletAssetList"
+import WalletActivityList from "../components/Wallet/WalletActivityList"
+import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
+import { fetchAccount, accountSelector } from "../slices/account"
 
 export default function Wallet() {
-  const [panelNum, setPanelNum] = useState(0);
-  const dispatch = useDispatch();
+  const [panelNum, setPanelNum] = useState(0)
+  const dispatch = useDispatch()
   //  accountLoading, hasWalletErrorCode
-  const { account } = useSelector(accountSelector);
+  const { account } = useSelector(accountSelector)
 
   useEffect(() => {
-    dispatch(fetchAccount('0x176B8c8DD7657A011fcAc694364e69cF011980e9'));
-  }, []);
+    dispatch(fetchAccount("0x176B8c8DD7657A011fcAc694364e69cF011980e9"))
+  }, [])
 
   return (
     <div className="wrap">
-      <CorePageWithTabs>
+      <CorePage>
         <div className="page_content">
           <div className="section">
             <WalletAccountBalanceControl
@@ -28,9 +28,10 @@ export default function Wallet() {
             />
           </div>
           <div className="section">
-            <WalletPanelSwitcher
+            <SharedPanelSwitcher
               setPanelNum={setPanelNum}
               panelNum={panelNum}
+              panelNames={["Assets", "Activity"]}
             />
             <div className="panel">
               {panelNum === 0 ? (
@@ -41,7 +42,7 @@ export default function Wallet() {
             </div>
           </div>
         </div>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .wrap {
@@ -67,8 +68,6 @@ export default function Wallet() {
           }
           .panel {
             height: 284px;
-            overflow: scroll;
-            scrollbar-width: none;
             padding-top: 16px;
             box-sizing: border-box;
           }
@@ -78,7 +77,7 @@ export default function Wallet() {
         `}
       </style>
     </div>
-  );
+  )
 }
 
-registerRoute('wallet', Wallet);
+registerRoute("wallet", Wallet)

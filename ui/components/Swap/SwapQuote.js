@@ -1,30 +1,30 @@
-import React, { useState } from 'react';
-import _ from 'lodash';
-import SharedButton from '../Shared/SharedButton';
-import SharedAssetsHeader from '../Shared/SharedAssetsHeader';
-import SwapQuoteAssetCard from './SwapQuoteAssetCard';
-import SwapTransactionSettings from './SwapTransactionSettings';
-import SwapApprovalStep from './SwapApprovalStep';
+import React, { useState } from "react"
+import _ from "lodash"
+import SharedButton from "../Shared/SharedButton"
+import SharedActivityHeader from "../Shared/SharedActivityHeader"
+import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
+import SwapTransactionSettings from "./SwapTransactionSettings"
+import SwapApprovalStep from "./SwapApprovalStep"
 
 export default function SwapQoute() {
-  const [stepComplete, setStepComplete] = useState(-1);
+  const [stepComplete, setStepComplete] = useState(-1)
 
   function handleApproveClick() {
-    setStepComplete(0);
+    setStepComplete(0)
     _.delay(() => {
-      setStepComplete(1);
-    }, 1500);
+      setStepComplete(1)
+    }, 1500)
     _.delay(() => {
-      setStepComplete(2);
-    }, 3000);
+      setStepComplete(2)
+    }, 3000)
     _.delay(() => {
-      setStepComplete(3);
-    }, 4500);
+      setStepComplete(3)
+    }, 4500)
   }
 
   return (
     <section className="center_horizontal">
-      <SharedAssetsHeader label="Swap Assets" icon="swap" />
+      <SharedActivityHeader label="Swap Assets" activity="swap" />
       <div className="qoute_cards">
         <SwapQuoteAssetCard />
         <span className="icon_switch" />
@@ -54,7 +54,7 @@ export default function SwapQoute() {
       ) : (
         <>
           <div className="exchange_section_wrap">
-            <label className="label">Exchange route</label>
+            <span className="label">Exchange route</span>
             <div className="exchange_content">
               <div className="left">
                 <span className="icon_uniswap" />
@@ -68,7 +68,6 @@ export default function SwapQoute() {
               type="primary"
               size="large"
               label="Aprove Assets & Swap"
-              disableIcon
               onClick={handleApproveClick}
             />
           </div>
@@ -81,7 +80,7 @@ export default function SwapQoute() {
             margin-top: -24px;
           }
           .icon_uniswap {
-            background: url('./images/uniswap@2x.png');
+            background: url("./images/uniswap@2x.png");
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
@@ -95,7 +94,7 @@ export default function SwapQoute() {
             margin-top: 24px;
           }
           .icon_switch {
-            background: url('./images/switch@2x.png') center no-repeat;
+            background: url("./images/switch@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 40px;
             height: 32px;
@@ -162,5 +161,5 @@ export default function SwapQoute() {
         `}
       </style>
     </section>
-  );
+  )
 }

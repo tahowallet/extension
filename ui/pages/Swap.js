@@ -1,40 +1,38 @@
-import React, { useState } from 'react';
-import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
-import SharedAssetInput from '../components/Shared/SharedAssetInput';
-import SharedButton from '../components/Shared/SharedButton';
-import SharedSlideUpMenu from '../components/Shared/SharedSlideUpMenu';
-import SwapQoute from '../components/Swap/SwapQuote';
-import SharedAssetsHeader from '../components/Shared/SharedAssetsHeader';
-import SwapTransactionSettings from '../components/Swap/SwapTransactionSettings';
+import React, { useState } from "react"
+import { registerRoute } from "../config/routes"
+import CorePage from "../components/Core/CorePage"
+import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedButton from "../components/Shared/SharedButton"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import SwapQoute from "../components/Swap/SwapQuote"
+import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
+import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 
 export default function Swap() {
-  const [openTokenMenu, setOpenTokenMenu] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
-  const [selectedCount, setSelectedCount] = useState(0);
+  const [openTokenMenu, setOpenTokenMenu] = useState(false)
+  const [selectedCount, setSelectedCount] = useState(0)
 
   function handleClick() {
-    setOpenTokenMenu(!openTokenMenu);
-    setRunAnimation(true);
+    setOpenTokenMenu(!openTokenMenu)
   }
 
   function handleAssetSelect() {
-    setSelectedCount(selectedCount + 1);
+    setSelectedCount(selectedCount + 1)
   }
 
   return (
     <>
-      <CorePageWithTabs>
+      <CorePage>
         <SharedSlideUpMenu
           isOpen={openTokenMenu}
-          isRunAnimation={isRunAnimation}
           close={handleClick}
           size="large"
         >
           <SwapQoute />
         </SharedSlideUpMenu>
         <div className="wrap">
-          <SharedAssetsHeader label="Swap Assets" icon="swap" />
+          <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
               <label className="label">
@@ -59,7 +57,6 @@ export default function Swap() {
                   size="large"
                   label="Review swap"
                   isDisabled
-                  disableIcon
                   onClick={handleClick}
                 />
               ) : (
@@ -67,14 +64,13 @@ export default function Swap() {
                   type="primary"
                   size="large"
                   label="Get final quote"
-                  disableIcon
                   onClick={handleClick}
                 />
               )}
             </div>
           </div>
         </div>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .wrap {
@@ -134,7 +130,7 @@ export default function Swap() {
             line-height: 16px;
           }
           .icon_change {
-            background: url('./images/change@2x.png') center no-repeat;
+            background: url("./images/change@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 20px;
             height: 20px;
@@ -153,7 +149,7 @@ export default function Swap() {
         `}
       </style>
     </>
-  );
+  )
 }
 
-registerRoute('swap', Swap);
+registerRoute("swap", Swap)

@@ -1,18 +1,18 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import SharedTooltip from '../Shared/SharedTooltip';
-import SharedButton from '../Shared/SharedButton';
+import React from "react"
+import PropTypes from "prop-types"
+import SharedTooltip from "../Shared/SharedTooltip"
+import SharedButton from "../Shared/SharedButton"
 
 export default function OnboardingStartTheHunt(props) {
-  const { openNewWalletScreen, openMetamaskImportScreen } = props;
+  const { openNewWalletScreen, openMetamaskImportScreen } = props
 
   return (
     <section className="start_wrap">
       <div className="mascot" />
       <h1 className="serif_header">Start the hunt</h1>
       <div className="subtitle subtitle_hunt">
-        Let's set Tally up with a wallet. Select with what wallet you would like
-        to continue.
+        Let&apos;s set Tally up with a wallet. Select with what wallet you would
+        like to continue.
       </div>
       <ul>
         <li className="label">Use an existing wallet</li>
@@ -35,7 +35,10 @@ export default function OnboardingStartTheHunt(props) {
         </li>
         <li className="label">
           Start Fresh
-          <SharedTooltip label="Create a new wallet that you own the private keys for. You will need to save the recovery seed to keep it safe." />
+          <SharedTooltip>
+            Create a n ew wallet that you own the private keys for. You will
+            need to save the recovery seed to keep it safe.
+          </SharedTooltip>
         </li>
         <li className="option">
           <div className="icon tally_icon" />
@@ -92,7 +95,7 @@ export default function OnboardingStartTheHunt(props) {
             justify-content: space-between;
           }
           .mascot {
-            background: url('./images/mascot@2x.png');
+            background: url("./images/mascot@2x.png");
             background-size: cover;
             width: 82px;
             height: 78px;
@@ -102,24 +105,24 @@ export default function OnboardingStartTheHunt(props) {
             height: 36px;
           }
           .trezor_icon {
-            background: url('./images/trezor_icon@2x.png');
+            background: url("./images/trezor_icon@2x.png");
             background-size: cover;
           }
           .tally_icon {
-            background: url('./images/tally_circle_icon@2x.png');
+            background: url("./images/tally_circle_icon@2x.png");
             background-size: cover;
           }
           .metamask_icon {
-            background: url('./images/metamask_icon@2x.png');
+            background: url("./images/metamask_icon@2x.png");
             background-size: cover;
           }
         `}
       </style>
     </section>
-  );
+  )
 }
 
 OnboardingStartTheHunt.propTypes = {
   openNewWalletScreen: PropTypes.func.isRequired,
   openMetamaskImportScreen: PropTypes.func.isRequired,
-};
+}

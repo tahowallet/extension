@@ -1,26 +1,22 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState } from "react"
+import PropTypes from "prop-types"
 
 export default function SharedTooltip(props) {
-  const { label } = props;
-  const [isShowingTooltip, setIsShowingTooltip] = useState(false);
-
-  function mouseEnter() {
-    setIsShowingTooltip(true);
-  }
-
-  function mouseLeave() {
-    setIsShowingTooltip(false);
-  }
+  const { children } = props
+  const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
     <div
       className="tooltip_wrap"
-      onMouseEnter={mouseEnter}
-      onMouseLeave={mouseLeave}
+      onMouseEnter={() => {
+        setIsShowingTooltip(true)
+      }}
+      onMouseLeave={() => {
+        setIsShowingTooltip(false)
+      }}
     >
       <div className="info_icon" />
-      {isShowingTooltip ? <div className="tooltip">{label}</div> : null}
+      {isShowingTooltip ? <div className="tooltip">{children}</div> : null}
       <style jsx>
         {`
           .tooltip_wrap {
@@ -30,7 +26,7 @@ export default function SharedTooltip(props) {
             z-index: 20;
           }
           .info_icon {
-            background: url('./images/info@2x.png');
+            background: url("./images/info@2x.png");
             background-size: cover;
             width: 16px;
             height: 16px;
@@ -53,9 +49,9 @@ export default function SharedTooltip(props) {
         `}
       </style>
     </div>
-  );
+  )
 }
 
 SharedTooltip.propTypes = {
-  label: PropTypes.string.isRequired,
-};
+  children: PropTypes.node.isRequired,
+}

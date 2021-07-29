@@ -1,12 +1,11 @@
-import React from 'react';
-import { getCurrent } from 'react-chrome-extension-router';
-import { routes } from '../../config/routes';
-import TabBarIcon from './TabBarIcon';
+import React from "react"
+import { getCurrent } from "react-chrome-extension-router"
+import { routes } from "../../config/routes"
+import TabBarIcon from "./TabBarIcon"
 
 export default function TabBar() {
-  const activeTabName =
-    getCurrent()?.component?.name?.toLowerCase() || 'wallet';
-  const tabs = ['accounts', 'wallet', 'swap', 'earn', 'menu'];
+  const activeTabName = getCurrent()?.component?.name?.toLowerCase() || "wallet"
+  const tabs = ["accounts", "wallet", "swap", "earn", "menu"]
 
   return (
     <nav>
@@ -35,5 +34,5 @@ export default function TabBar() {
         `}
       </style>
     </nav>
-  );
+  )
 }

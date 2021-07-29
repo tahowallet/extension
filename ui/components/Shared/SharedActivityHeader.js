@@ -1,11 +1,11 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
-export default function SharedAssetsHeader(props) {
-  const { label, icon } = props;
+export default function SharedActivityHeader(props) {
+  const { label, activity } = props
 
   return (
-    <h1 className="header">
+    <h1>
       <span className="icon_activity" />
       {label}
       <style jsx>
@@ -22,7 +22,7 @@ export default function SharedAssetsHeader(props) {
             line-height: 32px;
           }
           .icon_activity {
-            background: url('./images/activity_${icon}_medium@2x.png');
+            background: url("./images/activity_${activity}_medium@2x.png");
             background-size: cover;
             width: 24px;
             height: 24px;
@@ -31,10 +31,10 @@ export default function SharedAssetsHeader(props) {
         `}
       </style>
     </h1>
-  );
+  )
 }
 
-SharedAssetsHeader.propTypes = {
+SharedActivityHeader.propTypes = {
   label: PropTypes.string.isRequired,
-  icon: PropTypes.string.isRequired,
-};
+  activity: PropTypes.string.isRequired,
+}

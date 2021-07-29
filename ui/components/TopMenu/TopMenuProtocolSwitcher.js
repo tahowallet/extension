@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react"
 
 export default function TopMenuProtocolSwitcher() {
   return (
-    <button>
+    <button type="button">
       Ethereum
       <span className="icon_chevron_down" />
       <style jsx>
@@ -14,15 +14,22 @@ export default function TopMenuProtocolSwitcher() {
             cursor: pointer;
           }
           .icon_chevron_down {
-            background: url('./images/chevron_down.svg');
-            background-size: 15px 8px;
+            mask-image: url("./images/chevron_down.svg");
+            mask-size: 15px 8px;
             width: 15px;
             height: 8px;
             margin-left: 7px;
             margin-top: 2px;
+            background-color: var(--green-40);
+          }
+          button:hover {
+            color: #fff;
+          }
+          button:hover .icon_chevron_down {
+            background-color: #fff;
           }
         `}
       </style>
     </button>
-  );
+  )
 }

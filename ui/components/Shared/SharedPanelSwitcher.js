@@ -1,8 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
-export default function WalletPanelSwitcher(props) {
-  const { setPanelNum, panelNum } = props;
+export default function SharedPanelSwitcher(props) {
+  const { setPanelNum, panelNum, panelNames } = props
 
   return (
     <nav>
@@ -11,22 +11,22 @@ export default function WalletPanelSwitcher(props) {
           <button
             type="button"
             onClick={() => {
-              setPanelNum(0);
+              setPanelNum(0)
             }}
-            className={`option${panelNum === 0 ? ' selected' : ''}`}
+            className={`option${panelNum === 0 ? " selected" : ""}`}
           >
-            Assets
+            {panelNames[0]}
           </button>
         </li>
         <li>
           <button
             type="button"
             onClick={() => {
-              setPanelNum(1);
+              setPanelNum(1)
             }}
-            className={`option${panelNum === 1 ? ' selected' : ''}`}
+            className={`option${panelNum === 1 ? " selected" : ""}`}
           >
-            Activity
+            {panelNames[1]}
           </button>
         </li>
       </ul>
@@ -34,6 +34,9 @@ export default function WalletPanelSwitcher(props) {
         {`
           nav {
             width: 100%;
+            position: relative;
+            display: block;
+            height: 31px;
             border-bottom: 1px solid var(--green-120);
           }
           ul {
@@ -45,6 +48,9 @@ export default function WalletPanelSwitcher(props) {
             margin-right: 16px;
             cursor: pointer;
           }
+          .option:hover {
+            color: var(--gold-40);
+          }
           .selected {
             font-weight: 500;
             color: var(--trophy-gold);
@@ -52,8 +58,11 @@ export default function WalletPanelSwitcher(props) {
             display: flex;
             justify-content: center;
           }
+          .selected:hover {
+            color: var(--trophy-gold);
+          }
           .selected::after {
-            content: '';
+            content: "";
             width: 18px;
             height: 2px;
             background-color: var(--trophy-gold);
@@ -65,10 +74,11 @@ export default function WalletPanelSwitcher(props) {
         `}
       </style>
     </nav>
-  );
+  )
 }
 
-WalletPanelSwitcher.propTypes = {
+SharedPanelSwitcher.propTypes = {
   setPanelNum: PropTypes.func.isRequired,
   panelNum: PropTypes.number.isRequired,
-};
+  panelNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+}

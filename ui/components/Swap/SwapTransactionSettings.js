@@ -1,25 +1,22 @@
-import React, { useState } from 'react';
-import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
-import SharedButton from '../Shared/SharedButton';
-import SharedNetworkFeeGroup from '../Shared/SharedNetworkFeeGroup';
+import React, { useState } from "react"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedButton from "../Shared/SharedButton"
+import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
 
 export default function SwapTransactionSettings() {
-  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
+  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
 
   function handleClick() {
-    setIsSlideUpMenuOpen(!isSlideUpMenuOpen);
-    setRunAnimation(true);
+    setIsSlideUpMenuOpen(!isSlideUpMenuOpen)
   }
 
   return (
     <>
       <SharedSlideUpMenu
         isOpen={isSlideUpMenuOpen}
-        isRunAnimation={isRunAnimation}
         size="small"
         close={() => {
-          setIsSlideUpMenuOpen(false);
+          setIsSlideUpMenuOpen(false)
         }}
       >
         <div className="settings_wrap">
@@ -53,7 +50,7 @@ export default function SwapTransactionSettings() {
         </label>
         <label className="label">
           Network Fee/Speed
-          <div className="info">{'$24 / Fast <1min'}</div>
+          <div className="info">{"$24 / Fast <1min"}</div>
         </label>
       </div>
       <style jsx>
@@ -96,10 +93,14 @@ export default function SwapTransactionSettings() {
           }
           .icon_cog {
             display: block;
-            background: url('./images/cog@2x.png');
-            background-size: 12px 12px;
+            mask-image: url("./images/cog@2x.png");
+            mask-size: cover;
             width: 12px;
             height: 12px;
+            background-color: var(--green-60);
+          }
+          .icon_cog:hover {
+            background-color: #fff;
           }
           .settings_wrap {
             width: 384px;
@@ -133,5 +134,5 @@ export default function SwapTransactionSettings() {
         `}
       </style>
     </>
-  );
+  )
 }
