@@ -1,8 +1,7 @@
 // TODO We'll need to replace all of this with fixed-point math and structured
 // currency handling
 
-import { transactionFee, weiToEth } from '../lib/utils'
-
+import { transactionFee, weiToEth } from "../lib/utils"
 
 interface LooseTransaction {
   local: any
@@ -15,7 +14,10 @@ interface LooseTransaction {
   gas: string | number
 }
 
-type PartialTransaction = Pick<LooseTransaction, 'local' | 'hash' | 'to' | 'from' | 'blockNumber'>
+type PartialTransaction = Pick<
+  LooseTransaction,
+  "local" | "hash" | "to" | "from" | "blockNumber"
+>
 
 interface EthAndFiatAmount {
   eth: string
@@ -29,16 +31,20 @@ type FormattedTransaction = PartialTransaction & {
   total: EthAndFiatAmount
 }
 
-function weiAmountToEthAndFiatAmount(amount: string | number, fiatPrice: number) : EthAndFiatAmount {
-  let wei = typeof amount === 'number' ? amount : parseInt(amount)
+function weiAmountToEthAndFiatAmount(
+  amount: string | number,
+  fiatPrice: number
+): EthAndFiatAmount {
+  const wei = typeof amount === "number" ? amount : parseInt(amount)
   return {
     eth: weiToEth(wei).toString(8),
-    fiat: (fiatPrice * weiToEth(wei)).toFixed(2)
+    fiat: (fiatPrice * weiToEth(wei)).toFixed(2),
   }
 }
 
-export function formatTransaction (transaction, fiatPrice : number) {
-  const { local, hash, to, from, value, gasPrice, gas, blockNumber } = transaction
+export function formatTransaction(transaction, fiatPrice: number) {
+  const { local, hash, to, from, value, gasPrice, gas, blockNumber } =
+    transaction
   return {
     local,
     hash,
@@ -46,8 +52,14 @@ export function formatTransaction (transaction, fiatPrice : number) {
     from,
     blockNumber,
     amount: weiAmountToEthAndFiatAmount(value, fiatPrice),
-    transactionFee: weiAmountToEthAndFiatAmount(transactionFee(gasPrice, gas), fiatPrice),
+    transactionFee: weiAmountToEthAndFiatAmount(
+      transactionFee(gasPrice, gas),
+      fiatPrice
+    ),
     gasPrice: weiAmountToEthAndFiatAmount(gasPrice, fiatPrice),
-    total: weiAmountToEthAndFiatAmount(value + transactionFee(gasPrice, gas), fiatPrice)
+    total: weiAmountToEthAndFiatAmount(
+      value + transactionFee(gasPrice, gas),
+      fiatPrice
+    ),
   }
 }

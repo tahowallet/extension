@@ -1,21 +1,21 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
 export default function SharedSlideUpMenu(props) {
-  const { isOpen, close, size, children } = props;
+  const { isOpen, close, size, children } = props
 
-  let menuHeight = '536px';
-  if (size === 'large') {
-    menuHeight = '600px';
-  } else if (size === 'small') {
-    menuHeight = '268px';
+  let menuHeight = "536px"
+  if (size === "large") {
+    menuHeight = "600px"
+  } else if (size === "small") {
+    menuHeight = "268px"
   }
 
   return (
     <div
       className={`slide_up_menu
-        ${size === 'large' ? ' large' : ''}
-        ${!isOpen ? ' closed' : ''}`}
+        ${size === "large" ? " large" : ""}
+        ${!isOpen ? " closed" : ""}`}
     >
       <button
         type="button"
@@ -42,7 +42,7 @@ export default function SharedSlideUpMenu(props) {
             box-sizing: border-box;
           }
           .icon_close {
-            mask-image: url('./images/close.svg');
+            mask-image: url("./images/close.svg");
             mask-size: cover;
             width: 12px;
             height: 12px;
@@ -67,16 +67,16 @@ export default function SharedSlideUpMenu(props) {
         `}
       </style>
     </div>
-  );
+  )
 }
 
 SharedSlideUpMenu.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   close: PropTypes.func.isRequired,
   children: PropTypes.node.isRequired,
-  size: PropTypes.oneOf(['small', 'medium', 'large']),
-};
+  size: PropTypes.oneOf(["small", "medium", "large"]),
+}
 
 SharedSlideUpMenu.defaultProps = {
-  size: 'medium',
-};
+  size: "medium",
+}

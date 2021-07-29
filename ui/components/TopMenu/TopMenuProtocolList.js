@@ -1,5 +1,5 @@
-import React from 'react';
-import TopMenuProtocolListItem from './TopMenuProtocolListItem';
+import React from "react"
+import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 
 export default function TopMenuProtocolList() {
   return (
@@ -7,7 +7,7 @@ export default function TopMenuProtocolList() {
       <TopMenuProtocolListItem isSelected />
       <ul>
         {Array(3)
-          .fill('')
+          .fill("")
           .map(() => (
             <TopMenuProtocolListItem />
           ))}
@@ -16,7 +16,7 @@ export default function TopMenuProtocolList() {
           <div className="divider_line" />
         </li>
         {Array(3)
-          .fill('')
+          .fill("")
           .map(() => (
             <TopMenuProtocolListItem />
           ))}
@@ -45,5 +45,5 @@ export default function TopMenuProtocolList() {
         `}
       </style>
     </div>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import classNames from 'classnames';
+import React from "react"
+import PropTypes from "prop-types"
+import classNames from "classnames"
 
 export default function SharedFeeSelectButton(props) {
-  const { isActive, onClick } = props;
+  const { isActive, onClick } = props
 
   return (
     <button
@@ -77,15 +77,15 @@ export default function SharedFeeSelectButton(props) {
         `}
       </style>
     </button>
-  );
+  )
 }
 
 SharedFeeSelectButton.propTypes = {
   isActive: PropTypes.bool,
   onClick: PropTypes.func,
-};
+}
 
 SharedFeeSelectButton.defaultProps = {
   isActive: false,
   onClick: () => {},
-};
+}

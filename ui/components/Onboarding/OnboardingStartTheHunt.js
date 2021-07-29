@@ -1,10 +1,10 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import SharedTooltip from '../Shared/SharedTooltip';
-import SharedButton from '../Shared/SharedButton';
+import React from "react"
+import PropTypes from "prop-types"
+import SharedTooltip from "../Shared/SharedTooltip"
+import SharedButton from "../Shared/SharedButton"
 
 export default function OnboardingStartTheHunt(props) {
-  const { openNewWalletScreen, openMetamaskImportScreen } = props;
+  const { openNewWalletScreen, openMetamaskImportScreen } = props
 
   return (
     <section className="start_wrap">
@@ -95,7 +95,7 @@ export default function OnboardingStartTheHunt(props) {
             justify-content: space-between;
           }
           .mascot {
-            background: url('./images/mascot@2x.png');
+            background: url("./images/mascot@2x.png");
             background-size: cover;
             width: 82px;
             height: 78px;
@@ -105,24 +105,24 @@ export default function OnboardingStartTheHunt(props) {
             height: 36px;
           }
           .trezor_icon {
-            background: url('./images/trezor_icon@2x.png');
+            background: url("./images/trezor_icon@2x.png");
             background-size: cover;
           }
           .tally_icon {
-            background: url('./images/tally_circle_icon@2x.png');
+            background: url("./images/tally_circle_icon@2x.png");
             background-size: cover;
           }
           .metamask_icon {
-            background: url('./images/metamask_icon@2x.png');
+            background: url("./images/metamask_icon@2x.png");
             background-size: cover;
           }
         `}
       </style>
     </section>
-  );
+  )
 }
 
 OnboardingStartTheHunt.propTypes = {
   openNewWalletScreen: PropTypes.func.isRequired,
   openMetamaskImportScreen: PropTypes.func.isRequired,
-};
+}

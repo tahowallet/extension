@@ -1,7 +1,5 @@
 export default class Keys {
-  constructor () {
-
-  }
+  constructor() {}
 
   // import ({ type, keyData}) {
   //   switch (type) {

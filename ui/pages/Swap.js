@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
-import { registerRoute } from '../config/routes';
-import CorePage from '../components/Core/CorePage';
-import SharedAssetInput from '../components/Shared/SharedAssetInput';
-import SharedTooltip from '../components/Shared/SharedTooltip';
-import SharedButton from '../components/Shared/SharedButton';
-import SharedSlideUpMenu from '../components/Shared/SharedSlideUpMenu';
-import SwapQoute from '../components/Swap/SwapQuote';
-import SharedActivityHeader from '../components/Shared/SharedActivityHeader';
-import SwapTransactionSettings from '../components/Swap/SwapTransactionSettings';
+import React, { useState } from "react"
+import { registerRoute } from "../config/routes"
+import CorePage from "../components/Core/CorePage"
+import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedButton from "../components/Shared/SharedButton"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import SwapQoute from "../components/Swap/SwapQuote"
+import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
+import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 
 export default function Swap() {
-  const [openTokenMenu, setOpenTokenMenu] = useState(false);
-  const [selectedCount, setSelectedCount] = useState(0);
+  const [openTokenMenu, setOpenTokenMenu] = useState(false)
+  const [selectedCount, setSelectedCount] = useState(0)
 
   function handleClick() {
-    setOpenTokenMenu(!openTokenMenu);
+    setOpenTokenMenu(!openTokenMenu)
   }
 
   function handleAssetSelect() {
-    setSelectedCount(selectedCount + 1);
+    setSelectedCount(selectedCount + 1)
   }
 
   return (
@@ -130,7 +130,7 @@ export default function Swap() {
             line-height: 16px;
           }
           .icon_change {
-            background: url('./images/change@2x.png') center no-repeat;
+            background: url("./images/change@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 20px;
             height: 20px;
@@ -149,7 +149,7 @@ export default function Swap() {
         `}
       </style>
     </>
-  );
+  )
 }
 
-registerRoute('swap', Swap);
+registerRoute("swap", Swap)

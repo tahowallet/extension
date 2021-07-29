@@ -1,8 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
 export default function SharedInput(props) {
-  const { placeholder } = props;
+  const { placeholder } = props
 
   return (
     <>
@@ -23,13 +23,13 @@ export default function SharedInput(props) {
         `}
       </style>
     </>
-  );
+  )
 }
 
 SharedInput.propTypes = {
   placeholder: PropTypes.string,
-};
+}
 
 SharedInput.defaultProps = {
-  placeholder: '',
-};
+  placeholder: "",
+}

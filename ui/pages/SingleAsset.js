@@ -1,10 +1,10 @@
-import React from 'react';
-import { goBack } from 'react-chrome-extension-router';
-import { registerRoute } from '../config/routes';
-import CorePage from '../components/Core/CorePage';
-import SharedAssetIcon from '../components/Shared/SharedAssetIcon';
-import SharedButton from '../components/Shared/SharedButton';
-import WalletActivityList from '../components/Wallet/WalletActivityList';
+import React from "react"
+import { goBack } from "react-chrome-extension-router"
+import { registerRoute } from "../config/routes"
+import CorePage from "../components/Core/CorePage"
+import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
+import SharedButton from "../components/Shared/SharedButton"
+import WalletActivityList from "../components/Wallet/WalletActivityList"
 
 export default function SingleAsset() {
   return (
@@ -131,7 +131,7 @@ export default function SingleAsset() {
             color: #fff;
           }
           .icon_chevron_left {
-            mask-image: url('./images/chevron_down.svg');
+            mask-image: url("./images/chevron_down.svg");
             mask-size: 15px 8px;
             width: 15px;
             height: 8px;
@@ -145,7 +145,7 @@ export default function SingleAsset() {
         `}
       </style>
     </>
-  );
+  )
 }
 
-registerRoute('singleAsset', SingleAsset);
+registerRoute("singleAsset", SingleAsset)

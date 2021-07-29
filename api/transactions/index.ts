@@ -13,25 +13,32 @@ STATE
 
 export interface TransactionsState {
   address?: {
-    history: any[],
+    history: any[]
     localTransactions: any[]
   }
   lastBlock?: number
 }
 
 export default class Transactions {
-  state : ObsStore<TransactionsState>
-  query : any
-  getFiatValue : () => Promise<number>
-  lastBlock : number
+  state: ObsStore<TransactionsState>
 
-  constructor(state : TransactionsState, provider : any, getFiatValue : () => Promise<number>) {
+  query: any
+
+  getFiatValue: () => Promise<number>
+
+  lastBlock: number
+
+  constructor(
+    state: TransactionsState,
+    provider: any,
+    getFiatValue: () => Promise<number>
+  ) {
     this.state = new ObsStore<TransactionsState>(state)
     this.query = createEthProviderWrapper(provider)
     this.getFiatValue = getFiatValue
   }
 
-  async getHistory(address : string) {
+  async getHistory(address: string) {
     const state = this.state.getState()
     if (!state[address]) {
       state[address] = { history: [], localTransactions: [] }
@@ -50,10 +57,12 @@ export default class Transactions {
     })
     return orderdHistory
   }
+
   string
-  async _getTransfers(address : string, toBlock : string | number = "latest") {
+
+  async _getTransfers(address: string, toBlock: string | number = "latest") {
     const blockNumber = parseInt(await this.query.eth_blockNumber())
-    let fromBlock =
+    const fromBlock =
       this.lastBlock || `0x${(blockNumber - 10e3 * 3).toString(16)}`
 
     const fiatValue = await this.getFiatValue()
@@ -74,26 +83,30 @@ export default class Transactions {
       excludeZeroValue: false,
     })
     // get actual transaction data for all transactions
-    const transactions = (await Promise.allSettled(
-      [...(toTransfers.transfers || []), ...(fromTransfers.transfers || [])]
-        .sort((txA, txB) => {
-          return parseInt(txA.blockNum) - parseInt(txB.blockNum)
-        })
-        .map(async (transfer) => {
-          try {
-            const transaction = await this.query.eth_getTransactionByHash(
-              transfer.hash
-            )
-            return formatTransaction(
-              { local: false, ...transaction },
-              fiatValue
-            )
-          } catch (e) {
-            console.error(e)
-            throw e
-          }
-        })
-    )).filter((r) => r.status === "fulfilled").map((r) => (r as PromiseFulfilledResult<any>).value)
+    const transactions = (
+      await Promise.allSettled(
+        [...(toTransfers.transfers || []), ...(fromTransfers.transfers || [])]
+          .sort((txA, txB) => {
+            return parseInt(txA.blockNum) - parseInt(txB.blockNum)
+          })
+          .map(async (transfer) => {
+            try {
+              const transaction = await this.query.eth_getTransactionByHash(
+                transfer.hash
+              )
+              return formatTransaction(
+                { local: false, ...transaction },
+                fiatValue
+              )
+            } catch (e) {
+              console.error(e)
+              throw e
+            }
+          })
+      )
+    )
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => (r as PromiseFulfilledResult<any>).value)
 
     // store last checked block for later
     this.lastBlock = blockNumber

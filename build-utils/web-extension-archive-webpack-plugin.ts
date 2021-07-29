@@ -1,16 +1,16 @@
-import fs from 'fs'
-import path from 'path'
-import archiver from 'archiver'
-import {Compiler, Stats} from 'webpack'
+import fs from "fs"
+import path from "path"
+import archiver from "archiver"
+import { Compiler, Stats } from "webpack"
 
 type ArchiveOptions = {
- /** The filename for the archive, without a path or extension. */
-  filename: string,
- /**
-  * The path to the output. Defaults to the parent of the webpack config's
-  * output path; i.e., if the webpack config outputs to `dist/firefox`, this
-  * plugin defaults to `dist/` as the output path.
-  */
+  /** The filename for the archive, without a path or extension. */
+  filename: string
+  /**
+   * The path to the output. Defaults to the parent of the webpack config's
+   * output path; i.e., if the webpack config outputs to `dist/firefox`, this
+   * plugin defaults to `dist/` as the output path.
+   */
   outputDirectory?: string
 }
 
@@ -19,29 +19,31 @@ type ArchiveOptions = {
  *         compilation and generates a ZIP file based on the passed
  *         configuration ArchiveOptions.
  */
-function webextArchiveCreator(webpackCompiler: Compiler, { filename, outputDirectory }: ArchiveOptions): (stats: Stats, pluginCompleted: (err: Error) => void) => void {
+function webextArchiveCreator(
+  webpackCompiler: Compiler,
+  { filename, outputDirectory }: ArchiveOptions
+): (stats: Stats, pluginCompleted: (err: Error) => void) => void {
   return (_: Stats, pluginCompleted: (err: Error) => void) => {
     const archiveSources = webpackCompiler.outputPath
-    const outputPath = outputDirectory || path.join(webpackCompiler.outputPath, '..')
-  
-    const outputStream = fs.createWriteStream(path.join(outputPath, filename + ".zip"))
-    outputStream.on('close', () => {
+    const outputPath =
+      outputDirectory || path.join(webpackCompiler.outputPath, "..")
+
+    const outputStream = fs.createWriteStream(
+      path.join(outputPath, `${filename}.zip`)
+    )
+    outputStream.on("close", () => {
       pluginCompleted(null)
     })
-    outputStream.on('warning', (err) => {
-      console.warn(
-        `While generating archive ${filename}.zip, got: ${err}.`
-      )
+    outputStream.on("warning", (err) => {
+      console.warn(`While generating archive ${filename}.zip, got: ${err}.`)
     })
-    outputStream.on('error', (err) => {
+    outputStream.on("error", (err) => {
       pluginCompleted(err)
     })
 
-    const archive = archiver(
-      'zip',{
-        zlib: { level: 9 /* max compression */ }
-      }
-    )
+    const archive = archiver("zip", {
+      zlib: { level: 9 /* max compression */ },
+    })
 
     archive.pipe(outputStream)
     archive.directory(archiveSources, false)
@@ -54,7 +56,7 @@ export default class WebextArchive {
 
   apply(compiler: Compiler) {
     compiler.hooks.done.tapAsync(
-      'WebextArchive',
+      "WebextArchive",
       webextArchiveCreator(compiler, this.options)
     )
   }

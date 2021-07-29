@@ -1,28 +1,28 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { registerRoute } from '../config/routes';
-import SharedButton from '../components/Shared/SharedButton';
-import SharedPanelSwitcher from '../components/Shared/SharedPanelSwitcher';
-import SignTransactionSwapAssetBlock from '../components/SignTransaction/SignTransactionSwapAssetBlock';
-import SignTransactionApproveSpendAssetBlock from '../components/SignTransaction/SignTransactionApproveSpendAssetBlock';
-import SignTransactionNetworkAccountInfoTopBar from '../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar';
-import { Link } from 'react-chrome-extension-router';
-import Wallet from './Wallet';
+import React, { useState } from "react"
+import PropTypes from "prop-types"
+import { Link } from "react-chrome-extension-router"
+import { registerRoute } from "../config/routes"
+import SharedButton from "../components/Shared/SharedButton"
+import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
+import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
+import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
+import Wallet from "./Wallet"
 
 export default function SignTransaction(props) {
-  const { approveSpendOrSwap } = props;
-  const [panelNum, setPanelNum] = useState(0);
+  const { approveSpendOrSwap } = props
+  const [panelNum, setPanelNum] = useState(0)
 
   const spendOrSwapContent = {
     swap: {
-      title: 'Swap assets',
+      title: "Swap assets",
       component: () => <SignTransactionSwapAssetBlock />,
     },
     spend: {
-      title: 'Approve asset spend',
+      title: "Approve asset spend",
       component: () => <SignTransactionApproveSpendAssetBlock />,
     },
-  };
+  }
 
   return (
     <section>
@@ -36,13 +36,13 @@ export default function SignTransaction(props) {
       <SharedPanelSwitcher
         setPanelNum={setPanelNum}
         panelNum={panelNum}
-        panelNames={['Details', 'Advanced']}
+        panelNames={["Details", "Advanced"]}
       />
       {panelNum === 0 ? (
         <div className="detail_items_wrap standard_width">
           <span className="detail_item">
             Network Fee/Speed
-            <span className="detail_item_right">{'$24 / <1min'}</span>
+            <span className="detail_item_right">{"$24 / <1min"}</span>
           </span>
         </div>
       ) : null}
@@ -123,15 +123,15 @@ export default function SignTransaction(props) {
         `}
       </style>
     </section>
-  );
+  )
 }
 
 SignTransaction.propTypes = {
-  approveSpendOrSwap: PropTypes.oneOf(['swap', 'spend']),
-};
+  approveSpendOrSwap: PropTypes.oneOf(["swap", "spend"]),
+}
 
 SignTransaction.defaultProps = {
-  approveSpendOrSwap: 'spend',
-};
+  approveSpendOrSwap: "spend",
+}
 
-registerRoute('signTransaction', SignTransaction);
+registerRoute("signTransaction", SignTransaction)

@@ -1,8 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
 
 export default function SharedPanelSwitcher(props) {
-  const { setPanelNum, panelNum, panelNames } = props;
+  const { setPanelNum, panelNum, panelNames } = props
 
   return (
     <nav>
@@ -11,9 +11,9 @@ export default function SharedPanelSwitcher(props) {
           <button
             type="button"
             onClick={() => {
-              setPanelNum(0);
+              setPanelNum(0)
             }}
-            className={`option${panelNum === 0 ? ' selected' : ''}`}
+            className={`option${panelNum === 0 ? " selected" : ""}`}
           >
             {panelNames[0]}
           </button>
@@ -22,9 +22,9 @@ export default function SharedPanelSwitcher(props) {
           <button
             type="button"
             onClick={() => {
-              setPanelNum(1);
+              setPanelNum(1)
             }}
-            className={`option${panelNum === 1 ? ' selected' : ''}`}
+            className={`option${panelNum === 1 ? " selected" : ""}`}
           >
             {panelNames[1]}
           </button>
@@ -62,7 +62,7 @@ export default function SharedPanelSwitcher(props) {
             color: var(--trophy-gold);
           }
           .selected::after {
-            content: '';
+            content: "";
             width: 18px;
             height: 2px;
             background-color: var(--trophy-gold);
@@ -74,10 +74,10 @@ export default function SharedPanelSwitcher(props) {
         `}
       </style>
     </nav>
-  );
+  )
 }
 
 SharedPanelSwitcher.propTypes = {
   setPanelNum: PropTypes.func.isRequired,
   panelNum: PropTypes.number.isRequired,
-};
+}

@@ -1,6 +1,6 @@
-import React from 'react';
-import TopMenuProtocolSwitcher from './TopMenuProtocolSwitcher';
-import TopMenuProfileButton from './TopMenuProfileButton';
+import React from "react"
+import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
+import TopMenuProfileButton from "./TopMenuProfileButton"
 
 export default function TopMenu() {
   return (
@@ -27,5 +27,5 @@ export default function TopMenu() {
         `}
       </style>
     </div>
-  );
+  )
 }

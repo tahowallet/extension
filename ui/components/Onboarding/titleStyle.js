@@ -14,4 +14,4 @@ section {
 .subtitle {
   color: var(--green-60);
   margin-bottom: 32px;
-}`;
+}`

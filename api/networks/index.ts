@@ -1,6 +1,6 @@
-import ObsStore from '../lib/ob-store'
-import EtherumNetworkProvider from './ethereum'
-import { NETWORK_ERRORS } from '../constants/errors'
+import ObsStore from "../lib/ob-store"
+import EtherumNetworkProvider from "./ethereum"
+import { NETWORK_ERRORS } from "../constants/errors"
 
 export const providers = {
   ethereum: EtherumNetworkProvider,
@@ -29,10 +29,11 @@ export interface NetworkInfo {
 export type NetworksState = NetworkInfo[]
 
 export default class Network {
-  state : ObsStore<NetworksState>
-  providers : any // TODO replace with a generic provider type
+  state: ObsStore<NetworksState>
 
-  constructor (networks : NetworkInfo[]) {
+  providers: any // TODO replace with a generic provider type
+
+  constructor(networks: NetworkInfo[]) {
     this.state = new ObsStore(networks)
     this.providers = networks.reduce((agg, { type, endpoint, selected }) => {
       if (type in providers) {
@@ -52,7 +53,7 @@ export default class Network {
     adds network to state and creates a provider
   */
 
-  async add(newNetwork : NetworkInfo) {
+  async add(newNetwork: NetworkInfo) {
     const networks = this.state.getState()
 
     if (!(newNetwork.type in providers)) {
@@ -73,13 +74,11 @@ export default class Network {
   /*
     returns a full list of all networks
   */
-  async get () {
+  async get() {
     return this.state.getState()
   }
 
-  async delete () {
-  }
+  async delete() {}
 
-  async select () {
-  }
+  async select() {}
 }

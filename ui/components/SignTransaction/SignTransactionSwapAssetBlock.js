@@ -1,5 +1,5 @@
-import React from 'react';
-import SharedAssetIcon from '../Shared/SharedAssetIcon';
+import React from "react"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function SignTransactionSwapAssetBlock() {
   return (
@@ -91,5 +91,5 @@ export default function SignTransactionSwapAssetBlock() {
         `}
       </style>
     </>
-  );
+  )
 }
