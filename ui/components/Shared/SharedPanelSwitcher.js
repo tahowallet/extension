@@ -80,4 +80,5 @@ export default function SharedPanelSwitcher(props) {
 SharedPanelSwitcher.propTypes = {
   setPanelNum: PropTypes.func.isRequired,
   panelNum: PropTypes.number.isRequired,
+  panelNames: PropTypes.arrayOf(PropTypes.string).isRequired,
 }

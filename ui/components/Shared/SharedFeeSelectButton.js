@@ -87,5 +87,8 @@ SharedFeeSelectButton.propTypes = {
 
 SharedFeeSelectButton.defaultProps = {
   isActive: false,
-  onClick: () => {},
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
 }

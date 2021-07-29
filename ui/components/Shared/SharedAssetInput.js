@@ -205,8 +205,13 @@ export default function SharedAssetInput(props) {
 
 SharedAssetInput.propTypes = {
   isTypeDestination: PropTypes.bool,
+  onClick: PropTypes.func,
 }
 
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
 }

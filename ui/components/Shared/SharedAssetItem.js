@@ -77,5 +77,8 @@ SharedAssetItem.propTypes = {
 }
 
 SharedAssetItem.defaultProps = {
-  onClick: () => {},
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
 }
