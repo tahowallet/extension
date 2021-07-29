@@ -26,6 +26,8 @@ params: {id:number, ...edits}
 
 */
 
+// Disable default export while we reconsider how this might get consumed.
+// eslint-disable-next-line import/prefer-default-export
 export function createPortProxy(port: Runtime.Port) {
   const responseRegister = {}
 

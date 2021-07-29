@@ -1,4 +1,4 @@
-export const titleStyle = `
+export default `
 section {
   padding-top: 54px;
   display: flex;

@@ -31,7 +31,7 @@ type FormattedTransaction = PartialTransaction & {
   total: EthAndFiatAmount
 }
 
-function weiAmountToEthAndFiatAmount(
+export function weiAmountToEthAndFiatAmount(
   amount: string | number,
   fiatPrice: number
 ): EthAndFiatAmount {

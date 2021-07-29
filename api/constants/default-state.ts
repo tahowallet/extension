@@ -1,5 +1,7 @@
 import { NETWORK_TYPES } from "./index"
 
+// Disabled while we figure out how we want to move here.
+// eslint-disable-next-line import/prefer-default-export
 export const DEFAULT_STATE = {
   accounts: [],
   networks: [

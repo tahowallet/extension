@@ -4,7 +4,7 @@ import { Link } from "react-chrome-extension-router"
 import { routes } from "../../config/routes"
 import SharedButton from "../Shared/SharedButton"
 import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
-import { titleStyle } from "./titleStyle"
+import titleStyle from "./titleStyle"
 
 export default function OnboardingSaveSeed(props) {
   const { triggerNextStep } = props

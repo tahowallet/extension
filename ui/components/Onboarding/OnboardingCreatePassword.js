@@ -2,7 +2,7 @@ import React from "react"
 import PropTypes from "prop-types"
 import SharedInput from "../Shared/SharedInput"
 import SharedButton from "../Shared/SharedButton"
-import { titleStyle } from "./titleStyle"
+import titleStyle from "./titleStyle"
 
 export default function OnboardingCreatePassword(props) {
   const { triggerNextStep } = props
