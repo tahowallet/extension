@@ -35,17 +35,17 @@ export default class Network {
 
   constructor(networks: NetworkInfo[]) {
     this.state = new ObsStore(networks)
-    this.providers = networks.reduce((agg, { type, endpoint, selected }) => {
+    this.providers = networks.reduce((acc, { type, endpoint, selected }) => {
       if (type in providers) {
-        if (!agg[type]) {
-          agg[type] = {}
+        if (!acc[type]) {
+          acc[type] = {}
         }
-        agg[type][endpoint] = new providers[type]({ endpoint })
+        acc[type][endpoint] = new providers[type]({ endpoint })
         if (selected) {
-          agg[type].selected = agg[type][endpoint]
+          acc[type].selected = acc[type][endpoint]
         }
       }
-      return agg
+      return acc
     }, {})
   }
 
