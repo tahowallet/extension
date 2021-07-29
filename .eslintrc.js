@@ -7,6 +7,7 @@ module.exports = {
   ],
   globals: {
     document: "readonly",
+    window: "readonly",
   },
   rules: {
     "react/jsx-one-expression-per-line": [0],
