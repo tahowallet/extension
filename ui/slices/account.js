@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import { connectToBackgroundApi } from "@tallyho/tally-api/lib/connect"
 import { SEED_PHRASE_MM } from "@tallyho/tally-api/temp-stubs/stub"
 
-const { send, subscriber: subscribe } = connectToBackgroundApi("ui")
+const { send, subscribe } = connectToBackgroundApi("ui")
 
 export const initialState = {
   accountLoading: false,
