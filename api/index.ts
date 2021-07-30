@@ -6,7 +6,7 @@ import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
 
-// import { Keys } from './keys'
+// import { Keys } from "./keys"
 
 import { getPersistedState, persistState } from "./lib/db"
 import ObsStore from "./lib/ob-store"
@@ -104,6 +104,7 @@ class Main {
   }
 }
 
+export { browser } from "webextension-polyfill-ts"
 export { connectToBackgroundApi } from "./lib/connect"
 
 export async function startApi() {
