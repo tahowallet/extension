@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { connectToBackgroundApi } from "@tallyho/tally-api/lib/connect"
+import { connectToBackgroundApi } from "@tallyho/tally-api"
 import { SEED_PHRASE_MM } from "@tallyho/tally-api/temp-stubs/stub"
 
 const { send, subscribe } = connectToBackgroundApi("ui")
@@ -48,9 +48,6 @@ export function subscribeToAccount() {
           data: SEED_PHRASE_MM,
         },
       })
-
-      console.log("address", address)
-      console.log("here 1")
 
       subscribe(
         {
