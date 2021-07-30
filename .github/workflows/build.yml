@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  pull_request: {}
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Read .nvmrc
+      run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
+      id: nvm
+    - uses: actions/checkout@v2
+    - name: Use Node + Yarn
+      uses: actions/setup-node@v2
+      with:
+        node-version: "${{ steps.nvm.outputs.NVMRC }}"
+        cache: "yarn"
+    - run: yarn install
+    - run: yarn build
+    - name: Upload build on main
+      # A push event is a main merge; build and upload artifacts.
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v2
+      with:
+        name: extension-builds
+        path: dist/*.zip
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Read .nvmrc
+      run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
+      id: nvm
+    - uses: actions/checkout@v2
+    - name: Use Node + Yarn
+      uses: actions/setup-node@v2
+      with:
+        node-version: "${{ steps.nvm.outputs.NVMRC }}"
+        cache: "yarn"
+    - run: yarn install
+    - run: yarn test
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Read .nvmrc
+      run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
+      id: nvm
+    - uses: actions/checkout@v2
+    - name: Use Node + Yarn
+      uses: actions/setup-node@v2
+      with:
+        node-version: "${{ steps.nvm.outputs.NVMRC }}"
+        cache: "yarn"
+    - run: yarn install
+    - run: yarn lint

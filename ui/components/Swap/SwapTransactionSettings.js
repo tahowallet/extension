@@ -1,25 +1,22 @@
-import React, { useState } from 'react';
-import SharedSlideUpMenu from '../Shared/SharedSlideUpMenu';
-import SharedButton from '../Shared/SharedButton';
-import SharedNetworkFeeGroup from '../Shared/SharedNetworkFeeGroup';
+import React, { useState } from "react"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedButton from "../Shared/SharedButton"
+import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
 
 export default function SwapTransactionSettings() {
-  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
+  const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
 
   function handleClick() {
-    setIsSlideUpMenuOpen(!isSlideUpMenuOpen);
-    setRunAnimation(true);
+    setIsSlideUpMenuOpen(!isSlideUpMenuOpen)
   }
 
   return (
     <>
       <SharedSlideUpMenu
         isOpen={isSlideUpMenuOpen}
-        isRunAnimation={isRunAnimation}
         size="small"
         close={() => {
-          setIsSlideUpMenuOpen(false);
+          setIsSlideUpMenuOpen(false)
         }}
       >
         <div className="settings_wrap">
@@ -53,7 +50,7 @@ export default function SwapTransactionSettings() {
         </label>
         <label className="label">
           Network Fee/Speed
-          <div className="info">{'$24 / Fast <1min'}</div>
+          <div className="info">{"$24 / Fast <1min"}</div>
         </label>
       </div>
       <style jsx>
@@ -86,7 +83,6 @@ export default function SwapTransactionSettings() {
           .settings_label {
             height: 17px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -97,10 +93,14 @@ export default function SwapTransactionSettings() {
           }
           .icon_cog {
             display: block;
-            background: url('./images/cog@2x.png');
-            background-size: 12px 12px;
+            mask-image: url("./images/cog@2x.png");
+            mask-size: cover;
             width: 12px;
             height: 12px;
+            background-color: var(--green-60);
+          }
+          .icon_cog:hover {
+            background-color: #fff;
           }
           .settings_wrap {
             width: 384px;
@@ -112,7 +112,6 @@ export default function SwapTransactionSettings() {
           }
           .label {
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -126,7 +125,6 @@ export default function SwapTransactionSettings() {
           }
           .info {
             color: var(--green-20);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -136,5 +134,5 @@ export default function SwapTransactionSettings() {
         `}
       </style>
     </>
-  );
+  )
 }

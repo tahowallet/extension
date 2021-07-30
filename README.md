@@ -25,6 +25,7 @@ Builds are designed to be run from the top level of the repository.
 ### Quickstart
 
 ```sh
+$ nvm use
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
                # scrypt node-gyp failures prevent the install from completing
 $ yarn start # start a continuous webpack build that will auto-update with changes
@@ -52,8 +53,40 @@ The build script will generate a ZIP file for each browser bundle under the
 
 ```sh
 $ yarn lint # lint all sources in all projects
+$ yarn lint-fix # auto-fix any auto-fixable lint issues
 $ yarn test # run all tests in all projects
+
 ```
+
+#### A note on `git blame`
+
+Because lint configurations can occasionally evolve in a way that hits many
+files in the repository at once and obscures the functional blame readout for
+files, this repository has a `.git-blame-ignore-revs` file. This file can be
+used to run `git blame` while skipping over the revisions it lists, as
+described in [the Pro Git book
+reference](https://www.git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt)
+and [this Moxio blog
+post](https://www.moxio.com/blog/43/ignoring-bulk-change-commits-with-git-blame).
+
+To make use of this, you can do one of the following:
+
+- Run `git config --global blame.ignoreRevsFile .git-blame-ignore-revs` to
+  configure git to globally look for such a file. The filename is relatively
+  standard across projects, so this should save time for other projects that
+  use a similar setup.
+- Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` to configure
+  your local checkout to always ignore these files.
+- Add `--ignore-revs-file .git-blame-ignore-revs` to your `git blame`
+  invocation to ignore the file one time.
+
+The GitHub UI does not yet ignore these commits, though there is a
+[community thread requesting the
+feature](https://github.community/t/support-ignore-revs-file-in-githubs-blame-view/3256).
+In the meantime, the GitHub blame UI does allow you to zoom to the previous
+round of changes on a given line, which relieves much of the annoyance; see
+[the GitHub blame docs for
+more](https://docs.github.com/en/github/managing-files-in-a-repository/managing-files-on-github/tracking-changes-in-a-file).
 
 ## File Structure
 

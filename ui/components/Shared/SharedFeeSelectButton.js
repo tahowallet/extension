@@ -1,13 +1,14 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
+import classNames from "classnames"
 
 export default function SharedFeeSelectButton(props) {
-  const { isActive, onClick } = props;
+  const { isActive, onClick } = props
 
   return (
     <button
       type="button"
-      className={`${isActive ? ' active' : ''}`}
+      className={classNames({ active: isActive })}
       onClick={onClick}
     >
       <div className="top">
@@ -32,10 +33,12 @@ export default function SharedFeeSelectButton(props) {
             align-items: flex-start;
             flex-direction: column;
           }
+          button:hover {
+            background-color: var(--green-80);
+          }
           .top {
             width: 33px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -55,7 +58,6 @@ export default function SharedFeeSelectButton(props) {
             width: 89px;
             height: 17px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -66,7 +68,6 @@ export default function SharedFeeSelectButton(props) {
             width: 23px;
             height: 16px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 12px;
             font-weight: 500;
             letter-spacing: 0.36px;
@@ -76,15 +77,18 @@ export default function SharedFeeSelectButton(props) {
         `}
       </style>
     </button>
-  );
+  )
 }
 
 SharedFeeSelectButton.propTypes = {
   isActive: PropTypes.bool,
   onClick: PropTypes.func,
-};
+}
 
 SharedFeeSelectButton.defaultProps = {
   isActive: false,
-  onClick: () => {},
-};
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
+}

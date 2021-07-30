@@ -1,11 +1,12 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
+import classNames from "classnames"
 
 export default function TopMenuProtocolListItem(props) {
-  const { isSelected } = props;
+  const { isSelected } = props
 
   return (
-    <li className={`${isSelected ? ' select' : ''}`}>
+    <li className={classNames({ select: isSelected })}>
       <div className="left">
         <div className="icon_wrap">
           <span className="icon_eth" />
@@ -28,7 +29,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 76px;
             height: 17px;
             color: #22c480;
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -36,7 +36,7 @@ export default function TopMenuProtocolListItem(props) {
             margin-left: 8px;
           }
           .icon_eth {
-            background: url('./images/eth@2x.png');
+            background: url("./images/eth@2x.png");
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -58,7 +58,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 80px;
             height: 24px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -67,7 +66,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 80px;
             height: 24px;
             color: var(--green-5);
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -76,7 +74,6 @@ export default function TopMenuProtocolListItem(props) {
             width: 54px;
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -91,13 +88,13 @@ export default function TopMenuProtocolListItem(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 TopMenuProtocolListItem.propTypes = {
   isSelected: PropTypes.bool,
-};
+}
 
 TopMenuProtocolListItem.defaultProps = {
   isSelected: false,
-};
+}

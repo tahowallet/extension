@@ -1,58 +1,76 @@
-import { createPortProxy } from '@tallyho/tally-api/lib/port-proxy'
-import { platform } from '@tallyho/tally-api/lib/platform'
-import { UI_METHODS, STATE_KEY } from '@tallyho/tally-api/constants'
-import { getPersistedState, persistState } from '@tallyho/tally-api/lib/db'
-import { migrate } from '@tallyho/tally-api/migrations'
-import Main from  '@tallyho/tally-api'
-// const persistedState = load state from idb
+import { browser, startApi } from "@tallyho/tally-api"
 
-// instantiate main api for background process
-async function constructApi () {
-  const rawState = await getPersistedState(STATE_KEY)
-  const newVersionState = await migrate(rawState)
-  persistState(STATE_KEY, newVersionState)
-  const main = new Main(newVersionState.state)
-  console.log('heeeeeeeere')
-  return { main }
-}
+let connectionCount = 0
 
-const ready = constructApi()
-
-const state = getPersistedState()
-
+const ready = startApi()
 
 // add listener to extension api
-platform.runtime.onConnect.addListener((port) => {
+browser.runtime.onConnect.addListener(async (port) => {
+  connectionCount += 1
+  const { main } = await ready
+  const subscriptions = []
   port.onMessage.addListener(async (msg) => {
     // wait for main api to be ready ie determine network connectivity
-    const { main } = await ready
-
-    const { id, route, method, params = {} } = msg
+    const { type, id, route, method, params = {} } = msg
+    let response
     try {
-      let response
       // check port name if content-script forward msg to inpage provider
       // otherwise it goes to frontend api
-      if (port.name === 'content-script') response = await main.inpageProvider.request(msg)
-      else if (port.name === 'ui') {
-        let strippedRoute, address
-        if (route.includes('0x')) {
-          const split = route.split('/')
+      if (port.name === "content-script")
+        response = await main.inpageProvider.request(msg)
+      else if (port.name === "ui") {
+        let strippedRoute
+        let address
+        if (route.includes("0x")) {
+          const split = route.split("/")
           address = split.pop()
-          strippedRoute = split.join('/')
+          if (split.length) split.push("")
+          strippedRoute = split.join("/")
+        }
+        if (type === "subscription") {
+          const args = {
+            route: strippedRoute || route,
+            params,
+            id,
+          }
+          // register the subscription id
+          // and subscribe
+          subscriptions.push(args)
+          // temp disabled
+          // await main.registerSubscription(args)
+          main.getApi()[strippedRoute || route].subscribe((data) =>
+            port.postMessage({
+              id,
+              type,
+              response: data,
+            })
+          )
         }
         // sloppy
-        response = await main.getApi(params)[strippedRoute || route][method]({ address, ...params[0]})
+        response = await main
+          .getApi()
+          [strippedRoute || route][method]({ address, ...params })
       }
       port.postMessage({
+        type,
         id,
         response,
       })
     } catch (error) {
+      console.error(error)
       port.postMessage({
+        type,
         id,
         error: error.message,
       })
-
     }
+  })
+
+  port.onDisconnect.addListener(() => {
+    connectionCount -= 1
+    if (!connectionCount) main.disconnect()
+    subscriptions.forEach((info) =>
+      main.getApi()[info.route].unsubscribe(info.id)
+    )
   })
 })

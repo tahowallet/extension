@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import SharedButton from './SharedButton';
-import SharedSlideUpMenu from './SharedSlideUpMenu';
-import SharedAssetItem from './SharedAssetItem';
-import SharedAssetIcon from './SharedAssetIcon';
+import React, { useState } from "react"
+import PropTypes from "prop-types"
+import SharedButton from "./SharedButton"
+import SharedSlideUpMenu from "./SharedSlideUpMenu"
+import SharedAssetItem from "./SharedAssetItem"
+import SharedAssetIcon from "./SharedAssetIcon"
 
 function SelectTokenMenuContent(props) {
-  const { setSelectedTokenAndClose } = props;
+  const { setSelectedTokenAndClose } = props
 
   return (
     <>
@@ -23,18 +23,17 @@ function SelectTokenMenuContent(props) {
       </div>
       <div className="divider" />
       <ul>
-        {['', '', '', '', '', '', '', '', '', '', '', '', ''].map(() => (
-          <SharedAssetItem
-            setSelectedTokenAndClose={setSelectedTokenAndClose}
-          />
-        ))}
+        {Array(13)
+          .fill("")
+          .map(() => (
+            <SharedAssetItem onClick={setSelectedTokenAndClose} />
+          ))}
       </ul>
       <style jsx>
         {`
           .search_label {
             height: 20px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
@@ -57,7 +56,7 @@ function SelectTokenMenuContent(props) {
             color: var(--green-40);
           }
           .icon_search {
-            background: url('./images/search_large@2x.png');
+            background: url("./images/search_large@2x.png");
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
@@ -74,38 +73,32 @@ function SelectTokenMenuContent(props) {
         `}
       </style>
     </>
-  );
+  )
 }
 
 SelectTokenMenuContent.propTypes = {
   setSelectedTokenAndClose: PropTypes.func.isRequired,
-};
+}
 
 export default function SharedAssetInput(props) {
-  const { isTypeDestination, onClick } = props;
+  const { isTypeDestination, onClick } = props
 
-  const [openAssetMenu, setOpenAssetMenu] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
-  const [selectedToken, setSelectedToken] = useState({ name: false });
+  const [openAssetMenu, setOpenAssetMenu] = useState(false)
+  const [selectedToken, setSelectedToken] = useState({ name: false })
 
   function handleClick() {
-    setOpenAssetMenu(!openAssetMenu);
-    setRunAnimation(true);
-    onClick();
+    setOpenAssetMenu(!openAssetMenu)
+    onClick()
   }
 
   function setSelectedTokenAndClose(token) {
-    setSelectedToken(token);
-    setOpenAssetMenu(false);
+    setSelectedToken(token)
+    setOpenAssetMenu(false)
   }
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={openAssetMenu}
-        isRunAnimation={isRunAnimation}
-        close={handleClick}
-      >
+      <SharedSlideUpMenu isOpen={openAssetMenu} close={handleClick}>
         {SelectTokenMenuContent({ setSelectedTokenAndClose })}
       </SharedSlideUpMenu>
       <div className="asset_input">
@@ -165,7 +158,6 @@ export default function SharedAssetInput(props) {
             width: 204px;
             height: 34px;
             color: var(--green-40);
-            font-family: Segment;
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
@@ -173,7 +165,6 @@ export default function SharedAssetInput(props) {
           .paste_button {
             height: 24px;
             color: var(--trophy-gold);
-            font-family: Segment;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -181,7 +172,7 @@ export default function SharedAssetInput(props) {
             display: flex;
           }
           .icon_paste {
-            background: url('./images/paste@2x.png');
+            background: url("./images/paste@2x.png");
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
@@ -191,7 +182,6 @@ export default function SharedAssetInput(props) {
             width: 98px;
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -210,13 +200,18 @@ export default function SharedAssetInput(props) {
         `}
       </style>
     </>
-  );
+  )
 }
 
 SharedAssetInput.propTypes = {
   isTypeDestination: PropTypes.bool,
-};
+  onClick: PropTypes.func,
+}
 
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
-};
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
+}

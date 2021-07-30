@@ -21,7 +21,7 @@
     "lint": "run-p lint:*",
     "lint-fix": "run-p 'lint:* -- --fix'",
     "lint:js": "eslint .",
-    "test": "run-p lint:* build"
+    "test": "echo \"nothing to do\""
   },
   "workspaces": [
     "ui",
@@ -31,7 +31,6 @@
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@tallyho/tally-api": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
-    "@types/firefox-webext-browser": "^82.0.0",
     "buffer": "^6.0.3",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"
@@ -40,8 +39,15 @@
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.14.5",
     "@babel/preset-react": "^7.12.13",
+    "@babel/preset-typescript": "^7.14.5",
     "@babel/register": "^7.14.5",
-    "babel-eslint": "^10.1.0",
+    "@types/archiver": "^5.1.0",
+    "@types/copy-webpack-plugin": "^8.0.0",
+    "@types/firefox-webext-browser": "^82.0.0",
+    "@types/terser-webpack-plugin": "^5.0.3",
+    "@types/webpack-livereload-plugin": "^2.3.2",
+    "@typescript-eslint/eslint-plugin": "^4.28.4",
+    "@typescript-eslint/parser": "^4.28.4",
     "archiver": "^5.3.0",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.0.0",
@@ -55,14 +61,17 @@
     "install": "^0.13.0",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",
+    "prettier": "^2.3.2",
     "process": "^0.11.10",
-    "size-plugin": "^1.2.0",
+    "size-plugin": "^2.0.2",
     "stream-browserify": "^3.0.0",
     "styled-jsx": "^3.4.4",
     "terser-webpack-plugin": "^5.1.1",
-    "typescript": "4.2.2",
-    "webpack": "^5.24.2",
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.2",
+    "webpack": "^5.39.0",
     "webpack-cli": "4.5.0",
-    "webpack-livereload-plugin": "^3.0.1"
+    "webpack-livereload-plugin": "^3.0.1",
+    "webpack-merge": "^5.8.0"
   }
 }

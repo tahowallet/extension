@@ -1,26 +1,29 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react"
+import PropTypes from "prop-types"
+import classNames from "classnames"
 
 export default function SharedButton(props) {
-  const { label, type, size, onClick, isDisabled, icon, iconSize } = props;
+  const { label, type, size, onClick, isDisabled, icon, iconSize } = props
 
   return (
     <button
       type="button"
-      className={`
-        ${size === 'large' ? ' large' : ''}
-        ${type === 'secondary' ? ' secondary' : ''}
-        ${isDisabled ? ' disabled' : ''}${
-        type === 'tertiary' ? ' tertiary' : ''
-      }
-        ${type === 'tertiaryWhite' ? ' tertiary white' : ''}
-        ${type === 'tertiary' && isDisabled ? ' tertiary_disabled' : ''}`}
+      className={classNames(
+        { large: size === "large" },
+        { small: size === "small" },
+        { secondary: type === "secondary" },
+        { disabled: isDisabled },
+        { tertiary: type === "tertiary" },
+        { "tertiary white": type === "tertiaryWhite" },
+        { special_disabled_white: type === "specialDisabledWhite" },
+        { warning: type === "warning" }
+      )}
       onClick={onClick}
     >
       {label}
       {icon ? (
         <span
-          className={`icon_button${iconSize === 'large' ? ' icon_large' : ''}`}
+          className={`icon_button${iconSize === "large" ? " icon_large" : ""}`}
         />
       ) : null}
       <style jsx>
@@ -33,7 +36,6 @@ export default function SharedButton(props) {
             align-items: center;
             justify-content: space-between;
             color: #ffffff;
-            font-family: Segment;
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.48px;
@@ -41,9 +43,23 @@ export default function SharedButton(props) {
             text-align: center;
             padding: 0 17px;
           }
+          button:hover {
+            background-color: var(--gold-80);
+            color: var(--green-95);
+          }
+          button:hover .icon_button {
+            background-color: var(--green-95);
+          }
+          button:active {
+            background-color: var(--trophy-gold);
+            color: var(--green-120);
+          }
+          button:active .icon_button {
+            background-color: var(--green-120);
+          }
           .icon_button {
-            mask-image: url('./images/${icon}@2x.png');
-            mask-size: 12px 12px;
+            mask-image: url("./images/${icon}@2x.png");
+            mask-size: cover;
             width: 12px;
             height: 12px;
             margin-left: 9px;
@@ -55,7 +71,6 @@ export default function SharedButton(props) {
             padding: 0 24px;
           }
           .icon_large {
-            mask-size: 24px 24px;
             width: 24px;
             height: 24px;
             margin-left: 10px;
@@ -64,15 +79,37 @@ export default function SharedButton(props) {
             background: unset;
             border: 2px solid var(--trophy-gold);
             color: var(--trophy-gold);
+            box-sizing: border-box;
           }
           .secondary .icon_button {
             background-color: var(--trophy-gold);
           }
+          .secondary:hover {
+            border-color: var(--gold-80);
+          }
+          .secondary:active {
+            border-color: var(--trophy-gold);
+          }
           .disabled {
             background-color: var(--green-60);
             color: var(--green-80);
+            cursor: not-allowed;
           }
           .disabled .icon_button {
+            background-color: var(--green-80);
+          }
+          .disabled:hover {
+            background-color: var(--green-60);
+            color: var(--green-80);
+          }
+          .disabled:hover .icon_button {
+            background-color: var(--green-80);
+          }
+          .disabled:active {
+            background-color: var(--green-60);
+            color: var(--green-80);
+          }
+          .disabled:active .icon_button {
             background-color: var(--green-80);
           }
           .tertiary {
@@ -85,6 +122,20 @@ export default function SharedButton(props) {
           .tertiary .icon_button {
             background-color: var(--trophy-gold);
           }
+          .tertiary:hover {
+            background-color: unset;
+            color: var(--gold-40);
+          }
+          .tertiary:hover .icon_button {
+            background-color: var(--gold-40);
+          }
+          .tertiary:active {
+            background-color: unset;
+            color: var(--gold-80);
+          }
+          .tertiary:active .icon_button {
+            background-color: var(--gold-80);
+          }
           .white {
             color: #ffffff;
             font-weight: 500;
@@ -92,32 +143,59 @@ export default function SharedButton(props) {
           .white .icon_button {
             background-color: #ffffff;
           }
-          .tertiary_disabled {
+          .tertiary.disabled {
             color: var(--green-60);
           }
-          .tertiary_disabled .icon_button {
+          .tertiary.disabled .icon_button {
             background-color: var(--green-60);
+          }
+          .special_disabled_white {
+            color: #fff;
+          }
+          .special_disabled_white .icon_button {
+            background-color: #fff;
+          }
+          .small {
+            padding: 0 12px;
+            height: 32px;
+          }
+          .warning {
+            background-color: var(--attention);
+          }
+          .warning {
+            color: var(--hunter-green);
+          }
+          .warning .icon_button {
+            background-color: var(--hunter-green);
           }
         `}
       </style>
     </button>
-  );
+  )
 }
 
 SharedButton.propTypes = {
   label: PropTypes.string.isRequired,
-  type: PropTypes.oneOf(['primary', 'secondary', 'tertiary', 'tertiaryWhite'])
-    .isRequired,
-  size: PropTypes.oneOf(['medium', 'large']).isRequired,
+  type: PropTypes.oneOf([
+    "primary",
+    "secondary",
+    "tertiary",
+    "tertiaryWhite",
+    "specialDisabledWhite",
+  ]).isRequired,
+  size: PropTypes.oneOf(["medium", "large"]).isRequired,
   icon: PropTypes.string,
-  iconSize: PropTypes.oneOf(['medium', 'large']),
+  iconSize: PropTypes.oneOf(["small", "medium", "large"]),
   onClick: PropTypes.func,
   isDisabled: PropTypes.bool,
-};
+}
 
 SharedButton.defaultProps = {
   icon: null,
   isDisabled: false,
-  iconSize: 'medium',
-  onClick: () => {},
-};
+  iconSize: "medium",
+  onClick: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
+}

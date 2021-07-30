@@ -1,31 +1,37 @@
-import React from 'react';
+import React from "react"
+import PropTypes from "prop-types"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
-export default function WalletActivityListItem() {
+export default function WalletActivityListItem(props) {
+  const { onClick } = props
+
   return (
     <li>
-      <div className="top">
-        <div className="left">
-          <div className="activity_icon" />
-          Send
-        </div>
-        <div className="right">Apr 15</div>
-      </div>
-      <div className="bottom">
-        <div className="left">
-          <div className="token_icon_wrap">
-            <span className="icon_eth" />
+      <button type="button" onClick={onClick}>
+        <div className="top">
+          <div className="left">
+            <div className="activity_icon" />
+            Send
           </div>
-          <div className="amount">
-            <span className="bold_amount_count">12800</span>KEEP
+          <div className="right">Apr 15</div>
+        </div>
+        <div className="bottom">
+          <div className="left">
+            <div className="token_icon_wrap">
+              <span className="icon_eth" />
+            </div>
+            <div className="amount">
+              <span className="bold_amount_count">12800</span>KEEP
+            </div>
+          </div>
+          <div className="right">
+            <div className="outcome">To: 0xb34f...23rr</div>
           </div>
         </div>
-        <div className="right">
-          <div className="outcome">To: 0xb34f...23rr</div>
-        </div>
-      </div>
+      </button>
       <style jsx>
         {`
-          li {
+          button {
             width: 352px;
             height: 72px;
             border-radius: 16px;
@@ -38,8 +44,11 @@ export default function WalletActivityListItem() {
             justify-content: space-between;
             align-items: center;
           }
+          button:hover {
+            background-color: var(--green-80);
+          }
           .activity_icon {
-            background: url('./images/activity_send@2x.png');
+            background: url("./images/activity_send@2x.png");
             background-size: 14px 14px;
             width: 14px;
             height: 14px;
@@ -79,7 +88,7 @@ export default function WalletActivityListItem() {
             justify-content: center;
           }
           .icon_eth {
-            background: url('./images/eth@2x.png');
+            background: url("./images/eth@2x.png");
             background-size: 18px 29px;
             width: 18px;
             height: 29px;
@@ -114,13 +123,13 @@ export default function WalletActivityListItem() {
             line-height: 16px;
           }
           .icon_send_asset {
-            background: url('./images/send_asset.svg');
+            background: url("./images/send_asset.svg");
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
           }
           .icon_swap_asset {
-            background: url('./images/swap_asset.svg');
+            background: url("./images/swap_asset.svg");
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
@@ -142,5 +151,9 @@ export default function WalletActivityListItem() {
         `}
       </style>
     </li>
-  );
+  )
+}
+
+WalletActivityListItem.propTypes = {
+  onClick: PropTypes.func.isRequired,
 }

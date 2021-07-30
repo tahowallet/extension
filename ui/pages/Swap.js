@@ -1,51 +1,49 @@
-import React, { useState } from 'react';
-import { registerRoute } from '../config/routes';
-import CorePageWithTabs from '../components/Core/CorePageWithTabs';
-import SharedAssetInput from '../components/Shared/SharedAssetInput';
-import SharedButton from '../components/Shared/SharedButton';
-import SharedSlideUpMenu from '../components/Shared/SharedSlideUpMenu';
-import SwapQoute from '../components/Swap/SwapQuote';
-import SwapAssetsHeader from '../components/Swap/SwapAssetsHeader';
-import SwapTransactionSettings from '../components/Swap/SwapTransactionSettings';
+import React, { useState } from "react"
+import { registerRoute } from "../config/routes"
+import CorePage from "../components/Core/CorePage"
+import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedButton from "../components/Shared/SharedButton"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import SwapQoute from "../components/Swap/SwapQuote"
+import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
+import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 
 export default function Swap() {
-  const [openTokenMenu, setOpenTokenMenu] = useState(false);
-  const [isRunAnimation, setRunAnimation] = useState(false);
-  const [selectedCount, setSelectedCount] = useState(0);
+  const [openTokenMenu, setOpenTokenMenu] = useState(false)
+  const [selectedCount, setSelectedCount] = useState(0)
 
   function handleClick() {
-    setOpenTokenMenu(!openTokenMenu);
-    setRunAnimation(true);
+    setOpenTokenMenu(!openTokenMenu)
   }
 
   function handleAssetSelect() {
-    setSelectedCount(selectedCount + 1);
+    setSelectedCount(selectedCount + 1)
   }
 
   return (
     <>
-      <CorePageWithTabs>
+      <CorePage>
         <SharedSlideUpMenu
           isOpen={openTokenMenu}
-          isRunAnimation={isRunAnimation}
           close={handleClick}
           size="large"
         >
           <SwapQoute />
         </SharedSlideUpMenu>
         <div className="wrap">
-          <SwapAssetsHeader />
+          <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
               <label className="label">
-                Swap from: <label className="label_right">Max</label>
+                Swap from: <span className="label_right">Max</span>
               </label>
               <SharedAssetInput onClick={handleAssetSelect} />
             </div>
             <div className="icon_change" />
             <div className="form_input">
               <label className="label">
-                Swap to: <label className="label_right">-</label>
+                Swap to: <span className="label_right">-</span>
               </label>
               <SharedAssetInput onClick={handleAssetSelect} />
             </div>
@@ -59,7 +57,6 @@ export default function Swap() {
                   size="large"
                   label="Review swap"
                   isDisabled
-                  disableIcon
                   onClick={handleClick}
                 />
               ) : (
@@ -67,14 +64,13 @@ export default function Swap() {
                   type="primary"
                   size="large"
                   label="Get final quote"
-                  disableIcon
                   onClick={handleClick}
                 />
               )}
             </div>
           </div>
         </div>
-      </CorePageWithTabs>
+      </CorePage>
       <style jsx>
         {`
           .wrap {
@@ -93,7 +89,6 @@ export default function Swap() {
           .label {
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -115,7 +110,6 @@ export default function Swap() {
             width: 150px;
             height: 32px;
             color: #e7296d;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -130,14 +124,13 @@ export default function Swap() {
             width: 33px;
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
             line-height: 16px;
           }
           .icon_change {
-            background: url('./images/change@2x.png') center no-repeat;
+            background: url("./images/change@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 20px;
             height: 20px;
@@ -156,7 +149,7 @@ export default function Swap() {
         `}
       </style>
     </>
-  );
+  )
 }
 
-registerRoute('swap', Swap);
+registerRoute("swap", Swap)

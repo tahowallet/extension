@@ -1,5 +1,5 @@
-import React from 'react';
-import SharedAssetIcon from '../Shared/SharedAssetIcon';
+import React from "react"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function SwapQuoteAssetCard() {
   return (
@@ -24,7 +24,6 @@ export default function SwapQuoteAssetCard() {
           .top_label {
             height: 17px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -35,7 +34,6 @@ export default function SwapQuoteAssetCard() {
           .asset_name {
             height: 24px;
             color: var(--green-60);
-            font-family: Segment;
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
@@ -45,7 +43,6 @@ export default function SwapQuoteAssetCard() {
           .amount {
             height: 32px;
             color: #ffffff;
-            font-family: Segment;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -55,5 +52,5 @@ export default function SwapQuoteAssetCard() {
         `}
       </style>
     </div>
-  );
+  )
 }
