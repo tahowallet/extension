@@ -37,7 +37,7 @@ export default class WebSocketProvider {
     })
 
     this.register = {}
-    if (!endpoint.includes("wss://") || !endpoint.includes("ws://")) {
+    if (!endpoint.match(/^wss?:\/\//)) {
       throw new Error("Not a ws endpoint")
     }
   }
