@@ -1,4 +1,4 @@
-import { v0 } from "./00"
+import v0 from "./v0"
 
 export interface Migration {
   version: number

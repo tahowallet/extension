@@ -15,5 +15,5 @@ export default function WalletAssetList(props) {
 }
 
 WalletAssetList.propTypes = {
-  assets: PropTypes.array.isRequired,
+  assets: PropTypes.arrayOf(PropTypes.object).isRequired,
 }
