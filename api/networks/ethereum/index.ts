@@ -15,16 +15,16 @@ export default class EthereumNetworkProvider extends Provider {
     [index: string]: Subscription
   }
 
-  _cache: any
+  private cache: any
 
-  _subscriptionIds: any
+  private subscriptionIds: any
 
   constructor(endpoint: string) {
     super(endpoint)
     this.subscriptions = {}
     // private vars
-    this._cache = {}
-    this._subscriptionIds = {}
+    this.cache = {}
+    this.subscriptionIds = {}
   }
 
   // handler only for unsubscribe
@@ -37,7 +37,7 @@ export default class EthereumNetworkProvider extends Provider {
 
       const id = await super.request(request)
       // map for subcription id's
-      this._subscriptionIds[id] = name
+      this.subscriptionIds[id] = name
       // acctual subcription interface
       this.subscriptions[name] = new Subscription(name, id)
       this.transport.socket.addEventListener(
@@ -49,7 +49,7 @@ export default class EthereumNetworkProvider extends Provider {
     if (request.method === "eth_unsubscribe") {
       const { params: unsubscribeParams } = request
       const [id] = unsubscribeParams
-      const name = this._subscriptionIds[id]
+      const name = this.subscriptionIds[id]
       if (!this.subscriptions[name]) return false
       const subscription = this.subscriptions[name]
       // removes listener and if their are no subcriptions left unsubcribes from the node
@@ -73,11 +73,11 @@ export default class EthereumNetworkProvider extends Provider {
     if (!params || !params.length) key = request.method
     else key = [request.method, ...params].join("/")
 
-    if (!this._cache[key]) {
-      this._cache[key] = await super.request(request)
+    if (!this.cache[key]) {
+      this.cache[key] = await super.request(request)
     }
 
-    return this._cache[key]
+    return this.cache[key]
   }
 
   async connect() {
@@ -87,7 +87,7 @@ export default class EthereumNetworkProvider extends Provider {
       params: ["newHeads"],
     })
     this.subscriptions.newHeads.on("update", (state) => {
-      this._cache = {
+      this.cache = {
         eth_blockNumber: state.number,
       }
     })

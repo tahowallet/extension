@@ -32,8 +32,8 @@ export default class Accounts {
 
   async get(_: { address?: string }) {
     const { address } = _
-    if (address) return this._getAccount(address)
-    return this._getAccounts()
+    if (address) return this.getAccount(address)
+    return this.getAccounts()
   }
 
   async add(newAccountData: AccountMetadata) {
@@ -43,7 +43,7 @@ export default class Accounts {
     return true
   }
 
-  async _getAccounts() {
+  private async getAccounts() {
     return this.store.getState()
   }
 
@@ -55,7 +55,7 @@ export default class Accounts {
       )
   }
 
-  async _getAccount(address: string): Promise<AccountMetadata> {
+  private async getAccount(address: string): Promise<AccountMetadata> {
     const account = this.getAccountMetadata(address) || { address }
     const balances = await this.balances.get(address)
     // not availble yet
@@ -85,7 +85,7 @@ export default class Accounts {
 
   async setSelectedAccount(account: AccountMetadata) {
     const { address } = account
-    this.selectedAccount = await this._getAccount(address)
+    this.selectedAccount = await this.getAccount(address)
   }
 
   getSelectedAccount() {
