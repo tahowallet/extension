@@ -19,7 +19,7 @@ export default function Popup() {
   return (
     <Provider store={store}>
       <Router>
-        <Onboarding />
+        <Wallet />
       </Router>
     </Provider>
   )

@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import { connectToBackgroundApi } from "@tallyho/tally-api/lib/connect"
 import { SEED_PHRASE_MM } from "@tallyho/tally-api/temp-stubs/stub"
 
-const { send, subscribe } = connectToBackgroundApi({ name: "ui" })
+const { send, subscriber: subscribe } = connectToBackgroundApi("ui")
 
 export const initialState = {
   accountLoading: false,
@@ -49,13 +49,16 @@ export function subscribeToAccount() {
         },
       })
 
+      console.log("address", address)
+      console.log("here 1")
+
       subscribe(
         {
           route: `/accounts/${address}`,
           method: "GET",
         },
         (accountToMutate) => {
-          let account = accountToMutate
+          console.log("here 2")
 
           // Temporarily fill in hard coded USD conversion
           if (account?.total_balance?.amount) {
