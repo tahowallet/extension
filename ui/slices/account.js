@@ -57,20 +57,21 @@ export function subscribeToAccount() {
           route: `/accounts/${address}`,
           method: "GET",
         },
-        (accountToMutate) => {
-          console.log("here 2")
+        (account) => {
+          const updatedAccount = { ...account }
 
           // Temporarily fill in hard coded USD conversion
-          if (account?.total_balance?.amount) {
+          if (updatedAccount?.total_balance?.amount) {
             const usdAmount = (
-              account?.total_balance?.amount * 2411.44
+              updatedAccount?.total_balance?.amount * 2411.44
             ).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })
-            account.total_balance.usd_amount = usdAmount
-            account.tokens[0].usd_balance = usdAmount
+            updatedAccount.total_balance.usd_amount = usdAmount
+            updatedAccount.tokens[0].usd_balance = usdAmount
           }
-          dispatch(loadAccountSuccess(account))
+
+          dispatch(loadAccountSuccess(updatedAccount))
         }
       )
     } catch (err) {
