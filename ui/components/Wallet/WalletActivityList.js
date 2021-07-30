@@ -1,11 +1,13 @@
 import React from "react"
+import PropTypes from "prop-types"
 import { useDispatch, useSelector } from "react-redux"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
 import { setShowingActivityDetail, uiSelector } from "../../slices/ui"
 
-export default function WalletActivityList() {
+export default function WalletActivityList(props) {
+  const { activity } = props
   const dispatch = useDispatch()
   const { showingActivityDetail } = useSelector(uiSelector)
 
@@ -23,14 +25,19 @@ export default function WalletActivityList() {
         <WalletActivityDetails />
       </SharedSlideUpMenu>
       <ul>
-        {[1234123, 1532, 2362, 237345, 243623].map((activityId) => (
+        {activity.map((activityItem) => (
           <WalletActivityListItem
             onClick={() => {
-              handleOpen(activityId)
+              handleOpen(activityItem.blockHash)
             }}
+            activity={activityItem}
           />
         ))}
       </ul>
     </>
   )
+}
+
+WalletActivityList.propTypes = {
+  activity: PropTypes.array.isRequired,
 }
