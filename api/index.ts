@@ -104,7 +104,8 @@ class Main {
   }
 }
 
-export { connectToBackgroundApi } from "./lib/connect"
+export { browser } from 'webextension-polyfill-ts'
+export { connectToBackgroundApi } from './lib/connect'
 
 export async function startApi() {
   const rawState = await getPersistedState(STATE_KEY)

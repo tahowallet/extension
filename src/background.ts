@@ -16,8 +16,10 @@ browser.runtime.onConnect.addListener(async (port) => {
     try {
       // check port name if content-script forward msg to inpage provider
       // otherwise it goes to frontend api
-      if (port.name === "content-script")
-        response = await main.inpageProvider.request(msg)
+      if (port.name === "content-script") {
+        // TODO
+        // response = await main.inpageProvider.request(msg)
+      }
       else if (port.name === "ui") {
         let strippedRoute
         let address
