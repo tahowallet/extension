@@ -19,8 +19,7 @@ browser.runtime.onConnect.addListener(async (port) => {
       if (port.name === "content-script") {
         // TODO
         // response = await main.inpageProvider.request(msg)
-      }
-      else if (port.name === "ui") {
+      } else if (port.name === "ui") {
         let strippedRoute
         let address
         if (route.includes("0x")) {
