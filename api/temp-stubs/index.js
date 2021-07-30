@@ -25,7 +25,7 @@ export const apiStubs = {
       }
     },
     unsubscribe: () => {
-      if (window.tally_unsubscribe) window.tall_unsubscribe()
+      window.tally_unsubscribe?.()
     },
     subscribe: (handler) => {
       const id = setInterval(() => {
