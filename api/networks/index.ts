@@ -40,7 +40,7 @@ export default class Network {
         if (!acc[type]) {
           acc[type] = {}
         }
-        acc[type][endpoint] = new providers[type]({ endpoint })
+        acc[type][endpoint] = new providers[type](endpoint)
         if (selected) {
           acc[type].selected = acc[type][endpoint]
         }
