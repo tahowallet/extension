@@ -1,6 +1,7 @@
 import Networks, { NetworksState } from "./networks"
 import Transactions, { TransactionsState } from "./transactions"
 import Accounts, { AccountsState } from "./accounts"
+import { NetworkFungibleAsset } from "./types"
 import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
@@ -16,6 +17,7 @@ export interface MainState {
   accounts: AccountsState
   transactions: TransactionsState
   networks: NetworksState
+  tokensToTrack: NetworkFungibleAsset[]
 }
 
 class Main {
