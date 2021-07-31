@@ -21,7 +21,7 @@ export interface TokenListAndReference {
   tokenList: TokenList
 }
 
-async function fetchAndValidateTokenList(
+export async function fetchAndValidateTokenList(
   url: string
 ): Promise<TokenListAndReference> {
   const response = await fetch(url)
@@ -39,7 +39,7 @@ async function fetchAndValidateTokenList(
   }
 }
 
-async function fetchAndValidateTokenLists(urls: string[]) {
+export async function fetchAndValidateTokenLists(urls: string[]) {
   return (await Promise.allSettled(urls.map(fetchAndValidateTokenList)))
     .filter((l) => l.status === "fulfilled")
     .map((l) => (l as PromiseFulfilledResult<TokenListAndReference>).value)
@@ -75,7 +75,9 @@ function tokenListToFungibleAssets(
  * types for easy manipulation, and sorted by the number of lists each appears
  * in.
  */
-export function networkAssetFromLists(tokenLists: TokenListAndReference[]) {
+export function networkAssetFromLists(
+  tokenLists: TokenListAndReference[]
+): NetworkFungibleAsset[] {
   const fungibleAssets = tokenLists
     .map((listAndRef) =>
       tokenListToFungibleAssets(listAndRef.url, listAndRef.tokenList)
@@ -113,9 +115,3 @@ export function networkAssetFromLists(tokenLists: TokenListAndReference[]) {
         (b.metadata?.tokenLists?.length || 0)
     )
 }
-
-// TODO track "tokens of interest" in extension storage
-// TODO fetch, validate, and cache a token list
-// TODO maintain a cached NetworkFungibleAsset list from prioritized token lists
-// TODO get the latest list of assets from the cache
-// TODO bust the cache
