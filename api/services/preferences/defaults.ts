@@ -1,6 +1,6 @@
-import { FiatCurrency } from "../types"
+import { FiatCurrency } from "../../types"
 
-export const DEFAULT_STATE = {
+export default {
   tokenListURLs: [
     "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
     "https://yearn.science/static/tokenlist.json", // the Yearn list
@@ -14,14 +14,4 @@ export const DEFAULT_STATE = {
     symbol: "USD",
     decimals: 12,
   } as FiatCurrency,
-}
-
-export async function getCurrency(): Promise<FiatCurrency> {
-  // TODO pull from preference extension storage
-  return DEFAULT_STATE.currency
-}
-
-export async function getPrioritizedTokenListURLs(): Promise<string[]> {
-  // TODO pull from preference extension storage
-  return DEFAULT_STATE.tokenListURLs
 }

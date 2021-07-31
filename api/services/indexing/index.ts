@@ -11,13 +11,13 @@ const SCHEDULES = {
   },
 }
 
-export async function start(): Promise<void> {
+export async function startService(): Promise<void> {
   Object.entries(SCHEDULES).forEach(([name, schedule]) => {
     browser.alarms.create(name, schedule)
   })
 }
 
-export async function stop(): Promise<void> {
+export async function stopService(): Promise<void> {
   Object.entries(SCHEDULES).forEach(([name]) => {
     browser.alarms.clear(name)
   })
