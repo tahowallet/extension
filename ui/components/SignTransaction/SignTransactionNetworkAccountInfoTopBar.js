@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react"
 
 export default function SignTransactionNetworkAccountInfoTopBar() {
   return (
@@ -45,11 +45,11 @@ export default function SignTransactionNetworkAccountInfoTopBar() {
             height: 24px;
             background-color: white;
             margin-left: 8px;
-            background: url('./images/portrait.png');
+            background: url("./images/portrait.png");
             background-size: cover;
           }
           .network_icon {
-            background: url('./images/arbitrum_icon_small@2x.png');
+            background: url("./images/arbitrum_icon_small@2x.png");
             background-size: cover;
             width: 15px;
             height: 16px;
@@ -57,5 +57,5 @@ export default function SignTransactionNetworkAccountInfoTopBar() {
         `}
       </style>
     </div>
-  );
+  )
 }

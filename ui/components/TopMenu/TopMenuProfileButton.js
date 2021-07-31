@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react"
 
 export default function TopMenuProfileButton() {
   return (
@@ -13,7 +13,7 @@ export default function TopMenuProfileButton() {
             height: 32px;
             background-color: white;
             margin-left: 8px;
-            background: url('./images/portrait.png');
+            background: url("./images/portrait.png");
           }
           .wrap {
             flex-shrink: 0;
@@ -24,5 +24,5 @@ export default function TopMenuProfileButton() {
         `}
       </style>
     </button>
-  );
+  )
 }

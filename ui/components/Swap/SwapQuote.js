@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import _ from 'lodash';
-import SharedButton from '../Shared/SharedButton';
-import SharedActivityHeader from '../Shared/SharedActivityHeader';
-import SwapQuoteAssetCard from './SwapQuoteAssetCard';
-import SwapTransactionSettings from './SwapTransactionSettings';
-import SwapApprovalStep from './SwapApprovalStep';
+import React, { useState } from "react"
+import _ from "lodash"
+import SharedButton from "../Shared/SharedButton"
+import SharedActivityHeader from "../Shared/SharedActivityHeader"
+import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
+import SwapTransactionSettings from "./SwapTransactionSettings"
+import SwapApprovalStep from "./SwapApprovalStep"
 
 export default function SwapQoute() {
-  const [stepComplete, setStepComplete] = useState(-1);
+  const [stepComplete, setStepComplete] = useState(-1)
 
   function handleApproveClick() {
-    setStepComplete(0);
+    setStepComplete(0)
     _.delay(() => {
-      setStepComplete(1);
-    }, 1500);
+      setStepComplete(1)
+    }, 1500)
     _.delay(() => {
-      setStepComplete(2);
-    }, 3000);
+      setStepComplete(2)
+    }, 3000)
     _.delay(() => {
-      setStepComplete(3);
-    }, 4500);
+      setStepComplete(3)
+    }, 4500)
   }
 
   return (
@@ -80,7 +80,7 @@ export default function SwapQoute() {
             margin-top: -24px;
           }
           .icon_uniswap {
-            background: url('./images/uniswap@2x.png');
+            background: url("./images/uniswap@2x.png");
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
@@ -94,7 +94,7 @@ export default function SwapQoute() {
             margin-top: 24px;
           }
           .icon_switch {
-            background: url('./images/switch@2x.png') center no-repeat;
+            background: url("./images/switch@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 40px;
             height: 32px;
@@ -161,5 +161,5 @@ export default function SwapQoute() {
         `}
       </style>
     </section>
-  );
+  )
 }

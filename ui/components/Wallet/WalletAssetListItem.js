@@ -1,16 +1,16 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-chrome-extension-router';
-import { routes } from '../../config/routes';
-import SharedAssetIcon from '../Shared/SharedAssetIcon';
+import React from "react"
+import PropTypes from "prop-types"
+import { Link } from "react-chrome-extension-router"
+import { routes } from "../../config/routes"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function WalletAssetListItem(props) {
-  const { asset } = props;
+  const { asset } = props
 
   // TODO: ETH price hard-coded for demo
   return (
     <li>
-      <Link component={routes['singleAsset']}>
+      <Link component={routes.singleAsset}>
         <button type="button">
           <div className="left">
             <SharedAssetIcon />
@@ -86,13 +86,13 @@ export default function WalletAssetListItem(props) {
             line-height: 16px;
           }
           .icon_send_asset {
-            background: url('./images/send_asset.svg');
+            background: url("./images/send_asset.svg");
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
           }
           .icon_swap_asset {
-            background: url('./images/swap_asset.svg');
+            background: url("./images/swap_asset.svg");
             background-size: 12px 12px;
             width: 12px;
             height: 12px;
@@ -106,10 +106,14 @@ export default function WalletAssetListItem(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 // Could use PropTypes.shape when this gets solidified
 WalletAssetListItem.propTypes = {
-  asset: PropTypes.object.isRequired,
-};
+  asset: PropTypes.objectOf({
+    balance: PropTypes.number,
+    usd_balance: PropTypes.number,
+    symbol: PropTypes.string,
+  }).isRequired,
+}

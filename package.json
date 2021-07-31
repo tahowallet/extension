@@ -21,9 +21,12 @@
     "lint": "run-p lint:*",
     "lint-fix": "run-p 'lint:* -- --fix'",
     "lint:js": "eslint .",
-    "test": "run-p lint:* build"
+    "test": "echo \"nothing to do\""
   },
-  "workspaces": ["ui", "api"],
+  "workspaces": [
+    "ui",
+    "api"
+  ],
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@tallyho/tally-api": "0.0.1",

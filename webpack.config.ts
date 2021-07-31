@@ -15,8 +15,8 @@ const baseConfig: Configuration = {
   devtool: "source-map",
   stats: "errors-only",
   entry: {
-    ui: "./src/ui.js",
-    background: "./src/background.js",
+    ui: "./src/ui.ts",
+    background: "./src/background.ts",
     // Don't have these yet.....
     // inpage: './src/inpage.js',
     // "content-script": './src/content-script.js'
@@ -45,7 +45,7 @@ const baseConfig: Configuration = {
     filename: "[name].js",
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx'],
+    extensions: [".tsx", ".ts", ".js", ".jsx"],
     fallback: {
       stream: require.resolve("stream-browserify"),
       process: require.resolve("process/browser"),

@@ -1,13 +1,13 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-chrome-extension-router';
-import { routes } from '../../config/routes';
-import SharedButton from '../Shared/SharedButton';
-import OnboardingStepsIndicator from './OnboardingStepsIndicator';
-import { titleStyle } from './titleStyle';
+import React from "react"
+import PropTypes from "prop-types"
+import { Link } from "react-chrome-extension-router"
+import { routes } from "../../config/routes"
+import SharedButton from "../Shared/SharedButton"
+import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
+import titleStyle from "./titleStyle"
 
 export default function OnboardingSaveSeed(props) {
-  const { triggerNextStep } = props;
+  const { triggerNextStep } = props
 
   return (
     <section>
@@ -49,7 +49,7 @@ export default function OnboardingSaveSeed(props) {
             onClick={triggerNextStep}
           />
         </div>
-        <Link component={routes['wallet']}>
+        <Link component={routes.wallet}>
           <SharedButton type="tertiary" size="medium" label="remind me later" />
         </Link>
       </div>
@@ -101,9 +101,9 @@ export default function OnboardingSaveSeed(props) {
         `}
       </style>
     </section>
-  );
+  )
 }
 
 OnboardingSaveSeed.propTypes = {
   triggerNextStep: PropTypes.func.isRequired,
-};
+}

@@ -1,37 +1,47 @@
-import Networks, { NetworksState } from './networks'
-import Transactions, { TransactionsState } from './transactions'
-import Accounts, { AccountsState } from './accounts'
-import { apiStubs } from './temp-stubs'
-import { STATE_KEY } from './constants'
-import { DEFAULT_STATE } from './constants/default-state'
-import { migrate } from './migrations'
+import Networks, { NetworksState } from "./networks"
+import Transactions, { TransactionsState } from "./transactions"
+import Accounts, { AccountsState } from "./accounts"
+import { apiStubs } from "./temp-stubs"
+import { STATE_KEY } from "./constants"
+import { DEFAULT_STATE } from "./constants/default-state"
+import { migrate } from "./migrations"
 
-// import { Keys } from './keys'
+// import { Keys } from "./keys"
 
-import { getPersistedState, persistState } from './lib/db'
-import ObsStore from './lib/ob-store'
-import getFiatValue from './lib/getFiatValues'
+import { getPersistedState, persistState } from "./lib/db"
+import ObsStore from "./lib/ob-store"
+import getFiatValue from "./lib/getFiatValues"
 
 export interface MainState {
-  accounts: AccountsState,
-  transactions: TransactionsState,
+  accounts: AccountsState
+  transactions: TransactionsState
   networks: NetworksState
 }
 
 class Main {
-  state : ObsStore<MainState>
-  network : Networks
-  transactions : Transactions
-  accounts : Accounts
-  _subscriptionIds : any
-  keys : any
+  state: ObsStore<MainState>
 
-  constructor (state : MainState = DEFAULT_STATE) {
+  network: Networks
+
+  transactions: Transactions
+
+  accounts: Accounts
+
+  private subscriptionIds: any
+
+  keys: any
+
+  constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
     const { accounts, networks, transactions } = state
-    const { providers } = this.network = new Networks(networks)
+    this.network = new Networks(networks)
+    const { providers } = this.network
     const provider = providers.ethereum.selected
-    this.transactions = new Transactions(transactions, providers.ethereum.selected, getFiatValue)
+    this.transactions = new Transactions(
+      transactions,
+      providers.ethereum.selected,
+      getFiatValue
+    )
     // this.keys = new Keys(state.keys || {})
     // const balances = this.balances = new Balances({ state: balances, providers })
 
@@ -39,54 +49,63 @@ class Main {
 
     // this.userPrefernces = new ObsStore(state.userPrefernces || {})
 
-    this.accounts = new Accounts(provider, accounts, this.transactions.getHistory.bind(this.transactions))
-    this._subscriptionIds = {}
-    this._subscribeToStates()
+    this.accounts = new Accounts(
+      provider,
+      accounts,
+      this.transactions.getHistory.bind(this.transactions)
+    )
+    this.subscriptionIds = {}
+    this.subscribeToStates()
   }
 
   /*
     Returns a object containing all api methods for use
   */
-  getApi () {
+  // TODO Stubbed for now.
+  // eslint-disable-next-line class-methods-use-this
+  getApi() {
     return apiStubs
   }
 
-  registerSubscription ({route, params, handler, id}) {
-    if (!this._subscriptionIds[`${route}${JSON.stringify(params)}`]) {
-      this._subscriptionIds[`${route}${JSON.stringify(params)}`] = []
+  registerSubscription({ route, params, handler, id }) {
+    if (!this.subscriptionIds[`${route}${JSON.stringify(params)}`]) {
+      this.subscriptionIds[`${route}${JSON.stringify(params)}`] = []
     }
-    this._subscriptionIds[`${route}${JSON.stringify(params)}`].push({handler, id})
+    this.subscriptionIds[`${route}${JSON.stringify(params)}`].push({
+      handler,
+      id,
+    })
   }
 
   // used to start and stop the ws connections for new head subscription
 
-  async connect () {
+  async connect() {
     this.network.providers.ethereum.selected.connect()
   }
 
-  async disconnect () {
+  async disconnect() {
     this.network.providers.ethereum.selected.close()
   }
 
-  async _import ({ address, data, type, name}) {
+  private async import({ address, data, type, name }) {
     if (data) {
-      this.keys.import({type, data, name})
-    } else {
-      return await this.accounts.add(address)
+      return this.keys.import({ type, data, name })
     }
+    return this.accounts.add(address)
   }
 
-  _subscribeToStates () {
-    this.transactions.state.on('update', (state) => {
+  private subscribeToStates() {
+    this.transactions.state.on("update", (state) => {
       this.state.updateState({ transactions: state })
     })
-    this.network.state.on('update', (state) => {
+    this.network.state.on("update", (state) => {
       this.state.updateState({ networks: state })
     })
   }
 }
 
-export { connectToBackgroundApi } from './lib/connect'
+export { browser } from "webextension-polyfill-ts"
+export { connectToBackgroundApi } from "./lib/connect"
 
 export async function startApi() {
   const rawState = await getPersistedState(STATE_KEY)

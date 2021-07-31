@@ -1,5 +1,5 @@
-import React from 'react';
-import SharedAssetIcon from '../Shared/SharedAssetIcon';
+import React from "react"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function SwapQuoteAssetCard() {
   return (
@@ -52,5 +52,5 @@ export default function SwapQuoteAssetCard() {
         `}
       </style>
     </div>
-  );
+  )
 }

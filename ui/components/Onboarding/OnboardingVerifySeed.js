@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-chrome-extension-router';
-import { routes } from '../../config/routes';
-import SharedButton from '../Shared/SharedButton';
-import OnboardingStepsIndicator from './OnboardingStepsIndicator';
-import { titleStyle } from './titleStyle';
+import React, { useState } from "react"
+import PropTypes from "prop-types"
+import { Link } from "react-chrome-extension-router"
+import { routes } from "../../config/routes"
+import SharedButton from "../Shared/SharedButton"
+import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
+import titleStyle from "./titleStyle"
 
 function SuccessMessage() {
   return (
@@ -12,7 +12,7 @@ function SuccessMessage() {
       <span className="message">Congratulations!</span>
       <div className="subtitle">You can now safely use your wallet</div>
       <div className="button_container">
-        <Link component={routes['wallet']}>
+        <Link component={routes.wallet}>
           <SharedButton
             label="Take me to my wallet"
             size="medium"
@@ -46,17 +46,17 @@ function SuccessMessage() {
         `}
       </style>
     </div>
-  );
+  )
 }
 
 export default function OnboardingVerifySeed(props) {
-  const { triggerPreviousStep } = props;
-  const [isSelected, setIsSelected] = useState([]);
-  const [isNotSelected, setIsNotSelected] = useState(Array(12).fill(''));
+  const { triggerPreviousStep } = props
+  const [isSelected, setIsSelected] = useState([])
+  const [isNotSelected, setIsNotSelected] = useState(Array(12).fill(""))
 
   function handleClick() {
-    setIsSelected([...isSelected, []]);
-    setIsNotSelected(isNotSelected.slice(1));
+    setIsSelected([...isSelected, []])
+    setIsNotSelected(isNotSelected.slice(1))
   }
 
   return (
@@ -122,7 +122,7 @@ export default function OnboardingVerifySeed(props) {
             bottom: 0px;
           }
           .back_button {
-            background: url('./images/back@2x.png');
+            background: url("./images/back@2x.png");
             background-size: cover;
             width: 24px;
             height: 24px;
@@ -133,9 +133,9 @@ export default function OnboardingVerifySeed(props) {
         `}
       </style>
     </section>
-  );
+  )
 }
 
 OnboardingVerifySeed.propTypes = {
   triggerPreviousStep: PropTypes.func.isRequired,
-};
+}

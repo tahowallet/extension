@@ -1,27 +1,27 @@
-import { EventEmitter } from 'events'
+import { EventEmitter } from "events"
 
 export default class ObStore<T> extends EventEmitter {
-  _state : T
+  private state: T
 
-  constructor (initState : T) {
+  constructor(initState: T) {
     super()
-    this._state = initState
+    this.state = initState
   }
 
   // returns current state
-  getState() : T {
-    return this._state
+  getState(): T {
+    return this.state
   }
 
   // replaces previous state with new state
-  putState(state : T) {
-    this._state = state
-    this.emit('update', state)
+  putState(state: T) {
+    this.state = state
+    this.emit("update", state)
   }
 
-  /*spreads new/partial state object on top of previous state object*/
-  updateState(newState : Partial<T>) {
-    this._state = {...this._state, ...newState}
-    this.emit('update', this._state)
+  /* spreads new/partial state object on top of previous state object */
+  updateState(newState: Partial<T>) {
+    this.state = { ...this.state, ...newState }
+    this.emit("update", this.state)
   }
 }

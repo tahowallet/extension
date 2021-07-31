@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react"
 
 export default function TopMenuProtocolSwitcher() {
   return (
@@ -14,7 +14,7 @@ export default function TopMenuProtocolSwitcher() {
             cursor: pointer;
           }
           .icon_chevron_down {
-            mask-image: url('./images/chevron_down.svg');
+            mask-image: url("./images/chevron_down.svg");
             mask-size: 15px 8px;
             width: 15px;
             height: 8px;
@@ -31,5 +31,5 @@ export default function TopMenuProtocolSwitcher() {
         `}
       </style>
     </button>
-  );
+  )
 }

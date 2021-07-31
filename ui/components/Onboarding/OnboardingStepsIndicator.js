@@ -1,9 +1,9 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import classNames from 'classnames';
+import React from "react"
+import PropTypes from "prop-types"
+import classNames from "classnames"
 
 function OnboardingStep(props) {
-  const { label, isActive } = props;
+  const { label, isActive } = props
 
   return (
     <li className={classNames({ active: isActive })}>
@@ -11,7 +11,7 @@ function OnboardingStep(props) {
       <style jsx>
         {`
           li:before {
-            content: ' ';
+            content: " ";
             display: block;
             width: 6px;
             height: 6px;
@@ -40,20 +40,20 @@ function OnboardingStep(props) {
         `}
       </style>
     </li>
-  );
+  )
 }
 
 OnboardingStep.propTypes = {
   label: PropTypes.string.isRequired,
   isActive: PropTypes.bool,
-};
+}
 
 OnboardingStep.defaultProps = {
   isActive: false,
-};
+}
 
 export default function OnboardingStepsIndicator(props) {
-  const { activeStep } = props;
+  const { activeStep } = props
 
   return (
     <ul>
@@ -68,9 +68,9 @@ export default function OnboardingStepsIndicator(props) {
         `}
       </style>
     </ul>
-  );
+  )
 }
 
 OnboardingStepsIndicator.propTypes = {
   activeStep: PropTypes.number.isRequired,
-};
+}

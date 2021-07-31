@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { registerRoute } from '../config/routes';
-import CorePage from '../components/Core/CorePage';
-import SharedAssetInput from '../components/Shared/SharedAssetInput';
-import SharedButton from '../components/Shared/SharedButton';
-import SharedNetworkFeeGroup from '../components/Shared/SharedNetworkFeeGroup';
+import React, { useState } from "react"
+import { registerRoute } from "../config/routes"
+import CorePage from "../components/Core/CorePage"
+import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedButton from "../components/Shared/SharedButton"
+import SharedNetworkFeeGroup from "../components/Shared/SharedNetworkFeeGroup"
 
 export default function Send() {
-  const [selectedCount, setSelectedCount] = useState(0);
+  const [selectedCount, setSelectedCount] = useState(0)
 
   return (
     <>
@@ -23,7 +23,7 @@ export default function Send() {
               </label>
               <SharedAssetInput
                 onClick={() => {
-                  setSelectedCount(1);
+                  setSelectedCount(1)
                 }}
               />
             </div>
@@ -55,7 +55,7 @@ export default function Send() {
             width: 352px;
           }
           .icon_activity_send_medium {
-            background: url('./images/activity_send_medium@2x.png');
+            background: url("./images/activity_send_medium@2x.png");
             background-size: 24px 24px;
             width: 24px;
             height: 24px;
@@ -125,7 +125,7 @@ export default function Send() {
         `}
       </style>
     </>
-  );
+  )
 }
 
-registerRoute('send', Send);
+registerRoute("send", Send)
