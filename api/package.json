@@ -24,6 +24,7 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
+    "bnc-sdk": "^3.4.1",
     "node-fetch": "^2.6.1",
     "webextension-polyfill-ts": "^0.26.0"
   },
