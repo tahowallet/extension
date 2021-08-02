@@ -22,10 +22,35 @@ builds.
 
 Builds are designed to be run from the top level of the repository.
 
+### Development Setup
+
+If you’re on macOS, install Homebrew and run `scripts/macos-setup.sh`. Note
+that if you don’t have Homebrew or you’re not on macOS, the below information
+details what you’ll need. The script additionally sets up pre-commit hooks.
+
+```
+$ ./scripts/macos-setup.sh
+```
+
+#### Required Software
+
+If you can't use the macOS setup script, here is the software you'll need to
+install:
+
+- `nvm`: [Instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
+- `pre-commit`: [Instructions](https://pre-commit.com/#install)
+
+#### Installing pre-commit hooks
+
+Before committing code to this repository or a fork/branch that you intend to
+submit for inclusion, please make sure you've installed the pre-commit hooks
+by running `pre-commit --install`. The macOS setup script does this for you.
+
 ### Quickstart
 
 ```sh
 $ nvm use
+$ npm install -g yarn # if you don't have yarn globally installed
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
                # scrypt node-gyp failures prevent the install from completing
 $ yarn start # start a continuous webpack build that will auto-update with changes
