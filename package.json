@@ -19,8 +19,13 @@
     "start": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
     "lint": "run-p lint:*",
-    "lint-fix": "run-p 'lint:* -- --fix'",
+    "lint-fix": "run-p lint:*:fix",
+    "lint:config": "prettier -c '**/*.@(json|yaml|toml)'",
+    "lint:config:fix": "prettier -w '**/*.@(json|yaml|toml)'",
+    "lint:docs": "prettier -c '**/*.md'",
+    "lint:docs:fix": "prettier -w '**/*.md'",
     "lint:js": "eslint .",
+    "lint:js:fix": "eslint .",
     "test": "echo \"nothing to do\""
   },
   "workspaces": [
