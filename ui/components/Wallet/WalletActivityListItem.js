@@ -14,7 +14,9 @@ export default function WalletActivityListItem(props) {
             Receive
           </div>
           <div className="right">
-            {moment.unix(activity.timeStamp).format("MMM D")}
+            {moment(activity.timeStamp, "YYYY-MM-DDTHH:mm:ss.SSSSZ").format(
+              "MMM D"
+            )}
           </div>
         </div>
         <div className="bottom">
