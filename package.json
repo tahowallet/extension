@@ -25,7 +25,7 @@
     "lint:docs": "prettier -c '**/*.md'",
     "lint:docs:fix": "prettier -w '**/*.md'",
     "lint:js": "eslint .",
-    "lint:js:fix": "eslint .",
+    "lint:js:fix": "eslint . --fix",
     "test": "echo \"nothing to do\""
   },
   "workspaces": [

@@ -36,9 +36,9 @@ your dev browser of choice:
 
 - [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
 - [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
-    * Note that these instructions are for Chrome, but substituting
-      `brave://extensions` or `opera://extensions` for `chrome://extensions`
-      depending on browser should get you to the same buttons.
+  - Note that these instructions are for Chrome, but substituting
+    `brave://extensions` or `opera://extensions` for `chrome://extensions`
+    depending on browser should get you to the same buttons.
 
 Extension bundles for each browser are in `dist/<browser>`.
 
