@@ -1,9 +1,9 @@
 import React from "react"
 import PropTypes from "prop-types"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import moment from "moment"
 
 export default function WalletActivityListItem(props) {
-  const { onClick } = props
+  const { onClick, activity } = props
 
   return (
     <li>
@@ -11,9 +11,11 @@ export default function WalletActivityListItem(props) {
         <div className="top">
           <div className="left">
             <div className="activity_icon" />
-            Send
+            Receive
           </div>
-          <div className="right">Apr 15</div>
+          <div className="right">
+            {moment.unix(activity.timeStamp).format("MMM D")}
+          </div>
         </div>
         <div className="bottom">
           <div className="left">
@@ -21,11 +23,17 @@ export default function WalletActivityListItem(props) {
               <span className="icon_eth" />
             </div>
             <div className="amount">
-              <span className="bold_amount_count">12800</span>KEEP
+              <span className="bold_amount_count">
+                {activity.value && `${activity.value}`.substring(0, 6)}
+              </span>
+              ETH
             </div>
           </div>
           <div className="right">
-            <div className="outcome">To: 0xb34f...23rr</div>
+            <div className="outcome">
+              From:
+              {` ${activity.from.slice(0, 6)}...${activity.from.slice(37, 41)}`}
+            </div>
           </div>
         </div>
       </button>
@@ -48,7 +56,7 @@ export default function WalletActivityListItem(props) {
             background-color: var(--green-80);
           }
           .activity_icon {
-            background: url("./images/activity_send@2x.png");
+            background: url("./images/activity_receive@2x.png");
             background-size: 14px 14px;
             width: 14px;
             height: 14px;
@@ -140,7 +148,7 @@ export default function WalletActivityListItem(props) {
             text-align: right;
           }
           .outcome {
-            width: 115px;
+            width: 200px;
             color: var(--green-5);
             font-family: Segment;
             font-size: 14px;
@@ -156,4 +164,5 @@ export default function WalletActivityListItem(props) {
 
 WalletActivityListItem.propTypes = {
   onClick: PropTypes.func.isRequired,
+  activity: PropTypes.object.isRequired,
 }

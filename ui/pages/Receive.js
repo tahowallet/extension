@@ -1,7 +1,13 @@
 import React from "react"
+import QRCode from "react-qr-code"
+import { useSelector } from "react-redux"
+import { accountSelector } from "../slices/account"
 import SharedButton from "../components/Shared/SharedButton"
 
 export default function Receive() {
+  const { account } = useSelector(accountSelector)
+  if (!account?.address) return false
+
   return (
     <section>
       <h1>
@@ -12,11 +18,14 @@ export default function Receive() {
         Only send Ethereum Mainnet compatible assets to this address.
       </div>
       <div className="qr_code">
-        <div className="qr_code_image" />
+        <QRCode value={account?.address} size={128} />
       </div>
       <div className="copy_wrap">
         <SharedButton
-          label="0x2A0e23...fdA0f6"
+          label={`${account?.address.slice(0, 7)}...${account?.address.slice(
+            35,
+            41
+          )}`}
           icon="copy"
           size="medium"
           iconSize="large"
@@ -67,12 +76,6 @@ export default function Receive() {
             display: flex;
             align-items: center;
             justify-content: center;
-          }
-          .qr_code_image {
-            background: url("./images/qr_code@2x.png");
-            background-size: 128px 128px;
-            width: 128px;
-            height: 128px;
           }
           .copy_wrap {
             width: 215px;
