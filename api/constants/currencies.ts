@@ -25,7 +25,7 @@ export const ETH = {
   symbol: "ETH",
   decimals: 18,
   metadata: {
-    coingeckoId: "ethereum",
+    coinGeckoId: "ethereum",
     tokenLists: [],
     websiteURL: "https://ethereum.org",
   },
@@ -36,7 +36,7 @@ export const BTC = {
   symbol: "BTC",
   decimals: 8,
   metadata: {
-    coingeckoId: "bitcoin",
+    coinGeckoId: "bitcoin",
     tokenLists: [],
     websiteURL: "https://bitcoin.org",
   },

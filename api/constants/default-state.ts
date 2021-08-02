@@ -1,5 +1,5 @@
 import { NETWORK_TYPES } from "./index"
-import { NetworkFungibleAsset } from "../types"
+import { SmartContractFungibleAsset } from "../types"
 
 // Disabled while we figure out how we want to move here.
 // eslint-disable-next-line import/prefer-default-export
@@ -31,7 +31,7 @@ export const DEFAULT_STATE = {
         chainId: "1",
       },
       contractAddress: "0x6b175474e89094c44da98b954eedeac495271d0f",
-    } as NetworkFungibleAsset,
+    } as SmartContractFungibleAsset,
     {
       name: "USD Coin",
       symbol: "USDC",
@@ -47,6 +47,6 @@ export const DEFAULT_STATE = {
         chainId: "1",
       },
       contractAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    } as NetworkFungibleAsset,
+    } as SmartContractFungibleAsset,
   ],
 }

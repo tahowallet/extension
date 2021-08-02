@@ -1,59 +1,7 @@
 import { ethers } from "ethers"
-import { fetchJson } from "@ethersproject/web"
-import { NetworkFungibleAsset, UnitPriceAndTime } from "../types"
-
-const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3/"
-const COINGECKO_BASE_URL = new URL(COINGECKO_API_ROOT)
+import { SmartContractFungibleAsset } from "../types"
 
 const ALCHEMY_KEY = "8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa"
-
-/*
- * Get a list of token prices from the CoinGecko API against a fiat currency.
- *
- * Tokens are specified by an array of contract addresses. Prices are returned
- * as the "unit price" of each single token in the fiat currency.
- */
-export async function getPrices(
-  tokenAddresses: string[],
-  fiatCurrency: string
-) {
-  // TODO cover failed schema validation and http & network errors
-  const url = URL.createObjectURL({
-    ...COINGECKO_BASE_URL,
-    pathname: `${COINGECKO_BASE_URL.pathname}simple/token_price/ethereum`,
-    searchParams: {
-      contract_addresses: tokenAddresses.join(","),
-      include_last_updated_at: "true",
-      vs_currencies: fiatCurrency,
-    },
-  })
-  const json = await fetchJson(url.toString())
-
-  const prices: {
-    [index: string]: UnitPriceAndTime
-  } = {}
-  Object.entries(json).forEach(([address, priceDetails]) => {
-    // TODO parse this as a fixed decimal rather than a number
-    const price: number = Number.parseFloat(priceDetails[fiatCurrency])
-    // TODO fiat currency data lookups
-    const fiatDecimals = 10 // SHIB only needs 8, we're going all out
-    prices[address] = {
-      unitPrice: {
-        asset: {
-          name: fiatCurrency,
-          symbol: fiatCurrency.toUpperCase(),
-          decimals: fiatDecimals,
-        },
-        amount: BigInt(price ** fiatDecimals),
-      },
-      lastUpdated: Number.parseInt(
-        (priceDetails as any).last_updated_at || 0,
-        10
-      ),
-    }
-  })
-  return prices
-}
 
 /*
  * Get an account's balance from an ERC20-compliant contract.
@@ -76,7 +24,7 @@ export async function getBalance(
  * hour volume will be returned.
  */
 export async function getBalances(
-  tokens: NetworkFungibleAsset[],
+  tokens: SmartContractFungibleAsset[],
   account: string
 ): Promise<{ [tokenAddress: string]: BigInt }> {
   const provider = new ethers.providers.AlchemyProvider(ALCHEMY_KEY)
