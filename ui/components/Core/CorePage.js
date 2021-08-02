@@ -6,7 +6,7 @@ import TopMenu from "../TopMenu/TopMenu"
 import TabBar from "../TabBar/TabBar"
 
 export default function CorePage(props) {
-  const { children, hasTabBar } = props
+  const { children, hasTabBar, hasTopBar } = props
 
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
 
@@ -21,15 +21,18 @@ export default function CorePage(props) {
         <TopMenuProtocolList />
       </SharedSlideUpMenu>
       <div className="page">
-        <button
-          type="button"
-          className="trigger"
-          onClick={() => {
-            setIsProtocolListOpen(!isProtocolListOpen)
-          }}
-        >
-          <TopMenu />
-        </button>
+        {hasTopBar ? (
+          <button
+            type="button"
+            className="trigger"
+            onClick={() => {
+              setIsProtocolListOpen(!isProtocolListOpen)
+            }}
+          >
+            <TopMenu />
+          </button>
+        ) : null}
+
         <div className="page_content">{children}</div>
         {hasTabBar ? <TabBar /> : null}
       </div>
@@ -65,8 +68,10 @@ export default function CorePage(props) {
 CorePage.propTypes = {
   children: PropTypes.node.isRequired,
   hasTabBar: PropTypes.bool,
+  hasTopBar: PropTypes.bool,
 }
 
 CorePage.defaultProps = {
   hasTabBar: true,
+  hasTopBar: true,
 }
