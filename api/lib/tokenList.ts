@@ -1,14 +1,14 @@
 import Ajv from "ajv"
+import addAJVFormats from "ajv-formats"
 
 import { TokenList, schema } from "@uniswap/token-lists"
 
 import { ETHEREUM } from "../constants"
-import { Network, SmartContractFungibleAsset } from "../types"
-
-export interface TokenListAndReference {
-  url: string
-  tokenList: TokenList
-}
+import {
+  Network,
+  SmartContractFungibleAsset,
+  TokenListAndReference,
+} from "../types"
 
 export async function fetchAndValidateTokenList(
   url: string
@@ -18,7 +18,10 @@ export async function fetchAndValidateTokenList(
     throw new Error(`Error resolving token list at ${url}`)
   }
   const json = await response.json()
-  const valid = new Ajv().validate(schema, json)
+  const validator = new Ajv()
+  addAJVFormats(validator)
+  const valid = validator.validate(schema, json)
+
   if (!valid) {
     throw new Error(`Invalid token list at ${url}`)
   }
@@ -64,7 +67,7 @@ function tokenListToFungibleAssets(
  * types for easy manipulation, and sorted by the number of lists each appears
  * in.
  */
-export function networkAssetFromLists(
+export function networkAssetsFromLists(
   tokenLists: TokenListAndReference[]
 ): SmartContractFungibleAsset[] {
   const fungibleAssets = tokenLists
@@ -77,9 +80,10 @@ export function networkAssetFromLists(
     acc: { [contractAddress: string]: SmartContractFungibleAsset },
     asset: SmartContractFungibleAsset
   ) {
-    if (asset.contractAddress in acc) {
-      const original = acc[asset.contractAddress]
-      acc[asset.contractAddress] = {
+    const newAcc = { ...acc }
+    if (asset.contractAddress in newAcc) {
+      const original = newAcc[asset.contractAddress]
+      newAcc[asset.contractAddress] = {
         ...original,
         metadata: {
           ...original.metadata,
@@ -89,12 +93,13 @@ export function networkAssetFromLists(
           ),
         },
       }
+    } else {
+      newAcc[asset.contractAddress] = asset
     }
-    return acc
+    return newAcc
   }
 
   const merged = fungibleAssets.reduce(tokenReducer, {})
-
   return Object.entries(merged)
     .map(([k, v]) => v)
     .slice()

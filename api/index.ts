@@ -63,8 +63,8 @@ class Main {
 
     // start all services
     // TODO we need handles for calls and subscriptions
-    startIndexing()
     startPreferences()
+    startIndexing()
   }
 
   /*

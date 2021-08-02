@@ -1,16 +1,23 @@
+import { TokenList } from "@uniswap/token-lists"
+
 export { Transaction, UnsignedTransaction } from "@ethersproject/transactions"
 
-export interface TokenListReference {
+export interface TokenListCitation {
   name: string
   url: string
   logoURL?: string
+}
+
+export interface TokenListAndReference {
+  url: string
+  tokenList: TokenList
 }
 
 export interface AssetMetadata {
   coinGeckoId?: string
   logoURL?: string
   websiteURL?: string
-  tokenLists: TokenListReference[]
+  tokenLists: TokenListCitation[]
 }
 
 export interface Asset {

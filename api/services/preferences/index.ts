@@ -1,4 +1,5 @@
 import { FiatCurrency } from "../../types"
+import { TokenListPreferences } from "./types"
 import { getDB, getOrCreateDB } from "./db"
 
 export async function startService(): Promise<void> {
@@ -14,7 +15,7 @@ export async function getCurrency(): Promise<FiatCurrency> {
   return (await db.getLatestPreferences()).currency
 }
 
-export async function getPrioritizedTokenListURLs(): Promise<string[]> {
+export async function getTokenListPreferences(): Promise<TokenListPreferences> {
   const db = await getDB()
-  return (await db.getLatestPreferences()).tokenListURLs
+  return (await db.getLatestPreferences()).tokenLists
 }

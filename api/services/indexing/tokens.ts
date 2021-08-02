@@ -1,14 +1,32 @@
 // TODO get all token balances of interest and store them
-// TODO track "tokens of interest" in extension storage
-//
-// TODO maintain a cached NetworkFungibleAsset list from prioritized token lists
-//
 
-// TODO fetch, validate, and cache a token list
-// TODO when a new version is found, check preferences to see whether we should upgrade
-// TODO get the latest list of assets from the cache
-// TODO bust the cache
+import {
+  fetchAndValidateTokenList,
+  networkAssetsFromLists,
+} from "../../lib/tokenList"
+import { getDB } from "./db"
+import { getTokenListPreferences } from "../preferences"
 
 export async function handleAlarm(): Promise<void> {
-  console.warn("GETTING TOKENS!!!")
+  const db = await getDB()
+  const tokenListPrefs = await getTokenListPreferences()
+  // make sure each is loaded
+  await Promise.all(
+    tokenListPrefs.urls.map(async (url) => {
+      const cachedList = await db.getLatestTokenList(url)
+      if (!cachedList) {
+        const newListRef = await fetchAndValidateTokenList(url)
+        await db.saveTokenList(url, newListRef.tokenList)
+      }
+    })
+  )
+  // TODO if autoUpdate is true, pull the latest and update if the version has gone up
+  // TODO token balance checks!
+}
+
+export async function getCachedNetworkAssets() {
+  const tokenListPrefs = await getTokenListPreferences()
+  const db = await getDB()
+  const tokenLists = await db.getLatestTokenLists(tokenListPrefs.urls)
+  return networkAssetsFromLists(tokenLists)
 }
