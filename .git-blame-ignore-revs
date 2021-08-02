@@ -1,2 +1,4 @@
-# Impose prettier formatting, with some smaller eslint fixes as well.
+# Impose prettier formatting on JS and TS, with some smaller eslint fixes.
 23545c8ed87d8e9b1661ab02dfaefddaf3725f3e
+# Impose prettier formatting on JSON and Markdown.
+8a90e88658795d569ca525ecb7bced875922c59c
