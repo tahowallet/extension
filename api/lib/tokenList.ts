@@ -2,19 +2,8 @@ import Ajv from "ajv"
 
 import { TokenList, schema } from "@uniswap/token-lists"
 
-import { Network, NetworkFungibleAsset } from "../types"
-
-// TODO integrate this with /api/networks
-const ETHEREUM_NETWORK: Network = {
-  name: "Ethereum Main Net",
-  baseAsset: {
-    name: "Ether",
-    symbol: "ETH",
-    decimals: 18,
-  },
-  chainId: "1",
-  family: "EVM",
-}
+import { ETHEREUM } from "../constants"
+import { Network, SmartContractFungibleAsset } from "../types"
 
 export interface TokenListAndReference {
   url: string
@@ -48,7 +37,7 @@ export async function fetchAndValidateTokenLists(urls: string[]) {
 function tokenListToFungibleAssets(
   url: string,
   tokenList: TokenList
-): NetworkFungibleAsset[] {
+): SmartContractFungibleAsset[] {
   return tokenList.tokens.map((t) => {
     return {
       metadata: {
@@ -64,7 +53,7 @@ function tokenListToFungibleAssets(
       name: t.name,
       symbol: t.symbol,
       decimals: t.decimals,
-      homeNetwork: ETHEREUM_NETWORK,
+      homeNetwork: ETHEREUM,
       contractAddress: t.address,
     }
   })
@@ -77,7 +66,7 @@ function tokenListToFungibleAssets(
  */
 export function networkAssetFromLists(
   tokenLists: TokenListAndReference[]
-): NetworkFungibleAsset[] {
+): SmartContractFungibleAsset[] {
   const fungibleAssets = tokenLists
     .map((listAndRef) =>
       tokenListToFungibleAssets(listAndRef.url, listAndRef.tokenList)
@@ -85,8 +74,8 @@ export function networkAssetFromLists(
     .reduce((a, b) => a.concat(b), [])
 
   function tokenReducer(
-    acc: { [contractAddress: string]: NetworkFungibleAsset },
-    asset: NetworkFungibleAsset
+    acc: { [contractAddress: string]: SmartContractFungibleAsset },
+    asset: SmartContractFungibleAsset
   ) {
     if (asset.contractAddress in acc) {
       const original = acc[asset.contractAddress]
