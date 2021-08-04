@@ -10,7 +10,7 @@ function SelectTokenMenuContent(props) {
 
   return (
     <>
-      <div className="standard_width center_horizontal">
+      <div className="standard_width_padded center_horizontal">
         <div className="search_label">Select token</div>
         <div className="search_wrap">
           <input
@@ -101,7 +101,7 @@ export default function SharedAssetInput(props) {
       <SharedSlideUpMenu isOpen={openAssetMenu} close={handleClick}>
         {SelectTokenMenuContent({ setSelectedTokenAndClose })}
       </SharedSlideUpMenu>
-      <div className="asset_input">
+      <div className="asset_input standard_width">
         {isTypeDestination ? (
           <>
             <input className="token_input" type="text" value="0x..." />
@@ -144,7 +144,6 @@ export default function SharedAssetInput(props) {
       <style jsx>
         {`
           .asset_input {
-            width: 352px;
             height: 72px;
             border-radius: 4px;
             background-color: var(--green-95);

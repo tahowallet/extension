@@ -7,7 +7,7 @@ export default function WalletActivityListItem(props) {
 
   return (
     <li>
-      <button type="button" onClick={onClick}>
+      <button type="button" className="standard_width" onClick={onClick}>
         <div className="top">
           <div className="left">
             <div className="activity_icon" />
@@ -40,7 +40,6 @@ export default function WalletActivityListItem(props) {
       <style jsx>
         {`
           button {
-            width: 352px;
             height: 72px;
             border-radius: 16px;
             background-color: var(--green-95);

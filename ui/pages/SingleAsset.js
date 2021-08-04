@@ -12,13 +12,13 @@ export default function SingleAsset() {
       <CorePage>
         <button
           type="button"
-          className="back_button_wrap standard_width"
+          className="back_button_wrap standard_width_padded"
           onClick={() => goBack()}
         >
           <div className="icon_chevron_left" />
           Back
         </button>
-        <div className="header standard_width">
+        <div className="header standard_width_padded">
           <div className="left">
             <div className="asset_wrap">
               <SharedAssetIcon />
@@ -42,11 +42,11 @@ export default function SingleAsset() {
             />
           </div>
         </div>
-        <div className="sub_info_seperator_wrap standard_width">
+        <div className="sub_info_seperator_wrap standard_width_padded">
           <div className="left">Asset is on: Arbitrum</div>
           <div className="right">Move to Ethereum</div>
         </div>
-        <div className="label standard_width">Activity</div>
+        <div className="label standard_width_padded">Activity</div>
         <WalletActivityList />
       </CorePage>
       <style jsx>

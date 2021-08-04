@@ -11,7 +11,7 @@ export default function WalletAssetListItem(props) {
   return (
     <li>
       <Link component={routes.singleAsset}>
-        <button type="button">
+        <button type="button" className="standard_width">
           <div className="left">
             <SharedAssetIcon />
             <div className="left_content">
@@ -30,11 +30,9 @@ export default function WalletAssetListItem(props) {
           </div>
         </button>
       </Link>
-
       <style jsx>
         {`
           button {
-            width: 352px;
             height: 72px;
             border-radius: 16px;
             background-color: var(--green-95);

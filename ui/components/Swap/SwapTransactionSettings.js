@@ -43,7 +43,7 @@ export default function SwapTransactionSettings() {
           <span className="icon_cog" />
         </button>
       </div>
-      <div className="labels_wrap">
+      <div className="labels_wrap standard_width">
         <label className="label">
           Slippage tolerance
           <div className="info">1%</div>
@@ -56,7 +56,6 @@ export default function SwapTransactionSettings() {
       <style jsx>
         {`
           .labels_wrap {
-            width: 352px;
             height: 72px;
             border-radius: 4px;
             background-color: var(--green-95);

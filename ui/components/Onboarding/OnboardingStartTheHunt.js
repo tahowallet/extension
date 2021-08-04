@@ -16,7 +16,7 @@ export default function OnboardingStartTheHunt(props) {
       </div>
       <ul>
         <li className="label">Use an existing wallet</li>
-        <li className="option">
+        <li className="option standard_width">
           <div className="icon metamask_icon" />
           <SharedButton
             type="tertiary"
@@ -25,7 +25,7 @@ export default function OnboardingStartTheHunt(props) {
             onClick={openMetamaskImportScreen}
           />
         </li>
-        <li className="option">
+        <li className="option standard_width">
           <div className="icon trezor_icon" />
           <SharedButton
             type="tertiary"
@@ -40,7 +40,7 @@ export default function OnboardingStartTheHunt(props) {
             need to save the recovery seed to keep it safe.
           </SharedTooltip>
         </li>
-        <li className="option">
+        <li className="option standard_width">
           <div className="icon tally_icon" />
           <SharedButton
             type="secondary"
@@ -84,7 +84,6 @@ export default function OnboardingStartTheHunt(props) {
           }
           .option {
             display: flex;
-            width: 352px;
             height: 64px;
             border-radius: 16px;
             background-color: var(--green-95);

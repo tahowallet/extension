@@ -80,6 +80,10 @@ li {
 
 .standard_width {
   width: 352px;
+}
+
+.standard_width_padded {
+  width: 352px;
   padding: 0px 8px;
   box-sizing: border-box;
 }
