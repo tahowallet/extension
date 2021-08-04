@@ -50,7 +50,6 @@ export default function Overview() {
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
             background-color: var(--green-95);
           }
-
           .top_balance {
             color: #fff;
             font-size: 28px;
@@ -59,7 +58,6 @@ export default function Overview() {
             display: flex;
             align-self: center;
           }
-
           .prelabel {
             color: var(--green-40);
             font-size: 14px;
@@ -99,9 +97,6 @@ export default function Overview() {
             font-weight: 600;
             line-height: 24px;
             text-align: center;
-          }
-          .lighter_color {
-            color: var(--green-60);
           }
         `}
       </style>
