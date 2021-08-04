@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
-import { Link } from "react-chrome-extension-router"
 import { routes } from "../../config/routes"
+import SharedButtonLink from "../Shared/SharedButtonLink"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
@@ -33,14 +33,14 @@ export default function WalletAccountBalanceControl(props) {
 
         {hasSavedSeed ? (
           <div className="send_receive_button_wrap">
-            <Link component={routes.send}>
+            <SharedButtonLink component={routes.send}>
               <SharedButton
                 label="Send"
                 icon="send"
                 size="medium"
                 type="primary"
               />
-            </Link>
+            </SharedButtonLink>
             <SharedButton
               label="Receive"
               onClick={handleClick}
@@ -51,7 +51,9 @@ export default function WalletAccountBalanceControl(props) {
           </div>
         ) : (
           <div className="save_seed_button_wrap">
-            <Link component={() => routes.onboarding({ startPage: 2 })}>
+            <SharedButtonLink
+              component={() => routes.onboarding({ startPage: 2 })}
+            >
               <SharedButton
                 label="First, secure your recovery seed"
                 icon="arrow_right"
@@ -59,7 +61,7 @@ export default function WalletAccountBalanceControl(props) {
                 size="large"
                 type="warning"
               />
-            </Link>
+            </SharedButtonLink>
           </div>
         )}
       </div>
