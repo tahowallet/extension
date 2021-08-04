@@ -107,7 +107,7 @@ class Main {
 export { browser } from "webextension-polyfill-ts"
 export { connectToBackgroundApi } from "./lib/connect"
 
-export async function startApi() {
+export async function startApi(): Promise<{ main: Main }> {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
