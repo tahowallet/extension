@@ -111,9 +111,9 @@ export default function WalletAssetListItem(props) {
 
 // Could use PropTypes.shape when this gets solidified
 WalletAssetListItem.propTypes = {
-  asset: PropTypes.objectOf({
+  asset: PropTypes.shape({
     balance: PropTypes.number,
-    usd_balance: PropTypes.number,
+    usd_balance: PropTypes.string,
     symbol: PropTypes.string,
   }).isRequired,
 }

@@ -164,5 +164,9 @@ export default function WalletActivityListItem(props) {
 
 WalletActivityListItem.propTypes = {
   onClick: PropTypes.func.isRequired,
-  activity: PropTypes.object.isRequired,
+  activity: PropTypes.shape({
+    timeStamp: PropTypes.string,
+    value: PropTypes.string,
+    from: PropTypes.string,
+  }).isRequired,
 }
