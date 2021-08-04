@@ -1,8 +1,13 @@
 import React from "react"
+import { useSelector } from "react-redux"
 import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
+import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
+import { accountSelector } from "../slices/account"
 
 export default function Overview() {
+  const { account } = useSelector(accountSelector)
+
   return (
     <CorePage hasTopBar={false}>
       <div className="header">
@@ -10,6 +15,7 @@ export default function Overview() {
           <div className="prelabel">Total balance</div>
           <div className="top_balance">
             <span className="top_money_sign">$</span>
+            {account?.total_balance?.usd_amount}
           </div>
         </div>
         <div className="sub_info_row">
@@ -22,6 +28,7 @@ export default function Overview() {
           </div>
         </div>
       </div>
+      <OverviewAssetsTable assets={account?.tokens} />
       <style jsx>
         {`
           .header_top_content {
