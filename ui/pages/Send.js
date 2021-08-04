@@ -19,19 +19,21 @@ export default function Send() {
           <div className="form">
             <div className="form_input">
               <label className="label">
-                Asset / Amount <label className="label_right">Max</label>
+                Asset / Amount <span className="label_right">Max</span>
+                <SharedAssetInput
+                  onClick={() => {
+                    setSelectedCount(1)
+                  }}
+                />
               </label>
-              <SharedAssetInput
-                onClick={() => {
-                  setSelectedCount(1)
-                }}
-              />
             </div>
             <div className="form_input">
-              <label className="label">Send To:</label>
-              <SharedAssetInput isTypeDestination />
+              <label className="label">
+                Send To:
+                <SharedAssetInput isTypeDestination />
+              </label>
             </div>
-            <label className="label">Network Fee/Speed</label>
+            <span className="label">Network Fee/Speed</span>
             <SharedNetworkFeeGroup />
             <div className="divider" />
             <div className="total_footer standard_width">

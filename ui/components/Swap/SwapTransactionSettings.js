@@ -21,7 +21,7 @@ export default function SwapTransactionSettings() {
       >
         <div className="settings_wrap">
           <div className="row row_slippage">
-            <div className="settings_label">Slippage tolerance</div>
+            <span className="settings_label">Slippage tolerance</span>
             <SharedButton
               type="secondary"
               size="medium"
@@ -30,9 +30,9 @@ export default function SwapTransactionSettings() {
             />
           </div>
           <div className="row row_fee">
-            <div className="settings_label settings_label_fee">
+            <span className="settings_label settings_label_fee">
               Transaction Fee/Speed
-            </div>
+            </span>
             <SharedNetworkFeeGroup />
           </div>
         </div>
@@ -44,14 +44,14 @@ export default function SwapTransactionSettings() {
         </button>
       </div>
       <div className="labels_wrap">
-        <label className="label">
+        <span className="label">
           Slippage tolerance
           <div className="info">1%</div>
-        </label>
-        <label className="label">
+        </span>
+        <span className="label">
           Network Fee/Speed
           <div className="info">{"$24 / Fast <1min"}</div>
-        </label>
+        </span>
       </div>
       <style jsx>
         {`
