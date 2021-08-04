@@ -37,15 +37,21 @@ export default function Swap() {
             <div className="form_input">
               <label className="label">
                 Swap from: <span className="label_right">Max</span>
+                <SharedAssetInput
+                  onClick={handleAssetSelect}
+                  id="swap_asset_one"
+                />
               </label>
-              <SharedAssetInput onClick={handleAssetSelect} />
             </div>
             <div className="icon_change" />
             <div className="form_input">
               <label className="label">
                 Swap to: <span className="label_right">-</span>
+                <SharedAssetInput
+                  onClick={handleAssetSelect}
+                  id="swap_asset_two"
+                />
               </label>
-              <SharedAssetInput onClick={handleAssetSelect} />
             </div>
             <div className="settings_wrap">
               <SwapTransactionSettings />
@@ -76,7 +82,6 @@ export default function Swap() {
           .wrap {
             width: 352px;
           }
-
           .network_fee_group {
             display: flex;
             margin-bottom: 29px;
@@ -84,10 +89,8 @@ export default function Swap() {
           .network_fee_button {
             margin-right: 16px;
           }
-
           // TODO: this css is duplicated, needs to be dry
           .label {
-            height: 17px;
             color: var(--green-60);
             font-size: 14px;
             font-weight: 400;
@@ -96,7 +99,7 @@ export default function Swap() {
             margin-bottom: 5px;
             margin-left: 7px;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
           }
           .label_right {
             margin-right: 6px;
