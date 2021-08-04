@@ -19,7 +19,7 @@ jobs:
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
-    - run: yarn install
+    - run: yarn install --frozen-lockfile
     - run: yarn build
     - name: Upload build on main
       # A push event is a main merge; build and upload artifacts.
@@ -40,7 +40,7 @@ jobs:
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
-    - run: yarn install
+    - run: yarn install --frozen-lockfile
     - run: yarn test
   lint:
     runs-on: ubuntu-latest
@@ -54,5 +54,5 @@ jobs:
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
-    - run: yarn install
+    - run: yarn install --frozen-lockfile
     - run: yarn lint

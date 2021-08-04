@@ -100,16 +100,17 @@ export function createPortProxy(port: Runtime.Port) {
 
   return new Proxy<any>(port, {
     get: (_, key) => {
-      if (key === "send" || key === "subscriber") {
-        return post.bind(undefined, key)
+      switch (key) {
+        case "send":
+          return post.bind(undefined, key)
+        case "subscribe":
+          return post.bind(undefined, "subscription")
+        case "unsubscribe":
+          return (id) =>
+            post("subscription", { method: "TERMINATE", params: { id } })
+        default:
+          return port[key]
       }
-
-      if (key === "unsubscribe") {
-        return (id) =>
-          post("subscription", { method: "TERMINATE", params: { id } })
-      }
-
-      return port[key]
     },
     set: () => {
       throw new Error("Read Only")

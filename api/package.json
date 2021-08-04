@@ -31,6 +31,7 @@
     "ajv-formats": "^2.1.0",
     "dexie": "^3.0.3",
     "ethers": "^5.4.2",
+    "bnc-sdk": "^3.4.1",
     "node-fetch": "^2.6.1",
     "webextension-polyfill-ts": "^0.26.0"
   },
