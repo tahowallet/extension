@@ -36,7 +36,7 @@ export default function Swap() {
           <div className="form">
             <div className="form_input">
               <label className="label">
-                Swap from: <span className="label_right">Max</span>
+                Swap from:
                 <SharedAssetInput
                   onClick={handleAssetSelect}
                   id="swap_asset_one"
@@ -46,7 +46,7 @@ export default function Swap() {
             <div className="icon_change" />
             <div className="form_input">
               <label className="label">
-                Swap to: <span className="label_right">-</span>
+                Swap to:
                 <SharedAssetInput
                   onClick={handleAssetSelect}
                   id="swap_asset_two"
