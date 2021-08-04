@@ -18,7 +18,7 @@ export const accountsResult = {
       hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
       blockHash:
         "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
-      blockNumber: "0x891820",
+      blockNumber: 0x891820,
       from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
       gas: "0x5208",
       gasPrice: "0x3b9aca00",
