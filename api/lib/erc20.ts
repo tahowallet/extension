@@ -1,5 +1,6 @@
 import { ethers } from "ethers"
-import { SmartContractFungibleAsset } from "../types"
+import { ETHEREUM } from "../constants"
+import { AccountBalance, SmartContractFungibleAsset } from "../types"
 
 const ALCHEMY_KEY = "8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa"
 
@@ -10,7 +11,10 @@ export async function getBalance(
   tokenAddress: string,
   account: string
 ): Promise<BigInt> {
-  const provider = new ethers.providers.AlchemyProvider(ALCHEMY_KEY)
+  const provider = new ethers.providers.AlchemyProvider(
+    { name: "homestead", chainId: 1 },
+    ALCHEMY_KEY
+  )
   const abi = ["function balanceOf(address owner) view returns (uint256)"]
   const token = new ethers.Contract(tokenAddress, abi, provider)
 
@@ -20,26 +24,47 @@ export async function getBalance(
 /*
  * Get multiple token balances for an account using Alchemy.
  *
- * If no token contracts are provided, balances for the top 100 tokens by 24
- * hour volume will be returned.
+ * If no token contracts are provided, no balances will be returned.
  */
 export async function getBalances(
   tokens: SmartContractFungibleAsset[],
   account: string
-): Promise<{ [tokenAddress: string]: BigInt }> {
-  const provider = new ethers.providers.AlchemyProvider(ALCHEMY_KEY)
+): Promise<AccountBalance[]> {
+  const provider = new ethers.providers.AlchemyProvider(
+    { name: "homestead", chainId: 1 },
+    ALCHEMY_KEY
+  )
 
-  const params = [
-    account,
-    tokens.length > 0 ? tokens.map((t) => t.contractAddress) : "DEFAULT_TOKENS",
-  ]
+  if (tokens.length === 0) {
+    return [] as AccountBalance[]
+  }
+
+  const params = [account, tokens.map((t) => t.contractAddress)]
   const json = await provider.send("alchemy_getTokenBalances", params)
   // TODO cover failed schema validation and other errors
 
-  return json.tokenBalances.reduce((acc: any, tokenDetail: any) => {
-    acc[tokenDetail.contractAddress] = BigInt(tokenDetail.tokenBalance || 0)
-    return acc
+  const assetByAddress = tokens.reduce((acc, asset) => {
+    const newAcc = { ...acc }
+    newAcc[asset.contractAddress.toLowerCase()] = asset
+    return newAcc
   }, {})
+
+  return json.tokenBalances.reduce(
+    (acc: AccountBalance[], tokenDetail: any) => {
+      const accountBalance = {
+        assetAmount: {
+          amount: BigInt(tokenDetail.tokenBalance || 0),
+          asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
+        },
+        account,
+        network: ETHEREUM, // TODO go multi-network
+        retrievedAt: Date.now(),
+        provenance: "alchemy",
+      } as AccountBalance
+      return acc.concat([accountBalance])
+    },
+    []
+  )
 }
 
 // TODO get token balances of a many token contracts for a particular account the slow way, cache

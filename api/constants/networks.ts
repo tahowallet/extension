@@ -6,7 +6,7 @@ import { BTC, ETH } from "./currencies"
 export const ETHEREUM = {
   name: "Ethereum Main Net",
   baseAsset: ETH,
-  chainId: "1",
+  chainID: "1",
   family: "EVM",
 } as Network
 

@@ -1,34 +1,56 @@
 import Dexie from "dexie"
-
 import { TokenList } from "@uniswap/token-lists"
+
+import { ETHEREUM } from "../../constants"
 import {
+  AccountBalance,
   AnyAsset,
   FungibleAsset,
   Network,
   PricePoint,
+  SmartContractFungibleAsset,
   TokenListCitation,
 } from "../../types"
 
+/*
+ * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
+ * database index purposes.
+ */
 export type IndexedPricePoint = PricePoint & {
   asset1ID: string
   asset2ID: string
 }
 
+/*
+ * PriceMeasurement is a IndexedPricePoint extension with additional bookkeeping
+ * to keep track of how the price was measured and saved.
+ */
 export type PriceMeasurement = IndexedPricePoint & {
+  /*
+   * When the price was retrieved, independent from the time which the
+   * PricePoint purportis to represent.
+   */
   retrievedAt: number
+
+  /*
+   * An attempt to keep loose track of price data sources. It's unclear whether
+   * we'll need more than a simple string down the road.
+   */
   provenance: string
+
+  /*
+   * An optional exchange identifier.
+   */
   exchange?: string
 }
 
-export interface AccountBalance {
-  account: string
-  asset: FungibleAsset
-  network: Network
-  blockHeight?: BigInt
-  retrievedAt: number
-  provenance: string
-}
-
+/*
+ * CachedTokenList combines the specificty of TokenListCitation as a way to
+ * reference a token list with actual token list, as well as a retrieval date.
+ *
+ * This detail will allow for disambiguation in case a token list publisher has
+ * issues with backdating or improperly incremented version numbers.
+ */
 export type CachedTokenList = TokenListCitation & {
   retrievedAt: number
   list: TokenList
@@ -86,12 +108,37 @@ function numberArrayCompare(arr1: number[], arr2: number[]) {
   return 0
 }
 
+/*
+ * An account on a particular network. That's it. That's the comment.
+ */
+export interface AccountNetwork {
+  account: string
+  network: Network
+}
+
 export class IndexingDatabase extends Dexie {
   prices: Dexie.Table<PriceMeasurement, number>
 
+  /*
+   * Historic account balances.
+   */
   balances: Dexie.Table<AccountBalance, number>
 
+  /*
+   * Cached token lists maintaining token metadata.
+   */
   tokenLists: Dexie.Table<CachedTokenList, number>
+
+  /*
+   * Accounts whose balances should be tracked on a particular network.
+   */
+  accountsToTrack: Dexie.Table<AccountNetwork, number>
+
+  /*
+   * Tokens whose balances should be checked periodically. It might make sense
+   * for this to be tracked against particular accounts in the future.
+   */
+  tokensToTrack: Dexie.Table<SmartContractFungibleAsset, number>
 
   migrations: Dexie.Table<Migration, number>
 
@@ -101,8 +148,12 @@ export class IndexingDatabase extends Dexie {
       migrations: "++id,appliedAt",
       prices: "++id,time,[asset1ID+asset2ID]",
       balances:
-        "++id,account,asset.symbol,network.name,blockHeight,retrievedAt",
+        "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       tokenLists: "++id,url,retrievedAt",
+      accountsToTrack:
+        "++id,account,network.family,network.chainID,network.name",
+      tokensToTrack:
+        "++id,symbol,&contractAddress,homeNetwork.family,homeNetwork.chainId,homeNetwork.name",
     })
   }
 
@@ -121,7 +172,51 @@ export class IndexingDatabase extends Dexie {
     await this.prices.add(measurement)
   }
 
-  async getLatestTokenList(url: string) {
+  async getLatestAccountBalance(
+    account: string,
+    network: Network,
+    asset: FungibleAsset
+  ): Promise<AccountBalance | null> {
+    // TODO this needs to be tightened up, both for performance and specificity
+    const balanceCandidates = await this.balances
+      .where("retrievedAt")
+      .above(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      .filter(
+        (balance) =>
+          balance.account === account &&
+          balance.assetAmount.asset.symbol === asset.symbol &&
+          balance.network.name === network.name
+      )
+      .reverse()
+      .sortBy("retrievedAt")
+    return balanceCandidates.length > 0 ? balanceCandidates[0] : null
+  }
+
+  async addTokenToTrack(asset: SmartContractFungibleAsset) {
+    this.tokensToTrack.add(asset)
+  }
+
+  async getTokensToTrack() {
+    // TODO move "tokens to track" to expire over time and require a refresh
+    // to keep from balance checking tons of irrelevant tokens
+    // see https://github.com/tallycash/tally-extension/issues/136 for details
+    return this.tokensToTrack.toArray()
+  }
+
+  async setAccountsToTrack(
+    accountAndNetworks: AccountNetwork[]
+  ): Promise<void> {
+    await this.transaction("rw", this.accountsToTrack, () => {
+      this.accountsToTrack.clear()
+      this.accountsToTrack.bulkAdd(accountAndNetworks)
+    })
+  }
+
+  async getAccountsToTrack(): Promise<AccountNetwork[]> {
+    return this.accountsToTrack.toArray()
+  }
+
+  async getLatestTokenList(url: string): Promise<CachedTokenList | null> {
     const candidateLists = await this.tokenLists
       .where("url")
       .equals(url)
@@ -144,7 +239,9 @@ export class IndexingDatabase extends Dexie {
     await this.tokenLists.add(cachedList)
   }
 
-  async getLatestTokenLists(urls: string[]) {
+  async getLatestTokenLists(
+    urls: string[]
+  ): Promise<{ url: string; tokenList: TokenList }[]> {
     const candidateLists = (await this.tokenLists
       .where("url")
       .anyOf(urls)
