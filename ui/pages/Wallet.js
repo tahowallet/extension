@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
-import { useDispatch, useSelector } from "react-redux"
 import { subscribeToAccount, accountSelector } from "../slices/account"
 
 export default function Wallet() {

@@ -30,7 +30,7 @@ export default function SwapQoute() {
         <span className="icon_switch" />
         <SwapQuoteAssetCard />
       </div>
-      <label className="label label_right">1 ETH = 9,843 KEEP</label>
+      <span className="label label_right">1 ETH = 9,843 KEEP</span>
       <div className="settings_wrap">
         <SwapTransactionSettings />
       </div>

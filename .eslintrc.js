@@ -12,6 +12,12 @@ module.exports = {
   rules: {
     "react/jsx-one-expression-per-line": [0],
     "react/jsx-filename-extension": [0],
+    "jsx-a11y/label-has-associated-control": [
+      2,
+      {
+        controlComponents: ["SharedAssetInput"],
+      },
+    ],
     "import/no-extraneous-dependencies": [
       "error",
       // Don't slap build files for importing devDependencies.

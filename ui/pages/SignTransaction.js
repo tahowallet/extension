@@ -1,13 +1,12 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
-import { Link } from "react-chrome-extension-router"
-import { registerRoute } from "../config/routes"
+import { registerRoute, routes } from "../config/routes"
+import SharedButtonLink from "../components/Shared/SharedButtonLink"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
-import Wallet from "./Wallet"
 
 export default function SignTransaction(props) {
   const { approveSpendOrSwap } = props
@@ -47,14 +46,14 @@ export default function SignTransaction(props) {
         </div>
       ) : null}
       <div className="footer_actions">
-        <Link component={Wallet}>
+        <SharedButtonLink component={routes.wallet}>
           <SharedButton
             label="Reject"
             iconSize="large"
             size="large"
             type="secondary"
           />
-        </Link>
+        </SharedButtonLink>
         <SharedButton
           label="Confirm"
           type="primary"
