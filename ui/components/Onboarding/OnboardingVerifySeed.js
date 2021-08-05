@@ -74,7 +74,7 @@ export default function OnboardingVerifySeed(props) {
       <div className="subtitle">
         This is the only way to restore your tally wallett
       </div>
-      <ul className="standard_width button_group center_horizontal">
+      <ul className="standard_width_padded button_group center_horizontal">
         {isSelected.map((item, index) => (
           <li className="button_spacing">
             <SharedButton
@@ -88,7 +88,7 @@ export default function OnboardingVerifySeed(props) {
           </li>
         ))}
       </ul>
-      <ul className="standard_width button_group center_horizontal bottom">
+      <ul className="standard_width_padded button_group center_horizontal bottom">
         {isNotSelected.length === 0 ? (
           <SuccessMessage />
         ) : (

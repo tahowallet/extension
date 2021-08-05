@@ -5,7 +5,7 @@ import TopMenuProfileButton from "./TopMenuProfileButton"
 export default function TopMenu() {
   return (
     <div className="nav_wrap">
-      <nav className="standard_width">
+      <nav className="standard_width_padded">
         <TopMenuProtocolSwitcher />
         <TopMenuProfileButton />
       </nav>

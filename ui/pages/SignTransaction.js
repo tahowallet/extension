@@ -29,7 +29,7 @@ export default function SignTransaction(props) {
       <h1 className="serif_header title">
         {spendOrSwapContent[approveSpendOrSwap].title}
       </h1>
-      <div className="primary_info_card">
+      <div className="primary_info_card standard_width">
         {spendOrSwapContent[approveSpendOrSwap].component()}
       </div>
       <SharedPanelSwitcher
@@ -38,7 +38,7 @@ export default function SignTransaction(props) {
         panelNames={["Details", "Advanced"]}
       />
       {panelNum === 0 ? (
-        <div className="detail_items_wrap standard_width">
+        <div className="detail_items_wrap standard_width_padded">
           <span className="detail_item">
             Network Fee/Speed
             <span className="detail_item_right">{"$24 / <1min"}</span>
@@ -80,7 +80,6 @@ export default function SignTransaction(props) {
           }
           .primary_info_card {
             display: block;
-            width: 352px;
             height: fit-content;
             border-radius: 16px;
             background-color: var(--hunter-green);

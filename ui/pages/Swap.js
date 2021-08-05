@@ -31,7 +31,7 @@ export default function Swap() {
         >
           <SwapQoute />
         </SharedSlideUpMenu>
-        <div className="wrap">
+        <div className="standard_width">
           <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
@@ -56,7 +56,7 @@ export default function Swap() {
             <div className="settings_wrap">
               <SwapTransactionSettings />
             </div>
-            <div className="footer standard_width">
+            <div className="footer standard_width_padded">
               {selectedCount < 2 ? (
                 <SharedButton
                   type="primary"
@@ -79,9 +79,6 @@ export default function Swap() {
       </CorePage>
       <style jsx>
         {`
-          .wrap {
-            width: 352px;
-          }
           .network_fee_group {
             display: flex;
             margin-bottom: 29px;
