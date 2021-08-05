@@ -2,8 +2,7 @@
 /* eslint-disable */
 import * as stub from "./stub"
 import BlocknativeSdk from "bnc-sdk"
-
-/** @typedef { import("bnc-sdk/dist/types/src/interfaces").EthereumTransactionData } TransactionData */
+import { EthereumTransactionData } from "bnc-sdk/dist/types/src/interfaces"
 
 let time = 1e3 * 15
 let importWasCalled = !!window.localStorage.temp
@@ -17,31 +16,63 @@ const blockNative = new BlocknativeSdk({
   transactionHandlers: [(event) => console.log(event.transaction)],
 })
 
-/** @type {Array<(accounts: typeof accountsResult)=>void>} */
-let handlers = []
+type Account = typeof accountsResult
+
+// Some remedial typing for BlockNative; see blocknative/sdk#138 .
+type EthereumNetBalanceChanges = {
+  address: string
+  balanceChanges: EthereumAssetBalanceChanges[]
+}
+
+type EthereumAssetBalanceChanges = {
+  delta: string
+  asset: AssetDetails
+  breakdown: TransferDetails[]
+}
+
+type AssetDetails = {
+  type: AssetType
+  symbol: string
+}
+
+type AssetType = "ether" | "ERC20"
+
+type TransferDetails = {
+  counterparty: string
+  amount: string
+}
+
+let handlers: Array<(accounts: Account) => void> = []
 function subscribeBlockNative() {
   blockNative
     .account(ethermineAccount)
-    .emitter.on(
-      "txConfirmed",
-      (/** @type {TransactionData} */ transactionData) => {
-        const { netBalanceChanges } = transactionData
-        netBalanceChanges
+    .emitter.on("txConfirmed", (transactionData) => {
+      if (
+        "contractCall" in transactionData && // not a Bitcoin tx
+        transactionData.system == "ethereum" // not a log
+      ) {
+        // Lock type to transaction data, augment with netBalanceChanges info.
+        const transaction = transactionData as EthereumTransactionData & {
+          netBalanceChanges: EthereumNetBalanceChanges[]
+        }
+
+        transaction.netBalanceChanges
           .filter(({ address }) => address.toLowerCase() == ethermineAccount)
           .forEach(({ balanceChanges }) => {
             balanceChanges
               .filter(({ asset: { type: assetType } }) => assetType == "ether")
               .forEach(({ delta }) => {
+                // TODO Adjust this when we start shipping raw BigInts over to UI.
                 accountsResult.total_balance.amount +=
                   Number(BigInt(delta) / 10n ** 16n) / 100
               })
           })
 
-        accountsResult.activity.push(transactionData)
+        accountsResult.activity.push(transaction)
 
         handlers.forEach((handler) => handler(accountsResult))
       }
-    )
+    })
 }
 function unsubscribeBlockNative() {
   blockNative.account(ethermineAccount).emitter.off("txConfirmed")
@@ -69,7 +100,7 @@ export const apiStubs = {
       handlers = []
       unsubscribeBlockNative()
     },
-    subscribe: (handler) => {
+    subscribe: (handler: (accounts: Account) => void) => {
       handlers.push(handler)
 
       if (handlers.length === 1) {
