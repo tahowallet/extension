@@ -10,7 +10,7 @@ export default function Overview() {
 
   return (
     <CorePage hasTopBar={false}>
-      <div className="header">
+      <header>
         <div className="header_top_content standard_width">
           <div className="prelabel">Total balance</div>
           <div className="top_balance">
@@ -27,7 +27,7 @@ export default function Overview() {
             23
           </div>
         </div>
-      </div>
+      </header>
       <OverviewAssetsTable assets={account?.tokens} />
       <style jsx>
         {`
@@ -43,7 +43,7 @@ export default function Overview() {
             flex-direction: column;
             justify-content: center;
           }
-          .header {
+          header {
             width: 384px;
             height: 158px;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
