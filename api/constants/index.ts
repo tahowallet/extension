@@ -17,5 +17,3 @@ export const ALARMS = {
     minute: 1,
   },
 }
-
-

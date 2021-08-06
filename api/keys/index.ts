@@ -120,7 +120,7 @@ export default class Keys {
     return keyring.getAccounts()
   }
 
-  async import (type: keyTypeStrings, data: string, password?: string ): Promise<string[]> {
+  async import ({type: keyTypeStrings, data: string, password?: string}): Promise<string[]> {
     await this.ready
     this.#checkLock()
     // TODO use the same types across all deps
@@ -141,7 +141,7 @@ export default class Keys {
   // returns address list for specific keyring if no reference is
   // supplied returns all address for all keyrings
   // TODO: figure out why ts dosent like the reduce method
-  async getAddresses (reference?: string): Promise<any> {
+  async getAddresses (reference?: string): Promise<any[]> {
     await this.ready
     if (reference === undefined) {
       const addresses = Object.values(this.#keyrings).reduce((agg: string[], keyring: any): string[] => {
@@ -152,7 +152,7 @@ export default class Keys {
     return this.#keyrings[reference].getAccounts()
   }
 
-  async getWalletReferences (reference: string): Promise<string[]> {
+  async getWalletReferences (): Promise<string[]> {
     await this.ready
     return Object.keys(this.#keyrings)
   }
