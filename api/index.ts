@@ -6,8 +6,8 @@ import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
-import { startService as startIndexing } from "./services/indexing"
-import { startService as startPreferences } from "./services/preferences"
+import startPreferences from "./services/preferences"
+import startIndexing from "./services/indexing"
 
 // import { Keys } from "./keys"
 
@@ -22,6 +22,8 @@ export interface MainState {
   tokensToTrack: SmartContractFungibleAsset[]
 }
 
+type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T
+
 class Main {
   state: ObsStore<MainState>
 
@@ -34,6 +36,10 @@ class Main {
   private subscriptionIds: any
 
   keys: any
+
+  preferenceService: Awaited<ReturnType<typeof startPreferences>> | null
+
+  indexingService: Awaited<ReturnType<typeof startIndexing>> | null
 
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
@@ -62,9 +68,12 @@ class Main {
     this.subscribeToStates()
 
     // start all services
-    // TODO we need handles for calls and subscriptions
-    startPreferences()
-    startIndexing()
+    this.initialize()
+  }
+
+  async initialize() {
+    this.preferenceService = await startPreferences()
+    this.indexingService = await startIndexing(this.preferenceService)
   }
 
   /*

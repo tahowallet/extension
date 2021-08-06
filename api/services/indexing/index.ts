@@ -1,9 +1,5 @@
-import { browser, Alarms } from "webextension-polyfill-ts"
-
-import { FungibleAsset, Network, SmartContractFungibleAsset } from "../../types"
-import { handleAlarm as handleTokenAlarm } from "./tokens"
-import handlePriceAlarm from "./prices"
-import { getOrCreateDB, getDB, AccountNetwork } from "./db"
+import PreferenceService from "../preferences/service"
+import IndexingService from "./service"
 
 const SCHEDULES = {
   tokens: {
@@ -16,66 +12,10 @@ const SCHEDULES = {
   },
 }
 
-async function alarmHandler(alarm: Alarms.Alarm): Promise<void> {
-  if (alarm.name === "tokens") {
-    handleTokenAlarm()
-  } else if (alarm.name === "prices") {
-    handlePriceAlarm()
-  }
+export default async function startService(
+  preferenceService: PreferenceService
+): Promise<IndexingService> {
+  const service = new IndexingService(SCHEDULES, preferenceService)
+  await service.startService()
+  return service
 }
-
-export async function startService(): Promise<void> {
-  const db = await getOrCreateDB()
-
-  Object.entries(SCHEDULES).forEach(([name, schedule]) => {
-    browser.alarms.create(name, schedule)
-  })
-  browser.alarms.onAlarm.addListener(alarmHandler)
-}
-
-export async function stopService(): Promise<void> {
-  Object.entries(SCHEDULES).forEach(([name]) => {
-    browser.alarms.clear(name)
-  })
-  browser.alarms.onAlarm.removeListener(alarmHandler)
-}
-
-export { getCachedNetworkAssets } from "./tokens"
-
-export async function getAccountsToTrack(): Promise<AccountNetwork[]> {
-  const db = await getDB()
-  return db.getAccountsToTrack()
-}
-
-export async function setAccountsToTrack(
-  accountAndNetworks: AccountNetwork[]
-): Promise<void> {
-  const db = await getDB()
-  return db.setAccountsToTrack(accountAndNetworks)
-}
-
-export async function getTokensToTrack(): Promise<
-  SmartContractFungibleAsset[]
-> {
-  const db = await getDB()
-  return db.getTokensToTrack()
-}
-
-export async function addTokenToTrack(
-  asset: SmartContractFungibleAsset
-): Promise<void> {
-  const db = await getDB()
-  return db.addTokenToTrack(asset)
-}
-
-export async function getLatestAccountBalance(
-  account: string,
-  network: Network,
-  asset: FungibleAsset
-) {
-  const db = await getDB()
-  return db.getLatestAccountBalance(account, network, asset)
-}
-
-// TODO export subscription mechanism for token balances, only allow async functions
-// TODO export subscription mech for price changes
