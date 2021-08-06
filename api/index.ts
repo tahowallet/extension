@@ -20,13 +20,16 @@ export interface MainState {
 
 class Main {
   state: ObsStore<MainState>
+
   network: Networks
+
   transactions: Transactions
+
   accounts: Accounts
 
   keys: any
-  private subscriptionIds: any
 
+  private subscriptionIds: any
 
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
