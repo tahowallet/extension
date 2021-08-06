@@ -1,21 +1,7 @@
-import { FiatCurrency } from "../../types"
-import { TokenListPreferences } from "./types"
-import { getDB, getOrCreateDB } from "./db"
+import PreferenceService from "./service"
 
-export async function startService(): Promise<void> {
-  const db = await getOrCreateDB()
-}
-
-export async function stopService(): Promise<void> {
-  // TODO
-}
-
-export async function getCurrency(): Promise<FiatCurrency> {
-  const db = await getDB()
-  return (await db.getLatestPreferences()).currency
-}
-
-export async function getTokenListPreferences(): Promise<TokenListPreferences> {
-  const db = await getDB()
-  return (await db.getLatestPreferences()).tokenLists
+export default async function startService(): Promise<PreferenceService> {
+  const service = new PreferenceService()
+  await service.startService()
+  return service
 }

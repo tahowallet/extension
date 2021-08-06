@@ -3,12 +3,14 @@ import {
   networkAssetsFromLists,
 } from "../../lib/tokenList"
 import { getBalances as getTokenBalances } from "../../lib/erc20"
+import PreferenceService from "../preferences/service"
 import { getDB } from "./db"
-import { getTokenListPreferences } from "../preferences"
 
-export async function handleAlarm(): Promise<void> {
+export async function handleAlarm(
+  preferenceService: PreferenceService
+): Promise<void> {
   const db = await getDB()
-  const tokenListPrefs = await getTokenListPreferences()
+  const tokenListPrefs = await preferenceService.getTokenListPreferences()
   // make sure each token list in preferences is loaded
   await Promise.all(
     tokenListPrefs.urls.map(async (url) => {
@@ -40,8 +42,10 @@ export async function handleAlarm(): Promise<void> {
   )
 }
 
-export async function getCachedNetworkAssets() {
-  const tokenListPrefs = await getTokenListPreferences()
+export async function getCachedNetworkAssets(
+  preferenceService: PreferenceService
+) {
+  const tokenListPrefs = await preferenceService.getTokenListPreferences()
   const db = await getDB()
   const tokenLists = await db.getLatestTokenLists(tokenListPrefs.urls)
   return networkAssetsFromLists(tokenLists)

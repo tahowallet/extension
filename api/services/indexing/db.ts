@@ -1,7 +1,6 @@
 import Dexie from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
-import { ETHEREUM } from "../../constants"
 import {
   AccountBalance,
   AnyAsset,
