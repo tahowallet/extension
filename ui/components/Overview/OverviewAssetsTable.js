@@ -7,71 +7,75 @@ export default function OverviewAssetsTable(props) {
   if (!assets) return false
 
   return (
-    <div>
-      <div className="column_names standard_width">
-        <div className="column_one">Asset</div>
-        <div className="column_two">Price</div>
-        <div className="column_three">Balance</div>
-      </div>
-      <div className="table">
+    <table className="standard_width">
+      <thead>
+        <tr>
+          <th>Asset</th>
+          <th>Price</th>
+          <th>Balance</th>
+        </tr>
+      </thead>
+      <tbody>
         {assets.map((asset) => (
-          <div className="row standard_width">
-            <div className="row_asset column_one">
-              <SharedAssetIcon size="small" />
-              <span className="asset_name">KEEP</span>
-            </div>
-            <span className="row_price column_two">
-              <span className="lighter_color">$</span>0.02827
-            </span>
-            <div className="row_balance column_three">
-              <span>
+          <tr>
+            <td>
+              <div className="asset_descriptor">
+                <SharedAssetIcon size="small" />
+                <span className="asset_name">KEEP</span>
+              </div>
+            </td>
+            <td>
+              <div>
+                <span className="lighter_color">$</span>0.02827
+              </div>
+            </td>
+            <td>
+              <div>
                 <span className="lighter_color">$</span>
                 {asset.usd_balance}
-              </span>
-              <span className="balance_token_amount">
+              </div>
+              <div className="balance_token_amount">
                 {asset.balance.toFixed(5)}
-              </span>
-            </div>
-          </div>
+              </div>
+            </td>
+          </tr>
         ))}
-      </div>
+      </tbody>
       <style jsx>{`
-        .row {
-          display: flex;
+        tr {
           height: 55px;
-          align-items: center;
+        }
+        td,
+        th {
+          border-bottom: 1px solid var(--green-120);
+          text-align: left;
+        }
+        thead {
           border-bottom: 1px solid var(--green-120);
         }
-        .row_asset {
-          display: flex;
-          align-items: center;
-        }
-        .column_one {
-          width: 40%;
-        }
-        .column_two {
-          width: 25%;
-          text-align: right;
-        }
-        .column_three {
-          width: 35%;
-          justify-self: flex-end;
-          text-align: right;
-        }
-        .column_names {
-          display: flex;
+        th {
           color: var(--green-60);
           font-size: 12px;
           font-weight: 600;
           line-height: 16px;
-          margin: 0 auto;
-          margin-top: 23px;
-          border-bottom: 1px solid var(--green-120);
           padding-bottom: 8px;
+          vertical-align: bottom;
         }
-        .row_balance {
+        td:nth-child(1) {
+          width: 40%;
+        }
+        th:nth-child(2),
+        td:nth-child(2) {
+          width: 25%;
+          text-align: right;
+        }
+        th:nth-child(3),
+        td:nth-child(3) {
+          text-align: right;
+        }
+        .asset_descriptor {
           display: flex;
-          flex-direction: column;
+          align-items: center;
         }
         .balance_token_amount {
           color: var(--green-60);
@@ -84,7 +88,7 @@ export default function OverviewAssetsTable(props) {
           color: var(--green-60);
         }
       `}</style>
-    </div>
+    </table>
   )
 }
 
