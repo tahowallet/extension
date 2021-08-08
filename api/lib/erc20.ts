@@ -1,20 +1,16 @@
+import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers } from "ethers"
 import { ETHEREUM } from "../constants"
 import { AccountBalance, SmartContractFungibleAsset } from "../types"
-
-const ALCHEMY_KEY = "8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa"
 
 /*
  * Get an account's balance from an ERC20-compliant contract.
  */
 export async function getBalance(
+  provider: BaseProvider,
   tokenAddress: string,
   account: string
 ): Promise<BigInt> {
-  const provider = new ethers.providers.AlchemyProvider(
-    { name: "homestead", chainId: 1 },
-    ALCHEMY_KEY
-  )
   const abi = ["function balanceOf(address owner) view returns (uint256)"]
   const token = new ethers.Contract(tokenAddress, abi, provider)
 
@@ -27,14 +23,10 @@ export async function getBalance(
  * If no token contracts are provided, no balances will be returned.
  */
 export async function getBalances(
+  provider: AlchemyProvider,
   tokens: SmartContractFungibleAsset[],
   account: string
 ): Promise<AccountBalance[]> {
-  const provider = new ethers.providers.AlchemyProvider(
-    { name: "homestead", chainId: 1 },
-    ALCHEMY_KEY
-  )
-
   if (tokens.length === 0) {
     return [] as AccountBalance[]
   }

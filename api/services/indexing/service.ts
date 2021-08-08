@@ -9,7 +9,6 @@ import {
   PricePoint,
   SmartContractFungibleAsset,
 } from "../../types"
-import PreferenceService from "../preferences/service"
 import { getBalances as getTokenBalances } from "../../lib/erc20"
 import { getPrices } from "../../lib/prices"
 import {
@@ -17,8 +16,10 @@ import {
   networkAssetsFromLists,
 } from "../../lib/tokenList"
 import { BTC, ETH, FIAT_CURRENCIES } from "../../constants"
+import PreferenceService from "../preferences/service"
+import ChainService from "../chain/service"
 import { Service } from ".."
-import { getOrCreateDB, AccountNetwork, IndexingDatabase } from "./db"
+import { getOrCreateDB, IndexingDatabase } from "./db"
 
 interface AlarmSchedule {
   when?: number
@@ -32,7 +33,6 @@ interface Events {
 }
 
 /*
- *
  * IndexingService is responsible for pulling and maintaining all application-
  * level "indexing" data — things like fungible token balances and NFTs, as well
  * as more abstract application concepts like governance proposals.
@@ -50,6 +50,8 @@ export default class IndexingService implements Service<Events> {
 
   private preferenceService: Promise<PreferenceService>
 
+  private chainService: Promise<ChainService>
+
   /*
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
@@ -60,12 +62,14 @@ export default class IndexingService implements Service<Events> {
    */
   constructor(
     schedules: { [alarmName: string]: AlarmSchedule },
-    preferenceService: Promise<PreferenceService>
+    preferenceService: Promise<PreferenceService>,
+    chainService: Promise<ChainService>
   ) {
     this.db = null
     this.emitter = new Emittery<Events>()
     this.schedules = schedules
     this.preferenceService = preferenceService
+    this.chainService = chainService
   }
 
   /*
@@ -91,16 +95,6 @@ export default class IndexingService implements Service<Events> {
     Object.entries(this.schedules).forEach(([name]) => {
       browser.alarms.clear(name)
     })
-  }
-
-  async getAccountsToTrack(): Promise<AccountNetwork[]> {
-    return this.db.getAccountsToTrack()
-  }
-
-  async setAccountsToTrack(
-    accountAndNetworks: AccountNetwork[]
-  ): Promise<void> {
-    return this.db.setAccountsToTrack(accountAndNetworks)
   }
 
   async getTokensToTrack(): Promise<SmartContractFungibleAsset[]> {
@@ -173,12 +167,18 @@ export default class IndexingService implements Service<Events> {
       (t) => t.homeNetwork.chainID === "1"
     )
 
+    const chainService = await this.chainService
     // wait on balances being written to the db, don't wait on event emission
     await Promise.allSettled(
       (
-        await this.db.getAccountsToTrack()
+        await chainService.getAccountsToTrack()
       ).map(async ({ account }) => {
-        const balances = await getTokenBalances(erc20TokensToTrack, account)
+        // TODO hardcoded to Ethereum
+        const balances = await getTokenBalances(
+          chainService.pollingProviders.ethereum,
+          erc20TokensToTrack,
+          account
+        )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
         await this.db.balances.bulkAdd(balances)
       })

@@ -14,6 +14,7 @@ import {
   startService as startIndexing,
   IndexingService,
 } from "./services/indexing"
+import { startService as startChain, ChainService } from "./services/chain"
 
 // import { Keys } from "./keys"
 
@@ -46,6 +47,13 @@ class Main {
    * The promise will be resolved when the service is initialized.
    */
   preferenceService: Promise<PreferenceService>
+
+  /*
+   * A promise to the chain service, keeping track of base asset balances,
+   * transactions, and network status. The promise will be resolved when the
+   * service is initialized.
+   */
+  chainService: Promise<ChainService>
 
   /*
    * A promise to the indexing service, keeping track of token balances and
@@ -85,7 +93,11 @@ class Main {
 
   async initializeServices() {
     this.preferenceService = startPreferences()
-    this.indexingService = startIndexing(this.preferenceService)
+    this.chainService = startChain(this.preferenceService)
+    this.indexingService = startIndexing(
+      this.preferenceService,
+      this.chainService
+    )
   }
 
   /*

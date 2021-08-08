@@ -158,3 +158,11 @@ export interface AccountBalance {
    */
   dataSource: "alchemy" | "local"
 }
+
+/*
+ * An account on a particular network. That's it. That's the comment.
+ */
+export interface AccountNetwork {
+  account: string
+  network: Network
+}

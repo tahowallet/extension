@@ -4,7 +4,7 @@ import { BTC, ETH } from "./currencies"
 // TODO integrate this with /api/networks
 
 export const ETHEREUM = {
-  name: "Ethereum Main Net",
+  name: "Ethereum",
   baseAsset: ETH,
   chainID: "1",
   family: "EVM",
