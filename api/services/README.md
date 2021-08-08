@@ -1,12 +1,11 @@
-Services
-========
+# api/services
 
 The extension backend is organized into several different, largely independent
 services, each responsible for their own external communications and data
 persistence.
 
-In contrast to the architecture preferred by simple web services — a single REST
-interface synchronously managing data per request — this architecture prefers
+In contrast to the architecture preferred by a simple web service — a single REST
+interface synchronously managing data each request — this architecture prefers
 services that are constantly monitoring, indexing, and caching data, pushing the
 results to data stores and UI asynchronously.
 
