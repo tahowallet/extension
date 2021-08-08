@@ -9,6 +9,18 @@ import {
 
 // TODO application data atop transactions (eg token balances)
 
+export interface Block {
+  hash: string
+  height: number
+  parentHash: string
+  timestamp: number
+  gasLimit: BigInt
+  gasUsed: BigInt
+  baseFee?: BigInt
+  network: Network
+  dataSource: "local" | "alchemy"
+}
+
 export interface Transaction {
   hash: string
   from: string
@@ -18,13 +30,13 @@ export interface Transaction {
   input: string
   nonce: BigInt
   value: BigInt
-  dataSource: "local" | "alchemy"
   network: Network
+  dataSource: "local" | "alchemy"
 }
 
 export interface ConfirmedTransaction extends Transaction {
   blockHash: string
-  blockNumber: string
+  blockHeight: string
 }
 
 export interface SignedTransaction extends Transaction {
@@ -48,6 +60,8 @@ export class ChainDatabase extends Dexie {
    * network.
    */
   accountsToTrack: Dexie.Table<AccountNetwork, number>
+
+  blocks: Dexie.Table<Block, number>
 
   /*
    *
@@ -73,10 +87,11 @@ export class ChainDatabase extends Dexie {
       migrations: "++id,appliedAt",
       accountsToTrack:
         "++id,account,network.family,network.chainID,network.name",
-      balances:
-        "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
+      blocks: "&[hash+network.name],hash,height,timestamp,network.name",
       transactions:
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name",
+      balances:
+        "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
     })
   }
 
