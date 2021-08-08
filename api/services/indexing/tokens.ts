@@ -1,15 +1,18 @@
+import { AlchemyProvider } from "@ethersproject/providers"
 import {
   fetchAndValidateTokenList,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
 import { getBalances as getTokenBalances } from "../../lib/erc20"
 import PreferenceService from "../preferences/service"
-import { getDB } from "./db"
+import ChainService from "../chain/service"
+import { IndexingDatabase } from "./db"
 
 export async function handleAlarm(
-  preferenceService: PreferenceService
+  preferenceService: PreferenceService,
+  chainService: ChainService,
+  db: IndexingDatabase
 ): Promise<void> {
-  const db = await getDB()
   const tokenListPrefs = await preferenceService.getTokenListPreferences()
   // make sure each token list in preferences is loaded
   await Promise.all(
@@ -34,19 +37,24 @@ export async function handleAlarm(
 
   await Promise.all(
     (
-      await db.getAccountsToTrack()
+      await chainService.getAccountsToTrack()
     ).map(async ({ account }) => {
-      const balances = await getTokenBalances(erc20TokensToTrack, account)
+      // TODO proper provider lookup
+      const balances = await getTokenBalances(
+        chainService.pollingProviders.ethereum as AlchemyProvider,
+        erc20TokensToTrack,
+        account
+      )
       await db.balances.bulkAdd(balances)
     })
   )
 }
 
 export async function getCachedNetworkAssets(
-  preferenceService: PreferenceService
+  preferenceService: PreferenceService,
+  db: IndexingDatabase
 ) {
   const tokenListPrefs = await preferenceService.getTokenListPreferences()
-  const db = await getDB()
   const tokenLists = await db.getLatestTokenLists(tokenListPrefs.urls)
   return networkAssetsFromLists(tokenLists)
 }

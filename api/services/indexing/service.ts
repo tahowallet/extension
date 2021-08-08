@@ -2,15 +2,20 @@ import { browser, Alarms } from "webextension-polyfill-ts"
 
 import { FungibleAsset, Network, SmartContractFungibleAsset } from "../../types"
 import PreferenceService from "../preferences/service"
+import ChainService from "../chain/service"
 import { Service } from ".."
 import { handleAlarm as handleTokenAlarm } from "./tokens"
 import { handleAlarm as handlePriceAlarm } from "./prices"
-import { getOrCreateDB, getDB, AccountNetwork, IndexingDatabase } from "./db"
+import { getOrCreateDB, IndexingDatabase } from "./db"
 
-function getAlarmHandler(preferenceService: PreferenceService) {
+function getAlarmHandler(
+  preferenceService: PreferenceService,
+  chainService: ChainService,
+  db: IndexingDatabase
+) {
   async function alarmHandler(alarm: Alarms.Alarm): Promise<void> {
     if (alarm.name === "tokens") {
-      handleTokenAlarm(preferenceService)
+      handleTokenAlarm(preferenceService, chainService, db)
     } else if (alarm.name === "prices") {
       handlePriceAlarm()
     }
@@ -31,9 +36,12 @@ export default class IndexingService implements Service {
 
   preferenceService: PreferenceService
 
+  chainService: ChainService
+
   constructor(
     schedules: { [alarmName: string]: AlarmSchedule },
-    preferenceService: PreferenceService
+    preferenceService: PreferenceService,
+    chainService: ChainService
   ) {
     this.db = null
     this.schedules = schedules
@@ -46,23 +54,15 @@ export default class IndexingService implements Service {
     Object.entries(this.schedules).forEach(([name, schedule]) => {
       browser.alarms.create(name, schedule)
     })
-    browser.alarms.onAlarm.addListener(getAlarmHandler(this.preferenceService))
+    browser.alarms.onAlarm.addListener(
+      getAlarmHandler(this.preferenceService, this.chainService, this.db)
+    )
   }
 
   async stopService(): Promise<void> {
     Object.entries(this.schedules).forEach(([name]) => {
       browser.alarms.clear(name)
     })
-  }
-
-  async getAccountsToTrack(): Promise<AccountNetwork[]> {
-    return this.db.getAccountsToTrack()
-  }
-
-  async setAccountsToTrack(
-    accountAndNetworks: AccountNetwork[]
-  ): Promise<void> {
-    return this.db.setAccountsToTrack(accountAndNetworks)
   }
 
   async getTokensToTrack(): Promise<SmartContractFungibleAsset[]> {

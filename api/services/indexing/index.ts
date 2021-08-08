@@ -1,4 +1,5 @@
 import PreferenceService from "../preferences/service"
+import ChainService from "../chain/service"
 import IndexingService from "./service"
 
 const SCHEDULES = {
@@ -13,9 +14,14 @@ const SCHEDULES = {
 }
 
 export default async function startService(
-  preferenceService: PreferenceService
+  preferenceService: PreferenceService,
+  chainService: ChainService
 ): Promise<IndexingService> {
-  const service = new IndexingService(SCHEDULES, preferenceService)
+  const service = new IndexingService(
+    SCHEDULES,
+    preferenceService,
+    chainService
+  )
   await service.startService()
   return service
 }

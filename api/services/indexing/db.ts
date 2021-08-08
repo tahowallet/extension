@@ -3,6 +3,7 @@ import { TokenList } from "@uniswap/token-lists"
 
 import {
   AccountBalance,
+  AccountNetwork,
   AnyAsset,
   FungibleAsset,
   Network,
@@ -107,14 +108,6 @@ function numberArrayCompare(arr1: number[], arr2: number[]) {
   return 0
 }
 
-/*
- * An account on a particular network. That's it. That's the comment.
- */
-export interface AccountNetwork {
-  account: string
-  network: Network
-}
-
 export class IndexingDatabase extends Dexie {
   prices: Dexie.Table<PriceMeasurement, number>
 
@@ -127,11 +120,6 @@ export class IndexingDatabase extends Dexie {
    * Cached token lists maintaining token metadata.
    */
   tokenLists: Dexie.Table<CachedTokenList, number>
-
-  /*
-   * Accounts whose balances should be tracked on a particular network.
-   */
-  accountsToTrack: Dexie.Table<AccountNetwork, number>
 
   /*
    * Tokens whose balances should be checked periodically. It might make sense
@@ -149,8 +137,6 @@ export class IndexingDatabase extends Dexie {
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       tokenLists: "++id,url,retrievedAt",
-      accountsToTrack:
-        "++id,account,network.family,network.chainID,network.name",
       tokensToTrack:
         "++id,symbol,&contractAddress,homeNetwork.family,homeNetwork.chainId,homeNetwork.name",
     })
@@ -200,19 +186,6 @@ export class IndexingDatabase extends Dexie {
     // to keep from balance checking tons of irrelevant tokens
     // see https://github.com/tallycash/tally-extension/issues/136 for details
     return this.tokensToTrack.toArray()
-  }
-
-  async setAccountsToTrack(
-    accountAndNetworks: AccountNetwork[]
-  ): Promise<void> {
-    await this.transaction("rw", this.accountsToTrack, () => {
-      this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd(accountAndNetworks)
-    })
-  }
-
-  async getAccountsToTrack(): Promise<AccountNetwork[]> {
-    return this.accountsToTrack.toArray()
   }
 
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {

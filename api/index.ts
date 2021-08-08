@@ -7,6 +7,7 @@ import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
 import startPreferences from "./services/preferences"
+import startChain from "./services/chain"
 import startIndexing from "./services/indexing"
 
 // import { Keys } from "./keys"
@@ -38,6 +39,8 @@ class Main {
   keys: any
 
   preferenceService: Awaited<ReturnType<typeof startPreferences>> | null
+
+  chainService: Awaited<ReturnType<typeof startChain>> | null
 
   indexingService: Awaited<ReturnType<typeof startIndexing>> | null
 
@@ -73,7 +76,11 @@ class Main {
 
   async initialize() {
     this.preferenceService = await startPreferences()
-    this.indexingService = await startIndexing(this.preferenceService)
+    this.chainService = await startChain(this.preferenceService)
+    this.indexingService = await startIndexing(
+      this.preferenceService,
+      this.chainService
+    )
   }
 
   /*
