@@ -11,10 +11,10 @@ export default function Overview() {
   return (
     <CorePage hasTopBar={false}>
       <header>
-        <div className="header_top_content standard_width">
-          <div className="prelabel">Total balance</div>
-          <div className="top_balance">
-            <span className="top_money_sign">$</span>
+        <div className="header_primary_content standard_width">
+          <span className="total_balance_label">Total balance</span>
+          <div className="primary_balance">
+            <span className="primary_money_sign">$</span>
             {account?.total_balance?.usd_amount}
           </div>
         </div>
@@ -31,7 +31,7 @@ export default function Overview() {
       <OverviewAssetsTable assets={account?.tokens} />
       <style jsx>
         {`
-          .header_top_content {
+          .header_primary_content {
             height: 96px;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
@@ -50,7 +50,7 @@ export default function Overview() {
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
             background-color: var(--green-95);
           }
-          .top_balance {
+          .primary_balance {
             color: #fff;
             font-size: 28px;
             font-weight: 500;
@@ -58,7 +58,7 @@ export default function Overview() {
             display: flex;
             align-self: center;
           }
-          .prelabel {
+          .total_balance_label {
             color: var(--green-40);
             font-size: 14px;
             line-height: 16px;
