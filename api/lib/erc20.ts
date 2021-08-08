@@ -59,7 +59,7 @@ export async function getBalances(
         account,
         network: ETHEREUM, // TODO go multi-network
         retrievedAt: Date.now(),
-        provenance: "alchemy",
+        dataSource: "alchemy",
       } as AccountBalance
       return acc.concat([accountBalance])
     },

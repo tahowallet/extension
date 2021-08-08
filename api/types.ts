@@ -156,5 +156,5 @@ export interface AccountBalance {
    * A loose attempt at tracking balance data provenance, in case providers
    * disagree and need to be disambiguated.
    */
-  provenance: string
+  dataSource: "alchemy" | "local"
 }

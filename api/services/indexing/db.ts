@@ -36,7 +36,7 @@ export type PriceMeasurement = IndexedPricePoint & {
    * An attempt to keep loose track of price data sources. It's unclear whether
    * we'll need more than a simple string down the road.
    */
-  provenance: string
+  dataSource: "coingecko"
 
   /*
    * An optional exchange identifier.
@@ -160,13 +160,13 @@ export class IndexingDatabase extends Dexie {
   async savePriceMeasurement(
     pricePoint: PricePoint,
     retrievedAt: number,
-    provenance: string,
+    dataSource: PriceMeasurement["dataSource"],
     exchange?: string
   ): Promise<void> {
     const measurement = {
       ...normalizePricePoint(pricePoint),
       retrievedAt,
-      provenance,
+      dataSource,
       exchange,
     }
     await this.prices.add(measurement)
