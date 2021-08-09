@@ -31,6 +31,16 @@ interface Events {
   accountBalance: AccountBalance
 }
 
+/*
+ *
+ * IndexingService is responsible for pulling and maintaining all application-
+ * level "indexing" data — things like fungible token balances and NFTs, as well
+ * as more abstract application concepts like governance proposals.
+ *
+ * Today, the service periodically polls for price and token balance
+ * changes for all tracked tokens and accounts, as well as up to date
+ * token metadata. Relevant prices and balances are emitted as events.
+ */
 export default class IndexingService implements Service<Events> {
   readonly schedules: { [alarmName: string]: AlarmSchedule }
 
@@ -40,6 +50,14 @@ export default class IndexingService implements Service<Events> {
 
   private preferenceService: Promise<PreferenceService>
 
+  /*
+   * Create a new IndexingService. The service isn't initialized until
+   * startService() is called and resolved.
+   *
+   * @param schedules - Data polling schedules, used to create browser alarms.
+   * @param preferenceService - Required for token metadata and currency
+   *        preferences.
+   */
   constructor(
     schedules: { [alarmName: string]: AlarmSchedule },
     preferenceService: Promise<PreferenceService>
@@ -50,6 +68,10 @@ export default class IndexingService implements Service<Events> {
     this.preferenceService = preferenceService
   }
 
+  /*
+   * Initialize the IndexingService, setting up the database and all browser
+   * alarms.
+   */
   async startService(): Promise<void> {
     this.db = await getOrCreateDB()
 
