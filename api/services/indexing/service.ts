@@ -1,5 +1,4 @@
 import { browser, Alarms } from "webextension-polyfill-ts"
-
 import {
   AccountBalance,
   CoinGeckoAsset,
@@ -29,11 +28,11 @@ export default class IndexingService implements Service {
 
   private db: IndexingDatabase | null
 
-  private preferenceService: PreferenceService
+  private preferenceService: Promise<PreferenceService>
 
   constructor(
     schedules: { [alarmName: string]: AlarmSchedule },
-    preferenceService: PreferenceService
+    preferenceService: Promise<PreferenceService>
   ) {
     this.db = null
     this.schedules = schedules
@@ -87,9 +86,10 @@ export default class IndexingService implements Service {
     return this.db.getLatestAccountBalance(account, network, asset)
   }
 
-  async getCachedNetworkAssets() {
-    const tokenListPrefs =
-      await this.preferenceService.getTokenListPreferences()
+  async getCachedNetworkAssets(): Promise<SmartContractFungibleAsset[]> {
+    const tokenListPrefs = await (
+      await this.preferenceService
+    ).getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
     return networkAssetsFromLists(tokenLists)
   }
@@ -113,8 +113,9 @@ export default class IndexingService implements Service {
   }
 
   private async handleTokenAlarm(): Promise<void> {
-    const tokenListPrefs =
-      await this.preferenceService.getTokenListPreferences()
+    const tokenListPrefs = await (
+      await this.preferenceService
+    ).getTokenListPreferences()
     // make sure each token list in preferences is loaded
     await Promise.all(
       tokenListPrefs.urls.map(async (url) => {

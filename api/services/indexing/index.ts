@@ -13,7 +13,7 @@ const SCHEDULES = {
 }
 
 export default async function startService(
-  preferenceService: PreferenceService
+  preferenceService: Promise<PreferenceService>
 ): Promise<IndexingService> {
   const service = new IndexingService(SCHEDULES, preferenceService)
   await service.startService()

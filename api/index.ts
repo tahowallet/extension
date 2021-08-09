@@ -22,8 +22,6 @@ export interface MainState {
   tokensToTrack: SmartContractFungibleAsset[]
 }
 
-type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T
-
 class Main {
   state: ObsStore<MainState>
 
@@ -37,9 +35,17 @@ class Main {
 
   keys: any
 
-  preferenceService: Awaited<ReturnType<typeof startPreferences>> | null
+  /*
+   * A promise to the preference service, a dependency for most other services.
+   * The promise will be resolved when the service is initialized.
+   */
+  preferenceService: ReturnType<typeof startPreferences>
 
-  indexingService: Awaited<ReturnType<typeof startIndexing>> | null
+  /*
+   * A promise to the indexing service, keeping track of token balances and
+   * prices. The promise will be resolved when the service is initialized.
+   */
+  indexingService: ReturnType<typeof startIndexing>
 
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
@@ -68,12 +74,12 @@ class Main {
     this.subscribeToStates()
 
     // start all services
-    this.initialize()
+    this.initializeServices()
   }
 
-  async initialize() {
-    this.preferenceService = await startPreferences()
-    this.indexingService = await startIndexing(this.preferenceService)
+  async initializeServices() {
+    this.preferenceService = startPreferences()
+    this.indexingService = startIndexing(this.preferenceService)
   }
 
   /*
@@ -125,7 +131,7 @@ class Main {
 export { browser } from "webextension-polyfill-ts"
 export { connectToBackgroundApi } from "./lib/connect"
 
-export async function startApi() {
+export async function startApi(): Promise<{ main: Main }> {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
