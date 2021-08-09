@@ -23,14 +23,14 @@ export default function SwapQoute() {
   }
 
   return (
-    <section className="center_horizontal">
+    <section className="center_horizontal standard_width">
       <SharedActivityHeader label="Swap Assets" activity="swap" />
       <div className="qoute_cards">
         <SwapQuoteAssetCard />
         <span className="icon_switch" />
         <SwapQuoteAssetCard />
       </div>
-      <label className="label label_right">1 ETH = 9,843 KEEP</label>
+      <span className="label label_right">1 ETH = 9,843 KEEP</span>
       <div className="settings_wrap">
         <SwapTransactionSettings />
       </div>
@@ -55,7 +55,7 @@ export default function SwapQoute() {
         <>
           <div className="exchange_section_wrap">
             <span className="label">Exchange route</span>
-            <div className="exchange_content">
+            <div className="exchange_content standard_width">
               <div className="left">
                 <span className="icon_uniswap" />
                 Uniswap v3
@@ -76,7 +76,6 @@ export default function SwapQoute() {
       <style jsx>
         {`
           section {
-            width: 352px;
             margin-top: -24px;
           }
           .icon_uniswap {
@@ -132,7 +131,6 @@ export default function SwapQoute() {
             margin-top: 44px;
           }
           .exchange_content {
-            width: 352px;
             height: 40px;
             border-radius: 4px;
             background-color: var(--green-95);

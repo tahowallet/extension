@@ -1,17 +1,17 @@
 import React from "react"
 import PropTypes from "prop-types"
-import { Link } from "react-chrome-extension-router"
+import SharedButtonLink from "../Shared/SharedButtonLink"
 
 export default function TabBarIcon(props) {
   const { name, isActive, component } = props
 
   return (
     <>
-      <Link component={component}>
+      <SharedButtonLink component={component}>
         <div>
           <div className={`icon${isActive ? " active" : ""}`} />
         </div>
-      </Link>
+      </SharedButtonLink>
       <style jsx>
         {`
           .icon {

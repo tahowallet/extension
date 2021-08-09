@@ -3,7 +3,7 @@ import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 
 export default function TopMenuProtocolList() {
   return (
-    <div className="standard_width center_horizontal">
+    <div className="standard_width_padded center_horizontal">
       <TopMenuProtocolListItem isSelected />
       <ul>
         {Array(3)

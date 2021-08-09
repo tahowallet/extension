@@ -11,7 +11,7 @@ export default function Send() {
   return (
     <>
       <CorePage>
-        <div className="wrap">
+        <div className="standard_width">
           <h1 className="header">
             <span className="icon_activity_send_medium" />
             <div className="title">Send Asset</div>
@@ -19,22 +19,24 @@ export default function Send() {
           <div className="form">
             <div className="form_input">
               <label className="label">
-                Asset / Amount <label className="label_right">Max</label>
+                Asset / Amount <span className="label_right">Max</span>
+                <SharedAssetInput
+                  onClick={() => {
+                    setSelectedCount(1)
+                  }}
+                />
               </label>
-              <SharedAssetInput
-                onClick={() => {
-                  setSelectedCount(1)
-                }}
-              />
             </div>
             <div className="form_input">
-              <label className="label">Send To:</label>
-              <SharedAssetInput isTypeDestination />
+              <label className="label">
+                Send To:
+                <SharedAssetInput isTypeDestination />
+              </label>
             </div>
-            <label className="label">Network Fee/Speed</label>
+            <span className="label">Network Fee/Speed</span>
             <SharedNetworkFeeGroup />
             <div className="divider" />
-            <div className="total_footer standard_width">
+            <div className="total_footer standard_width_padded">
               <div className="total_amount">
                 <div className="total_label">Total</div>
                 <div className="total_amount_number">0.0</div>
@@ -51,9 +53,6 @@ export default function Send() {
       </CorePage>
       <style jsx>
         {`
-          .wrap {
-            width: 352px;
-          }
           .icon_activity_send_medium {
             background: url("./images/activity_send_medium@2x.png");
             background-size: 24px 24px;
