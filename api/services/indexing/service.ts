@@ -1,9 +1,12 @@
 import { browser, Alarms } from "webextension-polyfill-ts"
+import Emittery from "emittery"
+
 import {
   AccountBalance,
   CoinGeckoAsset,
   FungibleAsset,
   Network,
+  PricePoint,
   SmartContractFungibleAsset,
 } from "../../types"
 import PreferenceService from "../preferences/service"
@@ -23,8 +26,15 @@ interface AlarmSchedule {
   periodInMinutes?: number
 }
 
-export default class IndexingService implements Service {
+interface Events {
+  price: PricePoint
+  accountBalance: AccountBalance
+}
+
+export default class IndexingService implements Service<Events> {
   readonly schedules: { [alarmName: string]: AlarmSchedule }
+
+  emitter: Emittery<Events>
 
   private db: IndexingDatabase | null
 
@@ -35,6 +45,7 @@ export default class IndexingService implements Service {
     preferenceService: Promise<PreferenceService>
   ) {
     this.db = null
+    this.emitter = new Emittery<Events>()
     this.schedules = schedules
     this.preferenceService = preferenceService
   }
@@ -104,10 +115,13 @@ export default class IndexingService implements Service {
       [BTC, ETH] as CoinGeckoAsset[],
       FIAT_CURRENCIES
     )
-    // kick off db writes, don't wait for the promises to settle
-    pricePoints.forEach((pricePoint) =>
+
+    // kick off db writes and event emission, don't wait for the promises to
+    // settle
+    pricePoints.forEach((pricePoint) => {
+      this.emitter.emit("price", pricePoint)
       this.db.savePriceMeasurement(pricePoint, Date.now(), "coingecko")
-    )
+    })
 
     // TODO get the prices of all tokens to track and save them
   }
@@ -137,16 +151,15 @@ export default class IndexingService implements Service {
       (t) => t.homeNetwork.chainID === "1"
     )
 
-    await Promise.all(
+    // wait on balances being written to the db, don't wait on event emission
+    await Promise.allSettled(
       (
         await this.db.getAccountsToTrack()
       ).map(async ({ account }) => {
         const balances = await getTokenBalances(erc20TokensToTrack, account)
+        balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
         await this.db.balances.bulkAdd(balances)
       })
     )
   }
-
-  // TODO expose subscription mechanism for token balances, only allow async functions
-  // TODO expose subscription mech for price changes
 }

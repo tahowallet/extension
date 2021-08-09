@@ -1,10 +1,22 @@
+import Emittery from "emittery"
+
 import { FiatCurrency } from "../../types"
 import { Service } from ".."
-import { TokenListPreferences } from "./types"
+import { Preferences, TokenListPreferences } from "./types"
 import { getDB, getOrCreateDB, PreferenceDatabase } from "./db"
 
-export default class PreferenceService implements Service {
-  db: PreferenceDatabase | null
+interface Events {
+  preferencesChanges: Preferences
+}
+
+export default class PreferenceService implements Service<Events> {
+  emitter: Emittery<Events>
+
+  private db: PreferenceDatabase | null
+
+  constructor() {
+    this.emitter = new Emittery<Events>()
+  }
 
   async startService(): Promise<void> {
     this.db = await getOrCreateDB()

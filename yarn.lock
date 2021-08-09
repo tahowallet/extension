@@ -2929,6 +2929,11 @@ elliptic@6.5.4:
     minimalistic-assert "^1.0.1"
     minimalistic-crypto-utils "^1.0.1"
 
+emittery@^0.9.2:
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/emittery/-/emittery-0.9.2.tgz#0a57c40773c6da380115c85bd67d381dd9e22f6f"
+  integrity sha512-sweWHu3j4dQm+NjLPu17pv+m5lCeK7g4Ov0NgfbRUEyzLc59DYDeRYXqlxEvuolaToI0VR3ThjFAghzl7Acjfw==
+
 emoji-regex@^8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"

@@ -19,7 +19,7 @@ Grouping business rules and control flow into these services means
 * Clear boundaries for testing system behavior in the future
 
 Service APIs are designed to
-* Expose emitted events to the rest of the system asynchronously
-* Expose the most common synchronous requests via public methods on the
-  `Service` object
+* Expose emitted events to the rest of the system asynchronously via
+  `Service().emitter`
+* Expose common external requests via public methods on the `Service` object
 * Resolve inter-service dependencies with `Promise`s
