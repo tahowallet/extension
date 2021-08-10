@@ -3,7 +3,7 @@ import { CoinGeckoAsset } from "../../types"
 import { getPrices } from "../../lib/prices"
 import { BTC, ETH, FIAT_CURRENCIES } from "../../constants"
 
-export async function handleAlarm(): Promise<void> {
+export default async function handleAlarm(): Promise<void> {
   const db = await getDB()
   // ETH and BTC vs major currencies
   const pricePoints = await getPrices(

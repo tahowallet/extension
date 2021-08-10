@@ -2,7 +2,7 @@ import { browser, Alarms } from "webextension-polyfill-ts"
 
 import { FungibleAsset, Network, SmartContractFungibleAsset } from "../../types"
 import { handleAlarm as handleTokenAlarm } from "./tokens"
-import { handleAlarm as handlePriceAlarm } from "./prices"
+import handlePriceAlarm from "./prices"
 import { getOrCreateDB, getDB, AccountNetwork } from "./db"
 
 const SCHEDULES = {
