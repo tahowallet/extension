@@ -1,13 +1,12 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
-import { Link } from "react-chrome-extension-router"
-import { registerRoute } from "../config/routes"
+import { registerRoute, routes } from "../config/routes"
+import SharedButtonLink from "../components/Shared/SharedButtonLink"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
-import Wallet from "./Wallet"
 
 export default function SignTransaction(props) {
   const { approveSpendOrSwap } = props
@@ -30,7 +29,7 @@ export default function SignTransaction(props) {
       <h1 className="serif_header title">
         {spendOrSwapContent[approveSpendOrSwap].title}
       </h1>
-      <div className="primary_info_card">
+      <div className="primary_info_card standard_width">
         {spendOrSwapContent[approveSpendOrSwap].component()}
       </div>
       <SharedPanelSwitcher
@@ -39,7 +38,7 @@ export default function SignTransaction(props) {
         panelNames={["Details", "Advanced"]}
       />
       {panelNum === 0 ? (
-        <div className="detail_items_wrap standard_width">
+        <div className="detail_items_wrap standard_width_padded">
           <span className="detail_item">
             Network Fee/Speed
             <span className="detail_item_right">{"$24 / <1min"}</span>
@@ -47,14 +46,14 @@ export default function SignTransaction(props) {
         </div>
       ) : null}
       <div className="footer_actions">
-        <Link component={Wallet}>
+        <SharedButtonLink component={routes.wallet}>
           <SharedButton
             label="Reject"
             iconSize="large"
             size="large"
             type="secondary"
           />
-        </Link>
+        </SharedButtonLink>
         <SharedButton
           label="Confirm"
           type="primary"
@@ -81,7 +80,6 @@ export default function SignTransaction(props) {
           }
           .primary_info_card {
             display: block;
-            width: 352px;
             height: fit-content;
             border-radius: 16px;
             background-color: var(--hunter-green);

@@ -5,7 +5,7 @@ import TabBarIcon from "./TabBarIcon"
 
 export default function TabBar() {
   const activeTabName = getCurrent()?.component?.name?.toLowerCase() || "wallet"
-  const tabs = ["accounts", "wallet", "swap", "earn", "menu"]
+  const tabs = ["overview", "wallet", "swap", "earn", "menu"]
 
   return (
     <nav>
