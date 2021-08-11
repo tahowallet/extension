@@ -6,8 +6,14 @@ import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
-import { startService as startPreferences, PreferenceService } from "./services/preferences"
-import { startService as startIndexing, IndexingService } from "./services/indexing"
+import {
+  startService as startPreferences,
+  PreferenceService,
+} from "./services/preferences"
+import {
+  startService as startIndexing,
+  IndexingService,
+} from "./services/indexing"
 
 // import { Keys } from "./keys"
 
