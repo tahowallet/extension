@@ -1,14 +1,16 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
 import TopMenu from "../TopMenu/TopMenu"
+import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
+import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import TabBar from "../TabBar/TabBar"
 
 export default function CorePage(props) {
   const { children, hasTabBar, hasTopBar } = props
 
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(true)
 
   return (
     <main>
@@ -20,17 +22,26 @@ export default function CorePage(props) {
       >
         <TopMenuProtocolList />
       </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        isOpen={isNotificationsOpen}
+        close={() => {
+          setIsNotificationsOpen(false)
+        }}
+      >
+        <AccountsNotificationPanel />
+      </SharedSlideUpMenu>
       <div className="page">
         {hasTopBar ? (
-          <button
-            type="button"
-            className="trigger"
-            onClick={() => {
-              setIsProtocolListOpen(!isProtocolListOpen)
-            }}
-          >
-            <TopMenu />
-          </button>
+          <div className="top_menu_wrap">
+            <TopMenu
+              toggleOpenProtocolList={() => {
+                setIsProtocolListOpen(!isProtocolListOpen)
+              }}
+              toggleOpenNotifications={() => {
+                setIsNotificationsOpen(!isNotificationsOpen)
+              }}
+            />
+          </div>
         ) : null}
 
         <div className="page_content">{children}</div>
@@ -56,7 +67,7 @@ export default function CorePage(props) {
             margin: 0 auto;
             align-items: center;
           }
-          .trigger {
+          .top_menu_wrap {
             z-index: 10;
           }
         `}
