@@ -23,7 +23,11 @@ export default function SharedButton(props) {
       {label}
       {icon ? (
         <span
-          className={`icon_button${iconSize === "large" ? " icon_large" : ""}`}
+          className={classNames(
+            { icon_button: true },
+            { icon_large: iconSize === "large" },
+            { icon_secondary_medium: iconSize === "secondaryMedium" }
+          )}
         />
       ) : null}
       <style jsx>
@@ -69,6 +73,11 @@ export default function SharedButton(props) {
             height: 48px;
             border-radius: 8px;
             padding: 0 24px;
+          }
+          .icon_secondary_medium {
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
           }
           .icon_large {
             width: 24px;
