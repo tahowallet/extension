@@ -2,12 +2,17 @@ import React from "react"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
-export default function TopMenu() {
+export default function TopMenu(props) {
+  const { toggleOpenProtocolList, toggleOpenNotifications } = props
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
-        <TopMenuProtocolSwitcher />
-        <TopMenuProfileButton />
+        <button onClick={toggleOpenProtocolList}>
+          <TopMenuProtocolSwitcher />
+        </button>
+        <button onClick={toggleOpenNotifications}>
+          <TopMenuProfileButton />
+        </button>
       </nav>
       <style jsx>
         {`
