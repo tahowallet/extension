@@ -6,8 +6,8 @@ import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
-import startPreferences from "./services/preferences"
-import startIndexing from "./services/indexing"
+import { startService as startPreferences, PreferenceService } from "./services/preferences"
+import { startService as startIndexing, IndexingService } from "./services/indexing"
 
 // import { Keys } from "./keys"
 
@@ -39,13 +39,13 @@ class Main {
    * A promise to the preference service, a dependency for most other services.
    * The promise will be resolved when the service is initialized.
    */
-  preferenceService: ReturnType<typeof startPreferences>
+  preferenceService: Promise<PreferenceService>
 
   /*
    * A promise to the indexing service, keeping track of token balances and
    * prices. The promise will be resolved when the service is initialized.
    */
-  indexingService: ReturnType<typeof startIndexing>
+  indexingService: Promise<IndexingService>
 
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)

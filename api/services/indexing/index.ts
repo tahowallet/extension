@@ -12,7 +12,9 @@ const SCHEDULES = {
   },
 }
 
-export default async function startService(
+export { default as IndexingService } from "./service"
+
+export async function startService(
   preferenceService: Promise<PreferenceService>
 ): Promise<IndexingService> {
   const service = new IndexingService(SCHEDULES, preferenceService)
