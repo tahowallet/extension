@@ -1,21 +1,31 @@
 import Networks, { NetworksState } from "./networks"
 import Transactions, { TransactionsState } from "./transactions"
 import Accounts, { AccountsState } from "./accounts"
+import { SmartContractFungibleAsset } from "./types"
 import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
+import {
+  startService as startPreferences,
+  PreferenceService,
+} from "./services/preferences"
+import {
+  startService as startIndexing,
+  IndexingService,
+} from "./services/indexing"
 
 // import { Keys } from "./keys"
 
 import { getPersistedState, persistState } from "./lib/db"
 import ObsStore from "./lib/ob-store"
-import getFiatValue from "./lib/getFiatValues"
+import { getPrice } from "./lib/prices"
 
 export interface MainState {
   accounts: AccountsState
   transactions: TransactionsState
   networks: NetworksState
+  tokensToTrack: SmartContractFungibleAsset[]
 }
 
 class Main {
@@ -31,6 +41,18 @@ class Main {
 
   keys: any
 
+  /*
+   * A promise to the preference service, a dependency for most other services.
+   * The promise will be resolved when the service is initialized.
+   */
+  preferenceService: Promise<PreferenceService>
+
+  /*
+   * A promise to the indexing service, keeping track of token balances and
+   * prices. The promise will be resolved when the service is initialized.
+   */
+  indexingService: Promise<IndexingService>
+
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
     const { accounts, networks, transactions } = state
@@ -40,7 +62,7 @@ class Main {
     this.transactions = new Transactions(
       transactions,
       providers.ethereum.selected,
-      getFiatValue
+      getPrice
     )
     // this.keys = new Keys(state.keys || {})
     // const balances = this.balances = new Balances({ state: balances, providers })
@@ -56,6 +78,14 @@ class Main {
     )
     this.subscriptionIds = {}
     this.subscribeToStates()
+
+    // start all services
+    this.initializeServices()
+  }
+
+  async initializeServices() {
+    this.preferenceService = startPreferences()
+    this.indexingService = startIndexing(this.preferenceService)
   }
 
   /*
@@ -107,7 +137,7 @@ class Main {
 export { browser } from "webextension-polyfill-ts"
 export { connectToBackgroundApi } from "./lib/connect"
 
-export async function startApi() {
+export async function startApi(): Promise<{ main: Main }> {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
