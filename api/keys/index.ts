@@ -1,13 +1,13 @@
-import KeyringController from '@tallyho/eth-keyring-controller'
+import KeyringController from "@tallyho/eth-keyring-controller"
 
-import { getPersistedState, persistState } from '../lib/db'
+import { getPersistedState, persistState } from "../lib/db"
 
 import {
   MATERIAL_TYPES,
   PERSITIANCE_KEY,
   LOCKED_ERROR,
   NO_VAULT_ERROR,
-} from './constants'
+} from "./constants"
 
 export enum KEY_TYPE {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -25,7 +25,7 @@ export interface Seed {
   type: KEY_TYPE
   index: any //number // the current account index
   reference: string // unique reference
-  path: any //string // fallback path to derive new keys
+  path: any //string // default path to derive new keys
 }
 /*
 
@@ -67,7 +67,7 @@ export default class Keys {
   #password: string
   #ready: (value: any) => void
   #failed: (reason: any) => void
-  ready: Promise<any>
+  ready: Promise<boolean>
 
   constructor (password?: string) {
     this.#vault = getPersistedState(PERSITIANCE_KEY)
@@ -110,17 +110,19 @@ export default class Keys {
     this.#locked = false
     return true
   }
-  // creates a new mnemonic returns an address
-  // TODO: figure out why enum dosent match ts docs :'}
+/* *
+  Creates and saves a new BIP-39 256-bit mnemonic key, and returns its accounts.
+*/
+  // TODO: figure out why enum dosent match ts docs :"}
   async create (): Promise<string[]> {
-    const keyring = await this.#masterKeyring.addNewKeyring('HD Key Tree', {numberOfAccounts: 1, strength: 256})
+    const keyring = await this.#masterKeyring.addNewKeyring("HD Key Tree", {numberOfAccounts: 1, strength: 256})
     const firstAddress = await keyring.addAccounts(1)
     // await this.#saveKeyring(keyring, KEY_TYPE.mnemonicBIP39S256)
     await this.#saveKeyring(keyring, KEY_TYPE.mnemonicBIP39S256)
     return keyring.getAccounts()
   }
 
-  async import ({type: keyTypeStrings, data: string, password?: string}): Promise<string[]> {
+  async import ({type: keyTypeStrings, data: string, password?: string, }): Promise<string[]> {
     await this.ready
     this.#checkLock()
     // TODO use the same types across all deps
@@ -134,7 +136,7 @@ export default class Keys {
     await this.ready
     this.#checkLock()
     if (password !== this.#password) {
-      throw new Error('Invalid Password')
+      throw new Error("Invalid Password")
     }
     return this.#keyrings[reference].mnemonic
   }
@@ -180,7 +182,7 @@ export default class Keys {
   async #init (): Promise<void> {
     this.#seeds = await this.#masterKeyring.encryptor.decrypt(this.#password, this.#vault)
     this.#seeds.forEach(async (seed) => {
-      this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring('HD, Key Tree', {
+      this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
         mnemonic: seed.data,
         hdPath: seed.path,
         numberOfAccounts: seed.index,
@@ -191,11 +193,11 @@ export default class Keys {
   // todo look into freezing or use-strict not sure if possible or applicable here?
   // one way hash method for creating references to mnemonics
   // also makes it easy to know if it already exists
-  async #createReference(data): Promise<string> {
+  async #createReference(data: string): Promise<string> {
     const dataUint8 = new TextEncoder().encode(data)
-    const hashBufer = await crypto.subtle.digest('SHA-256', dataUint8)
+    const hashBufer = await crypto.subtle.digest("SHA-256", dataUint8)
     const hashArray = Array.from(new Uint8Array(hashBufer))
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join(")
     return hashHex
   }
 
@@ -221,7 +223,7 @@ export default class Keys {
       agg.push(seed)
       return agg
     }, [])
-    this.#persistState
+    this.#persistState()
   }
 
   #checkLock () {
@@ -230,5 +232,3 @@ export default class Keys {
     }
   }
 }
-
-

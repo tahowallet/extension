@@ -5,8 +5,7 @@ import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
-
-// import { Keys } from "./keys"
+import Keys from "./keys"
 
 import { getPersistedState, persistState } from "./lib/db"
 import ObsStore from "./lib/ob-store"
@@ -27,7 +26,7 @@ class Main {
 
   accounts: Accounts
 
-  keys: any
+  #keys: Keys
 
   private subscriptionIds: any
 
@@ -42,12 +41,7 @@ class Main {
       providers.ethereum.selected,
       getFiatValue
     )
-    // this.keys = new Keys(state.keys || {})
-    // const balances = this.balances = new Balances({ state: balances, providers })
-
-    // this is temporary
-
-    // this.userPrefernces = new ObsStore(state.userPrefernces || {})
+    this.#keys = new Keys()
 
     this.accounts = new Accounts(
       provider,
@@ -64,7 +58,14 @@ class Main {
   // TODO Stubbed for now.
   // eslint-disable-next-line class-methods-use-this
   getApi() {
-    return apiStubs
+    return {
+      "/accounts/": {
+        ...apiStubs["/accounts/"],
+        // overwrite stubbed api methods
+        // include an object in the account object for parent which will include refference
+        // include in keys get refference for address
+      },
+    }
   }
 
   registerSubscription({ route, params, handler, id }) {
@@ -87,9 +88,9 @@ class Main {
     this.network.providers.ethereum.selected.close()
   }
 
-  private async import({ address, data, type, name }) {
+  private async import({ address: string, data: string, type: string, name: string }) {
     if (data) {
-      return this.keys.import({ type, data, name })
+      return this.#keys.import({ type, data, name })
     }
     return this.accounts.add(address)
   }
