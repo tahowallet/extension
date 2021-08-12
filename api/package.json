@@ -29,9 +29,10 @@
     "@uniswap/token-lists": "^1.0.0-beta.25",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
-    "dexie": "^3.0.3",
-    "ethers": "^5.4.2",
     "bnc-sdk": "^3.4.1",
+    "dexie": "^3.0.3",
+    "emittery": "^0.9.2",
+    "ethers": "^5.4.2",
     "node-fetch": "^2.6.1",
     "webextension-polyfill-ts": "^0.26.0"
   },
