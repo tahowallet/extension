@@ -4,6 +4,7 @@ import Accounts, { AccountsState } from "./accounts"
 import { SmartContractFungibleAsset } from "./types"
 import { apiStubs } from "./temp-stubs"
 import { STATE_KEY } from "./constants"
+import { ETHEREUM } from "./constants/networks"
 import { DEFAULT_STATE } from "./constants/default-state"
 import { migrate } from "./migrations"
 import {
@@ -93,7 +94,17 @@ class Main {
 
   async initializeServices() {
     this.preferenceService = startPreferences()
-    this.chainService = startChain(this.preferenceService)
+    this.chainService = startChain(this.preferenceService).then(
+      async (service) => {
+        await service.addAccountToTrack({
+          // TODO uses Ethermine address for development - move this to startup
+          // state
+          account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
+          network: ETHEREUM,
+        })
+        return service
+      }
+    )
     this.indexingService = startIndexing(
       this.preferenceService,
       this.chainService

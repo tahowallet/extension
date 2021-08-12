@@ -44,7 +44,7 @@ interface Events {
 export default class IndexingService implements Service<Events> {
   readonly schedules: { [alarmName: string]: AlarmSchedule }
 
-  emitter: Emittery<Events>
+  readonly emitter: Emittery<Events>
 
   private db: IndexingDatabase | null
 

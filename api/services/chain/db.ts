@@ -3,44 +3,19 @@ import Dexie from "dexie"
 import {
   AccountBalance,
   AccountNetwork,
+  AnyEVMTransaction,
+  EIP1559Block,
   FungibleAsset,
   Network,
 } from "../../types"
 
-// TODO application data atop transactions (eg token balances)
-
-export interface Transaction {
-  hash: string
-  from: string
-  to: string
-  gas: BigInt
-  gasPrice: BigInt
-  input: string
-  nonce: BigInt
-  value: BigInt
-  dataSource: "local" | "alchemy"
-  network: Network
-}
-
-export interface ConfirmedTransaction extends Transaction {
-  blockHash: string
-  blockNumber: string
-}
-
-export interface SignedTransaction extends Transaction {
-  r: string
-  s: string
-  v: string
-}
-
-export interface SignedConfirmedTransaction
-  extends SignedTransaction,
-    ConfirmedTransaction {}
-
-export interface Migration {
+interface Migration {
   id: number
   appliedAt: number
 }
+
+// TODO keep track of blocks invalidated by a reorg
+// TODO keep track of transaction "first seen" time
 
 export class ChainDatabase extends Dexie {
   /*
@@ -50,15 +25,14 @@ export class ChainDatabase extends Dexie {
   accountsToTrack: Dexie.Table<AccountNetwork, number>
 
   /*
-   *
+   * Partial block headers cached to track reorgs and network status.
    */
-  transactions: Dexie.Table<
-    | Transaction
-    | ConfirmedTransaction
-    | SignedTransaction
-    | SignedConfirmedTransaction,
-    number
-  >
+  blocks: Dexie.Table<EIP1559Block, number>
+
+  /*
+   * Historic and pending transactions relevant to tracked accounts.
+   */
+  transactions: Dexie.Table<AnyEVMTransaction, number>
 
   /*
    * Historic account balances.
@@ -72,24 +46,28 @@ export class ChainDatabase extends Dexie {
     this.version(1).stores({
       migrations: "++id,appliedAt",
       accountsToTrack:
-        "++id,account,network.family,network.chainID,network.name",
+        "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       transactions:
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name",
+      blocks:
+        "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
+  }
+
+  async getLatestBlock(network: Network): Promise<EIP1559Block> {
+    return this.blocks
+      .where("[network.name+timestamp]")
+      .above([network.name, Date.now() - 60 * 60 * 24])
+      .reverse()
+      .sortBy("timestamp")[0]
   }
 
   async getTransaction(
     network: Network,
     txHash: string
-  ): Promise<
-    | Transaction
-    | ConfirmedTransaction
-    | SignedTransaction
-    | SignedConfirmedTransaction
-    | null
-  > {
+  ): Promise<AnyEVMTransaction | null> {
     return (
       (
         await this.transactions
@@ -98,6 +76,10 @@ export class ChainDatabase extends Dexie {
           .toArray()
       )[0] || null
     )
+  }
+
+  async addOrUpdateTransaction(tx: AnyEVMTransaction): Promise<void> {
+    await this.transactions.put(tx)
   }
 
   async getLatestAccountBalance(
