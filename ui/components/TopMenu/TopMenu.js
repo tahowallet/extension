@@ -1,16 +1,18 @@
 import React from "react"
+import PropTypes from "prop-types"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
 export default function TopMenu(props) {
   const { toggleOpenProtocolList, toggleOpenNotifications } = props
+
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
-        <button onClick={toggleOpenProtocolList}>
+        <button type="button" onClick={toggleOpenProtocolList}>
           <TopMenuProtocolSwitcher />
         </button>
-        <button onClick={toggleOpenNotifications}>
+        <button type="button" onClick={toggleOpenNotifications}>
           <TopMenuProfileButton />
         </button>
       </nav>
@@ -33,4 +35,9 @@ export default function TopMenu(props) {
       </style>
     </div>
   )
+}
+
+TopMenu.propTypes = {
+  toggleOpenProtocolList: PropTypes.func.isRequired,
+  toggleOpenNotifications: PropTypes.func.isRequired,
 }
