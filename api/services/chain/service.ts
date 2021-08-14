@@ -287,59 +287,6 @@ export default class ChainService implements Service<Events> {
     return this.db.getAccountsToTrack()
   }
 
-  async subscribeToNewHeads(network: Network): Promise<void> {
-    // TODO look up provider network properly
-    const provider = this.websocketProviders.ethereum
-    // eslint-disable-next-line
-    await provider._subscribe(
-      "newHeadsSubscriptionID",
-      ["newHeads"],
-      async (result: any) => {
-        // add new head to database
-        const block = blockFromWebsocketBlock(result)
-        await this.db.blocks.add(block)
-        // emit the new block, don't wait to settle
-        this.emitter.emit("newBlock", block)
-        // TODO if it matches a known blockheight and the difficulty is higher,
-        // emit a reorg event
-      }
-    )
-    this.subscribedNetworks.push({
-      network,
-      provider,
-    })
-  }
-
-  async subscribeToAccountTransactions(
-    accountNetwork: AccountNetwork
-  ): Promise<void> {
-    // TODO look up provider network properly
-    const provider = this.websocketProviders.ethereum
-    // eslint-disable-next-line
-    await provider._subscribe(
-      "filteredNewFullPendingTransactionsSubscriptionID",
-      [
-        "alchemy_filteredNewFullPendingTransactions",
-        { address: accountNetwork.account },
-      ],
-      async (result: any) => {
-        // handle incoming transactions for an account
-        // TODO use proper provider string
-        try {
-          await this.saveTransaction(
-            txFromWebsocketTx(result, ETH, ETHEREUM, "alchemy")
-          )
-        } catch (error) {
-          console.error(`Error saving tx: ${result}`, error)
-        }
-      }
-    )
-    this.subscribedAccounts.push({
-      account: accountNetwork.account,
-      provider,
-    })
-  }
-
   async getLatestBaseAccountBalance(
     accountNetwork: AccountNetwork
   ): Promise<AccountBalance> {
@@ -371,12 +318,28 @@ export default class ChainService implements Service<Events> {
   }
 
   async getBlockHeight(network: Network): Promise<number> {
-    const block = await this.db.getLatestBlock(network)
-    if (block) {
-      return block.blockHeight
+    const cachedBlock = await this.db.getLatestBlock(network)
+    if (cachedBlock) {
+      return cachedBlock.blockHeight
     }
     // TODO make proper use of the network
     return this.pollingProviders.ethereum.getBlockNumber()
+  }
+
+  async getTransaction(
+    network: Network,
+    hash: string
+  ): Promise<AnyEVMTransaction> {
+    const cachedTx = await this.db.getTransaction(network, hash)
+    if (cachedTx) {
+      return cachedTx
+    }
+    // TODO make proper use of the network
+    const gethResult = await this.pollingProviders.ethereum.getTransaction(hash)
+    // TODO proper provider string
+    const newTx = txFromGethTx(gethResult, ETH, ETHEREUM, "alchemy")
+    this.saveTransaction(newTx)
+    return newTx
   }
 
   async queueTransactionHashToRetrieve(
@@ -454,11 +417,81 @@ export default class ChainService implements Service<Events> {
   }
 
   private async saveTransaction(tx: AnyEVMTransaction): Promise<void> {
-    await this.db.addOrUpdateTransaction(tx)
-    this.emitter.emit("transaction", tx)
+    let error: any
+    try {
+      await this.db.addOrUpdateTransaction(tx)
+    } catch (err) {
+      // TODO proper logging
+      error = err
+      console.error(`Error saving tx ${tx}`, error)
+    }
+    try {
+      // emit in a separate try so outside services still get the tx
+      this.emitter.emit("transaction", tx)
+    } catch (err) {
+      // TODO proper logging
+      error = err
+      console.error(`Error emitting tx ${tx}`, error)
+    }
+    if (error) {
+      throw error
+    }
+  }
+
+  private async subscribeToNewHeads(network: Network): Promise<void> {
+    // TODO look up provider network properly
+    const provider = this.websocketProviders.ethereum
+    // eslint-disable-next-line
+    await provider._subscribe(
+      "newHeadsSubscriptionID",
+      ["newHeads"],
+      async (result: any) => {
+        // add new head to database
+        const block = blockFromWebsocketBlock(result)
+        await this.db.blocks.add(block)
+        // emit the new block, don't wait to settle
+        this.emitter.emit("newBlock", block)
+        // TODO if it matches a known blockheight and the difficulty is higher,
+        // emit a reorg event
+      }
+    )
+    this.subscribedNetworks.push({
+      network,
+      provider,
+    })
+  }
+
+  private async subscribeToAccountTransactions(
+    accountNetwork: AccountNetwork
+  ): Promise<void> {
+    // TODO look up provider network properly
+    const provider = this.websocketProviders.ethereum
+    // eslint-disable-next-line
+    await provider._subscribe(
+      "filteredNewFullPendingTransactionsSubscriptionID",
+      [
+        "alchemy_filteredNewFullPendingTransactions",
+        { address: accountNetwork.account },
+      ],
+      async (result: any) => {
+        // handle incoming transactions for an account
+        // TODO use proper provider string
+        try {
+          await this.saveTransaction(
+            txFromWebsocketTx(result, ETH, ETHEREUM, "alchemy")
+          )
+        } catch (error) {
+          console.error(`Error saving tx: ${result}`, error)
+        }
+      }
+    )
+    this.subscribedAccounts.push({
+      account: accountNetwork.account,
+      provider,
+    })
   }
 
   // TODO removing an account to track
   // TODO getting transaction contents from hash + network, confirmed + mempool, including cached & local transactions
-  // TODO keep track of transaction confirmation
+  // TODO keep track of transaction confirmations
 }
