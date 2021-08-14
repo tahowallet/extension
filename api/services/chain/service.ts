@@ -3,10 +3,8 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import {
-  Transaction as EthersTransaction,
-  UnsignedTransaction as EthersUnsignedTransaction,
-} from "@ethersproject/transactions"
+import { Block as EthersBlock } from "@ethersproject/abstract-provider"
+import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 import { BigNumber } from "ethers"
 import Emittery from "emittery"
 
@@ -39,18 +37,31 @@ function bigIntFromHex(s: string): BigInt {
 }
 
 /*
- * Parse a block as returned by geth or Alchemy.
+ * Parse a block as returned by a polling provider.
  */
-function blockFromGethResult(gethResult: any): EIP1559Block {
+function blockFromGethResult(gethResult: EthersBlock): EIP1559Block {
+  return {
+    hash: gethResult.hash as string,
+    blockHeight: gethResult.number,
+    parentHash: gethResult.parentHash as string,
+    difficulty: BigInt(gethResult.difficulty),
+    timestamp: gethResult.timestamp,
+    baseFeePerGas: gethResult.baseFeePerGas.toBigInt(),
+    network: ETHEREUM,
+  }
+}
+
+/*
+ * Parse a block as returned by a websocket provider subscription.
+ */
+function blockFromWebsocketBlock(gethResult: any): EIP1559Block {
   return {
     hash: gethResult.hash as string,
     blockHeight: BigNumber.from(gethResult.number as string).toNumber(),
     parentHash: gethResult.parentHash as string,
-    difficulty: BigNumber.from(gethResult.difficulty as string).toBigInt(),
+    difficulty: bigIntFromHex(gethResult.difficulty as string),
     timestamp: BigNumber.from(gethResult.timestamp as string).toNumber(),
-    baseFeePerGas: BigNumber.from(
-      gethResult.baseFeePerGas as string
-    ).toBigInt(),
+    baseFeePerGas: bigIntFromHex(gethResult.baseFeePerGas as string),
     network: ETHEREUM,
   }
 }
@@ -61,6 +72,9 @@ type AnyEVMTransaction =
   | SignedConfirmedEVMTransaction
   | SignedEVMTransaction
 
+/*
+ * Parse a transaction as returned by a websocket provider subscription.
+ */
 function txFromWebsocketTx(
   tx: any,
   asset: FungibleAsset,
@@ -91,6 +105,9 @@ function txFromWebsocketTx(
   }
 }
 
+/*
+ * Parse a transaction as returned by a polling provider.
+ */
 function txFromGethTx(
   tx: EthersTransaction & {
     blockHash?: string
@@ -251,7 +268,7 @@ export default class ChainService implements Service<Events> {
       accounts
         .map(
           // subscribe to all account transactions
-          (an) => this.subscribeToAccountTransaction(an)
+          (an) => this.subscribeToAccountTransactions(an)
         )
         .concat(
           // do a base-asset balance check for every account
@@ -279,7 +296,7 @@ export default class ChainService implements Service<Events> {
       ["newHeads"],
       async (result: any) => {
         // add new head to database
-        const block = blockFromGethResult(result)
+        const block = blockFromWebsocketBlock(result)
         await this.db.blocks.add(block)
         // emit the new block, don't wait to settle
         this.emitter.emit("newBlock", block)
@@ -293,7 +310,7 @@ export default class ChainService implements Service<Events> {
     })
   }
 
-  async subscribeToAccountTransaction(
+  async subscribeToAccountTransactions(
     accountNetwork: AccountNetwork
   ): Promise<void> {
     // TODO look up provider network properly
@@ -349,7 +366,7 @@ export default class ChainService implements Service<Events> {
     const current = await this.getAccountsToTrack()
     await this.db.setAccountsToTrack(current.concat([accountNetwork]))
     await this.getLatestBaseAccountBalance(accountNetwork)
-    await this.subscribeToAccountTransaction(accountNetwork)
+    await this.subscribeToAccountTransactions(accountNetwork)
     await this.loadRecentAssetTransfers(accountNetwork)
   }
 
@@ -372,6 +389,10 @@ export default class ChainService implements Service<Events> {
       this.transactionsToRetrieve.ethereum.push(hash)
     }
   }
+
+  /* *****************
+   * PRIVATE METHODS *
+   * **************** */
 
   /*
    * Get recent asset transfers from an account on a particular network. Emit
