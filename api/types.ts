@@ -193,7 +193,9 @@ export interface EVMTransaction {
   from: string
   to: string
   gas: BigInt
-  gasPrice: BigInt
+  gasPrice: BigInt | null
+  maxFeePerGas: BigInt | null
+  maxPriorityFeePerGas: BigInt | null
   input: string
   nonce: BigInt
   value: BigInt
@@ -206,6 +208,20 @@ export interface EVMTransaction {
    * 2 - EIP-1559 transactions
    */
   type: 0 | 1 | 2 | null
+}
+
+export interface LegacyEVMTransaction extends EVMTransaction {
+  gasPrice: BigInt
+  type: 0 | null
+  maxFeePerGas: null
+  maxPriorityFeePerGas: null
+}
+
+export interface EIP1559Transaction extends EVMTransaction {
+  gasPrice: null
+  type: 1 | 2
+  maxFeePerGas: BigInt
+  maxPriorityFeePerGas: BigInt
 }
 
 export interface ConfirmedEVMTransaction extends EVMTransaction {

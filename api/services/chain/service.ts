@@ -5,19 +5,17 @@ import {
 } from "@ethersproject/providers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
-import { BigNumber } from "ethers"
+import { BigNumber, utils } from "ethers"
 import Emittery from "emittery"
 
 import {
   AccountBalance,
   AccountNetwork,
+  AnyEVMTransaction,
   EIP1559Block,
   FungibleAsset,
   Network,
-  EVMTransaction,
-  ConfirmedEVMTransaction,
   SignedEVMTransaction,
-  SignedConfirmedEVMTransaction,
 } from "../../types"
 import { getAssetTransfers, AlchemyAssetTransfer } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
@@ -39,7 +37,7 @@ function bigIntFromHex(s: string): BigInt {
 /*
  * Parse a block as returned by a polling provider.
  */
-function blockFromGethResult(gethResult: EthersBlock): EIP1559Block {
+function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
   return {
     hash: gethResult.hash as string,
     blockHeight: gethResult.number,
@@ -65,12 +63,34 @@ function blockFromWebsocketBlock(gethResult: any): EIP1559Block {
     network: ETHEREUM,
   }
 }
+function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
+  const baseTx = {
+    nonce: Number(tx.nonce),
+    gasLimit: tx.gas ? BigNumber.from(tx.gas) : null,
+    maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : null,
+    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+      ? BigNumber.from(tx.maxPriorityFeePerGas)
+      : null,
+    to: tx.to,
+    from: tx.from,
+    data: tx.input,
+    chainId: parseInt(tx.network.chainID, 10),
+    value: BigNumber.from(tx.value),
+  }
+  if ((tx as SignedEVMTransaction).r !== undefined) {
+    return {
+      ...baseTx,
+      r: (tx as SignedEVMTransaction).r,
+      s: (tx as SignedEVMTransaction).s,
+      v: (tx as SignedEVMTransaction).v,
+    }
+  }
+  return baseTx
+}
 
-type AnyEVMTransaction =
-  | EVMTransaction
-  | ConfirmedEVMTransaction
-  | SignedConfirmedEVMTransaction
-  | SignedEVMTransaction
+function serializeTransaction(tx: SignedEVMTransaction): string {
+  return utils.serializeTransaction(ethersTxFromTx(tx))
+}
 
 /*
  * Parse a transaction as returned by a websocket provider subscription.
@@ -87,6 +107,10 @@ function txFromWebsocketTx(
     from: tx.from as string,
     gas: bigIntFromHex(tx.gas as string),
     gasPrice: bigIntFromHex(tx.gasPrice as string),
+    maxFeePerGas: tx.maxFeePerGas ? bigIntFromHex(tx.maxFeePerGas) : null,
+    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+      ? bigIntFromHex(tx.maxPriorityFeePerGas)
+      : null,
     input: tx.input as string,
     r: (tx.r as string) || undefined,
     s: (tx.s as string) || undefined,
@@ -108,7 +132,7 @@ function txFromWebsocketTx(
 /*
  * Parse a transaction as returned by a polling provider.
  */
-function txFromGethTx(
+function txFromEthersTx(
   tx: EthersTransaction & {
     blockHash?: string
     blockNumber?: number
@@ -127,7 +151,11 @@ function txFromGethTx(
     to: tx.to as string,
     nonce: BigInt(parseInt(tx.nonce.toString(), 10)),
     gas: tx.gasLimit.toBigInt(),
-    gasPrice: tx.gasPrice.toBigInt(),
+    gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
+    maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,
+    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+      ? tx.maxPriorityFeePerGas.toBigInt()
+      : null,
     value: tx.value.toBigInt(),
     input: tx.data,
     type: tx.type as AnyEVMTransaction["type"],
@@ -257,7 +285,7 @@ export default class ChainService implements Service<Events> {
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
-        const block = blockFromGethResult(result)
+        const block = blockFromEthersBlock(result)
         await this.db.blocks.add(block)
       }),
       // TODO subscribe to newHeads for other networks
@@ -337,7 +365,7 @@ export default class ChainService implements Service<Events> {
     // TODO make proper use of the network
     const gethResult = await this.pollingProviders.ethereum.getTransaction(hash)
     // TODO proper provider string
-    const newTx = txFromGethTx(gethResult, ETH, ETHEREUM, "alchemy")
+    const newTx = txFromEthersTx(gethResult, ETH, ETHEREUM, "alchemy")
     this.saveTransaction(newTx)
     return newTx
   }
@@ -351,6 +379,16 @@ export default class ChainService implements Service<Events> {
     if (!seen.has(hash)) {
       this.transactionsToRetrieve.ethereum.push(hash)
     }
+  }
+
+  /*
+   * Broadcast a signed EVM transaction.
+   */
+  async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
+    // TODO make poper use of tx.network to choose provider
+    const serialized = utils.serializeTransaction(ethersTxFromTx(tx))
+    // TODO subscribe to tx confirmations
+    await this.pollingProviders.ethereum.sendTransaction(serialized)
   }
 
   /* *****************
@@ -405,7 +443,7 @@ export default class ChainService implements Service<Events> {
           )
           // TODO make this provider specific
           await this.saveTransaction(
-            txFromGethTx(result, ETH, ETHEREUM, "alchemy")
+            txFromEthersTx(result, ETH, ETHEREUM, "alchemy")
           )
         } catch (error) {
           // TODO proper logging
