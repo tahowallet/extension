@@ -2,7 +2,7 @@ import React from "react"
 
 export default function SignTransactionNetworkAccountInfoTopBar() {
   return (
-    <div className="top_bar_wrap">
+    <div className="top_bar_wrap standard_width">
       <div className="row_part">
         <div className="network_icon" />
         <span className="network_name">Arbitrum</span>
@@ -17,7 +17,6 @@ export default function SignTransactionNetworkAccountInfoTopBar() {
             margin: 0 auto;
             margin-top: 16px;
             margin-bottom: 16px;
-            width: 352px;
             display: flex;
             justify-content: space-between;
           }

@@ -7,7 +7,7 @@ import Wallet from "./Wallet"
 
 import OnboardingImportMetamask from "../components/Onboarding/OnboardingImportMetamask"
 import Onboarding from "./Onboarding"
-import Accounts from "./Accounts"
+import Overview from "./Overview"
 import Earn from "./Earn"
 import Menu from "./Menu"
 import Send from "./Send"

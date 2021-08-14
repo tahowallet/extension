@@ -6,19 +6,82 @@ import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 
+const activityStub = [
+  {
+    blockHash:
+      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
+    blockNumber: "0x891820",
+    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
+    gas: "0x5208",
+    gasPrice: "0x3b9aca00",
+    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
+    timeStamp: "0x60fa2a18",
+    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
+    value: "0.01",
+  },
+  {
+    blockHash:
+      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
+    blockNumber: "0x891820",
+    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
+    gas: "0x5208",
+    gasPrice: "0x3b9aca00",
+    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
+    timeStamp: "0x60fa2a18",
+    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
+    value: "0.01",
+  },
+  {
+    blockHash:
+      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
+    blockNumber: "0x891820",
+    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
+    gas: "0x5208",
+    gasPrice: "0x3b9aca00",
+    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
+    timeStamp: "0x60fa2a18",
+    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
+    value: "0.01",
+  },
+  {
+    blockHash:
+      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
+    blockNumber: "0x891820",
+    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
+    gas: "0x5208",
+    gasPrice: "0x3b9aca00",
+    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
+    timeStamp: "0x60fa2a18",
+    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
+    value: "0.01",
+  },
+  {
+    blockHash:
+      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
+    blockNumber: "0x891820",
+    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
+    gas: "0x5208",
+    gasPrice: "0x3b9aca00",
+    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
+    timeStamp: "0x60fa2a18",
+    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
+    value: "0.01",
+  },
+]
+
 export default function SingleAsset() {
   return (
     <>
       <CorePage>
         <button
           type="button"
-          className="back_button_wrap standard_width"
+          className="back_button_wrap standard_width_padded"
           onClick={() => goBack()}
         >
           <div className="icon_chevron_left" />
           Back
         </button>
-        <div className="header standard_width">
+        <div className="header standard_width_padded">
           <div className="left">
             <div className="asset_wrap">
               <SharedAssetIcon />
@@ -42,12 +105,12 @@ export default function SingleAsset() {
             />
           </div>
         </div>
-        <div className="sub_info_seperator_wrap standard_width">
+        <div className="sub_info_seperator_wrap standard_width_padded">
           <div className="left">Asset is on: Arbitrum</div>
           <div className="right">Move to Ethereum</div>
         </div>
-        <div className="label standard_width">Activity</div>
-        <WalletActivityList />
+        <div className="label standard_width_padded">Activity</div>
+        <WalletActivityList activity={activityStub} />
       </CorePage>
       <style jsx>
         {`

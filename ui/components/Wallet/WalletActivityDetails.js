@@ -118,7 +118,7 @@ const DetailInfo = [
 
 export default function WalletActivityDetails() {
   return (
-    <div className="wrap center_horizontal">
+    <div className="wrap standard_width center_horizontal">
       <div className="header">
         <SharedActivityHeader label="Send Asset" activity="send" />
         <div className="header_button">
@@ -157,7 +157,6 @@ export default function WalletActivityDetails() {
       <style jsx>
         {`
           .wrap {
-            width: 352px;
             margin-top: -24px;
           }
           .destination_cards {
