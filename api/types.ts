@@ -199,7 +199,8 @@ export interface EVMTransaction {
   input: string
   nonce: BigInt
   value: BigInt
-  dataSource: "local" | "alchemy"
+  blockHash: string | null
+  blockHeight: number | null
   asset: FungibleAsset
   network: Network
   /*

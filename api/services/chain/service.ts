@@ -63,6 +63,7 @@ function blockFromWebsocketBlock(gethResult: any): EIP1559Block {
     network: ETHEREUM,
   }
 }
+
 function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
   const baseTx = {
     nonce: Number(tx.nonce),
@@ -88,18 +89,13 @@ function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
   return baseTx
 }
 
-function serializeTransaction(tx: SignedEVMTransaction): string {
-  return utils.serializeTransaction(ethersTxFromTx(tx))
-}
-
 /*
  * Parse a transaction as returned by a websocket provider subscription.
  */
 function txFromWebsocketTx(
   tx: any,
   asset: FungibleAsset,
-  network: Network,
-  dataSource: AnyEVMTransaction["dataSource"]
+  network: Network
 ): AnyEVMTransaction {
   return {
     hash: tx.hash as string,
@@ -125,7 +121,6 @@ function txFromWebsocketTx(
         : 0,
     asset,
     network,
-    dataSource,
   }
 }
 
@@ -139,8 +134,7 @@ function txFromEthersTx(
     type?: number
   },
   asset: FungibleAsset,
-  network: Network,
-  dataSource: AnyEVMTransaction["dataSource"]
+  network: Network
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
     throw Error("Malformed transaction")
@@ -159,7 +153,8 @@ function txFromEthersTx(
     value: tx.value.toBigInt(),
     input: tx.data,
     type: tx.type as AnyEVMTransaction["type"],
-    dataSource,
+    blockHash: tx.blockHash || null,
+    blockHeight: tx.blockNumber || null,
     network,
     asset,
   }
@@ -169,14 +164,6 @@ function txFromEthersTx(
       r: tx.r,
       s: tx.s,
       v: tx.v,
-    }
-
-    if (tx.blockHash && tx.blockNumber) {
-      return {
-        ...signedTx,
-        blockHash: tx.blockHash,
-        blockHeight: tx.blockNumber,
-      }
     }
     return signedTx
   }
@@ -204,15 +191,16 @@ interface Events {
  * The service should provide
  * * Basic cached network information, like the latest block hash and height
  * * Cached account balances, account history, and transaction data
- * * Event subscriptions, including
- *   * Incoming and outgoing transactions
- *   * Pending transaction confirmation
- *    * Relevant account balance changes
- *    * New blocks and reorgs
- *    * Gas estimation and transaction broadcasting
+ * * Gas estimation and transaction broadcasting
+ * * Event subscriptions, including events whenever
+ *   * A new transaction relevant to accounts tracked is found or first
+ *     confirmed
+ *   * A historic account transaction is pulled and cached
+ *   * Any asset transfers found for newly tracked accounts
+ *   * A relevant account balance changes
+ *   * New blocks
  * * ... and finally, polling and websocket providers for supported networks, in
  *   case a service needs to interact with a network directly.
- *
  */
 export default class ChainService implements Service<Events> {
   readonly schedules: { [alarmName: string]: AlarmSchedule }
@@ -364,9 +352,14 @@ export default class ChainService implements Service<Events> {
     }
     // TODO make proper use of the network
     const gethResult = await this.pollingProviders.ethereum.getTransaction(hash)
+    const newTx = txFromEthersTx(gethResult, ETH, ETHEREUM)
+
+    if (!newTx.blockHash && !newTx.blockHeight) {
+      this.subscribeToTransactionConfirmation(network, hash)
+    }
+
     // TODO proper provider string
-    const newTx = txFromEthersTx(gethResult, ETH, ETHEREUM, "alchemy")
-    this.saveTransaction(newTx)
+    this.saveTransaction(newTx, "alchemy")
     return newTx
   }
 
@@ -385,10 +378,19 @@ export default class ChainService implements Service<Events> {
    * Broadcast a signed EVM transaction.
    */
   async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
-    // TODO make poper use of tx.network to choose provider
+    // TODO make proper use of tx.network to choose provider
     const serialized = utils.serializeTransaction(ethersTxFromTx(tx))
-    // TODO subscribe to tx confirmations
-    await this.pollingProviders.ethereum.sendTransaction(serialized)
+    try {
+      await Promise.all([
+        this.pollingProviders.ethereum.sendTransaction(serialized),
+        this.subscribeToTransactionConfirmation(tx.network, tx.hash),
+        this.saveTransaction(tx, "local"),
+      ])
+    } catch (error) {
+      // TODO proper logging
+      console.error(`Error broadcasting transaction ${tx}`, error)
+      throw error
+    }
   }
 
   /* *****************
@@ -441,10 +443,13 @@ export default class ChainService implements Service<Events> {
           const result = await this.pollingProviders.ethereum.getTransaction(
             hash
           )
+          const tx = txFromEthersTx(result, ETH, ETHEREUM)
+
+          if (!tx.blockHash && !tx.blockHeight) {
+            this.subscribeToTransactionConfirmation(tx.network, tx.hash)
+          }
           // TODO make this provider specific
-          await this.saveTransaction(
-            txFromEthersTx(result, ETH, ETHEREUM, "alchemy")
-          )
+          await this.saveTransaction(tx, "alchemy")
         } catch (error) {
           // TODO proper logging
           console.error(`Error retrieving transaction ${hash}`, error)
@@ -454,10 +459,13 @@ export default class ChainService implements Service<Events> {
     )
   }
 
-  private async saveTransaction(tx: AnyEVMTransaction): Promise<void> {
+  private async saveTransaction(
+    tx: AnyEVMTransaction,
+    dataSource: "local" | "alchemy"
+  ): Promise<void> {
     let error: any
     try {
-      await this.db.addOrUpdateTransaction(tx)
+      await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {
       // TODO proper logging
       error = err
@@ -512,13 +520,15 @@ export default class ChainService implements Service<Events> {
         { address: accountNetwork.account },
       ],
       async (result: any) => {
-        // handle incoming transactions for an account
         // TODO use proper provider string
+        // handle incoming transactions for an account
         try {
           await this.saveTransaction(
-            txFromWebsocketTx(result, ETH, ETHEREUM, "alchemy")
+            txFromWebsocketTx(result, ETH, ETHEREUM),
+            "alchemy"
           )
         } catch (error) {
+          // TODO proper logging
           console.error(`Error saving tx: ${result}`, error)
         }
       }
@@ -526,6 +536,23 @@ export default class ChainService implements Service<Events> {
     this.subscribedAccounts.push({
       account: accountNetwork.account,
       provider,
+    })
+  }
+
+  /*
+   * Track an pending transaction's confirmation status, saving any updates to
+   * the database and informing subscribers.
+   */
+  private async subscribeToTransactionConfirmation(
+    network: Network,
+    hash: string
+  ): Promise<void> {
+    // TODO make proper use of the network
+    this.websocketProviders.ethereum.once(hash, (confirmedTx) => {
+      this.saveTransaction(
+        txFromWebsocketTx(confirmedTx, ETH, ETHEREUM),
+        "alchemy"
+      )
     })
   }
 

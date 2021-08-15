@@ -7,7 +7,13 @@ import {
   EIP1559Block,
   FungibleAsset,
   Network,
+  UNIXTime,
 } from "../../types"
+
+type Transaction = AnyEVMTransaction & {
+  dataSource: "alchemy" | "local"
+  firstSeen: UNIXTime
+}
 
 interface Migration {
   id: number
@@ -16,6 +22,7 @@ interface Migration {
 
 // TODO keep track of blocks invalidated by a reorg
 // TODO keep track of transaction "first seen" time
+// TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
   /*
@@ -32,7 +39,7 @@ export class ChainDatabase extends Dexie {
   /*
    * Historic and pending transactions relevant to tracked accounts.
    */
-  transactions: Dexie.Table<AnyEVMTransaction, number>
+  transactions: Dexie.Table<Transaction, number>
 
   /*
    * Historic account balances.
@@ -50,7 +57,7 @@ export class ChainDatabase extends Dexie {
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       transactions:
-        "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name",
+        "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
@@ -78,8 +85,26 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async addOrUpdateTransaction(tx: AnyEVMTransaction): Promise<void> {
-    await this.transactions.put(tx)
+  async addOrUpdateTransaction(
+    tx: AnyEVMTransaction,
+    dataSource: Transaction["dataSource"]
+  ): Promise<void> {
+    await this.transaction("rw", this.transactions, async () => {
+      const key = [tx.hash, tx.network.name]
+      const existingTx = await this.transactions.get(key)
+      if (existingTx) {
+        await this.transactions
+          .where("[hash+network.name]")
+          .equals(key)
+          .modify({ blockHeight: tx.blockHeight, blockHash: tx.blockHash })
+      } else {
+        await this.transactions.put({
+          ...tx,
+          firstSeen: Date.now(),
+          dataSource,
+        })
+      }
+    })
   }
 
   async getLatestAccountBalance(
