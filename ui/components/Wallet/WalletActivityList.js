@@ -21,7 +21,10 @@ export default function WalletActivityList(props) {
 
   return (
     <>
-      <SharedSlideUpMenu isOpen={showingActivityDetail} close={handleClose}>
+      <SharedSlideUpMenu
+        isOpen={showingActivityDetail && true}
+        close={handleClose}
+      >
         <WalletActivityDetails />
       </SharedSlideUpMenu>
       <ul>
@@ -39,5 +42,5 @@ export default function WalletActivityList(props) {
 }
 
 WalletActivityList.propTypes = {
-  activity: PropTypes.array.isRequired,
+  activity: PropTypes.shape([]).isRequired,
 }
