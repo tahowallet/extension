@@ -3,7 +3,7 @@ import React from "react"
 export default function NotificationItem() {
   return (
     <li>
-      <div className="icon_notification"></div>
+      <div className="icon_notification" />
       <div>
         Receive <span className="white">240 ETH</span> from{" "}
         <span className="white">0x424..12f3</span> succesful{" "}
