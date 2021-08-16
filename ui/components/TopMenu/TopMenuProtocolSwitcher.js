@@ -12,6 +12,7 @@ export default function TopMenuProtocolSwitcher() {
             display: flex;
             align-items: center;
             cursor: pointer;
+            user-select: none;
           }
           .icon_chevron_down {
             mask-image: url("./images/chevron_down.svg");
