@@ -3,7 +3,11 @@ import { Dispatch } from "redux"
 import { apiStubs } from "../temp-stubs"
 import { SEED_PHRASE_MM, accountsResult } from "../temp-stubs/stub"
 
-export const initialState = {
+export const initialState: {
+  accountLoading: boolean
+  hasAccountError: boolean
+  account: typeof accountsResult | undefined
+} = {
   accountLoading: false,
   hasAccountError: false,
   account: undefined,
@@ -38,6 +42,7 @@ export default accountSlice.reducer
 // Temporarily fill in hard coded USD conversion
 function enrichWithUSDAmounts(account: any) {
   const updatedAccount = { ...account }
+
   if (updatedAccount?.total_balance?.amount) {
     const usdAmount = (
       updatedAccount?.total_balance?.amount * 2411.44
@@ -71,25 +76,23 @@ async function createOrGetAddress() {
   return address
 }
 
-export function subscribeToAccount() {
-  return async (
-    dispatch: Dispatch<ReturnType<typeof loadAccount>>
-  ): Promise<void> => {
-    dispatch(loadAccount())
+export async function subscribeToAccount(
+  dispatch: Dispatch<ReturnType<typeof loadAccount>>
+): Promise<void> {
+  dispatch(loadAccount())
 
-    function accountUpdated(account: typeof accountsResult) {
-      const updatedAccount = enrichWithUSDAmounts(account)
-      dispatch(loadAccountSuccess(updatedAccount))
-    }
+  function accountUpdated(account: typeof accountsResult) {
+    const updatedAccount = enrichWithUSDAmounts(account)
+    dispatch(loadAccountSuccess(updatedAccount))
+  }
 
-    try {
-      const address = await createOrGetAddress()
-      const account = await apiStubs["/accounts/"].GET({ address })
+  try {
+    const address = await createOrGetAddress()
+    const account = await apiStubs["/accounts/"].GET({ address })
 
-      accountUpdated(account)
-      apiStubs["/accounts/"].subscribe(accountUpdated)
-    } catch (err) {
-      console.error(err)
-    }
+    accountUpdated(account)
+    apiStubs["/accounts/"].subscribe(accountUpdated)
+  } catch (err) {
+    console.error(err)
   }
 }

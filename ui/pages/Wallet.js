@@ -15,7 +15,7 @@ export default function Wallet() {
   const { account } = useBackgroundSelector((background) => background.account)
 
   useEffect(() => {
-    subscribeToAccount()(dispatch)
+    subscribeToAccount(dispatch)
   }, [])
 
   return (
