@@ -146,23 +146,6 @@ class Main {
     })
   }
 
-  // used to start and stop the ws connections for new head subscription
-
-  async connect() {
-    this.network.providers.ethereum.selected.connect()
-  }
-
-  async disconnect() {
-    this.network.providers.ethereum.selected.close()
-  }
-
-  private async import({ address, data, type, name }) {
-    if (data) {
-      return this.keys.import({ type, data, name })
-    }
-    return this.accounts.add(address)
-  }
-
   private subscribeToStates() {
     this.transactions.state.on("update", (state) => {
       this.state.updateState({ transactions: state })
@@ -174,7 +157,6 @@ class Main {
 }
 
 export { browser } from "webextension-polyfill-ts"
-export { connectToBackgroundApi } from "./lib/connect"
 
 export type RootState = ReturnType<Main["store"]["getState"]>
 export type BackgroundDispatch = Main["store"]["dispatch"]
