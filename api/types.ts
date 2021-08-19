@@ -1,7 +1,5 @@
 import { TokenList } from "@uniswap/token-lists"
 
-export { Transaction, UnsignedTransaction } from "@ethersproject/transactions"
-
 export interface TokenListCitation {
   name: string
   url: string
@@ -26,17 +24,16 @@ export interface Asset {
   metadata?: AssetMetadata
 }
 
-export type CoinGeckoAsset = {
-  metadata: {
+export interface CoinGeckoAsset extends Asset {
+  metadata: Asset["metadata"] & {
     coinGeckoId: string
-    [propName: string]: any
   }
-} & Asset
+}
 
 /*
  * Fungible assets include coins, currencies, and many tokens.
  */
-export type FungibleAsset = Asset & {
+export interface FungibleAsset extends Asset {
   decimals: number
 }
 
@@ -158,3 +155,93 @@ export interface AccountBalance {
    */
   dataSource: "alchemy" | "local"
 }
+
+/*
+ * An account on a particular network. That's it. That's the comment.
+ */
+export interface AccountNetwork {
+  account: string
+  network: Network
+}
+
+/*
+ * Time measured in seconds since the Unix Epoch, January 1st, 1970 UTC
+ */
+export type UNIXTime = number
+
+/*
+ * An EVM-style block identifier, including difficulty, block height, and
+ */
+export interface EVMBlock {
+  hash: string
+  parentHash: string
+  difficulty: BigInt
+  blockHeight: number
+  timestamp: UNIXTime
+  network: Network
+}
+
+/*
+ * An EVM-style block identifier that includes the base fee, as per EIP-1559.
+ */
+export interface EIP1559Block extends EVMBlock {
+  baseFeePerGas: BigInt
+}
+
+export interface EVMTransaction {
+  hash: string
+  from: string
+  to: string
+  gas: BigInt
+  gasPrice: BigInt | null
+  maxFeePerGas: BigInt | null
+  maxPriorityFeePerGas: BigInt | null
+  input: string
+  nonce: BigInt
+  value: BigInt
+  blockHash: string | null
+  blockHeight: number | null
+  asset: FungibleAsset
+  network: Network
+  /*
+   * 0 - plain jane
+   * 1 - EIP-2930
+   * 2 - EIP-1559 transactions
+   */
+  type: 0 | 1 | 2 | null
+}
+
+export interface LegacyEVMTransaction extends EVMTransaction {
+  gasPrice: BigInt
+  type: 0 | null
+  maxFeePerGas: null
+  maxPriorityFeePerGas: null
+}
+
+export interface EIP1559Transaction extends EVMTransaction {
+  gasPrice: null
+  type: 1 | 2
+  maxFeePerGas: BigInt
+  maxPriorityFeePerGas: BigInt
+}
+
+export interface ConfirmedEVMTransaction extends EVMTransaction {
+  blockHash: string
+  blockHeight: number
+}
+
+export interface SignedEVMTransaction extends EVMTransaction {
+  r: string
+  s: string
+  v: number
+}
+
+export interface SignedConfirmedEVMTransaction
+  extends SignedEVMTransaction,
+    ConfirmedEVMTransaction {}
+
+export type AnyEVMTransaction =
+  | EVMTransaction
+  | ConfirmedEVMTransaction
+  | SignedEVMTransaction
+  | SignedConfirmedEVMTransaction
