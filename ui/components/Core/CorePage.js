@@ -10,7 +10,7 @@ export default function CorePage(props) {
   const { children, hasTabBar, hasTopBar } = props
 
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(true)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
 
   return (
     <main>
@@ -43,7 +43,6 @@ export default function CorePage(props) {
             />
           </div>
         ) : null}
-
         <div className="page_content">{children}</div>
         {hasTabBar ? <TabBar /> : null}
       </div>
