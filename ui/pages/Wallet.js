@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { subscribeToAccount } from "@tallyho/tally-api/redux-slices/account"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
-import { subscribeToAccount, accountSelector } from "../slices/account"
 
 export default function Wallet() {
   const [panelNum, setPanelNum] = useState(0)
-  const dispatch = useDispatch()
+  const dispatch = useBackgroundDispatch()
   //  accountLoading, hasWalletErrorCode
-  const { account } = useSelector(accountSelector)
+  const { account } = useBackgroundSelector((background) => background.account)
 
   useEffect(() => {
-    dispatch(subscribeToAccount())
+    subscribeToAccount()(dispatch)
   }, [])
 
   return (
