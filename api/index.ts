@@ -1,3 +1,6 @@
+import { wrapStore } from "webext-redux"
+import { configureStore } from "@reduxjs/toolkit"
+
 import Networks, { NetworksState } from "./networks"
 import Transactions, { TransactionsState } from "./transactions"
 import Accounts, { AccountsState } from "./accounts"
@@ -22,6 +25,7 @@ import { startService as startChain, ChainService } from "./services/chain"
 import { getPersistedState, persistState } from "./lib/db"
 import ObsStore from "./lib/ob-store"
 import { getPrice } from "./lib/prices"
+import rootReducer from "./redux-slices"
 
 interface MainState {
   accounts: AccountsState
@@ -62,6 +66,15 @@ class Main {
    */
   indexingService: Promise<IndexingService>
 
+  /**
+   * The redux store for the wallet core. Note that the redux store is used to
+   * render the UI (via webext-redux), but it is _not_ the source of truth.
+   * Services interact with the various external and internal components and
+   * create persisted state, and the redux store is simply a view onto those
+   * pieces of canonical state.
+   */
+  store = configureStore({ reducer: rootReducer })
+
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
     const { accounts, networks, transactions } = state
@@ -87,6 +100,9 @@ class Main {
     )
     this.subscriptionIds = {}
     this.subscribeToStates()
+
+    // Start up the redux store.
+    wrapStore(this.store)
 
     // start all services
     this.initializeServices()
@@ -160,10 +176,15 @@ class Main {
 export { browser } from "webextension-polyfill-ts"
 export { connectToBackgroundApi } from "./lib/connect"
 
+export type RootState = ReturnType<Main["store"]["getState"]>
+export type BackgroundDispatch = Main["store"]["dispatch"]
+
 export async function startApi(): Promise<{ main: Main }> {
   const rawState = await getPersistedState(STATE_KEY)
   const newVersionState = await migrate(rawState)
   persistState(STATE_KEY, newVersionState)
+
   const main = new Main(newVersionState.state)
+
   return { main }
 }
