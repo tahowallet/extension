@@ -1,5 +1,11 @@
 import { combineReducers } from "redux"
 
-const rootReducer = combineReducers({})
+import accountReducer from "./account"
+import uiReducer from "./ui"
+
+const rootReducer = combineReducers({
+  account: accountReducer,
+  ui: uiReducer,
+})
 
 export default rootReducer
