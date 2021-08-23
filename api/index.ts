@@ -23,7 +23,7 @@ import { getPersistedState, persistState } from "./lib/db"
 import ObsStore from "./lib/ob-store"
 import { getPrice } from "./lib/prices"
 
-export interface MainState {
+interface MainState {
   accounts: AccountsState
   transactions: TransactionsState
   networks: NetworksState
@@ -31,7 +31,7 @@ export interface MainState {
 }
 
 class Main {
-  state: ObsStore<MainState>
+  private state: ObsStore<MainState>
 
   network: Networks
 
