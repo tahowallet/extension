@@ -22,6 +22,7 @@ import { startService as startChain, ChainService } from "./services/chain"
 import ObsStore from "./lib/ob-store"
 import { getPrice } from "./lib/prices"
 import rootReducer from "./redux-slices"
+import { subscribeToChainService } from "./redux-slices/account"
 
 interface MainState {
   accounts: AccountsState
@@ -29,6 +30,11 @@ interface MainState {
   networks: NetworksState
   tokensToTrack: SmartContractFungibleAsset[]
 }
+
+// Declared out here so StoreType can be used in Main.store type declaration.
+const initializeStore = (chainService: Promise<ChainService>) =>
+  configureStore({ reducer: rootReducer(chainService) })
+type ReduxStoreType = ReturnType<typeof initializeStore>
 
 export default class Main {
   private state: ObsStore<MainState>
@@ -69,7 +75,7 @@ export default class Main {
    * create persisted state, and the redux store is simply a view onto those
    * pieces of canonical state.
    */
-  store = configureStore({ reducer: rootReducer })
+  store: ReduxStoreType
 
   constructor(state: MainState = DEFAULT_STATE) {
     this.state = new ObsStore<MainState>(state)
@@ -97,14 +103,12 @@ export default class Main {
     this.subscriptionIds = {}
     this.subscribeToStates()
 
-    // Start up the redux store.
-    wrapStore(this.store)
-
     // start all services
     this.initializeServices()
+    this.initializeRedux()
   }
 
-  async initializeServices() {
+  initializeServices(): void {
     this.preferenceService = startPreferences()
     this.chainService = startChain(this.preferenceService).then(
       async (service) => {
@@ -123,13 +127,12 @@ export default class Main {
     )
   }
 
-  /*
-    Returns a object containing all api methods for use
-  */
-  // TODO Stubbed for now.
-  // eslint-disable-next-line class-methods-use-this
-  getApi() {
-    return apiStubs
+  async initializeRedux(): Promise<void> {
+    this.store = initializeStore(this.chainService)
+    // Start up the redux store.
+    wrapStore(this.store)
+
+    this.store.dispatch(subscribeToChainService())
   }
 
   registerSubscription({ route, params, handler, id }) {

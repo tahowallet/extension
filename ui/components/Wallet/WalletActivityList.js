@@ -1,3 +1,5 @@
+// @ts-check
+
 import React from "react"
 import PropTypes from "prop-types"
 import { setShowingActivityDetail } from "@tallyho/tally-api/redux-slices/ui"
@@ -33,7 +35,7 @@ export default function WalletActivityList(props) {
         {activity.map((activityItem) => (
           <WalletActivityListItem
             onClick={() => {
-              handleOpen(activityItem.blockHash)
+              handleOpen(activityItem.hash)
             }}
             activity={activityItem}
           />
@@ -44,5 +46,11 @@ export default function WalletActivityList(props) {
 }
 
 WalletActivityList.propTypes = {
-  activity: PropTypes.shape([]).isRequired,
+  activity: PropTypes.arrayOf(
+    PropTypes.shape({
+      hash: PropTypes.string,
+      timeStamp: PropTypes.string,
+      from: PropTypes.string,
+    })
+  ).isRequired,
 }
