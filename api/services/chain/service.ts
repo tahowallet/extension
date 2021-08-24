@@ -30,7 +30,7 @@ const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 32400 // 64800
 
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 
-function bigIntFromHex(s: string): BigInt {
+function bigIntFromHex(s: string): bigint {
   return BigNumber.from(s).toBigInt()
 }
 
