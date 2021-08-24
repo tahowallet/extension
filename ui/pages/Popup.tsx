@@ -11,6 +11,7 @@ import Onboarding from "./Onboarding"
 import Overview from "./Overview"
 import SingleAsset from "./SingleAsset"
 import Earn from "./Earn"
+import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
@@ -34,6 +35,9 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           </Route>
           <Route path="/earn">
             <Earn />
+          </Route>
+          <Route path="/earn/deposit">
+            <EarnDeposit />
           </Route>
           <Route path="/menu">
             <Menu />
