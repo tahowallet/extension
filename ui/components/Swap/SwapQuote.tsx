@@ -110,18 +110,6 @@ export default function SwapQoute(): ReactElement {
             justify-content: space-between;
             align-items: center;
           }
-          .label {
-            height: 17px;
-            color: var(--green-60);
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-            margin-bottom: 5px;
-            margin-left: 7px;
-            display: flex;
-            justify-content: space-between;
-          }
           .label_right {
             float: right;
             margin-top: 16px;
