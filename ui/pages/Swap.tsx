@@ -33,17 +33,14 @@ export default function Swap(): ReactElement {
           <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
-              <label className="label">
-                Swap from:
-                <SharedAssetInput onClick={handleAssetSelect} />
-              </label>
+              <SharedAssetInput
+                onClick={handleAssetSelect}
+                label="Swap from:"
+              />
             </div>
             <div className="icon_change" />
             <div className="form_input">
-              <label className="label">
-                Swap to:
-                <SharedAssetInput onClick={handleAssetSelect} />
-              </label>
+              <SharedAssetInput onClick={handleAssetSelect} label="Swap to:" />
             </div>
             <div className="settings_wrap">
               <SwapTransactionSettings />

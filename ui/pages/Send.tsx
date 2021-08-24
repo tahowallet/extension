@@ -17,20 +17,15 @@ export default function Send(): ReactElement {
           </h1>
           <div className="form">
             <div className="form_input">
-              <label className="label">
-                Asset / Amount <span className="label_right">Max</span>
-                <SharedAssetInput
-                  onClick={() => {
-                    setSelectedCount(1)
-                  }}
-                />
-              </label>
+              <SharedAssetInput
+                label="Asset / Amount"
+                onClick={() => {
+                  setSelectedCount(1)
+                }}
+              />
             </div>
             <div className="form_input">
-              <label className="label">
-                Send To:
-                <SharedAssetInput isTypeDestination />
-              </label>
+              <SharedAssetInput isTypeDestination label="Send To:" />
             </div>
             <span className="label">Network Fee/Speed</span>
             <SharedNetworkFeeGroup />
