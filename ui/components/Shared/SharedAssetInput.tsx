@@ -81,18 +81,51 @@ function SelectTokenMenuContent(
   )
 }
 
+interface SelectedTokenProps {
+  onClick: () => void
+}
+
+function SelectedToken(props: SelectedTokenProps): ReactElement {
+  const { onClick } = props
+  return (
+    <div className="token_group">
+      <div className="asset_icon_wrap">
+        <SharedAssetIcon />
+      </div>
+      <SharedButton
+        type="tertiaryWhite"
+        size="medium"
+        label="ETH"
+        icon="chevron"
+        onClick={onClick}
+      />
+      <style jsx>{`
+        .token_group {
+          display: flex;
+          align-items: center;
+        }
+        .asset_icon_wrap {
+          margin-right: 8px;
+        }
+      `}</style>
+    </div>
+  )
+}
+
 interface SharedAssetInputProps {
   isTypeDestination?: boolean
   onClick?: () => void
+  label?: string
+  defaultToken?: { name: string }
 }
 
 export default function SharedAssetInput(
   props: SharedAssetInputProps
 ): ReactElement {
-  const { isTypeDestination, onClick } = props
+  const { isTypeDestination, label, defaultToken, onClick } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
-  const [selectedToken, setSelectedToken] = useState({ name: false })
+  const [selectedToken, setSelectedToken] = useState(defaultToken)
 
   const handleClick = useCallback(() => {
     setOpenAssetMenu(!openAssetMenu)
@@ -105,7 +138,8 @@ export default function SharedAssetInput(
   }, [])
 
   return (
-    <>
+    <label className="label">
+      {label}
       <SharedSlideUpMenu isOpen={openAssetMenu} close={handleClick}>
         {SelectTokenMenuContent({ setSelectedTokenAndClose })}
       </SharedSlideUpMenu>
@@ -132,18 +166,7 @@ export default function SharedAssetInput(
                 onClick={handleClick}
               />
             ) : (
-              <div className="token_group">
-                <div className="asset_icon_wrap">
-                  <SharedAssetIcon />
-                </div>
-                <SharedButton
-                  type="tertiaryWhite"
-                  size="medium"
-                  label="ETH"
-                  icon="chevron"
-                  onClick={handleClick}
-                />
-              </div>
+              <SelectedToken onClick={handleClick} />
             )}
             <input className="input_amount" type="text" placeholder="0.0" />
           </>
@@ -197,21 +220,16 @@ export default function SharedAssetInput(
           .input_amount::placeholder {
             color: #ffffff;
           }
-          .token_group {
-            display: flex;
-            align-items: center;
-          }
-          .asset_icon_wrap {
-            margin-right: 8px;
-          }
         `}
       </style>
-    </>
+    </label>
   )
 }
 
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
+  defaultToken: { name: "" },
+  label: "",
   onClick: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
