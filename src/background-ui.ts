@@ -7,14 +7,11 @@ newProxyStore().then((backgroundStore) => {
 
   backgroundStore.subscribe(() => {
     const state = backgroundStore.getState()
-    const { account } = state.account
+    const {
+      combinedData: { totalUsdValue, activity: updatedActivity },
+    } = state.account
 
-    if (account) {
-      const {
-        total_balance: { amount: totalBalance },
-        activity: updatedActivity,
-      } = account
-
+    if (updatedActivity) {
       // Undefined activity hashes means we're initializing. Otherwise, notify
       // for any new activity.
       if (typeof latestActivityHashes === "undefined") {
@@ -27,8 +24,8 @@ newProxyStore().then((backgroundStore) => {
         browser.notifications.create("balance-update", {
           type: "basic",
           title: "Balance Update",
-          message: `<address> has balance ${totalBalance}`,
-          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalBalance}`,
+          message: `<address> has balance ${totalUsdValue}`,
+          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalUsdValue}`,
         })
       }
 

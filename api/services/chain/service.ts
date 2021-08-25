@@ -30,7 +30,7 @@ const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 32400 // 64800
 
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 
-function bigIntFromHex(s: string): BigInt {
+function bigIntFromHex(s: string): bigint {
   return BigNumber.from(s).toBigInt()
 }
 
@@ -405,23 +405,27 @@ export default class ChainService implements Service<Events> {
   private async loadRecentAssetTransfers(
     accountNetwork: AccountNetwork
   ): Promise<void> {
-    const blockHeight = await this.getBlockHeight(accountNetwork.network)
-    const fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
-    // TODO only works on Ethereum today
-    const assetTransfers = await getAssetTransfers(
-      this.pollingProviders.ethereum,
-      accountNetwork.account,
-      fromBlock
-    )
+    try {
+      const blockHeight = await this.getBlockHeight(accountNetwork.network)
+      const fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
+      // TODO only works on Ethereum today
+      const assetTransfers = await getAssetTransfers(
+        this.pollingProviders.ethereum,
+        accountNetwork.account,
+        fromBlock
+      )
 
-    // TODO any of those contracts that are ERC-20s should be added to
-    // tokensToTrack by the indexing service
-    this.emitter.emit("alchemyAssetTransfers", assetTransfers)
+      // TODO any of those contracts that are ERC-20s should be added to
+      // tokensToTrack by the indexing service
+      this.emitter.emit("alchemyAssetTransfers", assetTransfers)
 
-    /// send all found tx hashes into a queue to retrieve + cache
-    assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(ETHEREUM, a.hash)
-    )
+      /// send all found tx hashes into a queue to retrieve + cache
+      assetTransfers.forEach((a) =>
+        this.queueTransactionHashToRetrieve(ETHEREUM, a.hash)
+      )
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {

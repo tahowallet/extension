@@ -1,11 +1,21 @@
-import { combineReducers } from "redux"
+import { AnyAction, CombinedState, combineReducers, Reducer } from "redux"
 
-import accountReducer from "./account"
+import buildAccountReducer from "./account"
 import uiReducer from "./ui"
 
-const rootReducer = combineReducers({
-  account: accountReducer,
-  ui: uiReducer,
-})
+import ChainService from "../services/chain/service"
 
-export default rootReducer
+export default function buildRootReducer(
+  chainService: Promise<ChainService>
+): Reducer<
+  CombinedState<{
+    account: ReturnType<ReturnType<typeof buildAccountReducer>>
+    ui: ReturnType<typeof uiReducer>
+  }>,
+  AnyAction
+> {
+  return combineReducers({
+    account: buildAccountReducer(chainService),
+    ui: uiReducer,
+  })
+}

@@ -1,10 +1,12 @@
+// @ts-check
+//
 import React from "react"
 import PropTypes from "prop-types"
 import WalletAssetListItem from "./WalletAssetListItem"
 
 export default function WalletAssetList(props) {
   const { assets } = props
-  if (!assets) return false
+  if (!assets) return <></>
   return (
     <ul>
       {assets.map((asset) => (
@@ -15,5 +17,6 @@ export default function WalletAssetList(props) {
 }
 
 WalletAssetList.propTypes = {
-  assets: PropTypes.arrayOf(PropTypes.object).isRequired,
+  assets: PropTypes.arrayOf(PropTypes.shape(WalletAssetListItem.propTypes))
+    .isRequired,
 }
