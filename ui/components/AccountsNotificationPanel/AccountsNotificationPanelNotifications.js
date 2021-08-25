@@ -1,0 +1,65 @@
+import React from "react"
+import AccountsNotificationPanelNotificationItem from "./AccountsNotificationPanelNotificationItem"
+import SharedButton from "../Shared/SharedButton"
+
+export default function AccountsNotificationPanelNotifications() {
+  return (
+    <>
+      <h3 className="list_title">
+        Unread (3){" "}
+        <SharedButton
+          type="tertiary"
+          size="small"
+          label="Mark all as read"
+          icon="mark_read"
+          iconSize="secondaryMedium"
+          isDisabled
+        />
+      </h3>
+      <ul className="standard_width">
+        {Array(3).fill("").map(AccountsNotificationPanelNotificationItem)}
+      </ul>
+      <h3 className="list_title">
+        Read (128){" "}
+        <SharedButton
+          type="tertiary"
+          size="small"
+          label="Delete all"
+          icon="garbage"
+          iconSize="secondaryMedium"
+          isDisabled
+        />
+      </h3>
+      <ul className="standard_width read_list">
+        {Array(4).fill("").map(AccountsNotificationPanelNotificationItem)}
+      </ul>
+      <style jsx>{`
+        ul {
+          display: flex;
+          flex-direction: column;
+          margin: 0 auto;
+        }
+        ul:first-of-type {
+          border-bottom: solid var(--hunter-green) 1px;
+        }
+        .list_title {
+          color: var(--green-20);
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          padding: unset;
+          margin-left: 16px;
+          margin-bottom: 7px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+      `}</style>
+      <style jsx global>{`
+        .read_list .icon_notification {
+          background-color: var(--green-80);
+        }
+      `}</style>
+    </>
+  )
+}

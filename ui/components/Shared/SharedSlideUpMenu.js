@@ -49,6 +49,7 @@ export default function SharedSlideUpMenu(props) {
             position: absolute;
             right: 24px;
             background-color: var(--green-20);
+            z-index: 1;
           }
           .icon_close:hover {
             background-color: #fff;
