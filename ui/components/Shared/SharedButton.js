@@ -3,7 +3,16 @@ import PropTypes from "prop-types"
 import classNames from "classnames"
 
 export default function SharedButton(props) {
-  const { label, type, size, onClick, isDisabled, icon, iconSize } = props
+  const {
+    label,
+    type,
+    size,
+    onClick,
+    isDisabled,
+    icon,
+    iconSize,
+    iconPosition,
+  } = props
 
   return (
     <button
@@ -16,14 +25,19 @@ export default function SharedButton(props) {
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
         { special_disabled_white: type === "specialDisabledWhite" },
-        { warning: type === "warning" }
+        { warning: type === "warning" },
+        { icon_left: iconPosition === "left" }
       )}
       onClick={onClick}
     >
       {label}
       {icon ? (
         <span
-          className={`icon_button${iconSize === "large" ? " icon_large" : ""}`}
+          className={classNames(
+            { icon_button: true },
+            { icon_large: iconSize === "large" },
+            { icon_secondary_medium: iconSize === "secondaryMedium" }
+          )}
         />
       ) : null}
       <style jsx>
@@ -69,6 +83,11 @@ export default function SharedButton(props) {
             height: 48px;
             border-radius: 8px;
             padding: 0 24px;
+          }
+          .icon_secondary_medium {
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
           }
           .icon_large {
             width: 24px;
@@ -158,6 +177,7 @@ export default function SharedButton(props) {
           .small {
             padding: 0 12px;
             height: 32px;
+            font-size: 16px;
           }
           .warning {
             background-color: var(--attention);
@@ -167,6 +187,13 @@ export default function SharedButton(props) {
           }
           .warning .icon_button {
             background-color: var(--hunter-green);
+          }
+          .icon_left {
+            flex-direction: row-reverse;
+          }
+          .icon_left .icon_button {
+            margin-left: 0px;
+            margin-right: 9px;
           }
         `}
       </style>
@@ -186,6 +213,7 @@ SharedButton.propTypes = {
   size: PropTypes.oneOf(["medium", "large"]).isRequired,
   icon: PropTypes.string,
   iconSize: PropTypes.oneOf(["small", "medium", "large"]),
+  iconPosition: PropTypes.oneOf(["left", "right"]),
   onClick: PropTypes.func,
   isDisabled: PropTypes.bool,
 }
@@ -194,6 +222,7 @@ SharedButton.defaultProps = {
   icon: null,
   isDisabled: false,
   iconSize: "medium",
+  iconPosition: "right",
   onClick: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
