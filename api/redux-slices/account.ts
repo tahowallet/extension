@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import { ChainService } from "../services/chain"
+import Emittery from "emittery"
 import {
   AccountBalance,
   AccountNetwork,
@@ -281,50 +281,29 @@ const accountSlice = createSlice({
   },
 })
 
-export const { loadAccount, updateAccountBalance } = accountSlice.actions
+export const {
+  loadAccount,
+  updateAccountBalance,
+  transactionSeen,
+  transactionConfirmed,
+} = accountSlice.actions
 
-let chainService: Promise<ChainService> | undefined
+export default accountSlice.reducer
 
-export default function buildAccountSlice(
-  externalChainService: Promise<ChainService>
-): typeof accountSlice.reducer {
-  if (chainService) {
-    throw new Error("Account slice can only be initialized once.")
-  }
-
-  chainService = externalChainService
-
-  return accountSlice.reducer
+export type Events = {
+  addAccount: AccountNetwork
 }
 
-export const subscribeToChainService = createAsyncThunk(
-  "account/chain/subscribe",
-  async (_: void, { dispatch }) => {
-    const chain = await chainService
+export const emitter = new Emittery<Events>()
 
-    chain.emitter.on("accountBalance", (accountWithBalance) => {
-      // The first account balance update will transition the account to loading.
-      dispatch(updateAccountBalance(enrichWithUSDAmounts(accountWithBalance)))
-    })
-    chain.emitter.on("transaction", (transaction) => {
-      if (transaction.blockHash) {
-        dispatch(accountSlice.actions.transactionConfirmed(transaction))
-      } else {
-        dispatch(accountSlice.actions.transactionSeen(transaction))
-      }
-    })
-
-    const alreadySeen = await chain.getAccountsToTrack()
-    alreadySeen.forEach((accountNetwork) => {
-      // Mark as loading and wire things up.
-      dispatch(loadAccount(accountNetwork.account))
-
-      // Force a refresh of the account balance to populate the store.
-      chain.getLatestBaseAccountBalance(accountNetwork)
-    })
-  }
-)
-
+/**
+ * Async thunk creator whose dispatch promise will return when the account has
+ * been added.
+ *
+ * Actual account data will flow into the redux store through other channels;
+ * the promise returned from this action's dispatch will be fulfilled by a void
+ * value.
+ */
 export const subscribeToAccountNetwork = createAsyncThunk<
   Promise<void>,
   AccountNetwork,
@@ -335,14 +314,13 @@ export const subscribeToAccountNetwork = createAsyncThunk<
     const state = getState()
 
     if (state.account.accountsData[accountNetwork.account]) {
-      return // we already have it, don't do anything
+      // We already have it, return.
+      return
     }
 
-    // Otherwise, mark as loading and wire things up.
+    // Otherwise, mark as loading and dispatch the add event.
     dispatch(loadAccount(accountNetwork.account))
 
-    const chain = await chainService
-
-    chain.addAccountToTrack(accountNetwork)
+    await emitter.emit("addAccount", accountNetwork)
   }
 )
