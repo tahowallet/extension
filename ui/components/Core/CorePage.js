@@ -89,6 +89,7 @@ export default function CorePage(props) {
           }
           .top_menu_wrap {
             z-index: 10;
+            cursor: default;
           }
         `}
       </style>
