@@ -83,10 +83,12 @@ function SelectTokenMenuContent(
 
 interface SelectedTokenProps {
   onClick: () => void
+  isTokenOptionsLocked: boolean
 }
 
 function SelectedToken(props: SelectedTokenProps): ReactElement {
-  const { onClick } = props
+  const { isTokenOptionsLocked, onClick } = props
+
   return (
     <div className="token_group">
       <div className="asset_icon_wrap">
@@ -96,7 +98,7 @@ function SelectedToken(props: SelectedTokenProps): ReactElement {
         type="tertiaryWhite"
         size="medium"
         label="ETH"
-        icon="chevron"
+        icon={isTokenOptionsLocked ? undefined : "chevron"}
         onClick={onClick}
       />
       <style jsx>{`
@@ -117,19 +119,28 @@ interface SharedAssetInputProps {
   onClick?: () => void
   label?: string
   defaultToken?: { name: string }
+  isTokenOptionsLocked?: boolean
 }
 
 export default function SharedAssetInput(
   props: SharedAssetInputProps
 ): ReactElement {
-  const { isTypeDestination, label, defaultToken, onClick } = props
+  const {
+    isTypeDestination,
+    label,
+    defaultToken,
+    isTokenOptionsLocked,
+    onClick,
+  } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
   const [selectedToken, setSelectedToken] = useState(defaultToken)
 
   const handleClick = useCallback(() => {
-    setOpenAssetMenu(!openAssetMenu)
-    onClick()
+    if (!isTokenOptionsLocked) {
+      setOpenAssetMenu(!openAssetMenu)
+      onClick()
+    }
   }, [])
 
   const setSelectedTokenAndClose = useCallback((token) => {
@@ -166,7 +177,10 @@ export default function SharedAssetInput(
                 onClick={handleClick}
               />
             ) : (
-              <SelectedToken onClick={handleClick} />
+              <SelectedToken
+                onClick={handleClick}
+                isTokenOptionsLocked={isTokenOptionsLocked}
+              />
             )}
             <input className="input_amount" type="text" placeholder="0.0" />
           </>
@@ -228,6 +242,7 @@ export default function SharedAssetInput(
 
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
+  isTokenOptionsLocked: false,
   defaultToken: { name: "" },
   label: "",
   onClick: () => {
