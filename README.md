@@ -113,6 +113,69 @@ round of changes on a given line, which relieves much of the annoyance; see
 [the GitHub blame docs for
 more](https://docs.github.com/en/github/managing-files-in-a-repository/managing-files-on-github/tracking-changes-in-a-file).
 
+## Architecture
+
+Here is a light architecture diagram describing the relationship between
+services (in the API package) and the interface and browser notifications:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                     │
+│   ____                  _                                                                           │
+│  / ___|  ___ _ ____   _(_) ___ ___  ___                                                             │
+│  \___ \ / _ \ '__\ \ / / |/ __/ _ \/ __|                                       ┌────────────────────┼──┐
+│   ___) |  __/ |   \ V /| | (_|  __/\__ \                                       │                    │  │
+│  |____/ \___|_|    \_/ |_|\___\___||___/                                       │                    │  │   ┌─────────────────┐
+│                                                                     Chain                           │  │   │External Services│
+│                                                                     - Blocks      ━━━━━━━━━━━━┓     │  │   │                 │
+│                 ┌────subscribe (incoming or outgoing tx status)───▶ - Transactions            ┃     │  │   │  Local node     │
+│                 │                                                                             ┃     │  │   │                 │
+│                 │                                                                             ┃     │  │   │  Alchemy        │
+│                 │                                                                             ┃     │  ├───▶                 │
+│                 │                                                    Indexing                 ┃     │  │   │  BlockNative    │
+│                 │                                                    - Accounts               ┃     │  │   │                 │
+│                 │                                                    - ERC-20 balances    ━━━━╋─────┼──┘   │  CoinGecko      │
+│                 ├───subscribe (eg balance changes), get balances───▶ - ERC-721 ownership      ┃     │      │                 │
+│                 │                                                    - Governance proposals   ┃     │      │                 │
+│                 │                                                    - On-chain prices        ┃     │      └─────────────────┘
+│                 │                                                                             ┃     │
+│                 │                                                                             ┃     │      ┌────────────────┐
+│                 │                                                   Keyring                   ┃     │      │                │
+│                 ├──────list accounts, sign tx, sign message───────▶ - Native  ────────────────╋─────┼──────▶   Extension    │
+│                 │                                                   - Remote                  ┃     │      │  Storage API   │
+│      ┌──────────┴──────────┐                                                                  ┃     │      │                │
+│      │                     │                                                                  ┃     │      └────────────────┘
+│      │                     │                                                                  ┃     │
+│      │     Wallet API      │──────┐                                 Preferences  ━━━━━━━━━━━━━┫     │
+│      │                     │      │                                                           ┃     │      ┌────────────────┐
+│      │                     │      │                                                           ┃     │      │                │
+│      └──────────▲──────────┘      │                                 Notifications             ┃     │      │                │
+│                 │                 │                                 - Ephemeral               ┣━━━━━╋━━━━━━▶   IndexedDB    │
+│                 │                 └──────pull and subscribe───────▶ - Application      ━━━━━━━┛     │      │                │
+│                 │                                                   - Security-critical             │      │                │
+│             subscribe                                                          │                    │      └────────────────┘
+│              and get                                                           │                    │
+│                 │                                                              │                    │
+│                 │                                                            push                   │
+│                 │                                                              │                    │
+└─────────────────▼──────────────────────────────────────────────────────────────┼────────────────────┘
+┌──────────────────────────────────┐                             ┌───────────────▼───────────────┐
+│                                  │                             │                               │
+│                                  │                             │                               │
+│         Wallet interface         │                             │     Browser notifications     │
+│                                  │                             │                               │
+│                                  │                             │                               │
+└──────────────────────────────────┘                             └───────────────────────────────┘
+                   ┌───────────────┐
+                   │               │
+                   │ Internal dApp │
+                   │               │
+                   └───────────────┘
+                   ┌──────┐ ┌──────┐
+                   │ Earn │ │ Swap │
+                   └──────┘ └──────┘
+```
+
 ## File Structure
 
 Extension content lives directly under the root directory alongside
