@@ -1,29 +1,42 @@
-import { browser, startApi } from "@tallyho/tally-api"
+import { browser, newProxyStore } from "@tallyho/tally-api"
 
-startApi().then(async ({ main }) => {
-  const accountsApi = main.getApi()["/accounts/"]
-  let latestActivityHashes = (
-    await accountsApi.GET({ address: null })
-  ).activity.map(({ hash }) => hash)
-  main
-    .getApi()
-    ["/accounts/"].subscribe(
-      ({
-        total_balance: { amount: totalBalance },
-        activity: updatedActivity,
-      }) => {
+newProxyStore().then((backgroundStore) => {
+  // undefined if no account has been resolved, string array with the latest
+  // activity hashes if it has.
+  let latestActivityHashes: Set<string> | undefined
+
+  backgroundStore.subscribe(() => {
+    const state = backgroundStore.getState()
+    const {
+      combinedData: { totalUsdValue, activity: updatedActivity },
+    } = state.account
+
+    if (updatedActivity) {
+      // Undefined activity hashes means we're initializing. Otherwise, notify
+      // for any new activity.
+      if (typeof latestActivityHashes === "undefined") {
+        latestActivityHashes = new Set()
+      } else {
         const newActivity = updatedActivity.filter(({ hash }) =>
-          latestActivityHashes.includes(hash)
+          latestActivityHashes.has(hash)
         )
 
-        browser.notifications.create("balance-udpate", {
+        browser.notifications.create("balance-update", {
           type: "basic",
           title: "Balance Update",
-          message: `<address> has balance ${totalBalance}`,
-          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalBalance}`,
+          message: `<address> has balance ${totalUsdValue}`,
+          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalUsdValue}`,
         })
-
-        latestActivityHashes = updatedActivity.map(({ hash }) => hash)
       }
-    )
+
+      latestActivityHashes = updatedActivity.reduce(
+        (acc, { hash }) => acc.add(hash),
+        latestActivityHashes
+      )
+    } else {
+      // Account has been cleared, reset activity hashes so they can be
+      // reinitialized next time the account is set.
+      latestActivityHashes = undefined
+    }
+  })
 })

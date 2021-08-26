@@ -1,31 +1,27 @@
+// @ts-check
+//
 import React, { useState, useEffect } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
-import { subscribeToAccount, accountSelector } from "../slices/account"
 
 export default function Wallet() {
   const [panelNum, setPanelNum] = useState(0)
-  const dispatch = useDispatch()
   //  accountLoading, hasWalletErrorCode
-  const { account } = useSelector(accountSelector)
-
-  useEffect(() => {
-    dispatch(subscribeToAccount())
-  }, [])
+  const account = useBackgroundSelector(
+    (background) => background.account.combinedData
+  )
 
   return (
     <div className="wrap">
       <CorePage>
         <div className="page_content">
           <div className="section">
-            <WalletAccountBalanceControl
-              balance={account?.total_balance?.usd_amount}
-            />
+            <WalletAccountBalanceControl balance={account.totalUsdValue} />
           </div>
           <div className="section">
             <SharedPanelSwitcher
@@ -35,9 +31,9 @@ export default function Wallet() {
             />
             <div className="panel">
               {panelNum === 0 ? (
-                <WalletAssetList assets={account?.tokens} />
+                <WalletAssetList assets={account.assets} />
               ) : (
-                <WalletActivityList activity={account?.activity} />
+                <WalletActivityList activity={account.activity} />
               )}
             </div>
           </div>

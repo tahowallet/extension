@@ -68,7 +68,7 @@ export type SmartContractFungibleAsset = FungibleAsset & SmartContract
  */
 export interface AssetAmount {
   asset: Asset
-  amount: BigInt
+  amount: bigint
 }
 
 /*
@@ -76,7 +76,7 @@ export interface AssetAmount {
  */
 export interface FungibleAssetAmount {
   asset: FungibleAsset
-  amount: BigInt
+  amount: bigint
 }
 
 /*
@@ -94,7 +94,7 @@ export type AnyAsset =
  */
 export interface AnyAssetAmount {
   asset: AnyAsset
-  amount: BigInt
+  amount: bigint
 }
 
 /*
@@ -106,7 +106,7 @@ export interface AnyAssetAmount {
  */
 export interface PricePoint {
   pair: [AnyAsset, AnyAsset]
-  amounts: [BigInt, BigInt]
+  amounts: [bigint, bigint]
   time: number
 }
 
@@ -144,7 +144,7 @@ export interface AccountBalance {
   /*
    * The block height at while the balance measurement is valid.
    */
-  blockHeight?: BigInt
+  blockHeight?: bigint
   /*
    * When the account balance was measured, using Unix epoch timestamps.
    */
@@ -175,7 +175,7 @@ export type UNIXTime = number
 export interface EVMBlock {
   hash: string
   parentHash: string
-  difficulty: BigInt
+  difficulty: bigint
   blockHeight: number
   timestamp: UNIXTime
   network: Network
@@ -185,20 +185,20 @@ export interface EVMBlock {
  * An EVM-style block identifier that includes the base fee, as per EIP-1559.
  */
 export interface EIP1559Block extends EVMBlock {
-  baseFeePerGas: BigInt
+  baseFeePerGas: bigint
 }
 
 export interface EVMTransaction {
   hash: string
   from: string
   to: string
-  gas: BigInt
-  gasPrice: BigInt | null
-  maxFeePerGas: BigInt | null
-  maxPriorityFeePerGas: BigInt | null
+  gas: bigint
+  gasPrice: bigint | null
+  maxFeePerGas: bigint | null
+  maxPriorityFeePerGas: bigint | null
   input: string
-  nonce: BigInt
-  value: BigInt
+  nonce: bigint
+  value: bigint
   blockHash: string | null
   blockHeight: number | null
   asset: FungibleAsset
@@ -212,7 +212,7 @@ export interface EVMTransaction {
 }
 
 export interface LegacyEVMTransaction extends EVMTransaction {
-  gasPrice: BigInt
+  gasPrice: bigint
   type: 0 | null
   maxFeePerGas: null
   maxPriorityFeePerGas: null
@@ -221,8 +221,8 @@ export interface LegacyEVMTransaction extends EVMTransaction {
 export interface EIP1559Transaction extends EVMTransaction {
   gasPrice: null
   type: 1 | 2
-  maxFeePerGas: BigInt
-  maxPriorityFeePerGas: BigInt
+  maxFeePerGas: bigint
+  maxPriorityFeePerGas: bigint
 }
 
 export interface ConfirmedEVMTransaction extends EVMTransaction {

@@ -39,5 +39,9 @@
     "node-fetch": "^2.6.1",
     "webextension-polyfill-ts": "^0.26.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@reduxjs/toolkit": "^1.6.1",
+    "redux": "^4.1.1",
+    "webext-redux": "^2.1.7"
+  }
 }

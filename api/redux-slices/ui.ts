@@ -16,5 +16,4 @@ const uiSlice = createSlice({
 })
 
 export const { setShowingActivityDetail } = uiSlice.actions
-export const uiSelector = (state) => state.ui
 export default uiSlice.reducer
