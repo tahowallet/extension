@@ -15,7 +15,7 @@ export default function CorePage(props) {
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
 
   function handleOpenHiddenDevMenu(e) {
-    if (e.detail === 3) {
+    if (process.env.NODE_ENV === "development" && e.detail === 3) {
       setIsDevToolsOpen(true)
     }
   }
