@@ -39,6 +39,6 @@
 
   "background": {
     "persistent": true,
-    "scripts": ["background.js"]
+    "scripts": ["background.js", "background-ui.js"]
   }
 }

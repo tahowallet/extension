@@ -64,7 +64,6 @@ export default function CorePage(props) {
             />
           </button>
         ) : null}
-
         <div className="page_content">{children}</div>
         {hasTabBar ? <TabBar /> : null}
       </div>
