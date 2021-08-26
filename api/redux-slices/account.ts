@@ -10,28 +10,34 @@ import {
   Network,
 } from "../types"
 
-type USDValue = {
-  usdValue: number | "unknown"
-  localizedUsdValue: string
+// Adds user-specific values based on preferences. This is the combination of a
+// conversion to the user's preferred currency for viewing, as well as a
+// conversion to a decimal amount for assets that are represented by
+// fixed-point integers.
+type UserValue = {
+  userValue: number | "unknown"
+  decimalValue: number | "unknown"
+  localizedUserValue: string
+  localizedDecimalValue: string
 }
 
-type AccountBalanceWithUSD = AccountBalance & {
-  assetAmount: AnyAssetAmount & USDValue
+type AccountBalanceWithUserValue = AccountBalance & {
+  assetAmount: AnyAssetAmount & UserValue
 }
 
 type AccountData = {
   account: string
   network: Network
   balances: {
-    [assetSymbol: string]: AccountBalanceWithUSD
+    [assetSymbol: string]: AccountBalanceWithUserValue
   }
   confirmedTransactions: ConfirmedEVMTransaction[]
   unconfirmedTransactions: AnyEVMTransaction[]
 }
 
 type CombinedAccountData = {
-  totalUsdValue: string
-  assets: (AnyAssetAmount & USDValue)[]
+  totalUserValue: string
+  assets: (AnyAssetAmount & UserValue)[]
   activity: AnyEVMTransaction[]
 }
 
@@ -54,40 +60,57 @@ function isFungibleAssetAmount(
 }
 
 // Fill in USD amounts for an asset.
-function enrichAssetAmountWithUSDAmounts(
+function enrichAssetAmountWithUserAmounts(
   assetAmount: AnyAssetAmount
-): AnyAssetAmount & USDValue {
+): AnyAssetAmount & UserValue {
   if (isFungibleAssetAmount(assetAmount)) {
     const {
       amount,
       asset: { decimals },
     } = assetAmount
+    // TODO Make this pull from the user's preferred currency and its
+    // TODO conversion info.
+    const userCurrencyConversion2Decimals = usdConversion2Decimals
+    // TODO What actual precision do we want here? Probably more than 2
+    // TODO decimals.
+    const assetValue2Decimals = amount / 10n ** BigInt(decimals - 2)
+
     const converted2Decimals =
-      (amount / 10n ** BigInt(decimals - 2)) * usdConversion2Decimals
-    const usdValue = Number(converted2Decimals) / 2
+      assetValue2Decimals * userCurrencyConversion2Decimals
+
+    // Multiplying two 2-decimal precision fixed-points means dividing by
+    // 4-decimal precision.
+    const userValue = Number(converted2Decimals) / 10000
+    const decimalValue = Number(assetValue2Decimals) / 100
 
     return {
       ...assetAmount,
-      usdValue,
-      localizedUsdValue: usdValue.toLocaleString("default", {
+      userValue,
+      decimalValue,
+      localizedUserValue: userValue.toLocaleString("default", {
+        maximumFractionDigits: 2,
+      }),
+      localizedDecimalValue: decimalValue.toLocaleString("default", {
         maximumFractionDigits: 2,
       }),
     }
   }
   return {
     ...assetAmount,
-    usdValue: "unknown",
-    localizedUsdValue: "unknown",
+    userValue: "unknown",
+    decimalValue: "unknown",
+    localizedUserValue: "unknown",
+    localizedDecimalValue: "unknown",
   }
 }
 
 // Fill in USD amounts for an account balance.
-function enrichWithUSDAmounts(
+function enrichWithUerAmounts(
   accountBalance: AccountBalance
-): AccountBalanceWithUSD {
+): AccountBalanceWithUserValue {
   return {
     ...accountBalance,
-    assetAmount: enrichAssetAmountWithUSDAmounts(accountBalance.assetAmount),
+    assetAmount: enrichAssetAmountWithUserAmounts(accountBalance.assetAmount),
   }
 }
 
@@ -120,7 +143,7 @@ function transactionBlockComparator(
 export const initialState = {
   accountsData: {},
   combinedData: {
-    totalUsdValue: "",
+    totalUserValue: "",
     assets: [],
     activity: [],
   },
@@ -142,18 +165,26 @@ const accountSlice = createSlice({
     },
     updateAccountBalance: (
       immerState,
-      { payload }: { payload: AccountBalance }
+      { payload: updatedAccountBalance }: { payload: AccountBalance }
     ) => {
-      const existing = immerState.accountsData[payload.account]
-      if (existing && existing !== "loading") {
-        existing.balances[payload.assetAmount.asset.symbol] =
-          enrichWithUSDAmounts(payload)
+      const {
+        account: updatedAccount,
+        assetAmount: {
+          asset: { symbol: updatedAssetSymbol },
+        },
+      } = updatedAccountBalance
+
+      const existingAccountData = immerState.accountsData[updatedAccount]
+      if (existingAccountData && existingAccountData !== "loading") {
+        existingAccountData.balances[updatedAssetSymbol] = enrichWithUerAmounts(
+          updatedAccountBalance
+        )
       } else {
-        immerState.accountsData[payload.account] = {
-          account: payload.account,
-          network: payload.network,
+        immerState.accountsData[updatedAccount] = {
+          account: updatedAccount,
+          network: updatedAccountBalance.network,
           balances: {
-            [payload.assetAmount.asset.symbol]: enrichWithUSDAmounts(payload),
+            [updatedAssetSymbol]: enrichWithUerAmounts(updatedAccountBalance),
           },
           unconfirmedTransactions: [],
           confirmedTransactions: [],
@@ -172,22 +203,23 @@ const accountSlice = createSlice({
           Object.values(ad.balances).map((ab) => ab.assetAmount)
       )
 
-      immerState.combinedData.totalUsdValue = combinedAccountBalances
+      immerState.combinedData.totalUserValue = combinedAccountBalances
         .reduce(
-          (acc, { usdValue }) =>
-            usdValue === "unknown" ? acc : acc + usdValue,
+          (acc, { userValue }) =>
+            userValue === "unknown" ? acc : acc + userValue,
           0
         )
         .toLocaleString("default", { maximumFractionDigits: 2 })
 
       immerState.combinedData.assets = Object.values(
         combinedAccountBalances.reduce<{
-          [symbol: string]: AnyAssetAmount & USDValue
-        }>((acc, assetAmount) => {
-          const assetSymbol = assetAmount.asset.symbol
-          acc[assetSymbol] = enrichAssetAmountWithUSDAmounts({
-            ...assetAmount,
-            amount: (acc[assetSymbol]?.amount || 0n) + assetAmount.amount,
+          [symbol: string]: AnyAssetAmount & UserValue
+        }>((acc, combinedAssetAmount) => {
+          const assetSymbol = combinedAssetAmount.asset.symbol
+          acc[assetSymbol] = enrichAssetAmountWithUserAmounts({
+            ...combinedAssetAmount,
+            amount:
+              (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
           })
 
           return acc
