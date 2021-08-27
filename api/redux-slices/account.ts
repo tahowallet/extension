@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import {
   AccountBalance,
@@ -263,7 +263,7 @@ const accountSlice = createSlice({
         // Use a Map to drop any duplicate transaction entries, e.g. a send
         // between two tracked accounts.
         new Map(
-          Object.values(immerState.accountsData)
+          Object.values(current(immerState.accountsData))
             .flatMap(
               (ad) =>
                 ad !== "loading" &&
@@ -300,7 +300,7 @@ const accountSlice = createSlice({
         // Use a Map to drop any duplicate transaction entries, e.g. a send
         // between two tracked accounts.
         new Map(
-          Object.values(immerState.accountsData)
+          Object.values(current(immerState.accountsData))
             .flatMap(
               (ad) =>
                 ad !== "loading" &&
