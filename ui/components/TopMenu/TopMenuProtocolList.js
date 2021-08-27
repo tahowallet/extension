@@ -8,8 +8,8 @@ export default function TopMenuProtocolList() {
       <ul>
         {Array(3)
           .fill("")
-          .map(() => (
-            <TopMenuProtocolListItem />
+          .map((_, index) => (
+            <TopMenuProtocolListItem key={index.toString()} />
           ))}
         <li className="divider">
           <div className="divider_label">Testnet</div>
@@ -17,8 +17,8 @@ export default function TopMenuProtocolList() {
         </li>
         {Array(3)
           .fill("")
-          .map(() => (
-            <TopMenuProtocolListItem />
+          .map((_, index) => (
+            <TopMenuProtocolListItem key={index.toString()} />
           ))}
       </ul>
       <style jsx>
