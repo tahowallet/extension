@@ -1,8 +1,8 @@
-import React from "react"
+import React, { ReactElement } from "react"
 import { Router } from "react-chrome-extension-router"
-import { configureStore } from "@reduxjs/toolkit"
+import { Store } from "webext-redux"
 import { Provider } from "react-redux"
-import rootReducer from "../slices"
+
 import Wallet from "./Wallet"
 
 import OnboardingImportMetamask from "../components/Onboarding/OnboardingImportMetamask"
@@ -13,9 +13,7 @@ import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
 
-const store = configureStore({ reducer: rootReducer })
-
-export default function Popup() {
+export default function Popup({ store }: { store: Store }): ReactElement {
   return (
     <Provider store={store}>
       <Router>

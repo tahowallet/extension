@@ -1,11 +1,10 @@
 import React from "react"
 import QRCode from "react-qr-code"
-import { useSelector } from "react-redux"
-import { accountSelector } from "../slices/account"
+import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 
 export default function Receive() {
-  const { account } = useSelector(accountSelector)
+  const { account } = useBackgroundSelector((background) => background.account)
   if (!account?.address) return false
 
   return (

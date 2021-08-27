@@ -1,12 +1,11 @@
 import React from "react"
-import { useSelector } from "react-redux"
+import { useBackgroundSelector } from "../hooks"
 import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
-import { accountSelector } from "../slices/account"
 
 export default function Overview() {
-  const { account } = useSelector(accountSelector)
+  const { account } = useBackgroundSelector((background) => background.account)
 
   return (
     <CorePage hasTopBar={false}>

@@ -1,12 +1,19 @@
 import React from "react"
 import ReactDOM from "react-dom"
+import { newProxyStore } from "@tallyho/tally-api"
+
 import Popup from "./pages/Popup"
 
 /**
  * Attaches the Tally UI to the specified DOM element, eh?
  */
-function attachToElement(element: Element): void {
-  ReactDOM.render(React.createElement(Popup), element)
+async function attachToElement(element: Element): Promise<void> {
+  const backgroundStore = await newProxyStore()
+
+  ReactDOM.render(
+    React.createElement(Popup, { store: backgroundStore }),
+    element
+  )
 }
 
 export default {

@@ -3,7 +3,6 @@ import KeyringController from "@tallyho/eth-keyring-controller"
 import { getPersistedState, persistState } from "../lib/db"
 
 import {
-  MATERIAL_TYPES,
   PERSITIANCE_KEY,
   LOCKED_ERROR,
   NO_VAULT_ERROR,
@@ -75,7 +74,6 @@ export default class Keys {
   #ready: (value: any) => void
   #failed: (reason: any) => void
   #isready: Promise<boolean>
-
   constructor (password?: string) {
     this.#vault = getPersistedState(PERSITIANCE_KEY)
     this.#locked = password ? true : false
@@ -88,9 +86,22 @@ export default class Keys {
       this.#failed = reject
     })
     if (this.#vault) {
-        this.#init()
-        .then(() => { this.#ready(true) })
-        .catch((reason) => { this.#failed(reason) })
+      try {
+        this.#masterKeyring.encryptor.decrypt(this.#password, this.#vault).then((seeds) => {
+          this.#seeds = seeds
+          this.#seeds.forEach(async (seed) => {
+            this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
+              mnemonic: seed.data,
+              hdPath: seed.path,
+              numberOfAccounts: seed.index,
+            })
+          })
+        }).then(() => {
+          this.#ready(true)
+        })
+      } catch (reason) {
+        this.#failed(reason)
+      }
     } else {
         this.create()
         .then(() => { this.#ready(true) })
@@ -113,7 +124,14 @@ export default class Keys {
 
   // unlock keyring takes a password
   async unlock (password: string): Promise<boolean>  {
-    await this.#init()
+      this.#seeds = await this.#masterKeyring.encryptor.decrypt(this.#password, this.#vault)
+      this.#seeds.forEach(async (seed) => {
+        this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
+          mnemonic: seed.data,
+          hdPath: seed.path,
+          numberOfAccounts: seed.index,
+        })
+      })
     this.#locked = false
     return true
   }
@@ -124,7 +142,6 @@ export default class Keys {
   async create (): Promise<string[]> {
     const keyring = await this.#masterKeyring.addNewKeyring("HD Key Tree", {numberOfAccounts: 1, strength: 256})
     const firstAddress = await keyring.addAccounts(1)
-    // await this.#saveKeyring(keyring, KEY_TYPE.mnemonicBIP39S256)
     await this.#saveKeyring(keyring, KEY_TYPE.mnemonicBIP39S256)
     return keyring.getAccounts()
   }
@@ -151,14 +168,14 @@ export default class Keys {
   // returns address list for specific keyring if no reference is
   // supplied returns all address for all keyrings
   // TODO: figure out why ts dosent like the reduce method
-  async getAddresses (reference?: string): as Promise<string[]> {
+  async getAddresses (reference?: string): Promise<string[]> {
     await this.#isready
     if (reference === undefined) {
       const addresses = Object.values(this.#keyrings).reduce((agg: string[], keyring: any): Promise<string[]>[] => {
         return agg.push(keyring.getAccounts())
       }, [])
       const finAddresses = await Promise.all(addresses)
-      return finAddresses.reduce((agg: string[], addressList: string<>) => agg.concat(addressList), [])
+      return finAddresses.reduce((agg: string[], addressList: string[]) => agg.concat(addressList), [])
     }
     return this.#keyrings[reference].getAccounts()
   }
@@ -188,16 +205,6 @@ export default class Keys {
     persistState(PERSITIANCE_KEY, encryptedState)
   }
 
-  async #init (): Promise<void> {
-    this.#seeds = await this.#masterKeyring.encryptor.decrypt(this.#password, this.#vault)
-    this.#seeds.forEach(async (seed) => {
-      this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
-        mnemonic: seed.data,
-        hdPath: seed.path,
-        numberOfAccounts: seed.index,
-      })
-    })
-  }
 
   // todo look into freezing or use-strict not sure if possible or applicable here?
   // one way hash method for creating references to mnemonics
@@ -210,7 +217,7 @@ export default class Keys {
     return hashHex
   }
 
-  async #saveKeyring(keyring: any, type: KEY_TYPE) {
+  async #saveKeyring(keyring: any, keyType: KEY_TYPE): Promise<void> {
     const { mnemonic, numberOfAccounts, hdPath } = await keyring.serialize()
     const reference = await this.#createReference(mnemonic)
     this.#seeds.push({
@@ -218,13 +225,13 @@ export default class Keys {
       path: hdPath,
       reference,
       index: numberOfAccounts,
-      type,
+      type: keyType,
     })
     this.#keyrings[reference] = keyring
     await this.#persistState()
   }
 
-  #updateIndex (reference: string, newIndex: number) {
+  #updateIndex (reference: string, newIndex: number): void {
     this.#seeds = this.#seeds.reduce((agg, seed) => {
       if (seed.reference === reference) {
         seed.index = newIndex
@@ -235,7 +242,7 @@ export default class Keys {
     this.#persistState()
   }
 
-  #checkLock () {
+  #checkLock (): void {
     if (this.#locked === true) {
       throw new Error(LOCKED_ERROR)
     }

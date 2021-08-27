@@ -1,3 +1,5 @@
+// @ts-check
+//
 import React from "react"
 import PropTypes from "prop-types"
 import { routes } from "../../config/routes"
@@ -17,11 +19,14 @@ export default function WalletAssetListItem(props) {
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
-                  {asset.balance.toFixed(5)}
+                  {
+                    // TODO BigInts will not play nice here.
+                    Number(asset.amount).toFixed(5)
+                  }
                 </span>
                 {asset.symbol}
               </div>
-              <div className="price">${asset.usd_balance}</div>
+              <div className="price">${asset.usdValue}</div>
             </div>
           </div>
           <div className="right">
@@ -108,11 +113,11 @@ export default function WalletAssetListItem(props) {
   )
 }
 
-// Could use PropTypes.shape when this gets solidified
 WalletAssetListItem.propTypes = {
   asset: PropTypes.shape({
+    amount: PropTypes.number,
     balance: PropTypes.number,
-    usd_balance: PropTypes.string,
+    usdValue: PropTypes.string,
     symbol: PropTypes.string,
   }).isRequired,
 }
