@@ -27,6 +27,13 @@ export interface Seed {
   reference: string // unique reference
   path: any //string // default path to derive new keys
 }
+
+export interface ImportData {
+  type: keyTypeStrings
+  data: string
+  password ?: string
+}
+
 /*
 
 
@@ -67,7 +74,7 @@ export default class Keys {
   #password: string
   #ready: (value: any) => void
   #failed: (reason: any) => void
-  ready: Promise<boolean>
+  #isready: Promise<boolean>
 
   constructor (password?: string) {
     this.#vault = getPersistedState(PERSITIANCE_KEY)
@@ -76,7 +83,7 @@ export default class Keys {
     this.#masterKeyring = new KeyringController()
     this.#seeds = []
     this.#keyrings = {}
-    this.ready = new Promise((resolve, reject) => {
+    this.#isready = new Promise((resolve, reject) => {
       this.#ready = resolve
       this.#failed = reject
     })
@@ -122,18 +129,19 @@ export default class Keys {
     return keyring.getAccounts()
   }
 
-  async import ({type: keyTypeStrings, data: string, password?: string, }): Promise<string[]> {
-    await this.ready
+  async import (importData: ImportData): Promise<string[]> {
+
+    await this.#isready
     this.#checkLock()
     // TODO use the same types across all deps
-    const keyring = this.#masterKeyring.addNewKeyring(type, { mnemonic: data, numberOfAccounts: 10 })
+    const keyring = this.#masterKeyring.addNewKeyring(importData.type, { mnemonic: importData.data, numberOfAccounts: 10 })
     await keyring.addAccounts(10)
-    await this.#saveKeyring(type, keyring)
+    await this.#saveKeyring(importData.type, keyring)
     return keyring.getAccounts()
   }
 
   async export (reference: string, password: string): Promise<string> {
-    await this.ready
+    await this.#isready
     this.#checkLock()
     if (password !== this.#password) {
       throw new Error("Invalid Password")
@@ -143,25 +151,26 @@ export default class Keys {
   // returns address list for specific keyring if no reference is
   // supplied returns all address for all keyrings
   // TODO: figure out why ts dosent like the reduce method
-  async getAddresses (reference?: string): Promise<any[]> {
-    await this.ready
+  async getAddresses (reference?: string): as Promise<string[]> {
+    await this.#isready
     if (reference === undefined) {
-      const addresses = Object.values(this.#keyrings).reduce((agg: string[], keyring: any): string[] => {
-        return agg.concat(keyring.getAccounts())
+      const addresses = Object.values(this.#keyrings).reduce((agg: string[], keyring: any): Promise<string[]>[] => {
+        return agg.push(keyring.getAccounts())
       }, [])
-      return addresses
+      const finAddresses = await Promise.all(addresses)
+      return finAddresses.reduce((agg: string[], addressList: string<>) => agg.concat(addressList), [])
     }
     return this.#keyrings[reference].getAccounts()
   }
 
   async getWalletReferences (): Promise<string[]> {
-    await this.ready
+    await this.#isready
     return Object.keys(this.#keyrings)
   }
 
   async getNextAddress (reference: string, _count?: number): Promise<string[]> {
     const count = _count === undefined ? 1 : _count
-    await this.ready
+    await this.#isready
 
     const accounts = await this.#keyrings[reference].addAccounts(count)
     const allAccounts = await this.#keyrings[reference].getAccounts()
@@ -197,7 +206,7 @@ export default class Keys {
     const dataUint8 = new TextEncoder().encode(data)
     const hashBufer = await crypto.subtle.digest("SHA-256", dataUint8)
     const hashArray = Array.from(new Uint8Array(hashBufer))
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join(")
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
     return hashHex
   }
 
@@ -227,7 +236,7 @@ export default class Keys {
   }
 
   #checkLock () {
-    if (this.#locked) {
+    if (this.#locked === true) {
       throw new Error(LOCKED_ERROR)
     }
   }
