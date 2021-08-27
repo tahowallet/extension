@@ -31,7 +31,7 @@ export default function Wallet() {
             />
             <div className="panel">
               {panelNum === 0 ? (
-                <WalletAssetList assets={account.assets} />
+                <WalletAssetList assetAmounts={account.assets} />
               ) : (
                 <WalletActivityList activity={account.activity} />
               )}
