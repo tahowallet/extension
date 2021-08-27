@@ -26,7 +26,16 @@ export type BackgroundDispatch = Main["store"]["dispatch"]
 export async function newProxyStore(): Promise<
   ProxyStore<RootState, AnyAction>
 > {
-  const proxyStore = new ProxyStore()
+  const proxyStore = new ProxyStore({
+    serializer: (payload: unknown) =>
+      JSON.stringify(payload, (_, value) =>
+        typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
+      ),
+    deserializer: (payload: string) =>
+      JSON.parse(payload, (_, value) =>
+        "B_I_G_I_N_T" in value ? BigInt(value.B_I_G_I_N_T) : value
+      ),
+  })
   await proxyStore.ready()
 
   return proxyStore
