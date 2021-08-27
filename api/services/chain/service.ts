@@ -516,7 +516,7 @@ export default class ChainService implements Service<Events> {
   ): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
-    // eslint-disable-next-line
+    // eslint-disable-next-line no-underscore-dangle
     await provider._subscribe(
       "filteredNewFullPendingTransactionsSubscriptionID",
       [
