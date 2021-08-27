@@ -39,7 +39,17 @@ interface MainState {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = () => configureStore({ reducer: rootReducer })
+const initializeStore = () =>
+  configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: {
+          isSerializable: (value: unknown) =>
+            isPlain(value) || typeof value === "bigint",
+        },
+      }),
+  })
 type ReduxStoreType = ReturnType<typeof initializeStore>
 
 export default class Main {
