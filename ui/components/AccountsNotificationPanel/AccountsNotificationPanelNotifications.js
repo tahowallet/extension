@@ -17,7 +17,11 @@ export default function AccountsNotificationPanelNotifications() {
         />
       </h3>
       <ul className="standard_width">
-        {Array(3).fill("").map(AccountsNotificationPanelNotificationItem)}
+        {Array(3)
+          .fill("")
+          .map((_, index) => (
+            <AccountsNotificationPanelNotificationItem key={index.toString()} />
+          ))}
       </ul>
       <h3 className="list_title">
         Read (128){" "}
@@ -31,7 +35,11 @@ export default function AccountsNotificationPanelNotifications() {
         />
       </h3>
       <ul className="standard_width read_list">
-        {Array(4).fill("").map(AccountsNotificationPanelNotificationItem)}
+        {Array(4)
+          .fill("")
+          .map((_, index) => (
+            <AccountsNotificationPanelNotificationItem key={index.toString()} />
+          ))}
       </ul>
       <style jsx>{`
         ul {
