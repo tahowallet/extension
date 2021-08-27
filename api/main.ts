@@ -22,7 +22,13 @@ import { startService as startChain, ChainService } from "./services/chain"
 import ObsStore from "./lib/ob-store"
 import { getPrice } from "./lib/prices"
 import rootReducer from "./redux-slices"
-import { subscribeToChainService } from "./redux-slices/account"
+import {
+  loadAccount,
+  transactionConfirmed,
+  transactionSeen,
+  updateAccountBalance,
+  emitter as accountSliceEmitter,
+} from "./redux-slices/account"
 
 interface MainState {
   accounts: AccountsState
@@ -31,9 +37,9 @@ interface MainState {
   tokensToTrack: SmartContractFungibleAsset[]
 }
 
-// Declared out here so StoreType can be used in Main.store type declaration.
-const initializeStore = (chainService: Promise<ChainService>) =>
-  configureStore({ reducer: rootReducer(chainService) })
+// Declared out here so ReduxStoreType can be used in Main.store type
+// declaration.
+const initializeStore = () => configureStore({ reducer: rootReducer })
 type ReduxStoreType = ReturnType<typeof initializeStore>
 
 export default class Main {
@@ -128,11 +134,38 @@ export default class Main {
   }
 
   async initializeRedux(): Promise<void> {
-    this.store = initializeStore(this.chainService)
-    // Start up the redux store.
+    // Start up the redux store and set it up for proxying.
+    this.store = initializeStore()
     wrapStore(this.store)
 
-    this.store.dispatch(subscribeToChainService())
+    const chain = await this.chainService
+
+    // Wire up chain service to account slice.
+    chain.emitter.on("accountBalance", (accountWithBalance) => {
+      // The first account balance update will transition the account to loading.
+      this.store.dispatch(updateAccountBalance(accountWithBalance))
+    })
+    chain.emitter.on("transaction", (transaction) => {
+      if (transaction.blockHash) {
+        this.store.dispatch(transactionConfirmed(transaction))
+      } else {
+        this.store.dispatch(transactionSeen(transaction))
+      }
+    })
+
+    accountSliceEmitter.on("addAccount", async (accountNetwork) => {
+      await chain.addAccountToTrack(accountNetwork)
+    })
+
+    // Set up initial state.
+    const existingAccounts = await chain.getAccountsToTrack()
+    existingAccounts.forEach((accountNetwork) => {
+      // Mark as loading and wire things up.
+      this.store.dispatch(loadAccount(accountNetwork.account))
+
+      // Force a refresh of the account balance to populate the store.
+      chain.getLatestBaseAccountBalance(accountNetwork)
+    })
   }
 
   registerSubscription({ route, params, handler, id }) {

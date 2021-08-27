@@ -19,14 +19,11 @@ export default function WalletAssetListItem(props) {
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
-                  {
-                    // TODO BigInts will not play nice here.
-                    Number(asset.amount).toFixed(5)
-                  }
+                  {Number(asset.decimalValue).toFixed(5)}
                 </span>
                 {asset.symbol}
               </div>
-              <div className="price">${asset.usdValue}</div>
+              <div className="price">${asset.userValue}</div>
             </div>
           </div>
           <div className="right">
@@ -115,9 +112,9 @@ export default function WalletAssetListItem(props) {
 
 WalletAssetListItem.propTypes = {
   asset: PropTypes.shape({
-    amount: PropTypes.number,
+    decimalValue: PropTypes.number,
     balance: PropTypes.number,
-    usdValue: PropTypes.string,
+    userValue: PropTypes.string,
     symbol: PropTypes.string,
   }).isRequired,
 }
