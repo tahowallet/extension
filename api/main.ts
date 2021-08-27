@@ -1,5 +1,5 @@
 import { wrapStore } from "webext-redux"
-import { configureStore } from "@reduxjs/toolkit"
+import { configureStore, isPlain } from "@reduxjs/toolkit"
 
 import Networks, { NetworksState } from "./networks"
 import Transactions, { TransactionsState } from "./transactions"
@@ -39,7 +39,17 @@ interface MainState {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = () => configureStore({ reducer: rootReducer })
+const initializeStore = () =>
+  configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: {
+          isSerializable: (value: unknown) =>
+            isPlain(value) || typeof value === "bigint",
+        },
+      }),
+  })
 type ReduxStoreType = ReturnType<typeof initializeStore>
 
 export default class Main {
@@ -136,7 +146,16 @@ export default class Main {
   async initializeRedux(): Promise<void> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore()
-    wrapStore(this.store)
+    wrapStore(this.store, {
+      serializer: (payload: unknown) =>
+        JSON.stringify(payload, (_, value) =>
+          typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
+        ),
+      deserializer: (payload: string) =>
+        JSON.parse(payload, (_, value) =>
+          "B_I_G_I_N_T" in value ? BigInt(value.B_I_G_I_N_T) : value
+        ),
+    })
 
     const chain = await this.chainService
 
