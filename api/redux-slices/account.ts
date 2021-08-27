@@ -231,8 +231,8 @@ const accountSlice = createSlice({
       { payload: transaction }: { payload: AnyEVMTransaction }
     ) => {
       const existingAccounts = [
-        immerState.accountsData[transaction.from],
-        immerState.accountsData[transaction.to],
+        immerState.accountsData[transaction.from.toLowerCase()],
+        immerState.accountsData[transaction.to.toLowerCase()],
       ].filter((a): a is AccountData => a && a !== "loading")
 
       existingAccounts.forEach((immerExistingAccount) => {
@@ -278,8 +278,8 @@ const accountSlice = createSlice({
       { payload: transaction }: { payload: ConfirmedEVMTransaction }
     ) => {
       const existingAccounts = [
-        immerState.accountsData[transaction.from],
-        immerState.accountsData[transaction.to],
+        immerState.accountsData[transaction.from.toLowerCase()],
+        immerState.accountsData[transaction.to.toLowerCase()],
       ].filter((a): a is AccountData => a && a !== "loading")
 
       existingAccounts.forEach((immerAccount) => {
