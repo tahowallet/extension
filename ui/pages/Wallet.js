@@ -21,7 +21,7 @@ export default function Wallet() {
       <CorePage>
         <div className="page_content">
           <div className="section">
-            <WalletAccountBalanceControl balance={account.totalUsdValue} />
+            <WalletAccountBalanceControl balance={account.totalUserValue} />
           </div>
           <div className="section">
             <SharedPanelSwitcher
