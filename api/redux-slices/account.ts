@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import { ChainService } from "../services/chain"
+import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit"
+import Emittery from "emittery"
 import {
   AccountBalance,
   AccountNetwork,
@@ -10,28 +10,34 @@ import {
   Network,
 } from "../types"
 
-type USDValue = {
-  usdValue: number | "unknown"
-  localizedUsdValue: string
+// Adds user-specific values based on preferences. This is the combination of a
+// conversion to the user's preferred currency for viewing, as well as a
+// conversion to a decimal amount for assets that are represented by
+// fixed-point integers.
+type UserValue = {
+  userValue: number | "unknown"
+  decimalValue: number | "unknown"
+  localizedUserValue: string
+  localizedDecimalValue: string
 }
 
-type AccountBalanceWithUSD = AccountBalance & {
-  assetAmount: AnyAssetAmount & USDValue
+type AccountBalanceWithUserValue = AccountBalance & {
+  assetAmount: AnyAssetAmount & UserValue
 }
 
 type AccountData = {
   account: string
   network: Network
   balances: {
-    [assetSymbol: string]: AccountBalanceWithUSD
+    [assetSymbol: string]: AccountBalanceWithUserValue
   }
   confirmedTransactions: ConfirmedEVMTransaction[]
   unconfirmedTransactions: AnyEVMTransaction[]
 }
 
 type CombinedAccountData = {
-  totalUsdValue: string
-  assets: (AnyAssetAmount & USDValue)[]
+  totalUserValue: string
+  assets: (AnyAssetAmount & UserValue)[]
   activity: AnyEVMTransaction[]
 }
 
@@ -54,40 +60,57 @@ function isFungibleAssetAmount(
 }
 
 // Fill in USD amounts for an asset.
-function enrichAssetAmountWithUSDAmounts(
+function enrichAssetAmountWithUserAmounts(
   assetAmount: AnyAssetAmount
-): AnyAssetAmount & USDValue {
+): AnyAssetAmount & UserValue {
   if (isFungibleAssetAmount(assetAmount)) {
     const {
       amount,
       asset: { decimals },
     } = assetAmount
+    // TODO Make this pull from the user's preferred currency and its
+    // TODO conversion info.
+    const userCurrencyConversion2Decimals = usdConversion2Decimals
+    // TODO What actual precision do we want here? Probably more than 2
+    // TODO decimals.
+    const assetValue2Decimals = amount / 10n ** BigInt(decimals - 2)
+
     const converted2Decimals =
-      (amount / 10n ** BigInt(decimals - 2)) * usdConversion2Decimals
-    const usdValue = Number(converted2Decimals) / 2
+      assetValue2Decimals * userCurrencyConversion2Decimals
+
+    // Multiplying two 2-decimal precision fixed-points means dividing by
+    // 4-decimal precision.
+    const userValue = Number(converted2Decimals) / 10000
+    const decimalValue = Number(assetValue2Decimals) / 100
 
     return {
       ...assetAmount,
-      usdValue,
-      localizedUsdValue: usdValue.toLocaleString("default", {
+      userValue,
+      decimalValue,
+      localizedUserValue: userValue.toLocaleString("default", {
+        maximumFractionDigits: 2,
+      }),
+      localizedDecimalValue: decimalValue.toLocaleString("default", {
         maximumFractionDigits: 2,
       }),
     }
   }
   return {
     ...assetAmount,
-    usdValue: "unknown",
-    localizedUsdValue: "unknown",
+    userValue: "unknown",
+    decimalValue: "unknown",
+    localizedUserValue: "unknown",
+    localizedDecimalValue: "unknown",
   }
 }
 
 // Fill in USD amounts for an account balance.
-function enrichWithUSDAmounts(
+function enrichWithUerAmounts(
   accountBalance: AccountBalance
-): AccountBalanceWithUSD {
+): AccountBalanceWithUserValue {
   return {
     ...accountBalance,
-    assetAmount: enrichAssetAmountWithUSDAmounts(accountBalance.assetAmount),
+    assetAmount: enrichAssetAmountWithUserAmounts(accountBalance.assetAmount),
   }
 }
 
@@ -120,7 +143,7 @@ function transactionBlockComparator(
 export const initialState = {
   accountsData: {},
   combinedData: {
-    totalUsdValue: "",
+    totalUserValue: "",
     assets: [],
     activity: [],
   },
@@ -142,18 +165,26 @@ const accountSlice = createSlice({
     },
     updateAccountBalance: (
       immerState,
-      { payload }: { payload: AccountBalance }
+      { payload: updatedAccountBalance }: { payload: AccountBalance }
     ) => {
-      const existing = immerState.accountsData[payload.account]
-      if (existing && existing !== "loading") {
-        existing.balances[payload.assetAmount.asset.symbol] =
-          enrichWithUSDAmounts(payload)
+      const {
+        account: updatedAccount,
+        assetAmount: {
+          asset: { symbol: updatedAssetSymbol },
+        },
+      } = updatedAccountBalance
+
+      const existingAccountData = immerState.accountsData[updatedAccount]
+      if (existingAccountData && existingAccountData !== "loading") {
+        existingAccountData.balances[updatedAssetSymbol] = enrichWithUerAmounts(
+          updatedAccountBalance
+        )
       } else {
-        immerState.accountsData[payload.account] = {
-          account: payload.account,
-          network: payload.network,
+        immerState.accountsData[updatedAccount] = {
+          account: updatedAccount,
+          network: updatedAccountBalance.network,
           balances: {
-            [payload.assetAmount.asset.symbol]: enrichWithUSDAmounts(payload),
+            [updatedAssetSymbol]: enrichWithUerAmounts(updatedAccountBalance),
           },
           unconfirmedTransactions: [],
           confirmedTransactions: [],
@@ -172,22 +203,23 @@ const accountSlice = createSlice({
           Object.values(ad.balances).map((ab) => ab.assetAmount)
       )
 
-      immerState.combinedData.totalUsdValue = combinedAccountBalances
+      immerState.combinedData.totalUserValue = combinedAccountBalances
         .reduce(
-          (acc, { usdValue }) =>
-            usdValue === "unknown" ? acc : acc + usdValue,
+          (acc, { userValue }) =>
+            userValue === "unknown" ? acc : acc + userValue,
           0
         )
         .toLocaleString("default", { maximumFractionDigits: 2 })
 
       immerState.combinedData.assets = Object.values(
         combinedAccountBalances.reduce<{
-          [symbol: string]: AnyAssetAmount & USDValue
-        }>((acc, assetAmount) => {
-          const assetSymbol = assetAmount.asset.symbol
-          acc[assetSymbol] = enrichAssetAmountWithUSDAmounts({
-            ...assetAmount,
-            amount: (acc[assetSymbol]?.amount || 0n) + assetAmount.amount,
+          [symbol: string]: AnyAssetAmount & UserValue
+        }>((acc, combinedAssetAmount) => {
+          const assetSymbol = combinedAssetAmount.asset.symbol
+          acc[assetSymbol] = enrichAssetAmountWithUserAmounts({
+            ...combinedAssetAmount,
+            amount:
+              (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
           })
 
           return acc
@@ -199,8 +231,8 @@ const accountSlice = createSlice({
       { payload: transaction }: { payload: AnyEVMTransaction }
     ) => {
       const existingAccounts = [
-        immerState.accountsData[transaction.from],
-        immerState.accountsData[transaction.to],
+        immerState.accountsData[transaction.from.toLowerCase()],
+        immerState.accountsData[transaction.to.toLowerCase()],
       ].filter((a): a is AccountData => a && a !== "loading")
 
       existingAccounts.forEach((immerExistingAccount) => {
@@ -231,7 +263,7 @@ const accountSlice = createSlice({
         // Use a Map to drop any duplicate transaction entries, e.g. a send
         // between two tracked accounts.
         new Map(
-          Object.values(immerState.accountsData)
+          Object.values(current(immerState.accountsData))
             .flatMap(
               (ad) =>
                 ad !== "loading" &&
@@ -246,8 +278,8 @@ const accountSlice = createSlice({
       { payload: transaction }: { payload: ConfirmedEVMTransaction }
     ) => {
       const existingAccounts = [
-        immerState.accountsData[transaction.from],
-        immerState.accountsData[transaction.to],
+        immerState.accountsData[transaction.from.toLowerCase()],
+        immerState.accountsData[transaction.to.toLowerCase()],
       ].filter((a): a is AccountData => a && a !== "loading")
 
       existingAccounts.forEach((immerAccount) => {
@@ -268,7 +300,7 @@ const accountSlice = createSlice({
         // Use a Map to drop any duplicate transaction entries, e.g. a send
         // between two tracked accounts.
         new Map(
-          Object.values(immerState.accountsData)
+          Object.values(current(immerState.accountsData))
             .flatMap(
               (ad) =>
                 ad !== "loading" &&
@@ -281,50 +313,29 @@ const accountSlice = createSlice({
   },
 })
 
-export const { loadAccount, updateAccountBalance } = accountSlice.actions
+export const {
+  loadAccount,
+  updateAccountBalance,
+  transactionSeen,
+  transactionConfirmed,
+} = accountSlice.actions
 
-let chainService: Promise<ChainService> | undefined
+export default accountSlice.reducer
 
-export default function buildAccountSlice(
-  externalChainService: Promise<ChainService>
-): typeof accountSlice.reducer {
-  if (chainService) {
-    throw new Error("Account slice can only be initialized once.")
-  }
-
-  chainService = externalChainService
-
-  return accountSlice.reducer
+export type Events = {
+  addAccount: AccountNetwork
 }
 
-export const subscribeToChainService = createAsyncThunk(
-  "account/chain/subscribe",
-  async (_: void, { dispatch }) => {
-    const chain = await chainService
+export const emitter = new Emittery<Events>()
 
-    chain.emitter.on("accountBalance", (accountWithBalance) => {
-      // The first account balance update will transition the account to loading.
-      dispatch(updateAccountBalance(enrichWithUSDAmounts(accountWithBalance)))
-    })
-    chain.emitter.on("transaction", (transaction) => {
-      if (transaction.blockHash) {
-        dispatch(accountSlice.actions.transactionConfirmed(transaction))
-      } else {
-        dispatch(accountSlice.actions.transactionSeen(transaction))
-      }
-    })
-
-    const alreadySeen = await chain.getAccountsToTrack()
-    alreadySeen.forEach((accountNetwork) => {
-      // Mark as loading and wire things up.
-      dispatch(loadAccount(accountNetwork.account))
-
-      // Force a refresh of the account balance to populate the store.
-      chain.getLatestBaseAccountBalance(accountNetwork)
-    })
-  }
-)
-
+/**
+ * Async thunk creator whose dispatch promise will return when the account has
+ * been added.
+ *
+ * Actual account data will flow into the redux store through other channels;
+ * the promise returned from this action's dispatch will be fulfilled by a void
+ * value.
+ */
 export const subscribeToAccountNetwork = createAsyncThunk<
   Promise<void>,
   AccountNetwork,
@@ -335,14 +346,13 @@ export const subscribeToAccountNetwork = createAsyncThunk<
     const state = getState()
 
     if (state.account.accountsData[accountNetwork.account]) {
-      return // we already have it, don't do anything
+      // We already have it, return.
+      return
     }
 
-    // Otherwise, mark as loading and wire things up.
+    // Otherwise, mark as loading and dispatch the add event.
     dispatch(loadAccount(accountNetwork.account))
 
-    const chain = await chainService
-
-    chain.addAccountToTrack(accountNetwork)
+    await emitter.emit("addAccount", accountNetwork)
   }
 )

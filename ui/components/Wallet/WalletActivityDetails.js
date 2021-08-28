@@ -136,7 +136,16 @@ export default function WalletActivityDetails() {
         <div className="icon_transfer" />
         <DestinationCard />
       </div>
-      <ul>{DetailInfo.map(DetailRowItem)}</ul>
+      <ul>
+        {DetailInfo.map(({ label, value, valueDetail }, index) => (
+          <DetailRowItem
+            key={index.toString()}
+            label={label}
+            value={value}
+            valueDetail={valueDetail}
+          />
+        ))}
+      </ul>
       <div className="activity_log_wrap">
         <div className="activity_log_title">Activity Log</div>
         <ul>

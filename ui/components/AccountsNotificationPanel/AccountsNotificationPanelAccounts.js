@@ -82,6 +82,7 @@ export default function AccountsNotificationPanelAccounts() {
                 }}
               >
                 <AccountsNotificationPanelAccountItem
+                  key={index.toString()}
                   isSelected={index === selectedAccount && selectedWallet === 0}
                 />
               </button>
@@ -102,6 +103,7 @@ export default function AccountsNotificationPanelAccounts() {
                 }}
               >
                 <AccountsNotificationPanelAccountItem
+                  key={index.toString()}
                   isSelected={index === selectedAccount && selectedWallet === 1}
                 />
               </button>

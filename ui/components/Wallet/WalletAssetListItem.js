@@ -7,7 +7,7 @@ import SharedButtonLink from "../Shared/SharedButtonLink"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function WalletAssetListItem(props) {
-  const { asset } = props
+  const { assetAmount } = props
 
   // TODO: ETH price hard-coded for demo
   return (
@@ -19,14 +19,11 @@ export default function WalletAssetListItem(props) {
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
-                  {
-                    // TODO BigInts will not play nice here.
-                    Number(asset.amount).toFixed(5)
-                  }
+                  {assetAmount.localizedDecimalValue}
                 </span>
-                {asset.symbol}
+                {assetAmount.asset.symbol}
               </div>
-              <div className="price">${asset.usdValue}</div>
+              <div className="price">${assetAmount.localizedUserValue}</div>
             </div>
           </div>
           <div className="right">
@@ -114,10 +111,10 @@ export default function WalletAssetListItem(props) {
 }
 
 WalletAssetListItem.propTypes = {
-  asset: PropTypes.shape({
-    amount: PropTypes.number,
+  assetAmount: PropTypes.shape({
+    localizedDecimalValue: PropTypes.string,
     balance: PropTypes.number,
-    usdValue: PropTypes.string,
-    symbol: PropTypes.string,
+    localizedUserValue: PropTypes.string,
+    asset: PropTypes.shape({ symbol: PropTypes.string }),
   }).isRequired,
 }
