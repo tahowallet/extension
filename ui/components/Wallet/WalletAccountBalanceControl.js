@@ -9,7 +9,9 @@ import Receive from "../../pages/Receive"
 export default function WalletAccountBalanceControl(props) {
   const { balance } = props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
-  const [hasSavedSeed, setHasSavedSeed] = useState(false)
+  const [hasSavedSeed, setHasSavedSeed] = useState(
+    window.localStorage.getItem("hasSavedSeed")
+  )
 
   function handleClick() {
     setOpenReceiveMenu(!openReceiveMenu)

@@ -5,12 +5,20 @@ import TopMenu from "../TopMenu/TopMenu"
 import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import TabBar from "../TabBar/TabBar"
+import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
 
 export default function CorePage(props) {
   const { children, hasTabBar, hasTopBar } = props
 
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
+
+  function handleOpenHiddenDevMenu(e) {
+    if (process.env.NODE_ENV === "development" && e.detail === 3) {
+      setIsDevToolsOpen(true)
+    }
+  }
 
   return (
     <main>
@@ -30,9 +38,22 @@ export default function CorePage(props) {
       >
         <AccountsNotificationPanel />
       </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        isOpen={isDevToolsOpen}
+        size="small"
+        close={() => {
+          setIsDevToolsOpen(false)
+        }}
+      >
+        <HiddenDevPanel />
+      </SharedSlideUpMenu>
       <div className="page">
         {hasTopBar ? (
-          <div className="top_menu_wrap">
+          <button
+            type="button"
+            className="top_menu_wrap"
+            onClick={handleOpenHiddenDevMenu}
+          >
             <TopMenu
               toggleOpenProtocolList={() => {
                 setIsProtocolListOpen(!isProtocolListOpen)
@@ -41,7 +62,7 @@ export default function CorePage(props) {
                 setIsNotificationsOpen(!isNotificationsOpen)
               }}
             />
-          </div>
+          </button>
         ) : null}
         <div className="page_content">{children}</div>
         {hasTabBar ? <TabBar /> : null}
@@ -68,6 +89,7 @@ export default function CorePage(props) {
           }
           .top_menu_wrap {
             z-index: 10;
+            cursor: default;
           }
         `}
       </style>
