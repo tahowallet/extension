@@ -326,8 +326,7 @@ export default class ChainService implements Service<Events> {
   }
 
   async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
-    const current = await this.getAccountsToTrack()
-    await this.db.setAccountsToTrack(current.concat([accountNetwork]))
+    await this.db.addAccountToTrack(accountNetwork)
     await this.getLatestBaseAccountBalance(accountNetwork)
     await this.subscribeToAccountTransactions(accountNetwork)
     await this.loadRecentAssetTransfers(accountNetwork)
