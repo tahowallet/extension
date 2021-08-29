@@ -1,13 +1,7 @@
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 
-import Networks, { NetworksState } from "./networks"
-import Transactions, { TransactionsState } from "./transactions"
-import Accounts, { AccountsState } from "./accounts"
-import { SmartContractFungibleAsset } from "./types"
-
 import { ETHEREUM } from "./constants/networks"
-import { DEFAULT_STATE } from "./constants/default-state"
 
 import {
   startService as startPreferences,
@@ -19,8 +13,6 @@ import {
 } from "./services/indexing"
 import { startService as startChain, ChainService } from "./services/chain"
 
-import ObsStore from "./lib/ob-store"
-import { getPrice } from "./lib/prices"
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
@@ -29,13 +21,6 @@ import {
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/account"
-
-interface MainState {
-  accounts: AccountsState
-  transactions: TransactionsState
-  networks: NetworksState
-  tokensToTrack: SmartContractFungibleAsset[]
-}
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
@@ -50,21 +35,10 @@ const initializeStore = () =>
         },
       }),
   })
+
 type ReduxStoreType = ReturnType<typeof initializeStore>
 
 export default class Main {
-  private state: ObsStore<MainState>
-
-  network: Networks
-
-  transactions: Transactions
-
-  accounts: Accounts
-
-  private subscriptionIds: any
-
-  keys: any
-
   /*
    * A promise to the preference service, a dependency for most other services.
    * The promise will be resolved when the service is initialized.
@@ -93,32 +67,7 @@ export default class Main {
    */
   store: ReduxStoreType
 
-  constructor(state: MainState = DEFAULT_STATE) {
-    this.state = new ObsStore<MainState>(state)
-    const { accounts, networks, transactions } = state
-    this.network = new Networks(networks)
-    const { providers } = this.network
-    const provider = providers.ethereum.selected
-    this.transactions = new Transactions(
-      transactions,
-      providers.ethereum.selected,
-      getPrice
-    )
-    // this.keys = new Keys(state.keys || {})
-    // const balances = this.balances = new Balances({ state: balances, providers })
-
-    // this is temporary
-
-    // this.userPrefernces = new ObsStore(state.userPrefernces || {})
-
-    this.accounts = new Accounts(
-      provider,
-      accounts,
-      this.transactions.getHistory.bind(this.transactions)
-    )
-    this.subscriptionIds = {}
-    this.subscribeToStates()
-
+  constructor() {
     // start all services
     this.initializeServices()
     this.initializeRedux()
@@ -186,25 +135,6 @@ export default class Main {
 
       // Force a refresh of the account balance to populate the store.
       chain.getLatestBaseAccountBalance(accountNetwork)
-    })
-  }
-
-  registerSubscription({ route, params, handler, id }) {
-    if (!this.subscriptionIds[`${route}${JSON.stringify(params)}`]) {
-      this.subscriptionIds[`${route}${JSON.stringify(params)}`] = []
-    }
-    this.subscriptionIds[`${route}${JSON.stringify(params)}`].push({
-      handler,
-      id,
-    })
-  }
-
-  private subscribeToStates() {
-    this.transactions.state.on("update", (state) => {
-      this.state.updateState({ transactions: state })
-    })
-    this.network.state.on("update", (state) => {
-      this.state.updateState({ networks: state })
     })
   }
 }

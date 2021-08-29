@@ -1,12 +1,6 @@
 import { Store as ProxyStore } from "webext-redux"
 import { AnyAction } from "@reduxjs/toolkit"
 
-import { STATE_KEY } from "./constants"
-import { migrate } from "./migrations"
-
-// import { Keys } from "./keys"
-
-import { getPersistedState, persistState } from "./lib/db"
 import Main from "./main"
 
 export { browser } from "webextension-polyfill-ts"
@@ -47,9 +41,5 @@ export async function newProxyStore(): Promise<
  * Starts the API subsystems, including all services.
  */
 export async function startApi(): Promise<Main> {
-  const rawState = await getPersistedState(STATE_KEY)
-  const newVersionState = await migrate(rawState)
-  persistState(STATE_KEY, newVersionState)
-
-  return new Main(newVersionState.state)
+  return new Main()
 }
