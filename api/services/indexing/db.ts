@@ -178,7 +178,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async addTokenToTrack(asset: SmartContractFungibleAsset) {
-    this.tokensToTrack.add(asset)
+    this.tokensToTrack.put(asset)
   }
 
   async getTokensToTrack() {
