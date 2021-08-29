@@ -33,7 +33,9 @@ export async function newProxyStore(): Promise<
       ),
     deserializer: (payload: string) =>
       JSON.parse(payload, (_, value) =>
-        "B_I_G_I_N_T" in value ? BigInt(value.B_I_G_I_N_T) : value
+        typeof value === "object" && "B_I_G_I_N_T" in value
+          ? BigInt(value.B_I_G_I_N_T)
+          : value
       ),
   })
   await proxyStore.ready()
