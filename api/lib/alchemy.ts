@@ -72,7 +72,7 @@ export async function getAssetTransfers(
         // interaction that also includes transaction value
         value:
           json.value !== null
-            ? utils.parseUnits(json.value.toString(), "ether").toBigInt()
+            ? utils.parseUnits(json.value.toFixed(18), "ether").toBigInt()
             : null,
         erc721TokenId: json.erc721TokenId,
       }
