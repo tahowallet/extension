@@ -103,7 +103,7 @@ export default class Main {
         ),
       deserializer: (payload: string) =>
         JSON.parse(payload, (_, value) =>
-          typeof value === "object" && "B_I_G_I_N_T" in value
+          value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
             ? BigInt(value.B_I_G_I_N_T)
             : value
         ),
