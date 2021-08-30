@@ -72,7 +72,10 @@ save. You can target a particular browser by specifying it in the command, e.g.
 to only rebuild the Firefox extension on change:
 
 ```sh
+# On change, rebuild the firefox extension but not others.
 $ yarn start --config-name firefox
+# On change, rebuild the firefox and brave extensions but not others.
+$ yarn start --config-name firefox --config-name brave
 ```
 
 ### Additional Scripts
