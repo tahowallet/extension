@@ -178,7 +178,7 @@ interface AlarmSchedule {
 
 interface Events {
   accountBalance: AccountBalance
-  alchemyAssetTransfers: AlchemyAssetTransfer[]
+  alchemyAssetTransfers: [AccountNetwork, AlchemyAssetTransfer[]]
   newBlock: EIP1559Block
   transaction: AnyEVMTransaction
 }
@@ -327,9 +327,11 @@ export default class ChainService implements Service<Events> {
 
   async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
     await this.db.addAccountToTrack(accountNetwork)
-    await this.getLatestBaseAccountBalance(accountNetwork)
-    await this.subscribeToAccountTransactions(accountNetwork)
-    await this.loadRecentAssetTransfers(accountNetwork)
+    await Promise.allSettled([
+      this.getLatestBaseAccountBalance(accountNetwork),
+      this.subscribeToAccountTransactions(accountNetwork),
+      this.loadRecentAssetTransfers(accountNetwork),
+    ])
   }
 
   async getBlockHeight(network: Network): Promise<number> {
@@ -416,7 +418,12 @@ export default class ChainService implements Service<Events> {
 
       // TODO any of those contracts that are ERC-20s should be added to
       // tokensToTrack by the indexing service
-      this.emitter.emit("alchemyAssetTransfers", assetTransfers)
+      // TODO if this fails, other services still needs a way to kick
+      // off monitoring.
+      this.emitter.emit("alchemyAssetTransfers", [
+        accountNetwork,
+        assetTransfers,
+      ])
 
       /// send all found tx hashes into a queue to retrieve + cache
       assetTransfers.forEach((a) =>

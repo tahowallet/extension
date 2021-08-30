@@ -122,6 +122,11 @@ export class IndexingDatabase extends Dexie {
   tokenLists: Dexie.Table<CachedTokenList, number>
 
   /*
+   * User- and contract-supplied fungible asset metadata.
+   */
+  customAssets: Dexie.Table<SmartContractFungibleAsset, number>
+
+  /*
    * Tokens whose balances should be checked periodically. It might make sense
    * for this to be tracked against particular accounts in the future.
    */
@@ -137,8 +142,10 @@ export class IndexingDatabase extends Dexie {
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       tokenLists: "++id,url,retrievedAt",
+      customAssets:
+        "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainId,homeNetwork.name",
       tokensToTrack:
-        "++id,symbol,&contractAddress,homeNetwork.family,homeNetwork.chainId,homeNetwork.name",
+        "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainId,homeNetwork.name",
     })
   }
 
@@ -177,15 +184,29 @@ export class IndexingDatabase extends Dexie {
     return balanceCandidates.length > 0 ? balanceCandidates[0] : null
   }
 
-  async addTokenToTrack(asset: SmartContractFungibleAsset) {
+  async addTokenToTrack(asset: SmartContractFungibleAsset): Promise<void> {
     this.tokensToTrack.put(asset)
   }
 
-  async getTokensToTrack() {
+  async getTokensToTrack(): Promise<SmartContractFungibleAsset[]> {
     // TODO move "tokens to track" to expire over time and require a refresh
     // to keep from balance checking tons of irrelevant tokens
     // see https://github.com/tallycash/tally-extension/issues/136 for details
     return this.tokensToTrack.toArray()
+  }
+
+  async getCustomAssetByAddressAndNetwork(
+    network: Network,
+    contractAddress: string
+  ): Promise<SmartContractFungibleAsset> {
+    return this.customAssets
+      .where("[homeNetwork.name+contractAddress]")
+      .equals([network.name, contractAddress])
+      .first()
+  }
+
+  async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    this.customAssets.put(asset)
   }
 
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {

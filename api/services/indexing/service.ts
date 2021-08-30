@@ -91,6 +91,9 @@ export default class IndexingService implements Service<Events> {
         this.handlePriceAlarm()
       }
     })
+
+    this.wireChainService()
+    await this.fetchAndCacheTokenLists()
   }
 
   async stopService(): Promise<void> {
@@ -126,6 +129,72 @@ export default class IndexingService implements Service<Events> {
   /* *****************
    * PRIVATE METHODS *
    ******************* */
+
+  private async wireChainService(): Promise<void> {
+    const chain = await this.chainService
+
+    // listen for alchemyAssetTransfers, and if we find them, track those tokens
+    // TODO update for NFTs
+    chain.emitter.on(
+      "alchemyAssetTransfers",
+      async ([accountNetwork, assetTransfers]) => {
+        assetTransfers
+          .filter((t) => t.category === "token" && t.erc721TokenId === null)
+          .forEach((transfer) => {
+            if ("rawContract" in transfer) {
+              this.addTokenToTrackByContract(
+                accountNetwork,
+                transfer.rawContract.address,
+                transfer.rawContract.decimals
+              )
+            } else {
+              console.warn(
+                `Alchemy token transfer missing contract metadata ${transfer}`
+              )
+            }
+          })
+      }
+    )
+  }
+
+  /*
+   * Add an asset to track to a particular account and network, specified by the
+   * contract address and optional decimals.
+   *
+   * If the asset has already been cached, use that. Otherwise, infer asset
+   * details from the contract and outside services.
+   *
+   * @param accountNetwork the account and network on which this asset should
+   *        be tracked
+   * @param contractAddress the address of the token contract on this network
+   * @param decimals optionally include the number of decimals tracked by a
+   *        fungible asset. Useful in case this asset isn't found in existing
+   *        metadata.
+   */
+  private async addTokenToTrackByContract(
+    accountNetwork: AccountNetwork,
+    contractAddress: string,
+    decimals?: number
+  ): Promise<void> {
+    const knownAssets = await this.getCachedNetworkAssets()
+    const filtered = knownAssets.filter(
+      (asset) =>
+        asset.homeNetwork.name === accountNetwork.network.name &&
+        asset.contractAddress === contractAddress
+    )
+    if (filtered[0] !== undefined) {
+      this.addTokenToTrack(filtered[0])
+    }
+    const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
+      accountNetwork.network,
+      contractAddress
+    )
+    if (customAsset) {
+      this.addTokenToTrack(customAsset)
+    } else {
+      // TODO kick off metadata inference via a contract read + perhaps a CoinGecko lookup?
+    }
+  }
 
   private async handlePriceAlarm(): Promise<void> {
     // ETH and BTC vs major currencies
