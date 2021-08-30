@@ -120,6 +120,7 @@ export default (
       // Try to find a build mode config adjustment and call it with the browser.
       (modeConfigs[mode] || (() => ({})))(browser),
       {
+        name: browser,
         output: {
           path: distPath,
         },
