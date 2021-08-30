@@ -177,22 +177,23 @@ export default class IndexingService implements Service<Events> {
     decimals?: number
   ): Promise<void> {
     const knownAssets = await this.getCachedNetworkAssets()
-    const filtered = knownAssets.filter(
+    const found = knownAssets.find(
       (asset) =>
         asset.homeNetwork.name === accountNetwork.network.name &&
         asset.contractAddress === contractAddress
     )
-    if (filtered[0] !== undefined) {
-      this.addTokenToTrack(filtered[0])
-    }
-    const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
-      accountNetwork.network,
-      contractAddress
-    )
-    if (customAsset) {
-      this.addTokenToTrack(customAsset)
+    if (found) {
+      this.addTokenToTrack(found)
     } else {
-      // TODO kick off metadata inference via a contract read + perhaps a CoinGecko lookup?
+      const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
+        accountNetwork.network,
+        contractAddress
+      )
+      if (customAsset) {
+        this.addTokenToTrack(customAsset)
+      } else {
+        // TODO kick off metadata inference via a contract read + perhaps a CoinGecko lookup?
+      }
     }
   }
 
