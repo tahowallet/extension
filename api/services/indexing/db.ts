@@ -117,7 +117,7 @@ export class IndexingDatabase extends Dexie {
   balances: Dexie.Table<AccountBalance, number>
 
   /*
-   * Cached token lists maintaining token metadata.
+   * Cached token lists maintaining fungible asset metadata.
    */
   tokenLists: Dexie.Table<CachedTokenList, number>
 

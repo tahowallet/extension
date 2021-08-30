@@ -3,6 +3,7 @@ import Emittery from "emittery"
 
 import {
   AccountBalance,
+  AccountNetwork,
   CoinGeckoAsset,
   FungibleAsset,
   Network,
@@ -28,8 +29,9 @@ interface AlarmSchedule {
 }
 
 interface Events {
-  price: PricePoint
   accountBalance: AccountBalance
+  price: PricePoint
+  assets: SmartContractFungibleAsset[]
 }
 
 /*
@@ -142,23 +144,36 @@ export default class IndexingService implements Service<Events> {
     // TODO get the prices of all tokens to track and save them
   }
 
-  private async handleTokenAlarm(): Promise<void> {
+  private async fetchAndCacheTokenLists(): Promise<void> {
     const tokenListPrefs = await (
       await this.preferenceService
     ).getTokenListPreferences()
-    // make sure each token list in preferences is loaded
-    await Promise.all(
+    // load each token list in preferences
+    await Promise.allSettled(
       tokenListPrefs.urls.map(async (url) => {
         const cachedList = await this.db.getLatestTokenList(url)
         if (!cachedList) {
-          const newListRef = await fetchAndValidateTokenList(url)
-          await this.db.saveTokenList(url, newListRef.tokenList)
+          try {
+            const newListRef = await fetchAndValidateTokenList(url)
+            await this.db.saveTokenList(url, newListRef.tokenList)
+          } catch (err) {
+            console.error(
+              `Error fetching, validating, and saving token list ${url}`
+            )
+          }
         }
       })
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up
+
+    this.emitter.emit("assets", await this.getCachedNetworkAssets())
+  }
+
+  private async handleTokenAlarm(): Promise<void> {
+    // no need to block here, as the first fetch blocks the entire service init
+    this.fetchAndCacheTokenLists()
 
     const tokensToTrack = await this.db.getTokensToTrack()
     // TODO only supports Ethereum mainnet, doesn't support multi-network assets
