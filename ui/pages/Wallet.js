@@ -2,7 +2,6 @@
 //
 import React, { useState, useEffect } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -75,5 +74,3 @@ export default function Wallet() {
     </div>
   )
 }
-
-registerRoute("wallet", Wallet)

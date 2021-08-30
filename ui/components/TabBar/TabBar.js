@@ -1,20 +1,16 @@
 import React from "react"
-import { getCurrent } from "react-chrome-extension-router"
-import { routes } from "../../config/routes"
+import { useLocation } from "react-router-dom"
 import TabBarIcon from "./TabBarIcon"
 
 export default function TabBar() {
-  const activeTabName = getCurrent()?.component?.name?.toLowerCase() || "wallet"
+  const location = useLocation()
+  const activeTabName = location.pathname.split("/")[1] || "wallet"
   const tabs = ["overview", "wallet", "swap", "earn", "menu"]
 
   return (
     <nav>
       {tabs.map((tabName) => (
-        <TabBarIcon
-          name={tabName}
-          component={routes[tabName]}
-          isActive={activeTabName === tabName}
-        />
+        <TabBarIcon name={tabName} isActive={activeTabName === tabName} />
       ))}
       <style jsx>
         {`

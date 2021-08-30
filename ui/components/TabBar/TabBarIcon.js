@@ -1,17 +1,17 @@
 import React from "react"
 import PropTypes from "prop-types"
-import SharedButtonLink from "../Shared/SharedButtonLink"
+import { Link } from "react-router-dom"
 
 export default function TabBarIcon(props) {
-  const { name, isActive, component } = props
+  const { name, isActive } = props
 
   return (
     <>
-      <SharedButtonLink component={component}>
+      <Link to={`/${name}`}>
         <div>
           <div className={`icon${isActive ? " active" : ""}`} />
         </div>
-      </SharedButtonLink>
+      </Link>
       <style jsx>
         {`
           .icon {
@@ -37,7 +37,6 @@ export default function TabBarIcon(props) {
 TabBarIcon.propTypes = {
   name: PropTypes.string.isRequired,
   isActive: PropTypes.bool,
-  component: PropTypes.func.isRequired,
 }
 
 TabBarIcon.defaultProps = {

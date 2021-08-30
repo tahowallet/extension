@@ -1,5 +1,4 @@
 import React from "react"
-import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 
 export default function Menu() {
@@ -24,5 +23,3 @@ export default function Menu() {
     </>
   )
 }
-
-registerRoute("menu", Menu)

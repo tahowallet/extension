@@ -2,8 +2,7 @@
 //
 import React from "react"
 import PropTypes from "prop-types"
-import { routes } from "../../config/routes"
-import SharedButtonLink from "../Shared/SharedButtonLink"
+import { Link } from "react-router-dom"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function WalletAssetListItem(props) {
@@ -12,7 +11,7 @@ export default function WalletAssetListItem(props) {
   // TODO: ETH price hard-coded for demo
   return (
     <li>
-      <SharedButtonLink component={routes.singleAsset}>
+      <Link to="/singleAsset">
         <button type="button" className="standard_width">
           <div className="left">
             <SharedAssetIcon />
@@ -31,7 +30,7 @@ export default function WalletAssetListItem(props) {
             <span className="icon_swap_asset" />
           </div>
         </button>
-      </SharedButtonLink>
+      </Link>
 
       <style jsx>
         {`
