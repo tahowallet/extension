@@ -21,6 +21,7 @@ import {
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/account"
+import { assetsLoaded } from "./redux-slices/assets"
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
@@ -108,6 +109,11 @@ export default class Main {
         ),
     })
 
+    this.wireIndexingService()
+    await this.wireChainService()
+  }
+
+  async wireChainService(): Promise<void> {
     const chain = await this.chainService
 
     // Wire up chain service to account slice.
@@ -135,6 +141,18 @@ export default class Main {
 
       // Force a refresh of the account balance to populate the store.
       chain.getLatestBaseAccountBalance(accountNetwork)
+    })
+  }
+
+  async wireIndexingService(): Promise<void> {
+    const indexing = await this.indexingService
+
+    indexing.emitter.on("accountBalance", (accountWithBalance) => {
+      this.store.dispatch(updateAccountBalance(accountWithBalance))
+    })
+
+    indexing.emitter.on("assets", (assets) => {
+      this.store.dispatch(assetsLoaded(assets))
     })
   }
 }
