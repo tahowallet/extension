@@ -231,13 +231,12 @@ export default class IndexingService implements Service<Events> {
             )
           }
         }
+        this.emitter.emit("assets", await this.getCachedNetworkAssets())
       })
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up
-
-    this.emitter.emit("assets", await this.getCachedNetworkAssets())
   }
 
   private async handleTokenAlarm(): Promise<void> {
