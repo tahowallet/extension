@@ -109,11 +109,11 @@ export default class Main {
         ),
     })
 
-    this.wireIndexingService()
-    await this.wireChainService()
+    this.connectIndexingService()
+    await this.connectChainService()
   }
 
-  async wireChainService(): Promise<void> {
+  async connectChainService(): Promise<void> {
     const chain = await this.chainService
 
     // Wire up chain service to account slice.
@@ -144,7 +144,7 @@ export default class Main {
     })
   }
 
-  async wireIndexingService(): Promise<void> {
+  async connectIndexingService(): Promise<void> {
     const indexing = await this.indexingService
 
     indexing.emitter.on("accountBalance", (accountWithBalance) => {

@@ -92,7 +92,7 @@ export default class IndexingService implements Service<Events> {
       }
     })
 
-    this.wireChainService()
+    this.connectChainServiceEvents()
     await this.fetchAndCacheTokenLists()
   }
 
@@ -130,7 +130,7 @@ export default class IndexingService implements Service<Events> {
    * PRIVATE METHODS *
    ******************* */
 
-  private async wireChainService(): Promise<void> {
+  private async connectChainServiceEvents(): Promise<void> {
     const chain = await this.chainService
 
     // listen for alchemyAssetTransfers, and if we find them, track those tokens
