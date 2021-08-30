@@ -11,11 +11,11 @@ export interface AlchemyAssetTransfer {
   from: string | null
   to: string | null
   rawContract?: {
-    address: string
-    decimals: number
-    value: BigInt
+    address: string | null
+    decimals: number | null
+    value: BigInt | null
   }
-  value: number
+  value: BigInt | null
   erc721TokenId: string | null
 }
 
@@ -66,15 +66,32 @@ export async function getAssetTransfers(
         category: json.category,
         from: json.from,
         to: json.to,
-        value: json.value,
+        // do our best to get a well-formed ETH amount in wei. Alchemy appears
+        // to return the "correct" hex string value in the rawContract object if
+        // this is a normal ETH send, but doesn't help us if it's eg a contract
+        // interaction that also includes transaction value
+        value:
+          json.value !== null
+            ? utils.parseUnits(json.value.toString(), "ether").toBigInt()
+            : null,
         erc721TokenId: json.erc721TokenId,
       }
-      // TODO parse rawContract properly
       if (json.rawContract) {
+        const contract = json.rawContract
         formattedTransfer.rawContract = {
-          address: json.rawContract.address,
-          value: BigNumber.from(json.rawContract.value).toBigInt(),
-          decimals: Number(json.rawContract.decimal),
+          address: contract.address || null,
+          value:
+            contract.value !== null
+              ? BigNumber.from(contract.value).toBigInt()
+              : null,
+          decimals: contract.decimal !== null ? Number(contract.decimal) : null,
+        }
+        if (
+          contract.address === null &&
+          formattedTransfer.rawContract.decimals === 18 &&
+          formattedTransfer.rawContract.value
+        ) {
+          formattedTransfer.value = formattedTransfer.rawContract.value
         }
       }
       return formattedTransfer
