@@ -1,6 +1,5 @@
 import React from "react"
 import { useBackgroundSelector } from "../hooks"
-import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 
@@ -102,5 +101,3 @@ export default function Overview() {
     </CorePage>
   )
 }
-
-registerRoute("overview", Overview)

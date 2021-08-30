@@ -1,9 +1,10 @@
 import React from "react"
-import { goTo } from "react-chrome-extension-router"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
-import { routes } from "../../config/routes"
 
 export default function HiddenDevPanel() {
+  const history = useHistory()
+
   return (
     <div>
       <h3>Developer Panel</h3>
@@ -15,7 +16,7 @@ export default function HiddenDevPanel() {
           icon="arrow_right"
           iconSize="large"
           onClick={() => {
-            goTo(routes.onboarding)
+            history.push("/onboarding/0")
           }}
         />
         <SharedButton

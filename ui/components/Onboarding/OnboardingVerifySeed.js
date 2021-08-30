@@ -1,8 +1,7 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
-import { routes } from "../../config/routes"
+import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
-import SharedButtonLink from "../Shared/SharedButtonLink"
 import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
 import titleStyle from "./titleStyle"
 
@@ -12,13 +11,13 @@ function SuccessMessage() {
       <span className="message">Congratulations!</span>
       <div className="subtitle">You can now safely use your wallet</div>
       <div className="button_container">
-        <SharedButtonLink component={routes.wallet}>
+        <Link to="/">
           <SharedButton
             label="Take me to my wallet"
             size="medium"
             type="primary"
           />
-        </SharedButtonLink>
+        </Link>
       </div>
       <style jsx>
         {`

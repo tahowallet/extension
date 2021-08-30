@@ -1,8 +1,6 @@
 import React, { useState } from "react"
-import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
-import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQoute from "../components/Swap/SwapQuote"
@@ -151,5 +149,3 @@ export default function Swap() {
     </>
   )
 }
-
-registerRoute("swap", Swap)

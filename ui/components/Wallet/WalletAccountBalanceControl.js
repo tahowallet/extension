@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
-import { routes } from "../../config/routes"
-import SharedButtonLink from "../Shared/SharedButtonLink"
+import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
@@ -35,14 +34,14 @@ export default function WalletAccountBalanceControl(props) {
 
         {hasSavedSeed ? (
           <div className="send_receive_button_wrap">
-            <SharedButtonLink component={routes.send}>
+            <Link to="/send">
               <SharedButton
                 label="Send"
                 icon="send"
                 size="medium"
                 type="primary"
               />
-            </SharedButtonLink>
+            </Link>
             <SharedButton
               label="Receive"
               onClick={handleClick}
@@ -53,9 +52,7 @@ export default function WalletAccountBalanceControl(props) {
           </div>
         ) : (
           <div className="save_seed_button_wrap">
-            <SharedButtonLink
-              component={() => routes.onboarding({ startPage: 2 })}
-            >
+            <Link to="/onboarding/2">
               <SharedButton
                 label="First, secure your recovery seed"
                 icon="arrow_right"
@@ -63,7 +60,7 @@ export default function WalletAccountBalanceControl(props) {
                 size="large"
                 type="warning"
               />
-            </SharedButtonLink>
+            </Link>
           </div>
         )}
       </div>

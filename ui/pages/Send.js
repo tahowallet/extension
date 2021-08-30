@@ -1,5 +1,4 @@
 import React, { useState } from "react"
-import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -126,5 +125,3 @@ export default function Send() {
     </>
   )
 }
-
-registerRoute("send", Send)
