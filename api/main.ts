@@ -20,7 +20,7 @@ import {
   transactionSeen,
   updateAccountBalance,
   emitter as accountSliceEmitter,
-} from "./redux-slices/account"
+} from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
 
 // Declared out here so ReduxStoreType can be used in Main.store type

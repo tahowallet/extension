@@ -1,11 +1,11 @@
 import { combineReducers } from "redux"
 
-import accountReducer from "./account"
+import accountsReducer from "./accounts"
 import assetsReducer from "./assets"
 import uiReducer from "./ui"
 
 export default combineReducers({
-  account: accountReducer,
+  account: accountsReducer,
   assets: assetsReducer,
   ui: uiReducer,
 })

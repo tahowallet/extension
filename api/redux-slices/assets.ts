@@ -5,9 +5,9 @@ type SingleAssetState = AnyAsset & {
   currentPrice: PricePoint | null
 }
 
-type AssetState = SingleAssetState[]
+type AssetsState = SingleAssetState[]
 
-export const initialState = [] as AssetState
+export const initialState = [] as AssetsState
 
 const assetsSlice = createSlice({
   name: "assets",
