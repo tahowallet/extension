@@ -240,7 +240,7 @@ export default class Keys {
    * @param {string} address - The address of the account to remove.
    * @returns {Promise<void>} A Promise that resolves if the operation was successful.
    */
-  async removeAccount (address: string) {
+  async removeAccount (address: string): Promise<void> {
     const keyring = await this.#getKeyringFromAddress(address)
     // Not all the keyrings support this, so we have to check
     if (typeof keyring.removeAccount === 'function') {
@@ -270,9 +270,9 @@ export default class Keys {
    * @param {Object} ethTx - The transaction to sign.
    * @param {string} _fromAddress - The transaction 'from' address.
    * @param {Object} opts - Signing options.
-   * @returns {Promise<Object>} The signed transactio object.
+   * @returns {Promise<Object>} The signed transaction object.
    */
-  async signTransaction (ethTx: Transaction, _fromAddress: string, opts: Opts = {}) {
+  async signTransaction (ethTx: Transaction, _fromAddress: string, opts: Opts = {}): Promise<Transaction> {
     const fromAddress = normalizeAddress(_fromAddress)
     const keyring = await this.#getKeyringFromAddress(fromAddress)
     return keyring.signTransaction(fromAddress, ethTx, opts)
@@ -286,7 +286,7 @@ export default class Keys {
    * @param {Object} msgParams - The message parameters to sign.
    * @returns {Promise<Buffer>} The raw signature.
    */
-  async signMessage (msgParams: MsgParams, opts: Opts = {}) {
+  async signMessage (msgParams: MsgParams, opts: Opts = {}): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.signMessage(address, msgParams.data, opts)
@@ -301,7 +301,7 @@ export default class Keys {
    * @param {Object} msgParams - The message parameters to sign.
    * @returns {Promise<Buffer>} The raw signature.
    */
-  async signPersonalMessage (msgParams: MsgParams, opts: Opts = {}) {
+  async signPersonalMessage (msgParams: MsgParams, opts: Opts = {}): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.signPersonalMessage(address, msgParams.data, opts)
@@ -315,7 +315,7 @@ export default class Keys {
    * @param {Object} address - The address to get the encryption public key for.
    * @returns {Promise<Buffer>} The public key.
    */
-  async getEncryptionPublicKey (_address: string, opts: Opts = {}) {
+  async getEncryptionPublicKey (_address: string, opts: Opts = {}): Promise<Buffer> {
     const address = normalizeAddress(_address)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.getEncryptionPublicKey(address, opts)
@@ -329,7 +329,7 @@ export default class Keys {
    * @param {Object} msgParams - The decryption message parameters.
    * @returns {Promise<Buffer>} The raw decryption result.
    */
-  async decryptMessage (msgParams, opts: Opts = {}) {
+  async decryptMessage (msgParams, opts: Opts = {}): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.decryptMessage(address, msgParams.data, opts)
@@ -342,7 +342,7 @@ export default class Keys {
    * @param {Object} msgParams - The message parameters to sign.
    * @returns {Promise<Buffer>} The raw signature.
    */
-  async signTypedMessage (msgParams, opts: Opts = { version: 'V1' }) {
+  async signTypedMessage (msgParams, opts: Opts = { version: 'V1' }): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.signTypedData(address, msgParams.data, opts)
@@ -353,9 +353,9 @@ export default class Keys {
    *
    * @param {string} _address - The Ethereum address for the app key.
    * @param {string} origin - The origin for the app key.
-   * @returns {string} The app key address.
+   * @returns {Promise<string>} The app key address.
    */
-  async getAppKeyAddress (_address: string, origin: string) {
+  async getAppKeyAddress (_address: string, origin: string): Promise<string> {
     const address = normalizeAddress(_address)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.getAppKeyAddress(address, origin)
@@ -366,9 +366,9 @@ export default class Keys {
    *
    * @param {string} _address - The Ethereum address for the app key.
    * @param {string} origin - The origin for the app key.
-   * @returns {string} The app key private key.
+   * @returns {Promise<string>} The app key private key.
    */
-  async exportAppKeyForAddress (_address: string, origin: string) {
+  async exportAppKeyForAddress (_address: string, origin: string): Promise<string> {
     const address = normalizeAddress(_address)
     const keyring = await this.#getKeyringFromAddress(address)
     if (!('exportAccount' in keyring)) {
