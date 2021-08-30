@@ -67,6 +67,14 @@ your dev browser of choice:
 
 Extension bundles for each browser are in `dist/<browser>`.
 
+By default, the `yarn start` command rebuilds the extension for each browser on
+save. You can target a particular browser by specifying it in the command, e.g.
+to only rebuild the Firefox extension on change:
+
+```sh
+$ yarn start --config-name firefox
+```
+
 ### Additional Scripts
 
 ```sh
