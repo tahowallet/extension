@@ -137,7 +137,7 @@ export default class IndexingService implements Service<Events> {
     // TODO update for NFTs
     chain.emitter.on(
       "alchemyAssetTransfers",
-      async ([accountNetwork, assetTransfers]) => {
+      async ({ accountNetwork, assetTransfers }) => {
         assetTransfers
           .filter((t) => t.category === "token" && t.erc721TokenId === null)
           .forEach((transfer) => {

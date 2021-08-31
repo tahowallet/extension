@@ -178,7 +178,10 @@ interface AlarmSchedule {
 
 interface Events {
   accountBalance: AccountBalance
-  alchemyAssetTransfers: [AccountNetwork, AlchemyAssetTransfer[]]
+  alchemyAssetTransfers: {
+    accountNetwork: AccountNetwork
+    assetTransfers: AlchemyAssetTransfer[]
+  }
   newBlock: EIP1559Block
   transaction: AnyEVMTransaction
 }
@@ -416,10 +419,10 @@ export default class ChainService implements Service<Events> {
 
       // TODO if this fails, other services still needs a way to kick
       // off monitoring.
-      this.emitter.emit("alchemyAssetTransfers", [
+      this.emitter.emit("alchemyAssetTransfers", {
         accountNetwork,
         assetTransfers,
-      ])
+      })
 
       /// send all found tx hashes into a queue to retrieve + cache
       assetTransfers.forEach((a) =>
