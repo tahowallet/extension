@@ -141,7 +141,7 @@ export default class IndexingService implements Service<Events> {
         assetTransfers
           .filter((t) => t.category === "token" && t.erc721TokenId === null)
           .forEach((transfer) => {
-            if ("rawContract" in transfer) {
+            if ("rawContract" in transfer && transfer.rawContract.address) {
               this.addTokenToTrackByContract(
                 accountNetwork,
                 transfer.rawContract.address,

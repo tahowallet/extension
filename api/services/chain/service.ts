@@ -26,7 +26,7 @@ import { getOrCreateDB, ChainDatabase } from "./db"
 
 const ALCHEMY_KEY = "8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa"
 
-const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 32400 // 64800
+const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
 
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 
@@ -327,11 +327,9 @@ export default class ChainService implements Service<Events> {
 
   async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
     await this.db.addAccountToTrack(accountNetwork)
-    await Promise.allSettled([
-      this.getLatestBaseAccountBalance(accountNetwork),
-      this.subscribeToAccountTransactions(accountNetwork),
-      this.loadRecentAssetTransfers(accountNetwork),
-    ])
+    this.getLatestBaseAccountBalance(accountNetwork)
+    this.subscribeToAccountTransactions(accountNetwork)
+    this.loadRecentAssetTransfers(accountNetwork)
   }
 
   async getBlockHeight(network: Network): Promise<number> {
@@ -416,8 +414,6 @@ export default class ChainService implements Service<Events> {
         fromBlock
       )
 
-      // TODO any of those contracts that are ERC-20s should be added to
-      // tokensToTrack by the indexing service
       // TODO if this fails, other services still needs a way to kick
       // off monitoring.
       this.emitter.emit("alchemyAssetTransfers", [
