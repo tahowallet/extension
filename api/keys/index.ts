@@ -1,44 +1,22 @@
-import KeyringController, { normalizeAddress } from "@tallyho/eth-keyring-controller"
+import KeyringController, {
+  normalizeAddress,
+} from "@tallyho/eth-keyring-controller"
+import { BN } from "ethereumjs-util"
+import Common from "@ethereumjs/common"
+import {
+  FeeMarketEIP1559Transaction,
+  FeeMarketEIP1559TxData,
+} from "@ethereumjs/tx"
+import { TxParams, ImportData, Seed, MsgParams, KEY_TYPE } from "../types"
 import { getPersistedState, persistState } from "../lib/db"
-import { Transaction } from "ethereumjs-tx"
 import {
   PERSITIANCE_KEY,
   LOCKED_ERROR,
-  NO_VAULT_ERROR,
   ADDRESS_NOT_FOUND_ERROR,
 } from "./constants"
 
-export enum KEY_TYPE {
-  mnemonicBIP39S128 = "mnemonic#bip39:128",
-  mnemonicBIP39S256 = "mnemonic#bip39:256",
-  metamaskMnemonic = "mnemonic#metamask",
-  singleSECP = "single#secp256k1",
-}
-
-export type KeyTypeStrings = keyof typeof KEY_TYPE
-
-export type MsgParams = {
-  data: string
-  from: string
-}
-
-// TODO: type declarations in eth-hd-tree
-export interface Seed {
-  data: string // seed material
-  type: KEY_TYPE
-  index: number // the current account index
-  reference: string // unique reference
-  path: string // default path to derive new keys
-}
-
 interface Opts {
   [key: string]: string | number
-}
-
-export type ImportData = {
-  type: KeyTypeStrings
-  data: string
-  password ?: string
 }
 
 /*
@@ -67,24 +45,60 @@ from the main background process
 
 
 
-*/
+  /**
+   * #createReference
+   *
+   * one way hash method for creating references to mnemonics
+   *
+   * @returns {Promise<string>} has string
+    */
 
+async function createReference(data: string): Promise<string> {
+  const dataUint8 = new TextEncoder().encode(data)
+  const hashBufer = await crypto.subtle.digest("SHA-256", dataUint8)
+  const hashArray = Array.from(new Uint8Array(hashBufer))
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
+}
 
-
+function formatTransaction(txParams: TxParams): FeeMarketEIP1559TxData {
+  return {
+    data: txParams.input,
+    gasLimit: new BN(txParams.gasLimit.toString(16), 16),
+    maxPriorityFeePerGas: new BN(
+      txParams.maxPriorityFeePerGas.toString(16),
+      16
+    ),
+    maxFeePerGas: new BN(txParams.maxFeePerGas.toString(16), 16),
+    nonce: txParams.nonce.toString(16),
+    to: txParams.to,
+    value: txParams.value.toString(16),
+    chainId: parseInt(txParams.network.chainID, 16),
+    type: txParams.type,
+  }
+}
 
 export default class Keys {
   #vault: any
+
   #locked: boolean
+
   #seeds: Seed[]
+
   #keyrings: any
+
   #masterKeyring: any
+
   #password: string
+
   #ready: (value: any) => void
+
   #failed: (reason: any) => void
+
   #isready: Promise<boolean>
-  constructor (password?: string) {
+
+  constructor(password?: string) {
     this.#vault = getPersistedState(PERSITIANCE_KEY)
-    this.#locked = password ? true : false
+    this.#locked = !!password
     this.#password = password
     this.#masterKeyring = new KeyringController()
     this.#seeds = []
@@ -95,34 +109,42 @@ export default class Keys {
     })
     if (this.#vault) {
       try {
-        this.#masterKeyring.encryptor.decrypt(this.#password, this.#vault).then((seeds) => {
-          this.#seeds = seeds
-          this.#seeds.forEach(async (seed) => {
-            this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
-              mnemonic: seed.data,
-              hdPath: seed.path,
-              numberOfAccounts: seed.index,
+        this.#masterKeyring.encryptor
+          .decrypt(this.#password, this.#vault)
+          .then((seeds) => {
+            this.#seeds = seeds
+            this.#seeds.forEach(async (seed) => {
+              this.#keyrings[seed.reference] =
+                await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
+                  mnemonic: seed.data,
+                  hdPath: seed.path,
+                  numberOfAccounts: seed.index,
+                })
             })
           })
-        }).then(() => {
-          this.#ready(true)
-        })
+          .then(() => {
+            this.#ready(true)
+          })
       } catch (reason) {
         this.#failed(reason)
       }
     } else {
-        this.create()
-        .then(() => { this.#ready(true) })
-        .catch((reason) => { this.#failed(reason) })
+      this.create()
+        .then(() => {
+          this.#ready(true)
+        })
+        .catch((reason) => {
+          this.#failed(reason)
+        })
     }
   }
 
-  get isLocked (): boolean {
+  get isLocked(): boolean {
     return this.#locked
   }
 
   // locks keyring
-  async lock (): Promise<boolean> {
+  async lock(): Promise<boolean> {
     await this.#masterKeyring.setLocked()
     this.#keyrings = {}
     this.#seeds = []
@@ -131,41 +153,57 @@ export default class Keys {
   }
 
   // unlock keyring takes a password
-  async unlock (password: string): Promise<boolean>  {
-      this.#seeds = await this.#masterKeyring.encryptor.decrypt(this.#password, this.#vault)
-      this.#seeds.forEach(async (seed) => {
-        this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring("HD, Key Tree", {
+  async unlock(password: string): Promise<boolean> {
+    this.#seeds = await this.#masterKeyring.encryptor.decrypt(
+      this.#password,
+      this.#vault
+    )
+    this.#seeds.forEach(async (seed) => {
+      this.#keyrings[seed.reference] = await this.#masterKeyring.addNewKeyring(
+        "HD, Key Tree",
+        {
           mnemonic: seed.data,
           hdPath: seed.path,
           numberOfAccounts: seed.index,
-        })
-      })
+        }
+      )
+    })
     this.#locked = false
     return true
   }
-/* *
-  Creates and saves a new BIP-39 256-bit mnemonic key, and returns its accounts.
-*/
-  // TODO: figure out why enum dosent match ts docs :"}
-  async create (): Promise<string[]> {
-    const keyring = await this.#masterKeyring.addNewKeyring("HD Key Tree", {numberOfAccounts: 1, strength: 256})
+
+  /**
+   * Creates and saves a new BIP-39 256-bit mnemonic key, and returns its accounts.
+   * @returns {Promise<Array<string>>} The array of accounts.
+   */
+  async create(): Promise<string[]> {
+    const keyring = await this.#masterKeyring.addNewKeyring("HD Key Tree", {
+      numberOfAccounts: 1,
+      strength: 256,
+    })
     const firstAddress = await keyring.addAccounts(1)
     await this.#saveKeyring(keyring, KEY_TYPE.mnemonicBIP39S256)
     return keyring.getAccounts()
   }
 
-  async import (importData: ImportData): Promise<string[]> {
-
+  /**
+   * Creates and saves a new BIP-39 256-bit mnemonic key, and returns its accounts.
+   * @returns {Promise<string>} The array of accounts.
+   */
+  async import(importData: ImportData): Promise<string> {
     await this.#isready
     this.#checkLock()
     // TODO use the same types across all deps
-    const keyring = this.#masterKeyring.addNewKeyring(importData.type, { mnemonic: importData.data, numberOfAccounts: 10 })
+    const keyring = this.#masterKeyring.addNewKeyring(importData.type, {
+      mnemonic: importData.data,
+      numberOfAccounts: 10,
+    })
     await keyring.addAccounts(10)
     await this.#saveKeyring(importData.type, keyring)
     return keyring.getAccounts()
   }
 
-  async export (reference: string, password: string): Promise<string> {
+  async export(reference: string, password: string): Promise<string> {
     await this.#isready
     this.#checkLock()
     if (password !== this.#password) {
@@ -173,6 +211,7 @@ export default class Keys {
     }
     return this.#keyrings[reference].mnemonic
   }
+
   /**
    * getAddresses
    *
@@ -181,14 +220,19 @@ export default class Keys {
    *
    * @returns {Promise<Array<string>>} The array of accounts.
    */
-  async getAddresses (reference?: string): Promise<string[]> {
+  async getAddresses(reference?: string): Promise<string[]> {
     await this.#isready
     if (reference === undefined) {
-      const addresses: Promise<string[]>[] = Object.values(this.#keyrings).map((keyring: any): Promise<string[]> => {
-        return keyring.getAccounts()
-      })
+      const addresses: Promise<string[]>[] = Object.values(this.#keyrings).map(
+        (keyring: any): Promise<string[]> => {
+          return keyring.getAccounts()
+        }
+      )
       const finAddresses = await Promise.all(addresses)
-      return finAddresses.reduce((agg: string[], addressList: string[]) => agg.concat(addressList), [])
+      return finAddresses.reduce(
+        (agg: string[], addressList: string[]) => agg.concat(addressList),
+        []
+      )
     }
     return this.#keyrings[reference].getAccounts()
   }
@@ -200,12 +244,12 @@ export default class Keys {
    *
    * @returns {Promise<string[]>} The array of accounts.
    */
-  async getWalletReferences (): Promise<string[]> {
+  async getWalletReferences(): Promise<string[]> {
     await this.#isready
     return Object.keys(this.#keyrings)
   }
 
-  async getNextAddress (reference: string, _count?: number): Promise<string[]> {
+  async getNextAddress(reference: string, _count?: number): Promise<string[]> {
     const count = _count === undefined ? 1 : _count
     await this.#isready
 
@@ -214,6 +258,7 @@ export default class Keys {
     await this.#updateIndex(reference, allAccounts.length)
     return accounts
   }
+
   /**
    * Export Account
    *
@@ -225,7 +270,7 @@ export default class Keys {
    * @param {string} address - The address of the account to export.
    * @returns {Promise<string>} The private key of the account.
    */
-  async exportAccount (address) {
+  async exportAccount(address) {
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.exportAccount(normalizeAddress(address))
   }
@@ -240,10 +285,10 @@ export default class Keys {
    * @param {string} address - The address of the account to remove.
    * @returns {Promise<void>} A Promise that resolves if the operation was successful.
    */
-  async removeAccount (address: string): Promise<void> {
+  async removeAccount(address: string): Promise<void> {
     const keyring = await this.#getKeyringFromAddress(address)
     // Not all the keyrings support this, so we have to check
-    if (typeof keyring.removeAccount === 'function') {
+    if (typeof keyring.removeAccount === "function") {
       keyring.removeAccount(address)
       const accounts = await keyring.getAccounts()
       // Check if this was the last/only account
@@ -253,7 +298,7 @@ export default class Keys {
       await this.#persistState()
     } else {
       throw new Error(
-        `Keyring ${keyring.type} doesn't support account removal operations`,
+        `Keyring ${keyring.type} doesn't support account removal operations`
       )
     }
   }
@@ -270,12 +315,22 @@ export default class Keys {
    * @param {Object} ethTx - The transaction to sign.
    * @param {string} _fromAddress - The transaction 'from' address.
    * @param {Object} opts - Signing options.
-   * @returns {Promise<Object>} The signed transaction object.
+   * @returns {Promise<string>} The signature string to be broadcasted.
    */
-  async signTransaction (ethTx: Transaction, _fromAddress: string, opts: Opts = {}): Promise<Transaction> {
+  async signTransaction(
+    txData: TxParams,
+    _fromAddress: string,
+    opts: Opts = {}
+  ): Promise<string> {
+    // map params to new object also define data as input
+    const common = new Common({ chain: "mainnet" })
+    const txParams = formatTransaction(txData)
+    const ethTx = FeeMarketEIP1559Transaction.fromTxData(txParams, { common })
+
     const fromAddress = normalizeAddress(_fromAddress)
     const keyring = await this.#getKeyringFromAddress(fromAddress)
-    return keyring.signTransaction(fromAddress, ethTx, opts)
+    const signedTx = await keyring.signTransaction(fromAddress, ethTx, opts)
+    return `0x${signedTx.serialize().toString("hex")}`
   }
 
   /**
@@ -286,7 +341,7 @@ export default class Keys {
    * @param {Object} msgParams - The message parameters to sign.
    * @returns {Promise<Buffer>} The raw signature.
    */
-  async signMessage (msgParams: MsgParams, opts: Opts = {}): Promise<Buffer> {
+  async signMessage(msgParams: MsgParams, opts: Opts = {}): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.signMessage(address, msgParams.data, opts)
@@ -301,7 +356,10 @@ export default class Keys {
    * @param {Object} msgParams - The message parameters to sign.
    * @returns {Promise<Buffer>} The raw signature.
    */
-  async signPersonalMessage (msgParams: MsgParams, opts: Opts = {}): Promise<Buffer> {
+  async signPersonalMessage(
+    msgParams: MsgParams,
+    opts: Opts = {}
+  ): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.signPersonalMessage(address, msgParams.data, opts)
@@ -315,7 +373,10 @@ export default class Keys {
    * @param {Object} address - The address to get the encryption public key for.
    * @returns {Promise<Buffer>} The public key.
    */
-  async getEncryptionPublicKey (_address: string, opts: Opts = {}): Promise<Buffer> {
+  async getEncryptionPublicKey(
+    _address: string,
+    opts: Opts = {}
+  ): Promise<Buffer> {
     const address = normalizeAddress(_address)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.getEncryptionPublicKey(address, opts)
@@ -329,7 +390,7 @@ export default class Keys {
    * @param {Object} msgParams - The decryption message parameters.
    * @returns {Promise<Buffer>} The raw decryption result.
    */
-  async decryptMessage (msgParams, opts: Opts = {}): Promise<Buffer> {
+  async decryptMessage(msgParams, opts: Opts = {}): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.decryptMessage(address, msgParams.data, opts)
@@ -342,7 +403,10 @@ export default class Keys {
    * @param {Object} msgParams - The message parameters to sign.
    * @returns {Promise<Buffer>} The raw signature.
    */
-  async signTypedMessage (msgParams, opts: Opts = { version: 'V1' }): Promise<Buffer> {
+  async signTypedMessage(
+    msgParams,
+    opts: Opts = { version: "V1" }
+  ): Promise<Buffer> {
     const address = normalizeAddress(msgParams.from)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.signTypedData(address, msgParams.data, opts)
@@ -355,7 +419,7 @@ export default class Keys {
    * @param {string} origin - The origin for the app key.
    * @returns {Promise<string>} The app key address.
    */
-  async getAppKeyAddress (_address: string, origin: string): Promise<string> {
+  async getAppKeyAddress(_address: string, origin: string): Promise<string> {
     const address = normalizeAddress(_address)
     const keyring = await this.#getKeyringFromAddress(address)
     return keyring.getAppKeyAddress(address, origin)
@@ -368,25 +432,31 @@ export default class Keys {
    * @param {string} origin - The origin for the app key.
    * @returns {Promise<string>} The app key private key.
    */
-  async exportAppKeyForAddress (_address: string, origin: string): Promise<string> {
+  async exportAppKeyForAddress(
+    _address: string,
+    origin: string
+  ): Promise<string> {
     const address = normalizeAddress(_address)
     const keyring = await this.#getKeyringFromAddress(address)
-    if (!('exportAccount' in keyring)) {
-      throw new Error(`The keyring for address ${_address} does not support exporting.`)
+    if (!("exportAccount" in keyring)) {
+      throw new Error(
+        `The keyring for address ${_address} does not support exporting.`
+      )
     }
     return keyring.exportAccount(address, { withAppKeyOrigin: origin })
   }
-
 
   //
   // PRIVATE METHODS
   //
 
-  async #getKeyringFromAddress (address: string): Promise<any> {
+  async #getKeyringFromAddress(address: string): Promise<any> {
     const keyrings = Object.values(this.#keyrings)
-    const addresses = await Promise.all(keyrings.map(async (keyring: any) => {
-      return keyring.getAccounts()
-    }))
+    const addresses = await Promise.all(
+      keyrings.map(async (keyring: any) => {
+        return keyring.getAccounts()
+      })
+    )
     let index
     addresses.forEach((addressList: string[], i: number) => {
       if (addressList.includes(address)) {
@@ -399,36 +469,19 @@ export default class Keys {
     return keyrings[index]
   }
 
-  async #persistState (): Promise<void> {
+  async #persistState(): Promise<void> {
     const encryptedState = await this.#masterKeyring.encryptor.encrypt(
       this.#password,
       {
-        seeds: this.#seeds
+        seeds: this.#seeds,
       }
     )
     persistState(PERSITIANCE_KEY, encryptedState)
   }
 
-
-  /**
-   * #createReference
-   *
-   * one way hash method for creating references to mnemonics
-   *
-   * @returns {Promise<string>} has string
-   */
-
-  async #createReference(data: string): Promise<string> {
-    const dataUint8 = new TextEncoder().encode(data)
-    const hashBufer = await crypto.subtle.digest("SHA-256", dataUint8)
-    const hashArray = Array.from(new Uint8Array(hashBufer))
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
-    return hashHex
-  }
-
   async #saveKeyring(keyring: any, keyType: KEY_TYPE): Promise<void> {
     const { mnemonic, numberOfAccounts, hdPath } = await keyring.serialize()
-    const reference = await this.#createReference(mnemonic)
+    const reference = await createReference(mnemonic)
     this.#seeds.push({
       data: mnemonic,
       path: hdPath,
@@ -440,18 +493,22 @@ export default class Keys {
     await this.#persistState()
   }
 
-  #updateIndex (reference: string, newIndex: number): void {
+  #updateIndex(reference: string, newIndex: number): void {
     this.#seeds = this.#seeds.reduce((agg, seed) => {
       if (seed.reference === reference) {
-        seed.index = newIndex
+        agg.push({
+          ...seed,
+          index: newIndex,
+        })
+      } else {
+        agg.push(seed)
       }
-      agg.push(seed)
       return agg
     }, [])
     this.#persistState()
   }
 
-  #checkLock (): void {
+  #checkLock(): void {
     if (this.#locked === true) {
       throw new Error(LOCKED_ERROR)
     }

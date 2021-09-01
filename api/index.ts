@@ -4,6 +4,7 @@ import { STATE_KEY } from "./constants"
 import { migrate } from "./migrations"
 import { getPersistedState, persistState } from "./lib/db"
 import Main from "./main"
+
 export { browser } from "webextension-polyfill-ts"
 export type RootState = ReturnType<Main["store"]["getState"]>
 export type BackgroundDispatch = Main["store"]["dispatch"]
