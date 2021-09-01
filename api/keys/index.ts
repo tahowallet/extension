@@ -7,7 +7,7 @@ import {
   FeeMarketEIP1559Transaction,
   FeeMarketEIP1559TxData,
 } from "@ethereumjs/tx"
-import { TxParams, ImportData, Seed, MsgParams, KEY_TYPE } from "../types"
+import { TxParams, ImportData, Seed, MsgParams, KEY_TYPES } from "../types"
 import { getPersistedState, persistState } from "../lib/db"
 import {
   PERSITIANCE_KEY,
@@ -182,7 +182,7 @@ export default class Keys {
       strength: 256,
     })
     const firstAddress = await keyring.addAccounts(1)
-    await this.#saveKeyring(keyring, KEY_TYPE.mnemonicBIP39S256)
+    await this.#saveKeyring(keyring, KEY_TYPES.mnemonicBIP39S256)
     return keyring.getAccounts()
   }
 
@@ -479,7 +479,7 @@ export default class Keys {
     persistState(PERSITIANCE_KEY, encryptedState)
   }
 
-  async #saveKeyring(keyring: any, keyType: KEY_TYPE): Promise<void> {
+  async #saveKeyring(keyring: any, keyType: KEY_TYPES): Promise<void> {
     const { mnemonic, numberOfAccounts, hdPath } = await keyring.serialize()
     const reference = await createReference(mnemonic)
     this.#seeds.push({
