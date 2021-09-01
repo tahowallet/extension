@@ -1,6 +1,5 @@
 import React from "react"
-import { goBack } from "react-chrome-extension-router"
-import { registerRoute } from "../config/routes"
+import { useHistory } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -70,13 +69,15 @@ const activityStub = [
 ]
 
 export default function SingleAsset() {
+  const history = useHistory()
+
   return (
     <>
       <CorePage>
         <button
           type="button"
           className="back_button_wrap standard_width_padded"
-          onClick={() => goBack()}
+          onClick={() => history.goBack()}
         >
           <div className="icon_chevron_left" />
           Back
@@ -210,5 +211,3 @@ export default function SingleAsset() {
     </>
   )
 }
-
-registerRoute("singleAsset", SingleAsset)

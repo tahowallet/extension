@@ -2,7 +2,6 @@
 //
 import React, { useState, useEffect } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import { registerRoute } from "../config/routes"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -21,7 +20,7 @@ export default function Wallet() {
       <CorePage>
         <div className="page_content">
           <div className="section">
-            <WalletAccountBalanceControl balance={account.totalUsdValue} />
+            <WalletAccountBalanceControl balance={account.totalUserValue} />
           </div>
           <div className="section">
             <SharedPanelSwitcher
@@ -31,7 +30,7 @@ export default function Wallet() {
             />
             <div className="panel">
               {panelNum === 0 ? (
-                <WalletAssetList assets={account.assets} />
+                <WalletAssetList assetAmounts={account.assets} />
               ) : (
                 <WalletActivityList activity={account.activity} />
               )}
@@ -75,5 +74,3 @@ export default function Wallet() {
     </div>
   )
 }
-
-registerRoute("wallet", Wallet)

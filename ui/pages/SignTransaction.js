@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
-import { registerRoute, routes } from "../config/routes"
-import SharedButtonLink from "../components/Shared/SharedButtonLink"
+import { Link } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -46,14 +45,14 @@ export default function SignTransaction(props) {
         </div>
       ) : null}
       <div className="footer_actions">
-        <SharedButtonLink component={routes.wallet}>
+        <Link to="/wallet">
           <SharedButton
             label="Reject"
             iconSize="large"
             size="large"
             type="secondary"
           />
-        </SharedButtonLink>
+        </Link>
         <SharedButton
           label="Confirm"
           type="primary"
@@ -131,5 +130,3 @@ SignTransaction.propTypes = {
 SignTransaction.defaultProps = {
   approveSpendOrSwap: "spend",
 }
-
-registerRoute("signTransaction", SignTransaction)
