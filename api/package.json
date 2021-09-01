@@ -38,7 +38,6 @@
     "bnc-sdk": "^3.4.1",
     "dexie": "^3.0.3",
     "emittery": "^0.9.2",
-    "ethereumjs-tx": "^2.1.2",
     "ethereumjs-util": "^7.1.0",
     "ethers": "^5.4.2",
     "node-fetch": "^2.6.1",
