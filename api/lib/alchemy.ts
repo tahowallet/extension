@@ -66,14 +66,7 @@ export async function getAssetTransfers(
         category: json.category,
         from: json.from,
         to: json.to,
-        // do our best to get a well-formed ETH amount in wei. Alchemy appears
-        // to return the "correct" hex string value in the rawContract object if
-        // this is a normal ETH send, but doesn't help us if it's eg a contract
-        // interaction that also includes transaction value
-        value:
-          json.value !== null
-            ? utils.parseUnits(json.value.toFixed(18), "ether").toBigInt()
-            : null,
+        value: null,
         erc721TokenId: json.erc721TokenId,
       }
       if (json.rawContract) {
@@ -91,7 +84,9 @@ export async function getAssetTransfers(
           formattedTransfer.rawContract.decimals === 18 &&
           formattedTransfer.rawContract.value
         ) {
-          formattedTransfer.value = formattedTransfer.rawContract.value
+          formattedTransfer.value = BigNumber.from(
+            formattedTransfer.rawContract.value
+          ).toBigInt()
         }
       }
       return formattedTransfer
