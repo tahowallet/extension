@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import moment from "moment"
 
 interface Props {
   onClick: () => void
@@ -21,11 +20,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             <div className="activity_icon" />
             Receive
           </div>
-          <div className="right">
-            {moment(activity.timeStamp, "YYYY-MM-DDTHH:mm:ss.SSSSZ").format(
-              "MMM D"
-            )}
-          </div>
+          <div className="right">{activity.timeStamp}</div>
         </div>
         <div className="bottom">
           <div className="left">

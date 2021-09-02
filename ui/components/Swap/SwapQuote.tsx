@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from "react"
-import _ from "lodash"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
@@ -11,13 +10,13 @@ export default function SwapQoute(): ReactElement {
 
   function handleApproveClick() {
     setStepComplete(0)
-    _.delay(() => {
+    setTimeout(() => {
       setStepComplete(1)
     }, 1500)
-    _.delay(() => {
+    setTimeout(() => {
       setStepComplete(2)
     }, 3000)
-    _.delay(() => {
+    setTimeout(() => {
       setStepComplete(3)
     }, 4500)
   }
