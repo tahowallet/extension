@@ -48,7 +48,7 @@ export class ChainDatabase extends Dexie {
    *
    * Keyed by the [transaction hash, network name] pair.
    */
-  transactions: Dexie.Table<Transaction, [string, string]>
+  chainTransactions: Dexie.Table<Transaction, [string, string]>
 
   /*
    * Historic account balances.
@@ -65,38 +65,41 @@ export class ChainDatabase extends Dexie {
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
-      transactions:
+      chainTransactions:
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
 
-    this.transactions.hook("updating", (modifications, _, chainTransaction) => {
-      // Only these properties can be updated on a stored transaction.
-      // NOTE: Currently we do NOT throw if another property modification is
-      // attempted; instead, we just ignore it.
-      const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
+    this.chainTransactions.hook(
+      "updating",
+      (modifications, _, chainTransaction) => {
+        // Only these properties can be updated on a stored transaction.
+        // NOTE: Currently we do NOT throw if another property modification is
+        // attempted; instead, we just ignore it.
+        const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
 
-      const filteredModifications = Object.fromEntries(
-        Object.entries(modifications).filter(([k]) =>
-          allowedVariants.includes(k)
+        const filteredModifications = Object.fromEntries(
+          Object.entries(modifications).filter(([k]) =>
+            allowedVariants.includes(k)
+          )
         )
-      )
 
-      // If there is an attempt to modify `firstSeen`, prefer the earliest
-      // first seen value between the update and the existing value.
-      if ("firstSeen" in filteredModifications) {
-        return {
-          ...filteredModifications,
-          firstSeen: Math.min(
-            chainTransaction.firstSeen,
-            filteredModifications.firstSeen
-          ),
+        // If there is an attempt to modify `firstSeen`, prefer the earliest
+        // first seen value between the update and the existing value.
+        if ("firstSeen" in filteredModifications) {
+          return {
+            ...filteredModifications,
+            firstSeen: Math.min(
+              chainTransaction.firstSeen,
+              filteredModifications.firstSeen
+            ),
+          }
         }
-      }
 
-      return filteredModifications
-    })
+        return filteredModifications
+      }
+    )
   }
 
   async getLatestBlock(network: Network): Promise<EIP1559Block> {
@@ -113,7 +116,7 @@ export class ChainDatabase extends Dexie {
   ): Promise<AnyEVMTransaction | null> {
     return (
       (
-        await this.transactions
+        await this.chainTransactions
           .where("[hash+network.name]")
           .equals([txHash, network.name])
           .toArray()
@@ -125,8 +128,8 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"]
   ): Promise<void> {
-    await this.transaction("rw", this.transactions, () => {
-      return this.transactions.put({
+    await this.transaction("rw", this.chainTransactions, () => {
+      return this.chainTransactions.put({
         ...tx,
         firstSeen: Date.now(),
         dataSource,
