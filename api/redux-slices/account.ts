@@ -42,6 +42,7 @@ type CombinedAccountData = {
 }
 
 type AccountState = {
+  account?: any
   accountLoading?: string
   hasAccountError?: boolean
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
