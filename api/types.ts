@@ -1,5 +1,7 @@
 import { TokenList } from "@uniswap/token-lists"
 
+export type HexAddress = string
+
 export interface TokenListCitation {
   name: string
   url: string
@@ -53,7 +55,7 @@ export type NetworkSpecific = {
 }
 
 export type SmartContract = NetworkSpecific & {
-  contractAddress: string
+  contractAddress: HexAddress
 }
 
 export type NetworkSpecificAsset = NetworkSpecific & Asset
@@ -132,7 +134,7 @@ export interface AccountBalance {
   /*
    * The account whose balance was measured.
    */
-  account: string
+  account: HexAddress
   /*
    * The measured balance and the asset in which it's denominated.
    */
@@ -160,7 +162,7 @@ export interface AccountBalance {
  * An account on a particular network. That's it. That's the comment.
  */
 export interface AccountNetwork {
-  account: string
+  account: HexAddress
   network: Network
 }
 
@@ -190,8 +192,8 @@ export interface EIP1559Block extends EVMBlock {
 
 export interface EVMTransaction {
   hash: string
-  from: string
-  to: string
+  from: HexAddress
+  to: HexAddress
   gas: bigint
   gasPrice: bigint | null
   maxFeePerGas: bigint | null
@@ -245,3 +247,12 @@ export type AnyEVMTransaction =
   | ConfirmedEVMTransaction
   | SignedEVMTransaction
   | SignedConfirmedEVMTransaction
+
+export type AssetTransfer = {
+  network: Network
+  assetAmount: AssetAmount
+  from: HexAddress
+  to: HexAddress
+  dataSource: "alchemy" | "local"
+  txHash: string
+}

@@ -133,26 +133,22 @@ export default class IndexingService implements Service<Events> {
   private async connectChainServiceEvents(): Promise<void> {
     const chain = await this.chainService
 
-    // listen for alchemyAssetTransfers, and if we find them, track those tokens
+    // listen for assetTransfers, and if we find them, track those tokens
     // TODO update for NFTs
     chain.emitter.on(
-      "alchemyAssetTransfers",
+      "assetTransfers",
       async ({ accountNetwork, assetTransfers }) => {
-        assetTransfers
-          .filter((t) => t.category === "token" && t.erc721TokenId === null)
-          .forEach((transfer) => {
-            if ("rawContract" in transfer && transfer.rawContract.address) {
-              this.addTokenToTrackByContract(
-                accountNetwork,
-                transfer.rawContract.address,
-                transfer.rawContract.decimals
-              )
-            } else {
-              console.warn(
-                `Alchemy token transfer missing contract metadata ${transfer}`
-              )
-            }
-          })
+        assetTransfers.forEach((transfer) => {
+          const fungibleAsset = transfer.assetAmount
+            .asset as SmartContractFungibleAsset
+          if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
+            this.addTokenToTrackByContract(
+              accountNetwork,
+              fungibleAsset.contractAddress,
+              fungibleAsset.decimals
+            )
+          }
+        })
       }
     )
   }

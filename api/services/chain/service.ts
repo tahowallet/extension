@@ -12,12 +12,13 @@ import {
   AccountBalance,
   AccountNetwork,
   AnyEVMTransaction,
+  AssetTransfer,
   EIP1559Block,
   FungibleAsset,
   Network,
   SignedEVMTransaction,
 } from "../../types"
-import { getAssetTransfers, AlchemyAssetTransfer } from "../../lib/alchemy"
+import { getAssetTransfers } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences/service"
@@ -178,9 +179,9 @@ interface AlarmSchedule {
 
 interface Events {
   accountBalance: AccountBalance
-  alchemyAssetTransfers: {
+  assetTransfers: {
     accountNetwork: AccountNetwork
-    assetTransfers: AlchemyAssetTransfer[]
+    assetTransfers: AssetTransfer[]
   }
   newBlock: EIP1559Block
   transaction: AnyEVMTransaction
@@ -420,14 +421,14 @@ export default class ChainService implements Service<Events> {
 
       // TODO if this fails, other services still needs a way to kick
       // off monitoring.
-      this.emitter.emit("alchemyAssetTransfers", {
+      this.emitter.emit("assetTransfers", {
         accountNetwork,
         assetTransfers,
       })
 
       /// send all found tx hashes into a queue to retrieve + cache
       assetTransfers.forEach((a) =>
-        this.queueTransactionHashToRetrieve(ETHEREUM, a.hash)
+        this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
       )
     } catch (err) {
       console.error(err)

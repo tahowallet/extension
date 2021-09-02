@@ -3,22 +3,10 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { BigNumber, utils } from "ethers"
+import { utils } from "ethers"
 
-export interface AlchemyAssetTransfer {
-  hash: string
-  blockHeight: number
-  category: "token" | "internal" | "external"
-  from: string | null
-  to: string | null
-  rawContract?: {
-    address: string | null
-    decimals: number | null
-    value: BigInt | null
-  }
-  value: BigInt | null
-  erc721TokenId: string | null
-}
+import { AssetTransfer } from "../types"
+import { ETH, ETHEREUM } from "../constants"
 
 // JSON Type Definition for the Alchemy assetTransfers API. See RFC 8927 or
 // jsontypedef.com for more details
@@ -75,8 +63,8 @@ function validateAlchemyAssetTransfer(
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
  * account.
  *
- * Note that pagination isn't supported, so any responses after 1k transfers
- * will be dropped.
+ * Note that pagination isn't supported in this wrapper, so any responses after
+ * 1k transfers will be dropped.
  *
  * More information https://docs.alchemy.com/alchemy/documentation/apis/enhanced-apis/transfers-api#alchemy_getassettransfers
  * @param provider - an Alchemy ethers provider
@@ -84,11 +72,12 @@ function validateAlchemyAssetTransfer(
  * @param fromBlock - the block height specifying how far in the past we want
  *        to look.
  */
+// eslint-disable-next-line import/prefer-default-export
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   account: string,
   fromBlock: number
-): Promise<AlchemyAssetTransfer[]> {
+): Promise<AssetTransfer[]> {
   const params = {
     fromBlock: utils.hexValue(fromBlock),
     toBlock: "latest",
@@ -111,7 +100,7 @@ export async function getAssetTransfers(
 
   return rpcResponses[0].transfers
     .concat(rpcResponses[1].transfers)
-    .map((json) => {
+    .map((json: unknown) => {
       const transferResponse = validateAlchemyAssetTransfer(json)
       if (!transferResponse) {
         console.warn(
@@ -120,36 +109,43 @@ export async function getAssetTransfers(
         )
         return null
       }
-      const formattedTransfer: AlchemyAssetTransfer = {
-        hash: json.hash,
-        blockHeight: BigNumber.from(json.blockNum).toNumber(),
-        category: json.category,
-        from: json.from,
-        to: json.to,
-        value: null,
-        erc721TokenId: json.erc721TokenId,
+
+      // TODO handle NFT asset lookup properly
+      if (transferResponse.erc721TokenId) {
+        return null
       }
-      if (json.rawContract) {
-        const contract = json.rawContract
-        formattedTransfer.rawContract = {
-          address: contract.address || null,
-          value:
-            contract.value !== null
-              ? BigNumber.from(contract.value).toBigInt()
-              : null,
-          decimals: contract.decimal !== null ? Number(contract.decimal) : null,
-        }
-        if (
-          contract.address === null &&
-          formattedTransfer.rawContract.decimals === 18 &&
-          formattedTransfer.rawContract.value
-        ) {
-          formattedTransfer.value = BigNumber.from(
-            formattedTransfer.rawContract.value
-          ).toBigInt()
-        }
+
+      // we don't care about 0-value transfers
+      // TODO handle nonfungible assets properly
+      // TODO handle assets with a contract address and no name
+      if (
+        !transferResponse.rawContract ||
+        !transferResponse.rawContract.value ||
+        !transferResponse.rawContract.decimal ||
+        !transferResponse.asset
+      ) {
+        return null
       }
-      return formattedTransfer
+
+      const asset = !transferResponse.rawContract.address
+        ? {
+            contractAddress: transferResponse.rawContract.address,
+            decimals: Number(BigInt(transferResponse.rawContract.decimal)),
+            symbol: transferResponse.asset,
+            homeNetwork: ETHEREUM, // TODO is this true? asset lookup
+          }
+        : ETH
+      return {
+        network: ETHEREUM, // TODO make this friendly across other networks
+        assetAmount: {
+          asset,
+          amount: BigInt(transferResponse.rawContract.value),
+        },
+        txHash: transferResponse.hash,
+        to: transferResponse.to,
+        from: transferResponse.from,
+        dataSource: "alchemy",
+      } as AssetTransfer
     })
     .filter((t) => t)
 }
