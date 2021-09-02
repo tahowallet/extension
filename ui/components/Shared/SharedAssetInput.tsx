@@ -5,7 +5,7 @@ import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface SelectTokenMenuContentProps {
-  setSelectedTokenAndClose: (token: { name: string }) => void
+  setSelectedTokenAndClose: (token: any) => void
 }
 
 function SelectTokenMenuContent(
@@ -21,7 +21,7 @@ function SelectTokenMenuContent(
           <input
             type="text"
             className="search_input"
-            placeholder="Search by name or address"
+            placeholder="Search by name or address 1"
           />
           <span className="icon_search" />
         </div>

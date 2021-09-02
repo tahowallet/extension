@@ -5,7 +5,7 @@ import SharedButton from "../components/Shared/SharedButton"
 
 export default function Receive(): ReactElement {
   const { account } = useBackgroundSelector((background) => background.account)
-  if (!account?.address) return false
+  if (!account?.address) return <></>
 
   return (
     <section>
