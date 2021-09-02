@@ -1,14 +1,14 @@
 import React, { ReactElement } from "react"
 
 interface Props {
-  onClick?: (token: { name: boolean }) => void
+  onClick?: (token: { name: string }) => void
 }
 
 export default function SharedAssetItem(props: Props): ReactElement {
   const { onClick } = props
 
   function handleClick() {
-    onClick({ name: true })
+    onClick({ name: "" })
   }
 
   return (

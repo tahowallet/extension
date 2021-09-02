@@ -5,7 +5,7 @@ import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface SelectTokenMenuContentProps {
-  setSelectedTokenAndClose: (token: any) => void
+  setSelectedTokenAndClose: (token: { name: string }) => void
 }
 
 function SelectTokenMenuContent(
