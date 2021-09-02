@@ -29,6 +29,9 @@ const baseConfig: Configuration = {
         use: [
           {
             loader: "babel-loader",
+            options: {
+              cacheDirectory: true,
+            },
           },
         ],
       },
