@@ -3,6 +3,7 @@ import Emittery from "emittery"
 
 import {
   AccountBalance,
+  AccountNetwork,
   CoinGeckoAsset,
   FungibleAsset,
   Network,
@@ -28,8 +29,9 @@ interface AlarmSchedule {
 }
 
 interface Events {
-  price: PricePoint
   accountBalance: AccountBalance
+  price: PricePoint
+  assets: SmartContractFungibleAsset[]
 }
 
 /*
@@ -89,6 +91,9 @@ export default class IndexingService implements Service<Events> {
         this.handlePriceAlarm()
       }
     })
+
+    this.connectChainServiceEvents()
+    await this.fetchAndCacheTokenLists()
   }
 
   async stopService(): Promise<void> {
@@ -125,6 +130,73 @@ export default class IndexingService implements Service<Events> {
    * PRIVATE METHODS *
    ******************* */
 
+  private async connectChainServiceEvents(): Promise<void> {
+    const chain = await this.chainService
+
+    // listen for alchemyAssetTransfers, and if we find them, track those tokens
+    // TODO update for NFTs
+    chain.emitter.on(
+      "alchemyAssetTransfers",
+      async ({ accountNetwork, assetTransfers }) => {
+        assetTransfers
+          .filter((t) => t.category === "token" && t.erc721TokenId === null)
+          .forEach((transfer) => {
+            if ("rawContract" in transfer && transfer.rawContract.address) {
+              this.addTokenToTrackByContract(
+                accountNetwork,
+                transfer.rawContract.address,
+                transfer.rawContract.decimals
+              )
+            } else {
+              console.warn(
+                `Alchemy token transfer missing contract metadata ${transfer}`
+              )
+            }
+          })
+      }
+    )
+  }
+
+  /*
+   * Add an asset to track to a particular account and network, specified by the
+   * contract address and optional decimals.
+   *
+   * If the asset has already been cached, use that. Otherwise, infer asset
+   * details from the contract and outside services.
+   *
+   * @param accountNetwork the account and network on which this asset should
+   *        be tracked
+   * @param contractAddress the address of the token contract on this network
+   * @param decimals optionally include the number of decimals tracked by a
+   *        fungible asset. Useful in case this asset isn't found in existing
+   *        metadata.
+   */
+  private async addTokenToTrackByContract(
+    accountNetwork: AccountNetwork,
+    contractAddress: string,
+    decimals?: number
+  ): Promise<void> {
+    const knownAssets = await this.getCachedNetworkAssets()
+    const found = knownAssets.find(
+      (asset) =>
+        asset.homeNetwork.name === accountNetwork.network.name &&
+        asset.contractAddress === contractAddress
+    )
+    if (found) {
+      this.addTokenToTrack(found)
+    } else {
+      const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
+        accountNetwork.network,
+        contractAddress
+      )
+      if (customAsset) {
+        this.addTokenToTrack(customAsset)
+      } else {
+        // TODO kick off metadata inference via a contract read + perhaps a CoinGecko lookup?
+      }
+    }
+  }
+
   private async handlePriceAlarm(): Promise<void> {
     // ETH and BTC vs major currencies
     const pricePoints = await getPrices(
@@ -142,23 +214,35 @@ export default class IndexingService implements Service<Events> {
     // TODO get the prices of all tokens to track and save them
   }
 
-  private async handleTokenAlarm(): Promise<void> {
+  private async fetchAndCacheTokenLists(): Promise<void> {
     const tokenListPrefs = await (
       await this.preferenceService
     ).getTokenListPreferences()
-    // make sure each token list in preferences is loaded
-    await Promise.all(
+    // load each token list in preferences
+    await Promise.allSettled(
       tokenListPrefs.urls.map(async (url) => {
         const cachedList = await this.db.getLatestTokenList(url)
         if (!cachedList) {
-          const newListRef = await fetchAndValidateTokenList(url)
-          await this.db.saveTokenList(url, newListRef.tokenList)
+          try {
+            const newListRef = await fetchAndValidateTokenList(url)
+            await this.db.saveTokenList(url, newListRef.tokenList)
+          } catch (err) {
+            console.error(
+              `Error fetching, validating, and saving token list ${url}`
+            )
+          }
         }
+        this.emitter.emit("assets", await this.getCachedNetworkAssets())
       })
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up
+  }
+
+  private async handleTokenAlarm(): Promise<void> {
+    // no need to block here, as the first fetch blocks the entire service init
+    this.fetchAndCacheTokenLists()
 
     const tokensToTrack = await this.db.getTokensToTrack()
     // TODO only supports Ethereum mainnet, doesn't support multi-network assets

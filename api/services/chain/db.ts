@@ -21,25 +21,33 @@ interface Migration {
 }
 
 // TODO keep track of blocks invalidated by a reorg
-// TODO keep track of transaction "first seen" time
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
   /*
    * Accounts whose transaction and balances should be tracked on a particular
    * network.
+   *
+   * Keyed by the [account, network name, network chain ID] triplet. Note that
+   * "account" in this context refers to e.g. an Ethereum address.
    */
-  accountsToTrack: Dexie.Table<AccountNetwork, number>
+  accountsToTrack: Dexie.Table<AccountNetwork, [string, string, string]>
 
   /*
    * Partial block headers cached to track reorgs and network status.
+   *
+   * Keyed by the [block hash, network name] pair.
    */
-  blocks: Dexie.Table<EIP1559Block, number>
+  blocks: Dexie.Table<EIP1559Block, [string, string]>
 
   /*
-   * Historic and pending transactions relevant to tracked accounts.
+   * Historic and pending chain transactions relevant to tracked accounts.
+   * chainTransaction is used in this context to distinguish from database
+   * transactions.
+   *
+   * Keyed by the [transaction hash, network name] pair.
    */
-  transactions: Dexie.Table<Transaction, number>
+  chainTransactions: Dexie.Table<Transaction, [string, string]>
 
   /*
    * Historic account balances.
@@ -56,11 +64,41 @@ export class ChainDatabase extends Dexie {
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
-      transactions:
+      chainTransactions:
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
+
+    this.chainTransactions.hook(
+      "updating",
+      (modifications, _, chainTransaction) => {
+        // Only these properties can be updated on a stored transaction.
+        // NOTE: Currently we do NOT throw if another property modification is
+        // attempted; instead, we just ignore it.
+        const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
+
+        const filteredModifications = Object.fromEntries(
+          Object.entries(modifications).filter(([k]) =>
+            allowedVariants.includes(k)
+          )
+        )
+
+        // If there is an attempt to modify `firstSeen`, prefer the earliest
+        // first seen value between the update and the existing value.
+        if ("firstSeen" in filteredModifications) {
+          return {
+            ...filteredModifications,
+            firstSeen: Math.min(
+              chainTransaction.firstSeen,
+              filteredModifications.firstSeen
+            ),
+          }
+        }
+
+        return filteredModifications
+      }
+    )
   }
 
   async getLatestBlock(network: Network): Promise<EIP1559Block> {
@@ -77,7 +115,7 @@ export class ChainDatabase extends Dexie {
   ): Promise<AnyEVMTransaction | null> {
     return (
       (
-        await this.transactions
+        await this.chainTransactions
           .where("[hash+network.name]")
           .equals([txHash, network.name])
           .toArray()
@@ -89,21 +127,12 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"]
   ): Promise<void> {
-    await this.transaction("rw", this.transactions, async () => {
-      const key = [tx.hash, tx.network.name]
-      const existingTx = await this.transactions.get(key)
-      if (existingTx) {
-        await this.transactions
-          .where("[hash+network.name]")
-          .equals(key)
-          .modify({ blockHeight: tx.blockHeight, blockHash: tx.blockHash })
-      } else {
-        await this.transactions.put({
-          ...tx,
-          firstSeen: Date.now(),
-          dataSource,
-        })
-      }
+    await this.transaction("rw", this.chainTransactions, () => {
+      return this.chainTransactions.put({
+        ...tx,
+        firstSeen: Date.now(),
+        dataSource,
+      })
     })
   }
 
@@ -127,12 +156,16 @@ export class ChainDatabase extends Dexie {
     return balanceCandidates.length > 0 ? balanceCandidates[0] : null
   }
 
+  async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
+    await this.accountsToTrack.put(accountNetwork)
+  }
+
   async setAccountsToTrack(
-    accountAndNetworks: AccountNetwork[]
+    accountAndNetworks: Set<AccountNetwork>
   ): Promise<void> {
     await this.transaction("rw", this.accountsToTrack, () => {
       this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd(accountAndNetworks)
+      this.accountsToTrack.bulkAdd([...accountAndNetworks])
     })
   }
 
