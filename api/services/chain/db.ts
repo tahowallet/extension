@@ -28,18 +28,27 @@ export class ChainDatabase extends Dexie {
   /*
    * Accounts whose transaction and balances should be tracked on a particular
    * network.
+   *
+   * Keyed by the [account, network name, network chain ID] triplet. Note that
+   * "account" in this context refers to e.g. an Ethereum address.
    */
-  accountsToTrack: Dexie.Table<AccountNetwork, number>
+  accountsToTrack: Dexie.Table<AccountNetwork, [string, string, string]>
 
   /*
    * Partial block headers cached to track reorgs and network status.
+   *
+   * Keyed by the [block hash, network name] pair.
    */
-  blocks: Dexie.Table<EIP1559Block, number>
+  blocks: Dexie.Table<EIP1559Block, [string, string]>
 
   /*
-   * Historic and pending transactions relevant to tracked accounts.
+   * Historic and pending chain transactions relevant to tracked accounts.
+   * chainTransaction is used in this context to distinguish from database
+   * transactions.
+   *
+   * Keyed by the [transaction hash, network name] pair.
    */
-  transactions: Dexie.Table<Transaction, number>
+  transactions: Dexie.Table<Transaction, [string, string]>
 
   /*
    * Historic account balances.
