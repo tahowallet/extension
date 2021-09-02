@@ -70,6 +70,33 @@ export class ChainDatabase extends Dexie {
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
+
+    this.transactions.hook("updating", (modifications, _, chainTransaction) => {
+      // Only these properties can be updated on a stored transaction.
+      // NOTE: Currently we do NOT throw if another property modification is
+      // attempted; instead, we just ignore it.
+      const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
+
+      const filteredModifications = Object.fromEntries(
+        Object.entries(modifications).filter(([k]) =>
+          allowedVariants.includes(k)
+        )
+      )
+
+      // If there is an attempt to modify `firstSeen`, prefer the earliest
+      // first seen value between the update and the existing value.
+      if ("firstSeen" in filteredModifications) {
+        return {
+          ...filteredModifications,
+          firstSeen: Math.min(
+            chainTransaction.firstSeen,
+            filteredModifications.firstSeen
+          ),
+        }
+      }
+
+      return filteredModifications
+    })
   }
 
   async getLatestBlock(network: Network): Promise<EIP1559Block> {
@@ -98,21 +125,12 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"]
   ): Promise<void> {
-    await this.transaction("rw", this.transactions, async () => {
-      const key = [tx.hash, tx.network.name]
-      const existingTx = await this.transactions.get(key)
-      if (existingTx) {
-        await this.transactions
-          .where("[hash+network.name]")
-          .equals(key)
-          .modify({ blockHeight: tx.blockHeight, blockHash: tx.blockHash })
-      } else {
-        await this.transactions.put({
-          ...tx,
-          firstSeen: Date.now(),
-          dataSource,
-        })
-      }
+    await this.transaction("rw", this.transactions, () => {
+      return this.transactions.put({
+        ...tx,
+        firstSeen: Date.now(),
+        dataSource,
+      })
     })
   }
 
