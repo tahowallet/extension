@@ -102,11 +102,13 @@ export class ChainDatabase extends Dexie {
   }
 
   async getLatestBlock(network: Network): Promise<EIP1559Block> {
-    return this.blocks
-      .where("[network.name+timestamp]")
-      .above([network.name, Date.now() - 60 * 60 * 24])
-      .reverse()
-      .sortBy("timestamp")[0]
+    return (
+      await this.blocks
+        .where("[network.name+timestamp]")
+        .above([network.name, Date.now() - 60 * 60 * 24])
+        .reverse()
+        .sortBy("timestamp")
+    )[0]
   }
 
   async getTransaction(
