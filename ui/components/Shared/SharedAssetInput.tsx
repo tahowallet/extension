@@ -21,7 +21,7 @@ function SelectTokenMenuContent(
           <input
             type="text"
             className="search_input"
-            placeholder="Search by name or address 1"
+            placeholder="Search by name or address"
           />
           <span className="icon_search" />
         </div>
