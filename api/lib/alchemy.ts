@@ -5,12 +5,14 @@ import {
 } from "@ethersproject/providers"
 import { utils } from "ethers"
 
-import { AssetTransfer } from "../types"
+import { AssetTransfer, HexString } from "../types"
 import { ETH, ETHEREUM } from "../constants"
 
-// JSON Type Definition for the Alchemy assetTransfers API. See RFC 8927 or
-// jsontypedef.com for more details
-const alchemyAssetTransferJSONTypedef = {
+// JSON Type Definition for the Alchemy assetTransfers API.
+// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
+//
+// See RFC 8927 or jsontypedef.com to learn more about JTD.
+const alchemyAssetTransferJTD = {
   properties: {
     asset: { type: "string", nullable: true },
     hash: { type: "string" },
@@ -49,11 +51,11 @@ type AlchemyAssetTransferResponse = {
   erc721TokenId: string | null
 }
 
-function validateAlchemyAssetTransfer(
+function validateAlchemyAssetTransferResponse(
   json: unknown
 ): AlchemyAssetTransferResponse | null {
   const ajv = new Ajv()
-  if (!ajv.validate(alchemyAssetTransferJSONTypedef, json)) {
+  if (!ajv.validate(alchemyAssetTransferJTD, json)) {
     return null
   }
   return json as AlchemyAssetTransferResponse
@@ -72,7 +74,6 @@ function validateAlchemyAssetTransfer(
  * @param fromBlock - the block height specifying how far in the past we want
  *        to look.
  */
-// eslint-disable-next-line import/prefer-default-export
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   account: string,
@@ -83,6 +84,8 @@ export async function getAssetTransfers(
     toBlock: "latest",
     // excludeZeroValue: false,
   }
+
+  // TODO handle partial failure
   const rpcResponses = await Promise.all([
     provider.send("alchemy_getAssetTransfers", [
       {
@@ -101,7 +104,7 @@ export async function getAssetTransfers(
   return rpcResponses[0].transfers
     .concat(rpcResponses[1].transfers)
     .map((json: unknown) => {
-      const transferResponse = validateAlchemyAssetTransfer(json)
+      const transferResponse = validateAlchemyAssetTransferResponse(json)
       if (!transferResponse) {
         console.warn(
           "Alchemy asset transfer response didn't validate, did the API change?",
@@ -132,7 +135,7 @@ export async function getAssetTransfers(
             contractAddress: transferResponse.rawContract.address,
             decimals: Number(BigInt(transferResponse.rawContract.decimal)),
             symbol: transferResponse.asset,
-            homeNetwork: ETHEREUM, // TODO is this true? asset lookup
+            homeNetwork: ETHEREUM, // TODO is this true?
           }
         : ETH
       return {
@@ -148,4 +151,76 @@ export async function getAssetTransfers(
       } as AssetTransfer
     })
     .filter((t) => t)
+}
+
+// JSON Type Definition for the Alchemy token balance API.
+// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
+//
+// See RFC 8927 or jsontypedef.com for more detail to learn more about JTD.
+const alchemyTokenBalanceJTD = {
+  properties: {
+    address: { type: "string" },
+    tokenBalances: {
+      elements: {
+        properties: {
+          contractAddress: { type: "string" },
+          error: { type: "string", nullable: true },
+          tokenBalance: { type: "string", nullable: true },
+        },
+      },
+    },
+  },
+  additionalProperties: false,
+}
+
+// The type of a validated token balance API response, corresponding to the
+// above JTD.
+type AlchemyTokenBalanceResponse = {
+  address: string
+  tokenBalances: {
+    contractAddress: string
+    error: string | null
+    tokenBalance: string | null
+  }[]
+}
+
+function validateAlchemyTokenBalanceResponse(
+  json: unknown
+): AlchemyTokenBalanceResponse | null {
+  const ajv = new Ajv()
+  if (!ajv.validate(alchemyTokenBalanceJTD, json)) {
+    return null
+  }
+  return json as AlchemyTokenBalanceResponse
+}
+
+/*
+ * Use Alchemy's getTokenBalances call to get balances for a particular address.
+ *
+ *
+ * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
+ * @param provider - an Alchemy ethers provider
+ * @param account - the account whose balances we're fetching
+ * @param tokens - an optional list of hex-string contract addresses. If the list
+ *                 isn't provided, Alchemy will choose based on the top 100
+ *                 high-volume tokens on its platform
+ */
+export async function getTokenBalances(
+  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  account: string,
+  tokens?: HexString[]
+): Promise<{ contractAddress: string; amount: bigint }[]> {
+  const json: unknown = await provider.send("alchemy_getTokenBalances", [
+    account,
+    tokens || "DEFAULT_TOKENS",
+  ])
+  const tokenResponse = validateAlchemyTokenBalanceResponse(json)
+
+  // TODO log balances with errors, consider returning an error type
+  return tokenResponse.tokenBalances
+    .filter((b) => b.error === null && b.tokenBalance !== null)
+    .map((tokenBalance) => ({
+      contractAddress: tokenBalance.contractAddress,
+      amount: BigInt(tokenBalance.tokenBalance),
+    }))
 }
