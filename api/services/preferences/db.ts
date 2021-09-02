@@ -14,9 +14,9 @@ export interface Migration {
 }
 
 export class PreferenceDatabase extends Dexie {
-  preferences: Dexie.Table<Preferences, number>
+  private preferences!: Dexie.Table<Preferences, number>
 
-  migrations: Dexie.Table<Migration, number>
+  private migrations!: Dexie.Table<Migration, number>
 
   constructor() {
     super("tally/preferences")
@@ -26,28 +26,28 @@ export class PreferenceDatabase extends Dexie {
     })
   }
 
-  async getLatestPreferences() {
+  async getLatestPreferences(): Promise<Preferences | undefined> {
     return this.preferences.reverse().first()
   }
-}
 
-export async function getDB(): Promise<PreferenceDatabase> {
-  return new PreferenceDatabase()
+  private async migrate() {
+    const numMigrations = await this.migrations.count()
+    if (numMigrations === 0) {
+      await this.transaction("rw", this.migrations, async () => {
+        this.migrations.add({ id: 0, appliedAt: Date.now() })
+        // TODO decide migrations before the initial release
+      })
+    }
+  }
 }
 
 export async function getOrCreateDB(): Promise<PreferenceDatabase> {
-  // TODO run proper dependency and type-free migrations
-  const db = await getDB()
-  // if there are no migrations, this is a new database.
-  const numMigrations = await db.migrations.count()
-  if (numMigrations === 0) {
-    await db.transaction("rw", db.migrations, db.preferences, async () => {
-      db.migrations.add({ id: 0, appliedAt: Date.now() })
-      db.preferences.add({
-        ...DEFAULT_PREFERENCES,
-        savedAt: Date.now(),
-      })
-    })
-  }
+  const db = new PreferenceDatabase()
+
+  // Call known-private migrate function, effectively treating it as
+  // file-private.
+  // eslint-disable-next-line dot-notation
+  await db["migrate"]()
+
   return db
 }
