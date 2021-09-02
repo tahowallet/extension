@@ -21,7 +21,6 @@ interface Migration {
 }
 
 // TODO keep track of blocks invalidated by a reorg
-// TODO keep track of transaction "first seen" time
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
