@@ -1,4 +1,4 @@
-export const PERSITIANCE_KEY = "tally-vault"
+export const PERSISTENCE_KEY = "tally-vault"
 
 export const HD_PATHS = {
   Ethereum: "m’/44’/60’/0’/0",

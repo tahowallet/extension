@@ -252,14 +252,12 @@ export type AnyEVMTransaction =
 
 // KEY TYPES
 
-export enum KEY_TYPES {
+export enum KeyTypes { // eslint-disable-line no-shadow
   mnemonicBIP39S128 = "mnemonic#bip39:128",
   mnemonicBIP39S256 = "mnemonic#bip39:256",
   metamaskMnemonic = "mnemonic#metamask",
   singleSECP = "single#secp256k1",
 }
-
-export type KeyTypeStrings = keyof typeof KEY_TYPES
 
 export type MsgParams = {
   data: string
@@ -269,14 +267,14 @@ export type MsgParams = {
 // TODO: type declarations in @tallyho/eth-hd-tree
 export interface Seed {
   data: string // seed material
-  type: KeyTypeStrings
+  type: KeyTypes
   index: number // the current account index
   reference: string // unique reference
   path: string // default path to derive new keys
 }
 
 export type ImportData = {
-  type: KeyTypeStrings
+  type: keyof typeof KeyTypes
   data: string
   password?: string
 }
