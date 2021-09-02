@@ -105,7 +105,7 @@ function enrichAssetAmountWithUserAmounts(
 }
 
 // Fill in USD amounts for an account balance.
-function enrichWithUerAmounts(
+function enrichWithUserAmounts(
   accountBalance: AccountBalance
 ): AccountBalanceWithUserValue {
   return {
@@ -176,15 +176,14 @@ const accountSlice = createSlice({
 
       const existingAccountData = immerState.accountsData[updatedAccount]
       if (existingAccountData && existingAccountData !== "loading") {
-        existingAccountData.balances[updatedAssetSymbol] = enrichWithUerAmounts(
-          updatedAccountBalance
-        )
+        existingAccountData.balances[updatedAssetSymbol] =
+          enrichWithUserAmounts(updatedAccountBalance)
       } else {
         immerState.accountsData[updatedAccount] = {
           account: updatedAccount,
           network: updatedAccountBalance.network,
           balances: {
-            [updatedAssetSymbol]: enrichWithUerAmounts(updatedAccountBalance),
+            [updatedAssetSymbol]: enrichWithUserAmounts(updatedAccountBalance),
           },
           unconfirmedTransactions: [],
           confirmedTransactions: [],

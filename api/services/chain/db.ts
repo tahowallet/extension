@@ -156,12 +156,16 @@ export class ChainDatabase extends Dexie {
     return balanceCandidates.length > 0 ? balanceCandidates[0] : null
   }
 
+  async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
+    await this.accountsToTrack.put(accountNetwork)
+  }
+
   async setAccountsToTrack(
-    accountAndNetworks: AccountNetwork[]
+    accountAndNetworks: Set<AccountNetwork>
   ): Promise<void> {
     await this.transaction("rw", this.accountsToTrack, () => {
       this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd(accountAndNetworks)
+      this.accountsToTrack.bulkAdd([...accountAndNetworks])
     })
   }
 
