@@ -1,7 +1,6 @@
 import path from "path"
 import webpack, { Configuration, WebpackOptionsNormalized } from "webpack"
 import { merge as webpackMerge } from "webpack-merge"
-
 import SizePlugin from "size-plugin"
 import TerserPlugin from "terser-webpack-plugin"
 import LiveReloadPlugin from "webpack-livereload-plugin"
@@ -25,19 +24,13 @@ const baseConfig: Configuration = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.(tsx|ts|jsx)?$/,
         exclude: /node_modules(?!\/@tallyho)|webpack/,
         use: [
           {
-            loader: "ts-loader",
-            options: { compilerOptions: { noEmit: false } },
+            loader: "babel-loader",
           },
         ],
-      },
-      {
-        test: /\.jsx?$/,
-        exclude: /node_modules(?!\/@tallyho)|webpack/,
-        use: "babel-loader",
       },
     ],
   },
