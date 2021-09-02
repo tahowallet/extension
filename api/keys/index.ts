@@ -7,10 +7,10 @@ import {
   FeeMarketEIP1559Transaction,
   FeeMarketEIP1559TxData,
 } from "@ethereumjs/tx"
-import { TxParams, ImportData, Seed, MsgParams, KEY_TYPES } from "../types"
+import { TxParams, ImportData, Seed, MsgParams, KeyTypes } from "../types"
 import { getPersistedState, persistState } from "../lib/db"
 import {
-  PERSITIANCE_KEY,
+  PERSISTENCE_KEY,
   LOCKED_ERROR,
   ADDRESS_NOT_FOUND_ERROR,
 } from "./constants"
@@ -97,7 +97,7 @@ export default class Keys {
   #isready: Promise<boolean>
 
   constructor(password?: string) {
-    this.#vault = getPersistedState(PERSITIANCE_KEY)
+    this.#vault = getPersistedState(PERSISTENCE_KEY)
     this.#locked = !!password
     this.#password = password
     this.#masterKeyring = new KeyringController()
@@ -182,7 +182,7 @@ export default class Keys {
       strength: 256,
     })
     const firstAddress = await keyring.addAccounts(1)
-    await this.#saveKeyring(keyring, KEY_TYPES.mnemonicBIP39S256)
+    await this.#saveKeyring(keyring, KeyTypes.mnemonicBIP39S256)
     return keyring.getAccounts()
   }
 
@@ -476,10 +476,10 @@ export default class Keys {
         seeds: this.#seeds,
       }
     )
-    persistState(PERSITIANCE_KEY, encryptedState)
+    persistState(PERSISTENCE_KEY, encryptedState)
   }
 
-  async #saveKeyring(keyring: any, keyType: KEY_TYPES): Promise<void> {
+  async #saveKeyring(keyring: any, keyType: KeyTypes): Promise<void> {
     const { mnemonic, numberOfAccounts, hdPath } = await keyring.serialize()
     const reference = await createReference(mnemonic)
     this.#seeds.push({
