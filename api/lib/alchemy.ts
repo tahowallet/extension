@@ -1,3 +1,4 @@
+import Ajv from "ajv/dist/jtd"
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
@@ -17,6 +18,57 @@ export interface AlchemyAssetTransfer {
   }
   value: BigInt | null
   erc721TokenId: string | null
+}
+
+// JSON Type Definition for the Alchemy assetTransfers API. See RFC 8927 or
+// jsontypedef.com for more details
+const alchemyAssetTransferJSONTypedef = {
+  properties: {
+    asset: { type: "string", nullable: true },
+    hash: { type: "string" },
+    blockNum: { type: "string" },
+    category: { enum: ["token", "internal", "external"] },
+    from: { type: "string", nullable: true },
+    to: { type: "string", nullable: true },
+    erc721TokenId: { type: "string", nullable: true },
+  },
+  optionalProperties: {
+    rawContract: {
+      properties: {
+        address: { type: "string", nullable: true },
+        decimal: { type: "string", nullable: true },
+        value: { type: "string", nullable: true },
+      },
+    },
+  },
+  additionalProperties: true,
+}
+
+// The type corresponding to the above JTD. In an ideal world, these two
+// wouldn't be duplicative, stemming from a single code generator.
+type AlchemyAssetTransferResponse = {
+  asset: string | null
+  hash: string
+  blockNum: string
+  category: "token" | "internal" | "external"
+  from: string | null
+  to: string | null
+  rawContract?: {
+    address: string | null
+    decimal: string | null
+    value: string | null
+  }
+  erc721TokenId: string | null
+}
+
+function validateAlchemyAssetTransfer(
+  json: unknown
+): AlchemyAssetTransferResponse | null {
+  const ajv = new Ajv()
+  if (!ajv.validate(alchemyAssetTransferJSONTypedef, json)) {
+    return null
+  }
+  return json as AlchemyAssetTransferResponse
 }
 
 /*
@@ -60,6 +112,14 @@ export async function getAssetTransfers(
   return rpcResponses[0].transfers
     .concat(rpcResponses[1].transfers)
     .map((json) => {
+      const transferResponse = validateAlchemyAssetTransfer(json)
+      if (!transferResponse) {
+        console.warn(
+          "Alchemy asset transfer response didn't validate, did the API change?",
+          json
+        )
+        return null
+      }
       const formattedTransfer: AlchemyAssetTransfer = {
         hash: json.hash,
         blockHeight: BigNumber.from(json.blockNum).toNumber(),
@@ -91,4 +151,5 @@ export async function getAssetTransfers(
       }
       return formattedTransfer
     })
+    .filter((t) => t)
 }
