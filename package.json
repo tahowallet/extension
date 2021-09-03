@@ -34,7 +34,7 @@
   ],
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
-    "@tallyho/tally-api": "0.0.1",
+    "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
