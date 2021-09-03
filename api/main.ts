@@ -1,6 +1,6 @@
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
-import devToolsEnhancer from 'remote-redux-devtools';
+import devToolsEnhancer from "remote-redux-devtools"
 
 import { ETHEREUM } from "./constants/networks"
 
@@ -37,11 +37,13 @@ const initializeStore = () =>
         },
       }),
     devTools: false,
-    enhancers: [devToolsEnhancer({
-      hostname: "localhost",
-      port: 8000,
-      realtime: true
-    })],
+    enhancers: [
+      devToolsEnhancer({
+        hostname: "localhost",
+        port: 8000,
+        realtime: true,
+      }),
+    ],
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
