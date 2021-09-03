@@ -264,7 +264,7 @@ export default class IndexingService implements Service<Events> {
           account
         )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
-        await this.db.balances.bulkAdd(balances)
+        await this.db.addBalances(balances)
       })
     )
   }

@@ -21,32 +21,43 @@ interface Migration {
 }
 
 // TODO keep track of blocks invalidated by a reorg
-// TODO keep track of transaction "first seen" time
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
   /*
    * Accounts whose transaction and balances should be tracked on a particular
    * network.
+   *
+   * Keyed by the [account, network name, network chain ID] triplet. Note that
+   * "account" in this context refers to e.g. an Ethereum address.
    */
-  accountsToTrack: Dexie.Table<AccountNetwork, number>
+  private accountsToTrack!: Dexie.Table<
+    AccountNetwork,
+    [string, string, string]
+  >
 
   /*
    * Partial block headers cached to track reorgs and network status.
+   *
+   * Keyed by the [block hash, network name] pair.
    */
-  blocks: Dexie.Table<EIP1559Block, number>
+  private blocks!: Dexie.Table<EIP1559Block, [string, string]>
 
   /*
-   * Historic and pending transactions relevant to tracked accounts.
+   * Historic and pending chain transactions relevant to tracked accounts.
+   * chainTransaction is used in this context to distinguish from database
+   * transactions.
+   *
+   * Keyed by the [transaction hash, network name] pair.
    */
-  transactions: Dexie.Table<Transaction, number>
+  private chainTransactions!: Dexie.Table<Transaction, [string, string]>
 
   /*
    * Historic account balances.
    */
-  balances: Dexie.Table<AccountBalance, number>
+  private balances!: Dexie.Table<AccountBalance, number>
 
-  migrations: Dexie.Table<Migration, number>
+  private migrations!: Dexie.Table<Migration, number>
 
   constructor() {
     super("tally/chain")
@@ -56,19 +67,51 @@ export class ChainDatabase extends Dexie {
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
-      transactions:
+      chainTransactions:
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
+
+    this.chainTransactions.hook(
+      "updating",
+      (modifications, _, chainTransaction) => {
+        // Only these properties can be updated on a stored transaction.
+        // NOTE: Currently we do NOT throw if another property modification is
+        // attempted; instead, we just ignore it.
+        const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
+
+        const filteredModifications = Object.fromEntries(
+          Object.entries(modifications).filter(([k]) =>
+            allowedVariants.includes(k)
+          )
+        )
+
+        // If there is an attempt to modify `firstSeen`, prefer the earliest
+        // first seen value between the update and the existing value.
+        if ("firstSeen" in filteredModifications) {
+          return {
+            ...filteredModifications,
+            firstSeen: Math.min(
+              chainTransaction.firstSeen,
+              filteredModifications.firstSeen
+            ),
+          }
+        }
+
+        return filteredModifications
+      }
+    )
   }
 
   async getLatestBlock(network: Network): Promise<EIP1559Block> {
-    return this.blocks
-      .where("[network.name+timestamp]")
-      .above([network.name, Date.now() - 60 * 60 * 24])
-      .reverse()
-      .sortBy("timestamp")[0]
+    return (
+      await this.blocks
+        .where("[network.name+timestamp]")
+        .above([network.name, Date.now() - 60 * 60 * 24])
+        .reverse()
+        .sortBy("timestamp")
+    )[0]
   }
 
   async getTransaction(
@@ -77,7 +120,7 @@ export class ChainDatabase extends Dexie {
   ): Promise<AnyEVMTransaction | null> {
     return (
       (
-        await this.transactions
+        await this.chainTransactions
           .where("[hash+network.name]")
           .equals([txHash, network.name])
           .toArray()
@@ -89,21 +132,12 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"]
   ): Promise<void> {
-    await this.transaction("rw", this.transactions, async () => {
-      const key = [tx.hash, tx.network.name]
-      const existingTx = await this.transactions.get(key)
-      if (existingTx) {
-        await this.transactions
-          .where("[hash+network.name]")
-          .equals(key)
-          .modify({ blockHeight: tx.blockHeight, blockHash: tx.blockHash })
-      } else {
-        await this.transactions.put({
-          ...tx,
-          firstSeen: Date.now(),
-          dataSource,
-        })
-      }
+    await this.transaction("rw", this.chainTransactions, () => {
+      return this.chainTransactions.put({
+        ...tx,
+        firstSeen: Date.now(),
+        dataSource,
+      })
     })
   }
 
@@ -140,23 +174,38 @@ export class ChainDatabase extends Dexie {
     })
   }
 
+  async addBlock(block: EIP1559Block): Promise<void> {
+    // TODO Consider exposing whether the block was added or updated.
+    // TODO Consider tracking history of block changes, e.g. in case of reorg.
+    await this.blocks.put(block)
+  }
+
+  async addBalance(accountBalance: AccountBalance): Promise<void> {
+    await this.balances.add(accountBalance)
+  }
+
   async getAccountsToTrack(): Promise<AccountNetwork[]> {
     return this.accountsToTrack.toArray()
   }
-}
 
-export async function getDB(): Promise<ChainDatabase> {
-  return new ChainDatabase()
+  private async migrate() {
+    const numMigrations = await this.migrations.count()
+    if (numMigrations === 0) {
+      await this.transaction("rw", this.migrations, async () => {
+        this.migrations.add({ id: 0, appliedAt: Date.now() })
+        // TODO decide migrations before the initial release
+      })
+    }
+  }
 }
 
 export async function getOrCreateDB(): Promise<ChainDatabase> {
-  const db = await getDB()
-  const numMigrations = await db.migrations.count()
-  if (numMigrations === 0) {
-    await db.transaction("rw", db.migrations, async () => {
-      db.migrations.add({ id: 0, appliedAt: Date.now() })
-      // TODO decide migrations before the initial release
-    })
-  }
+  const db = new ChainDatabase()
+
+  // Call known-private migrate function, effectively treating it as
+  // file-private.
+  // eslint-disable-next-line dot-notation
+  await db["migrate"]()
+
   return db
 }
