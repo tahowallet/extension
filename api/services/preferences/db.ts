@@ -33,10 +33,18 @@ export class PreferenceDatabase extends Dexie {
   private async migrate() {
     const numMigrations = await this.migrations.count()
     if (numMigrations === 0) {
-      await this.transaction("rw", this.migrations, async () => {
-        this.migrations.add({ id: 0, appliedAt: Date.now() })
-        // TODO decide migrations before the initial release
-      })
+      await this.transaction(
+        "rw",
+        this.migrations,
+        this.preferences,
+        async () => {
+          this.migrations.add({ id: 0, appliedAt: Date.now() })
+          this.preferences.add({
+            ...DEFAULT_PREFERENCES,
+            savedAt: Date.now(),
+          })
+        }
+      )
     }
   }
 }
