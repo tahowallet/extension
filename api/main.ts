@@ -38,6 +38,8 @@ const initializeStore = () =>
       }),
     devTools: false,
     enhancers: [devToolsEnhancer({
+      hostname: "localhost",
+      port: 8000,
       realtime: true
     })],
   })
@@ -101,6 +103,7 @@ export default class Main {
   async initializeRedux(): Promise<void> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore()
+    console.log("store initialized")
     wrapStore(this.store, {
       serializer: (payload: unknown) =>
         JSON.stringify(payload, (_, value) =>
@@ -127,6 +130,8 @@ export default class Main {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
     chain.emitter.on("transaction", (transaction) => {
+      console.log("got a transaction")
+
       if (transaction.blockHash) {
         this.store.dispatch(transactionConfirmed(transaction))
       } else {
