@@ -262,6 +262,7 @@ export default class ChainService implements Service<Events> {
 
   async startService(): Promise<void> {
     this.db = await getOrCreateDB()
+
     const accounts = await this.getAccountsToTrack()
     const ethProvider = this.pollingProviders.ethereum
     Object.entries(this.schedules).forEach(([name, schedule]) => {
@@ -277,7 +278,7 @@ export default class ChainService implements Service<Events> {
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
         const block = blockFromEthersBlock(result)
-        await this.db.blocks.add(block)
+        await this.db.addBlock(block)
       }),
       // TODO subscribe to newHeads for other networks
       this.subscribeToNewHeads(ETHEREUM),
@@ -324,7 +325,7 @@ export default class ChainService implements Service<Events> {
       retrievedAt: Date.now(),
     } as AccountBalance
     this.emitter.emit("accountBalance", accountBalance)
-    await this.db.balances.add(accountBalance)
+    await this.db.addBalance(accountBalance)
     return accountBalance
   }
 
@@ -503,7 +504,7 @@ export default class ChainService implements Service<Events> {
       async (result: any) => {
         // add new head to database
         const block = blockFromWebsocketBlock(result)
-        await this.db.blocks.add(block)
+        await this.db.addBlock(block)
         // emit the new block, don't wait to settle
         this.emitter.emit("newBlock", block)
         // TODO if it matches a known blockheight and the difficulty is higher,
