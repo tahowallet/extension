@@ -1,5 +1,6 @@
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
+import devToolsEnhancer from 'remote-redux-devtools';
 
 import { ETHEREUM } from "./constants/networks"
 
@@ -35,6 +36,10 @@ const initializeStore = () =>
             isPlain(value) || typeof value === "bigint",
         },
       }),
+    devTools: false,
+    enhancers: [devToolsEnhancer({
+      realtime: true
+    })],
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
