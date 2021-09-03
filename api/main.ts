@@ -24,6 +24,28 @@ import {
 } from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
 
+const reduxSanitizer = (input) => {
+  if (typeof input === "bigint") {
+    return input.toString()
+  }
+
+  // We can use JSON stringify replacer function instead of recursively looping through the input
+  if (typeof input === "object") {
+    return JSON.parse(
+      JSON.stringify(input, (key, value) => {
+        if (typeof value === "bigint") {
+          return value.toString()
+        }
+
+        return value
+      })
+    )
+  }
+
+  // We only need to sanitize bigints and the objects that contain them
+  return input
+}
+
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
 const initializeStore = () =>
@@ -42,6 +64,15 @@ const initializeStore = () =>
         hostname: "localhost",
         port: 8000,
         realtime: true,
+        actionSanitizer: (action) => {
+          console.log("got an action", action)
+          return reduxSanitizer(action)
+        },
+
+        stateSanitizer: (state) => {
+          console.log("got a state", state)
+          return reduxSanitizer(state)
+        },
       }),
     ],
   })
