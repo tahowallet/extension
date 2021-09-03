@@ -7,6 +7,7 @@ interface Props {
 
 export default function OverviewAssetsTable(props: Props): ReactElement {
   const { assets } = props
+  if (!assets) return <></>
 
   return (
     <table className="standard_width">
