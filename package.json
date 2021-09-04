@@ -16,8 +16,9 @@
     "dapp"
   ],
   "scripts": {
-    "start": "webpack --mode=development --watch",
+    "start": "run-p devtools \"dev {@}\" --",
     "build": "webpack --mode=production",
+    "dev": "webpack --mode=development --watch",
     "devtools": "remotedev --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
