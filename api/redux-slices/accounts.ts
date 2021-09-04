@@ -194,13 +194,13 @@ const accountSlice = createSlice({
       // accountsData are mutually exclusive; that is, that there are no two
       // accounts in accountsData all or part of whose balances are shared with
       // each other.
-      const combinedAccountBalances = Object.values(
-        immerState.accountsData
-      ).flatMap(
-        (ad) =>
-          ad !== "loading" &&
-          Object.values(ad.balances).map((ab) => ab.assetAmount)
-      )
+      const combinedAccountBalances = Object.values(immerState.accountsData)
+        .flatMap(
+          (ad) =>
+            ad !== "loading" &&
+            Object.values(ad.balances).map((ab) => ab.assetAmount)
+        )
+        .filter((b) => b)
 
       immerState.combinedData.totalUserValue = combinedAccountBalances
         .reduce(
@@ -209,7 +209,6 @@ const accountSlice = createSlice({
           0
         )
         .toLocaleString("default", { maximumFractionDigits: 2 })
-
       immerState.combinedData.assets = Object.values(
         combinedAccountBalances.reduce<{
           [symbol: string]: AnyAssetAmount & UserValue

@@ -76,21 +76,20 @@ export default class Main {
 
   initializeServices(): void {
     this.preferenceService = startPreferences()
-    this.chainService = startChain(this.preferenceService).then(
-      async (service) => {
-        await service.addAccountToTrack({
-          // TODO uses Ethermine address for development - move this to startup
-          // state
-          account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-          network: ETHEREUM,
-        })
-        return service
-      }
-    )
+    this.chainService = startChain(this.preferenceService)
     this.indexingService = startIndexing(
       this.preferenceService,
       this.chainService
-    )
+    ).then(async (service) => {
+      const chain = await this.chainService
+      await chain.addAccountToTrack({
+        // TODO uses Ethermine address for development - move this to startup
+        // state
+        account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
+        network: ETHEREUM,
+      })
+      return service
+    })
   }
 
   async initializeRedux(): Promise<void> {

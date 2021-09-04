@@ -25,7 +25,7 @@ import PreferenceService from "../preferences/service"
 import { Service } from ".."
 import { getOrCreateDB, ChainDatabase } from "./db"
 
-const ALCHEMY_KEY = "8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa"
+const ALCHEMY_KEY = "mkX4QnxuNAyLmVF3yKzwf-n432udybcS" // 8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa
 
 const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
 
@@ -178,6 +178,7 @@ interface AlarmSchedule {
 }
 
 interface Events {
+  newAccountToTrack: AccountNetwork
   accountBalance: AccountBalance
   assetTransfers: {
     accountNetwork: AccountNetwork
@@ -274,7 +275,8 @@ export default class ChainService implements Service<Events> {
         this.handleQueuedTransactionAlarm()
       }
     })
-    await Promise.all([
+
+    Promise.all([
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
@@ -285,7 +287,7 @@ export default class ChainService implements Service<Events> {
       this.subscribeToNewHeads(ETHEREUM),
     ])
 
-    await Promise.all(
+    Promise.all(
       accounts
         .map(
           // subscribe to all account transactions
@@ -332,6 +334,7 @@ export default class ChainService implements Service<Events> {
 
   async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
     await this.db.addAccountToTrack(accountNetwork)
+    this.emitter.emit("newAccountToTrack", accountNetwork)
     this.getLatestBaseAccountBalance(accountNetwork)
     this.subscribeToAccountTransactions(accountNetwork)
     this.loadRecentAssetTransfers(accountNetwork)
@@ -420,7 +423,7 @@ export default class ChainService implements Service<Events> {
       )
 
       // TODO if this fails, other services still needs a way to kick
-      // off monitoring.
+      // off monitoring of token balances
       this.emitter.emit("assetTransfers", {
         accountNetwork,
         assetTransfers,
