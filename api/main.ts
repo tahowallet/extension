@@ -32,13 +32,9 @@ const reduxSanitizer = (input) => {
   // We can use JSON stringify replacer function instead of recursively looping through the input
   if (typeof input === "object") {
     return JSON.parse(
-      JSON.stringify(input, (key, value) => {
-        if (typeof value === "bigint") {
-          return value.toString()
-        }
-
-        return value
-      })
+      JSON.stringify(input, (_, value) =>
+        typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
+      )
     )
   }
 
@@ -65,12 +61,10 @@ const initializeStore = () =>
         port: 8000,
         realtime: true,
         actionSanitizer: (action) => {
-          console.log("got an action", action)
           return reduxSanitizer(action)
         },
 
         stateSanitizer: (state) => {
-          console.log("got a state", state)
           return reduxSanitizer(state)
         },
       }),
@@ -136,7 +130,6 @@ export default class Main {
   async initializeRedux(): Promise<void> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore()
-    console.log("store initialized")
     wrapStore(this.store, {
       serializer: (payload: unknown) =>
         JSON.stringify(payload, (_, value) =>
@@ -163,8 +156,6 @@ export default class Main {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
     chain.emitter.on("transaction", (transaction) => {
-      console.log("got a transaction")
-
       if (transaction.blockHash) {
         this.store.dispatch(transactionConfirmed(transaction))
       } else {

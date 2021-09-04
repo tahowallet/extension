@@ -18,6 +18,7 @@
   "scripts": {
     "start": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
+    "devtools": "remotedev --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
     "lint:config": "prettier -c '**/*.@(json|yaml|toml)'",
