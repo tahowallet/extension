@@ -5,7 +5,7 @@ import {
 } from "@ethersproject/providers"
 import { utils } from "ethers"
 
-import { AssetTransfer, HexString } from "../types"
+import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
 import { ETH, ETHEREUM } from "../constants"
 
 const ajv = new Ajv()
@@ -170,7 +170,7 @@ const isValidAlchemyTokenBalanceResponse =
  */
 export async function getTokenBalances(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  account: string,
+  account: HexString,
   tokens?: HexString[]
 ): Promise<{ contractAddress: string; amount: bigint }[]> {
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
@@ -192,4 +192,61 @@ export async function getTokenBalances(
       contractAddress: tokenBalance.contractAddress,
       amount: BigInt(tokenBalance.tokenBalance),
     }))
+}
+
+// JSON Type Definition for the Alchemy token metadata API.
+// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api#alchemy_gettokenmetadata
+//
+// See RFC 8927 or jsontypedef.com for more detail to learn more about JTD.
+const alchemyTokenMetadataJTD = {
+  properties: {
+    decimals: { type: "uint32" },
+    name: { type: "string" },
+    symbol: { type: "string" },
+    logo: { type: "string", nullable: true },
+  },
+  additionalProperties: false,
+} as const
+
+type AlchemyTokenMetadataResponse = JTDDataType<typeof alchemyTokenMetadataJTD>
+
+const isValidAlchemyTokenMetadataResponse =
+  ajv.compile<AlchemyTokenMetadataResponse>(alchemyTokenMetadataJTD)
+
+/*
+ * Use Alchemy's getTokenMetadata call to get metadata for a token contract on
+ * Ethereum.
+ *
+ * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
+ * @param provider - an Alchemy ethers provider
+ * @param account - the account whose balances we're fetching
+ * @param tokens - an optional list of hex-string contract addresses. If the list
+ *                 isn't provided, Alchemy will choose based on the top 100
+ *                 high-volume tokens on its platform
+ */
+export async function getTokenMetadata(
+  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  contractAddress: HexString
+): Promise<SmartContractFungibleAsset | null> {
+  const json: unknown = await provider.send("alchemy_getTokenMetadata", [
+    contractAddress,
+  ])
+  if (!isValidAlchemyTokenMetadataResponse(json)) {
+    console.warn(
+      "Alchemy token metadata response didn't validate, did the API change?",
+      json
+    )
+    return null
+  }
+  return {
+    decimals: json.decimals,
+    name: json.name,
+    symbol: json.symbol,
+    metadata: {
+      logoURL: json.logo,
+      tokenLists: [],
+    },
+    homeNetwork: ETHEREUM, // TODO make multi-network friendly
+    contractAddress,
+  }
 }
