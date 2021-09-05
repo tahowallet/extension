@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useCallback, useState } from "react"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -11,13 +11,13 @@ export default function Swap() {
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
   const [selectedCount, setSelectedCount] = useState(0)
 
-  function handleClick() {
+  const handleClick = useCallback(() => {
     setOpenTokenMenu(!openTokenMenu)
-  }
+  }, [])
 
-  function handleAssetSelect() {
+  const handleAssetSelect = useCallback(() => {
     setSelectedCount(selectedCount + 1)
-  }
+  }, [])
 
   return (
     <>

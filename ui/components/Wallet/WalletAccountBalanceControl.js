@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useCallback, useState } from "react"
 import PropTypes from "prop-types"
 import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
@@ -12,9 +12,9 @@ export default function WalletAccountBalanceControl(props) {
     window.localStorage.getItem("hasSavedSeed")
   )
 
-  function handleClick() {
+  const handleClick = useCallback(() => {
     setOpenReceiveMenu(!openReceiveMenu)
-  }
+  }, [])
 
   return (
     <>
@@ -31,7 +31,6 @@ export default function WalletAccountBalanceControl(props) {
             </span>
           )}
         </span>
-
         {hasSavedSeed ? (
           <div className="send_receive_button_wrap">
             <Link to="/send">
