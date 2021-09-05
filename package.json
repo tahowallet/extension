@@ -30,7 +30,7 @@
   },
   "workspaces": [
     "ui",
-    "api"
+    "background"
   ],
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
