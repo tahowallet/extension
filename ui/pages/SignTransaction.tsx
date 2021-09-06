@@ -12,7 +12,7 @@ interface Props {
 
 export default function SignTransaction(props: Props): ReactElement {
   const { approveSpendOrSwap } = props
-  const [panelNum, setPanelNum] = useState(0)
+  const [panelNumber, setPanelNumber] = useState(0)
 
   const spendOrSwapContent = {
     swap: {
@@ -35,11 +35,11 @@ export default function SignTransaction(props: Props): ReactElement {
         {spendOrSwapContent[approveSpendOrSwap].component()}
       </div>
       <SharedPanelSwitcher
-        setPanelNum={setPanelNum}
-        panelNum={panelNum}
+        setPanelNumber={setPanelNumber}
+        panelNumber={panelNumber}
         panelNames={["Details", "Advanced"]}
       />
-      {panelNum === 0 ? (
+      {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
           <span className="detail_item">
             Network Fee/Speed

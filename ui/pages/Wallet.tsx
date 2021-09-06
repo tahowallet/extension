@@ -1,7 +1,7 @@
 // @ts-check
 //
-import React, { ReactElement, useState, useEffect } from "react"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import React, { ReactElement, useState } from "react"
+import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -9,7 +9,7 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 
 export default function Wallet(): ReactElement {
-  const [panelNum, setPanelNum] = useState(0)
+  const [panelNumber, setPanelNumber] = useState(0)
   //  accountLoading, hasWalletErrorCode
   const account = useBackgroundSelector(
     (background) => background.account.combinedData
@@ -24,12 +24,12 @@ export default function Wallet(): ReactElement {
           </div>
           <div className="section">
             <SharedPanelSwitcher
-              setPanelNum={setPanelNum}
-              panelNum={panelNum}
+              setPanelNumber={setPanelNumber}
+              panelNumber={panelNumber}
               panelNames={["Assets", "Activity"]}
             />
             <div className="panel">
-              {panelNum === 0 ? (
+              {panelNumber === 0 ? (
                 <WalletAssetList assetAmounts={account.assets} />
               ) : (
                 <WalletActivityList activity={account.activity} />

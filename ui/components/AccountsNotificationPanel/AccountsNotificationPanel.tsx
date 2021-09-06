@@ -4,16 +4,16 @@ import AccountsNotificationPanelNotifications from "./AccountsNotificationPanelN
 import AccountsNotificationPanelAccounts from "./AccountsNotificationPanelAccounts"
 
 export default function TopMenuNotifications(): ReactElement {
-  const [panelNum, setPanelNum] = useState(1)
+  const [panelNumber, setPanelNumber] = useState(1)
 
   return (
     <div>
       <SharedPanelSwitcher
-        setPanelNum={setPanelNum}
-        panelNum={panelNum}
+        setPanelNumber={setPanelNumber}
+        panelNumber={panelNumber}
         panelNames={["Accounts", "Notifications"]}
       />
-      {panelNum === 1 ? (
+      {panelNumber === 1 ? (
         <AccountsNotificationPanelNotifications />
       ) : (
         <AccountsNotificationPanelAccounts />
