@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useCallback, useState } from "react"
 import _ from "lodash"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
@@ -9,7 +9,7 @@ import SwapApprovalStep from "./SwapApprovalStep"
 export default function SwapQoute() {
   const [stepComplete, setStepComplete] = useState(-1)
 
-  function handleApproveClick() {
+  const handleApproveClick = useCallback(() => {
     setStepComplete(0)
     _.delay(() => {
       setStepComplete(1)
@@ -20,7 +20,7 @@ export default function SwapQoute() {
     _.delay(() => {
       setStepComplete(3)
     }, 4500)
-  }
+  }, [])
 
   return (
     <section className="center_horizontal standard_width">

@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useCallback, useState } from "react"
 import PropTypes from "prop-types"
 import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
@@ -53,10 +53,10 @@ export default function OnboardingVerifySeed(props) {
   const [isSelected, setIsSelected] = useState([])
   const [isNotSelected, setIsNotSelected] = useState(Array(12).fill(""))
 
-  function handleClick() {
+  const handleClick = useCallback(() => {
     setIsSelected([...isSelected, []])
     setIsNotSelected(isNotSelected.slice(1))
-  }
+  }, [])
 
   return (
     <section>
