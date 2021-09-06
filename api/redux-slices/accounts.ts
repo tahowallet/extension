@@ -35,7 +35,7 @@ type AccountData = {
   unconfirmedTransactions: AnyEVMTransaction[]
 }
 
-type CombinedAccountData = {
+export type CombinedAccountData = {
   totalUserValue: string
   assets: (AnyAssetAmount & UserValue)[]
   activity: AnyEVMTransaction[]
