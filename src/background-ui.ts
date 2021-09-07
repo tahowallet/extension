@@ -1,4 +1,4 @@
-import { browser, newProxyStore } from "@tallyho/tally-api"
+import { browser, newProxyStore } from "@tallyho/tally-background"
 
 newProxyStore().then((backgroundStore) => {
   // undefined if no account has been resolved, string array with the latest

@@ -24,10 +24,8 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.0",
-    "@tallyho/tally-api": "0.0.1",
+    "@tallyho/tally-background": "0.0.1",
     "classnames": "^2.3.1",
-    "lodash": "^4.17.21",
-    "moment": "^2.29.1",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",

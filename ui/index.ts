@@ -1,6 +1,6 @@
 import React from "react"
 import ReactDOM from "react-dom"
-import { newProxyStore } from "@tallyho/tally-api"
+import { newProxyStore } from "@tallyho/tally-background"
 
 import Popup from "./pages/Popup"
 
