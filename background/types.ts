@@ -211,6 +211,10 @@ export interface EVMTransaction {
   type: 0 | 1 | 2 | null
 }
 
+export interface TxParams extends Partial<EVMTransaction> {
+  gasLimit: bigint | null
+}
+
 export interface LegacyEVMTransaction extends EVMTransaction {
   gasPrice: bigint
   type: 0 | null
@@ -245,3 +249,32 @@ export type AnyEVMTransaction =
   | ConfirmedEVMTransaction
   | SignedEVMTransaction
   | SignedConfirmedEVMTransaction
+
+// KEY TYPES
+
+export enum KeyTypes { // eslint-disable-line no-shadow
+  mnemonicBIP39S128 = "mnemonic#bip39:128",
+  mnemonicBIP39S256 = "mnemonic#bip39:256",
+  metamaskMnemonic = "mnemonic#metamask",
+  singleSECP = "single#secp256k1",
+}
+
+export type MsgParams = {
+  data: string
+  from: string
+}
+
+// TODO: type declarations in @tallyho/eth-hd-tree
+export interface Seed {
+  data: string // seed material
+  type: KeyTypes
+  index: number // the current account index
+  reference: string // unique reference
+  path: string // default path to derive new keys
+}
+
+export type ImportData = {
+  type: keyof typeof KeyTypes
+  data: string
+  password?: string
+}
