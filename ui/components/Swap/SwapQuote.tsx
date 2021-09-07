@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
@@ -8,7 +8,7 @@ import SwapApprovalStep from "./SwapApprovalStep"
 export default function SwapQoute(): ReactElement {
   const [stepComplete, setStepComplete] = useState(-1)
 
-  function handleApproveClick() {
+  const handleApproveClick = useCallback(() => {
     setStepComplete(0)
     setTimeout(() => {
       setStepComplete(1)
@@ -19,7 +19,7 @@ export default function SwapQoute(): ReactElement {
     setTimeout(() => {
       setStepComplete(3)
     }, 4500)
-  }
+  }, [])
 
   return (
     <section className="center_horizontal standard_width">

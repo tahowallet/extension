@@ -1,13 +1,13 @@
 import React, { ReactElement } from "react"
 
 interface Props {
-  setPanelNum: (x: number) => void
-  panelNum: number
+  setPanelNumber: (x: number) => void
+  panelNumber: number
   panelNames: string[]
 }
 
 export default function SharedPanelSwitcher(props: Props): ReactElement {
-  const { setPanelNum, panelNum, panelNames } = props
+  const { setPanelNumber, panelNumber, panelNames } = props
 
   return (
     <nav>
@@ -16,9 +16,9 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
           <button
             type="button"
             onClick={() => {
-              setPanelNum(0)
+              setPanelNumber(0)
             }}
-            className={`option${panelNum === 0 ? " selected" : ""}`}
+            className={`option${panelNumber === 0 ? " selected" : ""}`}
           >
             {panelNames[0]}
           </button>
@@ -27,9 +27,9 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
           <button
             type="button"
             onClick={() => {
-              setPanelNum(1)
+              setPanelNumber(1)
             }}
-            className={`option${panelNum === 1 ? " selected" : ""}`}
+            className={`option${panelNumber === 1 ? " selected" : ""}`}
           >
             {panelNames[1]}
           </button>

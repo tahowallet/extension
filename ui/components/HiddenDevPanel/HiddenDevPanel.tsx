@@ -25,7 +25,7 @@ export default function HiddenDevPanel(): ReactElement {
           label="Verify Recovery Seed"
           onClick={() => {
             window.localStorage.setItem("hasSavedSeed", "true")
-            window.location.reload(false)
+            window.location.reload()
           }}
           icon="arrow_right"
           iconSize="large"
@@ -36,7 +36,7 @@ export default function HiddenDevPanel(): ReactElement {
           label="Unverify Recovery Seed"
           onClick={() => {
             window.localStorage.removeItem("hasSavedSeed")
-            window.location.reload(false)
+            window.location.reload()
           }}
           icon="arrow_right"
           iconSize="large"

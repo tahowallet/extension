@@ -1,5 +1,6 @@
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
+import devToolsEnhancer from "remote-redux-devtools"
 
 import { ETHEREUM } from "./constants/networks"
 
@@ -23,6 +24,24 @@ import {
 } from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
 
+const reduxSanitizer = (input) => {
+  if (typeof input === "bigint") {
+    return input.toString()
+  }
+
+  // We can use JSON stringify replacer function instead of recursively looping through the input
+  if (typeof input === "object") {
+    return JSON.parse(
+      JSON.stringify(input, (_, value) =>
+        typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
+      )
+    )
+  }
+
+  // We only need to sanitize bigints and the objects that contain them
+  return input
+}
+
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
 const initializeStore = () =>
@@ -35,6 +54,21 @@ const initializeStore = () =>
             isPlain(value) || typeof value === "bigint",
         },
       }),
+    devTools: false,
+    enhancers: [
+      devToolsEnhancer({
+        hostname: "localhost",
+        port: 8000,
+        realtime: true,
+        actionSanitizer: (action) => {
+          return reduxSanitizer(action)
+        },
+
+        stateSanitizer: (state) => {
+          return reduxSanitizer(state)
+        },
+      }),
+    ],
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>

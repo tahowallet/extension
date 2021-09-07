@@ -1,10 +1,11 @@
 // @ts-check
 //
 import React, { ReactElement } from "react"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import WalletAssetListItem from "./WalletAssetListItem"
 
 interface Props {
-  assetAmounts: any[]
+  assetAmounts: CombinedAccountData["assets"]
 }
 
 export default function WalletAssetList(props: Props): ReactElement {

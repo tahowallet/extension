@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { FiatCurrency } from "../../types"
 import { Service } from ".."
 import { Preferences, TokenListPreferences } from "./types"
-import { getDB, getOrCreateDB, PreferenceDatabase } from "./db"
+import { getOrCreateDB, PreferenceDatabase } from "./db"
 
 interface Events {
   preferencesChanges: Preferences

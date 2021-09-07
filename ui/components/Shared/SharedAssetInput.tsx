@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -94,15 +94,15 @@ export default function SharedAssetInput(
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
   const [selectedToken, setSelectedToken] = useState({ name: false })
 
-  function handleClick() {
+  const handleClick = useCallback(() => {
     setOpenAssetMenu(!openAssetMenu)
     onClick()
-  }
+  }, [])
 
-  function setSelectedTokenAndClose(token) {
+  const setSelectedTokenAndClose = useCallback((token) => {
     setSelectedToken(token)
     setOpenAssetMenu(false)
-  }
+  }, [])
 
   return (
     <>

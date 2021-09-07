@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -17,9 +17,9 @@ export default function WalletAccountBalanceControl(
     window.localStorage.getItem("hasSavedSeed")
   )
 
-  function handleClick() {
+  const handleClick = useCallback(() => {
     setOpenReceiveMenu(!openReceiveMenu)
-  }
+  }, [])
 
   return (
     <>
@@ -36,7 +36,6 @@ export default function WalletAccountBalanceControl(
             </span>
           )}
         </span>
-
         {hasSavedSeed ? (
           <div className="send_receive_button_wrap">
             <Link to="/send">
