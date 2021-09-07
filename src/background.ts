@@ -1,3 +1,3 @@
-import { startApi } from "@tallyho/tally-api"
+import { startApi } from "@tallyho/tally-background"
 
 startApi()

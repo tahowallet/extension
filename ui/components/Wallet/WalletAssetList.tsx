@@ -1,7 +1,7 @@
 // @ts-check
 //
 import React, { ReactElement } from "react"
-import { CombinedAccountData } from "@tallyho/tally-api/redux-slices/accounts"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import WalletAssetListItem from "./WalletAssetListItem"
 
 interface Props {

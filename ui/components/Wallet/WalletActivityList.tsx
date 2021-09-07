@@ -2,8 +2,8 @@
 
 import React, { ReactElement, useCallback } from "react"
 
-import { AnyEVMTransaction } from "@tallyho/tally-api/types"
-import { setShowingActivityDetail } from "@tallyho/tally-api/redux-slices/ui"
+import { AnyEVMTransaction } from "@tallyho/tally-background/types"
+import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
