@@ -31,14 +31,17 @@ export class ChainDatabase extends Dexie {
    * Keyed by the [account, network name, network chain ID] triplet. Note that
    * "account" in this context refers to e.g. an Ethereum address.
    */
-  accountsToTrack: Dexie.Table<AccountNetwork, [string, string, string]>
+  private accountsToTrack!: Dexie.Table<
+    AccountNetwork,
+    [string, string, string]
+  >
 
   /*
    * Partial block headers cached to track reorgs and network status.
    *
    * Keyed by the [block hash, network name] pair.
    */
-  blocks: Dexie.Table<EIP1559Block, [string, string]>
+  private blocks!: Dexie.Table<EIP1559Block, [string, string]>
 
   /*
    * Historic and pending chain transactions relevant to tracked accounts.
@@ -47,14 +50,14 @@ export class ChainDatabase extends Dexie {
    *
    * Keyed by the [transaction hash, network name] pair.
    */
-  chainTransactions: Dexie.Table<Transaction, [string, string]>
+  private chainTransactions!: Dexie.Table<Transaction, [string, string]>
 
   /*
    * Historic account balances.
    */
-  balances: Dexie.Table<AccountBalance, number>
+  private balances!: Dexie.Table<AccountBalance, number>
 
-  migrations: Dexie.Table<Migration, number>
+  private migrations!: Dexie.Table<Migration, number>
 
   constructor() {
     super("tally/chain")
@@ -102,11 +105,13 @@ export class ChainDatabase extends Dexie {
   }
 
   async getLatestBlock(network: Network): Promise<EIP1559Block> {
-    return this.blocks
-      .where("[network.name+timestamp]")
-      .above([network.name, Date.now() - 60 * 60 * 24])
-      .reverse()
-      .sortBy("timestamp")[0]
+    return (
+      await this.blocks
+        .where("[network.name+timestamp]")
+        .above([network.name, Date.now() - 60 * 60 * 24])
+        .reverse()
+        .sortBy("timestamp")
+    )[0]
   }
 
   async getTransaction(
@@ -169,23 +174,38 @@ export class ChainDatabase extends Dexie {
     })
   }
 
+  async addBlock(block: EIP1559Block): Promise<void> {
+    // TODO Consider exposing whether the block was added or updated.
+    // TODO Consider tracking history of block changes, e.g. in case of reorg.
+    await this.blocks.put(block)
+  }
+
+  async addBalance(accountBalance: AccountBalance): Promise<void> {
+    await this.balances.add(accountBalance)
+  }
+
   async getAccountsToTrack(): Promise<AccountNetwork[]> {
     return this.accountsToTrack.toArray()
   }
-}
 
-export async function getDB(): Promise<ChainDatabase> {
-  return new ChainDatabase()
+  private async migrate() {
+    const numMigrations = await this.migrations.count()
+    if (numMigrations === 0) {
+      await this.transaction("rw", this.migrations, async () => {
+        this.migrations.add({ id: 0, appliedAt: Date.now() })
+        // TODO decide migrations before the initial release
+      })
+    }
+  }
 }
 
 export async function getOrCreateDB(): Promise<ChainDatabase> {
-  const db = await getDB()
-  const numMigrations = await db.migrations.count()
-  if (numMigrations === 0) {
-    await db.transaction("rw", db.migrations, async () => {
-      db.migrations.add({ id: 0, appliedAt: Date.now() })
-      // TODO decide migrations before the initial release
-    })
-  }
+  const db = new ChainDatabase()
+
+  // Call known-private migrate function, effectively treating it as
+  // file-private.
+  // eslint-disable-next-line dot-notation
+  await db["migrate"]()
+
   return db
 }

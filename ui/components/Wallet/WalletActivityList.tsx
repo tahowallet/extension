@@ -1,6 +1,7 @@
 // @ts-check
 
-import React, { ReactElement } from "react"
+import React, { ReactElement, useCallback } from "react"
+
 import { AnyEVMTransaction } from "@tallyho/tally-api/types"
 import { setShowingActivityDetail } from "@tallyho/tally-api/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -23,13 +24,13 @@ export default function WalletActivityList(props: Props): ReactElement {
     (background) => background.ui
   )
 
-  function handleOpen(activityId) {
+  const handleOpen = useCallback((activityId) => {
     dispatch(setShowingActivityDetail(activityId))
-  }
+  }, [])
 
-  function handleClose() {
+  const handleClose = useCallback(() => {
     dispatch(setShowingActivityDetail(undefined))
-  }
+  }, [])
 
   return (
     <>

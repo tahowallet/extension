@@ -3,7 +3,6 @@ import { TokenList } from "@uniswap/token-lists"
 
 import {
   AccountBalance,
-  AccountNetwork,
   AnyAsset,
   FungibleAsset,
   Network,
@@ -109,30 +108,30 @@ function numberArrayCompare(arr1: number[], arr2: number[]) {
 }
 
 export class IndexingDatabase extends Dexie {
-  prices: Dexie.Table<PriceMeasurement, number>
+  private prices!: Dexie.Table<PriceMeasurement, number>
 
   /*
    * Historic account balances.
    */
-  balances: Dexie.Table<AccountBalance, number>
+  private balances!: Dexie.Table<AccountBalance, number>
 
   /*
    * Cached token lists maintaining fungible asset metadata.
    */
-  tokenLists: Dexie.Table<CachedTokenList, number>
+  private tokenLists!: Dexie.Table<CachedTokenList, number>
 
   /*
    * User- and contract-supplied fungible asset metadata.
    */
-  customAssets: Dexie.Table<SmartContractFungibleAsset, number>
+  private customAssets!: Dexie.Table<SmartContractFungibleAsset, number>
 
   /*
    * Tokens whose balances should be checked periodically. It might make sense
    * for this to be tracked against particular accounts in the future.
    */
-  tokensToTrack: Dexie.Table<SmartContractFungibleAsset, number>
+  private tokensToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
 
-  migrations: Dexie.Table<Migration, number>
+  private migrations!: Dexie.Table<Migration, number>
 
   constructor() {
     super("tally/indexing")
@@ -198,7 +197,7 @@ export class IndexingDatabase extends Dexie {
   async getCustomAssetByAddressAndNetwork(
     network: Network,
     contractAddress: string
-  ): Promise<SmartContractFungibleAsset> {
+  ): Promise<SmartContractFungibleAsset | undefined> {
     return this.customAssets
       .where("[contractAddress+homeNetwork.name]")
       .equals([network.name, contractAddress])
@@ -207,6 +206,10 @@ export class IndexingDatabase extends Dexie {
 
   async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
     this.customAssets.put(asset)
+  }
+
+  async addBalances(accountBalances: AccountBalance[]): Promise<void> {
+    await this.balances.bulkAdd(accountBalances)
   }
 
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {
@@ -260,26 +263,31 @@ export class IndexingDatabase extends Dexie {
           }
         }
         return { ...acc }
-      }, {})
+      }, {} as { [url: string]: TokenList })
     ).map(([k, v]) => ({
       url: k,
       tokenList: v as TokenList,
     }))
   }
-}
 
-export async function getDB(): Promise<IndexingDatabase> {
-  return new IndexingDatabase()
+  private async migrate() {
+    const numMigrations = await this.migrations.count()
+    if (numMigrations === 0) {
+      await this.transaction("rw", this.migrations, async () => {
+        this.migrations.add({ id: 0, appliedAt: Date.now() })
+        // TODO decide migrations before the initial release
+      })
+    }
+  }
 }
 
 export async function getOrCreateDB(): Promise<IndexingDatabase> {
-  const db = await getDB()
-  const numMigrations = await db.migrations.count()
-  if (numMigrations === 0) {
-    await db.transaction("rw", db.migrations, async () => {
-      db.migrations.add({ id: 0, appliedAt: Date.now() })
-      // TODO decide migrations before the initial release
-    })
-  }
+  const db = new IndexingDatabase()
+
+  // Call known-private migrate function, effectively treating it as
+  // file-private.
+  // eslint-disable-next-line dot-notation
+  await db["migrate"]()
+
   return db
 }
