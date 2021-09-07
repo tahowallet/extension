@@ -35,13 +35,14 @@ type AccountData = {
   unconfirmedTransactions: AnyEVMTransaction[]
 }
 
-type CombinedAccountData = {
+export type CombinedAccountData = {
   totalUserValue: string
   assets: (AnyAssetAmount & UserValue)[]
   activity: AnyEVMTransaction[]
 }
 
 type AccountState = {
+  account?: any
   accountLoading?: string
   hasAccountError?: boolean
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
