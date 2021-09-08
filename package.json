@@ -16,8 +16,10 @@
     "dapp"
   ],
   "scripts": {
-    "start": "webpack --mode=development --watch",
+    "start": "run-p devtools \"dev {@}\" --",
     "build": "webpack --mode=production",
+    "dev": "webpack --mode=development --watch",
+    "devtools": "remotedev --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
     "lint:config": "prettier -c '**/*.@(json|yaml|toml)'",
@@ -30,21 +32,22 @@
   },
   "workspaces": [
     "ui",
-    "api"
+    "background"
   ],
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
-    "@tallyho/tally-api": "0.0.1",
+    "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
     "buffer": "^6.0.3",
+    "react": "^17.0.2",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.13.1",
-    "@babel/preset-env": "^7.14.5",
+    "@babel/preset-env": "^7.15.0",
     "@babel/preset-react": "^7.12.13",
-    "@babel/preset-typescript": "^7.14.5",
+    "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.14.5",
     "@types/archiver": "^5.1.0",
     "@types/copy-webpack-plugin": "^8.0.0",
@@ -64,6 +67,7 @@
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.24.0",
+    "fork-ts-checker-webpack-plugin": "^6.3.2",
     "install": "^0.13.0",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",

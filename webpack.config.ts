@@ -1,11 +1,11 @@
 import path from "path"
 import webpack, { Configuration, WebpackOptionsNormalized } from "webpack"
 import { merge as webpackMerge } from "webpack-merge"
-
 import SizePlugin from "size-plugin"
 import TerserPlugin from "terser-webpack-plugin"
 import LiveReloadPlugin from "webpack-livereload-plugin"
 import CopyPlugin, { ObjectPattern } from "copy-webpack-plugin"
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 
 const supportedBrowsers = ["firefox", "brave", "opera", "chrome"]
@@ -25,19 +25,16 @@ const baseConfig: Configuration = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.(tsx|ts|jsx)?$/,
         exclude: /node_modules(?!\/@tallyho)|webpack/,
         use: [
           {
-            loader: "ts-loader",
-            options: { compilerOptions: { noEmit: false } },
+            loader: "babel-loader",
+            options: {
+              cacheDirectory: true,
+            },
           },
         ],
-      },
-      {
-        test: /\.jsx?$/,
-        exclude: /node_modules(?!\/@tallyho)|webpack/,
-        use: "babel-loader",
       },
     ],
   },
@@ -53,6 +50,15 @@ const baseConfig: Configuration = {
     },
   },
   plugins: [
+    new ForkTsCheckerWebpackPlugin({
+      typescript: {
+        diagnosticOptions: {
+          semantic: true,
+          syntactic: true,
+        },
+        mode: "write-references",
+      },
+    }),
     // polyfill the process and Buffer APIs
     new webpack.ProvidePlugin({
       Buffer: ["buffer", "Buffer"],
