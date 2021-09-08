@@ -1,4 +1,4 @@
-import Ajv from "ajv/dist/jtd"
+import Ajv, { JTDDataType } from "ajv/dist/jtd"
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
@@ -7,6 +7,8 @@ import { utils } from "ethers"
 
 import { AssetTransfer, HexString } from "../types"
 import { ETH, ETHEREUM } from "../constants"
+
+const ajv = new Ajv()
 
 // JSON Type Definition for the Alchemy assetTransfers API.
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
@@ -32,34 +34,12 @@ const alchemyAssetTransferJTD = {
     },
   },
   additionalProperties: true,
-}
+} as const
 
-// The type corresponding to the above JTD. In an ideal world, these two
-// wouldn't be duplicative, stemming from a single code generator.
-type AlchemyAssetTransferResponse = {
-  asset: string | null
-  hash: string
-  blockNum: string
-  category: "token" | "internal" | "external"
-  from: string | null
-  to: string | null
-  rawContract?: {
-    address: string | null
-    decimal: string | null
-    value: string | null
-  }
-  erc721TokenId: string | null
-}
+type AlchemyAssetTransferResponse = JTDDataType<typeof alchemyAssetTransferJTD>
 
-function validateAlchemyAssetTransferResponse(
-  json: unknown
-): AlchemyAssetTransferResponse | null {
-  const ajv = new Ajv()
-  if (!ajv.validate(alchemyAssetTransferJTD, json)) {
-    return null
-  }
-  return json as AlchemyAssetTransferResponse
-}
+const isValidAlchemyAssetTransferResponse =
+  ajv.compile<AlchemyAssetTransferResponse>(alchemyAssetTransferJTD)
 
 /*
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -104,8 +84,7 @@ export async function getAssetTransfers(
   return rpcResponses[0].transfers
     .concat(rpcResponses[1].transfers)
     .map((json: unknown) => {
-      const transferResponse = validateAlchemyAssetTransferResponse(json)
-      if (!transferResponse) {
+      if (!isValidAlchemyAssetTransferResponse(json)) {
         console.warn(
           "Alchemy asset transfer response didn't validate, did the API change?",
           json
@@ -114,7 +93,7 @@ export async function getAssetTransfers(
       }
 
       // TODO handle NFT asset lookup properly
-      if (transferResponse.erc721TokenId) {
+      if (json.erc721TokenId) {
         return null
       }
 
@@ -122,19 +101,19 @@ export async function getAssetTransfers(
       // TODO handle nonfungible assets properly
       // TODO handle assets with a contract address and no name
       if (
-        !transferResponse.rawContract ||
-        !transferResponse.rawContract.value ||
-        !transferResponse.rawContract.decimal ||
-        !transferResponse.asset
+        !json.rawContract ||
+        !json.rawContract.value ||
+        !json.rawContract.decimal ||
+        !json.asset
       ) {
         return null
       }
 
-      const asset = !transferResponse.rawContract.address
+      const asset = !json.rawContract.address
         ? {
-            contractAddress: transferResponse.rawContract.address,
-            decimals: Number(BigInt(transferResponse.rawContract.decimal)),
-            symbol: transferResponse.asset,
+            contractAddress: json.rawContract.address,
+            decimals: Number(BigInt(json.rawContract.decimal)),
+            symbol: json.asset,
             homeNetwork: ETHEREUM, // TODO is this true?
           }
         : ETH
@@ -142,11 +121,11 @@ export async function getAssetTransfers(
         network: ETHEREUM, // TODO make this friendly across other networks
         assetAmount: {
           asset,
-          amount: BigInt(transferResponse.rawContract.value),
+          amount: BigInt(json.rawContract.value),
         },
-        txHash: transferResponse.hash,
-        to: transferResponse.to,
-        from: transferResponse.from,
+        txHash: json.hash,
+        to: json.to,
+        from: json.from,
         dataSource: "alchemy",
       } as AssetTransfer
     })
@@ -171,28 +150,12 @@ const alchemyTokenBalanceJTD = {
     },
   },
   additionalProperties: false,
-}
+} as const
 
-// The type of a validated token balance API response, corresponding to the
-// above JTD.
-type AlchemyTokenBalanceResponse = {
-  address: string
-  tokenBalances: {
-    contractAddress: string
-    error: string | null
-    tokenBalance: string | null
-  }[]
-}
+type AlchemyTokenBalanceResponse = JTDDataType<typeof alchemyTokenBalanceJTD>
 
-function validateAlchemyTokenBalanceResponse(
-  json: unknown
-): AlchemyTokenBalanceResponse | null {
-  const ajv = new Ajv()
-  if (!ajv.validate(alchemyTokenBalanceJTD, json)) {
-    return null
-  }
-  return json as AlchemyTokenBalanceResponse
-}
+const isValidAlchemyTokenBalanceResponse =
+  ajv.compile<AlchemyTokenBalanceResponse>(alchemyTokenBalanceJTD)
 
 /*
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
@@ -214,10 +177,16 @@ export async function getTokenBalances(
     account,
     tokens || "DEFAULT_TOKENS",
   ])
-  const tokenResponse = validateAlchemyTokenBalanceResponse(json)
+  if (!isValidAlchemyTokenBalanceResponse(json)) {
+    console.warn(
+      "Alchemy token balance response didn't validate, did the API change?",
+      json
+    )
+    return []
+  }
 
   // TODO log balances with errors, consider returning an error type
-  return tokenResponse.tokenBalances
+  return json.tokenBalances
     .filter((b) => b.error === null && b.tokenBalance !== null)
     .map((tokenBalance) => ({
       contractAddress: tokenBalance.contractAddress,
