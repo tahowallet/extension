@@ -1,3 +1,5 @@
+import { BigNumber, utils } from "ethers"
+
 export function idGenerator(start?: number) {
   let index = start || 1
   return () => {
@@ -19,6 +21,10 @@ export function createEthProviderWrapper(provider: any) {
 
 export function weiToEth(value: string | number): number {
   return (typeof value === "number" ? value : parseInt(value, 10)) / 10e17
+}
+
+export function convertToEth(value: string | number): string {
+  return utils.formatUnits(BigNumber.from(`${value}`).toBigInt())
 }
 
 export function transactionFee(
