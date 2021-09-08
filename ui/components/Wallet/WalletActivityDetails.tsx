@@ -1,14 +1,16 @@
 import React, { ReactElement } from "react"
+import { convertToEth } from "@tallyho/tally-background/lib/utils"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
 
-interface Props {
+interface DetailRowItemProps {
   label: string
   value: string
   valueDetail: string
 }
 
-function DetailRowItem(props: Props): ReactElement {
+function DetailRowItem(props: DetailRowItemProps): ReactElement {
   const { label, value, valueDetail } = props
 
   return (
@@ -48,12 +50,19 @@ function DetailRowItem(props: Props): ReactElement {
   )
 }
 
-function DestinationCard() {
+interface DestinationCardProps {
+  label: string
+  address: string
+}
+
+function DestinationCard(props: DestinationCardProps): ReactElement {
+  const { label, address } = props
+
   return (
     <div className="card_wrap">
-      <div className="sub_info from">From:</div>
-      0x23kj...238y
-      <div className="sub_info name">Foxhunter</div>
+      <div className="sub_info from">{label}:</div>
+      {address.slice(0, 6)}...{address.slice(37, 41)}
+      <div className="sub_info name" />
       <style jsx>
         {`
           .card_wrap {
@@ -87,39 +96,77 @@ function DestinationCard() {
   )
 }
 
-const DetailInfo = [
-  {
-    label: "Timestamp",
-    value: "03:00:12 PM",
-    valueDetail: "May-14-2021",
-  },
-  {
-    label: "Amount",
-    value: "0.342 ETH",
-    valueDetail: "($1409.11)",
-  },
-  {
-    label: "Transaction Fee",
-    value: "0.00508 ETH",
-    valueDetail: "($28,11)",
-  },
-  {
-    label: "Gas Price",
-    value: "0.00000012 ETH",
-    valueDetail: "(120 Gwei)",
-  },
-  {
-    label: "Total",
-    value: "0.347 ETH",
-    valueDetail: "($1437.11)",
-  },
-]
+const renameAndPickKeys = (keysMap, activityItem) =>
+  Object.keys(activityItem).reduce((previousValue, key) => {
+    if (keysMap[key]) {
+      return {
+        ...previousValue,
+        ...{
+          [keysMap[key].readableName]: keysMap[key].tansformer(
+            activityItem[key]
+          ),
+        },
+      }
+    }
+    return previousValue
+  }, {})
 
-export default function WalletActivityDetails(): ReactElement {
+function ethTransformer(value) {
+  return `${convertToEth(value)} ETH`
+}
+
+interface WalletActivityDetailsProps {
+  activityItem: any
+}
+
+export default function WalletActivityDetails(
+  props: WalletActivityDetailsProps
+): ReactElement {
+  const { activityItem } = props
+
+  const account = useBackgroundSelector((background) => background.account)
+
+  if (!activityItem) return <></>
+
+  const isSent =
+    activityItem.from.toLowerCase() ===
+    Object.keys(account.accountsData)[0].toLowerCase()
+
+  const headerTitle = `${!isSent ? "Received" : "Sent"} Asset`
+
+  const keysMap = {
+    blockHeight: {
+      readableName: "Block Height",
+      tansformer: (item) => item,
+      detailTransformer: ethTransformer,
+    },
+    value: {
+      readableName: "Amount",
+      tansformer: ethTransformer,
+      detailTransformer: ethTransformer,
+    },
+    gas: {
+      readableName: "Gas",
+      tansformer: ethTransformer,
+      detailTransformer: ethTransformer,
+    },
+    maxFeePerGas: {
+      readableName: "Max Fee/Gas",
+      tansformer: ethTransformer,
+      detailTransformer: ethTransformer,
+    },
+    gasPrice: {
+      readableName: "Gas Price",
+      tansformer: ethTransformer,
+      detailTransformer: ethTransformer,
+    },
+  }
+  const trimmedActivityItem = renameAndPickKeys(keysMap, activityItem)
+
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        <SharedActivityHeader label="Send Asset" activity="send" />
+        <SharedActivityHeader label={headerTitle} activity="send" />
         <div className="header_button">
           <SharedButton
             type="tertiary"
@@ -131,19 +178,22 @@ export default function WalletActivityDetails(): ReactElement {
         </div>
       </div>
       <div className="destination_cards">
-        <DestinationCard />
+        <DestinationCard label="From" address={activityItem.from} />
         <div className="icon_transfer" />
-        <DestinationCard />
+        <DestinationCard label="To" address={activityItem.to} />
       </div>
       <ul>
-        {DetailInfo.map(({ label, value, valueDetail }, index) => (
-          <DetailRowItem
-            key={index.toString()}
-            label={label}
-            value={value}
-            valueDetail={valueDetail}
-          />
-        ))}
+        {activityItem &&
+          Object.keys(trimmedActivityItem).map((key, index) => {
+            return (
+              <DetailRowItem
+                key={index.toString()}
+                label={key}
+                value={trimmedActivityItem[key].toString()}
+                valueDetail=""
+              />
+            )
+          })}
       </ul>
       <div className="activity_log_wrap">
         <div className="activity_log_title">Activity Log</div>
@@ -170,6 +220,7 @@ export default function WalletActivityDetails(): ReactElement {
           .destination_cards {
             display: flex;
             align-items: center;
+            margin-bottom: 4px;
           }
           .header {
             display: flex;
@@ -236,6 +287,9 @@ export default function WalletActivityDetails(): ReactElement {
           .check {
             mask-image: url("./images/check@2x.png");
             background-color: #22c480;
+          }
+          .activity_log_wrap {
+            display: none;
           }
         `}
       </style>
