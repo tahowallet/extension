@@ -57,6 +57,9 @@ module.exports = {
     "@typescript-eslint/no-use-before-define": ["error"],
     "no-useless-constructor": "off",
     "@typescript-eslint/no-useless-constructor": ["error"],
+    // TypeScript enums trigger a false positive when using no-shadow, we have to use a typescript specific rule instead
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": "error",
   },
   ignorePatterns: ["dist/", "extension-reload.js"],
   parser: "@typescript-eslint/parser",
