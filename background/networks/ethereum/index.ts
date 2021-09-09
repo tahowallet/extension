@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import Provider from "./provider"
 import Subscription from "./subscription"
-import Logger from "../../lib/logger"
+import logger from "../../lib/logger"
 
 /*
   should do caching
@@ -104,7 +104,7 @@ export default class EthereumNetworkProvider extends Provider {
         )
         this.request({ method: "eth_unsubscribe", params: [subscription.id] })
       } catch (e) {
-        Logger.error(e)
+        logger.error(e)
       }
     })
     await this.transport.close()

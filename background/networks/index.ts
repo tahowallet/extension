@@ -1,7 +1,7 @@
 import ObsStore from "../lib/ob-store"
 import EtherumNetworkProvider from "./ethereum"
 import { NETWORK_ERRORS } from "../constants/errors"
-import Logger from "../lib/logger"
+import logger from "../lib/logger"
 
 export const providers = {
   ethereum: EtherumNetworkProvider,
@@ -67,7 +67,7 @@ export default class Network {
       this.providers[type][endpoint] = new providers[type]({ endpoint })
       this.providers[type].selected = this.providers[type][endpoint]
     } catch (e) {
-      Logger.error(e)
+      logger.error(e)
     }
     this.state.putState(networks)
   }

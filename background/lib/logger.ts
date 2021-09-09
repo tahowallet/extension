@@ -1,14 +1,14 @@
 // eslint-disable no-console
 
 enum LogLevel {
-  Log = "log",
-  Info = "info",
-  Warn = "warn",
-  Error = "error",
+  log = "log",
+  info = "info",
+  warn = "warn",
+  error = "error",
 }
 
 function genericLogger(level: LogLevel, input: any[]) {
-  console[level].apply(this, input)
+  console[level](...input)
 
   const stackTrace = new Error().stack.split("\n").filter((line) => {
     // Remove empty lines from the output
@@ -27,19 +27,19 @@ function genericLogger(level: LogLevel, input: any[]) {
 
 const logger = {
   log(...input: any[]) {
-    genericLogger(LogLevel.Log, input)
+    genericLogger(LogLevel.log, input)
   },
 
   info(...input: any[]) {
-    genericLogger(LogLevel.Info, input)
+    genericLogger(LogLevel.info, input)
   },
 
   warn(...input: any[]) {
-    genericLogger(LogLevel.Warn, input)
+    genericLogger(LogLevel.warn, input)
   },
 
   error(...input: any[]) {
-    genericLogger(LogLevel.Error, input)
+    genericLogger(LogLevel.error, input)
   },
 }
 

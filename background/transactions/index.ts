@@ -2,7 +2,7 @@
 import ObsStore from "../lib/ob-store"
 import { createEthProviderWrapper } from "../lib/utils"
 import { formatTransaction } from "./utils"
-import Logger from "../lib/logger"
+import logger from "../lib/logger"
 
 /*
 STATE
@@ -101,7 +101,7 @@ export default class Transactions {
                 fiatValue
               )
             } catch (e) {
-              Logger.error(e)
+              logger.error(e)
               throw e
             }
           })

@@ -1,6 +1,6 @@
 import { browser, Alarms } from "webextension-polyfill-ts"
 import Emittery from "emittery"
-import Logger from "../../lib/logger"
+import logger from "../../lib/logger"
 
 import {
   AccountBalance,
@@ -290,7 +290,7 @@ export default class IndexingService implements Service<Events> {
             const newListRef = await fetchAndValidateTokenList(url)
             await this.db.saveTokenList(url, newListRef.tokenList)
           } catch (err) {
-            Logger.error(
+            logger.error(
               `Error fetching, validating, and saving token list ${url}`
             )
           }
