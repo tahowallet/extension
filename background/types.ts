@@ -1,5 +1,7 @@
 import { TokenList } from "@uniswap/token-lists"
 
+export type HexString = string
+
 export interface TokenListCitation {
   name: string
   url: string
@@ -53,7 +55,7 @@ export type NetworkSpecific = {
 }
 
 export type SmartContract = NetworkSpecific & {
-  contractAddress: string
+  contractAddress: HexString
 }
 
 export type NetworkSpecificAsset = NetworkSpecific & Asset
@@ -132,7 +134,7 @@ export interface AccountBalance {
   /*
    * The account whose balance was measured.
    */
-  account: string
+  account: HexString
   /*
    * The measured balance and the asset in which it's denominated.
    */
@@ -160,7 +162,7 @@ export interface AccountBalance {
  * An account on a particular network. That's it. That's the comment.
  */
 export interface AccountNetwork {
-  account: string
+  account: HexString
   network: Network
 }
 
@@ -190,8 +192,8 @@ export interface EIP1559Block extends EVMBlock {
 
 export interface EVMTransaction {
   hash: string
-  from: string
-  to: string
+  from: HexString
+  to: HexString
   gas: bigint
   gasPrice: bigint | null
   maxFeePerGas: bigint | null
@@ -250,6 +252,15 @@ export type AnyEVMTransaction =
   | SignedEVMTransaction
   | SignedConfirmedEVMTransaction
 
+export type AssetTransfer = {
+  network: Network
+  assetAmount: AssetAmount
+  from: HexString
+  to: HexString
+  dataSource: "alchemy" | "local"
+  txHash: string
+}
+
 // KEY TYPES
 
 export enum KeyTypes { // eslint-disable-line no-shadow
@@ -258,7 +269,6 @@ export enum KeyTypes { // eslint-disable-line no-shadow
   metamaskMnemonic = "mnemonic#metamask",
   singleSECP = "single#secp256k1",
 }
-
 export type MsgParams = {
   data: string
   from: string

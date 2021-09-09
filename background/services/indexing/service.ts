@@ -6,17 +6,19 @@ import {
   AccountNetwork,
   CoinGeckoAsset,
   FungibleAsset,
+  HexString,
   Network,
   PricePoint,
   SmartContractFungibleAsset,
 } from "../../types"
-import { getBalances as getTokenBalances } from "../../lib/erc20"
+import { getBalances as getAssetBalances } from "../../lib/erc20"
+import { getTokenBalances } from "../../lib/alchemy"
 import { getPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { BTC, ETH, FIAT_CURRENCIES } from "../../constants"
+import { BTC, ETH, FIAT_CURRENCIES, ETHEREUM } from "../../constants"
 import PreferenceService from "../preferences/service"
 import ChainService from "../chain/service"
 import { Service } from ".."
@@ -81,6 +83,8 @@ export default class IndexingService implements Service<Events> {
   async startService(): Promise<void> {
     this.db = await getOrCreateDB()
 
+    this.connectChainServiceEvents()
+
     Object.entries(this.schedules).forEach(([name, schedule]) => {
       browser.alarms.create(name, schedule)
     })
@@ -92,7 +96,6 @@ export default class IndexingService implements Service<Events> {
       }
     })
 
-    this.connectChainServiceEvents()
     await this.fetchAndCacheTokenLists()
   }
 
@@ -126,6 +129,26 @@ export default class IndexingService implements Service<Events> {
     return networkAssetsFromLists(tokenLists)
   }
 
+  /*
+   * Find the metadata for a known SmartContractFungibleAsset based on the
+   * network and address.
+   *
+   * @param network - the home network of the asset
+   * @param contractAddress - the address of the asset on its home network
+   */
+  async getKnownSmartContractAsset(
+    network: Network,
+    contractAddress: HexString
+  ): Promise<SmartContractFungibleAsset> {
+    const knownAssets = await this.getCachedNetworkAssets()
+    const found = knownAssets.find(
+      (asset) =>
+        asset.homeNetwork.name === network.name &&
+        asset.contractAddress === contractAddress
+    )
+    return found
+  }
+
   /* *****************
    * PRIVATE METHODS *
    ******************* */
@@ -133,28 +156,67 @@ export default class IndexingService implements Service<Events> {
   private async connectChainServiceEvents(): Promise<void> {
     const chain = await this.chainService
 
-    // listen for alchemyAssetTransfers, and if we find them, track those tokens
+    // listen for assetTransfers, and if we find them, track those tokens
     // TODO update for NFTs
     chain.emitter.on(
-      "alchemyAssetTransfers",
+      "assetTransfers",
       async ({ accountNetwork, assetTransfers }) => {
-        assetTransfers
-          .filter((t) => t.category === "token" && t.erc721TokenId === null)
-          .forEach((transfer) => {
-            if ("rawContract" in transfer && transfer.rawContract.address) {
-              this.addTokenToTrackByContract(
-                accountNetwork,
-                transfer.rawContract.address,
-                transfer.rawContract.decimals
-              )
-            } else {
-              console.warn(
-                `Alchemy token transfer missing contract metadata ${transfer}`
-              )
-            }
-          })
+        assetTransfers.forEach((transfer) => {
+          const fungibleAsset = transfer.assetAmount
+            .asset as SmartContractFungibleAsset
+          if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
+            this.addTokenToTrackByContract(
+              accountNetwork,
+              fungibleAsset.contractAddress,
+              fungibleAsset.decimals
+            )
+          }
+        })
       }
     )
+
+    chain.emitter.on("newAccountToTrack", async (accountNetwork) => {
+      // whenever a new account is added, get token balances from Alchemy's
+      // default list and add any non-zero tokens to the tracking list
+      const balances = await getTokenBalances(
+        chain.pollingProviders.ethereum,
+        accountNetwork.account
+      )
+
+      // look up all assets and set balances
+      Promise.allSettled(
+        balances.map(async (b) => {
+          const knownAsset = await this.getKnownSmartContractAsset(
+            accountNetwork.network,
+            b.contractAddress
+          )
+          if (knownAsset) {
+            await this.db.addBalances([
+              {
+                assetAmount: {
+                  asset: knownAsset,
+                  amount: b.amount,
+                },
+                retrievedAt: Date.now(),
+                network: accountNetwork.network,
+                dataSource: "alchemy",
+                account: accountNetwork.account,
+              },
+            ])
+            if (b.amount > 0) {
+              await this.addTokenToTrack(knownAsset)
+            }
+          } else if (b.amount > 0) {
+            await this.addTokenToTrackByContract(
+              accountNetwork,
+              b.contractAddress
+            )
+            // TODO we're losing balance information here, consider an
+            // addTokenAndBalanceToTrackByContract method
+          }
+        })
+      )
+    })
   }
 
   /*
@@ -258,7 +320,7 @@ export default class IndexingService implements Service<Events> {
         await chainService.getAccountsToTrack()
       ).map(async ({ account }) => {
         // TODO hardcoded to Ethereum
-        const balances = await getTokenBalances(
+        const balances = await getAssetBalances(
           chainService.pollingProviders.ethereum,
           erc20TokensToTrack,
           account
