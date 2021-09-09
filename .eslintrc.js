@@ -8,6 +8,8 @@ const {
 module.exports = {
   extends: [
     "airbnb",
+    "airbnb-typescript",
+    "airbnb/hooks",
     "plugin:import/typescript",
     "plugin:@typescript-eslint/recommended",
     "plugin:prettier/recommended",
@@ -30,13 +32,6 @@ module.exports = {
       // Don't slap build files for importing devDependencies.
       { devDependencies: ["!+(src/api|ui)/**/*.+(ts|js)"] },
     ],
-    "import/extensions": [
-      "error",
-      {
-        // Never flag missing .ts import extensions, as these are resolved at build time.
-        ts: "never",
-      },
-    ],
     // Add known-safe exceptions to no-param-reassign.
     "no-param-reassign": [
       airbnbNoParamReassignRules[0],
@@ -51,16 +46,10 @@ module.exports = {
         ],
       },
     ],
-    // Replace a couple of base ESLint rules defined by airbnb with TypeScript
-    // extensions that understand certain TypeScript-specific features.
-    "no-use-before-define": "off",
-    "@typescript-eslint/no-use-before-define": ["error"],
-    "no-useless-constructor": "off",
-    "@typescript-eslint/no-useless-constructor": ["error"],
-    // TypeScript enums trigger a false positive when using no-shadow, we have to use a typescript specific rule instead
-    "no-shadow": "off",
-    "@typescript-eslint/no-shadow": "error",
   },
   ignorePatterns: ["dist/", "extension-reload.js"],
   parser: "@typescript-eslint/parser",
+  parserOptions: {
+    project: "./.tsconfig-eslint.json",
+  },
 }

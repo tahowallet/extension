@@ -12,11 +12,11 @@ export default function Swap(): ReactElement {
   const [selectedCount, setSelectedCount] = useState(0)
 
   const handleClick = useCallback(() => {
-    setOpenTokenMenu(!openTokenMenu)
+    setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
   const handleAssetSelect = useCallback(() => {
-    setSelectedCount(selectedCount + 1)
+    setSelectedCount((currentCount) => currentCount + 1)
   }, [])
 
   return (
@@ -77,18 +77,6 @@ export default function Swap(): ReactElement {
           }
           .network_fee_button {
             margin-right: 16px;
-          }
-          // TODO: this css is duplicated, needs to be dry
-          .label {
-            color: var(--green-60);
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-            margin-bottom: 5px;
-            margin-left: 7px;
-            display: flex;
-            flex-direction: column;
           }
           .label_right {
             margin-right: 6px;

@@ -69,6 +69,14 @@ export default function SharedAssetItem(props: Props): ReactElement {
           .left {
             display: flex;
           }
+          .name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 18px;
+            text-transform: uppercase;
+            margin-top: 2px;
+          }
         `}
       </style>
     </li>

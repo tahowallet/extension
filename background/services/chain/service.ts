@@ -13,19 +13,20 @@ import {
   AccountBalance,
   AccountNetwork,
   AnyEVMTransaction,
+  AssetTransfer,
   EIP1559Block,
   FungibleAsset,
   Network,
   SignedEVMTransaction,
 } from "../../types"
-import { getAssetTransfers, AlchemyAssetTransfer } from "../../lib/alchemy"
+import { getAssetTransfers } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences/service"
 import { Service } from ".."
 import { getOrCreateDB, ChainDatabase } from "./db"
 
-const ALCHEMY_KEY = "8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa"
+const ALCHEMY_KEY = "mkX4QnxuNAyLmVF3yKzwf-n432udybcS" // 8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa
 
 const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
 
@@ -178,10 +179,11 @@ interface AlarmSchedule {
 }
 
 interface Events {
+  newAccountToTrack: AccountNetwork
   accountBalance: AccountBalance
-  alchemyAssetTransfers: {
+  assetTransfers: {
     accountNetwork: AccountNetwork
-    assetTransfers: AlchemyAssetTransfer[]
+    assetTransfers: AssetTransfer[]
   }
   newBlock: EIP1559Block
   transaction: AnyEVMTransaction
@@ -274,7 +276,8 @@ export default class ChainService implements Service<Events> {
         this.handleQueuedTransactionAlarm()
       }
     })
-    await Promise.all([
+
+    Promise.all([
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
@@ -285,7 +288,7 @@ export default class ChainService implements Service<Events> {
       this.subscribeToNewHeads(ETHEREUM),
     ])
 
-    await Promise.all(
+    Promise.all(
       accounts
         .map(
           // subscribe to all account transactions
@@ -332,6 +335,7 @@ export default class ChainService implements Service<Events> {
 
   async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
     await this.db.addAccountToTrack(accountNetwork)
+    this.emitter.emit("newAccountToTrack", accountNetwork)
     this.getLatestBaseAccountBalance(accountNetwork)
     this.subscribeToAccountTransactions(accountNetwork)
     this.loadRecentAssetTransfers(accountNetwork)
@@ -420,15 +424,15 @@ export default class ChainService implements Service<Events> {
       )
 
       // TODO if this fails, other services still needs a way to kick
-      // off monitoring.
-      this.emitter.emit("alchemyAssetTransfers", {
+      // off monitoring of token balances
+      this.emitter.emit("assetTransfers", {
         accountNetwork,
         assetTransfers,
       })
 
       /// send all found tx hashes into a queue to retrieve + cache
       assetTransfers.forEach((a) =>
-        this.queueTransactionHashToRetrieve(ETHEREUM, a.hash)
+        this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
       )
     } catch (err) {
       Logger.error(err)

@@ -44,7 +44,7 @@ body {
   width: 384px;
   height: 600px;
   margin: 0;
-  font-family: 'Segment', -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+  font-family: "Segment", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
     sans-serif;
   position: relative;
   color: #fff;
@@ -98,9 +98,24 @@ li {
 
 .serif_header {
   color: #fefefc;
-  font-family: 'Quincy CF';
+  font-family: "Quincy CF";
   font-size: 38px;
   font-weight: 400;
   padding: unset;
   margin: unset;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  color: var(--green-60);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.42px;
+  line-height: 16px;
+  display: flex;
+  justify-content: space-between;
 }

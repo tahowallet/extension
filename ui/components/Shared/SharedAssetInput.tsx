@@ -95,9 +95,9 @@ export default function SharedAssetInput(
   const [selectedToken, setSelectedToken] = useState({ name: false })
 
   const handleClick = useCallback(() => {
-    setOpenAssetMenu(!openAssetMenu)
+    setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
     onClick()
-  }, [])
+  }, [onClick])
 
   const setSelectedTokenAndClose = useCallback((token) => {
     setSelectedToken(token)
