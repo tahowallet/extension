@@ -19,7 +19,7 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
         like to continue.
       </div>
       <ul>
-        <li className="label">Use an existing wallet</li>
+        <li className="label_small">Use an existing wallet</li>
         <li className="option standard_width">
           <div className="icon metamask_icon" />
           <SharedButton
@@ -79,7 +79,7 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
             text-align: center;
             line-height: 24px;
           }
-          .label {
+          .label_small {
             margin-bottom: 16px;
             display: block;
             color: var(--green-40);

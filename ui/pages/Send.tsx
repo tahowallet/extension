@@ -76,18 +76,7 @@ export default function Send(): ReactElement {
           .form_input {
             margin-bottom: 22px;
           }
-          .label {
-            height: 17px;
-            color: var(--green-60);
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-            margin-bottom: 5px;
-            margin-left: 7px;
-            display: flex;
-            justify-content: space-between;
-          }
+
           .label_right {
             margin-right: 6px;
           }

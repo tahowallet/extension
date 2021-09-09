@@ -109,16 +109,6 @@ export default function SwapTransactionSettings(): ReactElement {
             padding: 0px 17px;
             box-sizing: border-box;
           }
-          .label {
-            color: var(--green-60);
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-          }
           .label:first-of-type {
             margin-bottom: 7px;
           }
