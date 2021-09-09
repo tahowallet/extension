@@ -18,7 +18,7 @@ export default function WalletAccountBalanceControl(
   )
 
   const handleClick = useCallback(() => {
-    setOpenReceiveMenu(!openReceiveMenu)
+    setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
   return (
