@@ -1,5 +1,6 @@
 import { EventEmitter } from "events"
 import { TRANSPORT_TYPES } from "../../constants"
+import Logger from "../../lib/logger"
 
 /*
 
@@ -32,7 +33,7 @@ export default class Subscription extends EventEmitter {
         this.emit("update", result)
       }
     } catch (e) {
-      console.error(e)
+      Logger.error(e)
     }
   }
 }

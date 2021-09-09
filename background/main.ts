@@ -24,8 +24,6 @@ import {
 } from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
 
-import logger from "./lib/logger"
-
 const reduxSanitizer = (input) => {
   if (typeof input === "bigint") {
     return input.toString()
@@ -132,7 +130,6 @@ export default class Main {
   async initializeRedux(): Promise<void> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore()
-    logger.log("Test!")
     wrapStore(this.store, {
       serializer: (payload: unknown) =>
         JSON.stringify(payload, (_, value) =>

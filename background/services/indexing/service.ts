@@ -1,5 +1,6 @@
 import { browser, Alarms } from "webextension-polyfill-ts"
 import Emittery from "emittery"
+import Logger from "../../lib/logger"
 
 import {
   AccountBalance,
@@ -148,7 +149,7 @@ export default class IndexingService implements Service<Events> {
                 transfer.rawContract.decimals
               )
             } else {
-              console.warn(
+              Logger.warn(
                 `Alchemy token transfer missing contract metadata ${transfer}`
               )
             }
@@ -227,7 +228,7 @@ export default class IndexingService implements Service<Events> {
             const newListRef = await fetchAndValidateTokenList(url)
             await this.db.saveTokenList(url, newListRef.tokenList)
           } catch (err) {
-            console.error(
+            Logger.error(
               `Error fetching, validating, and saving token list ${url}`
             )
           }
