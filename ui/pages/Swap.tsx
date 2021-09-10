@@ -12,11 +12,11 @@ export default function Swap(): ReactElement {
   const [selectedCount, setSelectedCount] = useState(0)
 
   const handleClick = useCallback(() => {
-    setOpenTokenMenu(!openTokenMenu)
+    setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
   const handleAssetSelect = useCallback(() => {
-    setSelectedCount(selectedCount + 1)
+    setSelectedCount((currentCount) => currentCount + 1)
   }, [])
 
   return (

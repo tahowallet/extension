@@ -1,5 +1,6 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers } from "ethers"
+import { getTokenBalances } from "./alchemy"
 import { ETHEREUM } from "../constants"
 import { AccountBalance, SmartContractFungibleAsset } from "../types"
 
@@ -31,9 +32,11 @@ export async function getBalances(
     return [] as AccountBalance[]
   }
 
-  const params = [account, tokens.map((t) => t.contractAddress)]
-  const json = await provider.send("alchemy_getTokenBalances", params)
-  // TODO cover failed schema validation and other errors
+  const tokenBalances = await getTokenBalances(
+    provider,
+    account,
+    tokens.map((t) => t.contractAddress)
+  )
 
   const assetByAddress = tokens.reduce((acc, asset) => {
     const newAcc = { ...acc }
@@ -41,11 +44,14 @@ export async function getBalances(
     return newAcc
   }, {})
 
-  return json.tokenBalances.reduce(
-    (acc: AccountBalance[], tokenDetail: any) => {
+  return tokenBalances.reduce(
+    (
+      acc: AccountBalance[],
+      tokenDetail: { contractAddress: string; amount: bigint }
+    ) => {
       const accountBalance = {
         assetAmount: {
-          amount: BigInt(tokenDetail.tokenBalance || 0),
+          amount: tokenDetail.amount,
           asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
         },
         account,
