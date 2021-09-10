@@ -1,6 +1,7 @@
 import path from "path"
 import webpack, { Configuration, WebpackOptionsNormalized } from "webpack"
 import { merge as webpackMerge } from "webpack-merge"
+import Dotenv from "dotenv-webpack"
 import SizePlugin from "size-plugin"
 import TerserPlugin from "terser-webpack-plugin"
 import LiveReloadPlugin from "webpack-livereload-plugin"
@@ -50,6 +51,7 @@ const baseConfig: Configuration = {
     },
   },
   plugins: [
+    new Dotenv(),
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         diagnosticOptions: {
