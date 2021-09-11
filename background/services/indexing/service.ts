@@ -107,11 +107,11 @@ export default class IndexingService implements Service<Events> {
   }
 
   async getTokensToTrack(): Promise<SmartContractFungibleAsset[]> {
-    return this.db.getTokensToTrack()
+    return this.db.getAssetsToTrack()
   }
 
-  async addTokenToTrack(asset: SmartContractFungibleAsset): Promise<void> {
-    return this.db.addTokenToTrack(asset)
+  async addAssetToTrack(asset: SmartContractFungibleAsset): Promise<void> {
+    return this.db.addAssetToTrack(asset)
   }
 
   async getLatestAccountBalance(
@@ -205,7 +205,7 @@ export default class IndexingService implements Service<Events> {
               },
             ])
             if (b.amount > 0) {
-              await this.addTokenToTrack(knownAsset)
+              await this.addAssetToTrack(knownAsset)
             }
           } else if (b.amount > 0) {
             await this.addTokenToTrackByContract(
@@ -246,14 +246,14 @@ export default class IndexingService implements Service<Events> {
         asset.contractAddress === contractAddress
     )
     if (found) {
-      this.addTokenToTrack(found)
+      this.addAssetToTrack(found)
     } else {
       const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         accountNetwork.network,
         contractAddress
       )
       if (customAsset) {
-        this.addTokenToTrack(customAsset)
+        this.addAssetToTrack(customAsset)
       } else {
         // TODO kick off metadata inference via a contract read + perhaps a CoinGecko lookup?
       }
@@ -307,10 +307,10 @@ export default class IndexingService implements Service<Events> {
     // no need to block here, as the first fetch blocks the entire service init
     this.fetchAndCacheTokenLists()
 
-    const tokensToTrack = await this.db.getTokensToTrack()
+    const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet, doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
-    const erc20TokensToTrack = tokensToTrack.filter(
+    const erc20TokensToTrack = assetsToTrack.filter(
       (t) => t.homeNetwork.chainID === "1"
     )
 
