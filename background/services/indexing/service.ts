@@ -5,6 +5,7 @@ import logger from "../../lib/logger"
 import {
   AccountBalance,
   AccountNetwork,
+  AnyAsset,
   CoinGeckoAsset,
   FungibleAsset,
   HexString,
@@ -34,7 +35,7 @@ interface AlarmSchedule {
 interface Events {
   accountBalance: AccountBalance
   price: PricePoint
-  assets: SmartContractFungibleAsset[]
+  assets: AnyAsset[]
 }
 
 /*
@@ -97,7 +98,10 @@ export default class IndexingService implements Service<Events> {
       }
     })
 
-    await this.fetchAndCacheTokenLists()
+    // on launch, push any assets we have cached
+    this.emitter.emit("assets", await this.getCachedAssets())
+    // ... and kick off token list fetching
+    this.fetchAndCacheTokenLists()
   }
 
   async stopService(): Promise<void> {
@@ -122,12 +126,17 @@ export default class IndexingService implements Service<Events> {
     return this.db.getLatestAccountBalance(account, network, asset)
   }
 
-  async getCachedNetworkAssets(): Promise<SmartContractFungibleAsset[]> {
+  /*
+   * Get cached asset metadata from hard-coded base assets and configured token
+   * lists.
+   */
+  async getCachedAssets(): Promise<AnyAsset[]> {
+    const baseAssets = [BTC, ETH]
     const tokenListPrefs = await (
       await this.preferenceService
     ).getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
-    return networkAssetsFromLists(tokenLists)
+    return baseAssets.concat(networkAssetsFromLists(tokenLists))
   }
 
   /*
@@ -141,13 +150,16 @@ export default class IndexingService implements Service<Events> {
     network: Network,
     contractAddress: HexString
   ): Promise<SmartContractFungibleAsset> {
-    const knownAssets = await this.getCachedNetworkAssets()
+    const knownAssets = await this.getCachedAssets()
     const found = knownAssets.find(
       (asset) =>
+        "decimals" in asset &&
+        "homeNetwork" in asset &&
+        "contractAddress" in asset &&
         asset.homeNetwork.name === network.name &&
         asset.contractAddress === contractAddress
     )
-    return found
+    return found as SmartContractFungibleAsset
   }
 
   /* *****************
@@ -239,14 +251,17 @@ export default class IndexingService implements Service<Events> {
     contractAddress: string,
     decimals?: number
   ): Promise<void> {
-    const knownAssets = await this.getCachedNetworkAssets()
+    const knownAssets = await this.getCachedAssets()
     const found = knownAssets.find(
       (asset) =>
+        "decimals" in asset &&
+        "homeNetwork" in asset &&
         asset.homeNetwork.name === accountNetwork.network.name &&
+        "contractAddress" in asset &&
         asset.contractAddress === contractAddress
     )
     if (found) {
-      this.addAssetToTrack(found)
+      this.addAssetToTrack(found as SmartContractFungibleAsset)
     } else {
       const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         accountNetwork.network,
@@ -285,7 +300,7 @@ export default class IndexingService implements Service<Events> {
       logger.error("Error getting base asset prices", BTC, ETH, FIAT_CURRENCIES)
     }
 
-    // get the prices of all assets to track and save them
+    // get the prices of all logger to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet
     const erc20TokensToTrack = assetsToTrack.filter(
@@ -364,7 +379,7 @@ export default class IndexingService implements Service<Events> {
           }
         }
         // TODO refactor to do this on init once, then only when assets change
-        this.emitter.emit("assets", await this.getCachedNetworkAssets())
+        this.emitter.emit("assets", await this.getCachedAssets())
       })
     )
 
