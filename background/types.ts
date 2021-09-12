@@ -122,7 +122,7 @@ export interface PricePoint {
  */
 export interface UnitPricePoint {
   unitPrice: AnyAssetAmount
-  lastUpdated: number
+  time: number
 }
 
 /*

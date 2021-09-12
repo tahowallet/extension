@@ -14,12 +14,12 @@ import {
 } from "../../types"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
 import { getTokenBalances } from "../../lib/alchemy"
-import { getPrices } from "../../lib/prices"
+import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { BTC, ETH, FIAT_CURRENCIES, ETHEREUM } from "../../constants"
+import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import PreferenceService from "../preferences/service"
 import ChainService from "../chain/service"
 import { Service } from ".."
@@ -261,20 +261,88 @@ export default class IndexingService implements Service<Events> {
   }
 
   private async handlePriceAlarm(): Promise<void> {
-    // ETH and BTC vs major currencies
-    const pricePoints = await getPrices(
-      [BTC, ETH] as CoinGeckoAsset[],
-      FIAT_CURRENCIES
+    // TODO refactor for multiple price sources
+    try {
+      // TODO include user-preferred currencies
+      // get the prices of ETH and BTC vs major currencies
+      const basicPrices = await getPrices(
+        [BTC, ETH] as CoinGeckoAsset[],
+        FIAT_CURRENCIES
+      )
+
+      // kick off db writes and event emission, don't wait for the promises to
+      // settle
+      const measuredAt = Date.now()
+      basicPrices.forEach((pricePoint) => {
+        this.emitter.emit("price", pricePoint)
+        this.db
+          .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
+          .catch((err) =>
+            logger.error("Error saving price point", pricePoint, measuredAt)
+          )
+      })
+    } catch (e) {
+      logger.error("Error getting base asset prices", BTC, ETH, FIAT_CURRENCIES)
+    }
+
+    // get the prices of all assets to track and save them
+    const assetsToTrack = await this.db.getAssetsToTrack()
+    // TODO only supports Ethereum mainnet
+    const erc20TokensToTrack = assetsToTrack.filter(
+      (t) => t.homeNetwork.chainID === "1"
     )
 
-    // kick off db writes and event emission, don't wait for the promises to
-    // settle
-    pricePoints.forEach((pricePoint) => {
-      this.emitter.emit("price", pricePoint)
-      this.db.savePriceMeasurement(pricePoint, Date.now(), "coingecko")
-    })
-
-    // TODO get the prices of all tokens to track and save them
+    try {
+      // TODO only uses USD
+      const erc20TokensByAddress = erc20TokensToTrack.reduce((agg, t) => {
+        const newAgg = {
+          ...agg,
+        }
+        newAgg[t.contractAddress.toLowerCase()] = t
+        return newAgg
+      }, {} as { [address: string]: SmartContractFungibleAsset })
+      const measuredAt = Date.now()
+      const erc20TokenPrices = await getEthereumTokenPrices(
+        Object.keys(erc20TokensByAddress),
+        "USD"
+      )
+      Object.entries(erc20TokenPrices).forEach(
+        ([contractAddress, unitPricePoint]) => {
+          const asset = erc20TokensByAddress[contractAddress.toLowerCase()]
+          if (asset) {
+            // TODO look up fiat currency
+            const pricePoint = {
+              pair: [asset, USD],
+              amounts: [
+                BigInt(1),
+                BigInt(
+                  (Number(unitPricePoint.unitPrice.amount) /
+                    10 **
+                      (unitPricePoint.unitPrice.asset as FungibleAsset)
+                        .decimals) *
+                    10 ** USD.decimals
+                ),
+              ], // TODO not a big fan of this lost precision
+              time: unitPricePoint.time,
+            } as PricePoint
+            this.emitter.emit("price", pricePoint)
+            this.db
+              .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
+              .catch(() =>
+                logger.error("Error saving price point", pricePoint, measuredAt)
+              )
+          } else {
+            logger.warn(
+              "Discarding price from unknown asset",
+              contractAddress,
+              unitPricePoint
+            )
+          }
+        }
+      )
+    } catch (err) {
+      logger.error("Error getting token prices", erc20TokensToTrack)
+    }
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {
@@ -295,6 +363,7 @@ export default class IndexingService implements Service<Events> {
             )
           }
         }
+        // TODO refactor to do this on init once, then only when assets change
         this.emitter.emit("assets", await this.getCachedNetworkAssets())
       })
     )
