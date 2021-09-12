@@ -13,6 +13,10 @@ import {
   IndexingService,
 } from "./services/indexing"
 import { startService as startChain, ChainService } from "./services/chain"
+import {
+  startService as startKeyring,
+  KeyringService,
+} from "./services/keyring"
 
 import rootReducer from "./redux-slices"
 import {
@@ -93,6 +97,13 @@ export default class Main {
    */
   indexingService: Promise<IndexingService>
 
+  /*
+   * A promise to the keyring service, which stores key material, derives
+   * accounts, and signs messagees and transactions. The promise will be
+   * resolved when the service is initialized.
+   */
+  keyringService: Promise<KeyringService>
+
   /**
    * The redux store for the wallet core. Note that the redux store is used to
    * render the UI (via webext-redux), but it is _not_ the source of truth.
@@ -124,6 +135,7 @@ export default class Main {
       })
       return service
     })
+    this.keyringService = startKeyring()
   }
 
   async initializeRedux(): Promise<void> {
