@@ -113,8 +113,8 @@ function recentPricesFromArray(
     .map((r) => r[1] as PricePoint)
     .reduce((agg: SingleAssetState["recentPrices"], pp: PricePoint) => {
       const pricedAssetIndex = findClosestAsset(baseAsset, pp.pair)
-      if (pricedAssetIndex) {
-        const pricedAsset = pp.pair[pricedAssetIndex]
+      if (pricedAssetIndex !== null) {
+        const pricedAsset = pp.pair[+(pricedAssetIndex === 0)]
         const newAgg = {
           ...agg,
         }
@@ -183,7 +183,6 @@ const assetsSlice = createSlice({
           ...immerState,
         ] as AnyAsset[])
         if (index) {
-          const asset = immerState[index]
           // append to longer-running prices
           const prices = prunePrices(
             [...immerState[index].prices].concat([pricePoint])
