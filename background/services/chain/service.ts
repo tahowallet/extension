@@ -26,7 +26,8 @@ import PreferenceService from "../preferences/service"
 import { Service } from ".."
 import { getOrCreateDB, ChainDatabase } from "./db"
 
-const { ALCHEMY_KEY } = process.env
+// We can't use destructuring because webpack has to replace all instances of `process.env` variables in the bundled output
+const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
 
