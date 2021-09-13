@@ -21,7 +21,7 @@ export default function Wallet(): ReactElement {
       Object.keys(data.accountsData)[0].toLowerCase()
     return {
       ...activityItem,
-      timestamp: data.blocks[activityItem.blockHeight].timestamp,
+      timestamp: data?.blocks[activityItem.blockHeight]?.timestamp,
       isSent,
     }
   })
