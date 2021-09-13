@@ -127,9 +127,6 @@ export default class Main {
   }
 
   async initializeRedux(): Promise<void> {
-    console.log("Is the envrionment working?")
-    console.log(process.env.API_KEY)
-
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore()
     wrapStore(this.store, {

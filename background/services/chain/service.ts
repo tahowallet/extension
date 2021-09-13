@@ -26,7 +26,7 @@ import PreferenceService from "../preferences/service"
 import { Service } from ".."
 import { getOrCreateDB, ChainDatabase } from "./db"
 
-const ALCHEMY_KEY = "mkX4QnxuNAyLmVF3yKzwf-n432udybcS" // 8R4YNuff-Is79CeEHM2jzj2ssfzJcnfa
+const { ALCHEMY_KEY } = process.env
 
 const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
 
