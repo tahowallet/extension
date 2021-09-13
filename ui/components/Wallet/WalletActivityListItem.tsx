@@ -7,6 +7,7 @@ interface Props {
     timestamp?: string
     value?: string
     from?: string
+    isSent?: boolean
   }
 }
 
@@ -18,8 +19,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       <button type="button" className="standard_width" onClick={onClick}>
         <div className="top">
           <div className="left">
-            <div className="activity_icon" />
-            Receive
+            <div
+              className={`activity_icon${
+                !activity.isSent ? " receive_icon" : ""
+              }`}
+            />
+            {`${!activity.isSent ? "Received" : "Sent"}`}
+          </div>
           <div className="right">
             {dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
           </div>
@@ -62,12 +68,15 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-80);
           }
           .activity_icon {
-            background: url("./images/activity_receive@2x.png");
+            background: url("./images/activity_send@2x.png");
             background-size: 14px 14px;
             width: 14px;
             height: 14px;
             margin-right: 4px;
             margin-left: 9px;
+          }
+          .receive_icon {
+            background: url("./images/activity_receive@2x.png");
           }
           .top {
             height: 16px;
@@ -154,7 +163,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             text-align: right;
           }
           .outcome {
-            width: 200px;
             color: var(--green-5);
             font-family: Segment;
             font-size: 14px;

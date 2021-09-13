@@ -16,9 +16,13 @@ export default function Wallet(): ReactElement {
 
   // Derive activities with timestamps included
   const activity = account.activity.map((activityItem) => {
+    const isSent =
+      activityItem.from.toLowerCase() ===
+      Object.keys(data.accountsData)[0].toLowerCase()
     return {
       ...activityItem,
       timestamp: data.blocks[activityItem.blockHeight].timestamp,
+      isSent,
     }
   })
 
@@ -39,7 +43,7 @@ export default function Wallet(): ReactElement {
               {panelNumber === 0 ? (
                 <WalletAssetList assetAmounts={account.assets} />
               ) : (
-                <WalletActivityList activity={account.activity} />
+                <WalletActivityList activity={activity} />
               )}
             </div>
           </div>

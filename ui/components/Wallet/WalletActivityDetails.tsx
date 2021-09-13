@@ -127,11 +127,7 @@ export default function WalletActivityDetails(
 
   if (!activityItem) return <></>
 
-  const isSent =
-    activityItem.from.toLowerCase() ===
-    Object.keys(account.accountsData)[0].toLowerCase()
-
-  const headerTitle = `${!isSent ? "Received" : "Sent"} Asset`
+  const headerTitle = `${!activityItem.isSent ? "Received" : "Sent Asset"}`
 
   const keysMap = {
     blockHeight: {
