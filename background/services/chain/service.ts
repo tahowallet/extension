@@ -450,16 +450,26 @@ export default class ChainService implements Service<Events> {
       toHandle.map(async (hash) => {
         try {
           // TODO make this multi network
-          const result = await this.pollingProviders.ethereum.getTransaction(
-            hash
-          )
+          const ethProvider = this.pollingProviders.ethereum
+          const result = await ethProvider.getTransaction(hash)
+
+          // Get relevant block data. Primarily used in the frontend for timestamps.
+          const resultBlock = await ethProvider.getBlock(result.blockNumber)
+          const block = blockFromEthersBlock(resultBlock)
+
           const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
           if (!tx.blockHash && !tx.blockHeight) {
             this.subscribeToTransactionConfirmation(tx.network, tx.hash)
           }
+
           // TODO make this provider specific
+          // Save block and transaction
+          await this.db.addBlock(block)
           await this.saveTransaction(tx, "alchemy")
+
+          // Trigger sending block to redux store
+          this.emitter.emit("newBlock", block)
         } catch (error) {
           // TODO proper logging
           console.error(`Error retrieving transaction ${hash}`, error)

@@ -19,6 +19,7 @@ import {
   loadAccount,
   transactionConfirmed,
   transactionSeen,
+  addBlock,
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
@@ -162,7 +163,9 @@ export default class Main {
         this.store.dispatch(transactionSeen(transaction))
       }
     })
-
+    chain.emitter.on("newBlock", (block) => {
+      this.store.dispatch(addBlock(block))
+    })
     accountSliceEmitter.on("addAccount", async (accountNetwork) => {
       await chain.addAccountToTrack(accountNetwork)
     })
