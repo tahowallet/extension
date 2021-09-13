@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 
 export const initialState = {
-  showingActivityDetail: false,
+  showingActivityDetail: null,
 }
 
 const uiSlice = createSlice({
