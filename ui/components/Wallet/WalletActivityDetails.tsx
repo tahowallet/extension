@@ -1,5 +1,6 @@
 import React, { useCallback, ReactElement } from "react"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
+import dayjs from "dayjs"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
@@ -124,8 +125,6 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem } = props
 
-  const account = useBackgroundSelector((background) => background.account)
-
   if (!activityItem) return <></>
 
   const isSent =
@@ -138,7 +137,9 @@ export default function WalletActivityDetails(
     blockHeight: {
       readableName: "Block Height",
       tansformer: (item) => item,
-      detailTransformer: ethTransformer,
+      detailTransformer: () => {
+        return ""
+      },
     },
     value: {
       readableName: "Amount",
@@ -160,6 +161,15 @@ export default function WalletActivityDetails(
       tansformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
+    timestamp: {
+      readableName: "Timestamp",
+      tansformer: (item) => {
+        return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
+      },
+      detailTransformer: () => {
+        return ""
+      },
+    },
   }
   const trimmedActivityItem = renameAndPickKeys(keysMap, activityItem)
 
@@ -172,7 +182,10 @@ export default function WalletActivityDetails(
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        <SharedActivityHeader label={headerTitle} activity="send" />
+        <SharedActivityHeader
+          label={headerTitle}
+          activity={activityItem.isSent ? "send" : "receive"}
+        />
         <div className="header_button">
           <SharedButton
             type="tertiary"

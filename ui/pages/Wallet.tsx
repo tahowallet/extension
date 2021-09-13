@@ -11,9 +11,16 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
   //  accountLoading, hasWalletErrorCode
-  const account = useBackgroundSelector(
-    (background) => background.account.combinedData
-  )
+  const data = useBackgroundSelector((background) => background.account)
+  const account = data.combinedData
+
+  // Derive activities with timestamps included
+  const activity = account.activity.map((activityItem) => {
+    return {
+      ...activityItem,
+      timestamp: data.blocks[activityItem.blockHeight].timestamp,
+    }
+  })
 
   return (
     <div className="wrap">

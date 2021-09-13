@@ -1,9 +1,10 @@
 import React, { ReactElement } from "react"
+import dayjs from "dayjs"
 
 interface Props {
   onClick: () => void
   activity: {
-    timeStamp?: string
+    timestamp?: string
     value?: string
     from?: string
   }
@@ -19,8 +20,9 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <div className="activity_icon" />
             Receive
+          <div className="right">
+            {dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
           </div>
-          <div className="right">{activity.timeStamp}</div>
         </div>
         <div className="bottom">
           <div className="left">
