@@ -69,7 +69,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .activity_icon {
             background: url("./images/activity_send@2x.png");
-            background-size: 14px 14px;
+            background-size: cover;
             width: 14px;
             height: 14px;
             margin-right: 4px;
@@ -77,6 +77,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .receive_icon {
             background: url("./images/activity_receive@2x.png");
+            background-size: cover;
           }
           .top {
             height: 16px;
