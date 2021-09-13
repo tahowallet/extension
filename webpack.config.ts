@@ -51,7 +51,7 @@ const baseConfig: Configuration = {
     },
   },
   plugins: [
-    new Dotenv(),
+    new Dotenv({ defaults: true }),
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         diagnosticOptions: {
