@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { useCallback, ReactElement } from "react"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
@@ -163,6 +163,12 @@ export default function WalletActivityDetails(
   }
   const trimmedActivityItem = renameAndPickKeys(keysMap, activityItem)
 
+  const openEtherscan = useCallback(() => {
+    window
+      .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
+      .focus()
+  }, [])
+
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
@@ -174,6 +180,7 @@ export default function WalletActivityDetails(
             label="Etherscan"
             icon="external"
             iconSize="large"
+            onClick={openEtherscan}
           />
         </div>
       </div>
