@@ -24,7 +24,10 @@ export function weiToEth(value: string | number): number {
 }
 
 export function convertToEth(value: string | number): string {
-  return utils.formatUnits(BigNumber.from(`${value}`).toBigInt())
+  if (value && value >= 1) {
+    return utils.formatUnits(BigNumber.from(value).toBigInt())
+  }
+  return ""
 }
 
 export function transactionFee(
