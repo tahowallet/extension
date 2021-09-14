@@ -110,7 +110,7 @@ export default class IndexingService implements Service<Events> {
     })
   }
 
-  async getTokensToTrack(): Promise<SmartContractFungibleAsset[]> {
+  async getAssetsToTrack(): Promise<SmartContractFungibleAsset[]> {
     return this.db.getAssetsToTrack()
   }
 
