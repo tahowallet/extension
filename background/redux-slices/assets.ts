@@ -93,7 +93,12 @@ function prunePrices(prices: PricePoint[]): PricePoint[] {
 /*
  * Reduce a list of asset prices to an object mapping symbols to price.
  *
- * For example, a list of prices for ETH might reduce to {
+ * The reducer returns the latest price for each symbol, priced against the
+ * base asset. We make a best effort to de-duplicate assets, kicking the can on
+ * whether we need to try to canonicalize asset IDs... a deep and dark hole, in
+ * my experience.
+ *
+ * A list of prices for ETH might reduce to {
  *   USD: {...},
  *   CNY: {...},
  *   EUR: {...},
