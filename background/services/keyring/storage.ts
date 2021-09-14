@@ -4,7 +4,10 @@ import { UNIXTime } from "../../types"
 
 type SerializedEncryptedVaults = {
   version: 1
-  vaults: [UNIXTime, string][]
+  vaults: {
+    timeSaved: UNIXTime
+    vault: string
+  }[]
 }
 
 /**
@@ -47,13 +50,16 @@ export async function writeLatestEncryptedVault(
   vaults.sort()
   const currentLatest = vaults.pop()
   // if there's been no change, don't write
-  if (!currentLatest || currentLatest[1] !== encryptedVault) {
+  if (!currentLatest || currentLatest.vault !== encryptedVault) {
     await browser.storage.local.set({
       tallyVaults: {
         ...serializedVaults,
         vaults: [
           ...serializedVaults.vaults,
-          [new Date().getTime(), encryptedVault],
+          {
+            timeSaved: new Date().getTime(),
+            vault: encryptedVault,
+          },
         ],
       },
     })

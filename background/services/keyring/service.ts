@@ -33,14 +33,8 @@ export default class KeyringService implements Service<Events> {
   constructor() {
     this.emitter = new Emittery<Events>()
     const currentEncryptedVault = (async () => {
-      const currentVaults = await getEncryptedVaults()
-      if (currentVaults.vaults.length > 0) {
-        const timeAndVault = [...currentVaults.vaults].pop()
-        if (timeAndVault && timeAndVault.length > 1) {
-          return [...timeAndVault].pop().toString()
-        }
-      }
-      return undefined
+      const { vaults } = await getEncryptedVaults()
+      return vaults.pop()?.vault
     })()
     this.#keyringController = (async () => {
       const keyringOptions = {
