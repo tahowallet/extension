@@ -1,7 +1,6 @@
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-
 import { ETHEREUM } from "./constants/networks"
 
 import {
@@ -29,7 +28,11 @@ import {
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
-import { updateKeyrings } from "./redux-slices/keyrings"
+import {
+  emitter as keyringSliceEmitter,
+  updateKeyrings,
+  importLegacyKeyring,
+} from "./redux-slices/keyrings"
 
 const reduxSanitizer = (input) => {
   if (typeof input === "bigint") {
@@ -212,7 +215,24 @@ export default class Main {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
-    // TODO move unlocking to a reasonable place in the initialization flow
-    await keyring.generateNewKeyring(KeyringTypes.mnemonicBIP39S256, "password")
+    keyringSliceEmitter.on("generateNewKeyring", async () => {
+      // TODO move unlocking to a reasonable place in the initialization flow
+      await keyring.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S256,
+        "password"
+      )
+    })
+
+    keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
+      await keyring.importLegacyKeyring(mnemonic, "password")
+    })
+
+    this.store.dispatch(
+      importLegacyKeyring({
+        mnemonic:
+          // Don't use this to store realy money :)
+          "brain surround have swap horror body response double fire dumb bring hazard",
+      })
+    )
   }
 }

@@ -1,4 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit"
+import Emittery from "emittery"
 
 import { KeyringTypes } from "../types"
 
@@ -34,3 +35,26 @@ const keyringsSlice = createSlice({
 export const { updateKeyrings } = keyringsSlice.actions
 
 export default keyringsSlice.reducer
+
+export type Events = {
+  generateNewKeyring: never
+  importLegacyKeyring: { mnemonic: string }
+}
+
+export const emitter = new Emittery<Events>()
+
+// Async thunk to bubble the generateNewKeyring action from  store to emitter.
+export const generateNewKeyring = createAsyncThunk<Promise<void>, void>(
+  "keyrings/generateNewKeyring",
+  async () => {
+    await emitter.emit("generateNewKeyring")
+  }
+)
+
+// Async thunk to bubble the importLegacyKeyring action from  store to emitter.
+export const importLegacyKeyring = createAsyncThunk<
+  Promise<void>,
+  { mnemonic: string }
+>("keyrings/importLegacyKeyring", async ({ mnemonic }) => {
+  await emitter.emit("importLegacyKeyring", { mnemonic })
+})
