@@ -16,9 +16,9 @@ type KeyringsState = {
   keyrings: Keyring[]
 }
 
-export const initialState = {
+export const initialState: KeyringsState = {
   keyrings: [],
-} as KeyringsState
+}
 
 const keyringsSlice = createSlice({
   name: "keyrings",
