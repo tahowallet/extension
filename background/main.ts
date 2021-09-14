@@ -122,7 +122,7 @@ export default class Main {
     this.initializeServices()
 
     // Setting REDUX_CACHE to false will cause API requests to be made each time the background script is refreshed, which can be useful for development
-    if (process.env.REDUX_CACHE) {
+    if (process.env.REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
         const startupState = JSON.parse(saved.state, (_, value) =>
           value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
