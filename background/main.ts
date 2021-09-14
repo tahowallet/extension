@@ -1,3 +1,4 @@
+import { browser } from "webextension-polyfill-ts"
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
@@ -46,8 +47,12 @@ const reduxCache = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
-  // Todo: Don't use hardcoded 'chrome' browser
-  chrome.storage.local.set({ state })
+  // Browser extension storage supports JSON natively, however we have to stringify to preserve BigInts
+  const stringifiedState = JSON.stringify(state, (_, value) =>
+    typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
+  )
+
+  browser.storage.local.set({ state: stringifiedState })
   return result
 }
 
@@ -118,8 +123,14 @@ export default class Main {
 
     // Setting REDUX_CACHE to false will cause API requests to be made each time the background script is refreshed, which can be useful for development
     if (process.env.REDUX_CACHE) {
-      chrome.storage.local.get("state", (startupState) => {
-        this.initializeRedux(startupState.state)
+      browser.storage.local.get("state").then((saved) => {
+        const startupState = JSON.parse(saved.state, (_, value) =>
+          value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
+            ? BigInt(value.B_I_G_I_N_T)
+            : value
+        )
+
+        this.initializeRedux(startupState)
       })
     } else {
       this.initializeRedux()
