@@ -47,6 +47,8 @@ const baseConfig: Configuration = {
     fallback: {
       stream: require.resolve("stream-browserify"),
       process: require.resolve("process/browser"),
+      // these are required for @tallyho/keyring-controller
+      crypto: require.resolve("crypto-browserify"),
     },
   },
   plugins: [

@@ -18,6 +18,8 @@ import {
   KeyringService,
 } from "./services/keyring"
 
+import { KeyringTypes } from "./types"
+
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
@@ -135,7 +137,13 @@ export default class Main {
       })
       return service
     })
-    this.keyringService = startKeyring()
+    this.keyringService = startKeyring().then(async (service) => {
+      await service.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S256,
+        "password"
+      )
+      return service
+    })
   }
 
   async initializeRedux(): Promise<void> {
