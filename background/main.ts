@@ -29,6 +29,7 @@ import {
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
+import { updateKeyrings } from "./redux-slices/keyrings"
 
 const reduxSanitizer = (input) => {
   if (typeof input === "bigint") {
@@ -137,13 +138,7 @@ export default class Main {
       })
       return service
     })
-    this.keyringService = startKeyring().then(async (service) => {
-      await service.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256,
-        "password"
-      )
-      return service
-    })
+    this.keyringService = startKeyring()
   }
 
   async initializeRedux(): Promise<void> {
@@ -163,6 +158,7 @@ export default class Main {
     })
 
     this.connectIndexingService()
+    this.connectKeyringService()
     await this.connectChainService()
   }
 
@@ -207,5 +203,16 @@ export default class Main {
     indexing.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
     })
+  }
+
+  async connectKeyringService(): Promise<void> {
+    const keyring = await this.keyringService
+
+    keyring.emitter.on("keyrings", (keyrings) => {
+      this.store.dispatch(updateKeyrings(keyrings))
+    })
+
+    // TODO move unlocking to a reasonable place in the initialization flow
+    await keyring.generateNewKeyring(KeyringTypes.mnemonicBIP39S256, "password")
   }
 }
