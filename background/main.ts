@@ -42,6 +42,15 @@ const reduxSanitizer = (input) => {
   return input
 }
 
+const reduxCache = (store) => (next) => (action) => {
+  const result = next(action)
+  const state = store.getState()
+
+  // Todo: Don't use hardcoded 'chrome' browser
+  chrome.storage.local.set({ state })
+  return result
+}
+
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
 const initializeStore = () =>
@@ -53,7 +62,7 @@ const initializeStore = () =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
-      }),
+      }).concat(reduxCache),
     devTools: false,
     enhancers: [
       devToolsEnhancer({
@@ -128,6 +137,11 @@ export default class Main {
 
   async initializeRedux(): Promise<void> {
     // Start up the redux store and set it up for proxying.
+    console.log("hello world")
+    const startupState = chrome.storage.local.get(["state"], (state) => {
+      console.log("Started with state", state)
+    })
+
     this.store = initializeStore()
     wrapStore(this.store, {
       serializer: (payload: unknown) =>
