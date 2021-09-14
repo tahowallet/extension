@@ -44,8 +44,11 @@ const reduxCache = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
-  // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
-  browser.storage.local.set({ state: jsonEncodeBigInt(state) })
+  if (process.env.REDUX_CACHE === "true") {
+    // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
+    browser.storage.local.set({ state: jsonEncodeBigInt(state) })
+  }
+
   return result
 }
 
@@ -114,7 +117,7 @@ export default class Main {
     // start all services
     this.initializeServices()
 
-    // Setting REDUX_CACHE to false will cause API requests to be made each time the background script is refreshed, which can be useful for development
+    // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
     if (process.env.REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
         this.initializeRedux(jsonDecodeBigInt(saved.state))
