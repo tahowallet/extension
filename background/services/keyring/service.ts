@@ -102,13 +102,21 @@ export default class KeyringService implements Service<Events> {
   // METHODS THAT REQUIRE AN UNLOCKED SERVICE //
   // ///////////////////////////////////////////
 
+  /**
+   * Generate a new keyring, saving it to extension storage.
+   *
+   * @param type - the type of keyring to generate. Currently only supports 256-
+   *        bit HD keys.
+   * @param password? - a password used to encrypt the keyring vault. Necessary
+   *        if the service is locked or this is the first keyring created.
+   */
   async generateNewKeyring(
     type: KeyringTypes,
     password?: string
   ): Promise<void> {
     if (type !== KeyringTypes.mnemonicBIP39S256) {
       throw new Error(
-        "KeyringService only supports generated 256-bit HD key trees"
+        "KeyringService only supports generating 256-bit HD key trees"
       )
     }
     const controller = await this.#keyringController
@@ -124,6 +132,30 @@ export default class KeyringService implements Service<Events> {
       }
 
       await controller.addNewKeyring("HD Key Tree", { strength: 256 })
+    }
+  }
+
+  /**
+   * Import a legacy 128 bit keyring.
+   */
+  async importLegacyKeyring(
+    mnemonic: string,
+    password?: string
+  ): Promise<void> {
+    const controller = await this.#keyringController
+    const state = await controller.memStore.getState()
+    if (state.keyrings.length < 1) {
+      if (password === undefined) {
+        throw new Error("Can't import initial keyring without a password!")
+      }
+      await controller.createNewVaultAndRestore(password, mnemonic)
+    } else {
+      if (password === undefined) {
+        await this.requireUnlocked()
+      } else {
+        await this.unlock(password)
+      }
+      await controller.addNewKeyring("HD Key Tree", { mnemonic, strength: 128 })
     }
   }
 }

@@ -1671,10 +1671,10 @@
     redux-thunk "^2.3.0"
     reselect "^4.0.0"
 
-"@tallyho/keyring-controller@^0.2.3":
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/@tallyho/keyring-controller/-/keyring-controller-0.2.3.tgz#ab26e451676dfda6a475027680fc0901c80e92c3"
-  integrity sha512-IJ7UFrLh8pibOPa6qcNAfXwq2cNiJi8tSf2oEGT6zuUwY7sQhd9IvaMZz7eNegGO+Q76/fjWy1ghCiSslihxQQ==
+"@tallyho/keyring-controller@^0.2.4":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@tallyho/keyring-controller/-/keyring-controller-0.2.4.tgz#ba996bec502874c3529655a6312199be4d64222f"
+  integrity sha512-/wBdYkxiPs+BREamG01sMgHPE8vTmEu7dTtFeeL+RirFBvtjzDWc7kgnwnLv+mNsM05kM3IkKbNXNJ5M+Vgz9A==
   dependencies:
     "@ethereumjs/tx" "^3.3.0"
     "@metamask/browser-passworder" "^3.0.0"
