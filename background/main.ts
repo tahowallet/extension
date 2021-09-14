@@ -2,6 +2,7 @@ import { browser } from "webextension-polyfill-ts"
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
+import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 
 import { ETHEREUM } from "./constants/networks"
 
@@ -32,11 +33,7 @@ const reduxSanitizer = (input) => {
 
   // We can use JSON stringify replacer function instead of recursively looping through the input
   if (typeof input === "object") {
-    return JSON.parse(
-      JSON.stringify(input, (_, value) =>
-        typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-      )
-    )
+    return JSON.parse(jsonEncodeBigInt(input))
   }
 
   // We only need to sanitize bigints and the objects that contain them
@@ -47,12 +44,8 @@ const reduxCache = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
-  // Browser extension storage supports JSON natively, however we have to stringify to preserve BigInts
-  const stringifiedState = JSON.stringify(state, (_, value) =>
-    typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-  )
-
-  browser.storage.local.set({ state: stringifiedState })
+  // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
+  browser.storage.local.set({ state: jsonEncodeBigInt(state) })
   return result
 }
 
@@ -124,13 +117,7 @@ export default class Main {
     // Setting REDUX_CACHE to false will cause API requests to be made each time the background script is refreshed, which can be useful for development
     if (process.env.REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
-        const startupState = JSON.parse(saved.state, (_, value) =>
-          value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
-            ? BigInt(value.B_I_G_I_N_T)
-            : value
-        )
-
-        this.initializeRedux(startupState)
+        this.initializeRedux(jsonDecodeBigInt(saved.state))
       })
     } else {
       this.initializeRedux()
@@ -159,16 +146,12 @@ export default class Main {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
-      serializer: (payload: unknown) =>
-        JSON.stringify(payload, (_, value) =>
-          typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-        ),
-      deserializer: (payload: string) =>
-        JSON.parse(payload, (_, value) =>
-          value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
-            ? BigInt(value.B_I_G_I_N_T)
-            : value
-        ),
+      serializer: (payload: unknown) => {
+        return jsonEncodeBigInt(payload)
+      },
+      deserializer: (payload: string) => {
+        return jsonDecodeBigInt(payload)
+      },
     })
 
     this.connectIndexingService()
