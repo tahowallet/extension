@@ -53,8 +53,9 @@ const reduxCache = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = () =>
+const initializeStore = (startupState = {}) =>
   configureStore({
+    preloadedState: startupState,
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
@@ -114,7 +115,15 @@ export default class Main {
   constructor() {
     // start all services
     this.initializeServices()
-    this.initializeRedux()
+
+    // Setting REDUX_CACHE to false will cause API requests to be made each time the background script is refreshed, which can be useful for development
+    if (process.env.REDUX_CACHE) {
+      chrome.storage.local.get("state", (startupState) => {
+        this.initializeRedux(startupState.state)
+      })
+    } else {
+      this.initializeRedux()
+    }
   }
 
   initializeServices(): void {
@@ -135,14 +144,9 @@ export default class Main {
     })
   }
 
-  async initializeRedux(): Promise<void> {
+  async initializeRedux(startupState?): Promise<void> {
     // Start up the redux store and set it up for proxying.
-    console.log("hello world")
-    const startupState = chrome.storage.local.get(["state"], (state) => {
-      console.log("Started with state", state)
-    })
-
-    this.store = initializeStore()
+    this.store = initializeStore(startupState)
     wrapStore(this.store, {
       serializer: (payload: unknown) =>
         JSON.stringify(payload, (_, value) =>
