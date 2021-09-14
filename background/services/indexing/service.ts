@@ -303,13 +303,13 @@ export default class IndexingService implements Service<Events> {
     // get the prices of all logger to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet
-    const erc20TokensToTrack = assetsToTrack.filter(
+    const mainnetAssetsToTrack = assetsToTrack.filter(
       (t) => t.homeNetwork.chainID === "1"
     )
 
     try {
       // TODO only uses USD
-      const erc20TokensByAddress = erc20TokensToTrack.reduce((agg, t) => {
+      const mainnetAssetsByAddress = mainnetAssetsToTrack.reduce((agg, t) => {
         const newAgg = {
           ...agg,
         }
@@ -317,13 +317,13 @@ export default class IndexingService implements Service<Events> {
         return newAgg
       }, {} as { [address: string]: SmartContractFungibleAsset })
       const measuredAt = Date.now()
-      const erc20TokenPrices = await getEthereumTokenPrices(
-        Object.keys(erc20TokensByAddress),
+      const mainnetAssetPrices = await getEthereumTokenPrices(
+        Object.keys(mainnetAssetsByAddress),
         "USD"
       )
-      Object.entries(erc20TokenPrices).forEach(
+      Object.entries(mainnetAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
-          const asset = erc20TokensByAddress[contractAddress.toLowerCase()]
+          const asset = mainnetAssetsByAddress[contractAddress.toLowerCase()]
           if (asset) {
             // TODO look up fiat currency
             const pricePoint = {
@@ -341,6 +341,7 @@ export default class IndexingService implements Service<Events> {
               time: unitPricePoint.time,
             } as PricePoint
             this.emitter.emit("price", pricePoint)
+            // TODO move the "coingecko" data source elsewhere
             this.db
               .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
               .catch(() =>
@@ -356,7 +357,7 @@ export default class IndexingService implements Service<Events> {
         }
       )
     } catch (err) {
-      logger.error("Error getting token prices", erc20TokensToTrack)
+      logger.error("Error getting token prices", mainnetAssetsToTrack)
     }
   }
 
@@ -394,7 +395,7 @@ export default class IndexingService implements Service<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet, doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
-    const erc20TokensToTrack = assetsToTrack.filter(
+    const mainnetAssetsToTrack = assetsToTrack.filter(
       (t) => t.homeNetwork.chainID === "1"
     )
 
@@ -407,7 +408,7 @@ export default class IndexingService implements Service<Events> {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
           chainService.pollingProviders.ethereum,
-          erc20TokensToTrack,
+          mainnetAssetsToTrack,
           account
         )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
