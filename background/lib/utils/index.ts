@@ -25,7 +25,7 @@ export function weiToEth(value: string | number): number {
 
 export function convertToEth(value: string | number): string {
   if (value && value >= 1) {
-    return utils.formatUnits(BigNumber.from(value).toBigInt())
+    return utils.formatUnits(BigInt(value))
   }
   return ""
 }
