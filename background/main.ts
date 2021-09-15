@@ -1,5 +1,5 @@
 import { browser } from "webextension-polyfill-ts"
-import { wrapStore } from "webext-redux"
+import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 
@@ -36,8 +36,9 @@ import {
   updateKeyrings,
   importLegacyKeyring,
 } from "./redux-slices/keyrings"
+import { allAliases } from "./redux-slices/utils"
 
-const reduxSanitizer = (input) => {
+const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
     return input.toString()
   }
@@ -69,24 +70,40 @@ const initializeStore = (startupState = {}) =>
   configureStore({
     preloadedState: startupState,
     reducer: rootReducer,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
+    middleware: (getDefaultMiddleware) => {
+      const middleware = getDefaultMiddleware({
         serializableCheck: {
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
-      }).concat(reduxCache),
+      })
+
+      // It might be tempting to use an array with `...` destructuring, but
+      // unfortunately this fails to preserve important type information from
+      // `getDefaultMiddleware`. `push` and `pull` preserve the type
+      // information in `getDefaultMiddleware`, including adjustments to the
+      // dispatch function type, but as a tradeoff nothing added this way can
+      // further modify the type signature. For now, that's fine, as these
+      // middlewares don't change acceptable dispatch types.
+      //
+      // Process aliases before all other middleware, and cache the redux store
+      // after all middleware gets a chance to run.
+      middleware.unshift(alias(allAliases))
+      middleware.push(reduxCache)
+
+      return middleware
+    },
     devTools: false,
     enhancers: [
       devToolsEnhancer({
         hostname: "localhost",
         port: 8000,
         realtime: true,
-        actionSanitizer: (action) => {
+        actionSanitizer: (action: unknown) => {
           return reduxSanitizer(action)
         },
 
-        stateSanitizer: (state) => {
+        stateSanitizer: (state: unknown) => {
           return reduxSanitizer(state)
         },
       }),
