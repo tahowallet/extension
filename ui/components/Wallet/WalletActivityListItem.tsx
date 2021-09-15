@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import dayjs from "dayjs"
+import classNames from "classnames"
 
 interface Props {
   onClick: () => void
@@ -20,11 +21,12 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="top">
           <div className="left">
             <div
-              className={`activity_icon${
-                !activity.isSent ? " receive_icon" : ""
-              }`}
+              className={classNames(
+                { activity_icon: true },
+                { send_icon: activity.isSent }
+              )}
             />
-            {`${!activity.isSent ? "Received" : "Sent"}`}
+            {`${activity.isSent ? "Sent" : "Recieved"}`}
           </div>
           <div className="right">
             {dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
@@ -68,15 +70,15 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-80);
           }
           .activity_icon {
-            background: url("./images/activity_send@2x.png");
+            background: url("./images/activity_receive@2x.png");
             background-size: cover;
             width: 14px;
             height: 14px;
             margin-right: 4px;
             margin-left: 9px;
           }
-          .receive_icon {
-            background: url("./images/activity_receive@2x.png");
+          .send_icon {
+            background: url("./images/activity_send@2x.png");
             background-size: cover;
           }
           .top {
