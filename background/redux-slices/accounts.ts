@@ -159,7 +159,7 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    addBlock: (immerState, { payload: block }: { payload: EIP1559Block }) => {
+    blockSeen: (immerState, { payload: block }: { payload: EIP1559Block }) => {
       immerState.blocks[block.blockHeight] = block
     },
     loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
@@ -324,7 +324,7 @@ export const {
   updateAccountBalance,
   transactionSeen,
   transactionConfirmed,
-  addBlock,
+  blockSeen,
 } = accountSlice.actions
 
 export default accountSlice.reducer
