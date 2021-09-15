@@ -49,6 +49,8 @@ type AccountState = {
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
   accountsData: { [account: string]: AccountData | "loading" }
   combinedData: CombinedAccountData
+  // TODO the blockHeight key should be changed to something
+  // compatible with the idea of multiple networks.
   blocks: { [blockHeight: number]: EIP1559Block }
 }
 
