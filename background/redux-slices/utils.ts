@@ -8,7 +8,9 @@ import {
 } from "@reduxjs/toolkit"
 
 /**
- * A list of all webext-redux aliases that have been registered globally.
+ * A list of all webext-redux aliases that have been registered globally. These
+ * are generally updated automatically by helpers like
+ * `createBackgroundAsyncThunk` and should rarely need to be touched directly.
  *
  * webext-redux aliases are actions that are only run in the background script,
  * but can be invoked with a payload in UI and other scripts. Their type and
@@ -31,6 +33,10 @@ type AsyncThunkProps = keyof AsyncThunk<unknown, unknown, unknown>
 
 // The type system will make sure we've listed all additional props that redux
 // toolkit adds to the AsyncThunk action creator below.
+//
+// The approach is a bit ugly, but the goal here is transparent usage wrt
+// createAsyncThunk, and this allows ensuring that any future upgrades don't
+// break expectations without breaking the compile.
 type ExhaustivePropList<PropListType, TargetType> =
   PropListType extends readonly (infer T)[]
     ? keyof TargetType extends T
