@@ -34,13 +34,16 @@ export default function Swap(): ReactElement {
           <div className="form">
             <div className="form_input">
               <SharedAssetInput
-                onClick={handleAssetSelect}
+                onAssetSelected={handleAssetSelect}
                 label="Swap from:"
               />
             </div>
             <div className="icon_change" />
             <div className="form_input">
-              <SharedAssetInput onClick={handleAssetSelect} label="Swap to:" />
+              <SharedAssetInput
+                onAssetSelected={handleAssetSelect}
+                label="Swap to:"
+              />
             </div>
             <div className="settings_wrap">
               <SwapTransactionSettings />

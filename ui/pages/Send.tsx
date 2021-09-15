@@ -19,7 +19,7 @@ export default function Send(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 label="Asset / Amount"
-                onClick={() => {
+                onAssetSelected={() => {
                   setSelectedCount(1)
                 }}
               />

@@ -64,6 +64,7 @@ button {
 input,
 textarea {
   all: unset;
+  cursor: text;
 }
 
 ul,
