@@ -259,13 +259,5 @@ export default class Main {
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
       await keyring.importLegacyKeyring(mnemonic, "password")
     })
-
-    this.store.dispatch(
-      importLegacyKeyring({
-        mnemonic:
-          // Don't use this to store realy money :)
-          "brain surround have swap horror body response double fire dumb bring hazard",
-      })
-    )
   }
 }
