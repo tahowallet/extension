@@ -345,6 +345,25 @@ export default class ChainService implements Service<Events> {
     return this.pollingProviders.ethereum.getBlockNumber()
   }
 
+  async getBlockData(
+    network: Network,
+    blockHash: string
+  ): Promise<EIP1559Block> {
+    // TODO make this multi network
+    const cachedBlock = await this.db.getBlock(network, blockHash)
+    if (cachedBlock) {
+      return cachedBlock
+    }
+
+    // Looking for new block
+    const resultBlock = await this.pollingProviders.ethereum.getBlock(blockHash)
+
+    const block = blockFromEthersBlock(resultBlock)
+
+    await this.db.addBlock(block)
+    return block
+  }
+
   async getTransaction(
     network: Network,
     hash: string
