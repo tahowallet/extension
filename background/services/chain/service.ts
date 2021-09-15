@@ -182,7 +182,7 @@ interface Events {
     accountNetwork: AccountNetwork
     assetTransfers: AlchemyAssetTransfer[]
   }
-  newBlock: EIP1559Block
+  block: EIP1559Block
   transaction: AnyEVMTransaction
 }
 
@@ -469,7 +469,7 @@ export default class ChainService implements Service<Events> {
           await this.saveTransaction(tx, "alchemy")
 
           // Trigger sending block to redux store
-          this.emitter.emit("newBlock", block)
+          this.emitter.emit("block", block)
         } catch (error) {
           // TODO proper logging
           console.error(`Error retrieving transaction ${hash}`, error)
@@ -516,7 +516,7 @@ export default class ChainService implements Service<Events> {
         const block = blockFromWebsocketBlock(result)
         await this.db.addBlock(block)
         // emit the new block, don't wait to settle
-        this.emitter.emit("newBlock", block)
+        this.emitter.emit("block", block)
         // TODO if it matches a known blockheight and the difficulty is higher,
         // emit a reorg event
       }
