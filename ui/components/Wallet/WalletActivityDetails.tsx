@@ -7,7 +7,7 @@ import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
   label: string
-  value: string
+  value: any
   valueDetail: string
 }
 
@@ -144,7 +144,7 @@ export default function WalletActivityDetails(
 
   if (!activityItem) return <></>
 
-  const headerTitle = `${!activityItem.isSent ? "Received" : "Sent Asset"}`
+  const headerTitle = `1323 ${!activityItem.isSent ? "Received" : "Sent Asset"}`
 
   const keysMap = {
     blockHeight: {
@@ -186,7 +186,7 @@ export default function WalletActivityDetails(
   }
   const trimmedActivityItem = renameAndPickKeys(keysMap, activityItem)
 
-  const openEtherscan = useCallback(() => {
+  const openExplorer = useCallback(() => {
     window
       .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
       .focus()
@@ -206,7 +206,7 @@ export default function WalletActivityDetails(
             label="Etherscan"
             icon="external"
             iconSize="large"
-            onClick={openEtherscan}
+            onClick={openExplorer}
           />
         </div>
       </div>
@@ -217,12 +217,12 @@ export default function WalletActivityDetails(
       </div>
       <ul>
         {activityItem &&
-          Object.keys(trimmedActivityItem).map((key, index) => {
+          Object.entries(trimmedActivityItem).map(([key, value]) => {
             return (
               <DetailRowItem
-                key={index.toString()}
+                key={key}
                 label={key}
-                value={trimmedActivityItem[key].toString()}
+                value={value}
                 valueDetail=""
               />
             )
