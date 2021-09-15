@@ -70,15 +70,29 @@ const initializeStore = (startupState = {}) =>
   configureStore({
     preloadedState: startupState,
     reducer: rootReducer,
-    middleware: (getDefaultMiddleware) => [
-      alias(allAliases),
-      ...getDefaultMiddleware({
+    middleware: (getDefaultMiddleware) => {
+      const middleware = getDefaultMiddleware({
         serializableCheck: {
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
-      }).concat(reduxCache),
-    ],
+      })
+
+      // It might be tempting to use an array with `...` destructuring, but
+      // unfortunately this fails to preserve important type information from
+      // `getDefaultMiddleware`. `push` and `pull` preserve the type
+      // information in `getDefaultMiddleware`, including adjustments to the
+      // dispatch function type, but as a tradeoff nothing added this way can
+      // further modify the type signature. For now, that's fine, as these
+      // middlewares don't change acceptable dispatch types.
+      //
+      // Process aliases before all other middleware, and cache the redux store
+      // after all middleware gets a chance to run.
+      middleware.unshift(alias(allAliases))
+      middleware.push(reduxCache)
+
+      return middleware
+    },
     devTools: false,
     enhancers: [
       devToolsEnhancer({
