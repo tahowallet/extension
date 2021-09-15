@@ -128,6 +128,20 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async getBlock(
+    network: Network,
+    blockHash: string
+  ): Promise<EIP1559Block | null> {
+    return (
+      (
+        await this.blocks
+          .where("[hash+network.name]")
+          .equals([blockHash, network.name])
+          .toArray()
+      )[0] || null
+    )
+  }
+
   async addOrUpdateTransaction(
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"]
