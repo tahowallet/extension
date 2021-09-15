@@ -1,8 +1,10 @@
+import { browser } from "webextension-polyfill-ts"
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 
 import { ETHEREUM } from "./constants/networks"
+import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 
 import {
   startService as startPreferences,
@@ -13,6 +15,12 @@ import {
   IndexingService,
 } from "./services/indexing"
 import { startService as startChain, ChainService } from "./services/chain"
+import {
+  startService as startKeyring,
+  KeyringService,
+} from "./services/keyring"
+
+import { KeyringTypes } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -23,6 +31,11 @@ import {
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  emitter as keyringSliceEmitter,
+  updateKeyrings,
+  importLegacyKeyring,
+} from "./redux-slices/keyrings"
 
 const reduxSanitizer = (input) => {
   if (typeof input === "bigint") {
@@ -31,21 +44,30 @@ const reduxSanitizer = (input) => {
 
   // We can use JSON stringify replacer function instead of recursively looping through the input
   if (typeof input === "object") {
-    return JSON.parse(
-      JSON.stringify(input, (_, value) =>
-        typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-      )
-    )
+    return JSON.parse(jsonEncodeBigInt(input))
   }
 
   // We only need to sanitize bigints and the objects that contain them
   return input
 }
 
+const reduxCache = (store) => (next) => (action) => {
+  const result = next(action)
+  const state = store.getState()
+
+  if (process.env.REDUX_CACHE === "true") {
+    // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
+    browser.storage.local.set({ state: jsonEncodeBigInt(state) })
+  }
+
+  return result
+}
+
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = () =>
+const initializeStore = (startupState = {}) =>
   configureStore({
+    preloadedState: startupState,
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
@@ -53,7 +75,7 @@ const initializeStore = () =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
-      }),
+      }).concat(reduxCache),
     devTools: false,
     enhancers: [
       devToolsEnhancer({
@@ -93,6 +115,13 @@ export default class Main {
    */
   indexingService: Promise<IndexingService>
 
+  /*
+   * A promise to the keyring service, which stores key material, derives
+   * accounts, and signs messagees and transactions. The promise will be
+   * resolved when the service is initialized.
+   */
+  keyringService: Promise<KeyringService>
+
   /**
    * The redux store for the wallet core. Note that the redux store is used to
    * render the UI (via webext-redux), but it is _not_ the source of truth.
@@ -105,7 +134,15 @@ export default class Main {
   constructor() {
     // start all services
     this.initializeServices()
-    this.initializeRedux()
+
+    // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
+    if (process.env.REDUX_CACHE === "true") {
+      browser.storage.local.get("state").then((saved) => {
+        this.initializeRedux(jsonDecodeBigInt(saved.state))
+      })
+    } else {
+      this.initializeRedux()
+    }
   }
 
   initializeServices(): void {
@@ -124,25 +161,23 @@ export default class Main {
       })
       return service
     })
+    this.keyringService = startKeyring()
   }
 
-  async initializeRedux(): Promise<void> {
+  async initializeRedux(startupState?): Promise<void> {
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore()
+    this.store = initializeStore(startupState)
     wrapStore(this.store, {
-      serializer: (payload: unknown) =>
-        JSON.stringify(payload, (_, value) =>
-          typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-        ),
-      deserializer: (payload: string) =>
-        JSON.parse(payload, (_, value) =>
-          value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
-            ? BigInt(value.B_I_G_I_N_T)
-            : value
-        ),
+      serializer: (payload: unknown) => {
+        return jsonEncodeBigInt(payload)
+      },
+      deserializer: (payload: string) => {
+        return jsonDecodeBigInt(payload)
+      },
     })
 
     this.connectIndexingService()
+    this.connectKeyringService()
     await this.connectChainService()
   }
 
@@ -191,5 +226,33 @@ export default class Main {
     indexing.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
     })
+  }
+
+  async connectKeyringService(): Promise<void> {
+    const keyring = await this.keyringService
+
+    keyring.emitter.on("keyrings", (keyrings) => {
+      this.store.dispatch(updateKeyrings(keyrings))
+    })
+
+    keyringSliceEmitter.on("generateNewKeyring", async () => {
+      // TODO move unlocking to a reasonable place in the initialization flow
+      await keyring.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S256,
+        "password"
+      )
+    })
+
+    keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
+      await keyring.importLegacyKeyring(mnemonic, "password")
+    })
+
+    this.store.dispatch(
+      importLegacyKeyring({
+        mnemonic:
+          // Don't use this to store realy money :)
+          "brain surround have swap horror body response double fire dumb bring hazard",
+      })
+    )
   }
 }

@@ -263,7 +263,7 @@ export type AssetTransfer = {
 
 // KEY TYPES
 
-export enum KeyTypes { // eslint-disable-line no-shadow
+export enum KeyringTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
   mnemonicBIP39S256 = "mnemonic#bip39:256",
   metamaskMnemonic = "mnemonic#metamask",
@@ -277,14 +277,14 @@ export type MsgParams = {
 // TODO: type declarations in @tallyho/eth-hd-tree
 export interface Seed {
   data: string // seed material
-  type: KeyTypes
+  type: KeyringTypes
   index: number // the current account index
   reference: string // unique reference
   path: string // default path to derive new keys
 }
 
 export type ImportData = {
-  type: keyof typeof KeyTypes
+  type: keyof typeof KeyringTypes
   data: string
   password?: string
 }
