@@ -7,13 +7,13 @@ export default function BackButton(): ReactElement {
   return (
     <button
       type="button"
-      className="back_button_wrap standard_width_padded"
+      className="standard_width_padded"
       onClick={() => history.goBack()}
     >
       <div className="icon_chevron_left" />
       Back
       <style jsx>{`
-        .back_button_wrap {
+        button {
           color: var(--green-40);
           font-size: 12px;
           font-weight: 500;
@@ -22,7 +22,7 @@ export default function BackButton(): ReactElement {
           margin-bottom: 10px;
           margin-top: 2px;
         }
-        .back_button_wrap:hover {
+        button:hover {
           color: #fff;
         }
         .icon_chevron_left {
@@ -34,7 +34,7 @@ export default function BackButton(): ReactElement {
           background-color: var(--green-40);
           transform: rotate(90deg);
         }
-        .back_button_wrap:hover .icon_chevron_left {
+        button:hover .icon_chevron_left {
           background-color: #fff;
         }
       `}</style>

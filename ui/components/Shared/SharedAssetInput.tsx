@@ -140,10 +140,10 @@ export default function SharedAssetInput(
 
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
-      setOpenAssetMenu(!openAssetMenu)
+      setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
       onAssetSelected()
     }
-  }, [])
+  }, [isTokenOptionsLocked, onAssetSelected])
 
   const setSelectedTokenAndClose = useCallback((token) => {
     setSelectedToken(token)
