@@ -144,7 +144,7 @@ export default function WalletActivityDetails(
 
   if (!activityItem) return <></>
 
-  const headerTitle = `1323 ${!activityItem.isSent ? "Received" : "Sent Asset"}`
+  const headerTitle = `${activityItem.isSent ? "Sent Asset" : "Received"}`
 
   const keysMap = {
     blockHeight: {
