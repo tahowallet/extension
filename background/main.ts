@@ -1,6 +1,8 @@
+import { browser } from "webextension-polyfill-ts"
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
+import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 
 import { ETHEREUM } from "./constants/networks"
 
@@ -31,21 +33,30 @@ const reduxSanitizer = (input) => {
 
   // We can use JSON stringify replacer function instead of recursively looping through the input
   if (typeof input === "object") {
-    return JSON.parse(
-      JSON.stringify(input, (_, value) =>
-        typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-      )
-    )
+    return JSON.parse(jsonEncodeBigInt(input))
   }
 
   // We only need to sanitize bigints and the objects that contain them
   return input
 }
 
+const reduxCache = (store) => (next) => (action) => {
+  const result = next(action)
+  const state = store.getState()
+
+  if (process.env.REDUX_CACHE === "true") {
+    // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
+    browser.storage.local.set({ state: jsonEncodeBigInt(state) })
+  }
+
+  return result
+}
+
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = () =>
+const initializeStore = (startupState = {}) =>
   configureStore({
+    preloadedState: startupState,
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
@@ -53,7 +64,7 @@ const initializeStore = () =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
-      }),
+      }).concat(reduxCache),
     devTools: false,
     enhancers: [
       devToolsEnhancer({
@@ -105,7 +116,15 @@ export default class Main {
   constructor() {
     // start all services
     this.initializeServices()
-    this.initializeRedux()
+
+    // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
+    if (process.env.REDUX_CACHE === "true") {
+      browser.storage.local.get("state").then((saved) => {
+        this.initializeRedux(jsonDecodeBigInt(saved.state))
+      })
+    } else {
+      this.initializeRedux()
+    }
   }
 
   initializeServices(): void {
@@ -126,20 +145,16 @@ export default class Main {
     })
   }
 
-  async initializeRedux(): Promise<void> {
+  async initializeRedux(startupState?): Promise<void> {
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore()
+    this.store = initializeStore(startupState)
     wrapStore(this.store, {
-      serializer: (payload: unknown) =>
-        JSON.stringify(payload, (_, value) =>
-          typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-        ),
-      deserializer: (payload: string) =>
-        JSON.parse(payload, (_, value) =>
-          value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
-            ? BigInt(value.B_I_G_I_N_T)
-            : value
-        ),
+      serializer: (payload: unknown) => {
+        return jsonEncodeBigInt(payload)
+      },
+      deserializer: (payload: string) => {
+        return jsonDecodeBigInt(payload)
+      },
     })
 
     this.connectIndexingService()
