@@ -155,7 +155,11 @@ export default class Main {
     // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
     if (process.env.REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
-        this.initializeRedux(jsonDecodeBigInt(saved.state))
+        if (saved && saved.state) {
+          this.initializeRedux(jsonDecodeBigInt(saved.state))
+        } else {
+          this.initializeRedux()
+        }
       })
     } else {
       this.initializeRedux()
