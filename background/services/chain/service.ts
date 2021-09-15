@@ -468,13 +468,9 @@ export default class ChainService implements Service<Events> {
     await Promise.allSettled(
       toHandle.map(async (hash) => {
         try {
-          // TODO make this multi network
-          const ethProvider = this.pollingProviders.ethereum
-          const result = await ethProvider.getTransaction(hash)
-
-          // Get relevant block data. Primarily used in the frontend for timestamps.
-          const resultBlock = await ethProvider.getBlock(result.blockNumber)
-          const block = blockFromEthersBlock(resultBlock)
+          const result = await this.pollingProviders.ethereum.getTransaction(
+            hash
+          )
 
           const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
@@ -482,9 +478,11 @@ export default class ChainService implements Service<Events> {
             this.subscribeToTransactionConfirmation(tx.network, tx.hash)
           }
 
+          // Get relevant block data. Primarily used in the frontend for timestamps. Emits and saves block data
+          const block = await this.getBlockData(tx.network, result.blockHash)
+
           // TODO make this provider specific
           // Save block and transaction
-          await this.db.addBlock(block)
           await this.saveTransaction(tx, "alchemy")
 
           // Trigger sending block to redux store
