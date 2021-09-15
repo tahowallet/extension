@@ -2,9 +2,9 @@ import { browser } from "webextension-polyfill-ts"
 import { wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 
 import { ETHEREUM } from "./constants/networks"
+import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 
 import {
   startService as startPreferences,
@@ -15,6 +15,12 @@ import {
   IndexingService,
 } from "./services/indexing"
 import { startService as startChain, ChainService } from "./services/chain"
+import {
+  startService as startKeyring,
+  KeyringService,
+} from "./services/keyring"
+
+import { KeyringTypes } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -25,6 +31,11 @@ import {
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { assetsLoaded } from "./redux-slices/assets"
+import {
+  emitter as keyringSliceEmitter,
+  updateKeyrings,
+  importLegacyKeyring,
+} from "./redux-slices/keyrings"
 
 const reduxSanitizer = (input) => {
   if (typeof input === "bigint") {
@@ -104,6 +115,13 @@ export default class Main {
    */
   indexingService: Promise<IndexingService>
 
+  /*
+   * A promise to the keyring service, which stores key material, derives
+   * accounts, and signs messagees and transactions. The promise will be
+   * resolved when the service is initialized.
+   */
+  keyringService: Promise<KeyringService>
+
   /**
    * The redux store for the wallet core. Note that the redux store is used to
    * render the UI (via webext-redux), but it is _not_ the source of truth.
@@ -143,6 +161,7 @@ export default class Main {
       })
       return service
     })
+    this.keyringService = startKeyring()
   }
 
   async initializeRedux(startupState?): Promise<void> {
@@ -158,6 +177,7 @@ export default class Main {
     })
 
     this.connectIndexingService()
+    this.connectKeyringService()
     await this.connectChainService()
   }
 
@@ -202,5 +222,33 @@ export default class Main {
     indexing.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
     })
+  }
+
+  async connectKeyringService(): Promise<void> {
+    const keyring = await this.keyringService
+
+    keyring.emitter.on("keyrings", (keyrings) => {
+      this.store.dispatch(updateKeyrings(keyrings))
+    })
+
+    keyringSliceEmitter.on("generateNewKeyring", async () => {
+      // TODO move unlocking to a reasonable place in the initialization flow
+      await keyring.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S256,
+        "password"
+      )
+    })
+
+    keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
+      await keyring.importLegacyKeyring(mnemonic, "password")
+    })
+
+    this.store.dispatch(
+      importLegacyKeyring({
+        mnemonic:
+          // Don't use this to store realy money :)
+          "brain surround have swap horror body response double fire dumb bring hazard",
+      })
+    )
   }
 }
