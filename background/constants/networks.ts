@@ -1,4 +1,4 @@
-import { Network } from "../types"
+import { EVMNetwork, Network } from "../types"
 import { BTC, ETH } from "./currencies"
 
 // TODO integrate this with /api/networks
@@ -8,7 +8,7 @@ export const ETHEREUM = {
   baseAsset: ETH,
   chainID: "1",
   family: "EVM",
-} as Network
+} as EVMNetwork
 
 export const BITCOIN = {
   name: "Bitcoin",
