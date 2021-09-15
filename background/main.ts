@@ -1,5 +1,5 @@
 import { browser } from "webextension-polyfill-ts"
-import { wrapStore } from "webext-redux"
+import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 
@@ -36,8 +36,9 @@ import {
   updateKeyrings,
   importLegacyKeyring,
 } from "./redux-slices/keyrings"
+import { allAliases } from "./redux-slices/utils"
 
-const reduxSanitizer = (input) => {
+const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
     return input.toString()
   }
@@ -69,24 +70,26 @@ const initializeStore = (startupState = {}) =>
   configureStore({
     preloadedState: startupState,
     reducer: rootReducer,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
+    middleware: (getDefaultMiddleware) => [
+      alias(allAliases),
+      ...getDefaultMiddleware({
         serializableCheck: {
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
       }).concat(reduxCache),
+    ],
     devTools: false,
     enhancers: [
       devToolsEnhancer({
         hostname: "localhost",
         port: 8000,
         realtime: true,
-        actionSanitizer: (action) => {
+        actionSanitizer: (action: unknown) => {
           return reduxSanitizer(action)
         },
 
-        stateSanitizer: (state) => {
+        stateSanitizer: (state: unknown) => {
           return reduxSanitizer(state)
         },
       }),
