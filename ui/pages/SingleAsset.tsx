@@ -1,9 +1,9 @@
 import React, { ReactElement } from "react"
-import { useHistory } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
+import BackButton from "../components/Shared/SharedBackButton"
 
 const activityStub = [
   {
@@ -69,19 +69,10 @@ const activityStub = [
 ]
 
 export default function SingleAsset(): ReactElement {
-  const history = useHistory()
-
   return (
     <>
       <CorePage>
-        <button
-          type="button"
-          className="back_button_wrap standard_width_padded"
-          onClick={() => history.goBack()}
-        >
-          <div className="icon_chevron_left" />
-          Back
-        </button>
+        <BackButton />
         <div className="header standard_width_padded">
           <div className="left">
             <div className="asset_wrap">
@@ -110,7 +101,7 @@ export default function SingleAsset(): ReactElement {
           <div className="left">Asset is on: Arbitrum</div>
           <div className="right">Move to Ethereum</div>
         </div>
-        <div className="label standard_width_padded">Activity</div>
+        <div className="label_light standard_width_padded">Activity</div>
         <WalletActivityList activity={activityStub} />
       </CorePage>
       <style jsx>
@@ -141,13 +132,6 @@ export default function SingleAsset(): ReactElement {
             flex-direction: column;
             justify-content: space-between;
           }
-          .back_button {
-            height: 16px;
-            color: var(--green-40);
-            font-size: 12px;
-            font-weight: 500;
-            line-height: 16px;
-          }
           .asset_name {
             color: #fff;
             font-size: 22px;
@@ -175,36 +159,12 @@ export default function SingleAsset(): ReactElement {
             line-height: 24px;
             text-align: center;
           }
-          .label {
+          .label_light {
             color: var(--green-40);
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
             margin-bottom: 8px;
-          }
-          .back_button_wrap {
-            color: var(--green-40);
-            font-size: 12px;
-            font-weight: 500;
-            line-height: 16px;
-            display: flex;
-            margin-bottom: 10px;
-            margin-top: 2px;
-          }
-          .back_button_wrap:hover {
-            color: #fff;
-          }
-          .icon_chevron_left {
-            mask-image: url("./images/chevron_down.svg");
-            mask-size: 15px 8px;
-            width: 15px;
-            height: 8px;
-            margin-top: 2px;
-            background-color: var(--green-40);
-            transform: rotate(90deg);
-          }
-          .back_button_wrap:hover .icon_chevron_left {
-            background-color: #fff;
           }
         `}
       </style>
