@@ -16,9 +16,9 @@ import { ETHEREUM } from "../../constants"
  */
 export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
   return {
-    hash: gethResult.hash as string,
+    hash: gethResult.hash,
     blockHeight: gethResult.number,
-    parentHash: gethResult.parentHash as string,
+    parentHash: gethResult.parentHash,
     difficulty: BigInt(gethResult.difficulty),
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas.toBigInt(),
@@ -29,14 +29,25 @@ export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
 /*
  * Parse a block as returned by a websocket provider subscription.
  */
-export function blockFromWebsocketBlock(gethResult: any): EIP1559Block {
+export function blockFromWebsocketBlock(
+  incomingGethResult: unknown
+): EIP1559Block {
+  const gethResult = incomingGethResult as {
+    hash: string
+    number: string
+    parentHash: string
+    difficulty: string
+    timestamp: string
+    baseFeePerGas: string
+  }
+
   return {
-    hash: gethResult.hash as string,
-    blockHeight: BigNumber.from(gethResult.number as string).toNumber(),
-    parentHash: gethResult.parentHash as string,
-    difficulty: BigInt(gethResult.difficulty as string),
-    timestamp: BigNumber.from(gethResult.timestamp as string).toNumber(),
-    baseFeePerGas: BigInt(gethResult.baseFeePerGas as string),
+    hash: gethResult.hash,
+    blockHeight: BigNumber.from(gethResult.number).toNumber(),
+    parentHash: gethResult.parentHash,
+    difficulty: BigInt(gethResult.difficulty),
+    timestamp: BigNumber.from(gethResult.timestamp).toNumber(),
+    baseFeePerGas: BigInt(gethResult.baseFeePerGas),
     network: ETHEREUM,
   }
 }
@@ -70,23 +81,44 @@ export function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
  * Parse a transaction as returned by a websocket provider subscription.
  */
 export function txFromWebsocketTx(
-  tx: any,
+  websocketTx: unknown,
   asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
+  // These are the props we expect here.
+  const tx = websocketTx as {
+    hash: string
+    to: string
+    from: string
+    gas: string
+    gasPrice: string
+    maxFeePerGas: string | undefined | null
+    maxPriorityFeePerGas: string | undefined | null
+    input: string
+    r: string
+    s: string
+    v: string
+    nonce: string
+    value: string
+    blockHash: string | undefined | null
+    blockHeight: string | undefined | null
+    blockNumber: number | undefined | null
+    type: string | undefined | null
+  }
+
   return {
-    hash: tx.hash as string,
-    to: tx.to as string,
-    from: tx.from as string,
-    gas: BigInt(tx.gas as string),
-    gasPrice: BigInt(tx.gasPrice as string),
+    hash: tx.hash,
+    to: tx.to,
+    from: tx.from,
+    gas: BigInt(tx.gas),
+    gasPrice: BigInt(tx.gasPrice),
     maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
       ? BigInt(tx.maxPriorityFeePerGas)
       : null,
-    input: tx.input as string,
-    r: (tx.r as string) || undefined,
-    s: (tx.s as string) || undefined,
+    input: tx.input,
+    r: tx.r || undefined,
+    s: tx.s || undefined,
     v: BigNumber.from(tx.v).toNumber(),
     nonce: BigInt(tx.nonce),
     value: BigInt(tx.value),
@@ -116,10 +148,14 @@ export function txFromEthersTx(
   if (tx.hash === undefined) {
     throw Error("Malformed transaction")
   }
+  if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
+    throw Error(`Unknown transaction type ${tx.type}`)
+  }
+
   const newTx = {
-    hash: tx.hash as string,
-    from: tx.from as string,
-    to: tx.to as string,
+    hash: tx.hash,
+    from: tx.from,
+    to: tx.to,
     nonce: BigInt(parseInt(tx.nonce.toString(), 10)),
     gas: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
@@ -129,12 +165,13 @@ export function txFromEthersTx(
       : null,
     value: tx.value.toBigInt(),
     input: tx.data,
-    type: tx.type as AnyEVMTransaction["type"],
+    type: tx.type,
     blockHash: tx.blockHash || null,
     blockHeight: tx.blockNumber || null,
     network,
     asset,
-  }
+  } as const // narrow types for compatiblity with our internal ones
+
   if (tx.r && tx.s && tx.v) {
     const signedTx = {
       ...newTx,
