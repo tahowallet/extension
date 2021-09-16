@@ -1,6 +1,7 @@
 import path from "path"
 import webpack, { Configuration, WebpackOptionsNormalized } from "webpack"
 import { merge as webpackMerge } from "webpack-merge"
+import Dotenv from "dotenv-webpack"
 import SizePlugin from "size-plugin"
 import TerserPlugin from "terser-webpack-plugin"
 import LiveReloadPlugin from "webpack-livereload-plugin"
@@ -47,9 +48,12 @@ const baseConfig: Configuration = {
     fallback: {
       stream: require.resolve("stream-browserify"),
       process: require.resolve("process/browser"),
+      // these are required for @tallyho/keyring-controller
+      crypto: require.resolve("crypto-browserify"),
     },
   },
   plugins: [
+    new Dotenv({ defaults: true }),
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         diagnosticOptions: {

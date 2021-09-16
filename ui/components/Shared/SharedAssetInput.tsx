@@ -81,42 +81,44 @@ function SelectTokenMenuContent(
   )
 }
 
-interface SelectedTokenProps {
-  onClick: () => void
-  isTokenOptionsLocked: boolean
+interface SelectedTokenButtonProps {
+  toggleIsTokenMenuOpen?: () => void
 }
 
-function SelectedToken(props: SelectedTokenProps): ReactElement {
-  const { isTokenOptionsLocked, onClick } = props
+function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
+  const { toggleIsTokenMenuOpen } = props
 
   return (
-    <div className="token_group">
+    <button type="button" onClick={toggleIsTokenMenuOpen}>
       <div className="asset_icon_wrap">
         <SharedAssetIcon />
       </div>
-      <SharedButton
-        type="tertiaryWhite"
-        size="medium"
-        label="ETH"
-        icon={isTokenOptionsLocked ? undefined : "chevron"}
-        onClick={onClick}
-      />
+      ETH
       <style jsx>{`
-        .token_group {
+        button {
           display: flex;
           align-items: center;
+          color: #fff;
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          text-transform: uppercase;
         }
         .asset_icon_wrap {
           margin-right: 8px;
         }
       `}</style>
-    </div>
+    </button>
   )
+}
+
+SelectedTokenButton.defaultProps = {
+  toggleIsTokenMenuOpen: null,
 }
 
 interface SharedAssetInputProps {
   isTypeDestination?: boolean
-  onClick?: () => void
+  onAssetSelected?: () => void
   label?: string
   defaultToken?: { name: string }
   isTokenOptionsLocked?: boolean
@@ -130,18 +132,18 @@ export default function SharedAssetInput(
     label,
     defaultToken,
     isTokenOptionsLocked,
-    onClick,
+    onAssetSelected,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
   const [selectedToken, setSelectedToken] = useState(defaultToken)
 
-  const handleClick = useCallback(() => {
+  const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
-      setOpenAssetMenu(!openAssetMenu)
-      onClick()
+      setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
+      onAssetSelected()
     }
-  }, [])
+  }, [isTokenOptionsLocked, onAssetSelected])
 
   const setSelectedTokenAndClose = useCallback((token) => {
     setSelectedToken(token)
@@ -151,8 +153,15 @@ export default function SharedAssetInput(
   return (
     <label className="label">
       {label}
-      <SharedSlideUpMenu isOpen={openAssetMenu} close={handleClick}>
-        {SelectTokenMenuContent({ setSelectedTokenAndClose })}
+      <SharedSlideUpMenu
+        isOpen={openAssetMenu}
+        close={() => {
+          setOpenAssetMenu(false)
+        }}
+      >
+        <SelectTokenMenuContent
+          setSelectedTokenAndClose={setSelectedTokenAndClose}
+        />
       </SharedSlideUpMenu>
       <div className="asset_input standard_width">
         {isTypeDestination ? (
@@ -168,18 +177,17 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            {!selectedToken.name ? (
+            {selectedToken.name ? (
+              <SelectedTokenButton
+                toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
+              />
+            ) : (
               <SharedButton
                 type="secondary"
                 size="medium"
                 label="Select token"
+                onClick={toggleIsTokenMenuOpen}
                 icon="chevron"
-                onClick={handleClick}
-              />
-            ) : (
-              <SelectedToken
-                onClick={handleClick}
-                isTokenOptionsLocked={isTokenOptionsLocked}
               />
             )}
             <input className="input_amount" type="text" placeholder="0.0" />
@@ -245,7 +253,7 @@ SharedAssetInput.defaultProps = {
   isTokenOptionsLocked: false,
   defaultToken: { name: "" },
   label: "",
-  onClick: () => {
+  onAssetSelected: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },

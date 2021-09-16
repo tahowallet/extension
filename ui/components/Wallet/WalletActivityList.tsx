@@ -1,5 +1,3 @@
-// @ts-check
-
 import React, { ReactElement, useCallback } from "react"
 
 import { AnyEVMTransaction } from "@tallyho/tally-background/types"
@@ -23,13 +21,17 @@ export default function WalletActivityList(props: Props): ReactElement {
   const { showingActivityDetail } = useBackgroundSelector(
     (background) => background.ui
   )
-  const handleOpen = useCallback((activityItem) => {
-    dispatch(setShowingActivityDetail(activityItem))
-  }, [])
+
+  const handleOpen = useCallback(
+    (activityItem) => {
+      dispatch(setShowingActivityDetail(activityItem))
+    },
+    [dispatch]
+  )
 
   const handleClose = useCallback(() => {
     dispatch(setShowingActivityDetail(undefined))
-  }, [])
+  }, [dispatch])
 
   return (
     <>

@@ -8,7 +8,7 @@ export default function SharedAssetItem(props: Props): ReactElement {
   const { onClick } = props
 
   function handleClick() {
-    onClick({ name: "" })
+    onClick({ name: "ETH" })
   }
 
   return (

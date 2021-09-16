@@ -1,10 +1,24 @@
-import React, { ReactElement } from "react"
-import SharedButton from "../Shared/SharedButton"
+import React, { ReactElement, useCallback, useState } from "react"
 
-function TextArea() {
+import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+
+import SharedButton from "../Shared/SharedButton"
+import { useBackgroundDispatch } from "../../hooks"
+
+function TextArea({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
   return (
     <>
-      <textarea className="wrap center_horizontal" />
+      <textarea
+        className="wrap center_horizontal"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      />
       <style jsx>{`
         textarea {
           width: 332px;
@@ -20,18 +34,34 @@ function TextArea() {
 }
 
 export default function OnboardingImportMetamask(): ReactElement {
+  const [recoveryPhrase, setRecoveryPhrase] = useState(
+    // Don't store real money in this plz.
+    "brain surround have swap horror body response double fire dumb bring hazard"
+  )
+
+  const dispatch = useBackgroundDispatch()
+
+  const importWallet = useCallback(() => {
+    dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase }))
+  }, [dispatch, recoveryPhrase])
+
   return (
     <section className="center_horizontal">
       <div className="portion top">
         <div className="metamask_onboarding_image" />
         <h1 className="serif_header">Metamask import</h1>
         <div className="info">
-          Write down or copy paste the seed phrase from your Metamask account.
+          Enter or copy paste the recovery phrase from your Metamask account.
         </div>
-        <TextArea />
+        <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
       </div>
       <div className="portion bottom">
-        <SharedButton size="medium" label="Import wallet" type="primary" />
+        <SharedButton
+          size="medium"
+          label="Importwallet"
+          type="primary"
+          onClick={importWallet}
+        />
       </div>
       <style jsx>{`
         section {

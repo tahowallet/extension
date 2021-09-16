@@ -7,6 +7,5 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "noEmit": true
-  },
-  "exclude": ["ui"]
+  }
 }

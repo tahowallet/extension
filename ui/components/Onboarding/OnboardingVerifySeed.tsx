@@ -57,8 +57,8 @@ export default function OnboardingVerifySeed(props: Props): ReactElement {
   const [isNotSelected, setIsNotSelected] = useState(Array(12).fill(""))
 
   const handleClick = useCallback(() => {
-    setIsSelected([...isSelected, []])
-    setIsNotSelected(isNotSelected.slice(1))
+    setIsSelected((currentlySelected) => [...currentlySelected, []])
+    setIsNotSelected((currentlyUnselected) => currentlyUnselected.slice(1))
   }, [])
 
   return (

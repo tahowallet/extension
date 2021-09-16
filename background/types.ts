@@ -1,5 +1,7 @@
 import { TokenList } from "@uniswap/token-lists"
 
+export type HexString = string
+
 export interface TokenListCitation {
   name: string
   url: string
@@ -53,7 +55,7 @@ export type NetworkSpecific = {
 }
 
 export type SmartContract = NetworkSpecific & {
-  contractAddress: string
+  contractAddress: HexString
 }
 
 export type NetworkSpecificAsset = NetworkSpecific & Asset
@@ -107,7 +109,7 @@ export interface AnyAssetAmount {
 export interface PricePoint {
   pair: [AnyAsset, AnyAsset]
   amounts: [bigint, bigint]
-  time: number
+  time: UNIXTime
 }
 
 /*
@@ -120,7 +122,7 @@ export interface PricePoint {
  */
 export interface UnitPricePoint {
   unitPrice: AnyAssetAmount
-  lastUpdated: number
+  time: UNIXTime
 }
 
 /*
@@ -132,7 +134,7 @@ export interface AccountBalance {
   /*
    * The account whose balance was measured.
    */
-  account: string
+  account: HexString
   /*
    * The measured balance and the asset in which it's denominated.
    */
@@ -160,7 +162,7 @@ export interface AccountBalance {
  * An account on a particular network. That's it. That's the comment.
  */
 export interface AccountNetwork {
-  account: string
+  account: HexString
   network: Network
 }
 
@@ -190,8 +192,8 @@ export interface EIP1559Block extends EVMBlock {
 
 export interface EVMTransaction {
   hash: string
-  from: string
-  to: string
+  from: HexString
+  to: HexString
   gas: bigint
   gasPrice: bigint | null
   maxFeePerGas: bigint | null
@@ -250,15 +252,23 @@ export type AnyEVMTransaction =
   | SignedEVMTransaction
   | SignedConfirmedEVMTransaction
 
+export type AssetTransfer = {
+  network: Network
+  assetAmount: AssetAmount
+  from: HexString
+  to: HexString
+  dataSource: "alchemy" | "local"
+  txHash: string
+}
+
 // KEY TYPES
 
-export enum KeyTypes { // eslint-disable-line no-shadow
+export enum KeyringTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
   mnemonicBIP39S256 = "mnemonic#bip39:256",
   metamaskMnemonic = "mnemonic#metamask",
   singleSECP = "single#secp256k1",
 }
-
 export type MsgParams = {
   data: string
   from: string
@@ -267,14 +277,14 @@ export type MsgParams = {
 // TODO: type declarations in @tallyho/eth-hd-tree
 export interface Seed {
   data: string // seed material
-  type: KeyTypes
+  type: KeyringTypes
   index: number // the current account index
   reference: string // unique reference
   path: string // default path to derive new keys
 }
 
 export type ImportData = {
-  type: keyof typeof KeyTypes
+  type: keyof typeof KeyringTypes
   data: string
   password?: string
 }

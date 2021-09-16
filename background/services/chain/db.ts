@@ -218,7 +218,7 @@ export async function getOrCreateDB(): Promise<ChainDatabase> {
 
   // Call known-private migrate function, effectively treating it as
   // file-private.
-  // eslint-disable-next-line dot-notation
+  // eslint-disable-next-line @typescript-eslint/dot-notation
   await db["migrate"]()
 
   return db
