@@ -27,10 +27,11 @@ import {
   loadAccount,
   transactionConfirmed,
   transactionSeen,
+  blockSeen,
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
-import { assetsLoaded } from "./redux-slices/assets"
+import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
@@ -213,7 +214,9 @@ export default class Main {
         this.store.dispatch(transactionSeen(transaction))
       }
     })
-
+    chain.emitter.on("block", (block) => {
+      this.store.dispatch(blockSeen(block))
+    })
     accountSliceEmitter.on("addAccount", async (accountNetwork) => {
       await chain.addAccountToTrack(accountNetwork)
     })
@@ -238,6 +241,10 @@ export default class Main {
 
     indexing.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
+    })
+
+    indexing.emitter.on("price", (pricePoint) => {
+      this.store.dispatch(newPricePoint(pricePoint))
     })
   }
 

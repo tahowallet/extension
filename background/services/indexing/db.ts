@@ -129,7 +129,7 @@ export class IndexingDatabase extends Dexie {
    * Tokens whose balances should be checked periodically. It might make sense
    * for this to be tracked against particular accounts in the future.
    */
-  private tokensToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
+  private assetsToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
 
   private migrations!: Dexie.Table<Migration, number>
 
@@ -143,7 +143,7 @@ export class IndexingDatabase extends Dexie {
       tokenLists: "++id,url,retrievedAt",
       customAssets:
         "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainId,homeNetwork.name",
-      tokensToTrack:
+      assetsToTrack:
         "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainId,homeNetwork.name",
     })
   }
@@ -183,15 +183,15 @@ export class IndexingDatabase extends Dexie {
     return balanceCandidates.length > 0 ? balanceCandidates[0] : null
   }
 
-  async addTokenToTrack(asset: SmartContractFungibleAsset): Promise<void> {
-    this.tokensToTrack.put(asset)
+  async addAssetToTrack(asset: SmartContractFungibleAsset): Promise<void> {
+    this.assetsToTrack.put(asset)
   }
 
-  async getTokensToTrack(): Promise<SmartContractFungibleAsset[]> {
-    // TODO move "tokens to track" to expire over time and require a refresh
+  async getAssetsToTrack(): Promise<SmartContractFungibleAsset[]> {
+    // TODO move "assets to track" to expire over time and require a refresh
     // to keep from balance checking tons of irrelevant tokens
     // see https://github.com/tallycash/tally-extension/issues/136 for details
-    return this.tokensToTrack.toArray()
+    return this.assetsToTrack.toArray()
   }
 
   async getCustomAssetByAddressAndNetwork(
