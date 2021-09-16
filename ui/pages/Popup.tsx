@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { MemoryRouter as Router, Switch, Route, Link } from "react-router-dom"
+import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
@@ -11,6 +11,7 @@ import Onboarding from "./Onboarding"
 import Overview from "./Overview"
 import SingleAsset from "./SingleAsset"
 import Earn from "./Earn"
+import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
@@ -31,6 +32,9 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           </Route>
           <Route path="/overview">
             <Overview />
+          </Route>
+          <Route path="/earn/deposit">
+            <EarnDeposit />
           </Route>
           <Route path="/earn">
             <Earn />
