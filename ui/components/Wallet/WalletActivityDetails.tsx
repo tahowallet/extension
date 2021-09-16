@@ -142,6 +142,12 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem } = props
 
+  const openExplorer = useCallback(() => {
+    window
+      .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
+      .focus()
+  }, [activityItem.hash])
+
   if (!activityItem) return <></>
 
   const headerTitle = `${activityItem.isSent ? "Sent Asset" : "Received"}`
@@ -185,12 +191,6 @@ export default function WalletActivityDetails(
     },
   }
   const trimmedActivityItem = renameAndPickKeys(keysMap, activityItem)
-
-  const openExplorer = useCallback(() => {
-    window
-      .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
-      .focus()
-  }, [])
 
   return (
     <div className="wrap standard_width center_horizontal">
