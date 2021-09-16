@@ -155,7 +155,7 @@ export default class Main {
     // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
     if (process.env.REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
-        this.initializeRedux(jsonDecodeBigInt(saved.state))
+        this.initializeRedux(saved.state && jsonDecodeBigInt(saved.state))
       })
     } else {
       this.initializeRedux()
@@ -181,7 +181,7 @@ export default class Main {
     this.keyringService = startKeyring()
   }
 
-  async initializeRedux(startupState?): Promise<void> {
+  async initializeRedux(startupState?: unknown): Promise<void> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
@@ -259,13 +259,5 @@ export default class Main {
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
       await keyring.importLegacyKeyring(mnemonic, "password")
     })
-
-    this.store.dispatch(
-      importLegacyKeyring({
-        mnemonic:
-          // Don't use this to store realy money :)
-          "brain surround have swap horror body response double fire dumb bring hazard",
-      })
-    )
   }
 }
