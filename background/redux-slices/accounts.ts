@@ -8,6 +8,7 @@ import {
   ConfirmedEVMTransaction,
   FungibleAssetAmount,
   Network,
+  EIP1559Block,
 } from "../types"
 
 // Adds user-specific values based on preferences. This is the combination of a
@@ -48,6 +49,9 @@ type AccountState = {
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
   accountsData: { [account: string]: AccountData | "loading" }
   combinedData: CombinedAccountData
+  // TODO the blockHeight key should be changed to something
+  // compatible with the idea of multiple networks.
+  blocks: { [blockHeight: number]: EIP1559Block }
 }
 
 // TODO Plug in price data and deal with non-USD target prices.
@@ -148,6 +152,7 @@ export const initialState = {
     assets: [],
     activity: [],
   },
+  blocks: {},
 } as AccountState
 
 // TODO Much of the combinedData bits should probably be done in a Reselect
@@ -156,6 +161,9 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
+    blockSeen: (immerState, { payload: block }: { payload: EIP1559Block }) => {
+      immerState.blocks[block.blockHeight] = block
+    },
     loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
       return state.accountsData[accountToLoad]
         ? state // If the account data already exists, the account is already loaded.
@@ -317,6 +325,7 @@ export const {
   updateAccountBalance,
   transactionSeen,
   transactionConfirmed,
+  blockSeen,
 } = accountSlice.actions
 
 export default accountSlice.reducer

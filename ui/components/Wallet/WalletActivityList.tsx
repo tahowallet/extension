@@ -23,8 +23,8 @@ export default function WalletActivityList(props: Props): ReactElement {
   )
 
   const handleOpen = useCallback(
-    (activityId) => {
-      dispatch(setShowingActivityDetail(activityId))
+    (activityItem) => {
+      dispatch(setShowingActivityDetail(activityItem))
     },
     [dispatch]
   )
@@ -39,13 +39,13 @@ export default function WalletActivityList(props: Props): ReactElement {
         isOpen={showingActivityDetail && true}
         close={handleClose}
       >
-        <WalletActivityDetails />
+        <WalletActivityDetails activityItem={showingActivityDetail} />
       </SharedSlideUpMenu>
       <ul>
         {activity.map((activityItem) => (
           <WalletActivityListItem
             onClick={() => {
-              handleOpen(activityItem.hash)
+              handleOpen(activityItem)
             }}
             activity={activityItem}
           />

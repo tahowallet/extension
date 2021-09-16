@@ -1,16 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit"
 
 export const initialState = {
-  showingActivityDetail: false,
+  showingActivityDetail: null,
 }
 
 const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    setShowingActivityDetail: (state, { payload: activityId }) => ({
+    setShowingActivityDetail: (state, { payload: activityItem }) => ({
       ...state,
-      showingActivityDetail: activityId,
+      showingActivityDetail: activityItem,
     }),
   },
 })

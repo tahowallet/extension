@@ -186,7 +186,7 @@ interface Events {
     accountNetwork: AccountNetwork
     assetTransfers: AssetTransfer[]
   }
-  newBlock: EIP1559Block
+  block: EIP1559Block
   transaction: AnyEVMTransaction
 }
 
@@ -351,6 +351,25 @@ export default class ChainService implements Service<Events> {
     return this.pollingProviders.ethereum.getBlockNumber()
   }
 
+  async getBlockData(
+    network: Network,
+    blockHash: string
+  ): Promise<EIP1559Block> {
+    // TODO make this multi network
+    const cachedBlock = await this.db.getBlock(network, blockHash)
+    if (cachedBlock) {
+      return cachedBlock
+    }
+
+    // Looking for new block
+    const resultBlock = await this.pollingProviders.ethereum.getBlock(blockHash)
+
+    const block = blockFromEthersBlock(resultBlock)
+
+    await this.db.addBlock(block)
+    return block
+  }
+
   async getTransaction(
     network: Network,
     hash: string
@@ -455,17 +474,25 @@ export default class ChainService implements Service<Events> {
     await Promise.allSettled(
       toHandle.map(async (hash) => {
         try {
-          // TODO make this multi network
           const result = await this.pollingProviders.ethereum.getTransaction(
             hash
           )
+
           const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
           if (!tx.blockHash && !tx.blockHeight) {
             this.subscribeToTransactionConfirmation(tx.network, tx.hash)
           }
+
+          // Get relevant block data. Primarily used in the frontend for timestamps. Emits and saves block data
+          const block = await this.getBlockData(tx.network, result.blockHash)
+
           // TODO make this provider specific
+          // Save block and transaction
           await this.saveTransaction(tx, "alchemy")
+
+          // Trigger sending block to redux store
+          this.emitter.emit("block", block)
         } catch (error) {
           // TODO proper logging
           logger.error(`Error retrieving transaction ${hash}`, error)
@@ -512,7 +539,7 @@ export default class ChainService implements Service<Events> {
         const block = blockFromWebsocketBlock(result)
         await this.db.addBlock(block)
         // emit the new block, don't wait to settle
-        this.emitter.emit("newBlock", block)
+        this.emitter.emit("block", block)
         // TODO if it matches a known blockheight and the difficulty is higher,
         // emit a reorg event
       }
