@@ -26,7 +26,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
                 { send_icon: activity.isSent }
               )}
             />
-            {`${activity.isSent ? "Sent" : "Recieved"}`}
+            {`${activity.isSent ? "Sent" : "Received"}`}
           </div>
           <div className="right">
             {dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
