@@ -328,8 +328,8 @@ export type Events = {
 export const emitter = new Emittery<Events>()
 
 /**
- * Async thunk creator whose dispatch promise will return when the account has
- * been added.
+ * Async thunk whose dispatch promise will return when the account has been
+ * added.
  *
  * Actual account data will flow into the redux store through other channels;
  * the promise returned from this action's dispatch will be fulfilled by a void
