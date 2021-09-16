@@ -109,7 +109,7 @@ export interface AnyAssetAmount {
 export interface PricePoint {
   pair: [AnyAsset, AnyAsset]
   amounts: [bigint, bigint]
-  time: number
+  time: UNIXTime
 }
 
 /*
@@ -122,7 +122,7 @@ export interface PricePoint {
  */
 export interface UnitPricePoint {
   unitPrice: AnyAssetAmount
-  lastUpdated: number
+  time: UNIXTime
 }
 
 /*

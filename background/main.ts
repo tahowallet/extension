@@ -30,7 +30,7 @@ import {
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
-import { assetsLoaded } from "./redux-slices/assets"
+import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
@@ -238,6 +238,10 @@ export default class Main {
 
     indexing.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
+    })
+
+    indexing.emitter.on("price", (pricePoint) => {
+      this.store.dispatch(newPricePoint(pricePoint))
     })
   }
 
