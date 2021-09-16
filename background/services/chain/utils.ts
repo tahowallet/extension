@@ -11,10 +11,6 @@ import {
 } from "../../types"
 import { ETHEREUM } from "../../constants"
 
-function bigIntFromHex(s: string): bigint {
-  return BigNumber.from(s).toBigInt()
-}
-
 /*
  * Parse a block as returned by a polling provider.
  */
@@ -38,9 +34,9 @@ export function blockFromWebsocketBlock(gethResult: any): EIP1559Block {
     hash: gethResult.hash as string,
     blockHeight: BigNumber.from(gethResult.number as string).toNumber(),
     parentHash: gethResult.parentHash as string,
-    difficulty: bigIntFromHex(gethResult.difficulty as string),
+    difficulty: BigInt(gethResult.difficulty as string),
     timestamp: BigNumber.from(gethResult.timestamp as string).toNumber(),
-    baseFeePerGas: bigIntFromHex(gethResult.baseFeePerGas as string),
+    baseFeePerGas: BigInt(gethResult.baseFeePerGas as string),
     network: ETHEREUM,
   }
 }
@@ -82,18 +78,18 @@ export function txFromWebsocketTx(
     hash: tx.hash as string,
     to: tx.to as string,
     from: tx.from as string,
-    gas: bigIntFromHex(tx.gas as string),
-    gasPrice: bigIntFromHex(tx.gasPrice as string),
-    maxFeePerGas: tx.maxFeePerGas ? bigIntFromHex(tx.maxFeePerGas) : null,
+    gas: BigInt(tx.gas as string),
+    gasPrice: BigInt(tx.gasPrice as string),
+    maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-      ? bigIntFromHex(tx.maxPriorityFeePerGas)
+      ? BigInt(tx.maxPriorityFeePerGas)
       : null,
     input: tx.input as string,
     r: (tx.r as string) || undefined,
     s: (tx.s as string) || undefined,
     v: BigNumber.from(tx.v).toNumber(),
-    nonce: bigIntFromHex(tx.nonce),
-    value: bigIntFromHex(tx.value),
+    nonce: BigInt(tx.nonce),
+    value: BigInt(tx.value),
     blockHash: tx.blockHash || undefined,
     blockHeight: tx.blockNumber || undefined,
     type:
