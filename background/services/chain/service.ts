@@ -343,7 +343,7 @@ export default class ChainService implements Service<Events> {
     this.loadRecentAssetTransfers(accountNetwork)
   }
 
-  async getBlockHeight(network: EVMNetwork): Promise<number> {
+  async getBlockHeight(network: Network): Promise<number> {
     const cachedBlock = await this.db.getLatestBlock(network)
     if (cachedBlock) {
       return cachedBlock.blockHeight
@@ -435,9 +435,7 @@ export default class ChainService implements Service<Events> {
     accountNetwork: AccountNetwork
   ): Promise<void> {
     try {
-      const blockHeight = await this.getBlockHeight(
-        accountNetwork.network as EVMNetwork
-      )
+      const blockHeight = await this.getBlockHeight(accountNetwork.network)
       const fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
       // TODO only works on Ethereum today
       const assetTransfers = await getAssetTransfers(
