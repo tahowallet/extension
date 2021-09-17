@@ -1,7 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
-
 import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
-
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -68,12 +66,9 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
       </div>
       <div className="portion bottom">
-        <SharedButton
-          size="medium"
-          label="Importwallet"
-          type="primary"
-          onClick={importWallet}
-        />
+        <SharedButton size="medium" type="primary" onClick={importWallet}>
+          Import wallet
+        </SharedButton>
       </div>
       <style jsx>{`
         section {

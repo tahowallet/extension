@@ -66,9 +66,10 @@ export default function SwapQoute(): ReactElement {
             <SharedButton
               type="primary"
               size="large"
-              label="Aprove Assets & Swap"
               onClick={handleApproveClick}
-            />
+            >
+              Aprove Assets & Swap
+            </SharedButton>
           </div>
         </>
       )}

@@ -15,7 +15,9 @@ export default function SignTransactionApproveSpendAssetBlock(): ReactElement {
       <span className="spending_label">Spend KEEP tokens</span>
       <span className="speed_limit_label">Spend limit</span>
       <span className="spend_amount">422,391,328.23 KEEP</span>
-      <SharedButton label="Change limit" size="small" type="tertiary" />
+      <SharedButton size="small" type="tertiary">
+        Change limit
+      </SharedButton>
       <div className="spacer" />
       <style jsx>
         {`

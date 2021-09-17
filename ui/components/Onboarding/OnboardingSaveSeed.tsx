@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
 import titleStyle from "./titleStyle"
@@ -36,24 +35,26 @@ export default function OnboardingSaveSeed(props: Props): ReactElement {
         <SharedButton
           type="primary"
           size="medium"
-          label="I wrote it down, verify recovery seed"
           icon="arrow_right"
           iconSize="large"
           onClick={triggerNextStep}
-        />
+        >
+          I wrote it down, verify recovery seed
+        </SharedButton>
         <div className="copy_button">
           <SharedButton
             type="secondary"
             size="medium"
-            label="Copy and verify recovery seed"
             icon="arrow_right"
             iconSize="large"
             onClick={triggerNextStep}
-          />
+          >
+            Copy and verify recovery seed
+          </SharedButton>
         </div>
-        <Link to="/">
-          <SharedButton type="tertiary" size="medium" label="remind me later" />
-        </Link>
+        <SharedButton type="tertiary" size="medium" linkTo="/">
+          remind me later
+        </SharedButton>
       </div>
       <style jsx>
         {`

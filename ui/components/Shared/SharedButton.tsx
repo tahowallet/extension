@@ -1,8 +1,9 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
+import { Redirect } from "react-router-dom"
 
 interface Props {
-  label: string
+  children: React.ReactNode
   type:
     | "primary"
     | "secondary"
@@ -16,11 +17,12 @@ interface Props {
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
+  linkTo?: string
 }
 
 export default function SharedButton(props: Props): ReactElement {
   const {
-    label,
+    children,
     type,
     size,
     onClick,
@@ -28,7 +30,21 @@ export default function SharedButton(props: Props): ReactElement {
     icon,
     iconSize,
     iconPosition,
+    linkTo,
   } = props
+
+  const [navigateTo, setNavigateTo] = React.useState(null)
+
+  if (navigateTo && navigateTo === linkTo) {
+    return <Redirect to={linkTo} />
+  }
+
+  function handleClick(e) {
+    if (linkTo) {
+      setNavigateTo(linkTo)
+    }
+    onClick(e)
+  }
 
   return (
     <button
@@ -44,9 +60,9 @@ export default function SharedButton(props: Props): ReactElement {
         { warning: type === "warning" },
         { icon_left: iconPosition === "left" }
       )}
-      onClick={onClick}
+      onClick={handleClick}
     >
-      {label}
+      {children}
       {icon ? (
         <span
           className={classNames(
@@ -226,4 +242,5 @@ SharedButton.defaultProps = {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },
+  linkTo: null,
 }
