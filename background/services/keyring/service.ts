@@ -204,11 +204,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network: {
-        ...ETHEREUM,
-        family: "EVM",
-        chainID: "1",
-      },
+      network: ETHEREUM,
     }
     this.emitter.emit("signedTx", signedTx)
   }

@@ -328,6 +328,7 @@ export default class ChainService extends BaseService<Events> {
     await Promise.allSettled(
       toHandle.map(async (hash) => {
         try {
+          // TODO make this multi network
           const result = await this.pollingProviders.ethereum.getTransaction(
             hash
           )
@@ -384,11 +385,11 @@ export default class ChainService extends BaseService<Events> {
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
-    // eslint-disable-next-line
+    // eslint-disable-next-line no-underscore-dangle
     await provider._subscribe(
       "newHeadsSubscriptionID",
       ["newHeads"],
-      async (result: any) => {
+      async (result: unknown) => {
         // add new head to database
         const block = blockFromWebsocketBlock(result)
         await this.db.addBlock(block)
@@ -416,7 +417,7 @@ export default class ChainService extends BaseService<Events> {
         "alchemy_filteredNewFullPendingTransactions",
         { address: accountNetwork.account },
       ],
-      async (result: any) => {
+      async (result: unknown) => {
         // TODO use proper provider string
         // handle incoming transactions for an account
         try {
