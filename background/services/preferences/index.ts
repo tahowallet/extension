@@ -14,6 +14,10 @@ interface Events extends ServiceLifecycleEvents {
  * event when preferences change.
  */
 export default class PreferenceService extends BaseService<Events> {
+  /*
+   * Create a new PrefenceService. The service isn't initialized until
+   * startService() is called and resolved.
+   */
   static create: ServiceCreatorFunction<Events, PreferenceService, []> =
     async () => {
       const db = await getOrCreateDB()
@@ -21,11 +25,7 @@ export default class PreferenceService extends BaseService<Events> {
       return new this(db)
     }
 
-  /*
-   * Create a new PrefenceService. The service isn't initialized until
-   * startService() is called and resolved.
-   */
-  constructor(private db: PreferenceDatabase) {
+  private constructor(private db: PreferenceDatabase) {
     super()
   }
 
