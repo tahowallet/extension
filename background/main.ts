@@ -7,18 +7,12 @@ import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 
 import {
-  startService as startPreferences,
   PreferenceService,
-} from "./services/preferences"
-import {
-  startService as startIndexing,
+  ChainService,
   IndexingService,
-} from "./services/indexing"
-import { startService as startChain, ChainService } from "./services/chain"
-import {
-  startService as startKeyring,
   KeyringService,
-} from "./services/keyring"
+  ServiceCreatorFunction,
+} from "./services"
 
 import { KeyringTypes } from "./types"
 
@@ -38,6 +32,7 @@ import {
   importLegacyKeyring,
 } from "./redux-slices/keyrings"
 import { allAliases } from "./redux-slices/utils"
+import BaseService from "./services/base"
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
@@ -113,33 +108,8 @@ const initializeStore = (startupState = {}) =>
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
 
-export default class Main {
-  /*
-   * A promise to the preference service, a dependency for most other services.
-   * The promise will be resolved when the service is initialized.
-   */
-  preferenceService: Promise<PreferenceService>
-
-  /*
-   * A promise to the chain service, keeping track of base asset balances,
-   * transactions, and network status. The promise will be resolved when the
-   * service is initialized.
-   */
-  chainService: Promise<ChainService>
-
-  /*
-   * A promise to the indexing service, keeping track of token balances and
-   * prices. The promise will be resolved when the service is initialized.
-   */
-  indexingService: Promise<IndexingService>
-
-  /*
-   * A promise to the keyring service, which stores key material, derives
-   * accounts, and signs messagees and transactions. The promise will be
-   * resolved when the service is initialized.
-   */
-  keyringService: Promise<KeyringService>
-
+// TODO Rename ReduxService or CoordinationService, move to services/, etc.
+export default class Main extends BaseService<never> {
   /**
    * The redux store for the wallet core. Note that the redux store is used to
    * render the UI (via webext-redux), but it is _not_ the source of truth.
@@ -149,9 +119,48 @@ export default class Main {
    */
   store: ReduxStoreType
 
-  constructor() {
-    // start all services
-    this.initializeServices()
+  static create: ServiceCreatorFunction<never, Main, []> = async () => {
+    const preferenceService = PreferenceService.create()
+    const chainService = ChainService.create(preferenceService)
+    const indexingService = IndexingService.create(
+      preferenceService,
+      chainService
+    )
+    const keyringService = KeyringService.create()
+
+    return new this(
+      await preferenceService,
+      await chainService,
+      await indexingService,
+      await keyringService
+    )
+  }
+
+  private constructor(
+    /**
+     * A promise to the preference service, a dependency for most other services.
+     * The promise will be resolved when the service is initialized.
+     */
+    private preferenceService: PreferenceService,
+    /**
+     * A promise to the chain service, keeping track of base asset balances,
+     * transactions, and network status. The promise will be resolved when the
+     * service is initialized.
+     */
+    private chainService: ChainService,
+    /**
+     * A promise to the indexing service, keeping track of token balances and
+     * prices. The promise will be resolved when the service is initialized.
+     */
+    private indexingService: IndexingService,
+    /**
+     * A promise to the keyring service, which stores key material, derives
+     * accounts, and signs messagees and transactions. The promise will be
+     * resolved when the service is initialized.
+     */
+    private keyringService: KeyringService
+  ) {
+    super()
 
     // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
     if (process.env.REDUX_CACHE === "true") {
@@ -163,23 +172,38 @@ export default class Main {
     }
   }
 
-  initializeServices(): void {
-    this.preferenceService = startPreferences()
-    this.chainService = startChain(this.preferenceService)
-    this.indexingService = startIndexing(
-      this.preferenceService,
-      this.chainService
-    ).then(async (service) => {
-      const chain = await this.chainService
-      await chain.addAccountToTrack({
-        // TODO uses Ethermine address for development - move this to startup
-        // state
-        account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-        network: ETHEREUM,
+  protected async internalStartService(): Promise<void> {
+    await super.internalStartService()
+
+    this.indexingService
+      .started()
+      .then(async () => this.chainService.started())
+      .then(async (chain) => {
+        chain.addAccountToTrack({
+          // TODO uses Ethermine address for development - move this to startup
+          // state
+          account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
+          network: ETHEREUM,
+        })
       })
-      return service
-    })
-    this.keyringService = startKeyring()
+
+    await Promise.all([
+      this.preferenceService.startService(),
+      this.chainService.startService(),
+      this.indexingService.startService(),
+      this.keyringService.startService(),
+    ])
+  }
+
+  protected async internalStopService(): Promise<void> {
+    await Promise.all([
+      this.preferenceService.stopService(),
+      this.chainService.stopService(),
+      this.indexingService.stopService(),
+      this.keyringService.stopService(),
+    ])
+
+    await super.internalStopService()
   }
 
   async initializeRedux(startupState?: unknown): Promise<void> {
@@ -200,71 +224,65 @@ export default class Main {
   }
 
   async connectChainService(): Promise<void> {
-    const chain = await this.chainService
-
     // Wire up chain service to account slice.
-    chain.emitter.on("accountBalance", (accountWithBalance) => {
+    this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    chain.emitter.on("transaction", (transaction) => {
+    this.chainService.emitter.on("transaction", (transaction) => {
       if (transaction.blockHash) {
         this.store.dispatch(transactionConfirmed(transaction))
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
     })
-    chain.emitter.on("block", (block) => {
+    this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
     accountSliceEmitter.on("addAccount", async (accountNetwork) => {
-      await chain.addAccountToTrack(accountNetwork)
+      await this.chainService.addAccountToTrack(accountNetwork)
     })
 
     // Set up initial state.
-    const existingAccounts = await chain.getAccountsToTrack()
+    const existingAccounts = await this.chainService.getAccountsToTrack()
     existingAccounts.forEach((accountNetwork) => {
       // Mark as loading and wire things up.
       this.store.dispatch(loadAccount(accountNetwork.account))
 
       // Force a refresh of the account balance to populate the store.
-      chain.getLatestBaseAccountBalance(accountNetwork)
+      this.chainService.getLatestBaseAccountBalance(accountNetwork)
     })
   }
 
   async connectIndexingService(): Promise<void> {
-    const indexing = await this.indexingService
-
-    indexing.emitter.on("accountBalance", (accountWithBalance) => {
+    this.indexingService.emitter.on("accountBalance", (accountWithBalance) => {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
 
-    indexing.emitter.on("assets", (assets) => {
+    this.indexingService.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
     })
 
-    indexing.emitter.on("price", (pricePoint) => {
+    this.indexingService.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
     })
   }
 
   async connectKeyringService(): Promise<void> {
-    const keyring = await this.keyringService
-
-    keyring.emitter.on("keyrings", (keyrings) => {
+    this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
-      await keyring.generateNewKeyring(
+      await this.keyringService.generateNewKeyring(
         KeyringTypes.mnemonicBIP39S256,
         "password"
       )
     })
 
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
-      await keyring.importLegacyKeyring(mnemonic, "password")
+      await this.keyringService.importLegacyKeyring(mnemonic, "password")
     })
   }
 }

@@ -1,10 +1,12 @@
-import Emittery from "emittery"
+import ChainService from "./chain"
+import IndexingService from "./indexing"
+import KeyringService from "./keyring"
+import PreferenceService from "./preferences"
 
-/*
- * A simple interface for service lifecycles and event emission.
- */
-export interface Service<T> {
-  emitter: Emittery<T>
-  startService(): Promise<void>
-  stopService(): Promise<void>
-}
+export type {
+  ServiceLifecycleEvents,
+  Service,
+  ServiceCreatorFunction,
+} from "./types"
+
+export { PreferenceService, ChainService, IndexingService, KeyringService }
