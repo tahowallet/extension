@@ -22,7 +22,6 @@ interface Events {
   unlocked: boolean
   keyrings: Keyring[]
   // TODO message was signed
-  // TODO tx was signed
   signedTx: SignedEVMTransaction
 }
 
