@@ -30,7 +30,8 @@ type AlarmSchedule =
  * {@link AlarmHandlerScheduleMap}, which allows for disambiguating between
  * different alarms.
  */
-export type AlarmHandlerSchedule = AlarmSchedule & {
+export type AlarmHandlerSchedule = {
+  schedule: AlarmSchedule
   handler: (alarm?: Alarms.Alarm) => void
 }
 
@@ -113,7 +114,7 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
   protected async internalStartService(): Promise<void> {
     const scheduleEntries = Object.entries(this.alarmSchedules)
 
-    scheduleEntries.forEach(([name, schedule]) => {
+    scheduleEntries.forEach(([name, { schedule }]) => {
       browser.alarms.create(name, schedule)
     })
 

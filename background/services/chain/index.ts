@@ -101,8 +101,10 @@ export default class ChainService extends BaseService<Events> {
   ) {
     super({
       queuedTransactions: {
-        delayInMinutes: 1,
-        periodInMinutes: 5,
+        schedule: {
+          delayInMinutes: 1,
+          periodInMinutes: 5,
+        },
         handler: () => {
           this.handleQueuedTransactionAlarm()
         },
