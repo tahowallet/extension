@@ -39,7 +39,11 @@ export default function WalletActivityList(props: Props): ReactElement {
         isOpen={showingActivityDetail && true}
         close={handleClose}
       >
-        <WalletActivityDetails activityItem={showingActivityDetail} />
+        {showingActivityDetail ? (
+          <WalletActivityDetails activityItem={showingActivityDetail} />
+        ) : (
+          <></>
+        )}
       </SharedSlideUpMenu>
       <ul>
         {activity.map((activityItem) => (
