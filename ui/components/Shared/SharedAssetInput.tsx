@@ -170,10 +170,11 @@ export default function SharedAssetInput(
             <SharedButton
               type="tertiary"
               size="medium"
-              label="Paste"
               icon="paste"
               iconSize="large"
-            />
+            >
+              Paste
+            </SharedButton>
           </>
         ) : (
           <>
@@ -185,10 +186,11 @@ export default function SharedAssetInput(
               <SharedButton
                 type="secondary"
                 size="medium"
-                label="Select token"
                 onClick={toggleIsTokenMenuOpen}
                 icon="chevron"
-              />
+              >
+                Select token
+              </SharedButton>
             )}
             <input className="input_amount" type="text" placeholder="0.0" />
           </>

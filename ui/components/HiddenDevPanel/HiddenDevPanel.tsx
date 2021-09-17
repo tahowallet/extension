@@ -12,35 +12,38 @@ export default function HiddenDevPanel(): ReactElement {
         <SharedButton
           type="primary"
           size="medium"
-          label="Enter Onboarding"
           icon="arrow_right"
           iconSize="large"
           onClick={() => {
             history.push("/onboarding/0")
           }}
-        />
+        >
+          Enter Onboarding
+        </SharedButton>
         <SharedButton
           type="secondary"
           size="medium"
-          label="Verify Recovery Seed"
           onClick={() => {
             window.localStorage.setItem("hasSavedSeed", "true")
             window.location.reload()
           }}
           icon="arrow_right"
           iconSize="large"
-        />
+        >
+          Verify Recovery Seed
+        </SharedButton>
         <SharedButton
           type="secondary"
           size="medium"
-          label="Unverify Recovery Seed"
           onClick={() => {
             window.localStorage.removeItem("hasSavedSeed")
             window.location.reload()
           }}
           icon="arrow_right"
           iconSize="large"
-        />
+        >
+          Unverify Recovery Seed
+        </SharedButton>
       </div>
       <style jsx>{`
         h3 {

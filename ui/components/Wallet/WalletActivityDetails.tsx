@@ -203,11 +203,12 @@ export default function WalletActivityDetails(
           <SharedButton
             type="tertiary"
             size="medium"
-            label="Etherscan"
             icon="external"
             iconSize="large"
             onClick={openExplorer}
-          />
+          >
+            Etherscan
+          </SharedButton>
         </div>
       </div>
       <div className="destination_cards">

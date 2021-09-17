@@ -1,5 +1,4 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { Link } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
@@ -38,33 +37,34 @@ export default function WalletAccountBalanceControl(
         </span>
         {hasSavedSeed ? (
           <div className="send_receive_button_wrap">
-            <Link to="/send">
-              <SharedButton
-                label="Send"
-                icon="send"
-                size="medium"
-                type="primary"
-              />
-            </Link>
             <SharedButton
-              label="Receive"
+              icon="send"
+              size="medium"
+              type="primary"
+              linkTo="/send"
+            >
+              Send
+            </SharedButton>
+            <SharedButton
               onClick={handleClick}
               icon="receive"
               size="medium"
               type="primary"
-            />
+            >
+              Receive
+            </SharedButton>
           </div>
         ) : (
           <div className="save_seed_button_wrap">
-            <Link to="/onboarding/2">
-              <SharedButton
-                label="First, secure your recovery seed"
-                icon="arrow_right"
-                iconSize="large"
-                size="large"
-                type="warning"
-              />
-            </Link>
+            <SharedButton
+              icon="arrow_right"
+              iconSize="large"
+              size="large"
+              type="warning"
+              linkTo="/onboarding/2"
+            >
+              First, secure your recovery seed
+            </SharedButton>
           </div>
         )}
       </div>
