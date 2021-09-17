@@ -17,6 +17,7 @@ import {
   EIP1559Block,
   EVMNetwork,
   FungibleAsset,
+  Network,
   SignedEVMTransaction,
 } from "../../types"
 import { getAssetTransfers } from "../../lib/alchemy"
