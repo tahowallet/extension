@@ -5,7 +5,7 @@ import {
   FeeMarketEIP1559TxData,
 } from "@ethereumjs/tx"
 
-import { TxParams, ImportData, Seed, MsgParams } from "../../types"
+import { TxParams, MsgParams } from "../../types"
 
 interface Opts {
   [key: string]: string | number
@@ -19,14 +19,14 @@ interface Opts {
  * @returns {Promise<string>} has string
  */
 
-async function createReference(data: string): Promise<string> {
+export async function createReference(data: string): Promise<string> {
   const dataUint8 = new TextEncoder().encode(data)
   const hashBufer = await crypto.subtle.digest("SHA-256", dataUint8)
   const hashArray = Array.from(new Uint8Array(hashBufer))
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
 }
 
-function formatTransaction(txParams: TxParams): FeeMarketEIP1559TxData {
+export function formatTransaction(txParams: TxParams): FeeMarketEIP1559TxData {
   return {
     data: txParams.input,
     gasLimit: new BN(txParams.gasLimit.toString(16), 16),
@@ -43,7 +43,7 @@ function formatTransaction(txParams: TxParams): FeeMarketEIP1559TxData {
   }
 }
 
-function normalizeAddress(address: string): string {
+export function normalizeAddress(address: string): string {
   return address.toLowerCase()
 }
 
@@ -57,7 +57,7 @@ function normalizeAddress(address: string): string {
  * @param {Object} opts - Signing options.
  * @returns {Promise<string>} The signature string to be broadcasted.
  */
-async function signTransaction(
+export async function signTransaction(
   keyring: any,
   txData: TxParams,
   fromAddress: string,

@@ -172,6 +172,14 @@ export interface AccountNetwork {
 export type UNIXTime = number
 
 /*
+ * An EVM-style network which *must* include a chainID.
+ */
+export interface EVMNetwork extends Network {
+  chainID: string
+  family: "EVM"
+}
+
+/*
  * An EVM-style block identifier, including difficulty, block height, and
  */
 export interface EVMBlock {
@@ -180,7 +188,7 @@ export interface EVMBlock {
   difficulty: bigint
   blockHeight: number
   timestamp: UNIXTime
-  network: Network
+  network: EVMNetwork
 }
 
 /*
@@ -198,13 +206,13 @@ export interface EVMTransaction {
   gasPrice: bigint | null
   maxFeePerGas: bigint | null
   maxPriorityFeePerGas: bigint | null
-  input: string
+  input: string | null
   nonce: bigint
   value: bigint
   blockHash: string | null
   blockHeight: number | null
   asset: FungibleAsset
-  network: Network
+  network: EVMNetwork
   /*
    * 0 - plain jane
    * 1 - EIP-2930
@@ -224,11 +232,34 @@ export interface LegacyEVMTransaction extends EVMTransaction {
   maxPriorityFeePerGas: null
 }
 
+export interface LegacyEVMTransactionRequest
+  extends Pick<
+    LegacyEVMTransaction,
+    "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
+  > {
+  gasLimit: bigint
+}
+
 export interface EIP1559Transaction extends EVMTransaction {
   gasPrice: null
   type: 1 | 2
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
+}
+
+export interface EIP1559TransactionRequest
+  extends Pick<
+    EIP1559Transaction,
+    | "maxFeePerGas"
+    | "maxPriorityFeePerGas"
+    | "type"
+    | "nonce"
+    | "from"
+    | "to"
+    | "input"
+    | "value"
+  > {
+  gasLimit: bigint
 }
 
 export interface ConfirmedEVMTransaction extends EVMTransaction {

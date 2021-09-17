@@ -15,6 +15,7 @@ import {
   AnyEVMTransaction,
   AssetTransfer,
   EIP1559Block,
+  EVMNetwork,
   FungibleAsset,
   Network,
   SignedEVMTransaction,
@@ -98,7 +99,7 @@ function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
 function txFromWebsocketTx(
   tx: any,
   asset: FungibleAsset,
-  network: Network
+  network: EVMNetwork
 ): AnyEVMTransaction {
   return {
     hash: tx.hash as string,
@@ -137,7 +138,7 @@ function txFromEthersTx(
     type?: number
   },
   asset: FungibleAsset,
-  network: Network
+  network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
     throw Error("Malformed transaction")
@@ -224,7 +225,7 @@ export default class ChainService implements Service<Events> {
   }[]
 
   subscribedNetworks: {
-    network: Network
+    network: EVMNetwork
     provider: AlchemyWebSocketProvider
   }[]
 
@@ -371,7 +372,7 @@ export default class ChainService implements Service<Events> {
   }
 
   async getTransaction(
-    network: Network,
+    network: EVMNetwork,
     hash: string
   ): Promise<AnyEVMTransaction> {
     const cachedTx = await this.db.getTransaction(network, hash)
@@ -392,7 +393,7 @@ export default class ChainService implements Service<Events> {
   }
 
   async queueTransactionHashToRetrieve(
-    network: Network,
+    network: EVMNetwork,
     hash: string
   ): Promise<void> {
     // TODO make proper use of the network
@@ -527,7 +528,7 @@ export default class ChainService implements Service<Events> {
     }
   }
 
-  private async subscribeToNewHeads(network: Network): Promise<void> {
+  private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
     // eslint-disable-next-line
@@ -587,7 +588,7 @@ export default class ChainService implements Service<Events> {
    * the database and informing subscribers.
    */
   private async subscribeToTransactionConfirmation(
-    network: Network,
+    network: EVMNetwork,
     hash: string
   ): Promise<void> {
     // TODO make proper use of the network
