@@ -3,17 +3,17 @@ import { BTC, ETH } from "./currencies"
 
 // TODO integrate this with /api/networks
 
-export const ETHEREUM = {
+export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
   baseAsset: ETH,
   chainID: "1",
   family: "EVM",
-} as EVMNetwork
+}
 
-export const BITCOIN = {
+export const BITCOIN: Network = {
   name: "Bitcoin",
   baseAsset: BTC,
   family: "BTC",
-} as Network
+}
 
 export const NETWORKS = [ETHEREUM, BITCOIN]
