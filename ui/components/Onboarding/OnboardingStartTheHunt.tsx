@@ -24,20 +24,18 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
           <div className="icon metamask_icon" />
           <SharedButton
             type="tertiary"
-            label="Import Metamask"
             icon="chevron_right"
             onClick={openMetamaskImportScreen}
             size="medium"
-          />
+          >
+            Import Metamask
+          </SharedButton>
         </li>
         <li className="option standard_width">
           <div className="icon trezor_icon" />
-          <SharedButton
-            type="tertiary"
-            label="Connect hardware wallet"
-            icon="chevron_right"
-            size="medium"
-          />
+          <SharedButton type="tertiary" icon="chevron_right" size="medium">
+            Connect hardware wallet
+          </SharedButton>
         </li>
         <li className="label">
           Start Fresh
@@ -50,10 +48,11 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
           <div className="icon tally_icon" />
           <SharedButton
             type="secondary"
-            label="Create new wallet"
             onClick={openNewWalletScreen}
             size="medium"
-          />
+          >
+            Create new wallet
+          </SharedButton>
         </li>
       </ul>
       <style jsx>

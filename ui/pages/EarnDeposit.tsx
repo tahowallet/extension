@@ -42,7 +42,9 @@ export default function EarnDeposit(): ReactElement {
             label="Deposit amount"
             defaultToken={{ name: "ETH" }}
           />
-          <SharedButton type="primary" size="large" label="Approve & Deposit" />
+          <SharedButton type="primary" size="large">
+            Approve & Deposit
+          </SharedButton>
         </div>
       </CorePage>
       <style jsx>

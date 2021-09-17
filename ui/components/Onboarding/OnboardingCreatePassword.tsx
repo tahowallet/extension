@@ -19,18 +19,13 @@ export default function OnboardingCreatePassword(props: Props): ReactElement {
       <div className="repeat_password_wrap">
         <SharedInput placeholder="Repeat Password" />
       </div>
-      <SharedButton
-        type="primary"
-        size="large"
-        label="Begin the hunt"
-        onClick={triggerNextStep}
-      />
+      <SharedButton type="primary" size="large" onClick={triggerNextStep}>
+        Begin the hunt
+      </SharedButton>
       <div className="restore">
-        <SharedButton
-          type="tertiary"
-          size="medium"
-          label="Restoring account?"
-        />
+        <SharedButton type="tertiary" size="medium">
+          Restoring account?
+        </SharedButton>
       </div>
       <style jsx>
         {`

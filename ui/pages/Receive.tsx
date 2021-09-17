@@ -20,16 +20,12 @@ export default function Receive(): ReactElement {
         <QRCode value={account?.address} size={128} />
       </div>
       <div className="copy_wrap">
-        <SharedButton
-          label={`${account?.address.slice(0, 7)}...${account?.address.slice(
+        <SharedButton icon="copy" size="medium" iconSize="large" type="primary">
+          {`${account?.address.slice(0, 7)}...${account?.address.slice(
             35,
             41
           )}`}
-          icon="copy"
-          size="medium"
-          iconSize="large"
-          type="primary"
-        />
+        </SharedButton>
       </div>
       <style jsx>
         {`

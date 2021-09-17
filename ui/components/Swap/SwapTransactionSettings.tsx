@@ -22,12 +22,9 @@ export default function SwapTransactionSettings(): ReactElement {
         <div className="settings_wrap">
           <div className="row row_slippage">
             <span className="settings_label">Slippage tolerance</span>
-            <SharedButton
-              type="secondary"
-              size="medium"
-              label="1%"
-              icon="chevron"
-            />
+            <SharedButton type="secondary" size="medium" icon="chevron">
+              1%
+            </SharedButton>
           </div>
           <div className="row row_fee">
             <span className="settings_label settings_label_fee">
