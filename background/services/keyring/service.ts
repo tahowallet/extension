@@ -1,8 +1,6 @@
-import Emittery from "emittery"
 import KeyringController from "@tallyho/keyring-controller"
-import logger from "../../lib/logger"
 
-import { Service } from ".."
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
   EIP1559TransactionRequest,
@@ -10,6 +8,7 @@ import {
   KeyringTypes,
   SignedEVMTransaction,
 } from "../../types"
+import BaseService from "../base"
 import { ETH, ETHEREUM } from "../../constants"
 
 type Keyring = {
@@ -17,7 +16,7 @@ type Keyring = {
   addresses: string[]
 }
 
-interface Events {
+interface Events extends ServiceLifecycleEvents {
   locked: boolean
   unlocked: boolean
   keyrings: Keyring[]
@@ -29,53 +28,59 @@ interface Events {
  * KeyringService is responsible for all key material, as well as applying the
  * material to sign messages, sign transactions, and derive child keypairs.
  */
-export default class KeyringService implements Service<Events> {
-  readonly emitter: Emittery<Events>
-
+export default class KeyringService extends BaseService<Events> {
   #hashedPassword: string | null
 
-  #keyringController: Promise<KeyringController>
+  #keyringController: KeyringController
 
-  constructor() {
-    this.emitter = new Emittery<Events>()
-    const currentEncryptedVault = (async () => {
+  static create: ServiceCreatorFunction<Events, KeyringService, []> =
+    async () => {
       const { vaults } = await getEncryptedVaults()
-      return vaults.pop()?.vault
-    })()
-    this.#keyringController = (async () => {
+      const currentEncryptedVault = vaults.slice(-1)[0]?.vault
+
       const keyringOptions = {
         persistVault: writeLatestEncryptedVault,
-        encryptedVault: await currentEncryptedVault,
+        encryptedVault: currentEncryptedVault,
       }
-      const controller = new KeyringController(keyringOptions)
 
-      controller.on("lock", () => this.emitter.emit("locked", true))
-      controller.on("unlock", () => this.emitter.emit("unlocked", true))
+      return new this(keyringOptions)
+    }
 
-      controller.memStore.subscribe((state) => {
-        const keyrings = state.keyrings
-          .filter((kr) => kr.type === "HD Key Tree")
-          .map((kr) => ({
-            type: KeyringTypes.mnemonicBIP39S256,
-            addresses: [...kr.accounts],
-          }))
-        this.emitter.emit("keyrings", keyrings)
-      })
+  private constructor(
+    keyringOptions: ConstructorParameters<typeof KeyringController>[0]
+  ) {
+    super()
 
-      return controller
-    })()
+    this.#keyringController = new KeyringController(keyringOptions)
   }
 
-  async startService(): Promise<void> {
-    await this.#keyringController
+  async internalStartService(): Promise<void> {
+    await super.internalStartService()
+
+    this.#keyringController.on("lock", () => this.emitter.emit("locked", true))
+    this.#keyringController.on("unlock", () =>
+      this.emitter.emit("unlocked", true)
+    )
+
+    this.#keyringController.memStore.subscribe((state) => {
+      const keyrings = state.keyrings
+        .filter((kr) => kr.type === "HD Key Tree")
+        .map((kr) => ({
+          type: KeyringTypes.mnemonicBIP39S256,
+          addresses: [...kr.accounts],
+        }))
+      this.emitter.emit("keyrings", keyrings)
+    })
   }
 
-  async stopService(): Promise<void> {
+  async internalStopService(): Promise<void> {
     await this.lock()
+
+    await super.internalStopService()
   }
 
   async unlock(password: string): Promise<boolean> {
-    const controller = await this.#keyringController
+    const controller = this.#keyringController
     const state = controller.memStore.getState()
     if (!controller.hasVault()) {
       // TODO this doesn't make much sense as a flow of operations. The entire
@@ -89,11 +94,11 @@ export default class KeyringService implements Service<Events> {
   }
 
   async lock(): Promise<void> {
-    await (await this.#keyringController).setLocked()
+    await this.#keyringController.setLocked()
   }
 
   private async requireUnlocked(): Promise<void> {
-    if (!(await this.#keyringController).memStore.getState().isUnlocked) {
+    if (!this.#keyringController.memStore.getState().isUnlocked) {
       throw new Error("KeyringService must be unlocked.")
     }
   }
@@ -119,19 +124,22 @@ export default class KeyringService implements Service<Events> {
         "KeyringService only supports generating 256-bit HD key trees"
       )
     }
-    const controller = await this.#keyringController
-    const state = await controller.memStore.getState()
+    const state = this.#keyringController.memStore.getState()
     if (state.keyrings.length < 1) {
       if (password === undefined) {
         throw new Error("Can't generate initial keyring without a password!")
       }
-      await controller.createNewVaultAndKeychain(password, { strength: 256 })
+      await this.#keyringController.createNewVaultAndKeychain(password, {
+        strength: 256,
+      })
     } else {
       if (password === undefined) {
         await this.requireUnlocked()
       }
 
-      await controller.addNewKeyring("HD Key Tree", { strength: 256 })
+      await this.#keyringController.addNewKeyring("HD Key Tree", {
+        strength: 256,
+      })
     }
   }
 
@@ -146,20 +154,22 @@ export default class KeyringService implements Service<Events> {
     mnemonic: string,
     password?: string
   ): Promise<void> {
-    const controller = await this.#keyringController
-    const state = await controller.memStore.getState()
+    const state = this.#keyringController.memStore.getState()
     if (state.keyrings.length < 1) {
       if (password === undefined) {
         throw new Error("Can't import initial keyring without a password!")
       }
-      await controller.createNewVaultAndRestore(password, mnemonic)
+      await this.#keyringController.createNewVaultAndRestore(password, mnemonic)
     } else {
       if (password === undefined) {
         await this.requireUnlocked()
       } else {
         await this.unlock(password)
       }
-      await controller.addNewKeyring("HD Key Tree", { mnemonic, strength: 128 })
+      await this.#keyringController.addNewKeyring("HD Key Tree", {
+        mnemonic,
+        strength: 128,
+      })
     }
   }
 

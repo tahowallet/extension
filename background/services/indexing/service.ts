@@ -1,5 +1,3 @@
-import { browser, Alarms } from "webextension-polyfill-ts"
-import Emittery from "emittery"
 import logger from "../../lib/logger"
 
 import {
@@ -21,18 +19,13 @@ import {
   networkAssetsFromLists,
 } from "../../lib/tokenList"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
-import PreferenceService from "../preferences/service"
-import ChainService from "../chain/service"
-import { Service } from ".."
+import PreferenceService from "../preferences"
+import ChainService from "../chain"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
+import BaseService from "../base"
 
-interface AlarmSchedule {
-  when?: number
-  delayInMinutes?: number
-  periodInMinutes?: number
-}
-
-interface Events {
+interface Events extends ServiceLifecycleEvents {
   accountBalance: AccountBalance
   price: PricePoint
   assets: AnyAsset[]
@@ -47,67 +40,57 @@ interface Events {
  * changes for all tracked tokens and accounts, as well as up to date
  * token metadata. Relevant prices and balances are emitted as events.
  */
-export default class IndexingService implements Service<Events> {
-  readonly schedules: { [alarmName: string]: AlarmSchedule }
-
-  readonly emitter: Emittery<Events>
-
-  private db: IndexingDatabase | null
-
-  private preferenceService: Promise<PreferenceService>
-
-  private chainService: Promise<ChainService>
-
+export default class IndexingService extends BaseService<Events> {
   /*
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
    *
-   * @param schedules - Data polling schedules, used to create browser alarms.
    * @param preferenceService - Required for token metadata and currency
    *        preferences.
+   * @param chainService - Required for chain interactions.
    */
-  constructor(
-    schedules: { [alarmName: string]: AlarmSchedule },
-    preferenceService: Promise<PreferenceService>,
-    chainService: Promise<ChainService>
-  ) {
-    this.db = null
-    this.emitter = new Emittery<Events>()
-    this.schedules = schedules
-    this.preferenceService = preferenceService
-    this.chainService = chainService
+  static create: ServiceCreatorFunction<
+    Events,
+    IndexingService,
+    [Promise<PreferenceService>, Promise<ChainService>]
+  > = async (preferenceService, chainService) => {
+    return new this(
+      await getOrCreateDB(),
+      await preferenceService,
+      await chainService
+    )
   }
 
-  /*
-   * Initialize the IndexingService, setting up the database and all browser
-   * alarms.
-   */
-  async startService(): Promise<void> {
-    this.db = await getOrCreateDB()
+  private constructor(
+    private db: IndexingDatabase,
+    private preferenceService: PreferenceService,
+    private chainService: ChainService
+  ) {
+    super({
+      tokens: {
+        delayInMinutes: 1,
+        periodInMinutes: 30,
+        handler: () => this.handleTokenAlarm(),
+      },
+      prices: {
+        delayInMinutes: 1,
+        periodInMinutes: 10,
+        handler: () => this.handlePriceAlarm(),
+      },
+    })
+  }
+
+  async internalStartService(): Promise<void> {
+    await super.internalStartService()
 
     this.connectChainServiceEvents()
 
-    Object.entries(this.schedules).forEach(([name, schedule]) => {
-      browser.alarms.create(name, schedule)
-    })
-    browser.alarms.onAlarm.addListener((alarm: Alarms.Alarm) => {
-      if (alarm.name === "tokens") {
-        this.handleTokenAlarm()
-      } else if (alarm.name === "prices") {
-        this.handlePriceAlarm()
-      }
-    })
+    await this.fetchAndCacheTokenLists()
 
     // on launch, push any assets we have cached
     this.emitter.emit("assets", await this.getCachedAssets())
     // ... and kick off token list fetching
     this.fetchAndCacheTokenLists()
-  }
-
-  async stopService(): Promise<void> {
-    Object.entries(this.schedules).forEach(([name]) => {
-      browser.alarms.clear(name)
-    })
   }
 
   async getAssetsToTrack(): Promise<SmartContractFungibleAsset[]> {
@@ -132,9 +115,8 @@ export default class IndexingService implements Service<Events> {
    */
   async getCachedAssets(): Promise<AnyAsset[]> {
     const baseAssets = [BTC, ETH]
-    const tokenListPrefs = await (
-      await this.preferenceService
-    ).getTokenListPreferences()
+    const tokenListPrefs =
+      await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
     return baseAssets.concat(networkAssetsFromLists(tokenLists))
   }
@@ -167,11 +149,9 @@ export default class IndexingService implements Service<Events> {
    ******************* */
 
   private async connectChainServiceEvents(): Promise<void> {
-    const chain = await this.chainService
-
     // listen for assetTransfers, and if we find them, track those tokens
     // TODO update for NFTs
-    chain.emitter.on(
+    this.chainService.emitter.on(
       "assetTransfers",
       async ({ accountNetwork, assetTransfers }) => {
         assetTransfers.forEach((transfer) => {
@@ -188,48 +168,51 @@ export default class IndexingService implements Service<Events> {
       }
     )
 
-    chain.emitter.on("newAccountToTrack", async (accountNetwork) => {
-      // whenever a new account is added, get token balances from Alchemy's
-      // default list and add any non-zero tokens to the tracking list
-      const balances = await getTokenBalances(
-        chain.pollingProviders.ethereum,
-        accountNetwork.account
-      )
+    this.chainService.emitter.on(
+      "newAccountToTrack",
+      async (accountNetwork) => {
+        // whenever a new account is added, get token balances from Alchemy's
+        // default list and add any non-zero tokens to the tracking list
+        const balances = await getTokenBalances(
+          this.chainService.pollingProviders.ethereum,
+          accountNetwork.account
+        )
 
-      // look up all assets and set balances
-      Promise.allSettled(
-        balances.map(async (b) => {
-          const knownAsset = await this.getKnownSmartContractAsset(
-            accountNetwork.network,
-            b.contractAddress
-          )
-          if (knownAsset) {
-            await this.db.addBalances([
-              {
-                assetAmount: {
-                  asset: knownAsset,
-                  amount: b.amount,
-                },
-                retrievedAt: Date.now(),
-                network: accountNetwork.network,
-                dataSource: "alchemy",
-                account: accountNetwork.account,
-              },
-            ])
-            if (b.amount > 0) {
-              await this.addAssetToTrack(knownAsset)
-            }
-          } else if (b.amount > 0) {
-            await this.addTokenToTrackByContract(
-              accountNetwork,
+        // look up all assets and set balances
+        Promise.allSettled(
+          balances.map(async (b) => {
+            const knownAsset = await this.getKnownSmartContractAsset(
+              accountNetwork.network,
               b.contractAddress
             )
-            // TODO we're losing balance information here, consider an
-            // addTokenAndBalanceToTrackByContract method
-          }
-        })
-      )
-    })
+            if (knownAsset) {
+              await this.db.addBalances([
+                {
+                  assetAmount: {
+                    asset: knownAsset,
+                    amount: b.amount,
+                  },
+                  retrievedAt: Date.now(),
+                  network: accountNetwork.network,
+                  dataSource: "alchemy",
+                  account: accountNetwork.account,
+                },
+              ])
+              if (b.amount > 0) {
+                await this.addAssetToTrack(knownAsset)
+              }
+            } else if (b.amount > 0) {
+              await this.addTokenToTrackByContract(
+                accountNetwork,
+                b.contractAddress
+              )
+              // TODO we're losing balance information here, consider an
+              // addTokenAndBalanceToTrackByContract method
+            }
+          })
+        )
+      }
+    )
   }
 
   /*
@@ -362,9 +345,8 @@ export default class IndexingService implements Service<Events> {
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {
-    const tokenListPrefs = await (
-      await this.preferenceService
-    ).getTokenListPreferences()
+    const tokenListPrefs =
+      await this.preferenceService.getTokenListPreferences()
     // load each token list in preferences
     await Promise.allSettled(
       tokenListPrefs.urls.map(async (url) => {
@@ -399,15 +381,14 @@ export default class IndexingService implements Service<Events> {
       (t) => t.homeNetwork.chainID === "1"
     )
 
-    const chainService = await this.chainService
     // wait on balances being written to the db, don't wait on event emission
     await Promise.allSettled(
       (
-        await chainService.getAccountsToTrack()
+        await this.chainService.getAccountsToTrack()
       ).map(async ({ account }) => {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
-          chainService.pollingProviders.ethereum,
+          this.chainService.pollingProviders.ethereum,
           mainnetAssetsToTrack,
           account
         )

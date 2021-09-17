@@ -1,11 +1,11 @@
-import Emittery from "emittery"
-
 import { FiatCurrency } from "../../types"
-import { Service } from ".."
+import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
+
 import { Preferences, TokenListPreferences } from "./types"
 import { getOrCreateDB, PreferenceDatabase } from "./db"
+import BaseService from "../base"
 
-interface Events {
+interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
 }
 
@@ -13,29 +13,26 @@ interface Events {
  * The preference service manages user preference persistence, emitting an
  * event when preferences change.
  */
-export default class PreferenceService implements Service<Events> {
-  emitter: Emittery<Events>
+export default class PreferenceService extends BaseService<Events> {
+  static create: ServiceCreatorFunction<Events, PreferenceService, []> =
+    async () => {
+      const db = await getOrCreateDB()
 
-  private db: PreferenceDatabase | null
+      return new this(db)
+    }
 
   /*
    * Create a new PrefenceService. The service isn't initialized until
    * startService() is called and resolved.
    */
-  constructor() {
-    this.emitter = new Emittery<Events>()
+  constructor(private db: PreferenceDatabase) {
+    super()
   }
 
-  /*
-   * Initialize the PreferenceService, setting up the database.
-   */
-  async startService(): Promise<void> {
-    this.db = await getOrCreateDB()
-  }
-
-  async stopService(): Promise<void> {
+  protected async internalStopService(): Promise<void> {
     this.db.close()
-    this.db = null
+
+    await super.internalStopService()
   }
 
   async getCurrency(): Promise<FiatCurrency> {

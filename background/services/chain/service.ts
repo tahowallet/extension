@@ -1,12 +1,8 @@
-import { browser, Alarms } from "webextension-polyfill-ts"
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { Transaction as EthersTransaction } from "@ethersproject/transactions"
-import { BigNumber, utils } from "ethers"
-import Emittery from "emittery"
+import { utils } from "ethers"
 import logger from "../../lib/logger"
 
 import {
@@ -24,8 +20,9 @@ import { getAssetTransfers } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences/service"
-import { Service } from ".."
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
+import BaseService from "../base"
 import {
   blockFromEthersBlock,
   blockFromWebsocketBlock,
@@ -41,13 +38,7 @@ const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
 
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 
-interface AlarmSchedule {
-  when?: number
-  delayInMinutes?: number
-  periodInMinutes?: number
-}
-
-interface Events {
+interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AccountNetwork
   accountBalance: AccountBalance
   assetTransfers: {
@@ -77,11 +68,7 @@ interface Events {
  * * ... and finally, polling and websocket providers for supported networks, in
  *   case a service needs to interact with a network directly.
  */
-export default class ChainService implements Service<Events> {
-  readonly schedules: { [alarmName: string]: AlarmSchedule }
-
-  readonly emitter: Emittery<Events>
-
+export default class ChainService extends BaseService<Events> {
   pollingProviders: { [networkName: string]: AlchemyProvider }
 
   websocketProviders: { [networkName: string]: AlchemyWebSocketProvider }
@@ -101,18 +88,27 @@ export default class ChainService implements Service<Events> {
    */
   private transactionsToRetrieve: { [networkName: string]: string[] }
 
-  private preferenceService: Promise<PreferenceService>
+  static create: ServiceCreatorFunction<
+    Events,
+    ChainService,
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => {
+    return new this(await getOrCreateDB(), await preferenceService)
+  }
 
-  private db?: ChainDatabase
-
-  constructor(
-    schedules: { [alarmName: string]: AlarmSchedule },
-    preferenceService: Promise<PreferenceService>
+  private constructor(
+    private db: ChainDatabase,
+    private preferenceService: PreferenceService
   ) {
-    this.schedules = schedules
-    this.emitter = new Emittery<Events>()
-
-    this.preferenceService = preferenceService
+    super({
+      queuedTransactions: {
+        delayInMinutes: 1,
+        periodInMinutes: 5,
+        handler: () => {
+          this.handleQueuedTransactionAlarm()
+        },
+      },
+    })
 
     // TODO set up for each relevant network
     this.pollingProviders = {
@@ -132,20 +128,13 @@ export default class ChainService implements Service<Events> {
     this.transactionsToRetrieve = { ethereum: [] }
   }
 
-  async startService(): Promise<void> {
-    this.db = await getOrCreateDB()
+  async internalStartService(): Promise<void> {
+    await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()
     const ethProvider = this.pollingProviders.ethereum
-    Object.entries(this.schedules).forEach(([name, schedule]) => {
-      browser.alarms.create(name, schedule)
-    })
-    browser.alarms.onAlarm.addListener((alarm: Alarms.Alarm) => {
-      if (alarm.name === "queuedTransactions") {
-        this.handleQueuedTransactionAlarm()
-      }
-    })
 
+    // FIXME Should we await or drop Promise.all on the below two?
     Promise.all([
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
@@ -172,9 +161,6 @@ export default class ChainService implements Service<Events> {
         .concat([])
     )
   }
-
-  // eslint-disable-next-line
-  async stopService(): Promise<void> {}
 
   async getAccountsToTrack(): Promise<AccountNetwork[]> {
     return this.db.getAccountsToTrack()
