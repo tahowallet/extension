@@ -50,14 +50,12 @@ const keyringsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(importLegacyKeyring.pending, (state) => {
-        console.log("eyyy")
         return {
           ...state,
           importing: "pending",
         }
       })
       .addCase(importLegacyKeyring.fulfilled, (state) => {
-        console.log("eyyy2")
         return {
           ...state,
           importing: "done",
