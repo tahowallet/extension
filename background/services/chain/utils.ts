@@ -1,6 +1,11 @@
-import { BigNumber } from "ethers"
+import { BigNumber, utils as ethersUtils } from "ethers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { Transaction as EthersTransaction } from "@ethersproject/transactions"
+import { AlchemyProvider } from "@ethersproject/providers"
+
+import {
+  Transaction as EthersTransaction,
+  UnsignedTransaction,
+} from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
@@ -8,6 +13,7 @@ import {
   FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
+  TxParams,
 } from "../../types"
 import { ETHEREUM } from "../../constants"
 
@@ -182,4 +188,22 @@ export function txFromEthersTx(
     return signedTx
   }
   return newTx
+}
+
+/*
+ * Generate a partial transaction to be signed
+ */
+
+export async function createUnsignedTx(
+  provider: AlchemyProvider,
+  transaction: TxParams
+): Promise<UnsignedTransaction> {
+  return {
+    // from: transaction.from,
+    to: transaction.to,
+    value: BigNumber.from(transaction.value),
+    // nonce: await provider.getTransactionCount(transaction.from, "latest"),
+    gasLimit: ethersUtils.hexlify(transaction.gasLimit),
+    gasPrice: await provider.getGasPrice(),
+  }
 }
