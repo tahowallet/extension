@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useHistory, useParams } from "react-router-dom"
 import OnboardingImportMetamask from "../components/Onboarding/OnboardingImportMetamask"
 import OnboardingCreatePassword from "../components/Onboarding/OnboardingCreatePassword"
 import OnboardingVerifySeed from "../components/Onboarding/OnboardingVerifySeed"
@@ -8,6 +8,7 @@ import OnboardingStartTheHunt from "../components/Onboarding/OnboardingStartTheH
 
 export default function Onboarding(): ReactElement {
   const { startPage } = useParams()
+  const history = useHistory()
   const [step, setStep] = useState(Math.floor(startPage))
 
   return (
@@ -43,7 +44,9 @@ export default function Onboarding(): ReactElement {
           }}
         />
       )}
-      {step === 4 && <OnboardingImportMetamask />}
+      {step === 4 && (
+        <OnboardingImportMetamask onImported={() => history.push("/")} />
+      )}
     </>
   )
 }

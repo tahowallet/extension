@@ -20,6 +20,7 @@ interface Events extends ServiceLifecycleEvents {
   locked: boolean
   unlocked: boolean
   keyrings: Keyring[]
+  address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
 }
@@ -144,7 +145,8 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * Import a legacy 128 bit keyring.
+   * Import a legacy 128 bit keyring and pull the first address from that
+   * keyring for system use.
    *
    * @param mnemonic - a 12-word seed phrase compatible with MetaMask.
    * @param password? - a password used to encrypt the keyring vault. Necessary
@@ -159,17 +161,41 @@ export default class KeyringService extends BaseService<Events> {
       if (password === undefined) {
         throw new Error("Can't import initial keyring without a password!")
       }
-      await this.#keyringController.createNewVaultAndRestore(password, mnemonic)
+      const updatedState =
+        await this.#keyringController.createNewVaultAndRestore(
+          password,
+          mnemonic
+        )
+
+      const keyring = updatedState.keyrings[0] // above leaves us with just one keyring
+      const account = keyring.accounts[0] // above creates one account
+
+      if (account) {
+        // Tally uses `address` to refer to a bare address, which is what we
+        // have here; convert to that terminology here at the event boundary.
+        this.emitter.emit("address", account)
+      }
     } else {
       if (password === undefined) {
         await this.requireUnlocked()
       } else {
         await this.unlock(password)
       }
-      await this.#keyringController.addNewKeyring("HD Key Tree", {
-        mnemonic,
-        strength: 128,
-      })
+      const keyring = await this.#keyringController.addNewKeyring(
+        "HD Key Tree",
+        {
+          mnemonic,
+          strength: 128,
+        }
+      )
+
+      const accounts = await keyring.getAccounts()
+      const [account] =
+        accounts.length === 0 ? await keyring.addAccounts(1) : accounts[0]
+
+      // Tally uses `address` to refer to a bare address, which is what we
+      // have here; convert to that terminology here at the event boundary.
+      this.emitter.emit("address", account)
     }
   }
 

@@ -273,6 +273,14 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
+    this.keyringService.emitter.on("address", (address) => {
+      this.chainService.addAccountToTrack({
+        account: address,
+        // TODO support other networks
+        network: ETHEREUM,
+      })
+    })
+
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
       await this.keyringService.generateNewKeyring(
