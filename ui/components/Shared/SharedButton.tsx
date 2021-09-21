@@ -17,7 +17,7 @@ interface Props {
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
-  linkTo?: string
+  linkTo?: string | { pathname: string; state: Record<string, unknown> }
 }
 
 export default function SharedButton(props: Props): ReactElement {
