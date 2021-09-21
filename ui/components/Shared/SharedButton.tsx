@@ -36,7 +36,7 @@ export default function SharedButton(props: Props): ReactElement {
   const [navigateTo, setNavigateTo] = React.useState(null)
 
   if (navigateTo && navigateTo === linkTo) {
-    return <Redirect to={linkTo} />
+    return <Redirect push to={linkTo} />
   }
 
   function handleClick(e) {
