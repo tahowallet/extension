@@ -87,6 +87,12 @@ export default function SingleAsset(): ReactElement {
               type="primary"
               size="medium"
               icon="send"
+              linkTo={{
+                pathname: "/send",
+                state: {
+                  token: { name: "ETH" },
+                },
+              }}
             >
               Send
             </SharedButton>
