@@ -1,27 +1,36 @@
 import React, { ReactElement, useState } from "react"
-import { Link } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
+import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 
-interface Props {
-  approveSpendOrSwap?: "swap" | "spend"
-}
+export default function SignTransaction(): ReactElement {
+  const history = useHistory()
 
-export default function SignTransaction(props: Props): ReactElement {
-  const { approveSpendOrSwap } = props
+  const location = useLocation()
+  const { token, amount, speed, network, signType } = location.state
   const [panelNumber, setPanelNumber] = useState(0)
 
   const spendOrSwapContent = {
     swap: {
       title: "Swap assets",
       component: () => <SignTransactionSwapAssetBlock />,
+      confirmButtonText: "Confirm",
     },
     spend: {
       title: "Approve asset spend",
       component: () => <SignTransactionApproveSpendAssetBlock />,
+      confirmButtonText: "Approve",
+    },
+    sign: {
+      title: "Sign Transaction",
+      component: () => (
+        <SignTransactionSignBlock token={token} amount={amount} />
+      ),
+      confirmButtonText: "Sign",
     },
   }
 
@@ -29,10 +38,10 @@ export default function SignTransaction(props: Props): ReactElement {
     <section>
       <SignTransactionNetworkAccountInfoTopBar />
       <h1 className="serif_header title">
-        {spendOrSwapContent[approveSpendOrSwap].title}
+        {spendOrSwapContent[signType].title}
       </h1>
       <div className="primary_info_card standard_width">
-        {spendOrSwapContent[approveSpendOrSwap].component()}
+        {spendOrSwapContent[signType].component()}
       </div>
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
@@ -52,11 +61,12 @@ export default function SignTransaction(props: Props): ReactElement {
           iconSize="large"
           size="large"
           type="secondary"
+          onClick={() => history.goBack()}
         >
           Reject
         </SharedButton>
         <SharedButton type="primary" iconSize="large" size="large">
-          Confirm
+          {spendOrSwapContent[signType].confirmButtonText}
         </SharedButton>
       </div>
       <style jsx>
@@ -120,8 +130,4 @@ export default function SignTransaction(props: Props): ReactElement {
       </style>
     </section>
   )
-}
-
-SignTransaction.defaultProps = {
-  approveSpendOrSwap: "spend",
 }
