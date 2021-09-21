@@ -229,10 +229,14 @@ export default function SharedAssetInput(
           .token_input {
             width: 204px;
             height: 34px;
-            color: var(--green-40);
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
+            color: #fff;
+          }
+          .token_input::placeholder {
+            color: var(--green-40);
+            opacity: 1;
           }
           .paste_button {
             height: 24px;
