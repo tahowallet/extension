@@ -12,9 +12,7 @@ export default function TabBarIcon(props: Props): ReactElement {
   return (
     <>
       <Link to={`/${name}`}>
-        <div>
-          <div className={`icon${isActive ? " active" : ""}`} />
-        </div>
+        <div className={`icon${isActive ? " active" : ""}`} />
       </Link>
       <style jsx>
         {`
