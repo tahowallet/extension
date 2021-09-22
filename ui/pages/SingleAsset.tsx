@@ -1,74 +1,15 @@
 import React, { ReactElement } from "react"
+import { selectTimestampedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
+import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import BackButton from "../components/Shared/SharedBackButton"
 
-const activityStub = [
-  {
-    blockHash:
-      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
-    blockNumber: "0x891820",
-    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
-    gas: "0x5208",
-    gasPrice: "0x3b9aca00",
-    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
-    timeStamp: "0x60fa2a18",
-    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
-    value: "0.01",
-  },
-  {
-    blockHash:
-      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
-    blockNumber: "0x891820",
-    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
-    gas: "0x5208",
-    gasPrice: "0x3b9aca00",
-    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
-    timeStamp: "0x60fa2a18",
-    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
-    value: "0.01",
-  },
-  {
-    blockHash:
-      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
-    blockNumber: "0x891820",
-    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
-    gas: "0x5208",
-    gasPrice: "0x3b9aca00",
-    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
-    timeStamp: "0x60fa2a18",
-    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
-    value: "0.01",
-  },
-  {
-    blockHash:
-      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
-    blockNumber: "0x891820",
-    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
-    gas: "0x5208",
-    gasPrice: "0x3b9aca00",
-    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
-    timeStamp: "0x60fa2a18",
-    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
-    value: "0.01",
-  },
-  {
-    blockHash:
-      "0xfa43112afad414ad898d986d4e52bcacb026d11b410206913bba58966f1ddd62",
-    blockNumber: "0x891820",
-    from: "0x32d44db61df0b10ccf0164df3d9cbee72e3df02c",
-    gas: "0x5208",
-    gasPrice: "0x3b9aca00",
-    hash: "0xa36d7ccf14d7f1d5480632cccb843683f62a03e8a36a51ac554cc3819b9b35e8",
-    timeStamp: "0x60fa2a18",
-    to: "0xd56e7d68ebf4bd2dfd4b16c9b57e4fa63bc1a3c2",
-    value: "0.01",
-  },
-]
-
 export default function SingleAsset(): ReactElement {
+  const { activity } = useBackgroundSelector(selectTimestampedAccountData)
+
   return (
     <>
       <CorePage>
@@ -106,7 +47,7 @@ export default function SingleAsset(): ReactElement {
           <div className="right">Move to Ethereum</div>
         </div>
         <div className="label_light standard_width_padded">Activity</div>
-        <WalletActivityList activity={activityStub} />
+        <WalletActivityList activity={activity} />
       </CorePage>
       <style jsx>
         {`
