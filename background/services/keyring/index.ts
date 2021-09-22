@@ -1,4 +1,4 @@
-import KeyringController from "@tallyho/keyring-controller"
+import HDKeyring from "@tallyho/hd-keyring"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
@@ -13,6 +13,7 @@ import { ETH, ETHEREUM } from "../../constants"
 
 type Keyring = {
   type: KeyringTypes
+  id: string | null
   addresses: string[]
 }
 
@@ -32,7 +33,9 @@ interface Events extends ServiceLifecycleEvents {
 export default class KeyringService extends BaseService<Events> {
   #hashedPassword: string | null
 
-  #keyringController: KeyringController
+  #locked = false
+
+  #keyrings: HDKeyring[] = []
 
   static create: ServiceCreatorFunction<Events, KeyringService, []> =
     async () => {
@@ -44,34 +47,16 @@ export default class KeyringService extends BaseService<Events> {
         encryptedVault: currentEncryptedVault,
       }
 
-      return new this(keyringOptions)
+      // TODO re-introduce persistence and vault encryption
+      return new this()
     }
 
-  private constructor(
-    keyringOptions: ConstructorParameters<typeof KeyringController>[0]
-  ) {
+  private constructor() {
     super()
-
-    this.#keyringController = new KeyringController(keyringOptions)
   }
 
   async internalStartService(): Promise<void> {
     await super.internalStartService()
-
-    this.#keyringController.on("lock", () => this.emitter.emit("locked", true))
-    this.#keyringController.on("unlock", () =>
-      this.emitter.emit("unlocked", true)
-    )
-
-    this.#keyringController.memStore.subscribe((state) => {
-      const keyrings = state.keyrings
-        .filter((kr) => kr.type === "HD Key Tree")
-        .map((kr) => ({
-          type: KeyringTypes.mnemonicBIP39S256,
-          addresses: [...kr.accounts],
-        }))
-      this.emitter.emit("keyrings", keyrings)
-    })
   }
 
   async internalStopService(): Promise<void> {
@@ -80,26 +65,21 @@ export default class KeyringService extends BaseService<Events> {
     await super.internalStopService()
   }
 
+  /* eslint-disable class-methods-use-this */
   async unlock(password: string): Promise<boolean> {
-    const controller = this.#keyringController
-    const state = controller.memStore.getState()
-    if (!controller.hasVault()) {
-      // TODO this doesn't make much sense as a flow of operations. The entire
-      // lock / unlock paradigm with the keyring controller is a bad fit for the
-      // problem tbh, but leaving it for now.
-      throw new Error(
-        "Generate a keyring before unlocking the keyring service."
-      )
-    }
+    // TODO re-introduce locking
     return true
   }
+  /* eslint-enable class-methods-use-this */
 
+  /* eslint-disable class-methods-use-this */
   async lock(): Promise<void> {
-    await this.#keyringController.setLocked()
+    // TODO re-introduce locking
   }
+  /* eslint-disable class-methods-use-this */
 
   private async requireUnlocked(): Promise<void> {
-    if (!this.#keyringController.memStore.getState().isUnlocked) {
+    if (!this.#locked) {
       throw new Error("KeyringService must be unlocked.")
     }
   }
@@ -115,33 +95,27 @@ export default class KeyringService extends BaseService<Events> {
    *        bit HD keys.
    * @param password? - a password used to encrypt the keyring vault. Necessary
    *        if the service is locked or this is the first keyring created.
+   * @returns The string ID of the new keyring.
    */
   async generateNewKeyring(
     type: KeyringTypes,
     password?: string
-  ): Promise<void> {
+  ): Promise<string> {
     if (type !== KeyringTypes.mnemonicBIP39S256) {
       throw new Error(
         "KeyringService only supports generating 256-bit HD key trees"
       )
     }
-    const state = this.#keyringController.memStore.getState()
-    if (state.keyrings.length < 1) {
-      if (password === undefined) {
-        throw new Error("Can't generate initial keyring without a password!")
-      }
-      await this.#keyringController.createNewVaultAndKeychain(password, {
-        strength: 256,
-      })
-    } else {
-      if (password === undefined) {
-        await this.requireUnlocked()
-      }
 
-      await this.#keyringController.addNewKeyring("HD Key Tree", {
-        strength: 256,
-      })
-    }
+    const newKeyring = new HDKeyring({ strength: 256 })
+    this.#keyrings.push(newKeyring)
+
+    const [address] = newKeyring.addAccountsSync(1)
+
+    this.emitter.emit("address", address)
+    this.emitKeyringState()
+
+    return newKeyring.id
   }
 
   /**
@@ -149,54 +123,28 @@ export default class KeyringService extends BaseService<Events> {
    * keyring for system use.
    *
    * @param mnemonic - a 12-word seed phrase compatible with MetaMask.
-   * @param password? - a password used to encrypt the keyring vault. Necessary
-   *        if the service is locked or this is the first keyring created.
+   * @param password - a password used to encrypt the keyring vault.
+   * @returns The string ID of the new keyring.
    */
   async importLegacyKeyring(
     mnemonic: string,
-    password?: string
-  ): Promise<void> {
-    const state = this.#keyringController.memStore.getState()
-    if (state.keyrings.length < 1) {
-      if (password === undefined) {
-        throw new Error("Can't import initial keyring without a password!")
-      }
-      const updatedState =
-        await this.#keyringController.createNewVaultAndRestore(
-          password,
-          mnemonic
-        )
-
-      const keyring = updatedState.keyrings[0] // above leaves us with just one keyring
-      const account = keyring.accounts[0] // above creates one account
-
-      if (account) {
-        // Tally uses `address` to refer to a bare address, which is what we
-        // have here; convert to that terminology here at the event boundary.
-        this.emitter.emit("address", account)
-      }
-    } else {
-      if (password === undefined) {
-        await this.requireUnlocked()
-      } else {
-        await this.unlock(password)
-      }
-      const keyring = await this.#keyringController.addNewKeyring(
-        "HD Key Tree",
-        {
-          mnemonic,
-          strength: 128,
-        }
-      )
-
-      const accounts = await keyring.getAccounts()
-      const [account] =
-        accounts.length === 0 ? await keyring.addAccounts(1) : accounts[0]
-
-      // Tally uses `address` to refer to a bare address, which is what we
-      // have here; convert to that terminology here at the event boundary.
-      this.emitter.emit("address", account)
+    password: string
+  ): Promise<string> {
+    // confirm the mnemonic is 12-word for a 128-bit seed + checksum. Leave
+    // further validate to HDKeyring
+    if (mnemonic.split(/\s+/).length !== 12) {
+      throw new Error("Invalid legacy mnemonic.")
     }
+
+    const newKeyring = new HDKeyring({ mnemonic })
+    this.#keyrings.push(newKeyring)
+
+    newKeyring.addAccountsSync(1)
+
+    this.emitter.emit("address", newKeyring.getAccountsSync()[0])
+    this.emitKeyringState()
+
+    return newKeyring.id
   }
 
   /**
@@ -233,5 +181,18 @@ export default class KeyringService extends BaseService<Events> {
       network: ETHEREUM,
     }
     this.emitter.emit("signedTx", signedTx)
+  }
+
+  // //////////////////
+  // PRIVATE METHODS //
+  // //////////////////
+
+  private emitKeyringState() {
+    const keyrings = this.#keyrings.map((kr) => ({
+      type: KeyringTypes.mnemonicBIP39S256,
+      addresses: [...kr.getAccountsSync()],
+      id: kr.id,
+    }))
+    this.emitter.emit("keyrings", keyrings)
   }
 }
