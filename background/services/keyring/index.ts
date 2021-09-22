@@ -1,3 +1,5 @@
+import { parse as parseRawTransaction } from "@ethersproject/transactions"
+
 import HDKeyring from "@tallyho/hd-keyring"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -158,23 +160,54 @@ export default class KeyringService extends BaseService<Events> {
     txRequest: EIP1559TransactionRequest
   ): Promise<void> {
     await this.requireUnlocked()
-    // TODO find the keyring
-    // TODO actually attempt to sign the transaction
+    // find the keyring using a linear search
+    const keyring = this.#keyrings.find((kr) =>
+      kr.getAccountsSync().includes(account)
+    )
+    if (!keyring) {
+      throw new Error("Account keyring not found.")
+    }
+
+    // unfortunately, ethers gives us a serialized signed tx here
+    const signed = await keyring.signTransaction(account, {
+      ...txRequest,
+      from: undefined,
+    })
+
+    // parse the tx, then unpack it as best we can
+    const tx = parseRawTransaction(signed)
+
+    if (
+      !tx.hash ||
+      !tx.from ||
+      !tx.to ||
+      !tx.r ||
+      !tx.s ||
+      tx.v === undefined
+    ) {
+      throw new Error("Transaction doesn't appear to have been signed.")
+    }
+
+    if (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas || tx.type !== 2) {
+      throw new Error("Can only sign EIP-1559 conforming transactions")
+    }
+
+    // TODO move this to a helper function
     const signedTx: SignedEVMTransaction = {
-      hash: "0xfe57c35ebafee8296a1605a1ddfa4ef5aca88d1fc724102ce3b4ac00adad7085",
-      type: 2,
-      maxFeePerGas: BigInt("144664539722"),
-      maxPriorityFeePerGas: BigInt(1000000000),
-      nonce: BigInt(68),
-      value: BigInt(0),
-      from: "0x5f55cd7a509fda9f0beb9309a49a689eb8c122ee",
-      to: "0x6dfcb04b7d2ab2069d9ba81ac643556429eb2d55",
-      gas: BigInt(154944),
-      gasPrice: BigInt("120428961153"),
-      r: "0x12",
-      s: "0x12",
-      v: 1,
-      input: "",
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      nonce: BigInt(tx.nonce),
+      input: tx.data,
+      value: tx.value.toBigInt(),
+      type: tx.type,
+      gasPrice: null,
+      maxFeePerGas: tx.maxFeePerGas.toBigInt(),
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
+      gasLimit: tx.gasLimit.toBigInt(),
+      r: tx.r,
+      s: tx.s,
+      v: tx.v,
       blockHash: null,
       blockHeight: null,
       asset: ETH,
