@@ -1,6 +1,7 @@
 // @ts-check
 //
 import React, { ReactElement, useState } from "react"
+import { selectTimestampedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -11,20 +12,9 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
   //  accountLoading, hasWalletErrorCode
-  const data = useBackgroundSelector((background) => background.account)
-  const account = data.combinedData
-
-  // Derive activities with timestamps included
-  const activity = account.activity.map((activityItem) => {
-    const isSent =
-      activityItem.from.toLowerCase() ===
-      Object.keys(data.accountsData)[0].toLowerCase()
-    return {
-      ...activityItem,
-      timestamp: data?.blocks[activityItem.blockHeight]?.timestamp,
-      isSent,
-    }
-  })
+  const { account, activity } = useBackgroundSelector(
+    selectTimestampedAccountData
+  )
 
   return (
     <div className="wrap">

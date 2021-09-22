@@ -1,4 +1,9 @@
-import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit"
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+  current,
+} from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import {
   AccountBalance,
@@ -362,5 +367,30 @@ export const subscribeToAccountNetwork = createAsyncThunk<
     dispatch(loadAccount(accountNetwork.account))
 
     await emitter.emit("addAccount", accountNetwork)
+  }
+)
+
+export const getAccountState = (state) => state.account
+
+export const selectTimestampedAccountData = createSelector(
+  getAccountState,
+  (state) => {
+    const account = state.combinedData
+
+    // Derive activities with timestamps included
+    const activity = account.activity.map((activityItem) => {
+      const isSent =
+        activityItem.from.toLowerCase() ===
+        Object.keys(state.accountsData)[0].toLowerCase()
+      return {
+        ...activityItem,
+        timestamp: state?.blocks[activityItem.blockHeight]?.timestamp,
+        isSent,
+      }
+    })
+    return {
+      account,
+      activity,
+    }
   }
 )

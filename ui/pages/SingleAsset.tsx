@@ -96,11 +96,7 @@ export default function SingleAsset(): ReactElement {
             >
               Send
             </SharedButton>
-            <SharedButton
-              type="primary"
-              size="medium"
-              icon="swap"
-            >
+            <SharedButton type="primary" size="medium" icon="swap">
               Swap
             </SharedButton>
           </div>
