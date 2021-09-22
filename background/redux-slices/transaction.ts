@@ -1,9 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { EVMTransaction, HexString } from "../types"
+import Emittery from "emittery"
 
-type TransactionParties = {
+import { EVMTransaction, HexString } from "../types"
+import { createBackgroundAsyncThunk } from "./utils"
+
+type TransactionOptions = {
   from: HexString
   to: HexString
+  value: bigint
+  nonce: bigint
+  gasLimit: bigint
 }
 
 export const initialState: Partial<EVMTransaction> = {}
@@ -12,20 +18,29 @@ const transactionSlice = createSlice({
   name: "transaction",
   initialState,
   reducers: {
-    transactionParties: (
+    transactionOptions: (
       immerState,
-      { payload: parties }: { payload: TransactionParties }
+      { payload: options }: { payload: TransactionOptions }
     ) => {
-      immerState.from = parties.from
-      immerState.to = parties.to
-    },
-
-    transactionValue: (immerState, { payload: value }: { payload: bigint }) => {
-      immerState.value = value
+      return { ...immerState, ...options }
     },
   },
 })
 
-export const { transactionParties, transactionValue } = transactionSlice.actions
+export const { transactionOptions } = transactionSlice.actions
 
 export default transactionSlice.reducer
+
+export type Events = {
+  updateOptions: { options: TransactionOptions }
+}
+
+export const emitter = new Emittery<Events>()
+
+// Async thunk to pass transaction options from the store to the background via an event
+export const updateTransactionOptions = createBackgroundAsyncThunk(
+  "transaction/options",
+  async ({ options }: { options: TransactionOptions }) => {
+    await emitter.emit("updateOptions", { options })
+  }
+)
