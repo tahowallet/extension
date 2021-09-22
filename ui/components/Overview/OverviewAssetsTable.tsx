@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
@@ -24,21 +25,22 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
             <td>
               <div className="asset_descriptor">
                 <SharedAssetIcon size="small" />
-                <span className="asset_name">KEEP</span>
-              </div>
-            </td>
-            <td>
-              <div>
-                <span className="lighter_color">$</span>0.02827
+                <span className="asset_name">{asset.asset.symbol}</span>
               </div>
             </td>
             <td>
               <div>
                 <span className="lighter_color">$</span>
-                {asset.usd_balance}
+                {asset.localizedDecimalValue}
+              </div>
+            </td>
+            <td>
+              <div>
+                <span className="lighter_color">$</span>
+                {asset.localizedUserValue}
               </div>
               <div className="balance_token_amount">
-                {asset.balance.toFixed(5)}
+                {parseInt(convertToEth(asset.amount), 10).toFixed(5)}
               </div>
             </td>
           </tr>
@@ -89,6 +91,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         }
         .lighter_color {
           color: var(--green-60);
+        }
+        .asset_name {
+          margin-left: 7px;
         }
       `}</style>
     </table>

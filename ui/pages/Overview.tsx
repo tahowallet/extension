@@ -4,7 +4,9 @@ import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 
 export default function Overview(): ReactElement {
-  const { account } = useBackgroundSelector((background) => background.account)
+  const { combinedData } = useBackgroundSelector(
+    (background) => background.account
+  )
 
   return (
     <CorePage hasTopBar={false}>
@@ -13,7 +15,7 @@ export default function Overview(): ReactElement {
           <span className="total_balance_label">Total balance</span>
           <div className="primary_balance">
             <span className="primary_money_sign">$</span>
-            {account?.total_balance?.usd_amount}
+            {combinedData?.totalUserValue}
           </div>
         </div>
         <div className="sub_info_row">
@@ -26,7 +28,7 @@ export default function Overview(): ReactElement {
           </div>
         </div>
       </header>
-      <OverviewAssetsTable assets={account?.tokens} />
+      <OverviewAssetsTable assets={combinedData?.assets} />
       <style jsx>
         {`
           .header_primary_content {
