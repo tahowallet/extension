@@ -31,6 +31,10 @@ import {
   updateKeyrings,
   importLegacyKeyring,
 } from "./redux-slices/keyrings"
+import {
+  transactionOptions,
+  emitter as transactionSliceEmitter,
+} from "./redux-slices/transaction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 
@@ -241,6 +245,21 @@ export default class Main extends BaseService<never> {
     })
     accountSliceEmitter.on("addAccount", async (accountNetwork) => {
       await this.chainService.addAccountToTrack(accountNetwork)
+    })
+
+    transactionSliceEmitter.on("updateOptions", async (options) => {
+      const transaction = {
+        ...options,
+        nonce:
+          await this.chainService.pollingProviders.ethereum.getTransactionCount(
+            options.from,
+            "latest"
+          ),
+        gasPrice:
+          await this.chainService.pollingProviders.ethereum.getGasPrice(),
+      }
+
+      // Todo actually sign this transaction?
     })
 
     // Set up initial state.
