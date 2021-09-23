@@ -4,6 +4,7 @@ import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
+  ConfirmedEVMTransaction,
   EIP1559Block,
   FungibleAsset,
   EVMNetwork,
@@ -55,7 +56,6 @@ export function blockFromWebsocketBlock(
 export function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
   const baseTx = {
     nonce: Number(tx.nonce),
-    gasLimit: tx.gas ? BigNumber.from(tx.gas) : null,
     maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : null,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
       ? BigNumber.from(tx.maxPriorityFeePerGas)
@@ -69,12 +69,20 @@ export function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
   if ((tx as SignedEVMTransaction).r !== undefined) {
     return {
       ...baseTx,
+      gasLimit: (tx as SignedEVMTransaction).gasLimit
+        ? BigNumber.from((tx as SignedEVMTransaction).gasLimit)
+        : null,
       r: (tx as SignedEVMTransaction).r,
       s: (tx as SignedEVMTransaction).s,
       v: (tx as SignedEVMTransaction).v,
     }
   }
-  return baseTx
+  return {
+    ...baseTx,
+    gasLimit: (tx as ConfirmedEVMTransaction).gas
+      ? BigNumber.from((tx as ConfirmedEVMTransaction).gas)
+      : null,
+  }
 }
 
 /*

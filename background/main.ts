@@ -14,7 +14,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { KeyringTypes } from "./types"
+import { ConfirmedEVMTransaction, KeyringTypes } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -230,8 +230,13 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
     this.chainService.emitter.on("transaction", (transaction) => {
-      if (transaction.blockHash) {
-        this.store.dispatch(transactionConfirmed(transaction))
+      if (
+        transaction.blockHash &&
+        (transaction as ConfirmedEVMTransaction).gas !== undefined
+      ) {
+        this.store.dispatch(
+          transactionConfirmed(transaction as ConfirmedEVMTransaction)
+        )
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
