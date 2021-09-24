@@ -1,10 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { TxParams } from "../types"
+import { EIP1559TransactionRequest } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
-export const initialState: TxParams = {
+export const initialState: Partial<EIP1559TransactionRequest> = {
   gasLimit: BigInt(21000), // 21,000 gwei is the minimum amount of gas needed for sending a transaction
 }
 
@@ -14,7 +14,7 @@ const transactionSlice = createSlice({
   reducers: {
     transactionOptions: (
       immerState,
-      { payload: options }: { payload: TxParams }
+      { payload: options }: { payload: EIP1559TransactionRequest }
     ) => {
       return { ...immerState, ...options }
     },
@@ -26,7 +26,7 @@ export const { transactionOptions } = transactionSlice.actions
 export default transactionSlice.reducer
 
 export type Events = {
-  updateOptions: TxParams
+  updateOptions: EIP1559TransactionRequest
 }
 
 export const emitter = new Emittery<Events>()
@@ -34,7 +34,7 @@ export const emitter = new Emittery<Events>()
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionOptions = createBackgroundAsyncThunk(
   "transaction/options",
-  async (options: TxParams) => {
+  async (options: EIP1559TransactionRequest) => {
     await emitter.emit("updateOptions", options)
   }
 )

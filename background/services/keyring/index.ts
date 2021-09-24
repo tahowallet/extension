@@ -197,7 +197,7 @@ export default class KeyringService extends BaseService<Events> {
       hash: tx.hash,
       from: tx.from,
       to: tx.to,
-      nonce: BigInt(tx.nonce),
+      nonce: tx.nonce,
       input: tx.data,
       value: tx.value.toBigInt(),
       type: tx.type,

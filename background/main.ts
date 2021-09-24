@@ -253,6 +253,7 @@ export default class Main extends BaseService<never> {
     })
 
     transactionSliceEmitter.on("updateOptions", async (options) => {
+      // Basic transaction construction based on the provided options, with extra data from the chain service
       const transaction = {
         ...options,
         nonce:
@@ -264,7 +265,7 @@ export default class Main extends BaseService<never> {
           await this.chainService.pollingProviders.ethereum.getGasPrice(),
       }
 
-      // Todo actually sign this transaction?
+      await this.keyringService.signTransaction(options.from, transaction)
     })
 
     // Set up initial state.

@@ -14,7 +14,6 @@ import {
   FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
-  TxParams,
 } from "../../types"
 import { ETHEREUM } from "../../constants"
 
@@ -134,7 +133,7 @@ export function txFromWebsocketTx(
     r: tx.r || undefined,
     s: tx.s || undefined,
     v: BigNumber.from(tx.v).toNumber(),
-    nonce: BigInt(tx.nonce),
+    nonce: Number(tx.nonce),
     value: BigInt(tx.value),
     blockHash: tx.blockHash || undefined,
     blockHeight: tx.blockNumber || undefined,
@@ -170,7 +169,7 @@ export function txFromEthersTx(
     hash: tx.hash,
     from: tx.from,
     to: tx.to,
-    nonce: BigInt(parseInt(tx.nonce.toString(), 10)),
+    nonce: parseInt(tx.nonce.toString(), 10),
     gas: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
     maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,
@@ -196,22 +195,4 @@ export function txFromEthersTx(
     return signedTx
   }
   return newTx
-}
-
-/*
- * Generate a partial transaction to be signed
- */
-
-export async function createUnsignedTx(
-  provider: AlchemyProvider,
-  transaction: TxParams
-): Promise<UnsignedTransaction> {
-  return {
-    // from: transaction.from,
-    to: transaction.to,
-    value: BigNumber.from(transaction.value),
-    // nonce: await provider.getTransactionCount(transaction.from, "latest"),
-    gasLimit: ethersUtils.hexlify(transaction.gasLimit),
-    gasPrice: await provider.getGasPrice(),
-  }
 }
