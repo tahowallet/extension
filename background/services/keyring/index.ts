@@ -1,4 +1,6 @@
-import KeyringController from "@tallyho/keyring-controller"
+import { parse as parseRawTransaction } from "@ethersproject/transactions"
+
+import HDKeyring from "@tallyho/hd-keyring"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
@@ -13,6 +15,7 @@ import { ETH, ETHEREUM } from "../../constants"
 
 type Keyring = {
   type: KeyringTypes
+  id: string | null
   addresses: string[]
 }
 
@@ -20,6 +23,7 @@ interface Events extends ServiceLifecycleEvents {
   locked: boolean
   unlocked: boolean
   keyrings: Keyring[]
+  address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
 }
@@ -31,7 +35,9 @@ interface Events extends ServiceLifecycleEvents {
 export default class KeyringService extends BaseService<Events> {
   #hashedPassword: string | null
 
-  #keyringController: KeyringController
+  #locked = false
+
+  #keyrings: HDKeyring[] = []
 
   static create: ServiceCreatorFunction<Events, KeyringService, []> =
     async () => {
@@ -43,34 +49,16 @@ export default class KeyringService extends BaseService<Events> {
         encryptedVault: currentEncryptedVault,
       }
 
-      return new this(keyringOptions)
+      // TODO re-introduce persistence and vault encryption
+      return new this()
     }
 
-  private constructor(
-    keyringOptions: ConstructorParameters<typeof KeyringController>[0]
-  ) {
+  private constructor() {
     super()
-
-    this.#keyringController = new KeyringController(keyringOptions)
   }
 
   async internalStartService(): Promise<void> {
     await super.internalStartService()
-
-    this.#keyringController.on("lock", () => this.emitter.emit("locked", true))
-    this.#keyringController.on("unlock", () =>
-      this.emitter.emit("unlocked", true)
-    )
-
-    this.#keyringController.memStore.subscribe((state) => {
-      const keyrings = state.keyrings
-        .filter((kr) => kr.type === "HD Key Tree")
-        .map((kr) => ({
-          type: KeyringTypes.mnemonicBIP39S256,
-          addresses: [...kr.accounts],
-        }))
-      this.emitter.emit("keyrings", keyrings)
-    })
   }
 
   async internalStopService(): Promise<void> {
@@ -79,26 +67,21 @@ export default class KeyringService extends BaseService<Events> {
     await super.internalStopService()
   }
 
+  /* eslint-disable class-methods-use-this */
   async unlock(password: string): Promise<boolean> {
-    const controller = this.#keyringController
-    const state = controller.memStore.getState()
-    if (!controller.hasVault()) {
-      // TODO this doesn't make much sense as a flow of operations. The entire
-      // lock / unlock paradigm with the keyring controller is a bad fit for the
-      // problem tbh, but leaving it for now.
-      throw new Error(
-        "Generate a keyring before unlocking the keyring service."
-      )
-    }
+    // TODO re-introduce locking
     return true
   }
+  /* eslint-enable class-methods-use-this */
 
+  /* eslint-disable class-methods-use-this */
   async lock(): Promise<void> {
-    await this.#keyringController.setLocked()
+    // TODO re-introduce locking
   }
+  /* eslint-disable class-methods-use-this */
 
   private async requireUnlocked(): Promise<void> {
-    if (!this.#keyringController.memStore.getState().isUnlocked) {
+    if (!this.#locked) {
       throw new Error("KeyringService must be unlocked.")
     }
   }
@@ -114,63 +97,56 @@ export default class KeyringService extends BaseService<Events> {
    *        bit HD keys.
    * @param password? - a password used to encrypt the keyring vault. Necessary
    *        if the service is locked or this is the first keyring created.
+   * @returns The string ID of the new keyring.
    */
   async generateNewKeyring(
     type: KeyringTypes,
     password?: string
-  ): Promise<void> {
+  ): Promise<string> {
     if (type !== KeyringTypes.mnemonicBIP39S256) {
       throw new Error(
         "KeyringService only supports generating 256-bit HD key trees"
       )
     }
-    const state = this.#keyringController.memStore.getState()
-    if (state.keyrings.length < 1) {
-      if (password === undefined) {
-        throw new Error("Can't generate initial keyring without a password!")
-      }
-      await this.#keyringController.createNewVaultAndKeychain(password, {
-        strength: 256,
-      })
-    } else {
-      if (password === undefined) {
-        await this.requireUnlocked()
-      }
 
-      await this.#keyringController.addNewKeyring("HD Key Tree", {
-        strength: 256,
-      })
-    }
+    const newKeyring = new HDKeyring({ strength: 256 })
+    this.#keyrings.push(newKeyring)
+
+    const [address] = newKeyring.addAccountsSync(1)
+
+    this.emitter.emit("address", address)
+    this.emitKeyringState()
+
+    return newKeyring.id
   }
 
   /**
-   * Import a legacy 128 bit keyring.
+   * Import a legacy 128 bit keyring and pull the first address from that
+   * keyring for system use.
    *
    * @param mnemonic - a 12-word seed phrase compatible with MetaMask.
-   * @param password? - a password used to encrypt the keyring vault. Necessary
-   *        if the service is locked or this is the first keyring created.
+   * @param password - a password used to encrypt the keyring vault.
+   * @returns The string ID of the new keyring.
    */
   async importLegacyKeyring(
     mnemonic: string,
-    password?: string
-  ): Promise<void> {
-    const state = this.#keyringController.memStore.getState()
-    if (state.keyrings.length < 1) {
-      if (password === undefined) {
-        throw new Error("Can't import initial keyring without a password!")
-      }
-      await this.#keyringController.createNewVaultAndRestore(password, mnemonic)
-    } else {
-      if (password === undefined) {
-        await this.requireUnlocked()
-      } else {
-        await this.unlock(password)
-      }
-      await this.#keyringController.addNewKeyring("HD Key Tree", {
-        mnemonic,
-        strength: 128,
-      })
+    password: string
+  ): Promise<string> {
+    // confirm the mnemonic is 12-word for a 128-bit seed + checksum. Leave
+    // further validate to HDKeyring
+    if (mnemonic.split(/\s+/).length !== 12) {
+      throw new Error("Invalid legacy mnemonic.")
     }
+
+    const newKeyring = new HDKeyring({ mnemonic })
+    this.#keyrings.push(newKeyring)
+
+    newKeyring.addAccountsSync(1)
+
+    this.emitter.emit("address", newKeyring.getAccountsSync()[0])
+    this.emitKeyringState()
+
+    return newKeyring.id
   }
 
   /**
@@ -184,28 +160,72 @@ export default class KeyringService extends BaseService<Events> {
     txRequest: EIP1559TransactionRequest
   ): Promise<void> {
     await this.requireUnlocked()
-    // TODO find the keyring
-    // TODO actually attempt to sign the transaction
+    // find the keyring using a linear search
+    const keyring = this.#keyrings.find((kr) =>
+      kr.getAccountsSync().includes(account)
+    )
+    if (!keyring) {
+      throw new Error("Account keyring not found.")
+    }
+
+    // unfortunately, ethers gives us a serialized signed tx here
+    const signed = await keyring.signTransaction(account, {
+      ...txRequest,
+      from: undefined,
+    })
+
+    // parse the tx, then unpack it as best we can
+    const tx = parseRawTransaction(signed)
+
+    if (
+      !tx.hash ||
+      !tx.from ||
+      !tx.to ||
+      !tx.r ||
+      !tx.s ||
+      tx.v === undefined
+    ) {
+      throw new Error("Transaction doesn't appear to have been signed.")
+    }
+
+    if (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas || tx.type !== 2) {
+      throw new Error("Can only sign EIP-1559 conforming transactions")
+    }
+
+    // TODO move this to a helper function
     const signedTx: SignedEVMTransaction = {
-      hash: "0xfe57c35ebafee8296a1605a1ddfa4ef5aca88d1fc724102ce3b4ac00adad7085",
-      type: 2,
-      maxFeePerGas: BigInt("144664539722"),
-      maxPriorityFeePerGas: BigInt(1000000000),
-      nonce: BigInt(68),
-      value: BigInt(0),
-      from: "0x5f55cd7a509fda9f0beb9309a49a689eb8c122ee",
-      to: "0x6dfcb04b7d2ab2069d9ba81ac643556429eb2d55",
-      gas: BigInt(154944),
-      gasPrice: BigInt("120428961153"),
-      r: "0x12",
-      s: "0x12",
-      v: 1,
-      input: "",
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      nonce: BigInt(tx.nonce),
+      input: tx.data,
+      value: tx.value.toBigInt(),
+      type: tx.type,
+      gasPrice: null,
+      maxFeePerGas: tx.maxFeePerGas.toBigInt(),
+      maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
+      gasLimit: tx.gasLimit.toBigInt(),
+      r: tx.r,
+      s: tx.s,
+      v: tx.v,
       blockHash: null,
       blockHeight: null,
       asset: ETH,
       network: ETHEREUM,
     }
     this.emitter.emit("signedTx", signedTx)
+  }
+
+  // //////////////////
+  // PRIVATE METHODS //
+  // //////////////////
+
+  private emitKeyringState() {
+    const keyrings = this.#keyrings.map((kr) => ({
+      type: KeyringTypes.mnemonicBIP39S256,
+      addresses: [...kr.getAccountsSync()],
+      id: kr.id,
+    }))
+    this.emitter.emit("keyrings", keyrings)
   }
 }

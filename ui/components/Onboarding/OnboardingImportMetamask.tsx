@@ -3,7 +3,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 
 import SharedButton from "../Shared/SharedButton"
-import { useBackgroundDispatch } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 function TextArea({
   value,
@@ -33,15 +33,27 @@ function TextArea({
   )
 }
 
-export default function OnboardingImportMetamask(): ReactElement {
+type Props = {
+  onImported: () => void
+}
+
+export default function OnboardingImportMetamask(props: Props): ReactElement {
   const [recoveryPhrase, setRecoveryPhrase] = useState(
     // Don't store real money in this plz.
     "brain surround have swap horror body response double fire dumb bring hazard"
   )
 
   const dispatch = useBackgroundDispatch()
+  const keyringImport = useBackgroundSelector(
+    (state) => state.keyrings.importing
+  )
 
-  const importWallet = useCallback(() => {
+  if (keyringImport === "done") {
+    const { onImported } = props
+    onImported()
+  }
+
+  const importWallet = useCallback(async () => {
     dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase }))
   }, [dispatch, recoveryPhrase])
 

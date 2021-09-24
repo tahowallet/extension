@@ -14,7 +14,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { KeyringTypes } from "./types"
+import { ConfirmedEVMTransaction, KeyringTypes } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -234,8 +234,13 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
     this.chainService.emitter.on("transaction", (transaction) => {
-      if (transaction.blockHash) {
-        this.store.dispatch(transactionConfirmed(transaction))
+      if (
+        transaction.blockHash &&
+        (transaction as ConfirmedEVMTransaction).gas !== undefined
+      ) {
+        this.store.dispatch(
+          transactionConfirmed(transaction as ConfirmedEVMTransaction)
+        )
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
@@ -290,6 +295,14 @@ export default class Main extends BaseService<never> {
   async connectKeyringService(): Promise<void> {
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
+    })
+
+    this.keyringService.emitter.on("address", (address) => {
+      this.chainService.addAccountToTrack({
+        account: address,
+        // TODO support other networks
+        network: ETHEREUM,
+      })
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
