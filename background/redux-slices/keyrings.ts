@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { KeyringTypes } from "../types"
+import { KeyringTypes, SignedEVMTransaction } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
 // TODO this is very simple. We'll want to expand to include "capabilities" per
@@ -26,6 +26,7 @@ export const initialState: KeyringsState = {
 export type Events = {
   generateNewKeyring: never
   importLegacyKeyring: { mnemonic: string }
+  signedTx: string
 }
 
 export const emitter = new Emittery<Events>()

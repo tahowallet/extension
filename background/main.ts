@@ -5,6 +5,7 @@ import devToolsEnhancer from "remote-redux-devtools"
 
 import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import logger from "./lib/logger"
 
 import {
   PreferenceService,
@@ -266,6 +267,16 @@ export default class Main extends BaseService<never> {
       }
 
       await this.keyringService.signTransaction(options.from, transaction)
+    })
+
+    keyringSliceEmitter.on("signedTx", async (transaction) => {
+      const response =
+        await this.chainService.pollingProviders.ethereum.sendTransaction(
+          transaction
+        )
+
+      logger.log("Transaction broadcast:")
+      logger.log(response)
     })
 
     // Set up initial state.
