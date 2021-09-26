@@ -1,3 +1,6 @@
+/**
+ * An encrypted vault which can be safely serialized and stored.
+ */
 export type EncryptedVault = {
   // a base-64 encoded salt, required for decryption
   salt: string
@@ -20,6 +23,10 @@ async function generateSalt(): Promise<string> {
   return bufferToBase64(saltBuffer)
 }
 
+/**
+ * Throw an error if global.crypto isn't available. We don't want to fall back
+ * to polyfills.
+ */
 function requireCryptoGlobal(message?: string) {
   if (global.crypto === undefined) {
     throw new Error(
@@ -30,7 +37,26 @@ function requireCryptoGlobal(message?: string) {
   }
 }
 
-async function deriveKeyFromPassword(password: string, existingSalt?: string) {
+/**
+ * Derive a WebCrypto symmetric key from a password and salt.
+ *
+ * @param password A user-supplied password. Without this value
+ * @param salt A random salt used in the initial key derivation, if there has
+ *        been one before. If no salt is provided, a random salt will be
+ *        generated.
+ *
+ *        Note that the the symmetric, alone, or the salt *and* the password,
+ *        together, must be retained to decrypt anything encrypted by the
+ *        returned key. While the salt isn't secret key material, losing it
+ *        could jeopardize access to user data (and therefor, funds).
+ * @returns a symmetric key suitable for encrypting and decrypting material
+ *          using AES GCM mode, as well as the salt required to derive the key
+ *          again later.
+ */
+async function deriveSymmetricKeyFromPassword(
+  password: string,
+  existingSalt?: string
+) {
   const { crypto } = global
 
   const salt = existingSalt || (await generateSalt())
@@ -64,6 +90,15 @@ async function deriveKeyFromPassword(password: string, existingSalt?: string) {
   }
 }
 
+/**
+ * Encrypt a JSON-serializable object with a supplied password using AES GCM
+ * mode.
+ *
+ * @param vault Any JSON-serializable object that should be encrypted.
+ * @param password A user-supplied password to encrypt the object.
+ * @returns the ciphertext and all non-password material required for later
+ *          decryption, including the salt and AES initialization vector.
+ */
 export async function encryptVault<V>(
   vault: V,
   password: string
@@ -75,7 +110,7 @@ export async function encryptVault<V>(
 
   const initializationVector = crypto.getRandomValues(new Uint8Array(16))
 
-  const { key, salt } = await deriveKeyFromPassword(password)
+  const { key, salt } = await deriveSymmetricKeyFromPassword(password)
 
   const encodedPlaintext = encoder.encode(JSON.stringify(vault))
 
@@ -94,6 +129,20 @@ export async function encryptVault<V>(
   }
 }
 
+/**
+ * Given an encrypted vault, including ciphertext, salt, and AES initialization
+ * vector, and the correct password, decrypt the vault.
+ *
+ * Vaults that were tampered with won't be decrypted, as enforced by the
+ * authentication scheme included with AES GCM mode, and will instead throw.
+ *
+ * @param vault an encrypted vault, including salt, initialization vector, and
+ *        ciphertext, as produced by `encryptVault`.
+ * @param password A user-supplied password to decrypt the vault.
+ * @returns the decrypted object, serialized and deserialized via JSON. For
+ *          most objects `decryptVault(encryptVault(o, password), password)`
+ *          should deeply equal `o`.
+ */
 export async function decryptVault<V>(
   vault: EncryptedVault,
   password: string
@@ -103,7 +152,7 @@ export async function decryptVault<V>(
 
   const { initializationVector, salt, cipherText } = vault
 
-  const { key } = await deriveKeyFromPassword(password, salt)
+  const { key } = await deriveSymmetricKeyFromPassword(password, salt)
 
   const plaintext = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: base64ToBuffer(initializationVector) },
