@@ -10,6 +10,17 @@ export type EncryptedVault = {
   cipherText: string
 }
 
+/*
+ * A key with a salt that can be combined with a password to re-derive the key.
+ *
+ * Useful for caching non-extractable `CryptoKey`s rather than requiring keeping
+ * a plaintext password lying around.
+ */
+export type SaltedKey = {
+  salt: string
+  key: CryptoKey
+}
+
 function bufferToBase64(array: Uint8Array): string {
   return Buffer.from(array).toString("base64")
 }
@@ -38,7 +49,7 @@ function requireCryptoGlobal(message?: string) {
 }
 
 /**
- * Derive a WebCrypto symmetric key from a password and salt.
+ * Derive a WebCrypto symmetric key from a password and optional salt.
  *
  * @param password A user-supplied password. Without this value
  * @param salt A random salt used in the initial key derivation, if there has
@@ -49,14 +60,14 @@ function requireCryptoGlobal(message?: string) {
  *        together, must be retained to decrypt anything encrypted by the
  *        returned key. While the salt isn't secret key material, losing it
  *        could jeopardize access to user data (and therefor, funds).
- * @returns a symmetric key suitable for encrypting and decrypting material
- *          using AES GCM mode, as well as the salt required to derive the key
- *          again later.
+ * @returns a salted symmetric key suitable for encrypting and decrypting
+ *          material using AES GCM mode, as well as the salt required to derive
+ *          the key again later.
  */
-async function deriveSymmetricKeyFromPassword(
+export async function deriveSymmetricKeyFromPassword(
   password: string,
   existingSalt?: string
-) {
+): Promise<SaltedKey> {
   const { crypto } = global
 
   const salt = existingSalt || (await generateSalt())
@@ -95,22 +106,26 @@ async function deriveSymmetricKeyFromPassword(
  * mode.
  *
  * @param vault Any JSON-serializable object that should be encrypted.
- * @param password A user-supplied password to encrypt the object.
+ * @param password A user-supplied password to encrypt the object, or a cached
+ *        salted key
  * @returns the ciphertext and all non-password material required for later
  *          decryption, including the salt and AES initialization vector.
  */
 export async function encryptVault<V>(
   vault: V,
-  password: string
+  passwordOrSaltedKey: string | SaltedKey
 ): Promise<EncryptedVault> {
   requireCryptoGlobal("Encrypting a vault")
   const { crypto } = global
 
+  const { key, salt } =
+    typeof passwordOrSaltedKey === "string"
+      ? await deriveSymmetricKeyFromPassword(passwordOrSaltedKey)
+      : passwordOrSaltedKey
+
   const encoder = new TextEncoder()
 
   const initializationVector = crypto.getRandomValues(new Uint8Array(16))
-
-  const { key, salt } = await deriveSymmetricKeyFromPassword(password)
 
   const encodedPlaintext = encoder.encode(JSON.stringify(vault))
 
@@ -138,21 +153,25 @@ export async function encryptVault<V>(
  *
  * @param vault an encrypted vault, including salt, initialization vector, and
  *        ciphertext, as produced by `encryptVault`.
- * @param password A user-supplied password to decrypt the vault.
+ * @param password A user-supplied password to decrypt the vault, or a cached
+ *        salted key
  * @returns the decrypted object, serialized and deserialized via JSON. For
  *          most objects `decryptVault(encryptVault(o, password), password)`
  *          should deeply equal `o`.
  */
 export async function decryptVault<V>(
   vault: EncryptedVault,
-  password: string
+  passwordOrSaltedKey: string | SaltedKey
 ): Promise<V> {
   requireCryptoGlobal("Decrypting a vault")
   const { crypto } = global
 
   const { initializationVector, salt, cipherText } = vault
 
-  const { key } = await deriveSymmetricKeyFromPassword(password, salt)
+  const { key } =
+    typeof passwordOrSaltedKey === "string"
+      ? await deriveSymmetricKeyFromPassword(passwordOrSaltedKey, salt)
+      : passwordOrSaltedKey
 
   const plaintext = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: base64ToBuffer(initializationVector) },
