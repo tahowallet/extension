@@ -159,7 +159,13 @@ export default class KeyringService extends BaseService<Events> {
     account: HexString,
     txRequest: EIP1559TransactionRequest
   ): Promise<void> {
+
+    console.log('SignedEVMTransaction starting')
+    debugger
+
+    await this.unlock('password')
     await this.requireUnlocked()
+
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
       kr.getAccountsSync().includes(account)
@@ -167,6 +173,9 @@ export default class KeyringService extends BaseService<Events> {
     if (!keyring) {
       throw new Error("Account keyring not found.")
     }
+
+    console.log('SignedEVMTransaction  here 1132452')
+
 
     // unfortunately, ethers gives us a serialized signed tx here
     const signed = await keyring.signTransaction(account, {
@@ -213,6 +222,8 @@ export default class KeyringService extends BaseService<Events> {
       asset: ETH,
       network: ETHEREUM,
     }
+    console.log('SignedEVMTransaction 11')
+
     this.emitter.emit("signedTx", signedTx)
   }
 

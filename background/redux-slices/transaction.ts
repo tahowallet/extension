@@ -14,7 +14,7 @@ const transactionSlice = createSlice({
   reducers: {
     transactionOptions: (
       immerState,
-      { payload: options }: { payload: EIP1559TransactionRequest }
+      { payload: options }: { payload: Partial<EIP1559TransactionRequest> }
     ) => {
       return { ...immerState, ...options }
     },
@@ -26,7 +26,7 @@ export const { transactionOptions } = transactionSlice.actions
 export default transactionSlice.reducer
 
 export type Events = {
-  updateOptions: EIP1559TransactionRequest
+  updateOptions: Partial<EIP1559TransactionRequest>
 }
 
 export const emitter = new Emittery<Events>()
@@ -34,7 +34,7 @@ export const emitter = new Emittery<Events>()
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionOptions = createBackgroundAsyncThunk(
   "transaction/options",
-  async (options: EIP1559TransactionRequest) => {
+  async (options: Partial<EIP1559TransactionRequest>) => {
     await emitter.emit("updateOptions", options)
   }
 )

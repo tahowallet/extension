@@ -25,7 +25,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
     hash: gethResult.hash,
     blockHeight: gethResult.number,
     parentHash: gethResult.parentHash,
-    difficulty: BigInt(gethResult.difficulty),
+    difficulty: gethResult.difficulty && BigInt(gethResult.difficulty),
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas.toBigInt(),
     network: ETHEREUM,

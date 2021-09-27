@@ -2,9 +2,12 @@ import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-
+import ethers from 'ethers'
 import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import { ethersTxFromTx } from "./services/chain/utils"
+
+var JSONbigNative = require('json-bigint')({ useNativeBigInt: true });
 import logger from "./lib/logger"
 
 import {
@@ -15,7 +18,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { ConfirmedEVMTransaction, KeyringTypes } from "./types"
+import { ConfirmedEVMTransaction, KeyringTypes, SignedEVMTransaction } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -216,10 +219,12 @@ export default class Main extends BaseService<never> {
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
       serializer: (payload: unknown) => {
-        return jsonEncodeBigInt(payload)
+        console.log('here')
+        return JSONbigNative.stringify(payload)
       },
       deserializer: (payload: string) => {
-        return jsonDecodeBigInt(payload)
+        console.log('here 2')
+        return JSONbigNative.parse(payload)
       },
     })
 
@@ -264,19 +269,19 @@ export default class Main extends BaseService<never> {
           ),
         gasPrice:
           await this.chainService.pollingProviders.ethereum.getGasPrice(),
+        gasLimit: options.gasLimit,
+        value: options.value,
+        from: options.from,
+        to: options.to,
+        maxFeePerGas: BigInt(21000),
+        maxPriorityFeePerGas: BigInt(21000),
+        input: '',
+        type: null
       }
 
+      console.log('transaction >>> ')
+
       await this.keyringService.signTransaction(options.from, transaction)
-    })
-
-    keyringSliceEmitter.on("signedTx", async (transaction) => {
-      const response =
-        await this.chainService.pollingProviders.ethereum.sendTransaction(
-          transaction
-        )
-
-      logger.log("Transaction broadcast:")
-      logger.log(response)
     })
 
     // Set up initial state.
@@ -316,6 +321,29 @@ export default class Main extends BaseService<never> {
         network: ETHEREUM,
       })
     })
+
+    this.keyringService.emitter.on("signedTx", async (transaction: SignedEVMTransaction) => {
+
+      console.log('signedTx <><<><>')
+
+
+          // TODO move this to a helper function
+    const ethersTx = ethersTxFromTx(transaction)
+      const ethersTxSend = ethers.utils.serializeTransaction(ethersTx, {r: transaction.r,
+        s: transaction.s,
+        v: transaction.v})
+
+        
+
+      const response =
+        await this.chainService.pollingProviders.ethereum.sendTransaction(
+          ethersTxSend
+        )
+
+      logger.log("Transaction broadcast:")
+      logger.log(response)
+    })
+
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow

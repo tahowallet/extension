@@ -254,7 +254,7 @@ export interface EIP1559TransactionRequest
     | "input"
     | "value"
   > {
-  gasLimit: bigint
+  gasLimit?: bigint
 }
 
 export interface ConfirmedEVMTransaction extends EVMTransaction {
