@@ -1,9 +1,15 @@
 import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
-import HDKeyring from "@tallyho/hd-keyring"
+import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
+import {
+  decryptVault,
+  deriveSymmetricKeyFromPassword,
+  encryptVault,
+  SaltedKey,
+} from "./encryption"
 import {
   EIP1559TransactionRequest,
   HexString,
@@ -21,7 +27,6 @@ type Keyring = {
 
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
-  unlocked: boolean
   keyrings: Keyring[]
   address: string
   // TODO message was signed
@@ -33,23 +38,12 @@ interface Events extends ServiceLifecycleEvents {
  * material to sign messages, sign transactions, and derive child keypairs.
  */
 export default class KeyringService extends BaseService<Events> {
-  #hashedPassword: string | null
-
-  #locked = false
+  #cachedKey: SaltedKey | null
 
   #keyrings: HDKeyring[] = []
 
   static create: ServiceCreatorFunction<Events, KeyringService, []> =
     async () => {
-      const { vaults } = await getEncryptedVaults()
-      const currentEncryptedVault = vaults.slice(-1)[0]?.vault
-
-      const keyringOptions = {
-        persistVault: writeLatestEncryptedVault,
-        encryptedVault: currentEncryptedVault,
-      }
-
-      // TODO re-introduce persistence and vault encryption
       return new this()
     }
 
@@ -67,21 +61,62 @@ export default class KeyringService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  /* eslint-disable class-methods-use-this */
-  async unlock(password: string): Promise<boolean> {
-    // TODO re-introduce locking
+  locked(): boolean {
+    return this.#cachedKey === null
+  }
+
+  async unlock(password: string, forceNewVault = false): Promise<boolean> {
+    if (this.#cachedKey) {
+      throw new Error("KeyringService is already unlocked!")
+    }
+
+    if (!forceNewVault) {
+      const { vaults } = await getEncryptedVaults()
+      const currentEncryptedVault = vaults.slice(-1)[0]?.vault
+      if (currentEncryptedVault) {
+        // attempt to load the vault
+        const saltedKey = await deriveSymmetricKeyFromPassword(
+          password,
+          currentEncryptedVault.salt
+        )
+        let plainTextVault: SerializedHDKeyring[]
+        try {
+          plainTextVault = await decryptVault<SerializedHDKeyring[]>(
+            currentEncryptedVault,
+            saltedKey
+          )
+          this.#cachedKey = saltedKey
+        } catch (err) {
+          // if we weren't able to load the vault, don't unlock
+          return false
+        }
+        // hooray! vault is loaded, import any serialized keyrings
+        this.#keyrings = []
+        plainTextVault.forEach((kr) => {
+          this.#keyrings.push(HDKeyring.deserialize(kr))
+        })
+      }
+    }
+
+    // if there's no vault or we want to force a new vault, generate a new key
+    // and unlock
+    if (!this.#cachedKey) {
+      this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
+      await this.persistKeyrings()
+    }
+    this.emitter.emit("locked", false)
     return true
   }
-  /* eslint-enable class-methods-use-this */
 
-  /* eslint-disable class-methods-use-this */
   async lock(): Promise<void> {
-    // TODO re-introduce locking
+    this.#cachedKey = null
+    this.#keyrings = []
+    this.emitter.emit("locked", true)
+    this.emitKeyrings()
   }
-  /* eslint-disable class-methods-use-this */
 
   private async requireUnlocked(): Promise<void> {
-    if (!this.#locked) {
+    if (!this.#cachedKey) {
       throw new Error("KeyringService must be unlocked.")
     }
   }
@@ -103,6 +138,11 @@ export default class KeyringService extends BaseService<Events> {
     type: KeyringTypes,
     password?: string
   ): Promise<string> {
+    if (password !== undefined) {
+      await this.unlock(password)
+    }
+    this.requireUnlocked()
+
     if (type !== KeyringTypes.mnemonicBIP39S256) {
       throw new Error(
         "KeyringService only supports generating 256-bit HD key trees"
@@ -111,11 +151,12 @@ export default class KeyringService extends BaseService<Events> {
 
     const newKeyring = new HDKeyring({ strength: 256 })
     this.#keyrings.push(newKeyring)
+    await this.persistKeyrings()
 
     const [address] = newKeyring.addAccountsSync(1)
 
     this.emitter.emit("address", address)
-    this.emitKeyringState()
+    this.emitKeyrings()
 
     return newKeyring.id
   }
@@ -130,21 +171,27 @@ export default class KeyringService extends BaseService<Events> {
    */
   async importLegacyKeyring(
     mnemonic: string,
-    password: string
+    password?: string
   ): Promise<string> {
+    if (password !== undefined) {
+      await this.unlock(password)
+    }
+    this.requireUnlocked()
+
     // confirm the mnemonic is 12-word for a 128-bit seed + checksum. Leave
-    // further validate to HDKeyring
+    // further validation to HDKeyring
     if (mnemonic.split(/\s+/).length !== 12) {
       throw new Error("Invalid legacy mnemonic.")
     }
 
     const newKeyring = new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
+    await this.persistKeyrings()
 
     newKeyring.addAccountsSync(1)
 
     this.emitter.emit("address", newKeyring.getAccountsSync()[0])
-    this.emitKeyringState()
+    this.emitKeyrings()
 
     return newKeyring.id
   }
@@ -220,12 +267,23 @@ export default class KeyringService extends BaseService<Events> {
   // PRIVATE METHODS //
   // //////////////////
 
-  private emitKeyringState() {
+  private emitKeyrings() {
     const keyrings = this.#keyrings.map((kr) => ({
       type: KeyringTypes.mnemonicBIP39S256,
       addresses: [...kr.getAccountsSync()],
       id: kr.id,
     }))
     this.emitter.emit("keyrings", keyrings)
+  }
+
+  private async persistKeyrings() {
+    this.requireUnlocked()
+    const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
+    serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
+    const vault = await encryptVault(
+      JSON.stringify(serializedKeyrings),
+      this.#cachedKey
+    )
+    await writeLatestEncryptedVault(vault)
   }
 }
