@@ -2,13 +2,17 @@ import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-import ethers from 'ethers'
+import ethers from "ethers"
 import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 import { ethersTxFromTx } from "./services/chain/utils"
-
-var JSONbigNative = require('json-bigint')({ useNativeBigInt: true });
 import logger from "./lib/logger"
+import {
+  EIP1559TransactionRequest,
+  ConfirmedEVMTransaction,
+  KeyringTypes,
+  SignedEVMTransaction,
+} from "./types"
 
 import {
   PreferenceService,
@@ -17,8 +21,6 @@ import {
   KeyringService,
   ServiceCreatorFunction,
 } from "./services"
-
-import { ConfirmedEVMTransaction, KeyringTypes, SignedEVMTransaction } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -41,6 +43,8 @@ import {
 } from "./redux-slices/transaction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
+
+const JSONbigNative = require("json-bigint")({ useNativeBigInt: true })
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
@@ -218,14 +222,8 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
-      serializer: (payload: unknown) => {
-        console.log('here')
-        return JSONbigNative.stringify(payload)
-      },
-      deserializer: (payload: string) => {
-        console.log('here 2')
-        return JSONbigNative.parse(payload)
-      },
+      serializer: JSONbigNative.stringify,
+      deserializer: JSONbigNative.parse,
     })
 
     this.connectIndexingService()
@@ -260,6 +258,7 @@ export default class Main extends BaseService<never> {
 
     transactionSliceEmitter.on("updateOptions", async (options) => {
       // Basic transaction construction based on the provided options, with extra data from the chain service
+      debugger
       const transaction = {
         ...options,
         nonce:
@@ -267,19 +266,19 @@ export default class Main extends BaseService<never> {
             options.from,
             "latest"
           ),
-        gasPrice:
-          await this.chainService.pollingProviders.ethereum.getGasPrice(),
-        gasLimit: options.gasLimit,
-        value: options.value,
-        from: options.from,
+        gasPrice: (
+          await this.chainService.pollingProviders.ethereum.getGasPrice()
+        ).toBigInt(),
+        gasLimit: BigInt(options.gasLimit),
+        value: BigInt(options.value),
         to: options.to,
         maxFeePerGas: BigInt(21000),
         maxPriorityFeePerGas: BigInt(21000),
-        input: '',
-        type: null
-      }
+        input: "",
+        type: 2,
+      } as EIP1559TransactionRequest
 
-      console.log('transaction >>> ')
+      console.log("transaction >>> ")
 
       await this.keyringService.signTransaction(options.from, transaction)
     })
@@ -322,28 +321,29 @@ export default class Main extends BaseService<never> {
       })
     })
 
-    this.keyringService.emitter.on("signedTx", async (transaction: SignedEVMTransaction) => {
+    this.keyringService.emitter.on(
+      "signedTx",
+      async (transaction: SignedEVMTransaction) => {
+        debugger
+        console.log("signedTx <><<><>")
 
-      console.log('signedTx <><<><>')
+        // TODO move this to a helper function
+        const ethersTx = ethersTxFromTx(transaction)
+        const ethersTxSend = ethers.utils.serializeTransaction(ethersTx, {
+          r: transaction.r,
+          s: transaction.s,
+          v: transaction.v,
+        })
 
+        const response =
+          await this.chainService.pollingProviders.ethereum.sendTransaction(
+            ethersTxSend
+          )
 
-          // TODO move this to a helper function
-    const ethersTx = ethersTxFromTx(transaction)
-      const ethersTxSend = ethers.utils.serializeTransaction(ethersTx, {r: transaction.r,
-        s: transaction.s,
-        v: transaction.v})
-
-        
-
-      const response =
-        await this.chainService.pollingProviders.ethereum.sendTransaction(
-          ethersTxSend
-        )
-
-      logger.log("Transaction broadcast:")
-      logger.log(response)
-    })
-
+        logger.log("Transaction broadcast:")
+        logger.log(response)
+      }
+    )
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow

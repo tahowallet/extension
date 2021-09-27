@@ -206,6 +206,7 @@ export default class KeyringService extends BaseService<Events> {
     account: HexString,
     txRequest: EIP1559TransactionRequest
   ): Promise<void> {
+    debugger
     await this.requireUnlocked()
 
     // find the keyring using a linear search
