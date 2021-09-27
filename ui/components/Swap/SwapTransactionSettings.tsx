@@ -117,6 +117,9 @@ export default function SwapTransactionSettings(): ReactElement {
             line-height: 16px;
             text-align: right;
           }
+          .label {
+            margin-bottom: 5px;
+          }
         `}
       </style>
     </>

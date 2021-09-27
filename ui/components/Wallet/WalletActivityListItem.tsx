@@ -15,6 +15,7 @@ interface Props {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity } = props
+  if (!activity.value || !activity.timestamp) return <></>
 
   return (
     <li>
