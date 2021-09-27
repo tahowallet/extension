@@ -276,6 +276,9 @@ export default class KeyringService extends BaseService<Events> {
     this.emitter.emit("keyrings", keyrings)
   }
 
+  /**
+   * Serialize, encrypt, and persist all HDKeyrings.
+   */
   private async persistKeyrings() {
     this.requireUnlocked()
     const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
