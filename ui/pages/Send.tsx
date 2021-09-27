@@ -50,7 +50,7 @@ export default function Send(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                isDisabled={selectedCount <= 0}
+                isDisabled={false}
                 linkTo={{
                   pathname: "/signTransaction",
                   state: {
@@ -127,6 +127,9 @@ export default function Send(): ReactElement {
             width: 384px;
             border-bottom: 1px solid #000000;
             margin-left: -16px;
+          }
+          .label {
+            margin-bottom: 6px;
           }
         `}
       </style>

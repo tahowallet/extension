@@ -174,6 +174,7 @@ export default function SharedAssetInput(
               className="token_input"
               type="text"
               placeholder="0x..."
+              spellCheck="false"
               onChange={(event) => {
                 onSendToAddressChange(event.target.value)
               }}

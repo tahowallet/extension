@@ -2,6 +2,8 @@
 //
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
+import { convertToEth } from "@tallyho/tally-background/lib/utils"
+
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
@@ -11,6 +13,9 @@ interface Props {
     localizedUserValue?: string
     asset?: {
       symbol?: string
+      metadata?: {
+        logoURL?: string
+      }
     }
   }
 }
@@ -24,7 +29,16 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       <Link to="/singleAsset">
         <div className="list_item standard_width">
           <div className="left">
-            <SharedAssetIcon />
+            {assetAmount?.asset?.metadata?.logoURL ? (
+              <img
+                width="40px"
+                src={assetAmount?.asset?.metadata?.logoURL}
+                alt=""
+              />
+            ) : (
+              <SharedAssetIcon />
+            )}
+
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
