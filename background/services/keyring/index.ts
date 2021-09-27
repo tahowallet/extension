@@ -2,6 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
+import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -209,7 +210,7 @@ export default class KeyringService extends BaseService<Events> {
     await this.requireUnlocked()
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
-      kr.getAccountsSync().includes(account)
+      kr.getAccountsSync().includes(normalizeEVMAddress(account))
     )
     if (!keyring) {
       throw new Error("Account keyring not found.")
