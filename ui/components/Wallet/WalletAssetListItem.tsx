@@ -26,8 +26,15 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   // TODO: ETH price hard-coded for demo
   return (
     <li>
-      <Link to="/singleAsset">
-        <button type="button" className="standard_width">
+      <Link
+        to={{
+          pathname: "/singleAsset",
+          state: {
+            symbol: assetAmount.asset.symbol,
+          },
+        }}
+      >
+        <div className="list_item standard_width">
           <div className="left">
             {assetAmount?.asset?.metadata?.logoURL ? (
               <img
@@ -53,7 +60,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             <span className="icon_send_asset" />
             <span className="icon_swap_asset" />
           </div>
-        </button>
+        </div>
       </Link>
 
       <style jsx>
