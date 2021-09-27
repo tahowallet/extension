@@ -1,12 +1,13 @@
 import { browser } from "webextension-polyfill-ts"
 
+import { EncryptedVault } from "./encryption"
 import { UNIXTime } from "../../types"
 
 type SerializedEncryptedVaults = {
   version: 1
   vaults: {
     timeSaved: UNIXTime
-    vault: string
+    vault: EncryptedVault
   }[]
 }
 
@@ -35,22 +36,40 @@ export async function getEncryptedVaults(): Promise<SerializedEncryptedVaults> {
   throw new Error("Encrypted vaults are using an unkown serialization format")
 }
 
+function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {
+  if (vault1.salt !== vault2.salt) {
+    return false
+  }
+  if (vault1.initializationVector !== vault2.initializationVector) {
+    return false
+  }
+  if (vault1.cipherText !== vault2.cipherText) {
+    return false
+  }
+  return true
+}
+
 /**
  * Write an encryptedVault to extension storage if and only if it's different
  * than the most recently saved vault.
  *
- * @param encryptedVault - an encrypted keyring controller vault that's been
- *        serialized to a string
+ * @param encryptedVault - an encrypted keyring vault
  */
 export async function writeLatestEncryptedVault(
-  encryptedVault: string
+  encryptedVault: EncryptedVault
 ): Promise<void> {
   const serializedVaults = await getEncryptedVaults()
   const vaults = [...serializedVaults.vaults]
-  vaults.sort()
-  const currentLatest = vaults.pop()
-  // if there's been no change, don't write
-  if (!currentLatest || currentLatest.vault !== encryptedVault) {
+  const currentLatest = vaults.reduce(
+    (newestVault, nextVault) =>
+      newestVault && newestVault.timeSaved > nextVault.timeSaved
+        ? newestVault
+        : nextVault,
+    null
+  )
+  const oldVault = currentLatest && currentLatest.vault
+  // if there's been a change, persist the vault
+  if (!oldVault || !equalVaults(oldVault, encryptedVault)) {
     await browser.storage.local.set({
       tallyVaults: {
         ...serializedVaults,
