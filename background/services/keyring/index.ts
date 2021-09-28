@@ -158,17 +158,9 @@ export default class KeyringService extends BaseService<Events> {
    *
    * @param type - the type of keyring to generate. Currently only supports 256-
    *        bit HD keys.
-   * @param password? - a password used to encrypt the keyring vault. Necessary
-   *        if the service is locked or this is the first keyring created.
    * @returns The string ID of the new keyring.
    */
-  async generateNewKeyring(
-    type: KeyringTypes,
-    password?: string
-  ): Promise<string> {
-    if (password !== undefined) {
-      await this.unlock(password)
-    }
+  async generateNewKeyring(type: KeyringTypes): Promise<string> {
     this.requireUnlocked()
 
     if (type !== KeyringTypes.mnemonicBIP39S256) {
@@ -194,16 +186,9 @@ export default class KeyringService extends BaseService<Events> {
    * keyring for system use.
    *
    * @param mnemonic - a 12-word seed phrase compatible with MetaMask.
-   * @param password - a password used to encrypt the keyring vault.
    * @returns The string ID of the new keyring.
    */
-  async importLegacyKeyring(
-    mnemonic: string,
-    password?: string
-  ): Promise<string> {
-    if (password !== undefined) {
-      await this.unlock(password)
-    }
+  async importLegacyKeyring(mnemonic: string): Promise<string> {
     this.requireUnlocked()
 
     // confirm the mnemonic is 12-word for a 128-bit seed + checksum. Leave
