@@ -35,7 +35,7 @@ test("derives symmetric keys", async () => {
   /* eslint-enable no-await-in-loop */
 })
 
-test("can encrypt a vault with a password", async () => {
+test("doesn't throw when encrypting a vault with a password", async () => {
   const vault = { a: 1 }
   const password = "this-is-a-poor-password"
   await encryptVault(vault, password)
