@@ -41,6 +41,22 @@ test("doesn't throw when encrypting a vault with a password", async () => {
   await encryptVault(vault, password)
 })
 
+test("avoids couple common footguns when encrypting a vault with a password", async () => {
+  const vault = { thisIsAnInterestingKey: "sentinel" }
+  const password = "this-is-a-poor-password"
+  const newVault = await encryptVault(vault, password)
+  // ensure sensitive plaintext isn't in the output, with a couple simple
+  // transformations. Note this *doesn't* show correctness of encryption — a
+  // simple substitution cipher would still pass this — it's just a smoke test.
+  const importantPlaintext = ["thisIsAnInterestingKey", "sentinel", password]
+  const serializedVault = JSON.stringify(newVault)
+  importantPlaintext.forEach((t) => {
+    expect(serializedVault).not.toContain(t)
+    expect(serializedVault).not.toContain(t.toLowerCase())
+    expect(serializedVault).not.toContain(Buffer.from(t).toString("base64"))
+  })
+})
+
 test("can decrypt a vault encrypted with a password", async () => {
   const vault = { a: 1 }
   const password = "this-is-a-poor-password"
