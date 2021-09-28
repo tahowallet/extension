@@ -206,7 +206,7 @@ export default class KeyringService extends BaseService<Events> {
   async signTransaction(
     account: HexString,
     txRequest: EIP1559TransactionRequest
-  ): Promise<void> {
+  ): Promise<SignedEVMTransaction> {
     await this.requireUnlocked()
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
@@ -216,11 +216,17 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Account keyring not found.")
     }
 
+    // ethers has a looser / slightly different request type
+    const ethersTxRequest = {
+      to: txRequest.to,
+      nonce: txRequest.nonce,
+      maxPriorityFeePerGas: txRequest.maxPriorityFeePerGas,
+      maxFeePerGas: txRequest.maxFeePerGas,
+      type: txRequest.type,
+      chainId: Number.parseInt(txRequest.chainID, 10),
+    }
     // unfortunately, ethers gives us a serialized signed tx here
-    const signed = await keyring.signTransaction(account, {
-      ...txRequest,
-      from: undefined,
-    })
+    const signed = await keyring.signTransaction(account, ethersTxRequest)
 
     // parse the tx, then unpack it as best we can
     const tx = parseRawTransaction(signed)
@@ -262,6 +268,7 @@ export default class KeyringService extends BaseService<Events> {
       network: ETHEREUM,
     }
     this.emitter.emit("signedTx", signedTx)
+    return signedTx
   }
 
   // //////////////////
