@@ -1,16 +1,19 @@
 import React, { ReactElement, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
+import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function SignTransaction(): ReactElement {
   const history = useHistory()
-
+  const dispatch = useBackgroundDispatch()
   const location = useLocation()
+  
   const { token, amount, speed, network, signType } = location.state
   const [panelNumber, setPanelNumber] = useState(0)
 
@@ -65,7 +68,21 @@ export default function SignTransaction(): ReactElement {
         >
           Reject
         </SharedButton>
-        <SharedButton type="primary" iconSize="large" size="large">
+        <SharedButton
+          type="primary"
+          iconSize="large"
+          size="large"
+          onClick={(e) =>
+            dispatch(
+              updateTransactionOptions({
+                from: "0x7b4322B9ABe447cE86fAa6121b35C84EC36945ad",
+                to: "0x7b4322B9ABe447cE86fAa6121b35C84EC36945ad",
+                value: BigInt(1000),
+                gasLimit: BigInt(21000),
+              })
+            )
+          }
+        >
           {spendOrSwapContent[signType].confirmButtonText}
         </SharedButton>
       </div>

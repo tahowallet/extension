@@ -202,12 +202,11 @@ export interface EVMTransaction {
   hash: string
   from: HexString
   to: HexString
-  gas: bigint
   gasPrice: bigint | null
   maxFeePerGas: bigint | null
   maxPriorityFeePerGas: bigint | null
   input: string | null
-  nonce: bigint
+  nonce: number
   value: bigint
   blockHash: string | null
   blockHeight: number | null
@@ -219,10 +218,6 @@ export interface EVMTransaction {
    * 2 - EIP-1559 transactions
    */
   type: 0 | 1 | 2 | null
-}
-
-export interface TxParams extends Partial<EVMTransaction> {
-  gasLimit: bigint | null
 }
 
 export interface LegacyEVMTransaction extends EVMTransaction {
@@ -259,23 +254,30 @@ export interface EIP1559TransactionRequest
     | "input"
     | "value"
   > {
-  gasLimit: bigint
+  gasLimit?: bigint
 }
 
 export interface ConfirmedEVMTransaction extends EVMTransaction {
+  gas: bigint
   blockHash: string
   blockHeight: number
 }
 
 export interface SignedEVMTransaction extends EVMTransaction {
+  gasLimit: bigint
   r: string
   s: string
   v: number
 }
 
-export interface SignedConfirmedEVMTransaction
+interface AlmostSignedConfirmedEVMTransaction
   extends SignedEVMTransaction,
     ConfirmedEVMTransaction {}
+
+export type SignedConfirmedEVMTransaction = Omit<
+  AlmostSignedConfirmedEVMTransaction,
+  "gasLimit"
+>
 
 export type AnyEVMTransaction =
   | EVMTransaction

@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { KeyringTypes } from "../types"
+import { KeyringTypes, SignedEVMTransaction } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
 // TODO this is very simple. We'll want to expand to include "capabilities" per
@@ -15,21 +15,53 @@ type Keyring = {
 
 type KeyringsState = {
   keyrings: Keyring[]
+  importing: false | "pending" | "done"
 }
 
 export const initialState: KeyringsState = {
   keyrings: [],
+  importing: false,
 }
+
+export type Events = {
+  generateNewKeyring: never
+  importLegacyKeyring: { mnemonic: string }
+  signedTx: string
+}
+
+export const emitter = new Emittery<Events>()
+
+// Async thunk to bubble the importLegacyKeyring action from  store to emitter.
+export const importLegacyKeyring = createBackgroundAsyncThunk(
+  "keyrings/importLegacyKeyring",
+  async ({ mnemonic }: { mnemonic: string }) => {
+    await emitter.emit("importLegacyKeyring", { mnemonic })
+  }
+)
 
 const keyringsSlice = createSlice({
   name: "keyrings",
   initialState,
   reducers: {
-    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
-      return {
-        keyrings,
-      }
-    },
+    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => ({
+      ...state,
+      keyrings,
+    }),
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(importLegacyKeyring.pending, (state) => {
+        return {
+          ...state,
+          importing: "pending",
+        }
+      })
+      .addCase(importLegacyKeyring.fulfilled, (state) => {
+        return {
+          ...state,
+          importing: "done",
+        }
+      })
   },
 })
 
@@ -37,25 +69,10 @@ export const { updateKeyrings } = keyringsSlice.actions
 
 export default keyringsSlice.reducer
 
-export type Events = {
-  generateNewKeyring: never
-  importLegacyKeyring: { mnemonic: string }
-}
-
-export const emitter = new Emittery<Events>()
-
 // Async thunk to bubble the generateNewKeyring action from  store to emitter.
 export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
   async () => {
     await emitter.emit("generateNewKeyring")
-  }
-)
-
-// Async thunk to bubble the importLegacyKeyring action from  store to emitter.
-export const importLegacyKeyring = createBackgroundAsyncThunk(
-  "keyrings/importLegacyKeyring",
-  async ({ mnemonic }: { mnemonic: string }) => {
-    await emitter.emit("importLegacyKeyring", { mnemonic })
   }
 )

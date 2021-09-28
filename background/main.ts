@@ -2,25 +2,23 @@ import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-
+import ethers from 'ethers'
 import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import { ethersTxFromTx } from "./services/chain/utils"
+
+var JSONbigNative = require('json-bigint')({ useNativeBigInt: true });
+import logger from "./lib/logger"
 
 import {
-  startService as startPreferences,
   PreferenceService,
-} from "./services/preferences"
-import {
-  startService as startIndexing,
+  ChainService,
   IndexingService,
-} from "./services/indexing"
-import { startService as startChain, ChainService } from "./services/chain"
-import {
-  startService as startKeyring,
   KeyringService,
-} from "./services/keyring"
+  ServiceCreatorFunction,
+} from "./services"
 
-import { KeyringTypes } from "./types"
+import { ConfirmedEVMTransaction, KeyringTypes, SignedEVMTransaction } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -37,7 +35,12 @@ import {
   updateKeyrings,
   importLegacyKeyring,
 } from "./redux-slices/keyrings"
+import {
+  transactionOptions,
+  emitter as transactionSliceEmitter,
+} from "./redux-slices/transaction"
 import { allAliases } from "./redux-slices/utils"
+import BaseService from "./services/base"
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
@@ -57,7 +60,7 @@ const reduxCache = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
-  if (process.env.REDUX_CACHE === "true") {
+  if (process.env.WRITE_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
     browser.storage.local.set({ state: jsonEncodeBigInt(state) })
   }
@@ -113,33 +116,8 @@ const initializeStore = (startupState = {}) =>
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
 
-export default class Main {
-  /*
-   * A promise to the preference service, a dependency for most other services.
-   * The promise will be resolved when the service is initialized.
-   */
-  preferenceService: Promise<PreferenceService>
-
-  /*
-   * A promise to the chain service, keeping track of base asset balances,
-   * transactions, and network status. The promise will be resolved when the
-   * service is initialized.
-   */
-  chainService: Promise<ChainService>
-
-  /*
-   * A promise to the indexing service, keeping track of token balances and
-   * prices. The promise will be resolved when the service is initialized.
-   */
-  indexingService: Promise<IndexingService>
-
-  /*
-   * A promise to the keyring service, which stores key material, derives
-   * accounts, and signs messagees and transactions. The promise will be
-   * resolved when the service is initialized.
-   */
-  keyringService: Promise<KeyringService>
-
+// TODO Rename ReduxService or CoordinationService, move to services/, etc.
+export default class Main extends BaseService<never> {
   /**
    * The redux store for the wallet core. Note that the redux store is used to
    * render the UI (via webext-redux), but it is _not_ the source of truth.
@@ -149,12 +127,51 @@ export default class Main {
    */
   store: ReduxStoreType
 
-  constructor() {
-    // start all services
-    this.initializeServices()
+  static create: ServiceCreatorFunction<never, Main, []> = async () => {
+    const preferenceService = PreferenceService.create()
+    const chainService = ChainService.create(preferenceService)
+    const indexingService = IndexingService.create(
+      preferenceService,
+      chainService
+    )
+    const keyringService = KeyringService.create()
 
-    // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
-    if (process.env.REDUX_CACHE === "true") {
+    return new this(
+      await preferenceService,
+      await chainService,
+      await indexingService,
+      await keyringService
+    )
+  }
+
+  private constructor(
+    /**
+     * A promise to the preference service, a dependency for most other services.
+     * The promise will be resolved when the service is initialized.
+     */
+    private preferenceService: PreferenceService,
+    /**
+     * A promise to the chain service, keeping track of base asset balances,
+     * transactions, and network status. The promise will be resolved when the
+     * service is initialized.
+     */
+    private chainService: ChainService,
+    /**
+     * A promise to the indexing service, keeping track of token balances and
+     * prices. The promise will be resolved when the service is initialized.
+     */
+    private indexingService: IndexingService,
+    /**
+     * A promise to the keyring service, which stores key material, derives
+     * accounts, and signs messagees and transactions. The promise will be
+     * resolved when the service is initialized.
+     */
+    private keyringService: KeyringService
+  ) {
+    super()
+
+    // Setting READ_CACHE to false will start the extension with an empty initial state, which can be useful for development
+    if (process.env.READ_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
         this.initializeRedux(saved.state && jsonDecodeBigInt(saved.state))
       })
@@ -163,23 +180,38 @@ export default class Main {
     }
   }
 
-  initializeServices(): void {
-    this.preferenceService = startPreferences()
-    this.chainService = startChain(this.preferenceService)
-    this.indexingService = startIndexing(
-      this.preferenceService,
-      this.chainService
-    ).then(async (service) => {
-      const chain = await this.chainService
-      await chain.addAccountToTrack({
-        // TODO uses Ethermine address for development - move this to startup
-        // state
-        account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-        network: ETHEREUM,
+  protected async internalStartService(): Promise<void> {
+    await super.internalStartService()
+
+    this.indexingService
+      .started()
+      .then(async () => this.chainService.started())
+      .then(async (chain) => {
+        chain.addAccountToTrack({
+          // TODO uses Ethermine address for development - move this to startup
+          // state
+          account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
+          network: ETHEREUM,
+        })
       })
-      return service
-    })
-    this.keyringService = startKeyring()
+
+    await Promise.all([
+      this.preferenceService.startService(),
+      this.chainService.startService(),
+      this.indexingService.startService(),
+      this.keyringService.startService(),
+    ])
+  }
+
+  protected async internalStopService(): Promise<void> {
+    await Promise.all([
+      this.preferenceService.stopService(),
+      this.chainService.stopService(),
+      this.indexingService.stopService(),
+      this.keyringService.stopService(),
+    ])
+
+    await super.internalStopService()
   }
 
   async initializeRedux(startupState?: unknown): Promise<void> {
@@ -187,10 +219,12 @@ export default class Main {
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
       serializer: (payload: unknown) => {
-        return jsonEncodeBigInt(payload)
+        console.log('here')
+        return JSONbigNative.stringify(payload)
       },
       deserializer: (payload: string) => {
-        return jsonDecodeBigInt(payload)
+        console.log('here 2')
+        return JSONbigNative.parse(payload)
       },
     })
 
@@ -200,71 +234,127 @@ export default class Main {
   }
 
   async connectChainService(): Promise<void> {
-    const chain = await this.chainService
-
     // Wire up chain service to account slice.
-    chain.emitter.on("accountBalance", (accountWithBalance) => {
+    this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    chain.emitter.on("transaction", (transaction) => {
-      if (transaction.blockHash) {
-        this.store.dispatch(transactionConfirmed(transaction))
+    this.chainService.emitter.on("transaction", (transaction) => {
+      if (
+        transaction.blockHash &&
+        (transaction as ConfirmedEVMTransaction).gas !== undefined
+      ) {
+        this.store.dispatch(
+          transactionConfirmed(transaction as ConfirmedEVMTransaction)
+        )
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
     })
-    chain.emitter.on("block", (block) => {
+    this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
     accountSliceEmitter.on("addAccount", async (accountNetwork) => {
-      await chain.addAccountToTrack(accountNetwork)
+      await this.chainService.addAccountToTrack(accountNetwork)
+    })
+
+    transactionSliceEmitter.on("updateOptions", async (options) => {
+      // Basic transaction construction based on the provided options, with extra data from the chain service
+      const transaction = {
+        ...options,
+        nonce:
+          await this.chainService.pollingProviders.ethereum.getTransactionCount(
+            options.from,
+            "latest"
+          ),
+        gasPrice:
+          await this.chainService.pollingProviders.ethereum.getGasPrice(),
+        gasLimit: options.gasLimit,
+        value: options.value,
+        from: options.from,
+        to: options.to,
+        maxFeePerGas: BigInt(21000),
+        maxPriorityFeePerGas: BigInt(21000),
+        input: '',
+        type: null
+      }
+
+      console.log('transaction >>> ')
+
+      await this.keyringService.signTransaction(options.from, transaction)
     })
 
     // Set up initial state.
-    const existingAccounts = await chain.getAccountsToTrack()
+    const existingAccounts = await this.chainService.getAccountsToTrack()
     existingAccounts.forEach((accountNetwork) => {
       // Mark as loading and wire things up.
       this.store.dispatch(loadAccount(accountNetwork.account))
 
       // Force a refresh of the account balance to populate the store.
-      chain.getLatestBaseAccountBalance(accountNetwork)
+      this.chainService.getLatestBaseAccountBalance(accountNetwork)
     })
   }
 
   async connectIndexingService(): Promise<void> {
-    const indexing = await this.indexingService
-
-    indexing.emitter.on("accountBalance", (accountWithBalance) => {
+    this.indexingService.emitter.on("accountBalance", (accountWithBalance) => {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
 
-    indexing.emitter.on("assets", (assets) => {
+    this.indexingService.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
     })
 
-    indexing.emitter.on("price", (pricePoint) => {
+    this.indexingService.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
     })
   }
 
   async connectKeyringService(): Promise<void> {
-    const keyring = await this.keyringService
-
-    keyring.emitter.on("keyrings", (keyrings) => {
+    this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
+    this.keyringService.emitter.on("address", (address) => {
+      this.chainService.addAccountToTrack({
+        account: address,
+        // TODO support other networks
+        network: ETHEREUM,
+      })
+    })
+
+    this.keyringService.emitter.on("signedTx", async (transaction: SignedEVMTransaction) => {
+
+      console.log('signedTx <><<><>')
+
+
+          // TODO move this to a helper function
+    const ethersTx = ethersTxFromTx(transaction)
+      const ethersTxSend = ethers.utils.serializeTransaction(ethersTx, {r: transaction.r,
+        s: transaction.s,
+        v: transaction.v})
+
+        
+
+      const response =
+        await this.chainService.pollingProviders.ethereum.sendTransaction(
+          ethersTxSend
+        )
+
+      logger.log("Transaction broadcast:")
+      logger.log(response)
+    })
+
+
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
-      await keyring.generateNewKeyring(
+      await this.keyringService.generateNewKeyring(
         KeyringTypes.mnemonicBIP39S256,
         "password"
       )
     })
 
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
-      await keyring.importLegacyKeyring(mnemonic, "password")
+      await this.keyringService.importLegacyKeyring(mnemonic, "password")
     })
   }
 }
