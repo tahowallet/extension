@@ -2,10 +2,12 @@ import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
+import ethers from "ethers"
 
 import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
 import logger from "./lib/logger"
+import { ethersTxFromTx } from "./services/chain/utils"
 
 import {
   PreferenceService,
@@ -15,7 +17,11 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { ConfirmedEVMTransaction, KeyringTypes } from "./types"
+import {
+  ConfirmedEVMTransaction,
+  SignedEVMTransaction,
+  KeyringTypes,
+} from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -269,16 +275,6 @@ export default class Main extends BaseService<never> {
       await this.keyringService.signTransaction(options.from, transaction)
     })
 
-    keyringSliceEmitter.on("signedTx", async (transaction) => {
-      const response =
-        await this.chainService.pollingProviders.ethereum.sendTransaction(
-          transaction
-        )
-
-      logger.log("Transaction broadcast:")
-      logger.log(response)
-    })
-
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
     existingAccounts.forEach((accountNetwork) => {
@@ -316,6 +312,26 @@ export default class Main extends BaseService<never> {
         network: ETHEREUM,
       })
     })
+
+    this.keyringService.emitter.on(
+      "signedTx",
+      async (transaction: SignedEVMTransaction) => {
+        const ethersTx = ethersTxFromTx(transaction)
+        const serializedTx = ethers.utils.serializeTransaction(ethersTx, {
+          r: transaction.r,
+          s: transaction.s,
+          v: transaction.v,
+        })
+
+        const response =
+          await this.chainService.pollingProviders.ethereum.sendTransaction(
+            serializedTx
+          )
+
+        logger.log("Transaction broadcast:")
+        logger.log(response)
+      }
+    )
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow

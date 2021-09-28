@@ -38,6 +38,3 @@ export const updateTransactionOptions = createBackgroundAsyncThunk(
     await emitter.emit("updateOptions", options)
   }
 )
-
-// TODO: Create action to expose the signed transaction to the front end
-// TODO: Create another action to actually broadcast the transaction to the network
