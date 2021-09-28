@@ -70,13 +70,13 @@ export default class KeyringService extends BaseService<Events> {
    * Unlock the keyring with a provided password, initializing from the most
    * recently persisted keyring vault if one exists.
    *
-   * @param password a user-chosen string used to encrypt keyring vaults.
+   * @param password A user-chosen string used to encrypt keyring vaults.
    *        Unlocking will fail if an existing vault is found, and this password
    *        can't decrypt it.
    *
    *        Note that losing this password means losing access to any key
    *        material stored in a vault.
-   * @param ignoreExistingVaults whether the ignore any existing, previously
+   * @param ignoreExistingVaults If true, ignore any existing, previously
    *        persisted vaults on unlock, instead starting with a clean slate.
    *        This option makes sense if a user has lost their password, and needs
    *        to generate a new keyring.
