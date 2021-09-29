@@ -254,7 +254,7 @@ export interface EIP1559TransactionRequest
     | "value"
   > {
   from?: HexString
-  gasLimit?: bigint
+  gasLimit: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
 }
 

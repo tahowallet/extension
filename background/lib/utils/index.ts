@@ -48,7 +48,7 @@ export function transactionFee(
   )
 }
 
-// BigInts are CUTTING EDGE can't be saved natively in Redux / Browser storage
+// BigInts are CUTTING EDGE and can't be saved natively in Redux / Browser storage
 export function jsonEncodeBigInt(input: unknown): string {
   return JSONBig({ useNativeBigInt: true }).stringify(input)
 }
