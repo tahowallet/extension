@@ -269,6 +269,7 @@ export default class Main extends BaseService<never> {
         maxPriorityFeePerGas: options.maxPriorityFeePerGas,
         input: "",
         type: 2 as const,
+        chainID: "1",
         nonce:
           await this.chainService.pollingProviders.ethereum.getTransactionCount(
             options.from,
