@@ -1,6 +1,11 @@
-import { BigNumber } from "ethers"
+import { BigNumber, utils as ethersUtils } from "ethers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { Transaction as EthersTransaction } from "@ethersproject/transactions"
+import { AlchemyProvider } from "@ethersproject/providers"
+
+import {
+  Transaction as EthersTransaction,
+  UnsignedTransaction,
+} from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
@@ -20,7 +25,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
     hash: gethResult.hash,
     blockHeight: gethResult.number,
     parentHash: gethResult.parentHash,
-    difficulty: BigInt(gethResult.difficulty),
+    difficulty: gethResult.difficulty && BigInt(gethResult.difficulty),
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas.toBigInt(),
     network: ETHEREUM,
@@ -128,7 +133,7 @@ export function txFromWebsocketTx(
     r: tx.r || undefined,
     s: tx.s || undefined,
     v: BigNumber.from(tx.v).toNumber(),
-    nonce: BigInt(tx.nonce),
+    nonce: Number(tx.nonce),
     value: BigInt(tx.value),
     blockHash: tx.blockHash || undefined,
     blockHeight: tx.blockNumber || undefined,
@@ -164,7 +169,7 @@ export function txFromEthersTx(
     hash: tx.hash,
     from: tx.from,
     to: tx.to,
-    nonce: BigInt(parseInt(tx.nonce.toString(), 10)),
+    nonce: parseInt(tx.nonce.toString(), 10),
     gas: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
     maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,

@@ -206,7 +206,7 @@ export interface EVMTransaction {
   maxFeePerGas: bigint | null
   maxPriorityFeePerGas: bigint | null
   input: string | null
-  nonce: bigint
+  nonce: number
   value: bigint
   blockHash: string | null
   blockHeight: number | null
@@ -254,7 +254,7 @@ export interface EIP1559TransactionRequest
     | "value"
   > {
   from?: HexString
-  gasLimit: bigint
+  gasLimit?: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
 }
 
