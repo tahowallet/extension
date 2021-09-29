@@ -1,5 +1,12 @@
 import { utils } from "ethers"
+import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import JSONBig from "json-bigint"
+
+import { HexString } from "../../types"
+
+export function normalizeEVMAddress(address: string | Buffer): HexString {
+  return normalizeHexAddress(address)
+}
 
 export function idGenerator(start?: number) {
   let index = start || 1

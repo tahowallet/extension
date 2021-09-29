@@ -342,13 +342,12 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
       await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256,
-        "password"
+        KeyringTypes.mnemonicBIP39S256
       )
     })
 
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
-      await this.keyringService.importLegacyKeyring(mnemonic, "password")
+      await this.keyringService.importLegacyKeyring(mnemonic)
     })
   }
 }

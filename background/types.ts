@@ -249,12 +249,13 @@ export interface EIP1559TransactionRequest
     | "maxPriorityFeePerGas"
     | "type"
     | "nonce"
-    | "from"
     | "to"
     | "input"
     | "value"
   > {
+  from?: HexString
   gasLimit?: bigint
+  chainID: EIP1559Transaction["network"]["chainID"]
 }
 
 export interface ConfirmedEVMTransaction extends EVMTransaction {
