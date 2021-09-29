@@ -12,7 +12,7 @@ import {
   SmartContractFungibleAsset,
 } from "../../types"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
-import { getTokenBalances } from "../../lib/alchemy"
+import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -41,13 +41,14 @@ interface Events extends ServiceLifecycleEvents {
  * token metadata. Relevant prices and balances are emitted as events.
  */
 export default class IndexingService extends BaseService<Events> {
-  /*
+  /**
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
    *
    * @param preferenceService - Required for token metadata and currency
    *        preferences.
    * @param chainService - Required for chain interactions.
+   * @returns A new, initializing IndexingService
    */
   static create: ServiceCreatorFunction<
     Events,
@@ -97,14 +98,30 @@ export default class IndexingService extends BaseService<Events> {
     this.fetchAndCacheTokenLists()
   }
 
+  /**
+   * Get all assets we're tracking, for both balances and prices. Only fungible
+   * assets are currently supported.
+   *
+   * @returns An array of fungible smart contract assets.
+   */
   async getAssetsToTrack(): Promise<SmartContractFungibleAsset[]> {
     return this.db.getAssetsToTrack()
   }
 
+  /**
+   * Begin tracking the price and any balance changes of a fungible network-
+   * specific asset.
+   *
+   * @param asset The fungible asset to track. It will be tracked across all
+   *        account / network pairs that are tracked by the chain service.
+   */
   async addAssetToTrack(asset: SmartContractFungibleAsset): Promise<void> {
     return this.db.addAssetToTrack(asset)
   }
 
+  /**
+   *
+   */
   async getLatestAccountBalance(
     account: string,
     network: Network,
@@ -113,9 +130,12 @@ export default class IndexingService extends BaseService<Events> {
     return this.db.getLatestAccountBalance(account, network, asset)
   }
 
-  /*
+  /**
    * Get cached asset metadata from hard-coded base assets and configured token
    * lists.
+   *
+   * @returns An array of assets, including base assets that are "built in" to
+   *          the codebase. Fiat currencies are not included.
    */
   async getCachedAssets(): Promise<AnyAsset[]> {
     const baseAssets = [BTC, ETH]
@@ -125,7 +145,7 @@ export default class IndexingService extends BaseService<Events> {
     return baseAssets.concat(networkAssetsFromLists(tokenLists))
   }
 
-  /*
+  /**
    * Find the metadata for a known SmartContractFungibleAsset based on the
    * network and address.
    *
@@ -219,7 +239,7 @@ export default class IndexingService extends BaseService<Events> {
     )
   }
 
-  /*
+  /**
    * Add an asset to track to a particular account and network, specified by the
    * contract address and optional decimals.
    *
