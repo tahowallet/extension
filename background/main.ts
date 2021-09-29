@@ -262,7 +262,13 @@ export default class Main extends BaseService<never> {
     transactionSliceEmitter.on("updateOptions", async (options) => {
       // Basic transaction construction based on the provided options, with extra data from the chain service
       const transaction = {
-        ...options,
+        to: options.to,
+        value: options.value,
+        gasLimit: options.gasLimit,
+        maxFeePerGas: options.maxFeePerGas,
+        maxPriorityFeePerGas: options.maxPriorityFeePerGas,
+        input: "",
+        type: 2 as const,
         nonce:
           await this.chainService.pollingProviders.ethereum.getTransactionCount(
             options.from,
