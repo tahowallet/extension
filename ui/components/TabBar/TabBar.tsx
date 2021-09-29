@@ -5,7 +5,13 @@ import TabBarIcon from "./TabBarIcon"
 export default function TabBar(): ReactElement {
   const location = useLocation()
   const activeTabName = location.pathname.split("/")[1] || "wallet"
-  const tabs = ["overview", "wallet", "swap", "earn", "menu"]
+  const tabs = ["overview", "wallet", "swap", "earn", "menu"].filter((tab) => {
+    if (tab === "earn" && process.env.HIDE_EARN_PAGE === "true") {
+      return false
+    }
+
+    return true
+  })
 
   return (
     <nav>
