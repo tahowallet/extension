@@ -175,17 +175,15 @@ export default class Main extends BaseService<never> {
   protected async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.indexingService
-      .started()
-      .then(async () => this.chainService.started())
-      .then(async (chain) => {
-        chain.addAccountToTrack({
-          // TODO uses Ethermine address for development - move this to startup
-          // state
-          account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-          network: ETHEREUM,
-        })
-      })
+    this.indexingService.started().then(async () => this.chainService.started())
+    // .then(async (chain) => {
+    //   chain.addAccountToTrack({
+    //     // TODO uses Ethermine address for development - move this to startup
+    //     // state
+    //     account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
+    //     network: ETHEREUM,
+    //   })
+    // })
 
     await Promise.all([
       this.preferenceService.startService(),
