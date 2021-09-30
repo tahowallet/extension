@@ -28,7 +28,7 @@
     "lint:docs:fix": "prettier -w '**/*.md'",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "test": "echo \"nothing to do\""
+    "test": "jest"
   },
   "workspaces": [
     "ui",
@@ -39,6 +39,7 @@
     "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
     "buffer": "^6.0.3",
+    "json-bigint": "^1.0.0",
     "react": "^17.0.2",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"
@@ -52,6 +53,7 @@
     "@types/archiver": "^5.1.0",
     "@types/copy-webpack-plugin": "^8.0.0",
     "@types/firefox-webext-browser": "^82.0.0",
+    "@types/jest": "^27.0.2",
     "@types/terser-webpack-plugin": "^5.0.3",
     "@types/webpack-livereload-plugin": "^2.3.2",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
@@ -73,6 +75,7 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^6.3.2",
     "install": "^0.13.0",
+    "jest": "^27.2.2",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.3.2",

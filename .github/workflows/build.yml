@@ -10,10 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Read .nvmrc
-      run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
-      id: nvm
     - uses: actions/checkout@v2
+    - name: Read .nvmrc
+      run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+      id: nvm
     - name: Use Node + Yarn
       uses: actions/setup-node@v2
       with:
@@ -31,10 +31,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Read .nvmrc
-      run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
-      id: nvm
     - uses: actions/checkout@v2
+    - name: Read .nvmrc
+      run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+      id: nvm
     - name: Use Node + Yarn
       uses: actions/setup-node@v2
       with:
@@ -45,10 +45,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - name: Read .nvmrc
-      run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
-      id: nvm
     - uses: actions/checkout@v2
+    - name: Read .nvmrc
+      run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+      id: nvm
     - name: Use Node + Yarn
       uses: actions/setup-node@v2
       with:
