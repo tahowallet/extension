@@ -49,7 +49,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       </div>
       <div className="cta_wrap">
         <div className="input_wrap">
-          <SharedInput placeholder="0x328d...8hsf" onChange={setAddress} />
+          <SharedInput placeholder="ETH address" onChange={setAddress} />
         </div>
         <SharedButton
           type="primary"

@@ -23,12 +23,11 @@ export default function SharedInput(props: Props): ReactElement {
             height: 48px;
             border-radius: 4px;
             border: 2px solid var(--green-60);
-            padding-left: 16px;
+            padding: 0px 16px;
             box-sizing: border-box;
           }
           input::placeholder {
-            color: #fff;
-            opacity: 0.8;
+            color: var(--green-40);
           }
           input:focus {
             border: 2px solid var(--green-40);
