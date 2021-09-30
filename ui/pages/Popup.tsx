@@ -12,6 +12,7 @@ import { Provider } from "react-redux"
 import Wallet from "./Wallet"
 
 import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
+import OnboardingViewOnlyWallet from "./Onboarding/OnboardingViewOnlyWallet"
 import Onboarding from "./Onboarding/Onboarding"
 import Overview from "./Overview"
 import SingleAsset from "./SingleAsset"
@@ -33,6 +34,9 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           </Route>
           <Route path="/onboardingImportMetamask">
             <OnboardingImportMetamask onImported={() => history.push("/")} />
+          </Route>
+          <Route path="/onboarding/viewOnlyWallet">
+            <OnboardingViewOnlyWallet />
           </Route>
           <Route path="/onboarding/:startPage">
             <Onboarding />
