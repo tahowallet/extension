@@ -20,6 +20,9 @@
       }
     }
   },
+  "icons": {
+    "128": "icon-128.png"
+  },
   "browser_action": {
     "default_title": "Tally",
     "default_popup": "popup.html"
