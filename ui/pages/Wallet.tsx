@@ -1,6 +1,7 @@
 // @ts-check
 //
 import React, { ReactElement, useState } from "react"
+import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -13,6 +14,12 @@ export default function Wallet(): ReactElement {
   //  accountLoading, hasWalletErrorCode
   const data = useBackgroundSelector((background) => background.account)
   const account = data.combinedData
+
+  // If an account doesn't exist, display view only
+  // onboarding for the initial test release.
+  if (Object.keys(data.accountsData).length === 0) {
+    return <Redirect to="/onboarding/viewOnlyWallet" />
+  }
 
   // Derive activities with timestamps included
   const activity = account.activity.map((activityItem) => {
