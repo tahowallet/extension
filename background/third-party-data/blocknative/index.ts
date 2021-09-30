@@ -1,6 +1,9 @@
+import { fetchJson } from "@ethersproject/web"
 import BlocknativeSdk from "bnc-sdk"
 
 import { EthereumTransactionData } from "./types"
+
+const BLOCKNATIVE_API_ROOT = "https://api.blocknative.com"
 
 export const BlocknativeNetworkIds = {
   ethereum: {
@@ -20,6 +23,8 @@ export const BlocknativeNetworkIds = {
 export default class Blocknative {
   private blocknative: BlocknativeSdk
 
+  private apiKey: string
+
   static connect(apiKey: string, networkId: number): Blocknative {
     const connection = new this(apiKey, networkId)
 
@@ -33,6 +38,8 @@ export default class Blocknative {
       dappId: apiKey,
       networkId,
     })
+
+    this.apiKey = apiKey
   }
 
   watchBalanceUpdatesFor(
@@ -75,5 +82,17 @@ export default class Blocknative {
     // that mechanism.
     this.blocknative.account(accountAddress).emitter.off("txConfirmed")
     this.blocknative.unsubscribe(accountAddress)
+  }
+
+  async getBlockPrices(): Promise {
+    const request = {
+      url: `${BLOCKNATIVE_API_ROOT}/gasprices/blockprices`,
+      headers: { Authorization: this.apiKey },
+    }
+
+    const response = await fetchJson(request)
+    console.log(response)
+
+    return response.blockPrices
   }
 }
