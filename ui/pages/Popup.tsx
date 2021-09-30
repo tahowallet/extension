@@ -11,8 +11,8 @@ import { Provider } from "react-redux"
 
 import Wallet from "./Wallet"
 
-import OnboardingImportMetamask from "../components/Onboarding/OnboardingImportMetamask"
-import Onboarding from "./Onboarding"
+import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
+import Onboarding from "./Onboarding/Onboarding"
 import Overview from "./Overview"
 import SingleAsset from "./SingleAsset"
 import Earn from "./Earn"
