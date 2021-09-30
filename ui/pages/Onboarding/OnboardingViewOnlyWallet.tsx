@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { addAccountNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
@@ -11,18 +11,13 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   const data = useBackgroundSelector((background) => background.account)
   const [address, setAddress] = useState("")
 
-  // Redirect to the wallet tab once an account is set
-  if (Object.keys(data.accountsData).length > 0) {
-    return <Redirect to="/" />
-  }
-
   // Quick temp solution grabbed from
   // https://ethereum.stackexchange.com/a/40670
   function checkIfPlausibleETHAddress(checkAddress) {
     return /^(0x){1}[0-9a-fA-F]{40}$/i.test(checkAddress)
   }
 
-  function handleSubmitViewOnlyAddress() {
+  const handleSubmitViewOnlyAddress = useCallback(async () => {
     if (checkIfPlausibleETHAddress(address)) {
       dispatch(
         addAccountNetwork({
@@ -33,6 +28,11 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
     } else {
       alert("Please enter a valid address")
     }
+  }, [dispatch, address])
+
+  // Redirect to the home tab once an account is set
+  if (Object.keys(data.accountsData).length > 0) {
+    return <Redirect to="/" />
   }
 
   return (
