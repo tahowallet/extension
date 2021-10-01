@@ -15,6 +15,10 @@ type Transaction = AnyEVMTransaction & {
   firstSeen: UNIXTime
 }
 
+type AccountLookupStatus = AccountNetwork & {
+  oldestBlockChecked: BigInt
+}
+
 interface Migration {
   id: number
   appliedAt: number
@@ -33,6 +37,14 @@ export class ChainDatabase extends Dexie {
    */
   private accountsToTrack!: Dexie.Table<
     AccountNetwork,
+    [string, string, string]
+  >
+
+  /**
+   * Keep track of details of accounts we've looked up before.
+   */
+  private accountLookupStatus!: Dexie.Table<
+    AccountLookupStatus,
     [string, string, string]
   >
 
@@ -65,6 +77,8 @@ export class ChainDatabase extends Dexie {
       migrations: "++id,appliedAt",
       accountsToTrack:
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
+      accountLookupStatus:
+        "&[account+network.name+network.chainID],account,network.chainID,network.name,oldestBlockChecked",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       chainTransactions:
@@ -187,6 +201,12 @@ export class ChainDatabase extends Dexie {
       this.accountsToTrack.bulkAdd([...accountAndNetworks])
     })
   }
+
+  async getAccountOldestBlockChecked(
+    accountNetwork: AccountNetwork
+  ): Promise<BigInt> {}
+
+  async updateAccountOldestBlockChecked(accountNetwork: AccountNetwork) {}
 
   async addBlock(block: EIP1559Block): Promise<void> {
     // TODO Consider exposing whether the block was added or updated.
