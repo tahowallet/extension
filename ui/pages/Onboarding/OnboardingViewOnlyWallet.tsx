@@ -68,12 +68,13 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
           <div className="right">
             <h3 className="warning_title">What is read-only mode?</h3>
             <p>
-              Read-only means you won’t be able to sign any transaction (for
-              your safety and ours).
+              Read-only means you won&lsquo;t be able to sign any transactions
+              or messages. It&lsquo;s a great way to try out a new wallet
+              safely.
               <br />
               <br />
-              You can, however, take a look at our progress and give feedback in
-              the Discord Feedback channel!
+              Look around and share your thoughts in the Discord Feedback
+              channel!
             </p>
           </div>
         </div>
