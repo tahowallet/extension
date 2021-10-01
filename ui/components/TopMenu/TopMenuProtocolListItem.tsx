@@ -2,23 +2,28 @@ import React, { ReactElement } from "react"
 import classNames from "classnames"
 
 interface Props {
+  name: string
+  info: string
+  width: number
+  height: number
   isSelected?: boolean
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
-  const { isSelected } = props
+  const { name, width, height, info, isSelected } = props
 
   return (
     <li className={classNames({ select: isSelected })}>
       <div className="left">
         <div className="icon_wrap">
-          <span className="icon_eth" />
+          <span className="icon" />
         </div>
       </div>
       <div className="right">
-        <div className="title">Ethereum</div>
+        <div className="title">{name}</div>
         <div className="sub_title">
-          Mainnet{isSelected && <span className="status">Connected</span>}
+          {info}
+          {isSelected && <span className="status">Connected</span>}
         </div>
       </div>
       <style jsx>
@@ -29,7 +34,6 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             cursor: pointer;
           }
           .status {
-            width: 76px;
             height: 17px;
             color: #22c480;
             font-size: 14px;
@@ -38,11 +42,13 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             line-height: 16px;
             margin-left: 8px;
           }
-          .icon_eth {
-            background: url("./images/eth@2x.png");
-            background-size: 18px 29px;
-            width: 18px;
-            height: 29px;
+          .icon {
+            background: url("./images/${name
+              .replaceAll(" ", "")
+              .toLowerCase()}@2x.png");
+            background-size: cover;
+            width: ${width}px;
+            height: ${height}px;
           }
           .icon_wrap {
             width: 40px;
@@ -58,7 +64,6 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             margin-left: 2px;
           }
           .right {
-            width: 80px;
             height: 24px;
             color: var(--green-5);
             font-size: 18px;
@@ -66,7 +71,6 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             line-height: 24px;
           }
           .title {
-            width: 80px;
             height: 24px;
             color: var(--green-5);
             font-size: 18px;
@@ -74,7 +78,6 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             line-height: 24px;
           }
           .sub_title {
-            width: 54px;
             height: 17px;
             color: var(--green-60);
             font-size: 14px;
