@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
+import { convertToEth } from "@tallyho/tally-background/lib/utils"
 
 interface Props {
   onClick: () => void
@@ -39,7 +40,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {activity.value && `${activity.value}`.substring(0, 6)}
+                {activity.value &&
+                  `${convertToEth(activity.value)}`.substring(0, 6)}
               </span>
               ETH
             </div>
