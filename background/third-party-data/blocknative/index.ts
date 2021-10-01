@@ -1,7 +1,8 @@
 import { fetchJson } from "@ethersproject/web"
 import BlocknativeSdk from "bnc-sdk"
 
-import { EthereumTransactionData } from "./types"
+import { EthereumTransactionData, BlockPrices } from "./types"
+import { gweiToWei } from "../../lib/utils"
 
 const BLOCKNATIVE_API_ROOT = "https://api.blocknative.com"
 
@@ -84,15 +85,29 @@ export default class Blocknative {
     this.blocknative.unsubscribe(accountAddress)
   }
 
-  async getBlockPrices(): Promise<any> {
+  async getBlockPrices(): Promise<BlockPrices> {
     const request = {
       url: `${BLOCKNATIVE_API_ROOT}/gasprices/blockprices`,
       headers: { Authorization: this.apiKey },
     }
 
+    // TODO: What happens if the blocknative API request fails or gets rate limited?
     const response = await fetchJson(request)
+    const currentBlock = response.blockPrices[0]
     console.log(response)
 
-    return response.blockPrices[0]
+    return {
+      blockNumber: currentBlock.blockNumber,
+      baseFeePerGas: gweiToWei(currentBlock.baseFeePerGas),
+      estimatedTransactionCount: currentBlock.estimatedTransactionCount,
+      estimatedPrices: currentBlock.estimatedPrices.map((estimate) => {
+        return {
+          confidence: estimate.confidence,
+          price: gweiToWei(estimate.price),
+          maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
+          maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
+        }
+      }),
+    }
   }
 }

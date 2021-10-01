@@ -1,4 +1,4 @@
-import { utils } from "ethers"
+import { utils, BigNumber } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 
 import { HexString } from "../../types"
@@ -24,6 +24,10 @@ export function createEthProviderWrapper(provider: any) {
       }
     },
   })
+}
+
+export function gweiToWei(value: number): bigint {
+  return BigInt(utils.parseUnits(value.toString(), "gwei").toString())
 }
 
 export function weiToEth(value: string | number): number {
