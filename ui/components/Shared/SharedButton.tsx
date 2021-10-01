@@ -40,10 +40,10 @@ export default function SharedButton(props: Props): ReactElement {
   }
 
   function handleClick(e) {
+    onClick(e)
     if (linkTo) {
       setNavigateTo(linkTo)
     }
-    onClick(e)
   }
 
   return (

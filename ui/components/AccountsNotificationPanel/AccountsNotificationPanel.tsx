@@ -4,7 +4,7 @@ import AccountsNotificationPanelNotifications from "./AccountsNotificationPanelN
 import AccountsNotificationPanelAccounts from "./AccountsNotificationPanelAccounts"
 
 export default function TopMenuNotifications(): ReactElement {
-  const [panelNumber, setPanelNumber] = useState(1)
+  const [panelNumber, setPanelNumber] = useState(0)
 
   return (
     <div>
