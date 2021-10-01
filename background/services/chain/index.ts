@@ -12,6 +12,7 @@ import {
   AssetTransfer,
   EIP1559Block,
   EVMNetwork,
+  HexString,
   Network,
   SignedEVMTransaction,
 } from "../../types"
@@ -30,7 +31,8 @@ import {
   txFromWebsocketTx,
 } from "./utils"
 
-// We can't use destructuring because webpack has to replace all instances of `process.env` variables in the bundled output
+// We can't use destructuring because webpack has to replace all instances of
+// `process.env` variables in the bundled output
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
@@ -48,7 +50,7 @@ interface Events extends ServiceLifecycleEvents {
   transaction: AnyEVMTransaction
 }
 
-/*
+/**
  * ChainService is responsible for basic network monitoring and interaction.
  * Other services rely on the chain service rather than polling networks
  * themselves.
@@ -82,7 +84,7 @@ export default class ChainService extends BaseService<Events> {
     provider: AlchemyWebSocketProvider
   }[]
 
-  /*
+  /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
    */
   private transactionsToRetrieve: { [networkName: string]: string[] }
@@ -206,6 +208,15 @@ export default class ChainService extends BaseService<Events> {
     return this.pollingProviders.ethereum.getBlockNumber()
   }
 
+  /**
+   * Return cached information on a block if it's in the local DB.
+   *
+   * Otherwise, retrieve the block from the specified network, caching and
+   * returning the object.
+   *
+   * @param network the EVM network we're interested in
+   * @param blockHash the hash of the block we're interested in
+   */
   async getBlockData(
     network: Network,
     blockHash: string
@@ -225,20 +236,32 @@ export default class ChainService extends BaseService<Events> {
     return block
   }
 
+  /**
+   * Return cached information on a transaction, if it's both confirmed and
+   * in the local DB.
+   *
+   * Otherwise, retrieve the transaction from the specified network, caching and
+   * returning the object.
+   *
+   * @param network the EVM network we're interested in
+   * @param txHash the hash of the unconfirmed transaction we're interested in
+   */
   async getTransaction(
     network: EVMNetwork,
-    hash: string
+    txHash: HexString
   ): Promise<AnyEVMTransaction> {
-    const cachedTx = await this.db.getTransaction(network, hash)
+    const cachedTx = await this.db.getTransaction(network, txHash)
     if (cachedTx) {
       return cachedTx
     }
     // TODO make proper use of the network
-    const gethResult = await this.pollingProviders.ethereum.getTransaction(hash)
+    const gethResult = await this.pollingProviders.ethereum.getTransaction(
+      txHash
+    )
     const newTx = txFromEthersTx(gethResult, ETH, ETHEREUM)
 
     if (!newTx.blockHash && !newTx.blockHeight) {
-      this.subscribeToTransactionConfirmation(network, hash)
+      this.subscribeToTransactionConfirmation(network, txHash)
     }
 
     // TODO proper provider string
@@ -246,19 +269,32 @@ export default class ChainService extends BaseService<Events> {
     return newTx
   }
 
+  /**
+   * Quest up a particular transaction hash for periodic retrieval.
+   *
+   * Using this method means the service can decide when to retriecve a
+   * particular transaction.
+   *
+   * @param network The network on which the transaction has been broadcast.
+   * @param txHash The tx hash identifier of the transaction we want to retrieve.
+   *
+   */
   async queueTransactionHashToRetrieve(
     network: EVMNetwork,
-    hash: string
+    txHash: HexString
   ): Promise<void> {
     // TODO make proper use of the network
     const seen = new Set(this.transactionsToRetrieve.ethereum)
-    if (!seen.has(hash)) {
-      this.transactionsToRetrieve.ethereum.push(hash)
+    if (!seen.has(txHash)) {
+      this.transactionsToRetrieve.ethereum.push(txHash)
     }
   }
 
-  /*
+  /**
    * Broadcast a signed EVM transaction.
+   *
+   * @param tx A signed EVM transaction to broadcast. Since the tx is signed,
+   *        it needs to include all gas limit and price params.
    */
   async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
     // TODO make proper use of tx.network to choose provider
@@ -340,7 +376,8 @@ export default class ChainService extends BaseService<Events> {
             this.subscribeToTransactionConfirmation(tx.network, tx.hash)
           }
 
-          // Get relevant block data. Primarily used in the frontend for timestamps. Emits and saves block data
+          // Get relevant block data. Primarily used in the frontend for
+          // timestamps. Emits and saves block data
           const block = await this.getBlockData(tx.network, result.blockHash)
 
           // TODO make this provider specific
@@ -358,11 +395,19 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /**
+   * Save a transaction to the database and emit an event. Transactions from re-
+   * orgs are not yet handled.
+   *
+   * @param tx The transaction to save and emit. Uniqueness and ordering will be
+   *        handled by the database.
+   * @param datasource Where the transaction was seen.
+   */
   private async saveTransaction(
     tx: AnyEVMTransaction,
     dataSource: "local" | "alchemy"
   ): Promise<void> {
-    let error: any
+    let error: Error
     try {
       await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {
@@ -383,6 +428,12 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  /**
+   * Watch a network for new blocks, saving each to the database and emitting an
+   * event. Re-orgs are currently ignored.
+   *
+   * @param network The EVM network to watch.
+   */
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
@@ -406,6 +457,11 @@ export default class ChainService extends BaseService<Events> {
     })
   }
 
+  /**
+   * Watch logs for an account's transactions on a particular network.
+   *
+   * @param accountNetwork The network and account to watch.
+   */
   private async subscribeToAccountTransactions(
     accountNetwork: AccountNetwork
   ): Promise<void> {
@@ -438,16 +494,19 @@ export default class ChainService extends BaseService<Events> {
     })
   }
 
-  /*
+  /**
    * Track an pending transaction's confirmation status, saving any updates to
-   * the database and informing subscribers.
+   * the database and informing subscribers via the emitter.
+   *
+   * @param network the EVM network we're interested in
+   * @param txHash the hash of the unconfirmed transaction we're interested in
    */
   private async subscribeToTransactionConfirmation(
     network: EVMNetwork,
-    hash: string
+    txHash: HexString
   ): Promise<void> {
     // TODO make proper use of the network
-    this.websocketProviders.ethereum.once(hash, (confirmedTx) => {
+    this.websocketProviders.ethereum.once(txHash, (confirmedTx) => {
       this.saveTransaction(
         txFromWebsocketTx(confirmedTx, ETH, ETHEREUM),
         "alchemy"
@@ -456,6 +515,4 @@ export default class ChainService extends BaseService<Events> {
   }
 
   // TODO removing an account to track
-  // TODO getting transaction contents from hash + network, confirmed + mempool, including cached & local transactions
-  // TODO keep track of transaction confirmations
 }

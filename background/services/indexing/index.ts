@@ -31,7 +31,7 @@ interface Events extends ServiceLifecycleEvents {
   assets: AnyAsset[]
 }
 
-/*
+/**
  * IndexingService is responsible for pulling and maintaining all application-
  * level "indexing" data — things like fungible token balances and NFTs, as well
  * as more abstract application concepts like governance proposals.
@@ -41,7 +41,7 @@ interface Events extends ServiceLifecycleEvents {
  * token metadata. Relevant prices and balances are emitted as events.
  */
 export default class IndexingService extends BaseService<Events> {
-  /*
+  /**
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
    *
@@ -113,7 +113,7 @@ export default class IndexingService extends BaseService<Events> {
     return this.db.getLatestAccountBalance(account, network, asset)
   }
 
-  /*
+  /**
    * Get cached asset metadata from hard-coded base assets and configured token
    * lists.
    */
@@ -125,7 +125,7 @@ export default class IndexingService extends BaseService<Events> {
     return baseAssets.concat(networkAssetsFromLists(tokenLists))
   }
 
-  /*
+  /**
    * Find the metadata for a known SmartContractFungibleAsset based on the
    * network and address.
    *
@@ -219,7 +219,7 @@ export default class IndexingService extends BaseService<Events> {
     )
   }
 
-  /*
+  /**
    * Add an asset to track to a particular account and network, specified by the
    * contract address and optional decimals.
    *
