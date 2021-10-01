@@ -33,6 +33,7 @@ import {
 } from "./redux-slices/keyrings"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
+import Blocknative from "./third-party-data/blocknative"
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
@@ -221,6 +222,12 @@ export default class Main extends BaseService<never> {
     this.connectIndexingService()
     this.connectKeyringService()
     await this.connectChainService()
+
+    // TODO: Remove this, just for testing
+    const blocknative = Blocknative.connect(process.env.BLOCKNATIVE_API_KEY, 1)
+    const blockPrices = await blocknative.getBlockPrices()
+
+    console.log(blockPrices)
   }
 
   async connectChainService(): Promise<void> {

@@ -84,7 +84,7 @@ export default class Blocknative {
     this.blocknative.unsubscribe(accountAddress)
   }
 
-  async getBlockPrices(): Promise {
+  async getBlockPrices(): Promise<any> {
     const request = {
       url: `${BLOCKNATIVE_API_ROOT}/gasprices/blockprices`,
       headers: { Authorization: this.apiKey },
@@ -93,6 +93,6 @@ export default class Blocknative {
     const response = await fetchJson(request)
     console.log(response)
 
-    return response.blockPrices
+    return response.blockPrices[0]
   }
 }
