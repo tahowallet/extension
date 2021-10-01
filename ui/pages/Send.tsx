@@ -38,9 +38,10 @@ export default function Send(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                label="Send"
                 isDisabled={selectedCount <= 0}
-              />
+              >
+                Send
+              </SharedButton>
             </div>
           </div>
         </div>

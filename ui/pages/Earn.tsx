@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { Link } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -15,9 +14,10 @@ function EarnCard() {
       <span className="apy_percent">250%</span>
       <div className="icon_rewards_locked" />
       <div className="divider" />
-      <Link to="/earn/deposit">
-        <SharedButton type="secondary" size="medium" label="Deposit" />
-      </Link>
+
+      <SharedButton type="secondary" size="medium" linkTo="/earn/deposit">
+        Deposit
+      </SharedButton>
       <style jsx>{`
         .card {
           width: 160px;

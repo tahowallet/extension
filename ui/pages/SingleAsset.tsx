@@ -83,18 +83,12 @@ export default function SingleAsset(): ReactElement {
             <div className="usd_value">($127,237,318)</div>
           </div>
           <div className="right">
-            <SharedButton
-              type="primary"
-              size="medium"
-              label="Send"
-              icon="send"
-            />
-            <SharedButton
-              type="primary"
-              size="medium"
-              label="Swap"
-              icon="swap"
-            />
+            <SharedButton type="primary" size="medium" icon="send">
+              Send
+            </SharedButton>
+            <SharedButton type="primary" size="medium" icon="swap">
+              Swap
+            </SharedButton>
           </div>
         </div>
         <div className="sub_info_seperator_wrap standard_width_padded">

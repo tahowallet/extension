@@ -48,20 +48,12 @@ export default function SignTransaction(props: Props): ReactElement {
         </div>
       ) : null}
       <div className="footer_actions">
-        <Link to="/wallet">
-          <SharedButton
-            label="Reject"
-            iconSize="large"
-            size="large"
-            type="secondary"
-          />
-        </Link>
-        <SharedButton
-          label="Confirm"
-          type="primary"
-          iconSize="large"
-          size="large"
-        />
+        <SharedButton iconSize="large" size="large" type="secondary">
+          Reject
+        </SharedButton>
+        <SharedButton type="primary" iconSize="large" size="large">
+          Confirm
+        </SharedButton>
       </div>
       <style jsx>
         {`

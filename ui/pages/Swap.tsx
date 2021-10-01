@@ -53,17 +53,15 @@ export default function Swap(): ReactElement {
                 <SharedButton
                   type="primary"
                   size="large"
-                  label="Review swap"
                   isDisabled
                   onClick={handleClick}
-                />
+                >
+                  Review swap
+                </SharedButton>
               ) : (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  label="Get final quote"
-                  onClick={handleClick}
-                />
+                <SharedButton type="primary" size="large" onClick={handleClick}>
+                  Get final quote
+                </SharedButton>
               )}
             </div>
           </div>
