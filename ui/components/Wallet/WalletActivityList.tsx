@@ -50,7 +50,7 @@ export default function WalletActivityList(props: Props): ReactElement {
         {activity.length === 0 ? (
           <div className="loading">
             <SharedLoadingSpinner />
-            <span>This may initially take a while.</span>
+            <span>This may initially take awhile.</span>
           </div>
         ) : (
           <>
