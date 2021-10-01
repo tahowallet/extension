@@ -113,10 +113,11 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             width: 293px;
           }
           .mascot {
-            background: url("./images/mascot.svg");
+            background: url("./images/mascot.svg") center no-repeat;
             background-size: cover;
-            width: 110.52px;
+            width: 120.52px;
             height: 94.97px;
+            margin-left: 16px;
           }
           .forest {
             background: url("./images/dark_forest@2x.png");
