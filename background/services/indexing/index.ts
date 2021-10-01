@@ -32,7 +32,7 @@ interface Events extends ServiceLifecycleEvents {
   assets: AnyAsset[]
 }
 
-/*
+/**
  * IndexingService is responsible for pulling and maintaining all application-
  * level "indexing" data — things like fungible token balances and NFTs, as well
  * as more abstract application concepts like governance proposals.
