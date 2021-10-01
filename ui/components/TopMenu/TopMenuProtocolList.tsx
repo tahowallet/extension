@@ -9,18 +9,6 @@ const networks = [
     height: 29,
   },
   {
-    name: "Binance Smart Chain",
-    info: "Ethereum-compatible blockchain",
-    width: 24,
-    height: 24,
-  },
-  {
-    name: "Celo",
-    info: "Global payments infrastructure",
-    width: 24,
-    height: 24,
-  },
-  {
     name: "Arbitrum",
     info: "L2 scaling solution",
     width: 23.2,
@@ -29,6 +17,18 @@ const networks = [
   {
     name: "Optimism",
     info: "L2 scaling solution",
+    width: 24,
+    height: 24,
+  },
+  {
+    name: "Binance Smart Chain",
+    info: "Ethereum-compatible blockchain",
+    width: 24,
+    height: 24,
+  },
+  {
+    name: "Celo",
+    info: "Global payments infrastructure",
     width: 24,
     height: 24,
   },
