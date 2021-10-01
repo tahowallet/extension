@@ -2,6 +2,7 @@
 //
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -12,33 +13,24 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
   //  accountLoading, hasWalletErrorCode
-  const data = useBackgroundSelector((background) => background.account)
-  const account = data.combinedData
+  const { combinedData, accountData, activity } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
 
   // If an account doesn't exist, display view only
   // onboarding for the initial test release.
-  if (Object.keys(data.accountsData).length === 0) {
+  if (Object.keys(accountData).length === 0) {
     return <Redirect to="/onboarding/viewOnlyWallet" />
   }
-
-  // Derive activities with timestamps included
-  const activity = account.activity.map((activityItem) => {
-    const isSent =
-      activityItem.from.toLowerCase() ===
-      Object.keys(data.accountsData)[0].toLowerCase()
-    return {
-      ...activityItem,
-      timestamp: data?.blocks[activityItem.blockHeight]?.timestamp,
-      isSent,
-    }
-  })
 
   return (
     <div className="wrap">
       <CorePage>
         <div className="page_content">
           <div className="section">
-            <WalletAccountBalanceControl balance={account.totalUserValue} />
+            <WalletAccountBalanceControl
+              balance={combinedData.totalUserValue}
+            />
           </div>
           <div className="section">
             <SharedPanelSwitcher
@@ -48,7 +40,7 @@ export default function Wallet(): ReactElement {
             />
             <div className="panel">
               {panelNumber === 0 ? (
-                <WalletAssetList assetAmounts={account.assets} />
+                <WalletAssetList assetAmounts={combinedData.assets} />
               ) : (
                 <WalletActivityList activity={activity} />
               )}
