@@ -5,7 +5,7 @@ import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
 import { ETHEREUM } from "./constants/networks"
-import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import { decodeJSON, encodeJSON } from "./lib/utils"
 import logger from "./lib/logger"
 import { ethersTxFromTx } from "./services/chain/utils"
 
@@ -47,13 +47,13 @@ import BaseService from "./services/base"
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
-    return jsonEncodeBigInt(input)
+    return encodeJSON(input)
   }
 
   // We can use JSON stringify replacer function instead of recursively looping
   // through the input
   if (typeof input === "object") {
-    return JSON.parse(jsonEncodeBigInt(input))
+    return JSON.parse(encodeJSON(input))
   }
 
   // We only need to sanitize bigints and the objects that contain them
@@ -67,7 +67,7 @@ const reduxCache = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
-    browser.storage.local.set({ state: jsonEncodeBigInt(state) })
+    browser.storage.local.set({ state: encodeJSON(state) })
   }
 
   return result
@@ -178,7 +178,7 @@ export default class Main extends BaseService<never> {
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
-        this.initializeRedux(saved.state && jsonDecodeBigInt(saved.state))
+        this.initializeRedux(saved.state && decodeJSON(saved.state))
       })
     } else {
       this.initializeRedux()
@@ -214,10 +214,10 @@ export default class Main extends BaseService<never> {
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
       serializer: (payload: unknown) => {
-        return jsonEncodeBigInt(payload)
+        return encodeJSON(payload)
       },
       deserializer: (payload: string) => {
-        return jsonDecodeBigInt(payload)
+        return decodeJSON(payload)
       },
     })
 

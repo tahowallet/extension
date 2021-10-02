@@ -13,7 +13,12 @@ export function convertToEth(value: string | number): string {
   return ""
 }
 
-export function jsonEncodeBigInt(input: unknown): string {
+/**
+ * Encode an unknown input as JSON, special-casing bigints and undefined.
+ *
+ * @param input an object, array, or primitive to encode as JSON
+ */
+export function encodeJSON(input: unknown): string {
   return JSON.stringify(input, (_, value) => {
     if (typeof value === "bigint") {
       return { B_I_G_I_N_T: value.toString() }
@@ -25,7 +30,14 @@ export function jsonEncodeBigInt(input: unknown): string {
   })
 }
 
-export function jsonDecodeBigInt(input: string): unknown {
+/**
+ * Decode a JSON string, as encoded by `encodeJSON`, including bigint support.
+ * Note that the functions aren't invertible, as `encodeJSON` discards
+ * `undefined`.
+ *
+ * @param input a string output from `encodeJSON`
+ */
+export function decodeJSON(input: string): unknown {
   return JSON.parse(input, (_, value) =>
     value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
       ? BigInt(value.B_I_G_I_N_T)
