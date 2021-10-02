@@ -23,6 +23,10 @@ export default function Wallet(): ReactElement {
     return <Redirect to="/onboarding/viewOnlyWallet" />
   }
 
+  const displayAssets = combinedData.assets.filter(
+    (am) => am.asset.symbol === "ETH" || am.amount > 0
+  )
+
   return (
     <div className="wrap">
       <CorePage>
@@ -40,7 +44,7 @@ export default function Wallet(): ReactElement {
             />
             <div className="panel">
               {panelNumber === 0 ? (
-                <WalletAssetList assetAmounts={combinedData.assets} />
+                <WalletAssetList assetAmounts={displayAssets} />
               ) : (
                 <WalletActivityList activity={activity} />
               )}
