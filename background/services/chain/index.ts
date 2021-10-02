@@ -12,6 +12,7 @@ import {
   AssetTransfer,
   EIP1559Block,
   EVMNetwork,
+  HexString,
   Network,
   SignedEVMTransaction,
 } from "../../types"
@@ -85,7 +86,7 @@ export default class ChainService extends BaseService<Events> {
   /*
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
    */
-  private transactionsToRetrieve: { [networkName: string]: string[] }
+  private transactionsToRetrieve: { [networkName: string]: HexString[] }
 
   static create: ServiceCreatorFunction<
     Events,

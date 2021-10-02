@@ -7,6 +7,7 @@ import {
   CoinGeckoAsset,
   FungibleAsset,
   HexString,
+  isSmartContractFungibleAsset,
   Network,
   PricePoint,
   SmartContractFungibleAsset,
@@ -90,12 +91,11 @@ export default class IndexingService extends BaseService<Events> {
 
     this.connectChainServiceEvents()
 
-    await this.fetchAndCacheTokenLists()
-
     // on launch, push any assets we have cached
     this.emitter.emit("assets", await this.getCachedAssets())
+
     // ... and kick off token list fetching
-    this.fetchAndCacheTokenLists()
+    await this.fetchAndCacheTokenLists()
   }
 
   /**
@@ -197,46 +197,84 @@ export default class IndexingService extends BaseService<Events> {
       async (accountNetwork) => {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
-        const balances = await getTokenBalances(
-          this.chainService.pollingProviders.ethereum,
-          accountNetwork.account
-        )
+        const balances = await this.retrieveTokenBalances(accountNetwork)
 
-        // look up all assets and set balances
-        Promise.allSettled(
-          balances.map(async (b) => {
-            const knownAsset = await this.getKnownSmartContractAsset(
-              accountNetwork.network,
-              b.contractAddress
-            )
-            if (knownAsset) {
-              const accountBalance = {
-                assetAmount: {
-                  asset: knownAsset,
-                  amount: b.amount,
-                },
-                retrievedAt: Date.now(),
-                network: accountNetwork.network,
-                dataSource: "alchemy",
-                account: accountNetwork.account,
-              } as const
-              await this.db.addBalances([accountBalance])
-              this.emitter.emit("accountBalance", accountBalance)
-              if (b.amount > 0) {
-                await this.addAssetToTrack(knownAsset)
-              }
-            } else if (b.amount > 0) {
-              await this.addTokenToTrackByContract(
-                accountNetwork,
-                b.contractAddress
-              )
-              // TODO we're losing balance information here, consider an
-              // addTokenAndBalanceToTrackByContract method
-            }
-          })
+        // Every asset we have that hasn't already been balance checked and is
+        // on mainnet Ethereum should be checked once.
+        //
+        // Note that we'll want to move this to a queuing system that can be
+        // easily rate-limited eventually.
+        const checkedContractAddresses = new Set(
+          balances.map((b) => b.contractAddress).filter(Boolean)
+        )
+        const cachedAssets = await this.getCachedAssets()
+        const otherMainnetAssets = cachedAssets
+          .filter(isSmartContractFungibleAsset)
+          .filter(
+            (a: SmartContractFungibleAsset) =>
+              a.homeNetwork.chainID === "1" &&
+              !checkedContractAddresses.has(a.contractAddress)
+          )
+        await this.retrieveTokenBalances(
+          accountNetwork,
+          otherMainnetAssets.map((a) => a.contractAddress)
         )
       }
     )
+  }
+
+  /**
+   * Retrieve token balances for a particular account on a particular network,
+   * saving the resulting balances and adding any asset with a non-zero balance
+   * to the list of assets to track.
+   *
+   * @param accountNetwork
+   * @param contractAddresses
+   */
+  private async retrieveTokenBalances(
+    accountNetwork: AccountNetwork,
+    contractAddresses?: HexString[]
+  ): ReturnType<typeof getTokenBalances> {
+    const balances = await getTokenBalances(
+      this.chainService.pollingProviders.ethereum,
+      accountNetwork.account,
+      contractAddresses || undefined
+    )
+
+    // look up all assets and set balances
+    await Promise.allSettled(
+      balances.map(async (b) => {
+        const knownAsset = await this.getKnownSmartContractAsset(
+          accountNetwork.network,
+          b.contractAddress
+        )
+        if (knownAsset) {
+          const accountBalance = {
+            assetAmount: {
+              asset: knownAsset,
+              amount: b.amount,
+            },
+            retrievedAt: Date.now(),
+            network: accountNetwork.network,
+            dataSource: "alchemy",
+            account: accountNetwork.account,
+          } as const
+          await this.db.addBalances([accountBalance])
+          this.emitter.emit("accountBalance", accountBalance)
+          if (b.amount > 0) {
+            await this.addAssetToTrack(knownAsset)
+          }
+        } else if (b.amount > 0) {
+          await this.addTokenToTrackByContract(
+            accountNetwork,
+            b.contractAddress
+          )
+          // TODO we're losing balance information here, consider an
+          // addTokenAndBalanceToTrackByContract method
+        }
+      })
+    )
+    return balances
   }
 
   /**
