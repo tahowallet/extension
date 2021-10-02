@@ -210,18 +210,18 @@ export default class IndexingService extends BaseService<Events> {
               b.contractAddress
             )
             if (knownAsset) {
-              await this.db.addBalances([
-                {
-                  assetAmount: {
-                    asset: knownAsset,
-                    amount: b.amount,
-                  },
-                  retrievedAt: Date.now(),
-                  network: accountNetwork.network,
-                  dataSource: "alchemy",
-                  account: accountNetwork.account,
+              const accountBalance = {
+                assetAmount: {
+                  asset: knownAsset,
+                  amount: b.amount,
                 },
-              ])
+                retrievedAt: Date.now(),
+                network: accountNetwork.network,
+                dataSource: "alchemy",
+                account: accountNetwork.account,
+              } as const
+              await this.db.addBalances([accountBalance])
+              this.emitter.emit("accountBalance", accountBalance)
               if (b.amount > 0) {
                 await this.addAssetToTrack(knownAsset)
               }
