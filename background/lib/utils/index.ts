@@ -13,11 +13,16 @@ export function convertToEth(value: string | number): string {
   return ""
 }
 
-// BigInt is a data type that can't be saved natively in Redux / browser storage
 export function jsonEncodeBigInt(input: unknown): string {
-  return JSON.stringify(input, (_, value) =>
-    typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-  )
+  return JSON.stringify(input, (_, value) => {
+    if (typeof value === "bigint") {
+      return { B_I_G_I_N_T: value.toString() }
+    }
+    if (value === undefined) {
+      return null
+    }
+    return value
+  })
 }
 
 export function jsonDecodeBigInt(input: string): unknown {
