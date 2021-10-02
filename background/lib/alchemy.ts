@@ -190,7 +190,10 @@ export async function getTokenBalances(
     .filter((b) => b.error === null && b.tokenBalance !== null)
     .map((tokenBalance) => ({
       contractAddress: tokenBalance.contractAddress,
-      amount: BigInt(tokenBalance.tokenBalance),
+      amount:
+        tokenBalance.tokenBalance === "0x"
+          ? BigInt(0)
+          : BigInt(tokenBalance.tokenBalance),
     }))
 }
 
