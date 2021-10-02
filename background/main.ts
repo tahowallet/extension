@@ -47,10 +47,11 @@ import BaseService from "./services/base"
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
-    return input.toString()
+    return jsonEncodeBigInt(input)
   }
 
-  // We can use JSON stringify replacer function instead of recursively looping through the input
+  // We can use JSON stringify replacer function instead of recursively looping
+  // through the input
   if (typeof input === "object") {
     return JSON.parse(jsonEncodeBigInt(input))
   }
@@ -64,7 +65,8 @@ const reduxCache = (store) => (next) => (action) => {
   const state = store.getState()
 
   if (process.env.WRITE_REDUX_CACHE === "true") {
-    // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
+    // Browser extension storage supports JSON natively, despite that we have
+    // to stringify to preserve BigInts
     browser.storage.local.set({ state: jsonEncodeBigInt(state) })
   }
 
@@ -109,7 +111,6 @@ const initializeStore = (startupState = {}) =>
         actionSanitizer: (action: unknown) => {
           return reduxSanitizer(action)
         },
-
         stateSanitizer: (state: unknown) => {
           return reduxSanitizer(state)
         },
