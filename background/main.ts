@@ -173,7 +173,8 @@ export default class Main extends BaseService<never> {
   ) {
     super()
 
-    // Setting READ_REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
+    // Setting READ_REDUX_CACHE to false will start the extension with an empty
+    // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
         this.initializeRedux(saved.state && jsonDecodeBigInt(saved.state))
@@ -187,14 +188,6 @@ export default class Main extends BaseService<never> {
     await super.internalStartService()
 
     this.indexingService.started().then(async () => this.chainService.started())
-    // .then(async (chain) => {
-    //   chain.addAccountToTrack({
-    //     // TODO uses Ethermine address for development - move this to startup
-    //     // state
-    //     account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-    //     network: ETHEREUM,
-    //   })
-    // })
 
     await Promise.all([
       this.preferenceService.startService(),
