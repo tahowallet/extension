@@ -11,6 +11,9 @@ interface Props {
     localizedUserValue?: string
     asset?: {
       symbol?: string
+      metadata?: {
+        logoURL?: string
+      }
     }
   }
 }
@@ -24,7 +27,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       <Link to="/singleAsset">
         <button type="button" className="standard_width">
           <div className="left">
-            <SharedAssetIcon />
+            <SharedAssetIcon logoURL={assetAmount.asset.metadata.logoURL} />
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
