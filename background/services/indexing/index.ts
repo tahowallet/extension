@@ -12,6 +12,7 @@ import {
   PricePoint,
   SmartContractFungibleAsset,
 } from "../../types"
+import { ETHEREUM, BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
 import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
@@ -19,7 +20,6 @@ import {
   fetchAndValidateTokenList,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -139,10 +139,13 @@ export default class IndexingService extends BaseService<Events> {
    */
   async getCachedAssets(): Promise<AnyAsset[]> {
     const baseAssets = [BTC, ETH]
+    const customAssets = await this.db.getCustomAssetsByNetwork(ETHEREUM)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
-    return baseAssets.concat(networkAssetsFromLists(tokenLists))
+    return baseAssets
+      .concat(customAssets)
+      .concat(networkAssetsFromLists(tokenLists))
   }
 
   /**
@@ -308,14 +311,26 @@ export default class IndexingService extends BaseService<Events> {
     if (found) {
       this.addAssetToTrack(found as SmartContractFungibleAsset)
     } else {
-      const customAsset = await this.db.getCustomAssetByAddressAndNetwork(
+      let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         accountNetwork.network,
         contractAddress
       )
+      if (!customAsset) {
+        // TODO hardcoded to Ethereum
+        const provider = this.chainService.pollingProviders.ethereum
+        // pull metadata from Alchemy
+        customAsset = await getTokenMetadata(provider, contractAddress)
+
+        if (customAsset) {
+          await this.db.addCustomAsset(customAsset)
+          this.emitter.emit("assets", [customAsset])
+        }
+      }
+
+      // TODO if we still don't have anything, use a contract read + a
+      // CoinGecko lookup
       if (customAsset) {
         this.addAssetToTrack(customAsset)
-      } else {
-        // TODO kick off metadata inference via a contract read + perhaps a CoinGecko lookup?
       }
     }
   }
@@ -345,7 +360,7 @@ export default class IndexingService extends BaseService<Events> {
       logger.error("Error getting base asset prices", BTC, ETH, FIAT_CURRENCIES)
     }
 
-    // get the prices of all logger to track and save them
+    // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet
     const mainnetAssetsToTrack = assetsToTrack.filter(
@@ -423,7 +438,6 @@ export default class IndexingService extends BaseService<Events> {
             )
           }
         }
-        // TODO refactor to do this on init once, then only when assets change
         this.emitter.emit("assets", await this.getCachedAssets())
       })
     )
