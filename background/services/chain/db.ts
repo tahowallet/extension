@@ -15,6 +15,13 @@ type Transaction = AnyEVMTransaction & {
   firstSeen: UNIXTime
 }
 
+type AccountAssetTransferLookup = {
+  accountNetwork: AccountNetwork
+  retrievedAt: UNIXTime
+  startBlock: BigInt
+  endBlock: BigInt
+}
+
 interface Migration {
   id: number
   appliedAt: number
@@ -34,6 +41,15 @@ export class ChainDatabase extends Dexie {
   private accountsToTrack!: Dexie.Table<
     AccountNetwork,
     [string, string, string]
+  >
+
+  /**
+   * Keep track of details of asset transfers we've looked up before per
+   * account.
+   */
+  private accountAssetTransferLookups!: Dexie.Table<
+    AccountAssetTransferLookup,
+    [number]
   >
 
   /*
@@ -65,6 +81,8 @@ export class ChainDatabase extends Dexie {
       migrations: "++id,appliedAt",
       accountsToTrack:
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
+      accountAssetTransferLookups:
+        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chailID+retrievedAt],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       chainTransactions:
@@ -187,6 +205,60 @@ export class ChainDatabase extends Dexie {
       this.accountsToTrack.bulkAdd([...accountAndNetworks])
     })
   }
+
+  async getAccountAssetTransferLookupOldestBlock(
+    accountNetwork: AccountNetwork
+  ): Promise<BigInt | null> {
+    return (
+      await this.accountAssetTransferLookups
+        .where([
+          "accountNetwork.account",
+          "accountNetwork.network.name",
+          "accountNetwork.network.chainID",
+        ])
+        .equals([
+          accountNetwork.account,
+          accountNetwork.network.name,
+          accountNetwork.network.chainID,
+        ])
+        .reverse()
+        .sortBy("startBlock")
+    )[0]?.startBlock
+  }
+
+  async getAccountAssetTransferLookupNewestBlock(
+    accountNetwork: AccountNetwork
+  ): Promise<BigInt | null> {
+    return (
+      await this.accountAssetTransferLookups
+        .where([
+          "accountNetwork.account",
+          "accountNetwork.network.name",
+          "accountNetwork.network.chainID",
+        ])
+        .equals([
+          accountNetwork.account,
+          accountNetwork.network.name,
+          accountNetwork.network.chainID,
+        ])
+        .sortBy("endBlock")
+    )[0]?.endBlock
+  }
+
+  async recordAccountAssetTransferLookup(
+    accountNetwork: AccountNetwork,
+    startBlock: bigint,
+    endBlock: bigint
+  ): Promise<void> {
+    await this.accountAssetTransferLookups.add({
+      accountNetwork,
+      startBlock,
+      endBlock,
+      retrievedAt: Date.now(),
+    })
+  }
+
+  async updateAccountOldestBlockChecked(accountNetwork: AccountNetwork) {}
 
   async addBlock(block: EIP1559Block): Promise<void> {
     // TODO Consider exposing whether the block was added or updated.

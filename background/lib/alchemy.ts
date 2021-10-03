@@ -57,11 +57,12 @@ const isValidAlchemyAssetTransferResponse =
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   account: string,
-  fromBlock: number
+  fromBlock: number,
+  toBlock?: number
 ): Promise<AssetTransfer[]> {
   const params = {
     fromBlock: utils.hexValue(fromBlock),
-    toBlock: "latest",
+    toBlock: toBlock === undefined ? "latest" : utils.hexValue(toBlock),
     // excludeZeroValue: false,
   }
 

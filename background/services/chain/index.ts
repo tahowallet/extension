@@ -332,7 +332,14 @@ export default class ChainService extends BaseService<Events> {
       const assetTransfers = await getAssetTransfers(
         this.pollingProviders.ethereum,
         accountNetwork.account,
-        fromBlock
+        fromBlock,
+        blockHeight
+      )
+
+      await this.db.recordAccountAssetTransferLookup(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
       )
 
       // TODO if this fails, other services still needs a way to kick
