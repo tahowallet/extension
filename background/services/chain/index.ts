@@ -307,7 +307,6 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(tx, "local"),
       ])
     } catch (error) {
-      // TODO proper logging
       logger.error(`Error broadcasting transaction ${tx}`, error)
       throw error
     }
@@ -342,8 +341,6 @@ export default class ChainService extends BaseService<Events> {
         BigInt(blockHeight)
       )
 
-      // TODO if this fails, other services still needs a way to kick
-      // off monitoring of token balances
       this.emitter.emit("assetTransfers", {
         accountNetwork,
         assetTransfers,
@@ -360,7 +357,6 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     // TODO make this multi network
-    // TODO get transaction and load it into database
     const toHandle = this.transactionsToRetrieve.ethereum.slice(
       0,
       TRANSACTIONS_RETRIEVED_PER_ALARM
@@ -384,18 +380,14 @@ export default class ChainService extends BaseService<Events> {
             this.subscribeToTransactionConfirmation(tx.network, tx.hash)
           }
 
-          // Get relevant block data. Primarily used in the frontend for
-          // timestamps. Emits and saves block data
+          // Get relevant block data.
           const block = await this.getBlockData(tx.network, result.blockHash)
 
           // TODO make this provider specific
-          // Save block and transaction
           await this.saveTransaction(tx, "alchemy")
 
-          // Trigger sending block to redux store
           this.emitter.emit("block", block)
         } catch (error) {
-          // TODO proper logging
           logger.error(`Error retrieving transaction ${hash}`, error)
           this.queueTransactionHashToRetrieve(ETHEREUM, hash)
         }
@@ -418,7 +410,6 @@ export default class ChainService extends BaseService<Events> {
     try {
       await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {
-      // TODO proper logging
       error = err
       logger.error(`Error saving tx ${tx}`, error)
     }
@@ -426,7 +417,6 @@ export default class ChainService extends BaseService<Events> {
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", tx)
     } catch (err) {
-      // TODO proper logging
       error = err
       logger.error(`Error emitting tx ${tx}`, error)
     }
@@ -490,7 +480,6 @@ export default class ChainService extends BaseService<Events> {
             "alchemy"
           )
         } catch (error) {
-          // TODO proper logging
           logger.error(`Error saving tx: ${result}`, error)
         }
       }
