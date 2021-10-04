@@ -213,12 +213,8 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
-      serializer: (payload: unknown) => {
-        return encodeJSON(payload)
-      },
-      deserializer: (payload: string) => {
-        return decodeJSON(payload)
-      },
+      serializer: encodeJSON,
+      deserializer: decodeJSON,
     })
 
     this.connectIndexingService()
