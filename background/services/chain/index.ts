@@ -35,9 +35,19 @@ import {
 // `process.env` variables in the bundled output
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
-const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
-
+// How many queued transactions should be retrieved on every tx alarm, per
+// network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
+// max 1 tx/min.
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
+
+// The number of blocks to query at a time for historic asset transfers.
+// Unfortunately there's no "right" answer here that works well across different
+// people's account histories. If the number is too large relative to a
+// frequently, used account, the first call will time out and waste provider
+// resources... resulting in an exponential backoff. If it's too small,
+// transaction history will appear "slow" to show up for newly imported
+// accounts.
+const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AccountNetwork
@@ -316,43 +326,101 @@ export default class ChainService extends BaseService<Events> {
    * PRIVATE METHODS *
    * **************** */
 
-  /*
-   * Get recent asset transfers from an account on a particular network. Emit
-   * events for any transfers found, and look up any related transactions and
-   * blocks.
+  /**
+   * Load recent asset transfers from an account on a particular network. Backs
+   * off exponentially (in block range, not in time) on failure.
+   *
+   * @param accountNetwork the account and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
     accountNetwork: AccountNetwork
   ): Promise<void> {
+    const blockHeight = await this.getBlockHeight(accountNetwork.network)
+    let fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
     try {
-      const blockHeight = await this.getBlockHeight(accountNetwork.network)
-      const fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
-      // TODO only works on Ethereum today
-      const assetTransfers = await getAssetTransfers(
-        this.pollingProviders.ethereum,
-        accountNetwork.account,
-        fromBlock,
-        blockHeight
-      )
-
-      await this.db.recordAccountAssetTransferLookup(
+      await this.loadAssetTransfers(
         accountNetwork,
         BigInt(fromBlock),
         BigInt(blockHeight)
       )
-
-      this.emitter.emit("assetTransfers", {
+    } catch (err) {
+      logger.error(
+        "Failed loaded recent assets, retrying with shorter block range",
         accountNetwork,
-        assetTransfers,
-      })
+        err
+      )
+    }
 
-      /// send all found tx hashes into a queue to retrieve + cache
-      assetTransfers.forEach((a) =>
-        this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+    // TODO replace the home-spun backoff with a util function
+    fromBlock =
+      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 2)
+    try {
+      return await this.loadAssetTransfers(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
       )
     } catch (err) {
-      logger.error(err)
+      logger.error(
+        "Second failure loading recent assets, retrying with shorter block range",
+        accountNetwork,
+        err
+      )
     }
+
+    fromBlock =
+      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 4)
+    try {
+      return await this.loadAssetTransfers(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
+      )
+    } catch (err) {
+      logger.error(
+        "Final failure loading recent assets for account",
+        accountNetwork,
+        err
+      )
+    }
+    return Promise.resolve()
+  }
+
+  /**
+   * Load asset transfers from an account on a particular network within a
+   * particular block range. Emit events for any transfers found, and look up
+   * any related transactions and blocks.
+   *
+   * @param accountNetwork the account and network whose asset transfers we need
+   */
+  private async loadAssetTransfers(
+    accountNetwork: AccountNetwork,
+    startBlock: bigint,
+    endBlock: bigint
+  ): Promise<void> {
+    // TODO only works on Ethereum today
+    const assetTransfers = await getAssetTransfers(
+      this.pollingProviders.ethereum,
+      accountNetwork.account,
+      Number(startBlock),
+      Number(endBlock)
+    )
+
+    await this.db.recordAccountAssetTransferLookup(
+      accountNetwork,
+      startBlock,
+      endBlock
+    )
+
+    this.emitter.emit("assetTransfers", {
+      accountNetwork,
+      assetTransfers,
+    })
+
+    /// send all found tx hashes into a queue to retrieve + cache
+    assetTransfers.forEach((a) =>
+      this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+    )
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
