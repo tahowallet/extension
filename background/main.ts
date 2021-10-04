@@ -45,19 +45,17 @@ import {
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 
-const reduxSanitizer = (input: unknown) => {
-  if (typeof input === "bigint") {
-    return encodeJSON(input)
+const devToolsSanitizer = (input: unknown) => {
+  switch (typeof input) {
+    // We can make use of encodeJSON instead of recursively looping through
+    // the input
+    case "bigint":
+    case "object":
+      return JSON.parse(encodeJSON(input))
+    // We only need to sanitize bigints and the objects that contain them
+    default:
+      return input
   }
-
-  // We can make use of encodeJSON instead of recursively looping through the
-  // input
-  if (typeof input === "object") {
-    return JSON.parse(encodeJSON(input))
-  }
-
-  // We only need to sanitize bigints and the objects that contain them
-  return input
 }
 
 const reduxCache = (store) => (next) => (action) => {
@@ -109,10 +107,10 @@ const initializeStore = (startupState = {}) =>
         port: 8000,
         realtime: true,
         actionSanitizer: (action: unknown) => {
-          return reduxSanitizer(action)
+          return devToolsSanitizer(action)
         },
         stateSanitizer: (state: unknown) => {
-          return reduxSanitizer(state)
+          return devToolsSanitizer(state)
         },
       }),
     ],
