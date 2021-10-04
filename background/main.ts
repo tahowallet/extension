@@ -50,8 +50,8 @@ const reduxSanitizer = (input: unknown) => {
     return encodeJSON(input)
   }
 
-  // We can use JSON stringify replacer function instead of recursively looping
-  // through the input
+  // We can make use of encodeJSON instead of recursively looping through the
+  // input
   if (typeof input === "object") {
     return JSON.parse(encodeJSON(input))
   }
