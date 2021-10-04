@@ -176,7 +176,7 @@ export default class Main extends BaseService<never> {
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
-        this.initializeRedux(saved.state && decodeJSON(saved.state))
+        this.initializeRedux(saved.state ? decodeJSON(saved.state) : {})
       })
     } else {
       this.initializeRedux()
