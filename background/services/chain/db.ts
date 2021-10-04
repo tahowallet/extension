@@ -82,7 +82,7 @@ export class ChainDatabase extends Dexie {
       accountsToTrack:
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
       accountAssetTransferLookups:
-        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chailID+retrievedAt],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
+        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chailID],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       chainTransactions:
@@ -206,43 +206,38 @@ export class ChainDatabase extends Dexie {
     })
   }
 
-  async getAccountAssetTransferLookupOldestBlock(
+  async getOldestAccountAssetTransferLookup(
     accountNetwork: AccountNetwork
   ): Promise<BigInt | null> {
-    return (
-      await this.accountAssetTransferLookups
-        .where([
-          "accountNetwork.account",
-          "accountNetwork.network.name",
-          "accountNetwork.network.chainID",
-        ])
-        .equals([
-          accountNetwork.account,
-          accountNetwork.network.name,
-          accountNetwork.network.chainID,
-        ])
-        .reverse()
-        .sortBy("startBlock")
-    )[0]?.startBlock
+    // TODO this is inefficient, make proper use of indexing
+    const lookups = await this.accountAssetTransferLookups
+      .where("accountNetwork.account")
+      .equals(accountNetwork.account)
+      .toArray()
+    return lookups.reduce(
+      (oldestBlock: bigint | null, lookup) =>
+        oldestBlock === null || lookup.startBlock < oldestBlock
+          ? lookup.startBlock
+          : oldestBlock,
+      null
+    )
   }
 
-  async getAccountAssetTransferLookupNewestBlock(
+  async getNewestAccountAssetTransferLookup(
     accountNetwork: AccountNetwork
   ): Promise<BigInt | null> {
-    return (
-      await this.accountAssetTransferLookups
-        .where([
-          "accountNetwork.account",
-          "accountNetwork.network.name",
-          "accountNetwork.network.chainID",
-        ])
-        .equals([
-          accountNetwork.account,
-          accountNetwork.network.name,
-          accountNetwork.network.chainID,
-        ])
-        .sortBy("endBlock")
-    )[0]?.endBlock
+    // TODO this is inefficient, make proper use of indexing
+    const lookups = await this.accountAssetTransferLookups
+      .where("accountNetwork.account")
+      .equals(accountNetwork.account)
+      .toArray()
+    return lookups.reduce(
+      (newestBlock: bigint | null, lookup) =>
+        newestBlock === null || lookup.startBlock > newestBlock
+          ? lookup.startBlock
+          : newestBlock,
+      null
+    )
   }
 
   async recordAccountAssetTransferLookup(
@@ -257,8 +252,6 @@ export class ChainDatabase extends Dexie {
       retrievedAt: Date.now(),
     })
   }
-
-  async updateAccountOldestBlockChecked(accountNetwork: AccountNetwork) {}
 
   async addBlock(block: EIP1559Block): Promise<void> {
     // TODO Consider exposing whether the block was added or updated.

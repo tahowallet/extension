@@ -49,6 +49,10 @@ const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 // accounts.
 const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 
+// The number of asset transfer lookups that will be done per account to rebuild
+// historic activity.
+const NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
+
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AccountNetwork
   accountBalance: AccountBalance
@@ -115,10 +119,18 @@ export default class ChainService extends BaseService<Events> {
       queuedTransactions: {
         schedule: {
           delayInMinutes: 1,
-          periodInMinutes: 5,
+          periodInMinutes: 1,
         },
         handler: () => {
           this.handleQueuedTransactionAlarm()
+        },
+      },
+      historicAssetTransfers: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.handleHistoricAssetTransferAlarm()
         },
       },
     })
@@ -243,6 +255,7 @@ export default class ChainService extends BaseService<Events> {
     const block = blockFromEthersBlock(resultBlock)
 
     await this.db.addBlock(block)
+    this.emitter.emit("block", block)
     return block
   }
 
@@ -387,6 +400,39 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
+   * Continue to load historic asset transfers, finding the oldest lookup and
+   * searching for asset transfers before that block.
+   *
+   * @param accountNetwork The account whose asset transfers are being loaded.
+   */
+  private async loadHistoricAssetTransfers(
+    accountNetwork: AccountNetwork
+  ): Promise<void> {
+    const oldest = await this.db.getOldestAccountAssetTransferLookup(
+      accountNetwork
+    )
+    const newest = await this.db.getNewestAccountAssetTransferLookup(
+      accountNetwork
+    )
+
+    if (typeof newest === "bigint" && typeof oldest === "bigint") {
+      const range = newest - oldest
+      if (
+        range <
+        NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY *
+          NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
+      ) {
+        // if we haven't hit 10x the single-call limit, pull another.
+        await this.loadAssetTransfers(
+          accountNetwork,
+          oldest - BigInt(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY),
+          oldest
+        )
+      }
+    }
+  }
+
+  /**
    * Load asset transfers from an account on a particular network within a
    * particular block range. Emit events for any transfers found, and look up
    * any related transactions and blocks.
@@ -423,6 +469,14 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  private async handleHistoricAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
+    )
+  }
+
   private async handleQueuedTransactionAlarm(): Promise<void> {
     // TODO make this multi network
     const toHandle = this.transactionsToRetrieve.ethereum.slice(
@@ -434,7 +488,7 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    await Promise.allSettled(
+    Promise.allSettled(
       toHandle.map(async (hash) => {
         try {
           // TODO make this multi network
@@ -444,17 +498,15 @@ export default class ChainService extends BaseService<Events> {
 
           const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
+          // TODO make this provider specific
+          await this.saveTransaction(tx, "alchemy")
+
           if (!tx.blockHash && !tx.blockHeight) {
             this.subscribeToTransactionConfirmation(tx.network, tx.hash)
           }
 
           // Get relevant block data.
-          const block = await this.getBlockData(tx.network, result.blockHash)
-
-          // TODO make this provider specific
-          await this.saveTransaction(tx, "alchemy")
-
-          this.emitter.emit("block", block)
+          await this.getBlockData(tx.network, result.blockHash)
         } catch (error) {
           logger.error(`Error retrieving transaction ${hash}`, error)
           this.queueTransactionHashToRetrieve(ETHEREUM, hash)
