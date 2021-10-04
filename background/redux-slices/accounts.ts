@@ -1,4 +1,4 @@
-import { createSlice, current } from "@reduxjs/toolkit"
+import { createSlice, createSelector, current } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
@@ -351,5 +351,29 @@ export const addAccountNetwork = createBackgroundAsyncThunk(
   async (accountNetwork: AccountNetwork, { dispatch }) => {
     dispatch(loadAccount(accountNetwork.account))
     await emitter.emit("addAccount", accountNetwork)
+  }
+)
+
+export const getAccountState = (state) => state.account
+
+export const selectAccountAndTimestampedActivities = createSelector(
+  getAccountState,
+  (state) => {
+    // Derive activities with timestamps included
+    const activity = state.combinedData.activity.map((activityItem) => {
+      const isSent =
+        activityItem.from.toLowerCase() ===
+        Object.keys(state.accountsData)[0].toLowerCase()
+      return {
+        ...activityItem,
+        timestamp: state?.blocks[activityItem.blockHeight]?.timestamp,
+        isSent,
+      }
+    })
+    return {
+      combinedData: state.combinedData,
+      accountData: state.accountsData,
+      activity,
+    }
   }
 )
