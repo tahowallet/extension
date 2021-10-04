@@ -65,7 +65,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
 
       <style jsx>
         {`
-          button {
+          .list_item {
             height: 72px;
             border-radius: 16px;
             background-color: var(--green-95);
@@ -76,7 +76,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             justify-content: space-between;
             align-items: center;
           }
-          button:hover {
+          .list_item:hover {
             background-color: var(--green-80);
           }
           .left {
