@@ -11,6 +11,7 @@ import {
   AnyEVMTransaction,
   AssetTransfer,
   EIP1559Block,
+  EIP1559TransactionRequest,
   EVMNetwork,
   Network,
   SignedEVMTransaction,
@@ -255,6 +256,17 @@ export default class ChainService extends BaseService<Events> {
     if (!seen.has(hash)) {
       this.transactionsToRetrieve.ethereum.push(hash)
     }
+  }
+
+  /*
+   * Estimate the gas needed to make a transaction.
+   */
+  async estimateGasLimit(
+    network: EVMNetwork,
+    tx: EIP1559TransactionRequest
+  ): Promise<bigint> {
+    const estimate = await this.pollingProviders.ethereum.estimateGas(tx)
+    return BigInt(estimate.toString())
   }
 
   /*

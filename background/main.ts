@@ -21,6 +21,7 @@ import {
   ConfirmedEVMTransaction,
   SignedEVMTransaction,
   KeyringTypes,
+  EIP1559TransactionRequest,
 } from "./types"
 
 import rootReducer from "./redux-slices"
@@ -40,6 +41,7 @@ import {
 } from "./redux-slices/keyrings"
 import {
   transactionOptions,
+  gasEstimates,
   emitter as transactionSliceEmitter,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
@@ -235,6 +237,7 @@ export default class Main extends BaseService<never> {
     // TODO: Remove this, just for testing
     const blocknative = Blocknative.connect(process.env.BLOCKNATIVE_API_KEY, 1)
     const blockPrices = await blocknative.getBlockPrices()
+    this.store.dispatch(gasEstimates(blockPrices))
 
     console.log(blockPrices)
   }
@@ -283,6 +286,12 @@ export default class Main extends BaseService<never> {
         gasPrice:
           await this.chainService.pollingProviders.ethereum.getGasPrice(),
       }
+
+      // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
+      transaction.gasLimit = await this.chainService.estimateGasLimit(
+        ETHEREUM,
+        transaction
+      )
 
       await this.keyringService.signTransaction(options.from, transaction)
     })
