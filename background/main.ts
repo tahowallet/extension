@@ -41,7 +41,7 @@ import {
 import {
   transactionOptions,
   emitter as transactionSliceEmitter,
-} from "./redux-slices/transaction"
+} from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 import Blocknative from "./third-party-data/blocknative"
