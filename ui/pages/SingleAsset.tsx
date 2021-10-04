@@ -11,13 +11,17 @@ import BackButton from "../components/Shared/SharedBackButton"
 export default function SingleAsset(): ReactElement {
   const location = useLocation()
   const { symbol } = location.state
-  const { activity } = useBackgroundSelector(
+  const { combinedData, activity } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
 
   const filteredActivity = activity.filter((item) => {
     return item?.asset?.symbol === symbol
   })
+
+  const filteredAsset = combinedData.assets.filter((item) => {
+    return item?.asset?.symbol === symbol
+  })[0]
 
   return (
     <>
@@ -29,8 +33,10 @@ export default function SingleAsset(): ReactElement {
               <SharedAssetIcon />
               <span className="asset_name">{symbol}</span>
             </div>
-            <div className="balance">125,137.00</div>
-            <div className="usd_value">($127,237,318)</div>
+            <div className="balance">{filteredAsset.localizedDecimalValue}</div>
+            <div className="usd_value">
+              (${filteredAsset.localizedUserValue})
+            </div>
           </div>
           <div className="right">
             <SharedButton
