@@ -1,7 +1,8 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import SharedButton from "../Shared/SharedButton"
-import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
-import titleStyle from "./titleStyle"
+import { Link } from "react-router-dom"
+import SharedButton from "../../components/Shared/SharedButton"
+import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
+import titleStyle from "../../components/Onboarding/titleStyle"
 
 function SuccessMessage() {
   return (
@@ -9,9 +10,11 @@ function SuccessMessage() {
       <span className="message">Congratulations!</span>
       <div className="subtitle">You can now safely use your wallet</div>
       <div className="button_container">
-        <SharedButton size="medium" type="primary" linkTo="/">
-          Take me to my wallet
-        </SharedButton>
+        <Link to="/">
+          <SharedButton size="medium" type="primary">
+            Take me to my wallet
+          </SharedButton>
+        </Link>
       </div>
       <style jsx>
         {`
@@ -80,9 +83,7 @@ export default function OnboardingVerifySeed(props: Props): ReactElement {
               onClick={handleClick}
               icon="close"
               isDisabled
-            >
-              {`${index + 1} - cat`}
-            </SharedButton>
+            >{`${index + 1} - cat`}</SharedButton>
           </li>
         ))}
       </ul>

@@ -1,5 +1,6 @@
-import { createAsyncThunk, createSlice, current } from "@reduxjs/toolkit"
+import { createSlice, createSelector, current } from "@reduxjs/toolkit"
 import Emittery from "emittery"
+import { createBackgroundAsyncThunk } from "./utils"
 import {
   AccountBalance,
   AccountNetwork,
@@ -344,23 +345,35 @@ export const emitter = new Emittery<Events>()
  * the promise returned from this action's dispatch will be fulfilled by a void
  * value.
  */
-export const subscribeToAccountNetwork = createAsyncThunk<
-  Promise<void>,
-  AccountNetwork,
-  { state: { account: AccountState } }
->(
-  "account/subscribe",
-  async (accountNetwork: AccountNetwork, { dispatch, getState }) => {
-    const state = getState()
 
-    if (state.account.accountsData[accountNetwork.account]) {
-      // We already have it, return.
-      return
-    }
-
-    // Otherwise, mark as loading and dispatch the add event.
+export const addAccountNetwork = createBackgroundAsyncThunk(
+  "account/addAccount",
+  async (accountNetwork: AccountNetwork, { dispatch }) => {
     dispatch(loadAccount(accountNetwork.account))
-
     await emitter.emit("addAccount", accountNetwork)
+  }
+)
+
+export const getAccountState = (state) => state.account
+
+export const selectAccountAndTimestampedActivities = createSelector(
+  getAccountState,
+  (state) => {
+    // Derive activities with timestamps included
+    const activity = state.combinedData.activity.map((activityItem) => {
+      const isSent =
+        activityItem.from.toLowerCase() ===
+        Object.keys(state.accountsData)[0].toLowerCase()
+      return {
+        ...activityItem,
+        timestamp: state?.blocks[activityItem.blockHeight]?.timestamp,
+        isSent,
+      }
+    })
+    return {
+      combinedData: state.combinedData,
+      accountData: state.accountsData,
+      activity,
+    }
   }
 )

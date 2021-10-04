@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
-import SharedTooltip from "../Shared/SharedTooltip"
-import SharedButton from "../Shared/SharedButton"
+import SharedTooltip from "../../components/Shared/SharedTooltip"
+import SharedButton from "../../components/Shared/SharedButton"
 
 interface Props {
   openNewWalletScreen: () => void

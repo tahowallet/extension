@@ -4,6 +4,7 @@ import { AnyEVMTransaction } from "@tallyho/tally-background/types"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
 
@@ -46,15 +47,38 @@ export default function WalletActivityList(props: Props): ReactElement {
         )}
       </SharedSlideUpMenu>
       <ul>
-        {activity.map((activityItem) => (
-          <WalletActivityListItem
-            onClick={() => {
-              handleOpen(activityItem)
-            }}
-            activity={activityItem}
-          />
-        ))}
+        {activity.length === 0 ? (
+          <div className="loading">
+            <SharedLoadingSpinner />
+            <span>This may initially take awhile.</span>
+          </div>
+        ) : (
+          <>
+            {activity.map((activityItem) => (
+              <WalletActivityListItem
+                onClick={() => {
+                  handleOpen(activityItem)
+                }}
+                activity={activityItem}
+              />
+            ))}
+          </>
+        )}
       </ul>
+      <style jsx>{`
+        .loading {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-top: 20px;
+        }
+        .loading span {
+          color: var(--green-60);
+          margin-top: 12px;
+          font-size: 14px;
+        }
+      `}</style>
     </>
   )
 }

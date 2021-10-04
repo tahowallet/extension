@@ -1,7 +1,8 @@
 import React, { ReactElement } from "react"
-import SharedButton from "../Shared/SharedButton"
-import OnboardingStepsIndicator from "./OnboardingStepsIndicator"
-import titleStyle from "./titleStyle"
+import { Link } from "react-router-dom"
+import SharedButton from "../../components/Shared/SharedButton"
+import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
+import titleStyle from "../../components/Onboarding/titleStyle"
 
 interface Props {
   triggerNextStep: () => void
@@ -52,9 +53,11 @@ export default function OnboardingSaveSeed(props: Props): ReactElement {
             Copy and verify recovery seed
           </SharedButton>
         </div>
-        <SharedButton type="tertiary" size="medium" linkTo="/">
-          remind me later
-        </SharedButton>
+        <Link to="/">
+          <SharedButton type="tertiary" size="medium">
+            remind me later
+          </SharedButton>
+        </Link>
       </div>
       <style jsx>
         {`

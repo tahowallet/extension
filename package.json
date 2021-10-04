@@ -39,6 +39,7 @@
     "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
     "buffer": "^6.0.3",
+    "json-bigint": "^1.0.0",
     "react": "^17.0.2",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"

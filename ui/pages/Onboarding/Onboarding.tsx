@@ -1,10 +1,10 @@
 import React, { ReactElement, useState } from "react"
 import { useHistory, useParams } from "react-router-dom"
-import OnboardingImportMetamask from "../components/Onboarding/OnboardingImportMetamask"
-import OnboardingCreatePassword from "../components/Onboarding/OnboardingCreatePassword"
-import OnboardingVerifySeed from "../components/Onboarding/OnboardingVerifySeed"
-import OnboardingSaveSeed from "../components/Onboarding/OnboardingSaveSeed"
-import OnboardingStartTheHunt from "../components/Onboarding/OnboardingStartTheHunt"
+import OnboardingImportMetamask from "./OnboardingImportMetamask"
+import OnboardingCreatePassword from "./OnboardingCreatePassword"
+import OnboardingVerifySeed from "./OnboardingVerifySeed"
+import OnboardingSaveSeed from "./OnboardingSaveSeed"
+import OnboardingStartTheHunt from "./OnboardingStartTheHunt"
 
 export default function Onboarding(): ReactElement {
   const { startPage } = useParams()

@@ -18,11 +18,12 @@ export default function SwapApprovalStep(props: Props): ReactElement {
       <SharedButton
         type="tertiary"
         size="medium"
-        label="Etherscan"
         icon="external"
         iconSize="large"
         isDisabled={!isDone}
-      />
+      >
+        Etherscan
+      </SharedButton>
       <style jsx>
         {`
           li {

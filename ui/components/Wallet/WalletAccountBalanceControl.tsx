@@ -1,8 +1,38 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { Link } from "react-router-dom"
+import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
+
+function ReadOnlyNotice(): ReactElement {
+  return (
+    <div className="notice_wrap">
+      <div className="icon_eye" />
+      Read-only mode
+      <style jsx>{`
+        .notice_wrap {
+          width: 177px;
+          height: 40px;
+          background: rgba(238, 178, 24, 0.1);
+          border-radius: 2px;
+          margin-top: 12px;
+          font-weight: 500;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          border-left: solid 2px var(--attention);
+        }
+        .icon_eye {
+          background: url("./images/eye@2x.png");
+          background-size: cover;
+          width: 24px;
+          height: 24px;
+          margin: 0px 7px 0px 10px;
+        }
+      `}</style>
+    </div>
+  )
+}
 
 interface Props {
   balance?: string
@@ -12,10 +42,20 @@ export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
   const { balance } = props
-  const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
-  const [hasSavedSeed, setHasSavedSeed] = useState(
-    window.localStorage.getItem("hasSavedSeed")
+  const keyringImport = useBackgroundSelector(
+    (state) => state.keyrings.importing
   )
+  const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
+  const hasSavedSeed = window.localStorage.getItem("hasSavedSeed")
+
+  /*
+   * Check to see if a keyring has been imported.
+   * If not, we can assume they're using a read-only wallet.
+   * Currently the wallet tab incorrectly merges all accounts
+   * together. So we'll need to,
+   * TODO: Give this multi-account support.
+   */
+  const isViewOnlyWallet = keyringImport !== "done"
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -36,36 +76,43 @@ export default function WalletAccountBalanceControl(
             </span>
           )}
         </span>
-        {hasSavedSeed ? (
-          <div className="send_receive_button_wrap">
-            <Link to="/send">
-              <SharedButton
-                label="Send"
-                icon="send"
-                size="medium"
-                type="primary"
-              />
-            </Link>
-            <SharedButton
-              label="Receive"
-              onClick={handleClick}
-              icon="receive"
-              size="medium"
-              type="primary"
-            />
-          </div>
+        {isViewOnlyWallet ? (
+          <ReadOnlyNotice />
         ) : (
-          <div className="save_seed_button_wrap">
-            <Link to="/onboarding/2">
-              <SharedButton
-                label="First, secure your recovery seed"
-                icon="arrow_right"
-                iconSize="large"
-                size="large"
-                type="warning"
-              />
-            </Link>
-          </div>
+          <>
+            {hasSavedSeed ? (
+              <div className="send_receive_button_wrap">
+                <SharedButton
+                  icon="send"
+                  size="medium"
+                  type="primary"
+                  linkTo="/send"
+                >
+                  Send
+                </SharedButton>
+                <SharedButton
+                  onClick={handleClick}
+                  icon="receive"
+                  size="medium"
+                  type="primary"
+                >
+                  Receive
+                </SharedButton>
+              </div>
+            ) : (
+              <div className="save_seed_button_wrap">
+                <SharedButton
+                  icon="arrow_right"
+                  iconSize="large"
+                  size="large"
+                  type="warning"
+                  linkTo="/onboarding/2"
+                >
+                  First, secure your recovery seed
+                </SharedButton>
+              </div>
+            )}
+          </>
         )}
       </div>
       <style jsx>

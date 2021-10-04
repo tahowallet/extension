@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
-import SharedInput from "../Shared/SharedInput"
-import SharedButton from "../Shared/SharedButton"
-import titleStyle from "./titleStyle"
+import SharedInput from "../../components/Shared/SharedInput"
+import SharedButton from "../../components/Shared/SharedButton"
+import titleStyle from "../../components/Onboarding/titleStyle"
 
 interface Props {
   triggerNextStep: () => void

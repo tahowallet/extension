@@ -2,9 +2,12 @@ import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
+import ethers from "ethers"
 
 import { ETHEREUM } from "./constants/networks"
 import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import logger from "./lib/logger"
+import { ethersTxFromTx } from "./services/chain/utils"
 
 import {
   PreferenceService,
@@ -14,7 +17,11 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { ConfirmedEVMTransaction, KeyringTypes } from "./types"
+import {
+  ConfirmedEVMTransaction,
+  SignedEVMTransaction,
+  KeyringTypes,
+} from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -31,6 +38,10 @@ import {
   updateKeyrings,
   importLegacyKeyring,
 } from "./redux-slices/keyrings"
+import {
+  transactionOptions,
+  emitter as transactionSliceEmitter,
+} from "./redux-slices/transaction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 import Blocknative from "./third-party-data/blocknative"
@@ -53,7 +64,7 @@ const reduxCache = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
-  if (process.env.REDUX_CACHE === "true") {
+  if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
     browser.storage.local.set({ state: jsonEncodeBigInt(state) })
   }
@@ -163,8 +174,8 @@ export default class Main extends BaseService<never> {
   ) {
     super()
 
-    // Setting REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
-    if (process.env.REDUX_CACHE === "true") {
+    // Setting READ_REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
+    if (process.env.READ_REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
         this.initializeRedux(saved.state && jsonDecodeBigInt(saved.state))
       })
@@ -176,17 +187,15 @@ export default class Main extends BaseService<never> {
   protected async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.indexingService
-      .started()
-      .then(async () => this.chainService.started())
-      .then(async (chain) => {
-        chain.addAccountToTrack({
-          // TODO uses Ethermine address for development - move this to startup
-          // state
-          account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-          network: ETHEREUM,
-        })
-      })
+    this.indexingService.started().then(async () => this.chainService.started())
+    // .then(async (chain) => {
+    //   chain.addAccountToTrack({
+    //     // TODO uses Ethermine address for development - move this to startup
+    //     // state
+    //     account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
+    //     network: ETHEREUM,
+    //   })
+    // })
 
     await Promise.all([
       this.preferenceService.startService(),
@@ -255,6 +264,29 @@ export default class Main extends BaseService<never> {
       await this.chainService.addAccountToTrack(accountNetwork)
     })
 
+    transactionSliceEmitter.on("updateOptions", async (options) => {
+      // Basic transaction construction based on the provided options, with extra data from the chain service
+      const transaction = {
+        to: options.to,
+        value: options.value,
+        gasLimit: options.gasLimit,
+        maxFeePerGas: options.maxFeePerGas,
+        maxPriorityFeePerGas: options.maxPriorityFeePerGas,
+        input: "",
+        type: 2 as const,
+        chainID: "1",
+        nonce:
+          await this.chainService.pollingProviders.ethereum.getTransactionCount(
+            options.from,
+            "latest"
+          ),
+        gasPrice:
+          await this.chainService.pollingProviders.ethereum.getGasPrice(),
+      }
+
+      await this.keyringService.signTransaction(options.from, transaction)
+    })
+
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
     existingAccounts.forEach((accountNetwork) => {
@@ -292,6 +324,26 @@ export default class Main extends BaseService<never> {
         network: ETHEREUM,
       })
     })
+
+    this.keyringService.emitter.on(
+      "signedTx",
+      async (transaction: SignedEVMTransaction) => {
+        const ethersTx = ethersTxFromTx(transaction)
+        const serializedTx = ethers.utils.serializeTransaction(ethersTx, {
+          r: transaction.r,
+          s: transaction.s,
+          v: transaction.v,
+        })
+
+        const response =
+          await this.chainService.pollingProviders.ethereum.sendTransaction(
+            serializedTx
+          )
+
+        logger.log("Transaction broadcast:")
+        logger.log(response)
+      }
+    )
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow

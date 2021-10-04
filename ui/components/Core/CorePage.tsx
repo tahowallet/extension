@@ -53,6 +53,7 @@ export default function CorePage(props: Props): ReactElement {
         <HiddenDevPanel />
       </SharedSlideUpMenu>
       <div className="page">
+        <div className="alpha_label">Alpha</div>
         {hasTopBar ? (
           <button
             type="button"
@@ -95,6 +96,19 @@ export default function CorePage(props: Props): ReactElement {
           .top_menu_wrap {
             z-index: 10;
             cursor: default;
+          }
+          .alpha_label {
+            width: 57px;
+            height: 20px;
+            left: 24px;
+            position: fixed;
+            background-color: var(--error);
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            box-sizing: border-box;
+            padding-left: 8px;
+            font-size: 14px;
+            z-index: 1000;
           }
         `}
       </style>

@@ -1,5 +1,6 @@
 import { utils, BigNumber } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
+import JSONBig from "json-bigint"
 
 import { HexString } from "../../types"
 
@@ -51,17 +52,11 @@ export function transactionFee(
   )
 }
 
-// BigInt is a custom data type that can't be saved natively in Redux / Browser storage
+// BigInts are CUTTING EDGE and can't be saved natively in Redux / Browser storage
 export function jsonEncodeBigInt(input: unknown): string {
-  return JSON.stringify(input, (_, value) =>
-    typeof value === "bigint" ? { B_I_G_I_N_T: value.toString() } : value
-  )
+  return JSONBig({ useNativeBigInt: true }).stringify(input)
 }
 
 export function jsonDecodeBigInt(input: string): unknown {
-  return JSON.parse(input, (_, value) =>
-    value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
-      ? BigInt(value.B_I_G_I_N_T)
-      : value
-  )
+  return JSONBig({ useNativeBigInt: true }).parse(input)
 }

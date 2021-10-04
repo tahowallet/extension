@@ -10,11 +10,12 @@ export default function AccountsNotificationPanelNotifications(): ReactElement {
         <SharedButton
           type="tertiary"
           size="small"
-          label="Mark all as read"
           icon="mark_read"
           iconSize="secondaryMedium"
           isDisabled
-        />
+        >
+          Mark all as read
+        </SharedButton>
       </h3>
       <ul className="standard_width">
         {Array(3)
@@ -28,11 +29,12 @@ export default function AccountsNotificationPanelNotifications(): ReactElement {
         <SharedButton
           type="tertiary"
           size="small"
-          label="Delete all"
           icon="garbage"
           iconSize="secondaryMedium"
           isDisabled
-        />
+        >
+          Delete all
+        </SharedButton>
       </h3>
       <ul className="standard_width read_list">
         {Array(4)

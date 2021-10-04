@@ -15,11 +15,12 @@ function WalletName() {
           <SharedButton
             type="tertiary"
             size="small"
-            label="Add address"
             icon="plus"
             iconSize="medium"
             isDisabled
-          />
+          >
+            Add address
+          </SharedButton>
         </div>
       </div>
       <style jsx>{`
@@ -114,13 +115,13 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
         <SharedButton
           type="tertiary"
           size="medium"
-          label="Add Wallet"
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-        />
+        >
+          Add Wallet
+        </SharedButton>
       </footer>
-
       <style jsx>
         {`
           ul {
