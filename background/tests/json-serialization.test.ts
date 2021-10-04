@@ -1,15 +1,11 @@
 import { decodeJSON, encodeJSON } from "../lib/utils"
 
-function randomFloat(): number {
-  return Math.random()
-}
-
-function randomPositiveInt(max: number): number {
-  return Math.floor(randomFloat() * max)
+function randomNonNegativeInt(max: number): number {
+  return Math.floor(Math.random() * max)
 }
 
 function randomBigInt(): BigInt {
-  const f = randomFloat()
+  const f = Math.random()
   if (f < 0.1) {
     return BigInt(0)
   }
@@ -19,18 +15,18 @@ function randomBigInt(): BigInt {
   if (f < 0.5) {
     return BigInt("10000000000")
   }
-  return BigInt(10) ** BigInt(randomPositiveInt(10) + 10)
+  return BigInt(10) ** BigInt(randomNonNegativeInt(10) + 10)
 }
 
 function randomNumber(): number {
-  return 1.1
+  return Math.random() * 100000
 }
 
 function randomString(maxLength: number): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890äćüÖ"
   let rv = ""
   for (let i = 0; i < maxLength; i += 1) {
-    rv += alphabet.charAt(randomPositiveInt(alphabet.length))
+    rv += alphabet.charAt(randomNonNegativeInt(alphabet.length))
   }
   return rv
 }
@@ -39,7 +35,7 @@ function randomJSONAtom(
   includeBigInt = false
 ): string | number | null | undefined | BigInt {
   const max = includeBigInt ? 4 : 3
-  const choice = randomPositiveInt(max)
+  const choice = randomNonNegativeInt(max)
   switch (choice) {
     case 0:
       return randomString(10)
@@ -66,8 +62,9 @@ function randomJSONAtomArray(
 }
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
+// note this is mutually recursive with randomJSONComponent
 function randomJSONObject(maxKeys: number, includeBigInt = false) {
-  const numKeys = randomPositiveInt(maxKeys)
+  const numKeys = randomNonNegativeInt(maxKeys)
   const rv = {}
   for (let i = 0; i < numKeys; i += 1) {
     rv[randomString(30)] = randomJSONComponent(includeBigInt)
@@ -76,8 +73,9 @@ function randomJSONObject(maxKeys: number, includeBigInt = false) {
 }
 /* eslint-enable @typescript-eslint/no-use-before-define */
 
+// note this is mutually recursive with randomJSONObject
 function randomJSONComponent(includeBigInt = false) {
-  const f = randomFloat()
+  const f = Math.random()
   if (f < 0.1) {
     return randomJSONObject(10, includeBigInt)
   }
