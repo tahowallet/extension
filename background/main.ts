@@ -46,7 +46,9 @@ import {
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
-import Blocknative from "./third-party-data/blocknative"
+import Blocknative, {
+  BlocknativeNetworkIds,
+} from "./third-party-data/blocknative"
 
 const reduxSanitizer = (input: unknown) => {
   if (typeof input === "bigint") {
@@ -230,16 +232,10 @@ export default class Main extends BaseService<never> {
       },
     })
 
+    this.connectThirdPartyData()
     this.connectIndexingService()
     this.connectKeyringService()
     await this.connectChainService()
-
-    // TODO: Remove this, just for testing
-    const blocknative = Blocknative.connect(process.env.BLOCKNATIVE_API_KEY, 1)
-    const blockPrices = await blocknative.getBlockPrices()
-    this.store.dispatch(gasEstimates(blockPrices))
-
-    console.log(blockPrices)
   }
 
   async connectChainService(): Promise<void> {
@@ -363,6 +359,20 @@ export default class Main extends BaseService<never> {
 
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
       await this.keyringService.importLegacyKeyring(mnemonic)
+    })
+  }
+
+  async connectThirdPartyData(): Promise<void> {
+    const blocknative = Blocknative.connect(
+      process.env.BLOCKNATIVE_API_KEY,
+      BlocknativeNetworkIds.ethereum.mainnet
+    )
+
+    // Start polling for blockPrices
+    blocknative.pollBlockPrices()
+
+    blocknative.emitter.on("blockPrices", (blockPrices) => {
+      this.store.dispatch(gasEstimates(blockPrices))
     })
   }
 }

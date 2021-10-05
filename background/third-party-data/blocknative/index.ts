@@ -1,5 +1,6 @@
 import { fetchJson } from "@ethersproject/web"
 import BlocknativeSdk from "bnc-sdk"
+import Emittery from "emittery"
 
 import { EthereumTransactionData, BlockPrices } from "./types"
 import { gweiToWei } from "../../lib/utils"
@@ -10,6 +11,10 @@ export const BlocknativeNetworkIds = {
   ethereum: {
     mainnet: 1,
   },
+}
+
+export type Events = {
+  blockPrices: BlockPrices
 }
 
 // TODO Improve code to clearly discriminate between Bitcoin and
@@ -25,6 +30,8 @@ export default class Blocknative {
   private blocknative: BlocknativeSdk
 
   private apiKey: string
+
+  readonly emitter = new Emittery<Events>()
 
   static connect(apiKey: string, networkId: number): Blocknative {
     const connection = new this(apiKey, networkId)
@@ -85,6 +92,10 @@ export default class Blocknative {
     this.blocknative.unsubscribe(accountAddress)
   }
 
+  /*
+   * Helper function to get current block prices and estimated fees
+   * Converts data from Blocknative into our own custom type
+   */
   async getBlockPrices(): Promise<BlockPrices> {
     const request = {
       url: `${BLOCKNATIVE_API_ROOT}/gasprices/blockprices`,
@@ -94,7 +105,6 @@ export default class Blocknative {
     // TODO: What happens if the blocknative API request fails or gets rate limited?
     const response = await fetchJson(request)
     const currentBlock = response.blockPrices[0]
-    console.log(response)
 
     return {
       blockNumber: currentBlock.blockNumber,
@@ -109,5 +119,19 @@ export default class Blocknative {
         }
       }),
     }
+  }
+
+  /*
+   * Periodically fetch block prices and emit an event whenever new data is received
+   */
+  async pollBlockPrices(): Promise<void> {
+    // Immediately fetch the current block prices when this function gets called
+    const blockPrices = await this.getBlockPrices()
+    this.emitter.emit("blockPrices", blockPrices)
+
+    // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
+    setTimeout(() => {
+      this.pollBlockPrices()
+    }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
   }
 }

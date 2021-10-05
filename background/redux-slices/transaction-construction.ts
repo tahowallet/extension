@@ -12,7 +12,7 @@ type TransactionConstruction = {
 
 export const initialState: TransactionConstruction = {
   transactionRequest: {
-    gasLimit: BigInt(21000), // 21,000 gwei is the minimum amount of gas needed for sending a transaction
+    gasLimit: BigInt(21000), // 21,000 is the minimum amount of gas needed for sending a transaction
     maxFeePerGas: BigInt(21000),
     maxPriorityFeePerGas: BigInt(21000),
   },
