@@ -354,6 +354,15 @@ export const addAccountNetwork = createBackgroundAsyncThunk(
   }
 )
 
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  })
+    .format(price)
+    .split("$")[1]
+}
+
 export const getAccountState = (state) => state.account
 
 export const getFullState = (state) => state
@@ -377,6 +386,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
       }
     })
 
+    // Keep a tally of the total user value
+    let totalUserValue = 0
+
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
     const accountAssets = account.combinedData.assets.map((assetItem) => {
@@ -385,6 +397,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
       )
 
+      // Does this break if the token is less than 1 USD? Hah...
       const usdNonDecimalValue =
         rawAsset[0].recentPrices.USD.amounts[1] > 1
           ? rawAsset[0].recentPrices.USD.amounts[1]
@@ -396,24 +409,18 @@ export const selectAccountAndTimestampedActivities = createSelector(
         pricePerTokenUSD *
         parseInt(`${assetItem.localizedDecimalValue}`.replace(",", ""), 10)
 
+      // Add to total user value
+      totalUserValue += totalBalanceValueUSD
+
       return {
         ...assetItem,
-        totalBalanceValueUSD: new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        })
-          .format(totalBalanceValueUSD)
-          .split("$")[1],
-        pricePerTokenUSD: new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        })
-          .format(pricePerTokenUSD)
-          .split("$")[1],
+        totalBalanceValueUSD: formatPrice(totalBalanceValueUSD),
+        pricePerTokenUSD: formatPrice(pricePerTokenUSD),
       }
     })
 
     account.combinedData.assets = accountAssets
+    account.combinedData.totalUserValue = formatPrice(totalUserValue)
 
     return {
       combinedData: account.combinedData,
