@@ -1905,10 +1905,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@tallyho/hd-keyring@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@tallyho/hd-keyring/-/hd-keyring-0.2.1.tgz#a508773e0fe2dd46f65b32c8c9003144a0f2d99e"
-  integrity sha512-efMmpY+QhvNyrUiUiVAxFw3JFTwANMMe4kWUNLLtUA7/UnK3nmn9DF6zT9QSOaRv7k5X9U0bQBHdCm3tRVyccw==
+"@tallyho/hd-keyring@^0.2.3":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@tallyho/hd-keyring/-/hd-keyring-0.2.3.tgz#d1c635c6402ee490c493b6e189158b4767e443a6"
+  integrity sha512-vGmaCNRPuABYmu7Ps+TRCajK4yOqqGOhR+AU4vOHfSkQBU0HZOlJHc3uZ9OR8sh5CgOHOIumH1DdBPtUYHdpFg==
   dependencies:
     "@ethersproject/abstract-provider" "^5.4.0"
     "@ethersproject/hdnode" "^5.4.0"
