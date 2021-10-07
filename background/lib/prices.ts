@@ -13,12 +13,10 @@ const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
 // See RFC 8927 or jsontypedef.com to learn more about JTD.
 const coinGeckoPriceJTD = {
-  properties: {
-    ethereum: {
-      properties: {
-        usd: { type: "float64" },
-        last_updated_at: { type: "uint32" },
-      },
+  values: {
+    properties: {
+      usd: { type: "float64" },
+      last_updated_at: { type: "uint32" },
     },
   },
 } as const
