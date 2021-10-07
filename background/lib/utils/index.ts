@@ -23,9 +23,6 @@ export function encodeJSON(input: unknown): string {
     if (typeof value === "bigint") {
       return { B_I_G_I_N_T: value.toString() }
     }
-    if (value === undefined) {
-      return null
-    }
     return value
   })
 }

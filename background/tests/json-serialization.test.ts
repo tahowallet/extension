@@ -28,8 +28,15 @@ test("round-trips mixed values with bigints correctly", () => {
     float: 132.167,
     exp: 12.683e13,
     string: "hello",
+    nullCheck: null,
+  }
+  const mixedObjectWithUndefined = {
+    ...mixedObject,
+    undefinedCheck: undefined,
   }
 
   expect(decodeJSON(encodeJSON(mixedArray))).toStrictEqual(mixedArray)
-  expect(decodeJSON(encodeJSON(mixedObject))).toStrictEqual(mixedObject)
+  expect(decodeJSON(encodeJSON(mixedObjectWithUndefined))).toStrictEqual(
+    mixedObject
+  )
 })
