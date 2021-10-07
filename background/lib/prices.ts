@@ -1,3 +1,4 @@
+import Ajv, { JTDDataType } from "ajv/dist/jtd"
 import { fetchJson } from "@ethersproject/web"
 import {
   CoinGeckoAsset,
@@ -6,7 +7,25 @@ import {
   UnitPricePoint,
 } from "../types"
 
+const ajv = new Ajv()
+
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
+
+// See RFC 8927 or jsontypedef.com to learn more about JTD.
+const coinGeckoPriceJTD = {
+  properties: {
+    ethereum: {
+      properties: {
+        usd: { type: "float64" },
+        last_updated_at: { type: "uint32" },
+      },
+    },
+  },
+} as const
+
+type CoingGeckoPriceResponse = JTDDataType<typeof coinGeckoPriceJTD>
+const isValidCoinGeckoPriceResponse =
+  ajv.compile<CoingGeckoPriceResponse>(coinGeckoPriceJTD)
 
 export async function getPrice(
   coingeckoCoinId = "ethereum",
@@ -15,7 +34,15 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  // TODO further validate response, fix loss of precision from json
+
+  if (!isValidCoinGeckoPriceResponse(json)) {
+    console.warn(
+      "CoinGecko price response didn't validate, did the API change?",
+      json
+    )
+    return null
+  }
+
   return parseFloat(json[coingeckoCoinId][currencySymbol])
 }
 
