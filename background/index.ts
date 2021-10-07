@@ -20,12 +20,8 @@ export async function newProxyStore(): Promise<
   ProxyStore<RootState, AnyAction>
 > {
   const proxyStore = new ProxyStore({
-    serializer: (payload: unknown) => {
-      return encodeJSON(payload)
-    },
-    deserializer: (payload: string) => {
-      return decodeJSON(payload)
-    },
+    serializer: encodeJSON,
+    deserializer: decodeJSON,
   })
   await proxyStore.ready()
 
