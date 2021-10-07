@@ -1,159 +1,35 @@
 import { decodeJSON, encodeJSON } from "../lib/utils"
 
-function randomNonNegativeInt(max: number): number {
-  return Math.floor(Math.random() * max)
-}
+const smallBigInt = 12n
+// Included as libraries exist that handle bigints but unexpectedly fail on
+// large ones.
+const hugeBigInt = 10n ** 400n
 
-function randomBigInt(): BigInt {
-  const f = Math.random()
-  if (f < 0.1) {
-    return BigInt(0)
-  }
-  if (f < 0.3) {
-    return BigInt("100000")
-  }
-  if (f < 0.5) {
-    return BigInt("10000000000")
-  }
-  return BigInt(10) ** BigInt(randomNonNegativeInt(10) + 10)
-}
+test("round-trips bigints correctly", () => {
+  // plain
+  expect(decodeJSON(encodeJSON(smallBigInt))).toStrictEqual(smallBigInt)
+  expect(decodeJSON(encodeJSON(hugeBigInt))).toStrictEqual(hugeBigInt)
 
-function randomNumber(): number {
-  return Math.random() * 100000
-}
+  // in arrays
+  const bigArray = [smallBigInt, hugeBigInt]
+  expect(decodeJSON(encodeJSON(bigArray))).toStrictEqual(bigArray)
 
-function randomString(maxLength: number): string {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890äćüÖ"
-  let rv = ""
-  for (let i = 0; i < maxLength; i += 1) {
-    rv += alphabet.charAt(randomNonNegativeInt(alphabet.length))
-  }
-  return rv
-}
-
-function randomJSONAtom(
-  includeBigInt = false
-): string | number | null | undefined | BigInt {
-  const max = includeBigInt ? 4 : 3
-  const choice = randomNonNegativeInt(max)
-  switch (choice) {
-    case 0:
-      return randomString(10)
-    case 1:
-      return randomNumber()
-    case 2:
-      return null
-    case 3:
-      return randomBigInt()
-    default:
-      return undefined
-  }
-}
-
-function randomJSONAtomArray(
-  maxLength: number,
-  includeBigInt = false
-): ReturnType<typeof randomJSONAtom>[] {
-  const arr = []
-  for (let i = 0; i < maxLength; i += 1) {
-    arr.push(randomJSONAtom(includeBigInt))
-  }
-  return arr
-}
-
-/* eslint-disable @typescript-eslint/no-use-before-define */
-// note this is mutually recursive with randomJSONComponent
-function randomJSONObject(maxKeys: number, includeBigInt = false) {
-  const numKeys = randomNonNegativeInt(maxKeys)
-  const rv = {}
-  for (let i = 0; i < numKeys; i += 1) {
-    rv[randomString(30)] = randomJSONComponent(includeBigInt)
-  }
-  return rv
-}
-/* eslint-enable @typescript-eslint/no-use-before-define */
-
-// note this is mutually recursive with randomJSONObject
-function randomJSONComponent(includeBigInt = false) {
-  const f = Math.random()
-  if (f < 0.1) {
-    return randomJSONObject(10, includeBigInt)
-  }
-  if (f < 0.2) {
-    return randomJSONAtomArray(10, includeBigInt)
-  }
-  return randomJSONAtom(includeBigInt)
-}
-
-test("encodes vanilla JSON without throwing", () => {
-  for (let i = 0; i < 100; i += 1) {
-    const json = randomJSONComponent()
-    encodeJSON(json)
-  }
+  // in object values
+  const bigObject = { small: smallBigInt, huge: hugeBigInt }
+  expect(decodeJSON(encodeJSON(bigObject))).toStrictEqual(bigObject)
 })
 
-test("decodes vanilla JSON it encoded", () => {
-  for (let i = 0; i < 100; i += 1) {
-    const json = randomJSONComponent()
-    const encoded = encodeJSON(json)
-    expect(decodeJSON(encoded)).toStrictEqual(json)
+test("round-trips mixed values with bigints correctly", () => {
+  const mixedArray = [smallBigInt, 132.167, 153, 12.683e13, "hello", hugeBigInt]
+  const mixedObject = {
+    small: smallBigInt,
+    huge: hugeBigInt,
+    number: 153,
+    float: 132.167,
+    exp: 12.683e13,
+    string: "hello",
   }
-})
 
-test("encodes bigints correctly", () => {
-  // plain bigint
-  for (let i = 0; i < 10; i += 1) {
-    const big = randomBigInt()
-    expect(encodeJSON(big)).toStrictEqual(`{"B_I_G_I_N_T":"${big.toString()}"}`)
-  }
-  // bigint arrays
-  for (let i = 0; i < 10; i += 1) {
-    const bigArr = [randomBigInt()]
-    expect(encodeJSON(bigArr)).toStrictEqual(
-      `[{"B_I_G_I_N_T":"${bigArr[0].toString()}"}]`
-    )
-  }
-  // bigint object values
-  for (let i = 0; i < 10; i += 1) {
-    const big = randomBigInt()
-    const bigObj = { test: big }
-    expect(encodeJSON(bigObj)).toStrictEqual(
-      `{"test":{"B_I_G_I_N_T":"${big.toString()}"}}`
-    )
-  }
-})
-
-test("encodes random JSON with bigints without throwing", () => {
-  for (let i = 0; i < 100; i += 1) {
-    const json = randomJSONComponent(true)
-    encodeJSON(json)
-  }
-})
-
-test("decodes random JSON with bigints that it encoded", () => {
-  for (let i = 0; i < 100; i += 1) {
-    const json = randomJSONComponent(true)
-    const encoded = encodeJSON(json)
-    expect(decodeJSON(encoded)).toStrictEqual(json)
-  }
-})
-
-test("encodes very large JSON without throwing", () => {
-  const json = randomJSONAtomArray(32000)
-  encodeJSON(json)
-})
-test("decodes large JSON", () => {
-  const json = randomJSONAtomArray(32000)
-  const encoded = encodeJSON(json)
-  expect(decodeJSON(encoded)).toStrictEqual(json)
-})
-
-test("encodes very large JSON with bigints", () => {
-  const json = randomJSONAtomArray(32000, true)
-  encodeJSON(json)
-})
-test("decodes large JSON with bigints", () => {
-  const json = randomJSONAtomArray(32000, true)
-  const encoded = encodeJSON(json)
-  expect(decodeJSON(encoded)).toStrictEqual(json)
+  expect(decodeJSON(encodeJSON(mixedArray))).toStrictEqual(mixedArray)
+  expect(decodeJSON(encodeJSON(mixedObject))).toStrictEqual(mixedObject)
 })
