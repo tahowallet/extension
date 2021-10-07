@@ -45,6 +45,10 @@ import {
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 
+// This sanitizer runs on store and action data before serializing for remote
+// redux devtools. The goal is to end up with an object that is direcetly
+// JSON-serializable and deserializable; the remote end will display the
+// resulting objects without additional processing or decoding logic.
 const devToolsSanitizer = (input: unknown) => {
   switch (typeof input) {
     // We can make use of encodeJSON instead of recursively looping through
@@ -52,7 +56,8 @@ const devToolsSanitizer = (input: unknown) => {
     case "bigint":
     case "object":
       return JSON.parse(encodeJSON(input))
-    // We only need to sanitize bigints and the objects that contain them
+    // We only need to sanitize bigints and objects that may or may not contain
+    // them.
     default:
       return input
   }
@@ -106,12 +111,8 @@ const initializeStore = (startupState = {}) =>
         hostname: "localhost",
         port: 8000,
         realtime: true,
-        actionSanitizer: (action: unknown) => {
-          return devToolsSanitizer(action)
-        },
-        stateSanitizer: (state: unknown) => {
-          return devToolsSanitizer(state)
-        },
+        actionSanitizer: devToolsSanitizer,
+        stateSanitizer: devToolsSanitizer,
       }),
     ],
   })
