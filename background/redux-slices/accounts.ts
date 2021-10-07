@@ -356,23 +356,68 @@ export const addAccountNetwork = createBackgroundAsyncThunk(
 
 export const getAccountState = (state) => state.account
 
+export const getFullState = (state) => state
+
 export const selectAccountAndTimestampedActivities = createSelector(
-  getAccountState,
+  getFullState,
   (state) => {
+    const { account } = state
+    const { assets } = state
+
     // Derive activities with timestamps included
-    const activity = state.combinedData.activity.map((activityItem) => {
+    const activity = account.combinedData.activity.map((activityItem) => {
       const isSent =
         activityItem.from.toLowerCase() ===
-        Object.keys(state.accountsData)[0].toLowerCase()
+        Object.keys(account.accountsData)[0].toLowerCase()
+
       return {
         ...activityItem,
-        timestamp: state?.blocks[activityItem.blockHeight]?.timestamp,
+        timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
         isSent,
       }
     })
+
+    // Derive account "assets"/assetAmount which include USD values using
+    // data from the assets slice
+    const accountAssets = account.combinedData.assets.map((assetItem) => {
+      const rawAsset = assets.filter(
+        (asset) =>
+          asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
+      )
+
+      const usdNonDecimalValue =
+        rawAsset[0].recentPrices.USD.amounts[1] > 1
+          ? rawAsset[0].recentPrices.USD.amounts[1]
+          : rawAsset[0].recentPrices.USD.amounts[0]
+
+      const pricePerTokenUSD = parseInt(`${usdNonDecimalValue}`, 10) / 10 ** 10
+
+      const totalBalanceValueUSD =
+        pricePerTokenUSD *
+        parseInt(`${assetItem.localizedDecimalValue}`.replace(",", ""), 10)
+
+      return {
+        ...assetItem,
+        totalBalanceValueUSD: new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        })
+          .format(totalBalanceValueUSD)
+          .split("$")[1],
+        pricePerTokenUSD: new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        })
+          .format(pricePerTokenUSD)
+          .split("$")[1],
+      }
+    })
+
+    account.combinedData.assets = accountAssets
+
     return {
-      combinedData: state.combinedData,
-      accountData: state.accountsData,
+      combinedData: account.combinedData,
+      accountData: account.accountsData,
       activity,
     }
   }
