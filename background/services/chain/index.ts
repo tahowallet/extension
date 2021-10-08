@@ -30,6 +30,10 @@ import {
   txFromEthersTx,
   txFromWebsocketTx,
 } from "./utils"
+import Blocknative, {
+  BlocknativeNetworkIds,
+} from "../../third-party-data/blocknative"
+import { BlockPrices } from "../../third-party-data/blocknative/types"
 
 // We can't use destructuring because webpack has to replace all instances of `process.env` variables in the bundled output
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
@@ -47,6 +51,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   block: EIP1559Block
   transaction: AnyEVMTransaction
+  blockPrices: BlockPrices
 }
 
 /*
@@ -82,6 +87,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork
     provider: AlchemyWebSocketProvider
   }[]
+
+  blocknative: Blocknative
 
   /*
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
@@ -128,6 +135,10 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
+    this.blocknative = Blocknative.connect(
+      process.env.BLOCKNATIVE_API_KEY,
+      BlocknativeNetworkIds.ethereum.mainnet
+    )
   }
 
   async internalStartService(): Promise<void> {
@@ -286,6 +297,21 @@ export default class ChainService extends BaseService<Events> {
       logger.error(`Error broadcasting transaction ${tx}`, error)
       throw error
     }
+  }
+
+  /*
+   * Periodically fetch block prices and emit an event whenever new data is received
+   * Write block prices to IndexedDB so we have them for later
+   */
+  async pollBlockPrices(): Promise<void> {
+    // Immediately fetch the current block prices when this function gets called
+    const blockPrices = await this.blocknative.getBlockPrices()
+    this.emitter.emit("blockPrices", blockPrices)
+
+    // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
+    setTimeout(() => {
+      this.pollBlockPrices()
+    }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
   }
 
   /* *****************
