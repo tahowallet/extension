@@ -270,10 +270,11 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Quest up a particular transaction hash for periodic retrieval.
+   * Queues up a particular transaction hash for later retrieval.
    *
-   * Using this method means the service can decide when to retriecve a
-   * particular transaction.
+   * Using this method means the service can decide when to retrieve a
+   * particular transaction. Queued transactions are generally retrieved on a
+   * periodic basis.
    *
    * @param network The network on which the transaction has been broadcast.
    * @param txHash The tx hash identifier of the transaction we want to retrieve.
@@ -396,8 +397,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Save a transaction to the database and emit an event. Transactions from re-
-   * orgs are not yet handled.
+   * Save a transaction to the database and emit an event.
    *
    * @param tx The transaction to save and emit. Uniqueness and ordering will be
    *        handled by the database.

@@ -41,7 +41,7 @@ type AlchemyAssetTransferResponse = JTDDataType<typeof alchemyAssetTransferJTD>
 const isValidAlchemyAssetTransferResponse =
   ajv.compile<AlchemyAssetTransferResponse>(alchemyAssetTransferJTD)
 
-/*
+/**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
  * account.
  *
@@ -49,9 +49,9 @@ const isValidAlchemyAssetTransferResponse =
  * 1k transfers will be dropped.
  *
  * More information https://docs.alchemy.com/alchemy/documentation/apis/enhanced-apis/transfers-api#alchemy_getassettransfers
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose transfer history we're fetching
- * @param fromBlock - the block height specifying how far in the past we want
+ * @param provider an Alchemy ethers provider
+ * @param account the account whose transfer history we're fetching
+ * @param fromBlock the block height specifying how far in the past we want
  *        to look.
  */
 export async function getAssetTransfers(
@@ -157,16 +157,17 @@ type AlchemyTokenBalanceResponse = JTDDataType<typeof alchemyTokenBalanceJTD>
 const isValidAlchemyTokenBalanceResponse =
   ajv.compile<AlchemyTokenBalanceResponse>(alchemyTokenBalanceJTD)
 
-/*
+/**
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
  *
  *
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose balances we're fetching
- * @param tokens - an optional list of hex-string contract addresses. If the list
- *                 isn't provided, Alchemy will choose based on the top 100
- *                 high-volume tokens on its platform
+ *
+ * @param provider an Alchemy ethers provider
+ * @param account the account whose balances we're fetching
+ * @param tokens An optional list of hex-string contract addresses. If the list
+ *        isn't provided, Alchemy will choose based on the top 100 high-volume
+ *        tokens on its platform
  */
 export async function getTokenBalances(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
@@ -216,16 +217,15 @@ type AlchemyTokenMetadataResponse = JTDDataType<typeof alchemyTokenMetadataJTD>
 const isValidAlchemyTokenMetadataResponse =
   ajv.compile<AlchemyTokenMetadataResponse>(alchemyTokenMetadataJTD)
 
-/*
+/**
  * Use Alchemy's getTokenMetadata call to get metadata for a token contract on
  * Ethereum.
  *
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose balances we're fetching
- * @param tokens - an optional list of hex-string contract addresses. If the list
- *                 isn't provided, Alchemy will choose based on the top 100
- *                 high-volume tokens on its platform
+ *
+ * @param provider an Alchemy ethers provider
+ * @param contractAddress the address of the token smart contract whose
+ *        metadata should be returned
  */
 export async function getTokenMetadata(
   provider: AlchemyProvider | AlchemyWebSocketProvider,

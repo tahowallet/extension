@@ -112,15 +112,21 @@ export default class IndexingService extends BaseService<Events> {
    * Begin tracking the price and any balance changes of a fungible network-
    * specific asset.
    *
-   * @param asset The fungible asset to track. It will be tracked across all
-   *        account / network pairs that are tracked by the chain service.
+   * @param asset The fungible asset to track.
    */
   async addAssetToTrack(asset: SmartContractFungibleAsset): Promise<void> {
+    // TODO Track across all account/network pairs, not just on one network or
+    // TODO account.
     return this.db.addAssetToTrack(asset)
   }
 
   /**
+   * Retrieves the latest balance of the specified asset for the specified
+   * account on the specified network.
    *
+   * @param account The account that owns the given asset.
+   * @param network The network on which the balance is being checked.
+   * @param asset The asset whose balance is being checked.
    */
   async getLatestAccountBalance(
     account: string,
