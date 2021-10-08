@@ -2,14 +2,16 @@ import React, { ReactElement } from "react"
 
 interface Props {
   size?: "small" | "medium" | "large"
+  logoURL?: string
 }
 
 export default function SharedAssetIcon(props: Props): ReactElement {
-  const { size } = props
+  const { logoURL, size } = props
 
   return (
     <div className={`token_icon_wrap ${size}`}>
       <span className="icon_eth" />
+
       <style jsx>
         {`
           .token_icon_wrap {
@@ -20,12 +22,6 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             display: flex;
             align-items: center;
             justify-content: center;
-          }
-          .icon_eth {
-            background: url("./images/eth@2x.png");
-            background-size: cover;
-            width: 18px;
-            height: 29px;
           }
           .small {
             width: 32px;
@@ -41,10 +37,22 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           }
         `}
       </style>
+      <style jsx>
+        {`
+          .icon_eth {
+            background: url("${logoURL || "./images/eth@2x.png"}");
+            background-size: cover;
+            width: ${logoURL ? "32px" : "18px"};
+            height: ${logoURL ? "32px" : "29px"};
+            height: 32px;
+          }
+        `}
+      </style>
     </div>
   )
 }
 
 SharedAssetIcon.defaultProps = {
   size: "medium",
+  logoURL: undefined,
 }

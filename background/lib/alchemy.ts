@@ -3,9 +3,9 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { utils } from "ethers"
+import { logger, utils } from "ethers"
 
-import { AssetTransfer, HexString } from "../types"
+import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
 import { ETH, ETHEREUM } from "../constants"
 
 const ajv = new Ajv()
@@ -41,7 +41,7 @@ type AlchemyAssetTransferResponse = JTDDataType<typeof alchemyAssetTransferJTD>
 const isValidAlchemyAssetTransferResponse =
   ajv.compile<AlchemyAssetTransferResponse>(alchemyAssetTransferJTD)
 
-/*
+/**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
  * account.
  *
@@ -49,9 +49,9 @@ const isValidAlchemyAssetTransferResponse =
  * 1k transfers will be dropped.
  *
  * More information https://docs.alchemy.com/alchemy/documentation/apis/enhanced-apis/transfers-api#alchemy_getassettransfers
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose transfer history we're fetching
- * @param fromBlock - the block height specifying how far in the past we want
+ * @param provider an Alchemy ethers provider
+ * @param account the account whose transfer history we're fetching
+ * @param fromBlock the block height specifying how far in the past we want
  *        to look.
  */
 export async function getAssetTransfers(
@@ -85,7 +85,7 @@ export async function getAssetTransfers(
     .concat(rpcResponses[1].transfers)
     .map((json: unknown) => {
       if (!isValidAlchemyAssetTransferResponse(json)) {
-        console.warn(
+        logger.warn(
           "Alchemy asset transfer response didn't validate, did the API change?",
           json
         )
@@ -157,20 +157,21 @@ type AlchemyTokenBalanceResponse = JTDDataType<typeof alchemyTokenBalanceJTD>
 const isValidAlchemyTokenBalanceResponse =
   ajv.compile<AlchemyTokenBalanceResponse>(alchemyTokenBalanceJTD)
 
-/*
+/**
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
  *
  *
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose balances we're fetching
- * @param tokens - an optional list of hex-string contract addresses. If the list
- *                 isn't provided, Alchemy will choose based on the top 100
- *                 high-volume tokens on its platform
+ *
+ * @param provider an Alchemy ethers provider
+ * @param account the account whose balances we're fetching
+ * @param tokens An optional list of hex-string contract addresses. If the list
+ *        isn't provided, Alchemy will choose based on the top 100 high-volume
+ *        tokens on its platform
  */
 export async function getTokenBalances(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  account: string,
+  account: HexString,
   tokens?: HexString[]
 ): Promise<{ contractAddress: string; amount: bigint }[]> {
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
@@ -178,7 +179,7 @@ export async function getTokenBalances(
     tokens || "DEFAULT_TOKENS",
   ])
   if (!isValidAlchemyTokenBalanceResponse(json)) {
-    console.warn(
+    logger.warn(
       "Alchemy token balance response didn't validate, did the API change?",
       json
     )
@@ -190,6 +191,65 @@ export async function getTokenBalances(
     .filter((b) => b.error === null && b.tokenBalance !== null)
     .map((tokenBalance) => ({
       contractAddress: tokenBalance.contractAddress,
-      amount: BigInt(tokenBalance.tokenBalance),
+      amount:
+        tokenBalance.tokenBalance === "0x"
+          ? BigInt(0)
+          : BigInt(tokenBalance.tokenBalance),
     }))
+}
+
+// JSON Type Definition for the Alchemy token metadata API.
+// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api#alchemy_gettokenmetadata
+//
+// See RFC 8927 or jsontypedef.com for more detail to learn more about JTD.
+const alchemyTokenMetadataJTD = {
+  properties: {
+    decimals: { type: "uint32" },
+    name: { type: "string" },
+    symbol: { type: "string" },
+    logo: { type: "string", nullable: true },
+  },
+  additionalProperties: false,
+} as const
+
+type AlchemyTokenMetadataResponse = JTDDataType<typeof alchemyTokenMetadataJTD>
+
+const isValidAlchemyTokenMetadataResponse =
+  ajv.compile<AlchemyTokenMetadataResponse>(alchemyTokenMetadataJTD)
+
+/**
+ * Use Alchemy's getTokenMetadata call to get metadata for a token contract on
+ * Ethereum.
+ *
+ * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
+ *
+ * @param provider an Alchemy ethers provider
+ * @param contractAddress the address of the token smart contract whose
+ *        metadata should be returned
+ */
+export async function getTokenMetadata(
+  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  contractAddress: HexString
+): Promise<SmartContractFungibleAsset | null> {
+  const json: unknown = await provider.send("alchemy_getTokenMetadata", [
+    contractAddress,
+  ])
+  if (!isValidAlchemyTokenMetadataResponse(json)) {
+    logger.warn(
+      "Alchemy token metadata response didn't validate, did the API change?",
+      json
+    )
+    return null
+  }
+  return {
+    decimals: json.decimals,
+    name: json.name,
+    symbol: json.symbol,
+    metadata: {
+      logoURL: json.logo,
+      tokenLists: [],
+    },
+    homeNetwork: ETHEREUM, // TODO make multi-network friendly
+    contractAddress,
+  }
 }
