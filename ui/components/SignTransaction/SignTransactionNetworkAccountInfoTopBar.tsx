@@ -26,6 +26,7 @@ export default function SignTransactionNetworkAccountInfoTopBar(): ReactElement 
             font-weight: 500;
             line-height: 24px;
             margin-left: 5px;
+            opacity: 0;
           }
           .account_name {
             color: #fff;
@@ -52,6 +53,7 @@ export default function SignTransactionNetworkAccountInfoTopBar(): ReactElement 
             background-size: cover;
             width: 15px;
             height: 16px;
+            opacity: 0;
           }
         `}
       </style>

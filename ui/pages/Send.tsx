@@ -105,6 +105,9 @@ export default function Send(): ReactElement {
             border-bottom: 1px solid #000000;
             margin-left: -16px;
           }
+          .label {
+            margin-bottom: 6px;
+          }
         `}
       </style>
     </>

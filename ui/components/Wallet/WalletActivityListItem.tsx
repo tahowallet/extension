@@ -7,7 +7,7 @@ interface Props {
   onClick: () => void
   activity: {
     timestamp?: string
-    value?: string
+    value: string
     from?: string
     isSent?: boolean
   }
@@ -15,6 +15,7 @@ interface Props {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity } = props
+  if (typeof activity.value === "undefined") return <></>
 
   return (
     <li>
@@ -30,7 +31,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             {`${activity.isSent ? "Sent" : "Received"}`}
           </div>
           <div className="right">
-            {dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
+            {activity.timestamp &&
+              dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
           </div>
         </div>
         <div className="bottom">
