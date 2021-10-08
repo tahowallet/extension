@@ -1,11 +1,12 @@
 import React, { ReactElement } from "react"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 
 export default function Overview(): ReactElement {
   const { combinedData } = useBackgroundSelector(
-    (background) => background.account
+    selectAccountAndTimestampedActivities
   )
 
   return (
@@ -24,11 +25,11 @@ export default function Overview(): ReactElement {
           </div>
           <div className="info_group_item">
             <span className="info_left">Assets</span>
-            23
+            {combinedData.assets.length}
           </div>
         </div>
       </header>
-      <OverviewAssetsTable assets={combinedData?.assets} />
+      <OverviewAssetsTable assets={combinedData.assets} />
       <style jsx>
         {`
           .header_primary_content {

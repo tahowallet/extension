@@ -17,6 +17,7 @@ interface Props {
         logoURL?: string
       }
     }
+    totalBalanceValueUSD?: number
   }
 }
 
@@ -47,7 +48,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                 </span>
                 {assetAmount.asset.symbol}
               </div>
-              <div className="price">${assetAmount.localizedUserValue}</div>
+              <div className="price">${assetAmount.totalBalanceValueUSD}</div>
             </div>
           </div>
           <div className="right">
