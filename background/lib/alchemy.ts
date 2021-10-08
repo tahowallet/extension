@@ -3,7 +3,7 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { utils } from "ethers"
+import { logger, utils } from "ethers"
 
 import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
 import { ETH, ETHEREUM } from "../constants"
@@ -85,7 +85,7 @@ export async function getAssetTransfers(
     .concat(rpcResponses[1].transfers)
     .map((json: unknown) => {
       if (!isValidAlchemyAssetTransferResponse(json)) {
-        console.warn(
+        logger.warn(
           "Alchemy asset transfer response didn't validate, did the API change?",
           json
         )
@@ -178,7 +178,7 @@ export async function getTokenBalances(
     tokens || "DEFAULT_TOKENS",
   ])
   if (!isValidAlchemyTokenBalanceResponse(json)) {
-    console.warn(
+    logger.warn(
       "Alchemy token balance response didn't validate, did the API change?",
       json
     )
@@ -235,7 +235,7 @@ export async function getTokenMetadata(
     contractAddress,
   ])
   if (!isValidAlchemyTokenMetadataResponse(json)) {
-    console.warn(
+    logger.warn(
       "Alchemy token metadata response didn't validate, did the API change?",
       json
     )
