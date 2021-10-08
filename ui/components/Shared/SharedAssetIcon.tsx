@@ -2,30 +2,50 @@ import React, { ReactElement } from "react"
 
 interface Props {
   size?: "small" | "medium" | "large"
+  logoURL?: string
+  symbol?: string
 }
 
 export default function SharedAssetIcon(props: Props): ReactElement {
-  const { size } = props
+  const { size, logoURL, symbol } = props
 
   return (
     <div className={`token_icon_wrap ${size}`}>
-      <span className="icon_eth" />
+      {logoURL ? (
+        <div className="token_icon" />
+      ) : (
+        <div className={`token_icon_fallback ${size}`}>
+          {symbol.slice(0)[0]}
+        </div>
+      )}
+
       <style jsx>
         {`
           .token_icon_wrap {
             width: 40px;
             height: 40px;
-            background-color: var(--castle-black);
             border-radius: 80px;
+            overflow: hidden;
+          }
+          .token_icon {
+            width: 100%;
+            height: 100%;
+            background-color: var(--castle-black);
+            background: url("${logoURL}");
+            background-size: cover;
             display: flex;
             align-items: center;
             justify-content: center;
           }
-          .icon_eth {
-            background: url("./images/eth@2x.png");
-            background-size: cover;
-            width: 18px;
-            height: 29px;
+          .token_icon_fallback {
+            width: 100%;
+            height: 100%;
+            background-color: var(--castle-black);
+            color: var(--green-60);
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           .small {
             width: 32px;
@@ -47,4 +67,6 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
 SharedAssetIcon.defaultProps = {
   size: "medium",
+  logoURL: null,
+  symbol: "ETH",
 }
