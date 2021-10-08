@@ -2,6 +2,8 @@
 //
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
+import { convertToEth } from "@tallyho/tally-background/lib/utils"
+
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
@@ -11,6 +13,9 @@ interface Props {
     localizedUserValue?: string
     asset?: {
       symbol?: string
+      metadata?: {
+        logoURL?: string
+      }
     }
   }
 }
@@ -21,10 +26,26 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   // TODO: ETH price hard-coded for demo
   return (
     <li>
-      <Link to="/singleAsset">
-        <button type="button" className="standard_width">
+      <Link
+        to={{
+          pathname: "/singleAsset",
+          state: {
+            symbol: assetAmount.asset.symbol,
+          },
+        }}
+      >
+        <div className="list_item standard_width">
           <div className="left">
-            <SharedAssetIcon />
+            {assetAmount?.asset?.metadata?.logoURL ? (
+              <img
+                width="40px"
+                src={assetAmount?.asset?.metadata?.logoURL}
+                alt=""
+              />
+            ) : (
+              <SharedAssetIcon />
+            )}
+
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
@@ -39,12 +60,12 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             <span className="icon_send_asset" />
             <span className="icon_swap_asset" />
           </div>
-        </button>
+        </div>
       </Link>
 
       <style jsx>
         {`
-          button {
+          .list_item {
             height: 72px;
             border-radius: 16px;
             background-color: var(--green-95);
@@ -55,7 +76,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             justify-content: space-between;
             align-items: center;
           }
-          button:hover {
+          .list_item:hover {
             background-color: var(--green-80);
           }
           .left {
