@@ -24,7 +24,7 @@ export default function Wallet(): ReactElement {
   }
 
   const displayAssets = combinedData.assets.filter(
-    (am) => am.asset.symbol === "ETH" || am.amount > 0
+    ({ asset, amount }) => asset.symbol === "ETH" || amount > 0
   )
 
   return (
