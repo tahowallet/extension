@@ -488,31 +488,27 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    Promise.allSettled(
-      toHandle.map(async (hash) => {
-        try {
-          // TODO make this multi network
-          const result = await this.pollingProviders.ethereum.getTransaction(
-            hash
-          )
+    toHandle.forEach(async (hash) => {
+      try {
+        // TODO make this multi network
+        const result = await this.pollingProviders.ethereum.getTransaction(hash)
 
-          const tx = txFromEthersTx(result, ETH, ETHEREUM)
+        const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
-          // TODO make this provider specific
-          await this.saveTransaction(tx, "alchemy")
+        // TODO make this provider specific
+        await this.saveTransaction(tx, "alchemy")
 
-          if (!tx.blockHash && !tx.blockHeight) {
-            this.subscribeToTransactionConfirmation(tx.network, tx.hash)
-          }
-
-          // Get relevant block data.
-          await this.getBlockData(tx.network, result.blockHash)
-        } catch (error) {
-          logger.error(`Error retrieving transaction ${hash}`, error)
-          this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+        if (!tx.blockHash && !tx.blockHeight) {
+          this.subscribeToTransactionConfirmation(tx.network, tx.hash)
         }
-      })
-    )
+
+        // Get relevant block data.
+        await this.getBlockData(tx.network, result.blockHash)
+      } catch (error) {
+        logger.error(`Error retrieving transaction ${hash}`, error)
+        this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+      }
+    })
   }
 
   /**
