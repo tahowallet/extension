@@ -43,7 +43,7 @@ const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
 // people's account histories. If the number is too large relative to a
-// frequently, used account, the first call will time out and waste provider
+// frequently used account, the first call will time out and waste provider
 // resources... resulting in an exponential backoff. If it's too small,
 // transaction history will appear "slow" to show up for newly imported
 // accounts.
