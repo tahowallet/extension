@@ -35,9 +35,23 @@ import {
 // `process.env` variables in the bundled output
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
-const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
-
+// How many queued transactions should be retrieved on every tx alarm, per
+// network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
+// max 1 tx/min.
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
+
+// The number of blocks to query at a time for historic asset transfers.
+// Unfortunately there's no "right" answer here that works well across different
+// people's account histories. If the number is too large relative to a
+// frequently used account, the first call will time out and waste provider
+// resources... resulting in an exponential backoff. If it's too small,
+// transaction history will appear "slow" to show up for newly imported
+// accounts.
+const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000
+
+// The number of asset transfer lookups that will be done per account to rebuild
+// historic activity.
+const NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AccountNetwork
@@ -105,10 +119,18 @@ export default class ChainService extends BaseService<Events> {
       queuedTransactions: {
         schedule: {
           delayInMinutes: 1,
-          periodInMinutes: 5,
+          periodInMinutes: 1,
         },
         handler: () => {
           this.handleQueuedTransactionAlarm()
+        },
+      },
+      historicAssetTransfers: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.handleHistoricAssetTransferAlarm()
         },
       },
     })
@@ -233,6 +255,7 @@ export default class ChainService extends BaseService<Events> {
     const block = blockFromEthersBlock(resultBlock)
 
     await this.db.addBlock(block)
+    this.emitter.emit("block", block)
     return block
   }
 
@@ -307,7 +330,6 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(tx, "local"),
       ])
     } catch (error) {
-      // TODO proper logging
       logger.error(`Error broadcasting transaction ${tx}`, error)
       throw error
     }
@@ -317,43 +339,146 @@ export default class ChainService extends BaseService<Events> {
    * PRIVATE METHODS *
    * **************** */
 
-  /*
-   * Get recent asset transfers from an account on a particular network. Emit
-   * events for any transfers found, and look up any related transactions and
-   * blocks.
+  /**
+   * Load recent asset transfers from an account on a particular network. Backs
+   * off exponentially (in block range, not in time) on failure.
+   *
+   * @param accountNetwork the account and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
     accountNetwork: AccountNetwork
   ): Promise<void> {
+    const blockHeight = await this.getBlockHeight(accountNetwork.network)
+    let fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
     try {
-      const blockHeight = await this.getBlockHeight(accountNetwork.network)
-      const fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
-      // TODO only works on Ethereum today
-      const assetTransfers = await getAssetTransfers(
-        this.pollingProviders.ethereum,
-        accountNetwork.account,
-        fromBlock
-      )
-
-      // TODO if this fails, other services still needs a way to kick
-      // off monitoring of token balances
-      this.emitter.emit("assetTransfers", {
+      return await this.loadAssetTransfers(
         accountNetwork,
-        assetTransfers,
-      })
-
-      /// send all found tx hashes into a queue to retrieve + cache
-      assetTransfers.forEach((a) =>
-        this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+        BigInt(fromBlock),
+        BigInt(blockHeight)
       )
     } catch (err) {
-      logger.error(err)
+      logger.error(
+        "Failed loaded recent assets, retrying with shorter block range",
+        accountNetwork,
+        err
+      )
     }
+
+    // TODO replace the home-spun backoff with a util function
+    fromBlock =
+      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 2)
+    try {
+      return await this.loadAssetTransfers(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
+      )
+    } catch (err) {
+      logger.error(
+        "Second failure loading recent assets, retrying with shorter block range",
+        accountNetwork,
+        err
+      )
+    }
+
+    fromBlock =
+      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 4)
+    try {
+      return await this.loadAssetTransfers(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
+      )
+    } catch (err) {
+      logger.error(
+        "Final failure loading recent assets for account",
+        accountNetwork,
+        err
+      )
+    }
+    return Promise.resolve()
+  }
+
+  /**
+   * Continue to load historic asset transfers, finding the oldest lookup and
+   * searching for asset transfers before that block.
+   *
+   * @param accountNetwork The account whose asset transfers are being loaded.
+   */
+  private async loadHistoricAssetTransfers(
+    accountNetwork: AccountNetwork
+  ): Promise<void> {
+    const oldest = await this.db.getOldestAccountAssetTransferLookup(
+      accountNetwork
+    )
+    const newest = await this.db.getNewestAccountAssetTransferLookup(
+      accountNetwork
+    )
+
+    if (newest !== undefined && oldest !== undefined) {
+      const range = newest - oldest
+      if (
+        range <
+        NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY *
+          NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
+      ) {
+        // if we haven't hit 10x the single-call limit, pull another.
+        await this.loadAssetTransfers(
+          accountNetwork,
+          oldest - BigInt(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY),
+          oldest
+        )
+      }
+    }
+  }
+
+  /**
+   * Load asset transfers from an account on a particular network within a
+   * particular block range. Emit events for any transfers found, and look up
+   * any related transactions and blocks.
+   *
+   * @param accountNetwork the account and network whose asset transfers we need
+   */
+  private async loadAssetTransfers(
+    accountNetwork: AccountNetwork,
+    startBlock: bigint,
+    endBlock: bigint
+  ): Promise<void> {
+    // TODO only works on Ethereum today
+    const assetTransfers = await getAssetTransfers(
+      this.pollingProviders.ethereum,
+      accountNetwork.account,
+      Number(startBlock),
+      Number(endBlock)
+    )
+
+    await this.db.recordAccountAssetTransferLookup(
+      accountNetwork,
+      startBlock,
+      endBlock
+    )
+
+    this.emitter.emit("assetTransfers", {
+      accountNetwork,
+      assetTransfers,
+    })
+
+    /// send all found tx hashes into a queue to retrieve + cache
+    assetTransfers.forEach((a) =>
+      this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+    )
+  }
+
+  private async handleHistoricAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
+    )
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     // TODO make this multi network
-    // TODO get transaction and load it into database
     const toHandle = this.transactionsToRetrieve.ethereum.slice(
       0,
       TRANSACTIONS_RETRIEVED_PER_ALARM
@@ -363,37 +488,27 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    await Promise.allSettled(
-      toHandle.map(async (hash) => {
-        try {
-          // TODO make this multi network
-          const result = await this.pollingProviders.ethereum.getTransaction(
-            hash
-          )
+    toHandle.forEach(async (hash) => {
+      try {
+        // TODO make this multi network
+        const result = await this.pollingProviders.ethereum.getTransaction(hash)
 
-          const tx = txFromEthersTx(result, ETH, ETHEREUM)
+        const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
-          if (!tx.blockHash && !tx.blockHeight) {
-            this.subscribeToTransactionConfirmation(tx.network, tx.hash)
-          }
+        // TODO make this provider specific
+        await this.saveTransaction(tx, "alchemy")
 
-          // Get relevant block data. Primarily used in the frontend for
-          // timestamps. Emits and saves block data
-          const block = await this.getBlockData(tx.network, result.blockHash)
-
-          // TODO make this provider specific
-          // Save block and transaction
-          await this.saveTransaction(tx, "alchemy")
-
-          // Trigger sending block to redux store
-          this.emitter.emit("block", block)
-        } catch (error) {
-          // TODO proper logging
-          logger.error(`Error retrieving transaction ${hash}`, error)
-          this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+        if (!tx.blockHash && !tx.blockHeight) {
+          this.subscribeToTransactionConfirmation(tx.network, tx.hash)
         }
-      })
-    )
+
+        // Get relevant block data.
+        await this.getBlockData(tx.network, result.blockHash)
+      } catch (error) {
+        logger.error(`Error retrieving transaction ${hash}`, error)
+        this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+      }
+    })
   }
 
   /**
@@ -411,7 +526,6 @@ export default class ChainService extends BaseService<Events> {
     try {
       await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {
-      // TODO proper logging
       error = err
       logger.error(`Error saving tx ${tx}`, error)
     }
@@ -419,7 +533,6 @@ export default class ChainService extends BaseService<Events> {
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", tx)
     } catch (err) {
-      // TODO proper logging
       error = err
       logger.error(`Error emitting tx ${tx}`, error)
     }
@@ -483,7 +596,6 @@ export default class ChainService extends BaseService<Events> {
             "alchemy"
           )
         } catch (error) {
-          // TODO proper logging
           logger.error(`Error saving tx: ${result}`, error)
         }
       }
