@@ -82,7 +82,7 @@ export class ChainDatabase extends Dexie {
       accountsToTrack:
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
       accountAssetTransferLookups:
-        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chailID],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
+        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       chainTransactions:
