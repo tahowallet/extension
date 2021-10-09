@@ -351,7 +351,7 @@ export default class ChainService extends BaseService<Events> {
     const blockHeight = await this.getBlockHeight(accountNetwork.network)
     let fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
     try {
-      await this.loadAssetTransfers(
+      return await this.loadAssetTransfers(
         accountNetwork,
         BigInt(fromBlock),
         BigInt(blockHeight)
