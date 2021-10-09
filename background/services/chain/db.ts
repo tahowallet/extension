@@ -18,8 +18,8 @@ type Transaction = AnyEVMTransaction & {
 type AccountAssetTransferLookup = {
   accountNetwork: AccountNetwork
   retrievedAt: UNIXTime
-  startBlock: BigInt
-  endBlock: BigInt
+  startBlock: bigint
+  endBlock: bigint
 }
 
 interface Migration {
@@ -208,7 +208,7 @@ export class ChainDatabase extends Dexie {
 
   async getOldestAccountAssetTransferLookup(
     accountNetwork: AccountNetwork
-  ): Promise<BigInt | null> {
+  ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
       .where("accountNetwork.account")
@@ -225,7 +225,7 @@ export class ChainDatabase extends Dexie {
 
   async getNewestAccountAssetTransferLookup(
     accountNetwork: AccountNetwork
-  ): Promise<BigInt | null> {
+  ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
       .where("accountNetwork.account")
