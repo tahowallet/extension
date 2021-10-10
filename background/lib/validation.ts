@@ -93,7 +93,10 @@ function getCacheKey(coinIds, currencySymbols) {
  * @param currencySymbols single currency or string of currencies separated by a coma
  * @returns validation function
  */
-function getSimplePriceValidator(coinIds: string, currencySymbols: string) {
+export function getSimplePriceValidator(
+  coinIds: string,
+  currencySymbols: string
+) {
   const cacheKey = getCacheKey(coinIds, currencySymbols)
   let validate = ajv.getSchema(cacheKey)
 
@@ -130,7 +133,4 @@ function getSimplePriceValidator(coinIds: string, currencySymbols: string) {
 // TODO implement me - I need at least a contract address to test this
 // export function getTokenPriceValidator() {}
 
-export default {
-  ajv,
-  getSimplePriceValidator,
-}
+export default ajv
