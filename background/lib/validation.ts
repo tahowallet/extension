@@ -110,7 +110,6 @@ export function getSimplePriceValidator(
    */
   if (validate) return validate
 
-  // See RFC 8927 or jsontypedef.com to learn more about JTD.
   // https://ajv.js.org/guide/schema-language.html#json-type-definition
   const schema = generatePriceJtdSchema(coinIds, currencySymbols)
 
