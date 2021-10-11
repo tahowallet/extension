@@ -391,16 +391,16 @@ export const selectAccountAndTimestampedActivities = createSelector(
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
     const accountAssets = account.combinedData.assets.map((assetItem) => {
-      const rawAsset = assets.filter(
+      const rawAsset = assets.find(
         (asset) =>
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
       )
 
       // Does this break if the token is less than 1 USD? Hah...
       const usdNonDecimalValue =
-        rawAsset[0].recentPrices.USD.amounts[1] > 1
-          ? rawAsset[0].recentPrices.USD.amounts[1]
-          : rawAsset[0].recentPrices.USD.amounts[0]
+        rawAsset.recentPrices.USD.amounts[1] > 1
+          ? rawAsset.recentPrices.USD.amounts[1]
+          : rawAsset.recentPrices.USD.amounts[0]
 
       const pricePerTokenUSD = parseInt(`${usdNonDecimalValue}`, 10) / 10 ** 10
 
