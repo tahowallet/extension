@@ -370,8 +370,7 @@ export const getFullState = (state) => state
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
   (state) => {
-    const { account } = state
-    const { assets } = state
+    const { account, assets } = state
 
     // Derive activities with timestamps included
     const activity = account.combinedData.activity.map((activityItem) => {
