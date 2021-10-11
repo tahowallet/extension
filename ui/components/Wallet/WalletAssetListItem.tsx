@@ -44,7 +44,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                 </span>
                 {assetAmount.asset.symbol}
               </div>
-              <div className="price">${assetAmount.totalBalanceValueUSD}</div>
+              <div className="price">${assetAmount.localizedUserValue}</div>
             </div>
           </div>
           <div className="right">

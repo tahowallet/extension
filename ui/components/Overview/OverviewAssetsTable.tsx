@@ -31,13 +31,13 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
             <td>
               <div>
                 <span className="lighter_color">$</span>
-                {asset.pricePerTokenUSD}
+                {asset.localizedPricePerToken}
               </div>
             </td>
             <td>
               <div>
                 <span className="lighter_color">$</span>
-                {asset.totalBalanceValueUSD}
+                {asset.localizedUserValue}
               </div>
               <div className="balance_token_amount">
                 {asset.localizedDecimalValue}
