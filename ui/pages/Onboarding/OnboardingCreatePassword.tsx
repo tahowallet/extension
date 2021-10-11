@@ -15,8 +15,10 @@ export default function OnboardingCreatePassword(props: Props): ReactElement {
       <div className="full_logo" />
       <h1 className="serif_header">Good hunting.</h1>
       <div className="subtitle">The decentralized web awaits.</div>
-      <SharedInput placeholder="Password" />
-      <div className="repeat_password_wrap">
+      <div className="input_wrap">
+        <SharedInput placeholder="Password" />
+      </div>
+      <div className="input_wrap repeat_password_wrap">
         <SharedInput placeholder="Repeat Password" />
       </div>
       <SharedButton type="primary" size="large" onClick={triggerNextStep}>
@@ -36,6 +38,9 @@ export default function OnboardingCreatePassword(props: Props): ReactElement {
             width: 118px;
             height: 120px;
             margin-bottom: 17px;
+          }
+          .input_wrap {
+            width: 211px;
           }
           .repeat_password_wrap {
             margin-top: 19px;
