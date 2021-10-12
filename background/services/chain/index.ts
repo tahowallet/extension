@@ -15,6 +15,7 @@ import {
   EVMNetwork,
   Network,
   SignedEVMTransaction,
+  BlockPrices,
 } from "../../types"
 import { getAssetTransfers } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
@@ -33,7 +34,6 @@ import {
 import Blocknative, {
   BlocknativeNetworkIds,
 } from "../../third-party-data/blocknative"
-import { BlockPrices } from "../../third-party-data/blocknative/types"
 
 // We can't use destructuring because webpack has to replace all instances of `process.env` variables in the bundled output
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
@@ -306,6 +306,7 @@ export default class ChainService extends BaseService<Events> {
   async pollBlockPrices(): Promise<void> {
     // Immediately fetch the current block prices when this function gets called
     const blockPrices = await this.blocknative.getBlockPrices()
+    await this.db.addBlockFees(blockPrices)
     this.emitter.emit("blockPrices", blockPrices)
 
     // Set a timeout to continue fetching block prices, defaulting to every 120 seconds

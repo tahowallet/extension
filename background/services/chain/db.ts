@@ -4,6 +4,7 @@ import {
   AccountBalance,
   AccountNetwork,
   AnyEVMTransaction,
+  BlockPrices,
   EIP1559Block,
   FungibleAsset,
   Network,
@@ -44,6 +45,13 @@ export class ChainDatabase extends Dexie {
   private blocks!: Dexie.Table<EIP1559Block, [string, string]>
 
   /*
+   * Historical transaction fee estimates provided by Blocknative
+   *
+   * Keyed by the [block number, network name] pair.
+   */
+  private blockFees!: Dexie.Table<BlockPrices, [string, string]>
+
+  /*
    * Historic and pending chain transactions relevant to tracked accounts.
    * chainTransaction is used in this context to distinguish from database
    * transactions.
@@ -71,6 +79,7 @@ export class ChainDatabase extends Dexie {
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
+      blockFees: "&[blockNumber+network.name]",
     })
 
     this.chainTransactions.hook(
@@ -192,6 +201,10 @@ export class ChainDatabase extends Dexie {
     // TODO Consider exposing whether the block was added or updated.
     // TODO Consider tracking history of block changes, e.g. in case of reorg.
     await this.blocks.put(block)
+  }
+
+  async addBlockFees(blockPrices: BlockPrices): Promise<void> {
+    await this.blockFees.put(blockPrices)
   }
 
   async addBalance(accountBalance: AccountBalance): Promise<void> {

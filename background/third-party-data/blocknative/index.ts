@@ -1,8 +1,10 @@
 import { fetchJson } from "@ethersproject/web"
 import BlocknativeSdk from "bnc-sdk"
 
-import { EthereumTransactionData, BlockPrices } from "./types"
+import { BlockPrices } from "../../types"
+import { EthereumTransactionData } from "./types"
 import { gweiToWei } from "../../lib/utils"
+import { ETHEREUM } from "../../constants/networks"
 
 const BLOCKNATIVE_API_ROOT = "https://api.blocknative.com"
 
@@ -100,6 +102,7 @@ export default class Blocknative {
     const currentBlock = response.blockPrices[0]
 
     return {
+      network: ETHEREUM,
       blockNumber: currentBlock.blockNumber,
       baseFeePerGas: gweiToWei(currentBlock.baseFeePerGas),
       estimatedTransactionCount: currentBlock.estimatedTransactionCount,

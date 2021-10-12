@@ -322,3 +322,18 @@ export type ImportData = {
   data: string
   password?: string
 }
+
+export type BlockPrices = {
+  network: Network
+  blockNumber: number
+  baseFeePerGas: bigint
+  estimatedTransactionCount: number
+  estimatedPrices: BlockEstimate[]
+}
+
+export type BlockEstimate = {
+  confidence: number
+  price: bigint
+  maxPriorityFeePerGas: bigint
+  maxFeePerGas: bigint
+}

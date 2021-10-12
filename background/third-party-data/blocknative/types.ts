@@ -27,17 +27,3 @@ type TransferDetails = {
 export type EthereumTransactionData = BlocknativeEthereumTransactionData & {
   netBalanceChanges?: EthereumNetBalanceChanges[]
 }
-
-export type BlockPrices = {
-  blockNumber: number
-  baseFeePerGas: bigint
-  estimatedTransactionCount: number
-  estimatedPrices: BlockEstimate[]
-}
-
-export type BlockEstimate = {
-  confidence: number
-  price: bigint
-  maxPriorityFeePerGas: bigint
-  maxFeePerGas: bigint
-}
