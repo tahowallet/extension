@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import classNames from "classnames"
 import { Link } from "react-router-dom"
 
 interface Props {
@@ -12,7 +13,7 @@ export default function TabBarIcon(props: Props): ReactElement {
   return (
     <>
       <Link to={`/${name}`}>
-        <div className={`icon${isActive ? " active" : ""}`} />
+        <div className={classNames("icon", { active: isActive })} />
       </Link>
       <style jsx>
         {`

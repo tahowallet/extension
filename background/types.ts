@@ -91,6 +91,12 @@ export type AnyAsset =
   | FungibleAsset
   | SmartContractFungibleAsset
 
+export function isSmartContractFungibleAsset(
+  asset: AnyAsset
+): asset is SmartContractFungibleAsset {
+  return "homeNetwork" in asset && "contractAddress" in asset
+}
+
 /*
  * The primary type representing amounts in fungible asset transactions.
  */

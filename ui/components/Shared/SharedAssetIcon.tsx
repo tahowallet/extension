@@ -18,7 +18,6 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           {symbol.slice(0)[0]}
         </div>
       )}
-
       <style jsx>
         {`
           .token_icon_wrap {

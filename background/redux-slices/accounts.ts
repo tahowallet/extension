@@ -370,8 +370,7 @@ export const getFullState = (state) => state
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
   (state) => {
-    const { account } = state
-    const { assets } = state
+    const { account, assets } = state
 
     // Derive activities with timestamps included
     const activity = account.combinedData.activity.map((activityItem) => {
@@ -392,38 +391,48 @@ export const selectAccountAndTimestampedActivities = createSelector(
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
     const accountAssets = account.combinedData.assets.map((assetItem) => {
-      const rawAsset = assets.filter(
+      const rawAsset = assets.find(
         (asset) =>
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
       )
 
-      // Does this break if the token is less than 1 USD? Hah...
-      const usdNonDecimalValue =
-        rawAsset[0].recentPrices.USD.amounts[1] > 1
-          ? rawAsset[0].recentPrices.USD.amounts[1]
-          : rawAsset[0].recentPrices.USD.amounts[0]
+      if (rawAsset) {
+        // Does this break if the token is less than 1 USD? Hah...
+        const usdIndex = rawAsset.recentPrices.USD.amounts[1] > 1 ? 1 : 0
+        const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
 
-      const pricePerTokenUSD = parseInt(`${usdNonDecimalValue}`, 10) / 10 ** 10
+        const usdDecimals = rawAsset.recentPrices.USD.pair[usdIndex].decimals
+        const combinedDecimals = assetItem.asset.decimals + usdDecimals
 
-      const totalBalanceValueUSD =
-        pricePerTokenUSD *
-        parseInt(`${assetItem.localizedDecimalValue}`.replace(",", ""), 10)
+        // Multiply then convert to localized decimal value
+        const localizedUserValue =
+          (Number(usdNonDecimalValue) * Number(assetItem.amount)) /
+          10 ** combinedDecimals
 
-      // Add to total user value
-      totalUserValue += totalBalanceValueUSD
+        // Add to total user value
+        totalUserValue += localizedUserValue
 
+        return {
+          ...assetItem,
+          localizedUserValue: formatPrice(localizedUserValue),
+          localizedPricePerToken: formatPrice(
+            Number(usdNonDecimalValue) / 10 ** usdDecimals
+          ),
+        }
+      }
       return {
         ...assetItem,
-        totalBalanceValueUSD: formatPrice(totalBalanceValueUSD),
-        pricePerTokenUSD: formatPrice(pricePerTokenUSD),
+        localizedUserValue: "Unknown",
+        localizedPricePerToken: "Unknown",
       }
     })
 
-    account.combinedData.assets = accountAssets
-    account.combinedData.totalUserValue = formatPrice(totalUserValue)
-
     return {
-      combinedData: account.combinedData,
+      combinedData: {
+        assets: accountAssets,
+        totalUserValue: formatPrice(totalUserValue),
+        activity: account.combinedData.activity,
+      },
       accountData: account.accountsData,
       activity,
     }

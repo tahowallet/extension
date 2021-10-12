@@ -4,11 +4,7 @@ import addAJVFormats from "ajv-formats"
 import { TokenList, schema } from "@uniswap/token-lists"
 
 import { ETHEREUM } from "../constants"
-import {
-  Network,
-  SmartContractFungibleAsset,
-  TokenListAndReference,
-} from "../types"
+import { SmartContractFungibleAsset, TokenListAndReference } from "../types"
 
 export async function fetchAndValidateTokenList(
   url: string
@@ -31,7 +27,9 @@ export async function fetchAndValidateTokenList(
   }
 }
 
-export async function fetchAndValidateTokenLists(urls: string[]) {
+export async function fetchAndValidateTokenLists(
+  urls: string[]
+): Promise<TokenListAndReference[]> {
   return (await Promise.allSettled(urls.map(fetchAndValidateTokenList)))
     .filter((l) => l.status === "fulfilled")
     .map((l) => (l as PromiseFulfilledResult<TokenListAndReference>).value)
@@ -103,9 +101,10 @@ export function networkAssetsFromLists(
   return Object.entries(merged)
     .map(([k, v]) => v)
     .slice()
-    .sort(
-      (a, b) =>
-        (a.metadata?.tokenLists?.length || 0) -
-        (b.metadata?.tokenLists?.length || 0)
+    .sort((a, b) =>
+      (a.metadata?.tokenLists?.length || 0) >
+      (b.metadata?.tokenLists?.length || 0)
+        ? 1
+        : -1
     )
 }
