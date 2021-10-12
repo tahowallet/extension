@@ -21,7 +21,6 @@ import {
   ConfirmedEVMTransaction,
   SignedEVMTransaction,
   KeyringTypes,
-  EIP1559TransactionRequest,
 } from "./types"
 
 import rootReducer from "./redux-slices"

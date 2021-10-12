@@ -1,4 +1,4 @@
-import { utils, BigNumber } from "ethers"
+import { utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import JSONBig from "json-bigint"
 
