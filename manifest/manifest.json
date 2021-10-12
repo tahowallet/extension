@@ -31,8 +31,6 @@
     "alarms",
     "storage",
     "unlimitedStorage",
-    "activeTab",
-    "webRequest",
     "tabs",
     "notifications"
   ],
