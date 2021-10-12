@@ -1,4 +1,5 @@
-import Ajv from "ajv/dist/jtd"
+import Ajv, { JTDDataType } from "ajv/dist/jtd"
+import { AnyValidateFunction } from "ajv/dist/types"
 import logger from "./logger"
 
 /**
@@ -19,8 +20,8 @@ const ajv = new Ajv()
  * @param expandTo the template that will be the value of every expanded key
  * @returns an object with all the keys separate and the expandTo as values
  */
-function expand(values: string, expandTo: unknown) {
-  return values.split(",").reduce((acc, curr) => {
+function expand(values: Array<string>, expandTo: unknown) {
+  return values.reduce((acc, curr) => {
     acc[curr] = expandTo
     return acc
   }, {} as { [x: string]: unknown })
@@ -55,7 +56,10 @@ function expand(values: string, expandTo: unknown) {
  * @param currencySymbols single currency or string of currencies separated by a coma
  * @returns schema object
  */
-function generatePriceJtdSchema(coinIds: string, currencySymbols: string) {
+function generatePriceJtdSchema(
+  coinIds: Array<string>,
+  currencySymbols: Array<string>
+) {
   const propertiesSlice = {
     properties: {
       ...expand(currencySymbols, { type: "float64" }),
@@ -73,6 +77,25 @@ function generatePriceJtdSchema(coinIds: string, currencySymbols: string) {
 function getCacheKey(coinIds, currencySymbols) {
   return `coingecko_simple/price_${coinIds}_${currencySymbols}`
 }
+
+/**
+ * https://github.com/ajv-validator/ajv/blob/master/spec/types/jtd-schema.spec.ts - jtd unit tests
+ * https://ajv.js.org/json-type-definition.html - jtd spec ajv
+ * https://jsontypedef.com/docs/jtd-in-5-minutes/ - jtd in 5 mins
+ * https://github.com/jsontypedef/homebrew-jsontypedef - jtd tooling
+ * https://ajv.js.org/guide/typescript.html - using with ts
+ *
+ */
+const coingeckoPriceSchema = {
+  values: {
+    properties: {
+      last_updated_at: { type: "uint32" },
+    },
+    additionalProperties: true,
+  },
+}
+
+type CoinGeckoPriceDataJtd = JTDDataType<typeof coingeckoPriceSchema>
 
 /**
  * The purpose of the validation is to be sure, that after it passed our data looks exactly
@@ -94,11 +117,15 @@ function getCacheKey(coinIds, currencySymbols) {
  * @returns validation function
  */
 export function getSimplePriceValidator(
-  coinIds: string,
-  currencySymbols: string
-) {
-  const cacheKey = getCacheKey(coinIds, currencySymbols)
-  let validate = ajv.getSchema(cacheKey)
+  coinIds: string | Array<string>,
+  currencySymbols: string | Array<string>
+): AnyValidateFunction<CoinGeckoPriceDataJtd> {
+  const coins = typeof coinIds === "string" ? [coinIds] : coinIds
+  const currencies =
+    typeof currencySymbols === "string" ? [currencySymbols] : currencySymbols
+
+  const cacheKey = getCacheKey(coins, currencies)
+  let validate = ajv.getSchema<CoinGeckoPriceDataJtd>(cacheKey)
 
   /**
    * Schema compile is a costly operation so we want to do it as lazyly as possible.
@@ -111,7 +138,7 @@ export function getSimplePriceValidator(
   if (validate) return validate
 
   // https://ajv.js.org/guide/schema-language.html#json-type-definition
-  const schema = generatePriceJtdSchema(coinIds, currencySymbols)
+  const schema = generatePriceJtdSchema(coins, currencies)
 
   try {
     /**
@@ -121,7 +148,7 @@ export function getSimplePriceValidator(
      * > the schema will be compiled when it is used first time.
      */
     ajv.addSchema(schema, cacheKey)
-    validate = ajv.getSchema(cacheKey)
+    validate = ajv.getSchema<CoinGeckoPriceDataJtd>(cacheKey)
   } catch (e) {
     logger.error(e)
   }

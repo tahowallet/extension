@@ -43,16 +43,16 @@ export async function getPrices(
   assets: CoinGeckoAsset[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoId).join(",")
+  const coinIds = assets.map((a) => a.metadata.coinGeckoId)
 
-  const currencySymbols = vsCurrencies
-    .map((c) => c.symbol.toLowerCase())
-    .join(",")
+  const currencySymbols = vsCurrencies.map((c) => c.symbol.toLowerCase())
 
-  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
+  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds.join(
+    ","
+  )}&include_last_updated_at=true&vs_currencies=${currencySymbols.join(",")}`
 
   const json = await fetchJson(url)
-  // TODO further validate response, fix loss of precision from json
+  // TODO fix loss of precision from json
   // TODO: TESTME
   const validate = getSimplePriceValidator(coinIds, currencySymbols)
 
@@ -130,7 +130,10 @@ export async function getEthereumTokenPrices(
         },
         amount: BigInt(price * 10 ** fiatDecimals),
       },
-      time: Number.parseInt((priceDetails as any).last_updated_at || 0, 10),
+      time: Number.parseInt(
+        (priceDetails as { last_updated_at }).last_updated_at || 0,
+        10
+      ),
     }
   })
   return prices
