@@ -31,7 +31,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
             <td>
               <div>
                 <span className="lighter_color">$</span>
-                {asset.localizedDecimalValue}
+                {asset.localizedPricePerToken}
               </div>
             </td>
             <td>
@@ -40,7 +40,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
                 {asset.localizedUserValue}
               </div>
               <div className="balance_token_amount">
-                {parseInt(convertToEth(asset.amount), 10).toFixed(5)}
+                {asset.localizedDecimalValue}
               </div>
             </td>
           </tr>

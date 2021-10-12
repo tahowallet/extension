@@ -354,25 +354,93 @@ export const addAccountNetwork = createBackgroundAsyncThunk(
   }
 )
 
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  })
+    .format(price)
+    .split("$")[1]
+}
+
 export const getAccountState = (state) => state.account
 
+export const getFullState = (state) => state
+
 export const selectAccountAndTimestampedActivities = createSelector(
-  getAccountState,
+  getFullState,
   (state) => {
+    const { account, assets } = state
+
     // Derive activities with timestamps included
-    const activity = state.combinedData.activity.map((activityItem) => {
+    const activity = account.combinedData.activity.map((activityItem) => {
       const isSent =
         activityItem.from.toLowerCase() ===
-        Object.keys(state.accountsData)[0].toLowerCase()
+        Object.keys(account.accountsData)[0].toLowerCase()
+
       return {
         ...activityItem,
-        timestamp: state?.blocks[activityItem.blockHeight]?.timestamp,
+        timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
         isSent,
       }
     })
+
+    // Keep a tally of the total user value
+    let totalUserValue = 0
+
+    // Derive account "assets"/assetAmount which include USD values using
+    // data from the assets slice
+    const accountAssets = account.combinedData.assets.map((assetItem) => {
+      const rawAsset = assets.find(
+        (asset) =>
+          asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
+      )
+
+      if (rawAsset) {
+        // Does this break if the token is less than 1 USD? Hah...
+        const usdIndex = rawAsset.recentPrices.USD.amounts[1] > 1 ? 1 : 0
+        const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
+
+        const usdDecimals = rawAsset.recentPrices.USD.pair[usdIndex].decimals
+        const combinedDecimals = assetItem.asset.decimals + usdDecimals
+
+        // Choose the precision we actually want
+        const desiredDecimals = 2
+
+        // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
+        const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
+
+        const dividedOutDecimals =
+          userValue /
+          10n ** (BigInt(combinedDecimals) - BigInt(desiredDecimals))
+        const localizedUserValue =
+          Number(dividedOutDecimals) / 10 ** desiredDecimals
+
+        // Add to total user value
+        totalUserValue += localizedUserValue
+
+        return {
+          ...assetItem,
+          localizedUserValue: formatPrice(localizedUserValue),
+          localizedPricePerToken: formatPrice(
+            Number(usdNonDecimalValue) / 10 ** usdDecimals
+          ),
+        }
+      }
+      return {
+        ...assetItem,
+        localizedUserValue: "Unknown",
+        localizedPricePerToken: "Unknown",
+      }
+    })
+
     return {
-      combinedData: state.combinedData,
-      accountData: state.accountsData,
+      combinedData: {
+        assets: accountAssets,
+        totalUserValue: formatPrice(totalUserValue),
+        activity: account.combinedData.activity,
+      },
+      accountData: account.accountsData,
       activity,
     }
   }
