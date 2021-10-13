@@ -3,8 +3,9 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { logger, utils } from "ethers"
+import { utils } from "ethers"
 
+import logger from "./logger"
 import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
 import { ETH, ETHEREUM } from "../constants"
 
