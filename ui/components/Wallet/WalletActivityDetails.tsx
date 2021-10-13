@@ -2,6 +2,7 @@ import React, { useCallback, ReactElement } from "react"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import { AnyEVMTransaction } from "@tallyho/tally-background/types"
 import dayjs from "dayjs"
+import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
 
@@ -117,21 +118,7 @@ function ethTransformer(value: string | number | bigint) {
 }
 
 interface WalletActivityDetailsProps {
-  activityItem:
-    | (AnyEVMTransaction & {
-        timestamp?: string
-        isSent?: boolean
-        from?: string
-        to?: string
-      })
-    | {
-        timestamp?: string
-        isSent?: boolean
-        value?: string
-        from?: string
-        to?: string
-        hash?: string
-      }
+  activityItem: ActivityItem
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page

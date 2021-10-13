@@ -2,15 +2,11 @@ import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
+import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
 
 interface Props {
   onClick: () => void
-  activity: {
-    timestamp?: string
-    value: string
-    from?: string
-    isSent?: boolean
-  }
+  activity: ActivityItem
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
