@@ -100,7 +100,8 @@ export async function getAssetTransfers(
 
       logger.warn(
         "Alchemy asset transfer response didn't validate, did the API change?",
-        jsonResponse
+        jsonResponse,
+        isValidAlchemyAssetTransferResponse.errors
       )
       return []
     })
@@ -194,7 +195,8 @@ export async function getTokenBalances(
   if (!isValidAlchemyTokenBalanceResponse(json)) {
     logger.warn(
       "Alchemy token balance response didn't validate, did the API change?",
-      json
+      json,
+      isValidAlchemyTokenBalanceResponse.errors
     )
     return []
   }
