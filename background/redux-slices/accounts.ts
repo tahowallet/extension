@@ -404,10 +404,17 @@ export const selectAccountAndTimestampedActivities = createSelector(
         const usdDecimals = rawAsset.recentPrices.USD.pair[usdIndex].decimals
         const combinedDecimals = assetItem.asset.decimals + usdDecimals
 
-        // Multiply then convert to localized decimal value
+        // Choose the precision we actually want
+        const desiredDecimals = 2
+
+        // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
+        const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
+
+        const dividedOutDecimals =
+          userValue /
+          10n ** (BigInt(combinedDecimals) - BigInt(desiredDecimals))
         const localizedUserValue =
-          (Number(usdNonDecimalValue) * Number(assetItem.amount)) /
-          10 ** combinedDecimals
+          Number(dividedOutDecimals) / 10 ** desiredDecimals
 
         // Add to total user value
         totalUserValue += localizedUserValue
