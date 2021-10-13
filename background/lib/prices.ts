@@ -139,7 +139,7 @@ export async function getEthereumTokenPrices(
           symbol: currencySymbol.toUpperCase(),
           decimals: fiatDecimals,
         },
-        amount: BigInt(price * 10 ** fiatDecimals),
+        amount: BigInt(Math.trunc(price * 10 ** fiatDecimals)),
       },
       time: priceDetails.last_updated_at,
     }
