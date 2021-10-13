@@ -1,5 +1,3 @@
-// @ts-check
-//
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
