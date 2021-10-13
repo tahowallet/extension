@@ -112,7 +112,7 @@ const renameAndPickKeys = (keysMap, activityItem) =>
     return previousValue
   }, {})
 
-function ethTransformer(value) {
+function ethTransformer(value: string | number | bigint) {
   return `${convertToEth(value)} ETH`
 }
 
