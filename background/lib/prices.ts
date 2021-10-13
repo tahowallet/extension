@@ -29,7 +29,11 @@ export async function getPrice(
     return null
   }
 
-  return json ? parseFloat(json[coingeckoCoinId][currencySymbol]) : null
+  return json
+    ? parseFloat(
+        json[coingeckoCoinId][currencySymbol] as string // FIXME Drop as when strict mode arrives and price schema type can include this.
+      )
+    : null
 }
 
 function multiplyByFloat(n: bigint, f: number, precision: number) {
@@ -78,7 +82,7 @@ export async function getPrices(
               amounts: [
                 multiplyByFloat(
                   BigInt(10) ** BigInt(c.decimals),
-                  parseFloat(simpleCoinPrices[symbol]),
+                  simpleCoinPrices[symbol] as number, // FIXME Drop as when strict mode arrives and price schema type can include this.
                   8
                 ),
                 BigInt(1),

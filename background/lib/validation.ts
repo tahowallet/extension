@@ -24,7 +24,7 @@ const coingeckoPriceSchema = {
     },
     additionalProperties: true,
   },
-}
+} as const
 
 type CoinGeckoPriceDataJtd = JTDDataType<typeof coingeckoPriceSchema>
 
