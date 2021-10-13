@@ -36,10 +36,20 @@ const alchemyAssetTransferJTD = {
   additionalProperties: true,
 } as const
 
-type AlchemyAssetTransferResponse = JTDDataType<typeof alchemyAssetTransferJTD>
+const alchemyGetAssetTransfersJTD = {
+  properties: {
+    transfers: {
+      elements: alchemyAssetTransferJTD,
+    },
+  },
+} as const
+
+type AlchemyAssetTransferResponse = JTDDataType<
+  typeof alchemyGetAssetTransfersJTD
+>
 
 const isValidAlchemyAssetTransferResponse =
-  ajv.compile<AlchemyAssetTransferResponse>(alchemyAssetTransferJTD)
+  ajv.compile<AlchemyAssetTransferResponse>(alchemyGetAssetTransfersJTD)
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -82,19 +92,21 @@ export async function getAssetTransfers(
     ]),
   ])
 
-  return rpcResponses[0].transfers
-    .concat(rpcResponses[1].transfers)
-    .map((json: unknown) => {
-      if (!isValidAlchemyAssetTransferResponse(json)) {
-        logger.warn(
-          "Alchemy asset transfer response didn't validate, did the API change?",
-          json
-        )
-        return null
+  return rpcResponses
+    .flatMap((jsonResponse: unknown) => {
+      if (isValidAlchemyAssetTransferResponse(jsonResponse)) {
+        return jsonResponse.transfers
       }
 
+      logger.warn(
+        "Alchemy asset transfer response didn't validate, did the API change?",
+        jsonResponse
+      )
+      return []
+    })
+    .map((transfer) => {
       // TODO handle NFT asset lookup properly
-      if (json.erc721TokenId) {
+      if (transfer.erc721TokenId) {
         return null
       }
 
@@ -102,19 +114,19 @@ export async function getAssetTransfers(
       // TODO handle nonfungible assets properly
       // TODO handle assets with a contract address and no name
       if (
-        !json.rawContract ||
-        !json.rawContract.value ||
-        !json.rawContract.decimal ||
-        !json.asset
+        !transfer.rawContract ||
+        !transfer.rawContract.value ||
+        !transfer.rawContract.decimal ||
+        !transfer.asset
       ) {
         return null
       }
 
-      const asset = !json.rawContract.address
+      const asset = !transfer.rawContract.address
         ? {
-            contractAddress: json.rawContract.address,
-            decimals: Number(BigInt(json.rawContract.decimal)),
-            symbol: json.asset,
+            contractAddress: transfer.rawContract.address,
+            decimals: Number(BigInt(transfer.rawContract.decimal)),
+            symbol: transfer.asset,
             homeNetwork: ETHEREUM, // TODO is this true?
           }
         : ETH
@@ -122,11 +134,11 @@ export async function getAssetTransfers(
         network: ETHEREUM, // TODO make this friendly across other networks
         assetAmount: {
           asset,
-          amount: BigInt(json.rawContract.value),
+          amount: BigInt(transfer.rawContract.value),
         },
-        txHash: json.hash,
-        to: json.to,
-        from: json.from,
+        txHash: transfer.hash,
+        to: transfer.to,
+        from: transfer.from,
         dataSource: "alchemy",
       } as AssetTransfer
     })
