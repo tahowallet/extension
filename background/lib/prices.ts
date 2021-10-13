@@ -17,7 +17,7 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  const validate = getSimplePriceValidator(coingeckoCoinId, currencySymbol)
+  const validate = getSimplePriceValidator()
 
   if (!validate(json)) {
     logger.warn(
@@ -43,18 +43,18 @@ export async function getPrices(
   assets: CoinGeckoAsset[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoId)
+  const coinIds = assets.map((a) => a.metadata.coinGeckoId).join(",")
 
-  const currencySymbols = vsCurrencies.map((c) => c.symbol.toLowerCase())
+  const currencySymbols = vsCurrencies
+    .map((c) => c.symbol.toLowerCase())
+    .join(",")
 
-  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds.join(
-    ","
-  )}&include_last_updated_at=true&vs_currencies=${currencySymbols.join(",")}`
+  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
 
   const json = await fetchJson(url)
   // TODO fix loss of precision from json
   // TODO: TESTME
-  const validate = getSimplePriceValidator(coinIds, currencySymbols)
+  const validate = getSimplePriceValidator()
 
   if (!validate(json)) {
     logger.warn(

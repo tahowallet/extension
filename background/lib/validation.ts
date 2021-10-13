@@ -10,75 +10,6 @@ import logger from "./logger"
 const ajv = new Ajv()
 
 /**
- * This is a small helper function that helps creating jtd schema by expanding concatenated keys
- * into separate keys + values
- *
- * eg.
- *   "usd,eur", expandTo: {type: "float64"} => { usd: {type: "float64"}, eur: {type: "float64"}}
- *
- * @param values single element or string of elements separated by ,
- * @param expandTo the template that will be the value of every expanded key
- * @returns an object with all the keys separate and the expandTo as values
- */
-function expand(values: Array<string>, expandTo: unknown) {
-  return values.reduce((acc, curr) => {
-    acc[curr] = expandTo
-    return acc
-  }, {} as { [x: string]: unknown })
-}
-
-/**
- * Based on the runtime arguments generates a validation schema for
- * coingecko simple/price endpoint
- *
- * {
- *  properties: {
- *      coinId1: {
- *          properties: {
- *              currency1: {type: "float64"},
- *              currency2: {type: "float64"},
- *              currencyn: {type: "float64"},
- *              last_updated_at: { type: "uint32" },
- *          }
- *      }
- *      coinId2: {
- *          properties: {
- *              currency1: {type: "float64"},
- *              currency2: {type: "float64"},
- *              currencyn: {type: "float64"},
- *              last_updated_at: { type: "uint32" },
- *          },
- *      }
- *  }
- * }
- *
- * @param coinIds single coinid or string of coinids separated by a coma
- * @param currencySymbols single currency or string of currencies separated by a coma
- * @returns schema object
- */
-function generatePriceJtdSchema(
-  coinIds: Array<string>,
-  currencySymbols: Array<string>
-) {
-  const propertiesSlice = {
-    properties: {
-      ...expand(currencySymbols, { type: "float64" }),
-      last_updated_at: { type: "uint32" },
-    },
-  }
-
-  return {
-    properties: {
-      ...expand(coinIds, propertiesSlice),
-    },
-  }
-}
-
-function getCacheKey(coinIds, currencySymbols) {
-  return `coingecko_simple/price_${coinIds}_${currencySymbols}`
-}
-
-/**
  * https://github.com/ajv-validator/ajv/blob/master/spec/types/jtd-schema.spec.ts - jtd unit tests
  * https://ajv.js.org/json-type-definition.html - jtd spec ajv
  * https://jsontypedef.com/docs/jtd-in-5-minutes/ - jtd in 5 mins
@@ -97,34 +28,8 @@ const coingeckoPriceSchema = {
 
 type CoinGeckoPriceDataJtd = JTDDataType<typeof coingeckoPriceSchema>
 
-/**
- * The purpose of the validation is to be sure, that after it passed our data looks exactly
- * as we expect it to be. Has all the keys, all the properties etc.
- *
- * Coingecko accepts everything but returns data only for values that it knows about.
- * So if we ask for a 'usd12341234' currency it will simply not include it in the response.
- *
- * To handle this we need a schema which can be written development time but be exact enough
- * so we can be sure our data is good at runtime. I could not find a schema description like this.
- * I could describe the shape of the response, but not the exact keys. But I think this is kind of
- * the core philosophy of JTD. Describe shape not values.
- * For this I used the values form. https://ajv.js.org/json-type-definition.html#values-form
- *
- * OR we generate the validation schema for the request at runtime.
- *
- * @param coinIds single coinid or string of coinids separated by a coma
- * @param currencySymbols single currency or string of currencies separated by a coma
- * @returns validation function
- */
-export function getSimplePriceValidator(
-  coinIds: string | Array<string>,
-  currencySymbols: string | Array<string>
-): AnyValidateFunction<CoinGeckoPriceDataJtd> {
-  const coins = typeof coinIds === "string" ? [coinIds] : coinIds
-  const currencies =
-    typeof currencySymbols === "string" ? [currencySymbols] : currencySymbols
-
-  const cacheKey = getCacheKey(coins, currencies)
+export function getSimplePriceValidator(): AnyValidateFunction<CoinGeckoPriceDataJtd> {
+  const cacheKey = "coingecko_simple_price"
   let validate = ajv.getSchema<CoinGeckoPriceDataJtd>(cacheKey)
 
   /**
@@ -137,9 +42,6 @@ export function getSimplePriceValidator(
    */
   if (validate) return validate
 
-  // https://ajv.js.org/guide/schema-language.html#json-type-definition
-  const schema = generatePriceJtdSchema(coins, currencies)
-
   try {
     /**
      * addSchema does not compile the schema, but it's not necessary - be lazy
@@ -147,7 +49,7 @@ export function getSimplePriceValidator(
      * > Although addSchema does not compile schemas, explicit compilation is not required
      * > the schema will be compiled when it is used first time.
      */
-    ajv.addSchema(schema, cacheKey)
+    ajv.addSchema(coingeckoPriceSchema, cacheKey)
     validate = ajv.getSchema<CoinGeckoPriceDataJtd>(cacheKey)
   } catch (e) {
     logger.error(e)
