@@ -115,7 +115,6 @@ export default function SingleAsset(): ReactElement {
             font-size: 16px;
             font-weight: 600;
             line-height: 24px;
-            text-align: center;
           }
           .label_light {
             color: var(--green-40);
