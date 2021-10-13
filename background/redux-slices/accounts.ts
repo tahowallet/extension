@@ -11,6 +11,7 @@ import {
   Network,
   EIP1559Block,
 } from "../types"
+import { AssetsState } from "./assets"
 
 // Adds user-specific values based on preferences. This is the combination of a
 // conversion to the user's preferred currency for viewing, as well as a
@@ -363,9 +364,15 @@ function formatPrice(price: number): string {
     .split("$")[1]
 }
 
-export const getAccountState = (state) => state.account
+export const getAccountState = (state: {
+  account: AccountState
+}): AccountState => state.account
 
-export const getFullState = (state) => state
+// FIXME This should probably live somewhere else.
+export const getFullState = (state: {
+  account: AccountState
+  assets: AssetsState
+}): { account: AccountState; assets: AssetsState } => state
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
