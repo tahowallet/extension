@@ -30,7 +30,10 @@ export default function SingleAsset(): ReactElement {
         <div className="header standard_width_padded">
           <div className="left">
             <div className="asset_wrap">
-              <SharedAssetIcon />
+              <SharedAssetIcon
+                logoURL={filteredAsset?.asset?.metadata?.logoURL}
+                symbol={filteredAsset?.asset?.symbol}
+              />
               <span className="asset_name">{symbol}</span>
             </div>
             <div className="balance">{filteredAsset.localizedDecimalValue}</div>
