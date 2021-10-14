@@ -9,13 +9,18 @@ interface Props {
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
+  const hardcodedIcons = ["ETH"]
+  const hasHardcodedIcon = hardcodedIcons.includes(symbol)
+
   // Checks to see if it's an http(s) address because I've seen
   // strings get here like ipfs://QmYNz8J1h5yefkaAw6tZwUYoJyBTWmBXgAY28ZWZ5rPsLR
-  // which won't load
-  const hasValidImageURL = logoURL && logoURL.includes("http")
+  // which won't load. Of if we have a hardcoded backup image
+  const hasValidImage =
+    (logoURL && logoURL.includes("http")) || hasHardcodedIcon
+
   return (
     <div className={`token_icon_wrap ${size}`}>
-      {hasValidImageURL ? (
+      {hasValidImage ? (
         <div className="token_icon" />
       ) : (
         <div className={`token_icon_fallback ${size}`}>
@@ -30,16 +35,6 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             border-radius: 80px;
             overflow: hidden;
             background-color: var(--castle-black);
-          }
-          .token_icon {
-            width: 100%;
-            height: 100%;
-            background-color: var(--castle-black);
-            background: url("${logoURL}");
-            background-size: cover;
-            display: flex;
-            align-items: center;
-            justify-content: center;
           }
           .token_icon_fallback {
             width: 100%;
@@ -67,6 +62,21 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           }
         `}
       </style>
+      <style jsx>{`
+        .token_icon {
+          width: 100%;
+          height: 100%;
+          background-color: var(--castle-black);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          ${hasHardcodedIcon
+            ? `background: url("${`./images/${symbol}@2x.png`}") center no-repeat;
+            background-size: 45% auto;`
+            : `background: url("${logoURL}");
+            background-size: cover;`}
+        }
+      `}</style>
     </div>
   )
 }
