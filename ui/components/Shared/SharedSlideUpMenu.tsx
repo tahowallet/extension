@@ -4,7 +4,7 @@ interface Props {
   isOpen: boolean
   close: () => void
   children: React.ReactNode
-  size?: "small" | "medium" | "large"
+  size: "small" | "medium" | "large"
 }
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {

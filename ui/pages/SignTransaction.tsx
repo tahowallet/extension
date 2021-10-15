@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from "react"
-import { Link } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -7,7 +6,7 @@ import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 
 interface Props {
-  approveSpendOrSwap?: "swap" | "spend"
+  approveSpendOrSwap: "swap" | "spend"
 }
 
 export default function SignTransaction(props: Props): ReactElement {

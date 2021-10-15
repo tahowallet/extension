@@ -117,11 +117,11 @@ SelectedTokenButton.defaultProps = {
 }
 
 interface SharedAssetInputProps {
-  isTypeDestination?: boolean
+  isTypeDestination: boolean
   onAssetSelected?: () => void
-  label?: string
-  defaultToken?: { name: string }
-  isTokenOptionsLocked?: boolean
+  label: string
+  defaultToken: { name: string }
+  isTokenOptionsLocked: boolean
 }
 
 export default function SharedAssetInput(

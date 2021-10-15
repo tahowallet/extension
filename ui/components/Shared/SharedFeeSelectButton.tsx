@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import classNames from "classnames"
 
 interface Props {
-  isActive?: boolean
+  isActive: boolean
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 

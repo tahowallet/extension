@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react"
 
 interface Props {
-  placeholder?: string
-  type?: "password" | "text"
+  placeholder: string
+  type: "password" | "text"
   onChange?: (value: string) => void
 }
 

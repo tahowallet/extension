@@ -6,7 +6,7 @@ interface Props {
   info: string
   width: number
   height: number
-  isSelected?: boolean
+  isSelected: boolean
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
