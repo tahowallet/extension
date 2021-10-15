@@ -33,7 +33,7 @@ export default function WalletActivityList(props: Props): ReactElement {
   return (
     <>
       <SharedSlideUpMenu
-        isOpen={showingActivityDetail && true}
+        isOpen={showingActivityDetail !== null}
         close={handleClose}
       >
         {showingActivityDetail ? (

@@ -7,7 +7,7 @@ import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
   label: string
-  value: any
+  value: unknown
   valueDetail: string
 }
 
@@ -157,7 +157,7 @@ export default function WalletActivityDetails(
   const keysMap: KeyRenameAndPickMap<ActivityItem> = {
     blockHeight: {
       readableName: "Block Height",
-      transformer: (item) => item.toString(),
+      transformer: (item: number) => item.toString(),
       detailTransformer: () => {
         return ""
       },
