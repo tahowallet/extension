@@ -178,7 +178,7 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            {selectedToken.name ? (
+            {selectedToken?.name ? (
               <SelectedTokenButton
                 toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
               />

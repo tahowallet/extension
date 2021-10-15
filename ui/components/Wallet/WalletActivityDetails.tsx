@@ -125,7 +125,10 @@ function renameAndPickKeys<T>(keysMap: KeyRenameAndPickMap<T>, item: T) {
   }, {})
 }
 
-function ethTransformer(value: string | number | bigint) {
+function ethTransformer(value: string | number | bigint | null) {
+  if (value === null) {
+    return "(Unknown)"
+  }
   return `${convertToEth(value)} ETH`
 }
 
@@ -144,7 +147,7 @@ export default function WalletActivityDetails(
   const openExplorer = useCallback(() => {
     window
       .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
-      .focus()
+      ?.focus()
   }, [activityItem.hash])
 
   if (!activityItem) return <></>
@@ -182,7 +185,10 @@ export default function WalletActivityDetails(
     timestamp: {
       readableName: "Timestamp",
       transformer: (item) => {
-        return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
+        if (typeof item !== "undefined") {
+          return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
+        }
+        return "(Unknown)"
       },
       detailTransformer: () => {
         return ""
@@ -213,7 +219,10 @@ export default function WalletActivityDetails(
       <div className="destination_cards">
         <DestinationCard label="From" address={activityItem.from} />
         <div className="icon_transfer" />
-        <DestinationCard label="To" address={activityItem.to} />
+        <DestinationCard
+          label="To"
+          address={activityItem.to || "(Contract creation)"}
+        />
       </div>
       <ul>
         {activityItem &&
