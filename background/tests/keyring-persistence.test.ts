@@ -5,13 +5,14 @@ import {
   deriveSymmetricKeyFromPassword,
 } from "../services/keyring/encryption"
 
+const originalCrypto = global.crypto
 beforeEach(() => {
   // polyfill the WebCrypto API
   global.crypto = webcrypto as unknown as Crypto
 })
 
 afterEach(() => {
-  delete global.crypto
+  global.crypto = originalCrypto
 })
 
 test("derives symmetric keys", async () => {
