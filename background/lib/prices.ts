@@ -13,7 +13,7 @@ const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 export async function getPrice(
   coingeckoCoinId = "ethereum",
   currencySymbol = "usd"
-): Promise<number> {
+): Promise<number | null> {
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)

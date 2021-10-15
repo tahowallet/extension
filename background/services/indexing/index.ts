@@ -132,7 +132,7 @@ export default class IndexingService extends BaseService<Events> {
     account: string,
     network: Network,
     asset: FungibleAsset
-  ): Promise<AccountBalance> {
+  ): Promise<AccountBalance | null> {
     return this.db.getLatestAccountBalance(account, network, asset)
   }
 
