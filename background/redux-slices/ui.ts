@@ -1,9 +1,20 @@
 import { createSlice } from "@reduxjs/toolkit"
+import { AnyEVMTransaction } from "../types"
 
-export const initialState = {
-  showingActivityDetail: null,
+export type ActivityItem = AnyEVMTransaction & {
+  timestamp?: string
+  value: bigint
+  from?: string
+  isSent?: boolean
 }
 
+export type UIState = {
+  showingActivityDetail: ActivityItem | null
+}
+
+export const initialState: UIState = {
+  showingActivityDetail: null,
+}
 const uiSlice = createSlice({
   name: "ui",
   initialState,

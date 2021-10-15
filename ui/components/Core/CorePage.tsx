@@ -19,7 +19,7 @@ export default function CorePage(props: Props): ReactElement {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
 
-  function handleOpenHiddenDevMenu(e) {
+  function handleOpenHiddenDevMenu(e: React.MouseEvent) {
     if (process.env.NODE_ENV === "development" && e.detail === 3) {
       setIsDevToolsOpen(true)
     }

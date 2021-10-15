@@ -115,15 +115,16 @@ export function createBackgroundAsyncThunk<
   )
 
   // Wrap the top-level action creator to make it compatible with webext-redux.
-  const webextActionCreator = (payload: ThunkArg) => ({
-    type: typePrefix,
-    payload,
-  })
-
-  // Copy the utility props on the redux-tools version to our version.
-  asyncThunkProperties.forEach((prop) => {
-    webextActionCreator[prop] = baseThunkActionCreator[prop]
-  })
+  const webextActionCreator = Object.assign(
+    (payload: ThunkArg) => ({
+      type: typePrefix,
+      payload,
+    }),
+    // Copy the utility props on the redux-tools version to our version.
+    Object.fromEntries(
+      asyncThunkProperties.map((prop) => [prop, baseThunkActionCreator[prop]])
+    ) as Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps>
+  )
 
   // Register the alias to ensure it will always get proxied back to the
   // background script, where we will run our proxy action creator to fire off
@@ -133,8 +134,5 @@ export function createBackgroundAsyncThunk<
 
   // Some type coercion because these types are gnarly af. If the code above
   // type-checks, this assertion *should* be correct.
-  return webextActionCreator as ((
-    payload: ThunkArg
-  ) => Action<TypePrefix> & { payload: ThunkArg }) &
-    Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps>
+  return webextActionCreator
 }

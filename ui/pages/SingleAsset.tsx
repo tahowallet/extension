@@ -9,7 +9,7 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import BackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation()
+  const location = useLocation<{ symbol: string }>()
   const { symbol } = location.state
   const { combinedData, activity } = useBackgroundSelector(
     selectAccountAndTimestampedActivities

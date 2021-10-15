@@ -11,6 +11,7 @@ import {
   Network,
   EIP1559Block,
 } from "../types"
+import { AssetsState } from "./assets"
 
 // Adds user-specific values based on preferences. This is the combination of a
 // conversion to the user's preferred currency for viewing, as well as a
@@ -363,9 +364,15 @@ function formatPrice(price: number): string {
     .split("$")[1]
 }
 
-export const getAccountState = (state) => state.account
+export const getAccountState = (state: {
+  account: AccountState
+}): AccountState => state.account
 
-export const getFullState = (state) => state
+// FIXME This should probably live somewhere else.
+export const getFullState = (state: {
+  account: AccountState
+  assets: AssetsState
+}): { account: AccountState; assets: AssetsState } => state
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
@@ -396,12 +403,13 @@ export const selectAccountAndTimestampedActivities = createSelector(
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
       )
 
-      if (rawAsset) {
-        // Does this break if the token is less than 1 USD? Hah...
-        const usdIndex = rawAsset.recentPrices.USD.amounts[1] > 1 ? 1 : 0
+      const usdIndex = rawAsset?.recentPrices?.USD?.amounts?.[1] > 1 ? 1 : 0
+      const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
+
+      if (rawAsset && "decimals" in usdAsset && "decimals" in assetItem.asset) {
         const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
 
-        const usdDecimals = rawAsset.recentPrices.USD.pair[usdIndex].decimals
+        const usdDecimals = usdAsset.decimals
         const combinedDecimals = assetItem.asset.decimals + usdDecimals
 
         // Choose the precision we actually want
