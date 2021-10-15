@@ -204,6 +204,8 @@ export interface EIP1559Block extends EVMBlock {
   baseFeePerGas: bigint
 }
 
+export type AnyEVMBlock = EVMBlock | EIP1559Block
+
 export interface EVMTransaction {
   hash: string
   from: HexString

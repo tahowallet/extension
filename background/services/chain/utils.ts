@@ -14,20 +14,27 @@ import {
   FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
+  AnyEVMBlock,
 } from "../../types"
 import { ETHEREUM } from "../../constants"
 
 /*
  * Parse a block as returned by a polling provider.
  */
-export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
+export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
   return {
     hash: gethResult.hash,
     blockHeight: gethResult.number,
     parentHash: gethResult.parentHash,
-    difficulty: gethResult.difficulty && BigInt(gethResult.difficulty),
+    // FIXME Hold for ethers/v5.4.8 _difficulty BigNumber field; the current
+    // FIXME difficutly field is a `number` and has overflowed since Ethereum
+    // FIXME difficulty has exceeded MAX_SAFE_INTEGER. The current ethers
+    // FIXME version devolves to `null` in that scenario, and does not reflect
+    // FIXME in its type. The upcoming release will have a BigNumber
+    // FIXME _difficulty field.
+    difficulty: 0n,
     timestamp: gethResult.timestamp,
-    baseFeePerGas: gethResult.baseFeePerGas.toBigInt(),
+    baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
     network: ETHEREUM,
   }
 }
@@ -37,14 +44,14 @@ export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
  */
 export function blockFromWebsocketBlock(
   incomingGethResult: unknown
-): EIP1559Block {
+): AnyEVMBlock {
   const gethResult = incomingGethResult as {
     hash: string
     number: string
     parentHash: string
     difficulty: string
     timestamp: string
-    baseFeePerGas: string
+    baseFeePerGas?: string
   }
 
   return {
@@ -53,7 +60,9 @@ export function blockFromWebsocketBlock(
     parentHash: gethResult.parentHash,
     difficulty: BigInt(gethResult.difficulty),
     timestamp: BigNumber.from(gethResult.timestamp).toNumber(),
-    baseFeePerGas: BigInt(gethResult.baseFeePerGas),
+    baseFeePerGas: gethResult.baseFeePerGas
+      ? BigInt(gethResult.baseFeePerGas)
+      : undefined,
     network: ETHEREUM,
   }
 }

@@ -9,7 +9,7 @@ import {
   ConfirmedEVMTransaction,
   FungibleAssetAmount,
   Network,
-  EIP1559Block,
+  AnyEVMBlock,
 } from "../types"
 import { AssetsState } from "./assets"
 
@@ -53,7 +53,7 @@ type AccountState = {
   combinedData: CombinedAccountData
   // TODO the blockHeight key should be changed to something
   // compatible with the idea of multiple networks.
-  blocks: { [blockHeight: number]: EIP1559Block }
+  blocks: { [blockHeight: number]: AnyEVMBlock }
 }
 
 // TODO Plug in price data and deal with non-USD target prices.
@@ -163,7 +163,7 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    blockSeen: (immerState, { payload: block }: { payload: EIP1559Block }) => {
+    blockSeen: (immerState, { payload: block }: { payload: AnyEVMBlock }) => {
       immerState.blocks[block.blockHeight] = block
     },
     loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {

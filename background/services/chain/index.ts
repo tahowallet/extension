@@ -8,9 +8,9 @@ import logger from "../../lib/logger"
 import {
   AccountBalance,
   AccountNetwork,
+  AnyEVMBlock,
   AnyEVMTransaction,
   AssetTransfer,
-  EIP1559Block,
   EIP1559TransactionRequest,
   EVMNetwork,
   HexString,
@@ -65,7 +65,7 @@ interface Events extends ServiceLifecycleEvents {
     accountNetwork: AccountNetwork
     assetTransfers: AssetTransfer[]
   }
-  block: EIP1559Block
+  block: AnyEVMBlock
   transaction: AnyEVMTransaction
   blockPrices: BlockPrices
 }
@@ -254,7 +254,7 @@ export default class ChainService extends BaseService<Events> {
   async getBlockData(
     network: Network,
     blockHash: string
-  ): Promise<EIP1559Block> {
+  ): Promise<AnyEVMBlock> {
     // TODO make this multi network
     const cachedBlock = await this.db.getBlock(network, blockHash)
     if (cachedBlock) {
