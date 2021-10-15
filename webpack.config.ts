@@ -137,51 +137,57 @@ export default (
   supportedBrowsers.map((browser) => {
     const distPath = path.join(__dirname, "dist", browser)
 
-    return webpackMerge(
-      baseConfig,
-      // Try to find a build mode config adjustment and call it with the browser.
-      (modeConfigs[mode] || (() => ({})))(browser),
-      {
-        name: browser,
-        output: {
-          path: distPath,
-        },
-        plugins: [
-          // Handle manifest adjustments. Adjustments are looked up and merged:
-          //  - by mode (`manifest.<mode>.json`)
-          //  - by browser (`manifest.<browser>.json`)
-          //  - by mode and browser both (`manifest.<mode>.<browser>.json`)
-          //
-          // Files that don't exist are ignored, while files with invalid data
-          // throw an exception. The merge order means that e.g. a mode+browser
-          // adjustment will override a browser adjustment, which will override a
-          // mode adjustment in turn.
-          //
-          // Merging currently only supports adding keys, overriding existing key
-          // values if their values are not arrays, or adding entries to arrays.
-          // It does not support removing keys or array values. webpackMerge is
-          // used for this.
-          new CopyPlugin({
-            patterns: [
-              {
-                from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
-                to: "manifest.json",
-                transformAll: (assets: { data: Buffer }[]) => {
-                  const combinedManifest = webpackMerge(
-                    {},
-                    ...assets
-                      .map((asset) => asset.data.toString("utf8"))
-                      // JSON.parse chokes on empty strings
-                      .filter((assetData) => assetData.trim().length > 0)
-                      .map((assetData) => JSON.parse(assetData))
-                  )
+    // Try to find a build mode config adjustment and call it with the browser.
+    const modeSpecificAdjuster =
+      typeof mode !== "undefined" ? modeConfigs[mode] : undefined
+    const modeSpecificAdjustment =
+      typeof modeSpecificAdjuster !== "undefined"
+        ? modeSpecificAdjuster(browser)
+        : {}
 
-                  return JSON.stringify(combinedManifest, null, 2)
-                },
-              } as unknown as ObjectPattern, // ObjectPattern doesn't include transformAll in current types
-            ],
-          }),
-        ],
-      }
-    )
+    return webpackMerge(baseConfig, modeSpecificAdjustment, {
+      name: browser,
+      output: {
+        path: distPath,
+      },
+      plugins: [
+        // Handle manifest adjustments. Adjustments are looked up and merged:
+        //  - by mode (`manifest.<mode>.json`)
+        //  - by browser (`manifest.<browser>.json`)
+        //  - by mode and browser both (`manifest.<mode>.<browser>.json`)
+        //
+        // Files that don't exist are ignored, while files with invalid data
+        // throw an exception. The merge order means that e.g. a mode+browser
+        // adjustment will override a browser adjustment, which will override a
+        // mode adjustment in turn.
+        //
+        // Merging currently only supports adding keys, overriding existing key
+        // values if their values are not arrays, or adding entries to arrays.
+        // It does not support removing keys or array values. webpackMerge is
+        // used for this.
+        new CopyPlugin({
+          patterns: [
+            {
+              from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
+              to: "manifest.json",
+              transformAll: (assets: { data: Buffer }[]) => {
+                const combinedManifest = webpackMerge(
+                  {},
+                  ...assets
+                    .map((asset) => asset.data.toString("utf8"))
+                    // JSON.parse chokes on empty strings
+                    .filter((assetData) => assetData.trim().length > 0)
+                    .map((assetData) => JSON.parse(assetData))
+                )
+
+                return JSON.stringify(combinedManifest, null, 2)
+              },
+            } as unknown as ObjectPattern, // ObjectPattern doesn't include transformAll in current types
+          ],
+          // FIXME Forced cast below due to an incompatibility between the webpack
+          // FIXME version refed in @types/copy-webpack-plugin and our local
+          // FIXME webpack version.
+        }) as unknown as WebpackPluginInstance,
+      ],
+    })
   })
