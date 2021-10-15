@@ -40,7 +40,7 @@ export default function SharedButton(props: Props): ReactElement {
   }
 
   function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-    onClick(e)
+    onClick?.(e)
     if (linkTo) {
       setNavigateTo(linkTo)
     }
@@ -238,9 +238,5 @@ SharedButton.defaultProps = {
   isDisabled: false,
   iconSize: "medium",
   iconPosition: "right",
-  onClick: () => {
-    // do nothing by default
-    // TODO replace this with support for undefined onClick
-  },
   linkTo: null,
 }

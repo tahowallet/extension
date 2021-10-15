@@ -141,7 +141,7 @@ export default function SharedAssetInput(
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
-      onAssetSelected()
+      onAssetSelected?.()
     }
   }, [isTokenOptionsLocked, onAssetSelected])
 
@@ -255,8 +255,4 @@ SharedAssetInput.defaultProps = {
   isTokenOptionsLocked: false,
   defaultToken: { name: "" },
   label: "",
-  onAssetSelected: () => {
-    // do nothing by default
-    // TODO replace this with support for undefined onClick
-  },
 }
