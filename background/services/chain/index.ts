@@ -365,7 +365,6 @@ export default class ChainService extends BaseService<Events> {
   async pollBlockPrices(): Promise<void> {
     // Immediately fetch the current block prices when this function gets called
     const blockPrices = await this.blocknative.getBlockPrices()
-    await this.db.addBlockFees(blockPrices)
     this.emitter.emit("blockPrices", blockPrices)
 
     // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
