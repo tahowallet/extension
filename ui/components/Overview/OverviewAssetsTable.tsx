@@ -24,7 +24,11 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
           <tr>
             <td>
               <div className="asset_descriptor">
-                <SharedAssetIcon size="small" />
+                <SharedAssetIcon
+                  size="small"
+                  logoURL={asset?.asset?.metadata?.logoURL}
+                  symbol={asset?.asset?.symbol}
+                />
                 <span className="asset_name">{asset.asset.symbol}</span>
               </div>
             </td>

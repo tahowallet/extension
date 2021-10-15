@@ -118,7 +118,7 @@ export default function Swap(): ReactElement {
             border-radius: 70%;
             margin: 0 auto;
             margin-top: -5px;
-            margin-bottom: -26px;
+            margin-bottom: -32px;
             position: relative;
           }
           .settings_wrap {

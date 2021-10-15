@@ -27,16 +27,10 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       >
         <div className="list_item standard_width">
           <div className="left">
-            {assetAmount?.asset?.metadata?.logoURL ? (
-              <img
-                width="40px"
-                src={assetAmount?.asset?.metadata?.logoURL}
-                alt=""
-              />
-            ) : (
-              <SharedAssetIcon />
-            )}
-
+            <SharedAssetIcon
+              logoURL={assetAmount?.asset?.metadata?.logoURL}
+              symbol={assetAmount?.asset?.symbol}
+            />
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
