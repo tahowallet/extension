@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
 import { Redirect } from "react-router-dom"
+import { History } from "history"
 
 interface Props {
   children: React.ReactNode
@@ -17,7 +18,7 @@ interface Props {
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
-  linkTo?: string | Record<string, unknown>
+  linkTo?: History.LocationDescriptor<unknown>
 }
 
 export default function SharedButton(props: Props): ReactElement {
@@ -33,7 +34,8 @@ export default function SharedButton(props: Props): ReactElement {
     linkTo,
   } = props
 
-  const [navigateTo, setNavigateTo] = React.useState(null)
+  const [navigateTo, setNavigateTo] =
+    React.useState<History.LocationDescriptor<unknown> | null>(null)
 
   if (navigateTo && navigateTo === linkTo) {
     return <Redirect to={linkTo} />
