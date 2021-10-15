@@ -2,22 +2,13 @@
 //
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
-  assetAmount: {
-    localizedDecimalValue?: string
-    balance?: number
-    localizedUserValue?: string
-    asset?: {
-      symbol?: string
-      metadata?: {
-        logoURL?: string
-      }
-    }
-  }
+  assetAmount: CombinedAccountData["assets"][0]
 }
 
 export default function WalletAssetListItem(props: Props): ReactElement {
