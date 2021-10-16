@@ -167,7 +167,7 @@ export default function WalletActivityDetails(
       transformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
-    gas: {
+    gasUsed: {
       readableName: "Gas",
       transformer: ethTransformer,
       detailTransformer: ethTransformer,

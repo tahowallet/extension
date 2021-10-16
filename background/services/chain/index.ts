@@ -28,7 +28,7 @@ import BaseService from "../base"
 import {
   blockFromEthersBlock,
   blockFromWebsocketBlock,
-  ethersTxFromTx,
+  ethersTxFromSignedTx,
   txFromEthersTx,
   txFromWebsocketTx,
 } from "./utils"
@@ -345,7 +345,7 @@ export default class ChainService extends BaseService<Events> {
    */
   async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
     // TODO make proper use of tx.network to choose provider
-    const serialized = utils.serializeTransaction(ethersTxFromTx(tx))
+    const serialized = utils.serializeTransaction(ethersTxFromSignedTx(tx))
     try {
       await Promise.all([
         this.pollingProviders.ethereum.sendTransaction(serialized),

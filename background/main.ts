@@ -7,7 +7,7 @@ import ethers from "ethers"
 import { ETHEREUM } from "./constants/networks"
 import { decodeJSON, encodeJSON } from "./lib/utils"
 import logger from "./lib/logger"
-import { ethersTxFromTx } from "./services/chain/utils"
+import { ethersTxFromSignedTx } from "./services/chain/utils"
 
 import {
   PreferenceService,
@@ -17,11 +17,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import {
-  ConfirmedEVMTransaction,
-  SignedEVMTransaction,
-  KeyringTypes,
-} from "./types"
+import { SignedEVMTransaction, KeyringTypes } from "./types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -229,11 +225,10 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("transaction", (transaction) => {
       if (
         transaction.blockHash &&
-        (transaction as ConfirmedEVMTransaction).gas !== undefined
+        "gasUsed" in transaction &&
+        transaction.gasUsed !== undefined
       ) {
-        this.store.dispatch(
-          transactionConfirmed(transaction as ConfirmedEVMTransaction)
-        )
+        this.store.dispatch(transactionConfirmed(transaction))
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
@@ -246,32 +241,44 @@ export default class Main extends BaseService<never> {
     })
 
     transactionSliceEmitter.on("updateOptions", async (options) => {
-      // Basic transaction construction based on the provided options, with extra data from the chain service
-      const transaction = {
-        to: options.to,
-        value: options.value,
-        gasLimit: options.gasLimit,
-        maxFeePerGas: options.maxFeePerGas,
-        maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-        input: "",
-        type: 2 as const,
-        chainID: "1",
-        nonce:
+      if (
+        typeof options.from !== "undefined" &&
+        typeof options.gasLimit !== "undefined" &&
+        typeof options.maxFeePerGas !== "undefined" &&
+        typeof options.maxPriorityFeePerGas !== "undefined" &&
+        typeof options.value !== "undefined"
+      ) {
+        // TODO Deal with pending transactions.
+        const resolvedNonce =
           await this.chainService.pollingProviders.ethereum.getTransactionCount(
             options.from,
             "latest"
-          ),
-        gasPrice:
-          await this.chainService.pollingProviders.ethereum.getGasPrice(),
+          )
+
+        // Basic transaction construction based on the provided options, with extra data from the chain service
+        const transaction = {
+          from: options.from,
+          to: options.to,
+          value: options.value,
+          gasLimit: options.gasLimit,
+          maxFeePerGas: options.maxFeePerGas,
+          maxPriorityFeePerGas: options.maxPriorityFeePerGas,
+          input: "",
+          type: 2 as const,
+          chainID: "1",
+          nonce: resolvedNonce,
+          gasPrice:
+            await this.chainService.pollingProviders.ethereum.getGasPrice(),
+        }
+
+        // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
+        transaction.gasLimit = await this.chainService.estimateGasLimit(
+          ETHEREUM,
+          transaction
+        )
+
+        await this.keyringService.signTransaction(options.from, transaction)
       }
-
-      // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
-      transaction.gasLimit = await this.chainService.estimateGasLimit(
-        ETHEREUM,
-        transaction
-      )
-
-      await this.keyringService.signTransaction(options.from, transaction)
     })
 
     // Set up initial state.
@@ -322,7 +329,7 @@ export default class Main extends BaseService<never> {
     this.keyringService.emitter.on(
       "signedTx",
       async (transaction: SignedEVMTransaction) => {
-        const ethersTx = ethersTxFromTx(transaction)
+        const ethersTx = ethersTxFromSignedTx(transaction)
         const serializedTx = ethers.utils.serializeTransaction(ethersTx, {
           r: transaction.r,
           s: transaction.s,

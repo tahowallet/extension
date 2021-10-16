@@ -206,10 +206,11 @@ export interface EIP1559Block extends EVMBlock {
 
 export type AnyEVMBlock = EVMBlock | EIP1559Block
 
-export interface EVMTransaction {
+export type EVMTransaction = {
   hash: string
   from: HexString
-  to: HexString
+  to?: HexString
+  gasLimit: bigint
   gasPrice: bigint | null
   maxFeePerGas: bigint | null
   maxPriorityFeePerGas: bigint | null
@@ -228,71 +229,68 @@ export interface EVMTransaction {
   type: 0 | 1 | 2 | null
 }
 
-export interface LegacyEVMTransaction extends EVMTransaction {
+export type LegacyEVMTransaction = EVMTransaction & {
   gasPrice: bigint
   type: 0 | null
   maxFeePerGas: null
   maxPriorityFeePerGas: null
 }
 
-export interface LegacyEVMTransactionRequest
-  extends Pick<
-    LegacyEVMTransaction,
-    "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
-  > {
+export type LegacyEVMTransactionRequest = Pick<
+  LegacyEVMTransaction,
+  "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
+> & {
   gasLimit: bigint
 }
 
-export interface EIP1559Transaction extends EVMTransaction {
+export type EIP1559Transaction = EVMTransaction & {
   gasPrice: null
   type: 1 | 2
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
 }
 
-export interface EIP1559TransactionRequest
-  extends Pick<
-    EIP1559Transaction,
-    | "maxFeePerGas"
-    | "maxPriorityFeePerGas"
-    | "type"
-    | "nonce"
-    | "to"
-    | "input"
-    | "value"
-  > {
-  from?: HexString
+export type EIP1559TransactionRequest = Pick<
+  EIP1559Transaction,
+  | "from"
+  | "to"
+  | "nonce"
+  | "type"
+  | "input"
+  | "value"
+  | "maxFeePerGas"
+  | "maxPriorityFeePerGas"
+> & {
   gasLimit: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
 }
 
-export interface ConfirmedEVMTransaction extends EVMTransaction {
-  gas: bigint
+export type ConfirmedEVMTransaction = EVMTransaction & {
+  gasUsed: bigint
   blockHash: string
   blockHeight: number
 }
 
-export interface SignedEVMTransaction extends EVMTransaction {
-  gasLimit: bigint
+export type AlmostSignedEVMTransaction = EVMTransaction & {
+  r?: string
+  s?: string
+  v?: number
+}
+
+export type SignedEVMTransaction = EVMTransaction & {
   r: string
   s: string
   v: number
 }
 
-interface AlmostSignedConfirmedEVMTransaction
-  extends SignedEVMTransaction,
-    ConfirmedEVMTransaction {}
-
-export type SignedConfirmedEVMTransaction = Omit<
-  AlmostSignedConfirmedEVMTransaction,
-  "gasLimit"
->
+export type SignedConfirmedEVMTransaction = SignedEVMTransaction &
+  ConfirmedEVMTransaction
 
 export type AnyEVMTransaction =
   | EVMTransaction
   | ConfirmedEVMTransaction
+  | AlmostSignedEVMTransaction
   | SignedEVMTransaction
-  | SignedConfirmedEVMTransaction
 
 export type AssetTransfer = {
   network: Network
