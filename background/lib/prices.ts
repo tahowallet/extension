@@ -29,11 +29,7 @@ export async function getPrice(
     return null
   }
 
-  return json
-    ? parseFloat(
-        json[coingeckoCoinId][currencySymbol] as string // FIXME Drop as when strict mode arrives and price schema type can include this.
-      )
-    : null
+  return json?.[coingeckoCoinId]?.[currencySymbol] || null
 }
 
 function multiplyByFloat(n: bigint, f: number, precision: number) {
@@ -67,34 +63,32 @@ export async function getPrices(
       validate.errors
     )
 
-    return null
+    return []
   }
 
-  return assets.reduce((acc, asset) => {
+  const resolutionTime = Date.now()
+  return assets.flatMap((asset) => {
     const simpleCoinPrices = json[asset.metadata.coinGeckoId]
-    return acc.concat(
-      vsCurrencies
-        .map((c) => {
-          const symbol = c.symbol.toLowerCase()
-          if (symbol in simpleCoinPrices) {
-            return {
-              pair: [c, asset],
-              amounts: [
-                multiplyByFloat(
-                  BigInt(10) ** BigInt(c.decimals),
-                  simpleCoinPrices[symbol] as number, // FIXME Drop as when strict mode arrives and price schema type can include this.
-                  8
-                ),
-                BigInt(1),
-              ],
-              time: Date.now(),
-            } as PricePoint
+
+    return vsCurrencies
+      .map<PricePoint | undefined>((c) => {
+        const symbol = c.symbol.toLowerCase()
+        const coinPrice = simpleCoinPrices?.[symbol]
+
+        if (coinPrice) {
+          return {
+            pair: [c, asset],
+            amounts: [
+              multiplyByFloat(BigInt(10) ** BigInt(c.decimals), coinPrice, 8),
+              BigInt(1),
+            ],
+            time: resolutionTime,
           }
-          return undefined
-        })
-        .filter((p) => p)
-    )
-  }, [])
+        }
+        return undefined
+      })
+      .filter((p): p is PricePoint => p !== undefined)
+  })
 }
 
 /*
