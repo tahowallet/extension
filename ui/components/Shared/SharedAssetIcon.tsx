@@ -71,7 +71,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           align-items: center;
           justify-content: center;
           ${hasHardcodedIcon
-            ? `background: url("${`./images/${symbol}@2x.png`}") center no-repeat;
+            ? `background: url("${`./images/${symbol.toLowerCase()}@2x.png`}") center no-repeat;
             background-size: 45% auto;`
             : `background: url("${logoURL}");
             background-size: cover;`}
