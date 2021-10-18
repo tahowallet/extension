@@ -1,7 +1,7 @@
 import { fetchJson } from "@ethersproject/web"
 import BlocknativeSdk from "bnc-sdk"
 
-import { BlockPrices } from "../../types"
+import { BlockPrices, BlockEstimate } from "../../types"
 import { EthereumTransactionData } from "./types"
 import { gweiToWei } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
@@ -106,14 +106,16 @@ export default class Blocknative {
       blockNumber: currentBlock.blockNumber,
       baseFeePerGas: gweiToWei(currentBlock.baseFeePerGas),
       estimatedTransactionCount: currentBlock.estimatedTransactionCount,
-      estimatedPrices: currentBlock.estimatedPrices.map((estimate) => {
-        return {
-          confidence: estimate.confidence,
-          price: gweiToWei(estimate.price),
-          maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
-          maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
+      estimatedPrices: currentBlock.estimatedPrices.map(
+        (estimate: BlockEstimate) => {
+          return {
+            confidence: estimate.confidence,
+            price: gweiToWei(estimate.price),
+            maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
+            maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
+          }
         }
-      }),
+      ),
     }
   }
 }

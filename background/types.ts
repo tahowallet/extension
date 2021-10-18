@@ -339,7 +339,7 @@ export type BlockPrices = {
 
 export type BlockEstimate = {
   confidence: number
-  price: bigint
-  maxPriorityFeePerGas: bigint
-  maxFeePerGas: bigint
+  price: bigint | number
+  maxPriorityFeePerGas: bigint | number
+  maxFeePerGas: bigint | number
 }
