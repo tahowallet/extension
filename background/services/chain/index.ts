@@ -538,10 +538,10 @@ export default class ChainService extends BaseService<Events> {
 
         if (!tx.blockHash && !tx.blockHeight) {
           this.subscribeToTransactionConfirmation(tx.network, tx.hash)
+        } else if (tx.blockHash) {
+          // Get relevant block data.
+          await this.getBlockData(tx.network, tx.blockHash)
         }
-
-        // Get relevant block data.
-        await this.getBlockData(tx.network, result.blockHash)
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
         this.queueTransactionHashToRetrieve(ETHEREUM, hash)
