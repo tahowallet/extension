@@ -424,7 +424,7 @@ export default class IndexingService extends BaseService<Events> {
         }
       )
     } catch (err) {
-      logger.error("Error getting token prices", mainnetAssetsToTrack)
+      logger.error("Error getting token prices", mainnetAssetsToTrack, err)
     }
   }
 
