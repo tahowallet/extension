@@ -453,7 +453,7 @@ export default class ChainService extends BaseService<Events> {
       accountNetwork
     )
 
-    if (newest !== undefined && oldest !== undefined) {
+    if (newest !== null && oldest !== null) {
       const range = newest - oldest
       if (
         range <

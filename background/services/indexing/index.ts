@@ -325,7 +325,8 @@ export default class IndexingService extends BaseService<Events> {
         // TODO hardcoded to Ethereum
         const provider = this.chainService.pollingProviders.ethereum
         // pull metadata from Alchemy
-        customAsset = await getTokenMetadata(provider, contractAddress)
+        customAsset =
+          (await getTokenMetadata(provider, contractAddress)) || undefined
 
         if (customAsset) {
           await this.db.addCustomAsset(customAsset)

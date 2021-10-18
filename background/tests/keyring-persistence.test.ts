@@ -71,7 +71,7 @@ test("can decrypt a vault encrypted with a password", async () => {
 test("can decrypt a complex vault encrypted with a password", async () => {
   const vault = {
     a: { b: [1, 2, 3] },
-    c: null as null /* FIXME fix when strict is enabled */,
+    c: null,
     d: 123,
   }
   const password = "this-is-a-poor-password"
@@ -85,7 +85,7 @@ test("can decrypt a complex vault encrypted with a password", async () => {
 test("can decrypt a complex vault encrypted with a password", async () => {
   const vault = {
     a: { b: [1, 2, 3] },
-    c: null as null /* FIXME fix when strict is enabled */,
+    c: null,
     d: 123,
   }
   const password = Buffer.from(
