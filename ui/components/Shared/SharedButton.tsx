@@ -39,7 +39,7 @@ export default function SharedButton(props: Props): ReactElement {
     return <Redirect to={linkTo} />
   }
 
-  function handleClick(e) {
+  function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     onClick(e)
     if (linkTo) {
       setNavigateTo(linkTo)

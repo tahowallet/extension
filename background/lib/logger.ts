@@ -9,7 +9,7 @@ enum LogLevel {
   error = "error",
 }
 
-function genericLogger(level: LogLevel, input: any[]) {
+function genericLogger(level: LogLevel, input: unknown[]) {
   console[level](...input)
 
   const stackTrace = new Error().stack.split("\n").filter((line) => {
@@ -29,19 +29,19 @@ function genericLogger(level: LogLevel, input: any[]) {
 }
 
 const logger = {
-  log(...input: any[]) {
+  log(...input: unknown[]): void {
     genericLogger(LogLevel.log, input)
   },
 
-  info(...input: any[]) {
+  info(...input: unknown[]): void {
     genericLogger(LogLevel.info, input)
   },
 
-  warn(...input: any[]) {
+  warn(...input: unknown[]): void {
     genericLogger(LogLevel.warn, input)
   },
 
-  error(...input: any[]) {
+  error(...input: unknown[]): void {
     genericLogger(LogLevel.error, input)
   },
 }

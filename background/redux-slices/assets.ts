@@ -8,7 +8,7 @@ type SingleAssetState = AnyAsset & {
   }
 }
 
-type AssetsState = SingleAssetState[]
+export type AssetsState = SingleAssetState[]
 
 export const initialState = [] as AssetsState
 

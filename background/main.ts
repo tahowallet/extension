@@ -1,6 +1,6 @@
 import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
-import { configureStore, isPlain } from "@reduxjs/toolkit"
+import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
@@ -36,10 +36,8 @@ import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
-  importLegacyKeyring,
 } from "./redux-slices/keyrings"
 import {
-  transactionOptions,
   gasEstimates,
   emitter as transactionSliceEmitter,
 } from "./redux-slices/transaction-construction"
@@ -64,7 +62,7 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-const reduxCache = (store) => (next) => (action) => {
+const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 

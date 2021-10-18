@@ -1,19 +1,15 @@
 import React, { ReactElement, useCallback } from "react"
 
-import { AnyEVMTransaction } from "@tallyho/tally-background/types"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
+import { AnyEVMTransaction } from "@tallyho/tally-background/types"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
 
-// Leaving the old activity type as an option for now to use the
-// existing single asset page placeholder data.
 interface Props {
-  activity:
-    | AnyEVMTransaction[]
-    | { timeStamp?: string; value?: string; from?: string }[]
+  activity: AnyEVMTransaction[]
 }
 
 export default function WalletActivityList(props: Props): ReactElement {

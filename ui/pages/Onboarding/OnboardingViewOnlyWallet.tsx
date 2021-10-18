@@ -14,7 +14,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   // Quick temp solution grabbed from
   // https://ethereum.stackexchange.com/a/40670
-  function checkIfPlausibleETHAddress(checkAddress) {
+  function checkIfPlausibleETHAddress(checkAddress: string) {
     return /^(0x){1}[0-9a-fA-F]{40}$/i.test(checkAddress)
   }
 

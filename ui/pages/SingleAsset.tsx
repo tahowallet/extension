@@ -9,7 +9,7 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import BackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation()
+  const location = useLocation<{ symbol: string }>()
   const { symbol } = location.state
   const { combinedData, activity } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -30,13 +30,14 @@ export default function SingleAsset(): ReactElement {
         <div className="header standard_width_padded">
           <div className="left">
             <div className="asset_wrap">
-              <SharedAssetIcon />
+              <SharedAssetIcon
+                logoURL={filteredAsset?.asset?.metadata?.logoURL}
+                symbol={filteredAsset?.asset?.symbol}
+              />
               <span className="asset_name">{symbol}</span>
             </div>
             <div className="balance">{filteredAsset.localizedDecimalValue}</div>
-            <div className="usd_value">
-              (${filteredAsset.localizedUserValue})
-            </div>
+            <div className="usd_value">${filteredAsset.localizedUserValue}</div>
           </div>
           <div className="right">
             <SharedButton
@@ -117,7 +118,6 @@ export default function SingleAsset(): ReactElement {
             font-size: 16px;
             font-weight: 600;
             line-height: 24px;
-            text-align: center;
           }
           .label_light {
             color: var(--green-40);
