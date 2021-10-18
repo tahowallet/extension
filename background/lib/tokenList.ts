@@ -86,9 +86,10 @@ export function networkAssetsFromLists(
         metadata: {
           ...original.metadata,
           ...asset.metadata,
-          tokenLists: original.metadata.tokenLists.concat(
-            asset.metadata.tokenLists
-          ),
+          tokenLists:
+            original.metadata?.tokenLists?.concat(
+              asset.metadata?.tokenLists ?? []
+            ) ?? [],
         },
       }
     } else {
@@ -99,7 +100,7 @@ export function networkAssetsFromLists(
 
   const merged = fungibleAssets.reduce(tokenReducer, {})
   return Object.entries(merged)
-    .map(([k, v]) => v)
+    .map(([, v]) => v)
     .slice()
     .sort((a, b) =>
       (a.metadata?.tokenLists?.length || 0) >

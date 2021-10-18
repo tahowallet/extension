@@ -206,10 +206,10 @@ const accountSlice = createSlice({
       // accounts in accountsData all or part of whose balances are shared with
       // each other.
       const combinedAccountBalances = Object.values(immerState.accountsData)
-        .flatMap(
-          (ad) =>
-            ad !== "loading" &&
-            Object.values(ad.balances).map((ab) => ab.assetAmount)
+        .flatMap((ad) =>
+          ad === "loading"
+            ? []
+            : Object.values(ad.balances).map((ab) => ab.assetAmount)
         )
         .filter((b) => b)
 
@@ -273,10 +273,10 @@ const accountSlice = createSlice({
         // between two tracked accounts.
         new Map(
           Object.values(current(immerState.accountsData))
-            .flatMap(
-              (ad) =>
-                ad !== "loading" &&
-                ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
+            .flatMap((ad) =>
+              ad === "loading"
+                ? []
+                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
             )
             .map((t) => [t.hash, t])
         ).values()
@@ -310,10 +310,10 @@ const accountSlice = createSlice({
         // between two tracked accounts.
         new Map(
           Object.values(current(immerState.accountsData))
-            .flatMap(
-              (ad) =>
-                ad !== "loading" &&
-                ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
+            .flatMap((ad) =>
+              ad === "loading"
+                ? []
+                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
             )
             .map((t) => [t.hash, t])
         ).values()
@@ -387,7 +387,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
       return {
         ...activityItem,
-        timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
+        ...(activityItem.blockHeight && {
+          timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
+        }),
         isSent,
       }
     })
@@ -403,10 +405,19 @@ export const selectAccountAndTimestampedActivities = createSelector(
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
       )
 
-      const usdIndex = rawAsset?.recentPrices?.USD?.amounts?.[1] > 1 ? 1 : 0
+      // TODO Better determine which side is USD---possibly using
+      // TODO USD.pair[0|1].symbol and a known constant?
+      const possibleUsdAmount = rawAsset?.recentPrices?.USD?.amounts?.[1]
+      const usdIndex =
+        possibleUsdAmount !== undefined && possibleUsdAmount > 1 ? 1 : 0
       const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
 
-      if (rawAsset && "decimals" in usdAsset && "decimals" in assetItem.asset) {
+      if (
+        rawAsset &&
+        usdAsset &&
+        "decimals" in usdAsset &&
+        "decimals" in assetItem.asset
+      ) {
         const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
 
         const usdDecimals = usdAsset.decimals
