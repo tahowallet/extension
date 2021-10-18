@@ -157,6 +157,24 @@ export const initialState = {
   blocks: {},
 } as AccountState
 
+// Looks up existing account data in the given AccountState, dealing with
+// undefined addresses and filtering out data that is still loading.
+function lookUpExistingAccountData(
+  state: AccountState,
+  ...addresses: (string | undefined)[]
+): AccountData[] {
+  return addresses
+    .map((a) => {
+      if (typeof a !== "undefined") {
+        return state.accountsData[a]
+      }
+      return undefined
+    })
+    .filter(
+      (a): a is AccountData => typeof a !== "undefined" && a !== "loading"
+    )
+}
+
 // TODO Much of the combinedData bits should probably be done in a Reselect
 // TODO selector.
 const accountSlice = createSlice({
@@ -239,10 +257,11 @@ const accountSlice = createSlice({
       immerState,
       { payload: transaction }: { payload: AnyEVMTransaction }
     ) => {
-      const existingAccounts = [
-        immerState.accountsData[transaction.from.toLowerCase()],
-        immerState.accountsData[transaction.to.toLowerCase()],
-      ].filter((a): a is AccountData => a && a !== "loading")
+      const existingAccounts = lookUpExistingAccountData(
+        immerState,
+        transaction.from.toLowerCase(),
+        transaction.to?.toLowerCase()
+      )
 
       existingAccounts.forEach((immerExistingAccount) => {
         if (
@@ -286,10 +305,11 @@ const accountSlice = createSlice({
       immerState,
       { payload: transaction }: { payload: ConfirmedEVMTransaction }
     ) => {
-      const existingAccounts = [
-        immerState.accountsData[transaction.from.toLowerCase()],
-        immerState.accountsData[transaction.to.toLowerCase()],
-      ].filter((a): a is AccountData => a && a !== "loading")
+      const existingAccounts = lookUpExistingAccountData(
+        immerState,
+        transaction.from.toLowerCase(),
+        transaction.to?.toLowerCase()
+      )
 
       existingAccounts.forEach((immerAccount) => {
         immerAccount.unconfirmedTransactions = [
