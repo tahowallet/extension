@@ -33,7 +33,7 @@ const transactionSlice = createSlice({
       immerState,
       { payload: gasEstimates }: { payload: BlockPrices }
     ) => {
-      immerState.gasEstimates = gasEstimates
+      return { ...immerState, gasEstimates }
     },
   },
 })
