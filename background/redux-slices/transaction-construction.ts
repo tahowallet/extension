@@ -1,17 +1,25 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { EIP1559TransactionRequest } from "../types"
+import { EIP1559TransactionRequest, BlockPrices } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
-export const initialState: Partial<EIP1559TransactionRequest> = {
-  gasLimit: BigInt(21000), // 21,000 gwei is the minimum amount of gas needed for sending a transaction
-  maxFeePerGas: BigInt(21000),
-  maxPriorityFeePerGas: BigInt(21000),
+type TransactionConstruction = {
+  transactionRequest: Partial<EIP1559TransactionRequest>
+  gasEstimates: BlockPrices | null
+}
+
+export const initialState: TransactionConstruction = {
+  transactionRequest: {
+    gasLimit: BigInt(21000), // 21,000 is the minimum amount of gas needed for sending a transaction
+    maxFeePerGas: BigInt(21000),
+    maxPriorityFeePerGas: BigInt(21000),
+  },
+  gasEstimates: null,
 }
 
 const transactionSlice = createSlice({
-  name: "transaction",
+  name: "transaction-construction",
   initialState,
   reducers: {
     transactionOptions: (
@@ -20,15 +28,23 @@ const transactionSlice = createSlice({
     ) => {
       return { ...immerState, ...options }
     },
+
+    gasEstimates: (
+      immerState,
+      { payload: gasEstimates }: { payload: BlockPrices }
+    ) => {
+      return { ...immerState, gasEstimates }
+    },
   },
 })
 
-export const { transactionOptions } = transactionSlice.actions
+export const { transactionOptions, gasEstimates } = transactionSlice.actions
 
 export default transactionSlice.reducer
 
 export type Events = {
   updateOptions: Partial<EIP1559TransactionRequest>
+  gasEstimates: BlockPrices
 }
 
 export const emitter = new Emittery<Events>()
