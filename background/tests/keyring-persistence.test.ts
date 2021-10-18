@@ -68,7 +68,11 @@ test("can decrypt a vault encrypted with a password", async () => {
 })
 
 test("can decrypt a complex vault encrypted with a password", async () => {
-  const vault = { a: { b: [1, 2, 3] }, c: null, d: 123 }
+  const vault = {
+    a: { b: [1, 2, 3] },
+    c: null as null /* FIXME fix when strict is enabled */,
+    d: 123,
+  }
   const password = "this-is-a-poor-password"
   const encryptedVault = await encryptVault(vault, password)
 
@@ -78,7 +82,11 @@ test("can decrypt a complex vault encrypted with a password", async () => {
 })
 
 test("can decrypt a complex vault encrypted with a password", async () => {
-  const vault = { a: { b: [1, 2, 3] }, c: null, d: 123 }
+  const vault = {
+    a: { b: [1, 2, 3] },
+    c: null as null /* FIXME fix when strict is enabled */,
+    d: 123,
+  }
   const password = Buffer.from(
     global.crypto.getRandomValues(new Uint8Array(16))
   ).toString("base64")

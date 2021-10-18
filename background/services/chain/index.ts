@@ -11,9 +11,12 @@ import {
   AnyEVMTransaction,
   AssetTransfer,
   EIP1559Block,
+  EIP1559TransactionRequest,
   EVMNetwork,
+  HexString,
   Network,
   SignedEVMTransaction,
+  BlockPrices,
 } from "../../types"
 import { getAssetTransfers } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
@@ -29,13 +32,31 @@ import {
   txFromEthersTx,
   txFromWebsocketTx,
 } from "./utils"
+import Blocknative, {
+  BlocknativeNetworkIds,
+} from "../../third-party-data/blocknative"
 
-// We can't use destructuring because webpack has to replace all instances of `process.env` variables in the bundled output
+// We can't use destructuring because webpack has to replace all instances of
+// `process.env` variables in the bundled output
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
-const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000 // 32400 // 64800
-
+// How many queued transactions should be retrieved on every tx alarm, per
+// network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
+// max 1 tx/min.
 const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
+
+// The number of blocks to query at a time for historic asset transfers.
+// Unfortunately there's no "right" answer here that works well across different
+// people's account histories. If the number is too large relative to a
+// frequently used account, the first call will time out and waste provider
+// resources... resulting in an exponential backoff. If it's too small,
+// transaction history will appear "slow" to show up for newly imported
+// accounts.
+const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000
+
+// The number of asset transfer lookups that will be done per account to rebuild
+// historic activity.
+const NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AccountNetwork
@@ -46,9 +67,10 @@ interface Events extends ServiceLifecycleEvents {
   }
   block: EIP1559Block
   transaction: AnyEVMTransaction
+  blockPrices: BlockPrices
 }
 
-/*
+/**
  * ChainService is responsible for basic network monitoring and interaction.
  * Other services rely on the chain service rather than polling networks
  * themselves.
@@ -82,10 +104,12 @@ export default class ChainService extends BaseService<Events> {
     provider: AlchemyWebSocketProvider
   }[]
 
-  /*
+  blocknative: Blocknative
+
+  /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
    */
-  private transactionsToRetrieve: { [networkName: string]: string[] }
+  private transactionsToRetrieve: { [networkName: string]: HexString[] }
 
   static create: ServiceCreatorFunction<
     Events,
@@ -103,10 +127,18 @@ export default class ChainService extends BaseService<Events> {
       queuedTransactions: {
         schedule: {
           delayInMinutes: 1,
-          periodInMinutes: 5,
+          periodInMinutes: 1,
         },
         handler: () => {
           this.handleQueuedTransactionAlarm()
+        },
+      },
+      historicAssetTransfers: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.handleHistoricAssetTransferAlarm()
         },
       },
     })
@@ -127,6 +159,10 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
+    this.blocknative = Blocknative.connect(
+      process.env.BLOCKNATIVE_API_KEY,
+      BlocknativeNetworkIds.ethereum.mainnet
+    )
   }
 
   async internalStartService(): Promise<void> {
@@ -206,6 +242,15 @@ export default class ChainService extends BaseService<Events> {
     return this.pollingProviders.ethereum.getBlockNumber()
   }
 
+  /**
+   * Return cached information on a block if it's in the local DB.
+   *
+   * Otherwise, retrieve the block from the specified network, caching and
+   * returning the object.
+   *
+   * @param network the EVM network we're interested in
+   * @param blockHash the hash of the block we're interested in
+   */
   async getBlockData(
     network: Network,
     blockHash: string
@@ -222,23 +267,36 @@ export default class ChainService extends BaseService<Events> {
     const block = blockFromEthersBlock(resultBlock)
 
     await this.db.addBlock(block)
+    this.emitter.emit("block", block)
     return block
   }
 
+  /**
+   * Return cached information on a transaction, if it's both confirmed and
+   * in the local DB.
+   *
+   * Otherwise, retrieve the transaction from the specified network, caching and
+   * returning the object.
+   *
+   * @param network the EVM network we're interested in
+   * @param txHash the hash of the unconfirmed transaction we're interested in
+   */
   async getTransaction(
     network: EVMNetwork,
-    hash: string
+    txHash: HexString
   ): Promise<AnyEVMTransaction> {
-    const cachedTx = await this.db.getTransaction(network, hash)
+    const cachedTx = await this.db.getTransaction(network, txHash)
     if (cachedTx) {
       return cachedTx
     }
     // TODO make proper use of the network
-    const gethResult = await this.pollingProviders.ethereum.getTransaction(hash)
+    const gethResult = await this.pollingProviders.ethereum.getTransaction(
+      txHash
+    )
     const newTx = txFromEthersTx(gethResult, ETH, ETHEREUM)
 
     if (!newTx.blockHash && !newTx.blockHeight) {
-      this.subscribeToTransactionConfirmation(network, hash)
+      this.subscribeToTransactionConfirmation(network, txHash)
     }
 
     // TODO proper provider string
@@ -246,19 +304,44 @@ export default class ChainService extends BaseService<Events> {
     return newTx
   }
 
+  /**
+   * Queues up a particular transaction hash for later retrieval.
+   *
+   * Using this method means the service can decide when to retrieve a
+   * particular transaction. Queued transactions are generally retrieved on a
+   * periodic basis.
+   *
+   * @param network The network on which the transaction has been broadcast.
+   * @param txHash The tx hash identifier of the transaction we want to retrieve.
+   *
+   */
   async queueTransactionHashToRetrieve(
     network: EVMNetwork,
-    hash: string
+    txHash: HexString
   ): Promise<void> {
     // TODO make proper use of the network
     const seen = new Set(this.transactionsToRetrieve.ethereum)
-    if (!seen.has(hash)) {
-      this.transactionsToRetrieve.ethereum.push(hash)
+    if (!seen.has(txHash)) {
+      this.transactionsToRetrieve.ethereum.push(txHash)
     }
   }
 
-  /*
+  /**
+   * Estimate the gas needed to make a transaction.
+   */
+  async estimateGasLimit(
+    network: EVMNetwork,
+    tx: EIP1559TransactionRequest
+  ): Promise<bigint> {
+    const estimate = await this.pollingProviders.ethereum.estimateGas(tx)
+    return BigInt(estimate.toString())
+  }
+
+  /**
    * Broadcast a signed EVM transaction.
+   *
+   * @param tx A signed EVM transaction to broadcast. Since the tx is signed,
+   *        it needs to include all gas limit and price params.
    */
   async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
     // TODO make proper use of tx.network to choose provider
@@ -270,53 +353,170 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(tx, "local"),
       ])
     } catch (error) {
-      // TODO proper logging
       logger.error(`Error broadcasting transaction ${tx}`, error)
       throw error
     }
+  }
+
+  /*
+   * Periodically fetch block prices and emit an event whenever new data is received
+   * Write block prices to IndexedDB so we have them for later
+   */
+  async pollBlockPrices(): Promise<void> {
+    // Immediately fetch the current block prices when this function gets called
+    const blockPrices = await this.blocknative.getBlockPrices()
+    this.emitter.emit("blockPrices", blockPrices)
+
+    // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
+    setTimeout(() => {
+      this.pollBlockPrices()
+    }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
   }
 
   /* *****************
    * PRIVATE METHODS *
    * **************** */
 
-  /*
-   * Get recent asset transfers from an account on a particular network. Emit
-   * events for any transfers found, and look up any related transactions and
-   * blocks.
+  /**
+   * Load recent asset transfers from an account on a particular network. Backs
+   * off exponentially (in block range, not in time) on failure.
+   *
+   * @param accountNetwork the account and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
     accountNetwork: AccountNetwork
   ): Promise<void> {
+    const blockHeight = await this.getBlockHeight(accountNetwork.network)
+    let fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
     try {
-      const blockHeight = await this.getBlockHeight(accountNetwork.network)
-      const fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
-      // TODO only works on Ethereum today
-      const assetTransfers = await getAssetTransfers(
-        this.pollingProviders.ethereum,
-        accountNetwork.account,
-        fromBlock
-      )
-
-      // TODO if this fails, other services still needs a way to kick
-      // off monitoring of token balances
-      this.emitter.emit("assetTransfers", {
+      return await this.loadAssetTransfers(
         accountNetwork,
-        assetTransfers,
-      })
-
-      /// send all found tx hashes into a queue to retrieve + cache
-      assetTransfers.forEach((a) =>
-        this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+        BigInt(fromBlock),
+        BigInt(blockHeight)
       )
     } catch (err) {
-      logger.error(err)
+      logger.error(
+        "Failed loaded recent assets, retrying with shorter block range",
+        accountNetwork,
+        err
+      )
     }
+
+    // TODO replace the home-spun backoff with a util function
+    fromBlock =
+      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 2)
+    try {
+      return await this.loadAssetTransfers(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
+      )
+    } catch (err) {
+      logger.error(
+        "Second failure loading recent assets, retrying with shorter block range",
+        accountNetwork,
+        err
+      )
+    }
+
+    fromBlock =
+      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 4)
+    try {
+      return await this.loadAssetTransfers(
+        accountNetwork,
+        BigInt(fromBlock),
+        BigInt(blockHeight)
+      )
+    } catch (err) {
+      logger.error(
+        "Final failure loading recent assets for account",
+        accountNetwork,
+        err
+      )
+    }
+    return Promise.resolve()
+  }
+
+  /**
+   * Continue to load historic asset transfers, finding the oldest lookup and
+   * searching for asset transfers before that block.
+   *
+   * @param accountNetwork The account whose asset transfers are being loaded.
+   */
+  private async loadHistoricAssetTransfers(
+    accountNetwork: AccountNetwork
+  ): Promise<void> {
+    const oldest = await this.db.getOldestAccountAssetTransferLookup(
+      accountNetwork
+    )
+    const newest = await this.db.getNewestAccountAssetTransferLookup(
+      accountNetwork
+    )
+
+    if (newest !== undefined && oldest !== undefined) {
+      const range = newest - oldest
+      if (
+        range <
+        NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY *
+          NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
+      ) {
+        // if we haven't hit 10x the single-call limit, pull another.
+        await this.loadAssetTransfers(
+          accountNetwork,
+          oldest - BigInt(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY),
+          oldest
+        )
+      }
+    }
+  }
+
+  /**
+   * Load asset transfers from an account on a particular network within a
+   * particular block range. Emit events for any transfers found, and look up
+   * any related transactions and blocks.
+   *
+   * @param accountNetwork the account and network whose asset transfers we need
+   */
+  private async loadAssetTransfers(
+    accountNetwork: AccountNetwork,
+    startBlock: bigint,
+    endBlock: bigint
+  ): Promise<void> {
+    // TODO only works on Ethereum today
+    const assetTransfers = await getAssetTransfers(
+      this.pollingProviders.ethereum,
+      accountNetwork.account,
+      Number(startBlock),
+      Number(endBlock)
+    )
+
+    await this.db.recordAccountAssetTransferLookup(
+      accountNetwork,
+      startBlock,
+      endBlock
+    )
+
+    this.emitter.emit("assetTransfers", {
+      accountNetwork,
+      assetTransfers,
+    })
+
+    /// send all found tx hashes into a queue to retrieve + cache
+    assetTransfers.forEach((a) =>
+      this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+    )
+  }
+
+  private async handleHistoricAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
+    )
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     // TODO make this multi network
-    // TODO get transaction and load it into database
     const toHandle = this.transactionsToRetrieve.ethereum.slice(
       0,
       TRANSACTIONS_RETRIEVED_PER_ALARM
@@ -326,47 +526,44 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    await Promise.allSettled(
-      toHandle.map(async (hash) => {
-        try {
-          // TODO make this multi network
-          const result = await this.pollingProviders.ethereum.getTransaction(
-            hash
-          )
+    toHandle.forEach(async (hash) => {
+      try {
+        // TODO make this multi network
+        const result = await this.pollingProviders.ethereum.getTransaction(hash)
 
-          const tx = txFromEthersTx(result, ETH, ETHEREUM)
+        const tx = txFromEthersTx(result, ETH, ETHEREUM)
 
-          if (!tx.blockHash && !tx.blockHeight) {
-            this.subscribeToTransactionConfirmation(tx.network, tx.hash)
-          }
+        // TODO make this provider specific
+        await this.saveTransaction(tx, "alchemy")
 
-          // Get relevant block data. Primarily used in the frontend for timestamps. Emits and saves block data
-          const block = await this.getBlockData(tx.network, result.blockHash)
-
-          // TODO make this provider specific
-          // Save block and transaction
-          await this.saveTransaction(tx, "alchemy")
-
-          // Trigger sending block to redux store
-          this.emitter.emit("block", block)
-        } catch (error) {
-          // TODO proper logging
-          logger.error(`Error retrieving transaction ${hash}`, error)
-          this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+        if (!tx.blockHash && !tx.blockHeight) {
+          this.subscribeToTransactionConfirmation(tx.network, tx.hash)
         }
-      })
-    )
+
+        // Get relevant block data.
+        await this.getBlockData(tx.network, result.blockHash)
+      } catch (error) {
+        logger.error(`Error retrieving transaction ${hash}`, error)
+        this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+      }
+    })
   }
 
+  /**
+   * Save a transaction to the database and emit an event.
+   *
+   * @param tx The transaction to save and emit. Uniqueness and ordering will be
+   *        handled by the database.
+   * @param datasource Where the transaction was seen.
+   */
   private async saveTransaction(
     tx: AnyEVMTransaction,
     dataSource: "local" | "alchemy"
   ): Promise<void> {
-    let error: any
+    let error: Error
     try {
       await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {
-      // TODO proper logging
       error = err
       logger.error(`Error saving tx ${tx}`, error)
     }
@@ -374,7 +571,6 @@ export default class ChainService extends BaseService<Events> {
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", tx)
     } catch (err) {
-      // TODO proper logging
       error = err
       logger.error(`Error emitting tx ${tx}`, error)
     }
@@ -383,6 +579,12 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  /**
+   * Watch a network for new blocks, saving each to the database and emitting an
+   * event. Re-orgs are currently ignored.
+   *
+   * @param network The EVM network to watch.
+   */
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
@@ -406,6 +608,11 @@ export default class ChainService extends BaseService<Events> {
     })
   }
 
+  /**
+   * Watch logs for an account's transactions on a particular network.
+   *
+   * @param accountNetwork The network and account to watch.
+   */
   private async subscribeToAccountTransactions(
     accountNetwork: AccountNetwork
   ): Promise<void> {
@@ -427,7 +634,6 @@ export default class ChainService extends BaseService<Events> {
             "alchemy"
           )
         } catch (error) {
-          // TODO proper logging
           logger.error(`Error saving tx: ${result}`, error)
         }
       }
@@ -438,16 +644,19 @@ export default class ChainService extends BaseService<Events> {
     })
   }
 
-  /*
+  /**
    * Track an pending transaction's confirmation status, saving any updates to
-   * the database and informing subscribers.
+   * the database and informing subscribers via the emitter.
+   *
+   * @param network the EVM network we're interested in
+   * @param txHash the hash of the unconfirmed transaction we're interested in
    */
   private async subscribeToTransactionConfirmation(
     network: EVMNetwork,
-    hash: string
+    txHash: HexString
   ): Promise<void> {
     // TODO make proper use of the network
-    this.websocketProviders.ethereum.once(hash, (confirmedTx) => {
+    this.websocketProviders.ethereum.once(txHash, (confirmedTx) => {
       this.saveTransaction(
         txFromWebsocketTx(confirmedTx, ETH, ETHEREUM),
         "alchemy"
@@ -456,6 +665,4 @@ export default class ChainService extends BaseService<Events> {
   }
 
   // TODO removing an account to track
-  // TODO getting transaction contents from hash + network, confirmed + mempool, including cached & local transactions
-  // TODO keep track of transaction confirmations
 }

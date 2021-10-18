@@ -5,7 +5,8 @@ import {
 } from "@ethersproject/providers"
 import { utils } from "ethers"
 
-import { AssetTransfer, HexString } from "../types"
+import logger from "./logger"
+import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
 import { ETH, ETHEREUM } from "../constants"
 
 const ajv = new Ajv()
@@ -36,12 +37,22 @@ const alchemyAssetTransferJTD = {
   additionalProperties: true,
 } as const
 
-type AlchemyAssetTransferResponse = JTDDataType<typeof alchemyAssetTransferJTD>
+const alchemyGetAssetTransfersJTD = {
+  properties: {
+    transfers: {
+      elements: alchemyAssetTransferJTD,
+    },
+  },
+} as const
+
+type AlchemyAssetTransferResponse = JTDDataType<
+  typeof alchemyGetAssetTransfersJTD
+>
 
 const isValidAlchemyAssetTransferResponse =
-  ajv.compile<AlchemyAssetTransferResponse>(alchemyAssetTransferJTD)
+  ajv.compile<AlchemyAssetTransferResponse>(alchemyGetAssetTransfersJTD)
 
-/*
+/**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
  * account.
  *
@@ -49,19 +60,20 @@ const isValidAlchemyAssetTransferResponse =
  * 1k transfers will be dropped.
  *
  * More information https://docs.alchemy.com/alchemy/documentation/apis/enhanced-apis/transfers-api#alchemy_getassettransfers
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose transfer history we're fetching
- * @param fromBlock - the block height specifying how far in the past we want
+ * @param provider an Alchemy ethers provider
+ * @param account the account whose transfer history we're fetching
+ * @param fromBlock the block height specifying how far in the past we want
  *        to look.
  */
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   account: string,
-  fromBlock: number
+  fromBlock: number,
+  toBlock?: number
 ): Promise<AssetTransfer[]> {
   const params = {
     fromBlock: utils.hexValue(fromBlock),
-    toBlock: "latest",
+    toBlock: toBlock === undefined ? "latest" : utils.hexValue(toBlock),
     // excludeZeroValue: false,
   }
 
@@ -81,19 +93,22 @@ export async function getAssetTransfers(
     ]),
   ])
 
-  return rpcResponses[0].transfers
-    .concat(rpcResponses[1].transfers)
-    .map((json: unknown) => {
-      if (!isValidAlchemyAssetTransferResponse(json)) {
-        console.warn(
-          "Alchemy asset transfer response didn't validate, did the API change?",
-          json
-        )
-        return null
+  return rpcResponses
+    .flatMap((jsonResponse: unknown) => {
+      if (isValidAlchemyAssetTransferResponse(jsonResponse)) {
+        return jsonResponse.transfers
       }
 
+      logger.warn(
+        "Alchemy asset transfer response didn't validate, did the API change?",
+        jsonResponse,
+        isValidAlchemyAssetTransferResponse.errors
+      )
+      return []
+    })
+    .map((transfer) => {
       // TODO handle NFT asset lookup properly
-      if (json.erc721TokenId) {
+      if (transfer.erc721TokenId) {
         return null
       }
 
@@ -101,19 +116,19 @@ export async function getAssetTransfers(
       // TODO handle nonfungible assets properly
       // TODO handle assets with a contract address and no name
       if (
-        !json.rawContract ||
-        !json.rawContract.value ||
-        !json.rawContract.decimal ||
-        !json.asset
+        !transfer.rawContract ||
+        !transfer.rawContract.value ||
+        !transfer.rawContract.decimal ||
+        !transfer.asset
       ) {
         return null
       }
 
-      const asset = !json.rawContract.address
+      const asset = !transfer.rawContract.address
         ? {
-            contractAddress: json.rawContract.address,
-            decimals: Number(BigInt(json.rawContract.decimal)),
-            symbol: json.asset,
+            contractAddress: transfer.rawContract.address,
+            decimals: Number(BigInt(transfer.rawContract.decimal)),
+            symbol: transfer.asset,
             homeNetwork: ETHEREUM, // TODO is this true?
           }
         : ETH
@@ -121,11 +136,11 @@ export async function getAssetTransfers(
         network: ETHEREUM, // TODO make this friendly across other networks
         assetAmount: {
           asset,
-          amount: BigInt(json.rawContract.value),
+          amount: BigInt(transfer.rawContract.value),
         },
-        txHash: json.hash,
-        to: json.to,
-        from: json.from,
+        txHash: transfer.hash,
+        to: transfer.to,
+        from: transfer.from,
         dataSource: "alchemy",
       } as AssetTransfer
     })
@@ -157,20 +172,21 @@ type AlchemyTokenBalanceResponse = JTDDataType<typeof alchemyTokenBalanceJTD>
 const isValidAlchemyTokenBalanceResponse =
   ajv.compile<AlchemyTokenBalanceResponse>(alchemyTokenBalanceJTD)
 
-/*
+/**
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
  *
  *
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
- * @param provider - an Alchemy ethers provider
- * @param account - the account whose balances we're fetching
- * @param tokens - an optional list of hex-string contract addresses. If the list
- *                 isn't provided, Alchemy will choose based on the top 100
- *                 high-volume tokens on its platform
+ *
+ * @param provider an Alchemy ethers provider
+ * @param account the account whose balances we're fetching
+ * @param tokens An optional list of hex-string contract addresses. If the list
+ *        isn't provided, Alchemy will choose based on the top 100 high-volume
+ *        tokens on its platform
  */
 export async function getTokenBalances(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  account: string,
+  account: HexString,
   tokens?: HexString[]
 ): Promise<{ contractAddress: string; amount: bigint }[]> {
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
@@ -178,9 +194,10 @@ export async function getTokenBalances(
     tokens || "DEFAULT_TOKENS",
   ])
   if (!isValidAlchemyTokenBalanceResponse(json)) {
-    console.warn(
+    logger.warn(
       "Alchemy token balance response didn't validate, did the API change?",
-      json
+      json,
+      isValidAlchemyTokenBalanceResponse.errors
     )
     return []
   }
@@ -190,6 +207,65 @@ export async function getTokenBalances(
     .filter((b) => b.error === null && b.tokenBalance !== null)
     .map((tokenBalance) => ({
       contractAddress: tokenBalance.contractAddress,
-      amount: BigInt(tokenBalance.tokenBalance),
+      amount:
+        tokenBalance.tokenBalance === "0x"
+          ? BigInt(0)
+          : BigInt(tokenBalance.tokenBalance),
     }))
+}
+
+// JSON Type Definition for the Alchemy token metadata API.
+// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api#alchemy_gettokenmetadata
+//
+// See RFC 8927 or jsontypedef.com for more detail to learn more about JTD.
+const alchemyTokenMetadataJTD = {
+  properties: {
+    decimals: { type: "uint32" },
+    name: { type: "string" },
+    symbol: { type: "string" },
+    logo: { type: "string", nullable: true },
+  },
+  additionalProperties: false,
+} as const
+
+type AlchemyTokenMetadataResponse = JTDDataType<typeof alchemyTokenMetadataJTD>
+
+const isValidAlchemyTokenMetadataResponse =
+  ajv.compile<AlchemyTokenMetadataResponse>(alchemyTokenMetadataJTD)
+
+/**
+ * Use Alchemy's getTokenMetadata call to get metadata for a token contract on
+ * Ethereum.
+ *
+ * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
+ *
+ * @param provider an Alchemy ethers provider
+ * @param contractAddress the address of the token smart contract whose
+ *        metadata should be returned
+ */
+export async function getTokenMetadata(
+  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  contractAddress: HexString
+): Promise<SmartContractFungibleAsset | null> {
+  const json: unknown = await provider.send("alchemy_getTokenMetadata", [
+    contractAddress,
+  ])
+  if (!isValidAlchemyTokenMetadataResponse(json)) {
+    logger.warn(
+      "Alchemy token metadata response didn't validate, did the API change?",
+      json
+    )
+    return null
+  }
+  return {
+    decimals: json.decimals,
+    name: json.name,
+    symbol: json.symbol,
+    metadata: {
+      logoURL: json.logo,
+      tokenLists: [],
+    },
+    homeNetwork: ETHEREUM, // TODO make multi-network friendly
+    contractAddress,
+  }
 }

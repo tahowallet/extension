@@ -1,7 +1,7 @@
 import { Store as ProxyStore } from "webext-redux"
 import { AnyAction } from "@reduxjs/toolkit"
 import Main from "./main"
-import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import { encodeJSON, decodeJSON } from "./lib/utils"
 
 export { browser } from "webextension-polyfill-ts"
 export type RootState = ReturnType<Main["store"]["getState"]>
@@ -20,12 +20,8 @@ export async function newProxyStore(): Promise<
   ProxyStore<RootState, AnyAction>
 > {
   const proxyStore = new ProxyStore({
-    serializer: (payload: unknown) => {
-      return jsonEncodeBigInt(payload)
-    },
-    deserializer: (payload: string) => {
-      return jsonDecodeBigInt(payload)
-    },
+    serializer: encodeJSON,
+    deserializer: decodeJSON,
   })
   await proxyStore.ready()
 

@@ -1,10 +1,12 @@
 import { fetchJson } from "@ethersproject/web"
+import logger from "./logger"
 import {
   CoinGeckoAsset,
   FiatCurrency,
   PricePoint,
   UnitPricePoint,
 } from "../types"
+import { getSimplePriceValidator } from "./validation"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
@@ -15,8 +17,23 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  // TODO further validate response, fix loss of precision from json
-  return parseFloat(json[coingeckoCoinId][currencySymbol])
+  const validate = getSimplePriceValidator()
+
+  if (!validate(json)) {
+    logger.warn(
+      "CoinGecko price response didn't validate, did the API change?",
+      json,
+      validate.errors
+    )
+
+    return null
+  }
+
+  return json
+    ? parseFloat(
+        json[coingeckoCoinId][currencySymbol] as string // FIXME Drop as when strict mode arrives and price schema type can include this.
+      )
+    : null
 }
 
 function multiplyByFloat(n: bigint, f: number, precision: number) {
@@ -30,14 +47,29 @@ export async function getPrices(
   assets: CoinGeckoAsset[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${assets
-    .map((a) => a.metadata.coinGeckoId)
-    .join(",")}&include_last_updated_at=true&vs_currencies=${vsCurrencies
+  const coinIds = assets.map((a) => a.metadata.coinGeckoId).join(",")
+
+  const currencySymbols = vsCurrencies
     .map((c) => c.symbol.toLowerCase())
-    .join(",")}`
+    .join(",")
+
+  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
 
   const json = await fetchJson(url)
-  // TODO further validate response, fix loss of precision from json
+  // TODO fix loss of precision from json
+  // TODO: TESTME
+  const validate = getSimplePriceValidator()
+
+  if (!validate(json)) {
+    logger.warn(
+      "CoinGecko price response didn't validate, did the API change?",
+      json,
+      validate.errors
+    )
+
+    return null
+  }
+
   return assets.reduce((acc, asset) => {
     const simpleCoinPrices = json[asset.metadata.coinGeckoId]
     return acc.concat(
@@ -50,7 +82,7 @@ export async function getPrices(
               amounts: [
                 multiplyByFloat(
                   BigInt(10) ** BigInt(c.decimals),
-                  parseFloat(simpleCoinPrices[symbol]),
+                  simpleCoinPrices[symbol] as number, // FIXME Drop as when strict mode arrives and price schema type can include this.
                   8
                 ),
                 BigInt(1),
@@ -85,7 +117,14 @@ export async function getEthereumTokenPrices(
   const prices: {
     [index: string]: UnitPricePoint
   } = {}
-  Object.entries(json).forEach(([address, priceDetails]) => {
+  // TODO Improve typing with Ajv validation.
+  Object.entries(
+    json as {
+      [address: string]: { last_updated_at: number } & {
+        [currencySymbol: string]: string
+      }
+    }
+  ).forEach(([address, priceDetails]) => {
     // TODO parse this as a fixed decimal rather than a number. Will require
     // custom JSON deserialization
     const price: number = Number.parseFloat(
@@ -100,9 +139,9 @@ export async function getEthereumTokenPrices(
           symbol: currencySymbol.toUpperCase(),
           decimals: fiatDecimals,
         },
-        amount: BigInt(price * 10 ** fiatDecimals),
+        amount: BigInt(Math.trunc(price * 10 ** fiatDecimals)),
       },
-      time: Number.parseInt((priceDetails as any).last_updated_at || 0, 10),
+      time: priceDetails.last_updated_at,
     }
   })
   return prices

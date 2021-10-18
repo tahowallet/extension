@@ -38,7 +38,9 @@ export async function getBalances(
     tokens.map((t) => t.contractAddress)
   )
 
-  const assetByAddress = tokens.reduce((acc, asset) => {
+  const assetByAddress = tokens.reduce<{
+    [contractAddress: string]: SmartContractFungibleAsset
+  }>((acc, asset) => {
     const newAcc = { ...acc }
     newAcc[asset.contractAddress.toLowerCase()] = asset
     return newAcc

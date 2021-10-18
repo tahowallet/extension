@@ -7,9 +7,9 @@ import OnboardingSaveSeed from "./OnboardingSaveSeed"
 import OnboardingStartTheHunt from "./OnboardingStartTheHunt"
 
 export default function Onboarding(): ReactElement {
-  const { startPage } = useParams()
+  const { startPage } = useParams<{ startPage: string }>()
   const history = useHistory()
-  const [step, setStep] = useState(Math.floor(startPage))
+  const [step, setStep] = useState(Math.floor(parseInt(startPage, 10)))
 
   return (
     <>

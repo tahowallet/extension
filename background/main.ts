@@ -1,11 +1,11 @@
 import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
-import { configureStore, isPlain } from "@reduxjs/toolkit"
+import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
 import { ETHEREUM } from "./constants/networks"
-import { jsonEncodeBigInt, jsonDecodeBigInt } from "./lib/utils"
+import { decodeJSON, encodeJSON } from "./lib/utils"
 import logger from "./lib/logger"
 import { ethersTxFromTx } from "./services/chain/utils"
 
@@ -36,36 +36,40 @@ import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
-  importLegacyKeyring,
 } from "./redux-slices/keyrings"
 import {
-  transactionOptions,
+  gasEstimates,
   emitter as transactionSliceEmitter,
-} from "./redux-slices/transaction"
+} from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 
-const reduxSanitizer = (input: unknown) => {
-  if (typeof input === "bigint") {
-    return input.toString()
+// This sanitizer runs on store and action data before serializing for remote
+// redux devtools. The goal is to end up with an object that is direcetly
+// JSON-serializable and deserializable; the remote end will display the
+// resulting objects without additional processing or decoding logic.
+const devToolsSanitizer = (input: unknown) => {
+  switch (typeof input) {
+    // We can make use of encodeJSON instead of recursively looping through
+    // the input
+    case "bigint":
+    case "object":
+      return JSON.parse(encodeJSON(input))
+    // We only need to sanitize bigints and objects that may or may not contain
+    // them.
+    default:
+      return input
   }
-
-  // We can use JSON stringify replacer function instead of recursively looping through the input
-  if (typeof input === "object") {
-    return JSON.parse(jsonEncodeBigInt(input))
-  }
-
-  // We only need to sanitize bigints and the objects that contain them
-  return input
 }
 
-const reduxCache = (store) => (next) => (action) => {
+const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
   if (process.env.WRITE_REDUX_CACHE === "true") {
-    // Browser extension storage supports JSON natively, despite that we have to stringify to preserve BigInts
-    browser.storage.local.set({ state: jsonEncodeBigInt(state) })
+    // Browser extension storage supports JSON natively, despite that we have
+    // to stringify to preserve BigInts
+    browser.storage.local.set({ state: encodeJSON(state) })
   }
 
   return result
@@ -106,13 +110,8 @@ const initializeStore = (startupState = {}) =>
         hostname: "localhost",
         port: 8000,
         realtime: true,
-        actionSanitizer: (action: unknown) => {
-          return reduxSanitizer(action)
-        },
-
-        stateSanitizer: (state: unknown) => {
-          return reduxSanitizer(state)
-        },
+        actionSanitizer: devToolsSanitizer,
+        stateSanitizer: devToolsSanitizer,
       }),
     ],
   })
@@ -173,10 +172,11 @@ export default class Main extends BaseService<never> {
   ) {
     super()
 
-    // Setting READ_REDUX_CACHE to false will start the extension with an empty initial state, which can be useful for development
+    // Setting READ_REDUX_CACHE to false will start the extension with an empty
+    // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
       browser.storage.local.get("state").then((saved) => {
-        this.initializeRedux(saved.state && jsonDecodeBigInt(saved.state))
+        this.initializeRedux(saved.state ? decodeJSON(saved.state) : {})
       })
     } else {
       this.initializeRedux()
@@ -187,14 +187,6 @@ export default class Main extends BaseService<never> {
     await super.internalStartService()
 
     this.indexingService.started().then(async () => this.chainService.started())
-    // .then(async (chain) => {
-    //   chain.addAccountToTrack({
-    //     // TODO uses Ethermine address for development - move this to startup
-    //     // state
-    //     account: "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-    //     network: ETHEREUM,
-    //   })
-    // })
 
     await Promise.all([
       this.preferenceService.startService(),
@@ -219,12 +211,8 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(startupState)
     wrapStore(this.store, {
-      serializer: (payload: unknown) => {
-        return jsonEncodeBigInt(payload)
-      },
-      deserializer: (payload: string) => {
-        return jsonDecodeBigInt(payload)
-      },
+      serializer: encodeJSON,
+      deserializer: decodeJSON,
     })
 
     this.connectIndexingService()
@@ -277,6 +265,12 @@ export default class Main extends BaseService<never> {
           await this.chainService.pollingProviders.ethereum.getGasPrice(),
       }
 
+      // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
+      transaction.gasLimit = await this.chainService.estimateGasLimit(
+        ETHEREUM,
+        transaction
+      )
+
       await this.keyringService.signTransaction(options.from, transaction)
     })
 
@@ -288,6 +282,13 @@ export default class Main extends BaseService<never> {
 
       // Force a refresh of the account balance to populate the store.
       this.chainService.getLatestBaseAccountBalance(accountNetwork)
+    })
+
+    // Start polling for blockPrices
+    this.chainService.pollBlockPrices()
+
+    this.chainService.emitter.on("blockPrices", (blockPrices) => {
+      this.store.dispatch(gasEstimates(blockPrices))
     })
   }
 

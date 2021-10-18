@@ -1,58 +1,47 @@
 import { utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
-import JSONBig from "json-bigint"
-
 import { HexString } from "../../types"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
 }
 
-export function idGenerator(start?: number) {
-  let index = start || 1
-  return () => {
-    index += 1
-    return index
-  }
+export function gweiToWei(value: number | bigint): bigint {
+  return BigInt(utils.parseUnits(value.toString(), "gwei").toString())
 }
 
-export function createEthProviderWrapper(provider: any) {
-  return new Proxy(provider, {
-    get: (_, method) => {
-      if (method === "provider") return provider
-      return async (...params) => {
-        return provider.request({ method, params })
-      }
-    },
-  })
-}
-
-export function weiToEth(value: string | number): number {
-  return (typeof value === "number" ? value : parseInt(value, 10)) / 10e17
-}
-
-export function convertToEth(value: string | number): string {
+export function convertToEth(value: string | number | bigint): string {
   if (value && value >= 1) {
     return utils.formatUnits(BigInt(value))
   }
   return ""
 }
 
-export function transactionFee(
-  gas: string | number,
-  gasPrice: string | number
-): number {
-  return (
-    (typeof gas === "number" ? gas : parseInt(gas, 10)) *
-    (typeof gasPrice === "number" ? gasPrice : parseInt(gasPrice, 10))
+/**
+ * Encode an unknown input as JSON, special-casing bigints and undefined.
+ *
+ * @param input an object, array, or primitive to encode as JSON
+ */
+export function encodeJSON(input: unknown): string {
+  return JSON.stringify(input, (_, value) => {
+    if (typeof value === "bigint") {
+      return { B_I_G_I_N_T: value.toString() }
+    }
+    return value
+  })
+}
+
+/**
+ * Decode a JSON string, as encoded by `encodeJSON`, including bigint support.
+ * Note that the functions aren't invertible, as `encodeJSON` discards
+ * `undefined`.
+ *
+ * @param input a string output from `encodeJSON`
+ */
+export function decodeJSON(input: string): unknown {
+  return JSON.parse(input, (_, value) =>
+    value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
+      ? BigInt(value.B_I_G_I_N_T)
+      : value
   )
-}
-
-// BigInts are CUTTING EDGE and can't be saved natively in Redux / Browser storage
-export function jsonEncodeBigInt(input: unknown): string {
-  return JSONBig({ useNativeBigInt: true }).stringify(input)
-}
-
-export function jsonDecodeBigInt(input: string): unknown {
-  return JSONBig({ useNativeBigInt: true }).parse(input)
 }

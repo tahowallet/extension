@@ -4,6 +4,7 @@ import {
   AccountBalance,
   AccountNetwork,
   AnyEVMTransaction,
+  BlockPrices,
   EIP1559Block,
   FungibleAsset,
   Network,
@@ -13,6 +14,13 @@ import {
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
   firstSeen: UNIXTime
+}
+
+type AccountAssetTransferLookup = {
+  accountNetwork: AccountNetwork
+  retrievedAt: UNIXTime
+  startBlock: bigint
+  endBlock: bigint
 }
 
 interface Migration {
@@ -34,6 +42,15 @@ export class ChainDatabase extends Dexie {
   private accountsToTrack!: Dexie.Table<
     AccountNetwork,
     [string, string, string]
+  >
+
+  /**
+   * Keep track of details of asset transfers we've looked up before per
+   * account.
+   */
+  private accountAssetTransferLookups!: Dexie.Table<
+    AccountAssetTransferLookup,
+    [number]
   >
 
   /*
@@ -65,6 +82,8 @@ export class ChainDatabase extends Dexie {
       migrations: "++id,appliedAt",
       accountsToTrack:
         "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
+      accountAssetTransferLookups:
+        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
       balances:
         "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       chainTransactions:
@@ -185,6 +204,53 @@ export class ChainDatabase extends Dexie {
     await this.transaction("rw", this.accountsToTrack, () => {
       this.accountsToTrack.clear()
       this.accountsToTrack.bulkAdd([...accountAndNetworks])
+    })
+  }
+
+  async getOldestAccountAssetTransferLookup(
+    accountNetwork: AccountNetwork
+  ): Promise<bigint | null> {
+    // TODO this is inefficient, make proper use of indexing
+    const lookups = await this.accountAssetTransferLookups
+      .where("accountNetwork.account")
+      .equals(accountNetwork.account)
+      .toArray()
+    return lookups.reduce(
+      (oldestBlock: bigint | null, lookup) =>
+        oldestBlock === null || lookup.startBlock < oldestBlock
+          ? lookup.startBlock
+          : oldestBlock,
+      null
+    )
+  }
+
+  async getNewestAccountAssetTransferLookup(
+    accountNetwork: AccountNetwork
+  ): Promise<bigint | null> {
+    // TODO this is inefficient, make proper use of indexing
+    const lookups = await this.accountAssetTransferLookups
+      .where("accountNetwork.account")
+      .equals(accountNetwork.account)
+      .toArray()
+    return lookups.reduce(
+      (newestBlock: bigint | null, lookup) =>
+        newestBlock === null || lookup.startBlock > newestBlock
+          ? lookup.startBlock
+          : newestBlock,
+      null
+    )
+  }
+
+  async recordAccountAssetTransferLookup(
+    accountNetwork: AccountNetwork,
+    startBlock: bigint,
+    endBlock: bigint
+  ): Promise<void> {
+    await this.accountAssetTransferLookups.add({
+      accountNetwork,
+      startBlock,
+      endBlock,
+      retrievedAt: Date.now(),
     })
   }
 

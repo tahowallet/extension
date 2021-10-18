@@ -1,4 +1,4 @@
-// This is a JS file, so this rule can't be followed.
+// This is a non-ESM JS file, so this rule can't be followed.
 /* eslint-disable @typescript-eslint/no-var-requires */
 const {
   rules: { "no-param-reassign": airbnbNoParamReassignRules },
@@ -19,17 +19,28 @@ module.exports = {
     window: "readonly",
   },
   rules: {
+    // Styled-jsx does not play nice with this rule, unfortunately.
     "react/jsx-one-expression-per-line": [0],
+    // JSX for the extension is explicitly rejected by Dan Abramov with good
+    // reasoning @
+    // https://github.com/airbnb/javascript/pull/985#issuecomment-239145468 .
+    // The rule is also mostly irrelevant to this codebase due to TypeScript
+    // usage (where .tsx is required).
     "react/jsx-filename-extension": [0],
+    // Shared components may have labels associated externally in a way ESLint
+    // does not detect.
     "jsx-a11y/label-has-associated-control": [
       2,
       {
         controlComponents: ["SharedAssetInput"],
       },
     ],
+    // Console usage should use background/lib/logger.ts, which allows users to
+    // share logs with devs if desired.
+    "no-console": ["error"],
+    // Don't slap build files for importing devDependencies.
     "import/no-extraneous-dependencies": [
       "error",
-      // Don't slap build files for importing devDependencies.
       { devDependencies: ["!+(src/api|ui)/**/*.+(ts|js)"] },
     ],
     // Add known-safe exceptions to no-param-reassign.

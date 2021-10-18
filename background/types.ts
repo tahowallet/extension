@@ -91,6 +91,12 @@ export type AnyAsset =
   | FungibleAsset
   | SmartContractFungibleAsset
 
+export function isSmartContractFungibleAsset(
+  asset: AnyAsset
+): asset is SmartContractFungibleAsset {
+  return "homeNetwork" in asset && "contractAddress" in asset
+}
+
 /*
  * The primary type representing amounts in fungible asset transactions.
  */
@@ -321,4 +327,19 @@ export type ImportData = {
   type: keyof typeof KeyringTypes
   data: string
   password?: string
+}
+
+export type BlockPrices = {
+  network: Network
+  blockNumber: number
+  baseFeePerGas: bigint
+  estimatedTransactionCount: number
+  estimatedPrices: BlockEstimate[]
+}
+
+export type BlockEstimate = {
+  confidence: number
+  price: bigint | number
+  maxPriorityFeePerGas: bigint | number
+  maxFeePerGas: bigint | number
 }

@@ -2,17 +2,13 @@
 //
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
+import { convertToEth } from "@tallyho/tally-background/lib/utils"
+
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
-  assetAmount: {
-    localizedDecimalValue?: string
-    balance?: number
-    localizedUserValue?: string
-    asset?: {
-      symbol?: string
-    }
-  }
+  assetAmount: CombinedAccountData["assets"][0]
 }
 
 export default function WalletAssetListItem(props: Props): ReactElement {
@@ -21,10 +17,20 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   // TODO: ETH price hard-coded for demo
   return (
     <li>
-      <Link to="/singleAsset">
+      <Link
+        to={{
+          pathname: "/singleAsset",
+          state: {
+            symbol: assetAmount.asset.symbol,
+          },
+        }}
+      >
         <div className="list_item standard_width">
           <div className="left">
-            <SharedAssetIcon />
+            <SharedAssetIcon
+              logoURL={assetAmount?.asset?.metadata?.logoURL}
+              symbol={assetAmount?.asset?.symbol}
+            />
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">

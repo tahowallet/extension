@@ -1,7 +1,7 @@
 import React, { useCallback, ReactElement } from "react"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
-import { AnyEVMTransaction } from "@tallyho/tally-background/types"
 import dayjs from "dayjs"
+import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
 
@@ -97,14 +97,27 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   )
 }
 
-const renameAndPickKeys = (keysMap, activityItem) =>
-  Object.keys(activityItem).reduce((previousValue, key) => {
-    if (keysMap[key]) {
+type KeyRenameAndPickMap<T> = {
+  [P in keyof T]?: {
+    readableName: string
+    transformer: (value: T[P]) => string
+    detailTransformer: (value: T[P]) => string
+  }
+}
+
+const renameAndPickKeys = <T extends unknown>(
+  keysMap: KeyRenameAndPickMap<T>,
+  item: T
+) =>
+  // The as below is dicey but reasonable in our usage.
+  Object.keys(item).reduce((previousValue, key) => {
+    if (key in keysMap) {
+      const knownKey = key as keyof KeyRenameAndPickMap<T> // guaranteed to be true by the `in` test
       return {
         ...previousValue,
         ...{
-          [keysMap[key].readableName]: keysMap[key].tansformer(
-            activityItem[key]
+          [keysMap[knownKey].readableName]: keysMap[knownKey].transformer(
+            item[knownKey]
           ),
         },
       }
@@ -112,26 +125,12 @@ const renameAndPickKeys = (keysMap, activityItem) =>
     return previousValue
   }, {})
 
-function ethTransformer(value) {
+function ethTransformer(value: string | number | bigint) {
   return `${convertToEth(value)} ETH`
 }
 
 interface WalletActivityDetailsProps {
-  activityItem:
-    | (AnyEVMTransaction & {
-        timestamp?: string
-        isSent?: boolean
-        from?: string
-        to?: string
-      })
-    | {
-        timestamp?: string
-        isSent?: boolean
-        value?: string
-        from?: string
-        to?: string
-        hash?: string
-      }
+  activityItem: ActivityItem
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page
@@ -152,37 +151,37 @@ export default function WalletActivityDetails(
 
   const headerTitle = `${activityItem.isSent ? "Sent Asset" : "Received"}`
 
-  const keysMap = {
+  const keysMap: KeyRenameAndPickMap<ActivityItem> = {
     blockHeight: {
       readableName: "Block Height",
-      tansformer: (item) => item,
+      transformer: (item) => item.toString(),
       detailTransformer: () => {
         return ""
       },
     },
     value: {
       readableName: "Amount",
-      tansformer: ethTransformer,
+      transformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
     gas: {
       readableName: "Gas",
-      tansformer: ethTransformer,
+      transformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
     maxFeePerGas: {
       readableName: "Max Fee/Gas",
-      tansformer: ethTransformer,
+      transformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
     gasPrice: {
       readableName: "Gas Price",
-      tansformer: ethTransformer,
+      transformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
     timestamp: {
       readableName: "Timestamp",
-      tansformer: (item) => {
+      transformer: (item) => {
         return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
       },
       detailTransformer: () => {
