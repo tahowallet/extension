@@ -134,7 +134,27 @@ export default class Main extends BaseService<never> {
     )
     const keyringService = KeyringService.create()
 
+    let savedReduxState = {}
+    // Setting READ_REDUX_CACHE to false will start the extension with an empty
+    // initial state, which can be useful for development
+    if (process.env.READ_REDUX_CACHE === "true") {
+      const { state } = await browser.storage.local.get("state")
+
+      if (state) {
+        const restoredState = decodeJSON(state)
+        if (typeof restoredState === "object" && restoredState !== null) {
+          // If someone managed to sneak JSON that decodes to typeof "object"
+          // but isn't a Record<string, unknown>, there is a very large
+          // problem...
+          savedReduxState = restoredState as Record<string, unknown>
+        } else {
+          throw new Error(`Unexpected JSON persisted for state: ${state}`)
+        }
+      }
+    }
+
     return new this(
+      savedReduxState,
       await preferenceService,
       await chainService,
       await indexingService,
@@ -143,6 +163,7 @@ export default class Main extends BaseService<never> {
   }
 
   private constructor(
+    savedReduxState: Record<string, unknown>,
     /**
      * A promise to the preference service, a dependency for most other services.
      * The promise will be resolved when the service is initialized.
@@ -168,15 +189,14 @@ export default class Main extends BaseService<never> {
   ) {
     super()
 
-    // Setting READ_REDUX_CACHE to false will start the extension with an empty
-    // initial state, which can be useful for development
-    if (process.env.READ_REDUX_CACHE === "true") {
-      browser.storage.local.get("state").then((saved) => {
-        this.initializeRedux(saved.state ? decodeJSON(saved.state) : {})
-      })
-    } else {
-      this.initializeRedux()
-    }
+    // Start up the redux store and set it up for proxying.
+    this.store = initializeStore(savedReduxState)
+    wrapStore(this.store, {
+      serializer: encodeJSON,
+      deserializer: decodeJSON,
+    })
+
+    this.initializeRedux()
   }
 
   protected async internalStartService(): Promise<void> {
@@ -203,14 +223,7 @@ export default class Main extends BaseService<never> {
     await super.internalStopService()
   }
 
-  async initializeRedux(startupState?: unknown): Promise<void> {
-    // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(startupState)
-    wrapStore(this.store, {
-      serializer: encodeJSON,
-      deserializer: decodeJSON,
-    })
-
+  async initializeRedux(): Promise<void> {
     this.connectIndexingService()
     this.connectKeyringService()
     await this.connectChainService()
