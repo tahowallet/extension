@@ -560,7 +560,7 @@ export default class ChainService extends BaseService<Events> {
     tx: AnyEVMTransaction,
     dataSource: "local" | "alchemy"
   ): Promise<void> {
-    let error: Error
+    let error: unknown = null
     try {
       await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {
