@@ -95,24 +95,16 @@ export default function Menu(): ReactElement {
           <div className="icon_lock" />
           <h3>General</h3>
           <ul>
-            {settings.slice(0, 4).map((setting) => {
-              return (
-                <>
-                  <SettingRow title={setting.title} action={setting.action} />
-                </>
-              )
-            })}
+            {settings.slice(0, 4).map((setting) => (
+              <SettingRow title={setting.title} action={setting.action} />
+            ))}
           </ul>
           <hr />
           <h3>Developer</h3>
           <ul>
-            {settings.slice(4, 6).map((setting) => {
-              return (
-                <>
-                  <SettingRow title={setting.title} action={setting.action} />
-                </>
-              )
-            })}
+            {settings.slice(4, 6).map((setting) => (
+              <SettingRow title={setting.title} action={setting.action} />
+            ))}
           </ul>
         </section>
       </CorePage>
