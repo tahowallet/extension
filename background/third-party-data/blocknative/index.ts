@@ -1,6 +1,12 @@
+import { fetchJson } from "@ethersproject/web"
 import BlocknativeSdk from "bnc-sdk"
 
+import { BlockPrices, BlockEstimate } from "../../types"
 import { EthereumTransactionData } from "./types"
+import { gweiToWei } from "../../lib/utils"
+import { ETHEREUM } from "../../constants/networks"
+
+const BLOCKNATIVE_API_ROOT = "https://api.blocknative.com"
 
 export const BlocknativeNetworkIds = {
   ethereum: {
@@ -20,6 +26,8 @@ export const BlocknativeNetworkIds = {
 export default class Blocknative {
   private blocknative: BlocknativeSdk
 
+  private apiKey: string
+
   static connect(apiKey: string, networkId: number): Blocknative {
     const connection = new this(apiKey, networkId)
 
@@ -33,6 +41,8 @@ export default class Blocknative {
       dappId: apiKey,
       networkId,
     })
+
+    this.apiKey = apiKey
   }
 
   watchBalanceUpdatesFor(
@@ -75,5 +85,37 @@ export default class Blocknative {
     // that mechanism.
     this.blocknative.account(accountAddress).emitter.off("txConfirmed")
     this.blocknative.unsubscribe(accountAddress)
+  }
+
+  /*
+   * Helper function to get current block prices and estimated fees
+   * Converts data from Blocknative into our own custom type
+   */
+  async getBlockPrices(): Promise<BlockPrices> {
+    const request = {
+      url: `${BLOCKNATIVE_API_ROOT}/gasprices/blockprices`,
+      headers: { Authorization: this.apiKey },
+    }
+
+    // TODO: What happens if the blocknative API request fails or gets rate limited?
+    const response = await fetchJson(request)
+    const currentBlock = response.blockPrices[0]
+
+    return {
+      network: ETHEREUM,
+      blockNumber: currentBlock.blockNumber,
+      baseFeePerGas: gweiToWei(currentBlock.baseFeePerGas),
+      estimatedTransactionCount: currentBlock.estimatedTransactionCount,
+      estimatedPrices: currentBlock.estimatedPrices.map(
+        (estimate: BlockEstimate) => {
+          return {
+            confidence: estimate.confidence,
+            price: gweiToWei(estimate.price),
+            maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
+            maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
+          }
+        }
+      ),
+    }
   }
 }

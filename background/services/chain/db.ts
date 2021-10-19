@@ -4,6 +4,7 @@ import {
   AccountBalance,
   AccountNetwork,
   AnyEVMTransaction,
+  BlockPrices,
   EIP1559Block,
   FungibleAsset,
   Network,

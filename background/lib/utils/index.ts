@@ -6,7 +6,11 @@ export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
 }
 
-export function convertToEth(value: string | number): string {
+export function gweiToWei(value: number | bigint): bigint {
+  return BigInt(utils.parseUnits(value.toString(), "gwei").toString())
+}
+
+export function convertToEth(value: string | number | bigint): string {
   if (value && value >= 1) {
     return utils.formatUnits(BigInt(value))
   }

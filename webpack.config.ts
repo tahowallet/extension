@@ -1,5 +1,9 @@
 import path from "path"
-import webpack, { Configuration, WebpackOptionsNormalized } from "webpack"
+import webpack, {
+  Configuration,
+  WebpackOptionsNormalized,
+  WebpackPluginInstance,
+} from "webpack"
 import { merge as webpackMerge } from "webpack-merge"
 import Dotenv from "dotenv-webpack"
 import SizePlugin from "size-plugin"
@@ -79,7 +83,10 @@ const baseConfig: Configuration = {
           from: "node_modules/@tallyho/tally-ui/public/",
         },
       ],
-    }),
+      // FIXME Forced cast below due to an incompatibility between the webpack
+      // FIXME version refed in @types/copy-webpack-plugin and our local
+      // FIXME webpack version.
+    }) as unknown as WebpackPluginInstance,
   ],
   optimization: {
     minimizer: [
@@ -105,7 +112,12 @@ const modeConfigs: {
   development: () => ({
     plugins: [
       new LiveReloadPlugin({}),
-      new CopyPlugin({ patterns: ["dev-utils/*.js"] }),
+      new CopyPlugin({
+        patterns: ["dev-utils/*.js"],
+        // FIXME Forced cast below due to an incompatibility between the webpack
+        // FIXME version refed in @types/copy-webpack-plugin and our local
+        // FIXME webpack version.
+      }) as unknown as WebpackPluginInstance,
     ],
   }),
   production: (browser) => ({

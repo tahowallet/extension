@@ -1,6 +1,6 @@
 import { browser } from "webextension-polyfill-ts"
 import { alias, wrapStore } from "webext-redux"
-import { configureStore, isPlain } from "@reduxjs/toolkit"
+import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
@@ -36,12 +36,11 @@ import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
-  importLegacyKeyring,
 } from "./redux-slices/keyrings"
 import {
-  transactionOptions,
+  gasEstimates,
   emitter as transactionSliceEmitter,
-} from "./redux-slices/transaction"
+} from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 
@@ -63,7 +62,7 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-const reduxCache = (store) => (next) => (action) => {
+const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
@@ -266,6 +265,12 @@ export default class Main extends BaseService<never> {
           await this.chainService.pollingProviders.ethereum.getGasPrice(),
       }
 
+      // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
+      transaction.gasLimit = await this.chainService.estimateGasLimit(
+        ETHEREUM,
+        transaction
+      )
+
       await this.keyringService.signTransaction(options.from, transaction)
     })
 
@@ -277,6 +282,13 @@ export default class Main extends BaseService<never> {
 
       // Force a refresh of the account balance to populate the store.
       this.chainService.getLatestBaseAccountBalance(accountNetwork)
+    })
+
+    // Start polling for blockPrices
+    this.chainService.pollBlockPrices()
+
+    this.chainService.emitter.on("blockPrices", (blockPrices) => {
+      this.store.dispatch(gasEstimates(blockPrices))
     })
   }
 

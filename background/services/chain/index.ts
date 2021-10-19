@@ -11,10 +11,12 @@ import {
   AnyEVMTransaction,
   AssetTransfer,
   EIP1559Block,
+  EIP1559TransactionRequest,
   EVMNetwork,
   HexString,
   Network,
   SignedEVMTransaction,
+  BlockPrices,
 } from "../../types"
 import { getAssetTransfers } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
@@ -30,6 +32,9 @@ import {
   txFromEthersTx,
   txFromWebsocketTx,
 } from "./utils"
+import Blocknative, {
+  BlocknativeNetworkIds,
+} from "../../third-party-data/blocknative"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -62,6 +67,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   block: EIP1559Block
   transaction: AnyEVMTransaction
+  blockPrices: BlockPrices
 }
 
 /**
@@ -97,6 +103,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork
     provider: AlchemyWebSocketProvider
   }[]
+
+  blocknative: Blocknative
 
   /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
@@ -151,6 +159,10 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
+    this.blocknative = Blocknative.connect(
+      process.env.BLOCKNATIVE_API_KEY,
+      BlocknativeNetworkIds.ethereum.mainnet
+    )
   }
 
   async internalStartService(): Promise<void> {
@@ -315,6 +327,17 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
+   * Estimate the gas needed to make a transaction.
+   */
+  async estimateGasLimit(
+    network: EVMNetwork,
+    tx: EIP1559TransactionRequest
+  ): Promise<bigint> {
+    const estimate = await this.pollingProviders.ethereum.estimateGas(tx)
+    return BigInt(estimate.toString())
+  }
+
+  /**
    * Broadcast a signed EVM transaction.
    *
    * @param tx A signed EVM transaction to broadcast. Since the tx is signed,
@@ -333,6 +356,21 @@ export default class ChainService extends BaseService<Events> {
       logger.error(`Error broadcasting transaction ${tx}`, error)
       throw error
     }
+  }
+
+  /*
+   * Periodically fetch block prices and emit an event whenever new data is received
+   * Write block prices to IndexedDB so we have them for later
+   */
+  async pollBlockPrices(): Promise<void> {
+    // Immediately fetch the current block prices when this function gets called
+    const blockPrices = await this.blocknative.getBlockPrices()
+    this.emitter.emit("blockPrices", blockPrices)
+
+    // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
+    setTimeout(() => {
+      this.pollBlockPrices()
+    }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
   }
 
   /* *****************
