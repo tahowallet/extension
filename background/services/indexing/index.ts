@@ -398,11 +398,13 @@ export default class IndexingService extends BaseService<Events> {
               amounts: [
                 BigInt(1),
                 BigInt(
-                  (Number(unitPricePoint.unitPrice.amount) /
-                    10 **
-                      (unitPricePoint.unitPrice.asset as FungibleAsset)
-                        .decimals) *
-                    10 ** USD.decimals
+                  Math.trunc(
+                    (Number(unitPricePoint.unitPrice.amount) /
+                      10 **
+                        (unitPricePoint.unitPrice.asset as FungibleAsset)
+                          .decimals) *
+                      10 ** USD.decimals
+                  )
                 ),
               ], // TODO not a big fan of this lost precision
               time: unitPricePoint.time,
