@@ -27,7 +27,7 @@ export default function WalletActivityList(props: Props): ReactElement {
   )
 
   const handleClose = useCallback(() => {
-    dispatch(setShowingActivityDetail(undefined))
+    dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
   return (
