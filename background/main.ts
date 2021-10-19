@@ -37,7 +37,10 @@ import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
 } from "./redux-slices/keyrings"
-import { emitter as transactionSliceEmitter } from "./redux-slices/transaction"
+import {
+  gasEstimates,
+  emitter as transactionSliceEmitter,
+} from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
 
@@ -262,6 +265,12 @@ export default class Main extends BaseService<never> {
           await this.chainService.pollingProviders.ethereum.getGasPrice(),
       }
 
+      // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
+      transaction.gasLimit = await this.chainService.estimateGasLimit(
+        ETHEREUM,
+        transaction
+      )
+
       await this.keyringService.signTransaction(options.from, transaction)
     })
 
@@ -273,6 +282,13 @@ export default class Main extends BaseService<never> {
 
       // Force a refresh of the account balance to populate the store.
       this.chainService.getLatestBaseAccountBalance(accountNetwork)
+    })
+
+    // Start polling for blockPrices
+    this.chainService.pollBlockPrices()
+
+    this.chainService.emitter.on("blockPrices", (blockPrices) => {
+      this.store.dispatch(gasEstimates(blockPrices))
     })
   }
 
