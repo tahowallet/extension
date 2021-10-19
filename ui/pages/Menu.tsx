@@ -33,9 +33,7 @@ function SettingRow(props: { title: string; action: any }): ReactElement {
 
 function ArrowRightIcon() {
   return (
-    <>
-      <div className="icon_chevron_left" />
-
+    <div className="icon_chevron_left">
       <style jsx>
         {`
           .icon_chevron_left {
@@ -49,7 +47,7 @@ function ArrowRightIcon() {
           }
         `}
       </style>
-    </>
+    </div>
   )
 }
 
