@@ -51,40 +51,42 @@ function ArrowRightIcon() {
   )
 }
 
-const settings = [
-  {
-    title: "Main Currency",
-    action: () => {
-      return (
-        <>
+const settings = {
+  general: [
+    {
+      title: "Main Currency",
+      action: () => {
+        return (
           <SharedButton size="medium" type="secondary" icon="chevron">
             USD
           </SharedButton>
-        </>
-      )
+        )
+      },
     },
-  },
-  {
-    title: "Hide asset balance under $2",
-    action: SharedToggleButton,
-  },
-  {
-    title: "Use Tally as default wallet",
-    action: SharedToggleButton,
-  },
-  {
-    title: "Token list",
-    action: ArrowRightIcon,
-  },
-  {
-    title: "Show testnet networks",
-    action: SharedToggleButton,
-  },
-  {
-    title: "Contracts deployed by users",
-    action: ArrowRightIcon,
-  },
-]
+    {
+      title: "Hide asset balance under $2",
+      action: SharedToggleButton,
+    },
+    {
+      title: "Use Tally as default wallet",
+      action: SharedToggleButton,
+    },
+    {
+      title: "Token list",
+      action: ArrowRightIcon,
+    },
+  ],
+  developer: [
+    {
+      title: "Show testnet networks",
+      action: SharedToggleButton,
+    },
+    {
+      title: "Contracts deployed by users",
+      action: ArrowRightIcon,
+    },
+  ],
+}
 
 export default function Menu(): ReactElement {
   return (
@@ -95,14 +97,14 @@ export default function Menu(): ReactElement {
           <div className="icon_lock" />
           <h3>General</h3>
           <ul>
-            {settings.slice(0, 4).map((setting) => (
+            {settings.general.map((setting) => (
               <SettingRow title={setting.title} action={setting.action} />
             ))}
           </ul>
           <hr />
           <h3>Developer</h3>
           <ul>
-            {settings.slice(4, 6).map((setting) => (
+            {settings.developer.map((setting) => (
               <SettingRow title={setting.title} action={setting.action} />
             ))}
           </ul>
