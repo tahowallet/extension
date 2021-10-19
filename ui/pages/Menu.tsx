@@ -2,46 +2,7 @@ import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
-
-function ToggleButton(): ReactElement {
-  const [isActive, setIsActive] = useState(false)
-
-  return (
-    <div
-      className={classNames("container", { is_active: isActive })}
-      onClick={() => {
-        setIsActive(!isActive)
-      }}
-    >
-      <div className="bulb"></div>
-      <style jsx>
-        {`
-          .container {
-            width: 40px;
-            height: 24px;
-            border-radius: 20px;
-            background-color: var(--green-80);
-            box-sizing: border-box;
-            padding: 4px;
-            cursor: pointer;
-            display: flex;
-          }
-          .bulb {
-            width: 16px;
-            height: 16px;
-            border-radius: 20px;
-            background-color: var(--green-40);
-            transition: 0.2s ease-in-out;
-          }
-          .is_active .bulb {
-            transform: translateX(16px);
-            background-color: var(--trophy-gold);
-          }
-        `}
-      </style>
-    </div>
-  )
-}
+import SharedToggleButton from "../components/Shared/SharedToggleButton"
 
 function SettingRow(props: { title: string; action: any }): ReactElement {
   const { title, action } = props
@@ -107,11 +68,11 @@ const settings = [
   },
   {
     title: "Hide asset balance under $2",
-    action: ToggleButton,
+    action: SharedToggleButton,
   },
   {
     title: "Use Tally as default wallet",
-    action: ToggleButton,
+    action: SharedToggleButton,
   },
   {
     title: "Token list",
@@ -119,7 +80,7 @@ const settings = [
   },
   {
     title: "Show testnet networks",
-    action: ToggleButton,
+    action: SharedToggleButton,
   },
   {
     title: "Contracts deployed by users",
@@ -133,7 +94,7 @@ export default function Menu(): ReactElement {
       <CorePage hasTopBar={false}>
         <section className="standard_width_padded">
           <h1>Settings</h1>
-          <div className="icon_lock"></div>
+          <div className="icon_lock" />
           <h3>General</h3>
           <ul>
             {settings.slice(0, 4).map((setting) => {
