@@ -1,4 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
+import { JSONSchemaType } from "ajv"
 import logger from "./logger"
 import {
   CoinGeckoAsset,
@@ -6,9 +7,55 @@ import {
   PricePoint,
   UnitPricePoint,
 } from "../types"
-import { getSimplePriceValidator } from "./validation"
+import { jsonSchemaValidatorFor } from "./validation"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
+
+export type CoingeckoPriceData = {
+  [coinId: string]:
+    | {
+        last_updated_at: number
+        [currencyId: string]: number | undefined
+      }
+    | undefined
+}
+
+/**
+ * https://github.com/ajv-validator/ajv/blob/master/spec/types/jtd-schema.spec.ts - jtd unit tests
+ * https://ajv.js.org/json-type-definition.html - jtd spec ajv
+ * https://jsontypedef.com/docs/jtd-in-5-minutes/ - jtd in 5 mins
+ * https://github.com/jsontypedef/homebrew-jsontypedef - jtd tooling
+ * https://ajv.js.org/guide/typescript.html - using with ts
+ *
+ */
+// Ajv's typing incorrectly requires nullable: true for last_updated_at because
+// the remaining keys in the coin entry are optional. This in turn interferes
+// with the fact that last_updated_at is listed in `required`. The two `as`
+// type casts below trick the type system into allowing the schema correctly.
+// Note that the schema will validate as required, and the casts allow it to
+// match the corret TypeScript types.
+//
+// This all stems from Ajv also incorrectly requiring an optional property (`|
+// undefined`) to be nullable (`| null`). See
+// https://github.com/ajv-validator/ajv/issues/1664, which should be fixed in
+// Ajv v9 via
+// https://github.com/ajv-validator/ajv/commit/b4b806fd03a9906e9126ad86cef233fa405c9a3e
+const coingeckoPriceSchema: JSONSchemaType<CoingeckoPriceData> = {
+  type: "object",
+  required: [],
+  additionalProperties: {
+    type: "object",
+    properties: {
+      last_updated_at: { type: "number" } as {
+        type: "number"
+        nullable: true
+      },
+    },
+    required: ["last_updated_at"] as never[],
+    additionalProperties: { type: "number", nullable: true },
+    nullable: true,
+  },
+}
 
 export async function getPrice(
   coingeckoCoinId = "ethereum",
@@ -17,7 +64,8 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  const validate = getSimplePriceValidator()
+  const validate =
+    jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
 
   if (!validate(json)) {
     logger.warn(
@@ -54,7 +102,8 @@ export async function getPrices(
   const json = await fetchJson(url)
   // TODO fix loss of precision from json
   // TODO: TESTME
-  const validate = getSimplePriceValidator()
+  const validate =
+    jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
 
   if (!validate(json)) {
     logger.warn(
