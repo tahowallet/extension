@@ -1,6 +1,5 @@
-import { JSONSchemaType } from "ajv"
+import AjvJSONSchema, { JSONSchemaType } from "ajv"
 import AjvJTD, { JTDDataType } from "ajv/dist/jtd"
-import AjvJSONSchema from "ajv/dist/2019"
 import { ValidateFunction } from "ajv/dist/types"
 
 /**
@@ -8,8 +7,21 @@ import { ValidateFunction } from "ajv/dist/types"
  * a good starting point would a base validation class in /lib and
  * a validation instance in every service
  */
-const ajvJTD = new AjvJTD()
-const ajvJSONSchema = new AjvJSONSchema()
+
+// Below, the JTD and JSON Schema Ajv instances are lazily instantiatied so the
+// startup cost (which is not insignificant) is only paid when the relevant
+// validations are first requested.
+let instantiatedAjvJTD: AjvJTD | null = null
+let instantiatedAjvJSONSchema: AjvJSONSchema | null = null
+
+const ajvJTD = () => {
+  instantiatedAjvJTD = instantiatedAjvJTD ?? new AjvJTD()
+  return instantiatedAjvJTD
+}
+const ajvJSONSchema = () => {
+  instantiatedAjvJSONSchema = instantiatedAjvJSONSchema ?? new AjvJTD()
+  return instantiatedAjvJSONSchema
+}
 
 export type CoingeckoPriceData = {
   [coinId: string]:
@@ -76,7 +88,7 @@ export function jtdValidatorFor<SchemaType>(
       (json: unknown): json is JTDDataType<SchemaType> => {
         try {
           compiled =
-            compiled || ajvJTD.compile<JTDDataType<SchemaType>>(jtdDefinition)
+            compiled || ajvJTD().compile<JTDDataType<SchemaType>>(jtdDefinition)
 
           const result = compiled(json)
           // Copy errors and such, which Ajv carries on the validator function
@@ -117,7 +129,7 @@ export function jsonSchemaValidatorFor<T>(
   const wrapper: EnvlessValidateFunction<T> = Object.assign(
     (json: unknown): json is T => {
       try {
-        compiled = compiled || ajvJSONSchema.compile<T>(jsonSchemaDefinition)
+        compiled = compiled || ajvJSONSchema().compile<T>(jsonSchemaDefinition)
         const result = compiled(json)
         // Copy errors and such, which Ajv carries on the validator function
         // object itself.
