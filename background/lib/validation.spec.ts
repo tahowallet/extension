@@ -28,9 +28,7 @@ describe("lazy-compiled/cacheing works as intended", () => {
           },
         } as const,
         data: {
-          transfers: {
-            elements: "The Fifth",
-          },
+          transfers: ["The Fifth"],
         },
       },
     ]
