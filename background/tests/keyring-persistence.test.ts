@@ -5,13 +5,14 @@ import {
   deriveSymmetricKeyFromPassword,
 } from "../services/keyring/encryption"
 
+const originalCrypto = global.crypto
 beforeEach(() => {
   // polyfill the WebCrypto API
   global.crypto = webcrypto as unknown as Crypto
 })
 
 afterEach(() => {
-  delete global.crypto
+  global.crypto = originalCrypto
 })
 
 test("derives symmetric keys", async () => {
@@ -70,7 +71,7 @@ test("can decrypt a vault encrypted with a password", async () => {
 test("can decrypt a complex vault encrypted with a password", async () => {
   const vault = {
     a: { b: [1, 2, 3] },
-    c: null as null /* FIXME fix when strict is enabled */,
+    c: null,
     d: 123,
   }
   const password = "this-is-a-poor-password"
@@ -84,7 +85,7 @@ test("can decrypt a complex vault encrypted with a password", async () => {
 test("can decrypt a complex vault encrypted with a password", async () => {
   const vault = {
     a: { b: [1, 2, 3] },
-    c: null as null /* FIXME fix when strict is enabled */,
+    c: null,
     d: 123,
   }
   const password = Buffer.from(

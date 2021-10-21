@@ -36,10 +36,10 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async getCurrency(): Promise<FiatCurrency> {
-    return (await this.db.getLatestPreferences()).currency
+    return (await this.db.getLatestPreferences())?.currency
   }
 
   async getTokenListPreferences(): Promise<TokenListPreferences> {
-    return (await this.db.getLatestPreferences()).tokenLists
+    return (await this.db.getLatestPreferences())?.tokenLists
   }
 }

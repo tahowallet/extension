@@ -9,7 +9,7 @@ import {
   ConfirmedEVMTransaction,
   FungibleAssetAmount,
   Network,
-  EIP1559Block,
+  AnyEVMBlock,
 } from "../types"
 import { AssetsState } from "./assets"
 
@@ -53,7 +53,7 @@ type AccountState = {
   combinedData: CombinedAccountData
   // TODO the blockHeight key should be changed to something
   // compatible with the idea of multiple networks.
-  blocks: { [blockHeight: number]: EIP1559Block }
+  blocks: { [blockHeight: number]: AnyEVMBlock }
 }
 
 // TODO Plug in price data and deal with non-USD target prices.
@@ -157,13 +157,31 @@ export const initialState = {
   blocks: {},
 } as AccountState
 
+// Looks up existing account data in the given AccountState, dealing with
+// undefined addresses and filtering out data that is still loading.
+function lookUpExistingAccountData(
+  state: AccountState,
+  ...addresses: (string | undefined)[]
+): AccountData[] {
+  return addresses
+    .map((a) => {
+      if (typeof a !== "undefined") {
+        return state.accountsData[a]
+      }
+      return undefined
+    })
+    .filter(
+      (a): a is AccountData => typeof a !== "undefined" && a !== "loading"
+    )
+}
+
 // TODO Much of the combinedData bits should probably be done in a Reselect
 // TODO selector.
 const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    blockSeen: (immerState, { payload: block }: { payload: EIP1559Block }) => {
+    blockSeen: (immerState, { payload: block }: { payload: AnyEVMBlock }) => {
       immerState.blocks[block.blockHeight] = block
     },
     loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
@@ -206,10 +224,10 @@ const accountSlice = createSlice({
       // accounts in accountsData all or part of whose balances are shared with
       // each other.
       const combinedAccountBalances = Object.values(immerState.accountsData)
-        .flatMap(
-          (ad) =>
-            ad !== "loading" &&
-            Object.values(ad.balances).map((ab) => ab.assetAmount)
+        .flatMap((ad) =>
+          ad === "loading"
+            ? []
+            : Object.values(ad.balances).map((ab) => ab.assetAmount)
         )
         .filter((b) => b)
 
@@ -239,10 +257,11 @@ const accountSlice = createSlice({
       immerState,
       { payload: transaction }: { payload: AnyEVMTransaction }
     ) => {
-      const existingAccounts = [
-        immerState.accountsData[transaction.from.toLowerCase()],
-        immerState.accountsData[transaction.to.toLowerCase()],
-      ].filter((a): a is AccountData => a && a !== "loading")
+      const existingAccounts = lookUpExistingAccountData(
+        immerState,
+        transaction.from.toLowerCase(),
+        transaction.to?.toLowerCase()
+      )
 
       existingAccounts.forEach((immerExistingAccount) => {
         if (
@@ -273,10 +292,10 @@ const accountSlice = createSlice({
         // between two tracked accounts.
         new Map(
           Object.values(current(immerState.accountsData))
-            .flatMap(
-              (ad) =>
-                ad !== "loading" &&
-                ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
+            .flatMap((ad) =>
+              ad === "loading"
+                ? []
+                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
             )
             .map((t) => [t.hash, t])
         ).values()
@@ -286,10 +305,11 @@ const accountSlice = createSlice({
       immerState,
       { payload: transaction }: { payload: ConfirmedEVMTransaction }
     ) => {
-      const existingAccounts = [
-        immerState.accountsData[transaction.from.toLowerCase()],
-        immerState.accountsData[transaction.to.toLowerCase()],
-      ].filter((a): a is AccountData => a && a !== "loading")
+      const existingAccounts = lookUpExistingAccountData(
+        immerState,
+        transaction.from.toLowerCase(),
+        transaction.to?.toLowerCase()
+      )
 
       existingAccounts.forEach((immerAccount) => {
         immerAccount.unconfirmedTransactions = [
@@ -310,10 +330,10 @@ const accountSlice = createSlice({
         // between two tracked accounts.
         new Map(
           Object.values(current(immerState.accountsData))
-            .flatMap(
-              (ad) =>
-                ad !== "loading" &&
-                ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
+            .flatMap((ad) =>
+              ad === "loading"
+                ? []
+                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
             )
             .map((t) => [t.hash, t])
         ).values()
@@ -387,7 +407,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
       return {
         ...activityItem,
-        timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
+        ...(activityItem.blockHeight && {
+          timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
+        }),
         isSent,
       }
     })
@@ -403,10 +425,19 @@ export const selectAccountAndTimestampedActivities = createSelector(
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
       )
 
-      const usdIndex = rawAsset?.recentPrices?.USD?.amounts?.[1] > 1 ? 1 : 0
+      // TODO Better determine which side is USD---possibly using
+      // TODO USD.pair[0|1].symbol and a known constant?
+      const possibleUsdAmount = rawAsset?.recentPrices?.USD?.amounts?.[1]
+      const usdIndex =
+        possibleUsdAmount !== undefined && possibleUsdAmount > 1 ? 1 : 0
       const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
 
-      if (rawAsset && "decimals" in usdAsset && "decimals" in assetItem.asset) {
+      if (
+        rawAsset &&
+        usdAsset &&
+        "decimals" in usdAsset &&
+        "decimals" in assetItem.asset
+      ) {
         const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
 
         const usdDecimals = usdAsset.decimals

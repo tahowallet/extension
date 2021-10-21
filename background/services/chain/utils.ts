@@ -1,33 +1,34 @@
-import { BigNumber, utils as ethersUtils } from "ethers"
+import { BigNumber } from "ethers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { AlchemyProvider } from "@ethersproject/providers"
 
-import {
-  Transaction as EthersTransaction,
-  UnsignedTransaction,
-} from "@ethersproject/transactions"
+import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
-  ConfirmedEVMTransaction,
-  EIP1559Block,
   FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
+  AnyEVMBlock,
 } from "../../types"
 import { ETHEREUM } from "../../constants"
 
 /*
  * Parse a block as returned by a polling provider.
  */
-export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
+export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
   return {
     hash: gethResult.hash,
     blockHeight: gethResult.number,
     parentHash: gethResult.parentHash,
-    difficulty: gethResult.difficulty && BigInt(gethResult.difficulty),
+    // FIXME Hold for ethers/v5.4.8 _difficulty BigNumber field; the current
+    // FIXME difficutly field is a `number` and has overflowed since Ethereum
+    // FIXME difficulty has exceeded MAX_SAFE_INTEGER. The current ethers
+    // FIXME version devolves to `null` in that scenario, and does not reflect
+    // FIXME in its type. The upcoming release will have a BigNumber
+    // FIXME _difficulty field.
+    difficulty: 0n,
     timestamp: gethResult.timestamp,
-    baseFeePerGas: gethResult.baseFeePerGas.toBigInt(),
+    baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
     network: ETHEREUM,
   }
 }
@@ -37,14 +38,14 @@ export function blockFromEthersBlock(gethResult: EthersBlock): EIP1559Block {
  */
 export function blockFromWebsocketBlock(
   incomingGethResult: unknown
-): EIP1559Block {
+): AnyEVMBlock {
   const gethResult = incomingGethResult as {
     hash: string
     number: string
     parentHash: string
     difficulty: string
     timestamp: string
-    baseFeePerGas: string
+    baseFeePerGas?: string
   }
 
   return {
@@ -53,40 +54,35 @@ export function blockFromWebsocketBlock(
     parentHash: gethResult.parentHash,
     difficulty: BigInt(gethResult.difficulty),
     timestamp: BigNumber.from(gethResult.timestamp).toNumber(),
-    baseFeePerGas: BigInt(gethResult.baseFeePerGas),
+    baseFeePerGas: gethResult.baseFeePerGas
+      ? BigInt(gethResult.baseFeePerGas)
+      : undefined,
     network: ETHEREUM,
   }
 }
 
-export function ethersTxFromTx(tx: AnyEVMTransaction): EthersTransaction {
+export function ethersTxFromSignedTx(
+  tx: SignedEVMTransaction
+): EthersTransaction {
   const baseTx = {
     nonce: Number(tx.nonce),
-    maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : null,
+    maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : undefined,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
       ? BigNumber.from(tx.maxPriorityFeePerGas)
-      : null,
+      : undefined,
     to: tx.to,
     from: tx.from,
-    data: tx.input,
+    data: tx.input || "",
     chainId: parseInt(tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
+    gasLimit: BigNumber.from(tx.gasLimit),
   }
-  if ((tx as SignedEVMTransaction).r !== undefined) {
-    return {
-      ...baseTx,
-      gasLimit: (tx as SignedEVMTransaction).gasLimit
-        ? BigNumber.from((tx as SignedEVMTransaction).gasLimit)
-        : null,
-      r: (tx as SignedEVMTransaction).r,
-      s: (tx as SignedEVMTransaction).s,
-      v: (tx as SignedEVMTransaction).v,
-    }
-  }
+
   return {
     ...baseTx,
-    gasLimit: (tx as ConfirmedEVMTransaction).gas
-      ? BigNumber.from((tx as ConfirmedEVMTransaction).gas)
-      : null,
+    r: tx.r,
+    s: tx.s,
+    v: tx.v,
   }
 }
 
@@ -123,7 +119,7 @@ export function txFromWebsocketTx(
     hash: tx.hash,
     to: tx.to,
     from: tx.from,
-    gas: BigInt(tx.gas),
+    gasLimit: BigInt(tx.gas),
     gasPrice: BigInt(tx.gasPrice),
     maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
@@ -135,8 +131,8 @@ export function txFromWebsocketTx(
     v: BigNumber.from(tx.v).toNumber(),
     nonce: Number(tx.nonce),
     value: BigInt(tx.value),
-    blockHash: tx.blockHash || undefined,
-    blockHeight: tx.blockNumber || undefined,
+    blockHash: tx.blockHash ?? null,
+    blockHeight: tx.blockNumber ?? null,
     type:
       tx.type !== undefined
         ? (BigNumber.from(tx.type).toNumber() as AnyEVMTransaction["type"])
@@ -151,9 +147,10 @@ export function txFromWebsocketTx(
  */
 export function txFromEthersTx(
   tx: EthersTransaction & {
+    from: string
     blockHash?: string
     blockNumber?: number
-    type?: number
+    type?: number | null
   },
   asset: FungibleAsset,
   network: EVMNetwork
@@ -170,7 +167,7 @@ export function txFromEthersTx(
     from: tx.from,
     to: tx.to,
     nonce: parseInt(tx.nonce.toString(), 10),
-    gas: tx.gasLimit.toBigInt(),
+    gasLimit: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
     maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
@@ -186,7 +183,7 @@ export function txFromEthersTx(
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {
-    const signedTx = {
+    const signedTx: SignedEVMTransaction = {
       ...newTx,
       r: tx.r,
       s: tx.s,

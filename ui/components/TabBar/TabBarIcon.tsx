@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 
 interface Props {
   name: string
-  isActive?: boolean
+  isActive: boolean
 }
 
 export default function TabBarIcon(props: Props): ReactElement {

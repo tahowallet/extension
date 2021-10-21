@@ -153,7 +153,7 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
    *
    * @throws {Error} If the service has already been stopped.
    */
-  async started(): Promise<typeof this> {
+  async started(): Promise<this> {
     switch (this.serviceState) {
       case "started":
         return this

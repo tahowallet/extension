@@ -24,9 +24,9 @@ type ArchiveOptions = {
 function webextArchiveCreator(
   webpackCompiler: Compiler,
   { filename, outputDirectory }: ArchiveOptions
-): (stats: Stats, pluginCompleted: (err: Error) => void) => void {
+): (stats: Stats, pluginCompleted: (err: Error | null) => void) => void {
   const logger = webpackCompiler.getInfrastructureLogger(PLUGIN_NAME)
-  return (_: Stats, pluginCompleted: (err: Error) => void) => {
+  return (_: Stats, pluginCompleted: (err: Error | null) => void) => {
     const archiveSources = webpackCompiler.outputPath
     const outputPath =
       outputDirectory || path.join(webpackCompiler.outputPath, "..")

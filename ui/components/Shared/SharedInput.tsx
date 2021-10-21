@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react"
 
 interface Props {
-  placeholder?: string
-  type?: "password" | "text"
+  placeholder: string
+  type: "password" | "text"
   onChange?: (value: string) => void
 }
 
@@ -14,7 +14,7 @@ export default function SharedInput(props: Props): ReactElement {
       <input
         type={type}
         placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange?.(event.target.value)}
       />
       <style jsx>
         {`
@@ -41,5 +41,4 @@ export default function SharedInput(props: Props): ReactElement {
 SharedInput.defaultProps = {
   placeholder: "",
   type: "text",
-  onChange: () => {},
 }

@@ -17,8 +17,8 @@ newProxyStore().then((backgroundStore) => {
       if (typeof latestActivityHashes === "undefined") {
         latestActivityHashes = new Set()
       } else {
-        const newActivity = updatedActivity.filter(({ hash }) =>
-          latestActivityHashes.has(hash)
+        const newActivity = updatedActivity.filter(
+          ({ hash }) => latestActivityHashes?.has(hash) || false
         )
 
         browser.notifications.create("balance-update", {

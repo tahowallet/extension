@@ -27,6 +27,15 @@ module.exports = {
     // The rule is also mostly irrelevant to this codebase due to TypeScript
     // usage (where .tsx is required).
     "react/jsx-filename-extension": [0],
+    // TypeScript allows us to declare props that are non-optional internally
+    // but are interpreted as optional externally if they have defaultProps
+    // defined; the following two adjustments disable eslint-plugin-react
+    // checks that predate this ability for TS and that no longer apply.
+    "react/default-props-match-prop-types": [
+      2,
+      { allowRequiredDefaults: true },
+    ],
+    "react/require-default-props": [0],
     // Shared components may have labels associated externally in a way ESLint
     // does not detect.
     "jsx-a11y/label-has-associated-control": [

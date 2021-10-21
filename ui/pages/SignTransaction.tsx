@@ -7,9 +7,12 @@ import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 
-export default function SignTransaction(): ReactElement {
-  const history = useHistory()
+interface Props {
+  approveSpendOrSwap: "swap" | "spend"
+}
 
+export default function SignTransaction(props: Props): ReactElement {
+  const history = useHistory()
   const location = useLocation()
   const { token, amount, speed, network, signType } = location.state
   const [panelNumber, setPanelNumber] = useState(0)

@@ -19,7 +19,10 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    setShowingActivityDetail: (state, { payload: activityItem }) => ({
+    setShowingActivityDetail: (
+      state,
+      { payload: activityItem }: { payload: ActivityItem | null }
+    ): UIState => ({
       ...state,
       showingActivityDetail: activityItem,
     }),
