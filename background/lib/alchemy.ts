@@ -43,6 +43,7 @@ const alchemyGetAssetTransfersJTD = {
       elements: alchemyAssetTransferJTD,
     },
   },
+  additionalProperties: true,
 } as const
 
 type AlchemyAssetTransferResponse = JTDDataType<
