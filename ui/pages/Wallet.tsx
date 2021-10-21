@@ -44,7 +44,7 @@ export default function Wallet(): ReactElement {
               {panelNumber === 0 ? (
                 <WalletAssetList assetAmounts={displayAssets} />
               ) : (
-                <WalletActivityList activity={activity} />
+                <WalletActivityList />
               )}
             </div>
           </div>

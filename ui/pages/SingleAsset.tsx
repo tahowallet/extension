@@ -63,7 +63,7 @@ export default function SingleAsset(): ReactElement {
           <div className="right">Move to Ethereum</div>
         </div>
         <div className="label_light standard_width_padded">Activity</div>
-        <WalletActivityList activity={filteredActivity} />
+        <WalletActivityList />
       </CorePage>
       <style jsx>
         {`
