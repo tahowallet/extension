@@ -14,10 +14,14 @@ export default function WalletAssetList(props: Props): ReactElement {
   return (
     <ul>
       {assetAmounts.map((assetAmount) => (
-        <WalletAssetListItem
-          assetAmount={assetAmount}
-          key={assetAmount.asset.symbol}
-        />
+        <>
+          {assetAmount.localizedDecimalValue !== "∞" ? (
+            <WalletAssetListItem
+              assetAmount={assetAmount}
+              key={assetAmount.asset.symbol}
+            />
+          ) : null}
+        </>
       ))}
     </ul>
   )
