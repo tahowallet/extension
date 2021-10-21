@@ -1,16 +1,20 @@
-import Ajv, { JSONSchemaType } from "ajv"
+import AjvJSONSchema, { JSONSchemaType } from "ajv"
 import AjvJTD, { JTDDataType } from "ajv/dist/jtd"
-import AjvJSONSchema from "ajv/dist/2019"
 import { ValidateFunction } from "ajv/dist/types"
 
-let ajvJTD: Ajv
-let ajvJSONSchema: Ajv
+// Below, the JTD and JSON Schema Ajv instances are lazily instantiatied so the
+// startup cost (which is not insignificant) is only paid when the relevant
+// validations are first requested.
+let instantiatedAjvJTD: AjvJTD | null = null
+let instantiatedAjvJSONSchema: AjvJSONSchema | null = null
 
-function getAjv() {
-  return {
-    ajvJTD: ajvJTD || new AjvJTD(),
-    ajvJSONSchema: ajvJSONSchema || new AjvJSONSchema(),
-  }
+const ajvJTD = () => {
+  instantiatedAjvJTD = instantiatedAjvJTD ?? new AjvJTD()
+  return instantiatedAjvJTD
+}
+const ajvJSONSchema = () => {
+  instantiatedAjvJSONSchema = instantiatedAjvJSONSchema ?? new AjvJTD()
+  return instantiatedAjvJSONSchema
 }
 
 // The type returned by Ajv validator functions, but without the schemaEnv
@@ -32,8 +36,7 @@ export function jtdValidatorFor<SchemaType>(
       (json: unknown): json is JTDDataType<SchemaType> => {
         try {
           compiled =
-            compiled ||
-            getAjv().ajvJTD.compile<JTDDataType<SchemaType>>(jtdDefinition)
+            compiled || ajvJTD().compile<JTDDataType<SchemaType>>(jtdDefinition)
 
           const result = compiled(json)
           // Copy errors and such, which Ajv carries on the validator function
@@ -74,8 +77,7 @@ export function jsonSchemaValidatorFor<T>(
   const wrapper: EnvlessValidateFunction<T> = Object.assign(
     (json: unknown): json is T => {
       try {
-        compiled =
-          compiled || getAjv().ajvJSONSchema.compile<T>(jsonSchemaDefinition)
+        compiled = compiled || ajvJSONSchema().compile<T>(jsonSchemaDefinition)
         const result = compiled(json)
         // Copy errors and such, which Ajv carries on the validator function
         // object itself.
