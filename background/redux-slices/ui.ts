@@ -10,10 +10,12 @@ export type ActivityItem = AnyEVMTransaction & {
 
 export type UIState = {
   showingActivityDetail: ActivityItem | null
+  selectedAccount: string
 }
 
 export const initialState: UIState = {
   showingActivityDetail: null,
+  selectedAccount: "",
 }
 const uiSlice = createSlice({
   name: "ui",
@@ -23,8 +25,11 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetail: activityItem,
     }),
+    setSelectedAccount: (immerState, { payload: address }) => {
+      immerState.selectedAccount = address
+    },
   },
 })
 
-export const { setShowingActivityDetail } = uiSlice.actions
+export const { setShowingActivityDetail, setSelectedAccount } = uiSlice.actions
 export default uiSlice.reducer
