@@ -41,7 +41,8 @@ export function jtdValidatorFor<SchemaType>(
           const result = compiled(json)
           // Copy errors and such, which Ajv carries on the validator function
           // object itself.
-          Object.assign(wrapper, result)
+          // Quick note: Object.assign
+          Object.assign(wrapper, compiled)
 
           return result
         } catch (error) {
@@ -81,7 +82,7 @@ export function jsonSchemaValidatorFor<T>(
         const result = compiled(json)
         // Copy errors and such, which Ajv carries on the validator function
         // object itself.
-        Object.assign(wrapper, result)
+        Object.assign(wrapper, compiled)
 
         return result
       } catch (error) {
