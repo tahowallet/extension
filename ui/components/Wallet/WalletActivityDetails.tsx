@@ -7,7 +7,7 @@ import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
   label: string
-  value: any
+  value: unknown
   valueDetail: string
 }
 
@@ -105,27 +105,30 @@ type KeyRenameAndPickMap<T> = {
   }
 }
 
-const renameAndPickKeys = <T extends unknown>(
-  keysMap: KeyRenameAndPickMap<T>,
-  item: T
-) =>
+function renameAndPickKeys<T>(keysMap: KeyRenameAndPickMap<T>, item: T) {
   // The as below is dicey but reasonable in our usage.
-  Object.keys(item).reduce((previousValue, key) => {
+  return Object.keys(item).reduce((previousValue, key) => {
     if (key in keysMap) {
       const knownKey = key as keyof KeyRenameAndPickMap<T> // guaranteed to be true by the `in` test
-      return {
-        ...previousValue,
-        ...{
-          [keysMap[knownKey].readableName]: keysMap[knownKey].transformer(
-            item[knownKey]
-          ),
-        },
-      }
+      const keyAdjustment = keysMap[knownKey]
+
+      return keyAdjustment === undefined
+        ? previousValue
+        : {
+            ...previousValue,
+            [keyAdjustment.readableName]: keyAdjustment.transformer(
+              item[knownKey]
+            ),
+          }
     }
     return previousValue
   }, {})
+}
 
-function ethTransformer(value: string | number | bigint) {
+function ethTransformer(value: string | number | bigint | null) {
+  if (value === null) {
+    return "(Unknown)"
+  }
   return `${convertToEth(value)} ETH`
 }
 
@@ -144,7 +147,7 @@ export default function WalletActivityDetails(
   const openExplorer = useCallback(() => {
     window
       .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
-      .focus()
+      ?.focus()
   }, [activityItem.hash])
 
   if (!activityItem) return <></>
@@ -154,7 +157,7 @@ export default function WalletActivityDetails(
   const keysMap: KeyRenameAndPickMap<ActivityItem> = {
     blockHeight: {
       readableName: "Block Height",
-      transformer: (item) => item.toString(),
+      transformer: (item: number) => item.toString(),
       detailTransformer: () => {
         return ""
       },
@@ -164,7 +167,7 @@ export default function WalletActivityDetails(
       transformer: ethTransformer,
       detailTransformer: ethTransformer,
     },
-    gas: {
+    gasUsed: {
       readableName: "Gas",
       transformer: ethTransformer,
       detailTransformer: ethTransformer,
@@ -182,7 +185,10 @@ export default function WalletActivityDetails(
     timestamp: {
       readableName: "Timestamp",
       transformer: (item) => {
-        return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
+        if (typeof item !== "undefined") {
+          return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
+        }
+        return "(Unknown)"
       },
       detailTransformer: () => {
         return ""
@@ -213,7 +219,10 @@ export default function WalletActivityDetails(
       <div className="destination_cards">
         <DestinationCard label="From" address={activityItem.from} />
         <div className="icon_transfer" />
-        <DestinationCard label="To" address={activityItem.to} />
+        <DestinationCard
+          label="To"
+          address={activityItem.to || "(Contract creation)"}
+        />
       </div>
       <ul>
         {activityItem &&

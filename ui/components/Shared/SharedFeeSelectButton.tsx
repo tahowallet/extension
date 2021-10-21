@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import classNames from "classnames"
 
 interface Props {
-  isActive?: boolean
+  isActive: boolean
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
@@ -86,8 +86,4 @@ export default function SharedFeeSelectButton(props: Props): ReactElement {
 
 SharedFeeSelectButton.defaultProps = {
   isActive: false,
-  onClick: () => {
-    // do nothing by default
-    // TODO replace this with support for undefined onClick
-  },
 }

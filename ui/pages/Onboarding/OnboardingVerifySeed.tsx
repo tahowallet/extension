@@ -51,7 +51,7 @@ interface Props {
 
 export default function OnboardingVerifySeed(props: Props): ReactElement {
   const { triggerPreviousStep } = props
-  const [isSelected, setIsSelected] = useState([])
+  const [isSelected, setIsSelected] = useState<unknown[]>([])
   const [isNotSelected, setIsNotSelected] = useState(Array(12).fill(""))
 
   const handleClick = useCallback(() => {

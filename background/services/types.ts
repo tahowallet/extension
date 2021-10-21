@@ -4,19 +4,19 @@ export interface ServiceLifecycleEvents {
   serviceStarted: void
   serviceStopped: void
 }
-
 // We use this type to represent "an Emittery event emitter without the
-// any-event-related methods". We do this because the onAny method is locked to
-// the specific set of events in Emittery's type parameter, but we want to be
-// able to create more specific lists of type parameters and use them
-// interchangeably. In particular, a Service<MyServiceEvents> should be
-// interchangeable with a Service<ServiceLifecycleEvents> if MyServiceEvents
-// extends ServiceLifecycleEvents. `onAny`'s typing does not allow this, so for
-// the Service interface level we use a type that eliminates that method, and
-// thus the problem.
-type EmitteryWithoutAnySupport<T> = Omit<
+// any-event-related or debug methods". We do this because the onAny method,
+// its siblings, and the debug method are locked to the specific set of events
+// in Emittery's type parameter, but we want to be able to create more specific
+// lists of type parameters and use them interchangeably. In particular, a
+// Service<MyServiceEvents> should be interchangeable with a
+// Service<ServiceLifecycleEvents> if MyServiceEvents extends
+// ServiceLifecycleEvents. `onAny`'s typing does not allow this, so for the
+// Service interface level we use a type that eliminates that method, and thus
+// the problem.
+type EmitteryWithoutAnyOrDebugSupport<T> = Omit<
   Emittery<T>,
-  "anyEvent" | "onAny" | "offAny"
+  "anyEvent" | "onAny" | "offAny" | "debug"
 >
 
 /**
@@ -47,7 +47,7 @@ export interface Service<T extends ServiceLifecycleEvents> {
    * finished its start process, and a `serviceStopped` event when the service
    * has finished its stop process.
    */
-  readonly emitter: EmitteryWithoutAnySupport<T>
+  readonly emitter: EmitteryWithoutAnyOrDebugSupport<T>
 
   /**
    * Waits for any internal initialization to occur before fulfilling the
@@ -55,7 +55,7 @@ export interface Service<T extends ServiceLifecycleEvents> {
    * chained. Calling `started` does _not_ start the service! Instead, it acts
    * as a hook for calling things once a service has been started.
    */
-  started(): Promise<typeof this>
+  started(): Promise<this>
 
   /**
    * Starts any internal monitoring, scheduling, etc and then resolves the

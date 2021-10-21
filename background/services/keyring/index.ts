@@ -39,7 +39,7 @@ interface Events extends ServiceLifecycleEvents {
  * material to sign messages, sign transactions, and derive child keypairs.
  */
 export default class KeyringService extends BaseService<Events> {
-  #cachedKey: SaltedKey | null
+  #cachedKey: SaltedKey | null = null
 
   #keyrings: HDKeyring[] = []
 
@@ -143,7 +143,7 @@ export default class KeyringService extends BaseService<Events> {
     this.emitKeyrings()
   }
 
-  private async requireUnlocked(): Promise<void> {
+  private requireUnlocked(): void {
     if (!this.#cachedKey) {
       throw new Error("KeyringService must be unlocked.")
     }
@@ -219,7 +219,7 @@ export default class KeyringService extends BaseService<Events> {
     account: HexString,
     txRequest: EIP1559TransactionRequest
   ): Promise<SignedEVMTransaction> {
-    await this.requireUnlocked()
+    this.requireUnlocked()
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
       kr.getAccountsSync().includes(normalizeEVMAddress(account))
@@ -301,12 +301,17 @@ export default class KeyringService extends BaseService<Events> {
    */
   private async persistKeyrings() {
     this.requireUnlocked()
-    const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
-    serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-    const vault = await encryptVault(
-      JSON.stringify(serializedKeyrings),
-      this.#cachedKey
-    )
-    await writeLatestEncryptedVault(vault)
+
+    // This if guard will always pass due to requireUnlocked, but statically
+    // prove it to TypeScript.
+    if (this.#cachedKey !== null) {
+      const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
+      serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
+      const vault = await encryptVault(
+        JSON.stringify(serializedKeyrings),
+        this.#cachedKey
+      )
+      await writeLatestEncryptedVault(vault)
+    }
   }
 }

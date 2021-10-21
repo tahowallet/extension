@@ -117,11 +117,11 @@ SelectedTokenButton.defaultProps = {
 }
 
 interface SharedAssetInputProps {
-  isTypeDestination?: boolean
+  isTypeDestination: boolean
   onAssetSelected?: () => void
-  label?: string
-  defaultToken?: { name: string }
-  isTokenOptionsLocked?: boolean
+  label: string
+  defaultToken: { name: string }
+  isTokenOptionsLocked: boolean
 }
 
 export default function SharedAssetInput(
@@ -141,7 +141,7 @@ export default function SharedAssetInput(
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
-      onAssetSelected()
+      onAssetSelected?.()
     }
   }, [isTokenOptionsLocked, onAssetSelected])
 
@@ -178,7 +178,7 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            {selectedToken.name ? (
+            {selectedToken?.name ? (
               <SelectedTokenButton
                 toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
               />
@@ -255,8 +255,4 @@ SharedAssetInput.defaultProps = {
   isTokenOptionsLocked: false,
   defaultToken: { name: "" },
   label: "",
-  onAssetSelected: () => {
-    // do nothing by default
-    // TODO replace this with support for undefined onClick
-  },
 }

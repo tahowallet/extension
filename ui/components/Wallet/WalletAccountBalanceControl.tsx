@@ -35,7 +35,7 @@ function ReadOnlyNotice(): ReactElement {
 }
 
 interface Props {
-  balance?: string
+  balance: string
 }
 
 export default function WalletAccountBalanceControl(
@@ -69,12 +69,10 @@ export default function WalletAccountBalanceControl(
       <div className="wrap">
         <div className="balance_label">Total account balance</div>
         <span className="balance_area">
-          {balance && (
-            <span className="balance fade_in">
-              <span className="dollar_sign">$</span>
-              {balance}
-            </span>
-          )}
+          <span className="balance fade_in">
+            <span className="dollar_sign">$</span>
+            {balance}
+          </span>
         </span>
         {isViewOnlyWallet ? (
           <ReadOnlyNotice />

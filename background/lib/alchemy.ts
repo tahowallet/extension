@@ -1,4 +1,3 @@
-import Ajv, { JTDDataType } from "ajv/dist/jtd"
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
@@ -8,8 +7,7 @@ import { utils } from "ethers"
 import logger from "./logger"
 import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
 import { ETH, ETHEREUM } from "../constants"
-
-const ajv = new Ajv()
+import { jtdValidatorFor } from "./validation"
 
 // JSON Type Definition for the Alchemy assetTransfers API.
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
@@ -45,12 +43,9 @@ const alchemyGetAssetTransfersJTD = {
   },
 } as const
 
-type AlchemyAssetTransferResponse = JTDDataType<
-  typeof alchemyGetAssetTransfersJTD
->
-
-const isValidAlchemyAssetTransferResponse =
-  ajv.compile<AlchemyAssetTransferResponse>(alchemyGetAssetTransfersJTD)
+const isValidAlchemyAssetTransferResponse = jtdValidatorFor(
+  alchemyGetAssetTransfersJTD
+)
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -144,7 +139,7 @@ export async function getAssetTransfers(
         dataSource: "alchemy",
       } as AssetTransfer
     })
-    .filter((t) => t)
+    .filter((t): t is AssetTransfer => t !== null)
 }
 
 // JSON Type Definition for the Alchemy token balance API.
@@ -167,10 +162,9 @@ const alchemyTokenBalanceJTD = {
   additionalProperties: false,
 } as const
 
-type AlchemyTokenBalanceResponse = JTDDataType<typeof alchemyTokenBalanceJTD>
-
-const isValidAlchemyTokenBalanceResponse =
-  ajv.compile<AlchemyTokenBalanceResponse>(alchemyTokenBalanceJTD)
+const isValidAlchemyTokenBalanceResponse = jtdValidatorFor(
+  alchemyTokenBalanceJTD
+)
 
 /**
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
@@ -204,7 +198,16 @@ export async function getTokenBalances(
 
   // TODO log balances with errors, consider returning an error type
   return json.tokenBalances
-    .filter((b) => b.error === null && b.tokenBalance !== null)
+    .filter(
+      (
+        b
+      ): b is typeof json["tokenBalances"][0] & {
+        tokenBalance: Exclude<
+          typeof json["tokenBalances"][0]["tokenBalance"],
+          null
+        >
+      } => b.error === null && b.tokenBalance !== null
+    )
     .map((tokenBalance) => ({
       contractAddress: tokenBalance.contractAddress,
       amount:
@@ -228,10 +231,9 @@ const alchemyTokenMetadataJTD = {
   additionalProperties: false,
 } as const
 
-type AlchemyTokenMetadataResponse = JTDDataType<typeof alchemyTokenMetadataJTD>
-
-const isValidAlchemyTokenMetadataResponse =
-  ajv.compile<AlchemyTokenMetadataResponse>(alchemyTokenMetadataJTD)
+const isValidAlchemyTokenMetadataResponse = jtdValidatorFor(
+  alchemyTokenMetadataJTD
+)
 
 /**
  * Use Alchemy's getTokenMetadata call to get metadata for a token contract on
@@ -262,8 +264,8 @@ export async function getTokenMetadata(
     name: json.name,
     symbol: json.symbol,
     metadata: {
-      logoURL: json.logo,
       tokenLists: [],
+      ...(json.logo ? { logoURL: json.logo } : {}),
     },
     homeNetwork: ETHEREUM, // TODO make multi-network friendly
     contractAddress,

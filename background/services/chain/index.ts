@@ -8,9 +8,9 @@ import logger from "../../lib/logger"
 import {
   AccountBalance,
   AccountNetwork,
+  AnyEVMBlock,
   AnyEVMTransaction,
   AssetTransfer,
-  EIP1559Block,
   EIP1559TransactionRequest,
   EVMNetwork,
   HexString,
@@ -28,7 +28,7 @@ import BaseService from "../base"
 import {
   blockFromEthersBlock,
   blockFromWebsocketBlock,
-  ethersTxFromTx,
+  ethersTxFromSignedTx,
   txFromEthersTx,
   txFromWebsocketTx,
 } from "./utils"
@@ -65,7 +65,7 @@ interface Events extends ServiceLifecycleEvents {
     accountNetwork: AccountNetwork
     assetTransfers: AssetTransfer[]
   }
-  block: EIP1559Block
+  block: AnyEVMBlock
   transaction: AnyEVMTransaction
   blockPrices: BlockPrices
 }
@@ -104,7 +104,7 @@ export default class ChainService extends BaseService<Events> {
     provider: AlchemyWebSocketProvider
   }[]
 
-  blocknative: Blocknative
+  blocknative: Blocknative | null = null
 
   /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
@@ -116,10 +116,15 @@ export default class ChainService extends BaseService<Events> {
     ChainService,
     [Promise<PreferenceService>]
   > = async (preferenceService) => {
-    return new this(await getOrCreateDB(), await preferenceService)
+    return new this(
+      process.env.BLOCKNATIVE_API_KEY,
+      await getOrCreateDB(),
+      await preferenceService
+    )
   }
 
   private constructor(
+    blocknativeApiKey: string | undefined,
     private db: ChainDatabase,
     private preferenceService: PreferenceService
   ) {
@@ -159,10 +164,12 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
-    this.blocknative = Blocknative.connect(
-      process.env.BLOCKNATIVE_API_KEY,
-      BlocknativeNetworkIds.ethereum.mainnet
-    )
+    if (typeof blocknativeApiKey !== "undefined") {
+      this.blocknative = Blocknative.connect(
+        blocknativeApiKey,
+        BlocknativeNetworkIds.ethereum.mainnet
+      )
+    }
   }
 
   async internalStartService(): Promise<void> {
@@ -254,7 +261,7 @@ export default class ChainService extends BaseService<Events> {
   async getBlockData(
     network: Network,
     blockHash: string
-  ): Promise<EIP1559Block> {
+  ): Promise<AnyEVMBlock> {
     // TODO make this multi network
     const cachedBlock = await this.db.getBlock(network, blockHash)
     if (cachedBlock) {
@@ -345,7 +352,7 @@ export default class ChainService extends BaseService<Events> {
    */
   async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
     // TODO make proper use of tx.network to choose provider
-    const serialized = utils.serializeTransaction(ethersTxFromTx(tx))
+    const serialized = utils.serializeTransaction(ethersTxFromSignedTx(tx))
     try {
       await Promise.all([
         this.pollingProviders.ethereum.sendTransaction(serialized),
@@ -364,13 +371,15 @@ export default class ChainService extends BaseService<Events> {
    */
   async pollBlockPrices(): Promise<void> {
     // Immediately fetch the current block prices when this function gets called
-    const blockPrices = await this.blocknative.getBlockPrices()
-    this.emitter.emit("blockPrices", blockPrices)
+    if (this.blocknative) {
+      const blockPrices = await this.blocknative?.getBlockPrices()
+      this.emitter.emit("blockPrices", blockPrices)
 
-    // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
-    setTimeout(() => {
-      this.pollBlockPrices()
-    }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
+      // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
+      setTimeout(() => {
+        this.pollBlockPrices()
+      }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
+    }
   }
 
   /* *****************
@@ -453,7 +462,7 @@ export default class ChainService extends BaseService<Events> {
       accountNetwork
     )
 
-    if (newest !== undefined && oldest !== undefined) {
+    if (newest !== null && oldest !== null) {
       const range = newest - oldest
       if (
         range <
@@ -538,10 +547,10 @@ export default class ChainService extends BaseService<Events> {
 
         if (!tx.blockHash && !tx.blockHeight) {
           this.subscribeToTransactionConfirmation(tx.network, tx.hash)
+        } else if (tx.blockHash) {
+          // Get relevant block data.
+          await this.getBlockData(tx.network, tx.blockHash)
         }
-
-        // Get relevant block data.
-        await this.getBlockData(tx.network, result.blockHash)
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
         this.queueTransactionHashToRetrieve(ETHEREUM, hash)
@@ -560,7 +569,7 @@ export default class ChainService extends BaseService<Events> {
     tx: AnyEVMTransaction,
     dataSource: "local" | "alchemy"
   ): Promise<void> {
-    let error: Error
+    let error: unknown = null
     try {
       await this.db.addOrUpdateTransaction(tx, dataSource)
     } catch (err) {

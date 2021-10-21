@@ -8,7 +8,7 @@ export default function SharedAssetItem(props: Props): ReactElement {
   const { onClick } = props
 
   function handleClick() {
-    onClick({ name: "ETH" })
+    onClick?.({ name: "ETH" })
   }
 
   return (
@@ -83,9 +83,4 @@ export default function SharedAssetItem(props: Props): ReactElement {
   )
 }
 
-SharedAssetItem.defaultProps = {
-  onClick: () => {
-    // do nothing by default
-    // TODO replace this with support for undefined onClick
-  },
-}
+SharedAssetItem.defaultProps = {}

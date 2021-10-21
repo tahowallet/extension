@@ -1,9 +1,9 @@
 import React, { ReactElement } from "react"
 
 interface Props {
-  size?: "small" | "medium" | "large"
-  logoURL?: string
-  symbol?: string
+  size: "small" | "medium" | "large"
+  logoURL: string
+  symbol: string
 }
 
 export default function SharedAssetIcon(props: Props): ReactElement {
