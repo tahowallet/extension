@@ -40,19 +40,21 @@ export default function SingleAsset(): ReactElement {
             <div className="usd_value">${filteredAsset.localizedUserValue}</div>
           </div>
           <div className="right">
-            <SharedButton
-              type="primary"
-              size="medium"
-              icon="send"
-              linkTo={{
-                pathname: "/send",
-                state: {
-                  token: { name: symbol },
-                },
-              }}
-            >
-              Send
-            </SharedButton>
+            {process.env.HIDE_EARN_PAGE === "true" ? null : (
+              <SharedButton
+                type="primary"
+                size="medium"
+                icon="send"
+                linkTo={{
+                  pathname: "/send",
+                  state: {
+                    token: { name: symbol },
+                  },
+                }}
+              >
+                Send
+              </SharedButton>
+            )}
             <SharedButton type="primary" size="medium" icon="swap">
               Swap
             </SharedButton>
