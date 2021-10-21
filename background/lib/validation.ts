@@ -41,7 +41,7 @@ export function jtdValidatorFor<SchemaType>(
           const result = compiled(json)
           // Copy errors and such, which Ajv carries on the validator function
           // object itself.
-          // Quick note: Object.assign
+          // NOTE: this changes the ajv api bc/ it won't copy the null vallues
           Object.assign(wrapper, compiled)
 
           return result
@@ -89,6 +89,7 @@ export function jsonSchemaValidatorFor<T>(
         // If there's a compilation error, communicate it in a way that
         // aligns with Ajv's typical way of communicating validation errors,
         // and report the JSON as invalid (since we can't know for sure).
+        // NOTE: this changes the ajv api bc/ it won't copy the null vallues
         wrapper.errors = [
           {
             keyword: "COMPILATION FAILURE",
