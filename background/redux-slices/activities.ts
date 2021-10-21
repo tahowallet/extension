@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { AnyEVMTransaction } from "../types"
 
 export type ActivityItem = AnyEVMTransaction & {
-  timestamp?: string
+  timestamp?: number
   value: bigint
   from?: string
   isSent?: boolean
