@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
+import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 
 interface Props {
   onClick: () => void
@@ -11,7 +11,8 @@ interface Props {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity } = props
-  if (typeof activity.value === "undefined") return <></>
+  if (typeof activity.value === "undefined" || activity.value === BigInt(0))
+    return <></>
 
   return (
     <li>
@@ -28,7 +29,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           </div>
           <div className="right">
             {activity.timestamp &&
-              dayjs.unix(parseInt(activity.timestamp, 10)).format("MMM D")}
+              dayjs.unix(activity.timestamp).format("MMM D")}
           </div>
         </div>
         <div className="bottom">
@@ -38,8 +39,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {activity.value &&
-                  `${convertToEth(activity.value)}`.substring(0, 6)}
+                {`${convertToEth(activity.value)}`.substring(0, 6)}
               </span>
               ETH
             </div>
