@@ -1,6 +1,8 @@
 import React, { ReactElement, useState } from "react"
+import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 function WalletName() {
   return (
@@ -64,52 +66,40 @@ function WalletName() {
 }
 
 export default function AccountsNotificationPanelAccounts(): ReactElement {
-  const [selectedAccount, setSelectedAccount] = useState(1)
   const [selectedWallet, setSelectedWallet] = useState(0)
+
+  const dispatch = useBackgroundDispatch()
+
+  const accountAddresses = useBackgroundSelector((background) => {
+    return Object.keys(background.account.accountsData)
+  })
+
+  const selectedAccount = useBackgroundSelector((background) => {
+    return background.ui.selectedAccount
+  })
 
   return (
     <div>
       <WalletName />
       <ul>
-        {Array(1)
-          .fill("")
-          .map((item, index) => {
-            return (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedWallet(0)
-                  setSelectedAccount(index)
-                }}
-              >
-                <AccountsNotificationPanelAccountItem
-                  key={index.toString()}
-                  isSelected={index === selectedAccount && selectedWallet === 0}
-                />
-              </button>
-            )
-          })}
-      </ul>
-      <WalletName />
-      <ul>
-        {Array(3)
-          .fill("")
-          .map((item, index) => {
-            return (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedWallet(1)
-                  setSelectedAccount(index)
-                }}
-              >
-                <AccountsNotificationPanelAccountItem
-                  key={index.toString()}
-                  isSelected={index === selectedAccount && selectedWallet === 1}
-                />
-              </button>
-            )
-          })}
+        {accountAddresses.map((item, index) => {
+          return (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedWallet(0)
+                setSelectedAccount(index)
+                dispatch(setSelectedAccount(item))
+              }}
+            >
+              <AccountsNotificationPanelAccountItem
+                key={item}
+                address={item.slice(0, 16)}
+                isSelected={item === selectedAccount}
+              />
+            </button>
+          )
+        })}
       </ul>
       <footer>
         <SharedButton
