@@ -190,13 +190,3 @@ describe("jsonSchemaValidatorFor", () => {
     })
   })
 })
-
-// describe("getValidatiorFn() should return a validation fn that works as expected", () => {
-//   it("should work with JTD schema", () => {})
-//   it("should work with JSON schema", () => {})
-// })
-// describe("performance optimization", () => {
-//   it("should generate validation Fn only on first call then return it from cache", () => {})
-//   it("should not compile validation fn beforehand", () => {})
-//   it("should not instantiate Ajv before the first getValidatorFn() call is made", () => {})
-// })
