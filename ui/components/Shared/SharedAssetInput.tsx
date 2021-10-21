@@ -122,8 +122,8 @@ interface SharedAssetInputProps {
   label: string
   defaultToken: { name: string }
   isTokenOptionsLocked: boolean
-  onAmountChange?: (value: number) => void
-  onSendToAddressChange?: (value: string) => void
+  onAmountChange: (value: number) => void
+  onSendToAddressChange: (value: string) => void
 }
 
 export default function SharedAssetInput(

@@ -5,8 +5,12 @@ import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedNetworkFeeGroup from "../components/Shared/SharedNetworkFeeGroup"
 
+interface SendLocationState {
+  token: string
+}
+
 export default function Send(): ReactElement {
-  const location = useLocation()
+  const location = useLocation<SendLocationState>()
   const token = location?.state?.token
 
   const [selectedCount, setSelectedCount] = useState(0)
@@ -29,7 +33,7 @@ export default function Send(): ReactElement {
                   setSelectedCount(1)
                 }}
                 onAmountChange={setAmount}
-                defaultToken={token}
+                defaultToken={{ name: token }}
               />
             </div>
             <div className="form_input">

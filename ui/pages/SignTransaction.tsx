@@ -7,17 +7,28 @@ import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 
-interface Props {
-  approveSpendOrSwap: "swap" | "spend"
+interface SignLocationState {
+  token: string
+  amount: number
+  speed: number
+  network: string
+  signType: string
 }
 
-export default function SignTransaction(props: Props): ReactElement {
+export default function SignTransaction(): ReactElement {
   const history = useHistory()
-  const location = useLocation()
+  const location = useLocation<SignLocationState>()
   const { token, amount, speed, network, signType } = location.state
+
   const [panelNumber, setPanelNumber] = useState(0)
 
-  const spendOrSwapContent = {
+  const spendOrSwapContent: {
+    [pageName: string]: {
+      title: string
+      component: () => ReactElement
+      confirmButtonText: string
+    }
+  } = {
     swap: {
       title: "Swap assets",
       component: () => <SignTransactionSwapAssetBlock />,
