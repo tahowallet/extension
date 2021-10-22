@@ -40,7 +40,7 @@ export default function SingleAsset(): ReactElement {
             <div className="usd_value">${filteredAsset.localizedUserValue}</div>
           </div>
           <div className="right">
-            {process.env.HIDE_EARN_PAGE === "true" ? null : (
+            {process.env.HIDE_SEND_BUTTON === "true" ? null : (
               <SharedButton
                 type="primary"
                 size="medium"
