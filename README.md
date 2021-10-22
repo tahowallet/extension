@@ -79,6 +79,31 @@ $ yarn start --config-name firefox
 $ yarn start --config-name firefox --config-name brave
 ```
 
+### Releasing a version
+
+This repository uses `yarn version` to create new versions. Typical usage:
+
+```sh
+$ yarn version --patch # bump patch version, e.g. 0.0.5->0.0.6
+$ yarn version --minor # bump minor version, e.g. 0.1.5->0.2.0
+```
+
+Major releases generally require more discussion than this automation allows,
+but can be managed the same way.
+
+Bumping a version in this way will do a few things:
+
+- Ensure the commit is running on the correct branch (`release-<new-version>`)
+  for review. If you are on a different branch, the script attempts to switch
+  to a new branch based on the latest origin/main. Releases should generally
+  only add version bumps to the main branch.
+- Synchronize the extension manifest version to the updated package version.
+- Commit, tag, and push the new version and branch.
+
+Once the branch is pushed, you should open a pull request. This will do any
+further processing, including potentially managing automated submission of the
+new version to extension directories (as relevant).
+
 ### Additional Scripts
 
 ```sh
