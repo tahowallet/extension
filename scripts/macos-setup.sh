@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "Installing jq..."
+brew list jq &>/dev/null || brew install jq
+
 echo "Installing pre-commit and specified hooks..."
 brew list pre-commit &>/dev/null || brew install pre-commit
 pre-commit install --install-hooks

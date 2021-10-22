@@ -37,6 +37,7 @@ $ ./scripts/macos-setup.sh
 If you can't use the macOS setup script, here is the software you'll need to
 install:
 
+- `jq`: [Instructions](https://stedolan.github.io/jq/download/)
 - `nvm`: [Instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
 - `pre-commit`: [Instructions](https://pre-commit.com/#install)
 
