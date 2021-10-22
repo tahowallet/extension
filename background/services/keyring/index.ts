@@ -52,10 +52,6 @@ export default class KeyringService extends BaseService<Events> {
     super()
   }
 
-  async internalStartService(): Promise<void> {
-    await super.internalStartService()
-  }
-
   async internalStopService(): Promise<void> {
     await this.lock()
 
