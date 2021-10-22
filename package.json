@@ -29,8 +29,9 @@
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
     "test": "jest",
-    "preversion": "which jq || (echo 'You must install jq; scripts/macos-setup.sh for macOS.' && exit 1)",
-    "version": "jq -w '.version=\"$npm_package_version\"' manifest/manifest.json"
+    "preversion": "which jq &>1 || (echo 'You must install jq; scripts/macos-setup.sh for macOS.' && exit 1)",
+    "version": "scripts/update-version.sh",
+    "postversion": "git push --tags origin release-$npm_package_version"
   },
   "workspaces": [
     "ui",
