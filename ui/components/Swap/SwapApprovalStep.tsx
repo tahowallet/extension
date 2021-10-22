@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import SharedButton from "../Shared/SharedButton"
 
 interface Props {
-  isDone?: boolean
+  isDone: boolean
   label: string
 }
 

@@ -7,6 +7,10 @@ import {
   createAsyncThunk,
 } from "@reduxjs/toolkit"
 
+// Below, we use `any` to deal with the fact that allAliases is a heterogeneous
+// collection of async thunk actions whose payload types have little in common
+// with each other.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * A list of all webext-redux aliases that have been registered globally. These
  * are generally updated automatically by helpers like
@@ -24,12 +28,17 @@ export const allAliases: Record<
   string,
   (action: {
     type: string
-    payload: unknown
-  }) => AsyncThunkAction<unknown, unknown, unknown>
+    payload: any
+  }) => AsyncThunkAction<unknown, unknown, any>
 > = {}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // All props of an AsyncThunk.
-type AsyncThunkProps = keyof AsyncThunk<unknown, unknown, unknown>
+type AsyncThunkProps = keyof AsyncThunk<
+  unknown,
+  unknown,
+  Record<string, unknown>
+>
 
 // The type system will make sure we've listed all additional props that redux
 // toolkit adds to the AsyncThunk action creator below.
@@ -48,7 +57,7 @@ const asyncThunkProperties = (() => {
 
   const exhaustiveList: ExhaustivePropList<
     typeof temp,
-    AsyncThunk<unknown, unknown, unknown>
+    AsyncThunk<unknown, unknown, Record<string, unknown>>
   > = temp
 
   return exhaustiveList
@@ -129,10 +138,8 @@ export function createBackgroundAsyncThunk<
   // Register the alias to ensure it will always get proxied back to the
   // background script, where we will run our proxy action creator to fire off
   // the thunk correctly.
-  allAliases[typePrefix] = (action: { type: TypePrefix; payload: ThunkArg }) =>
+  allAliases[typePrefix] = (action: { type: string; payload: ThunkArg }) =>
     baseThunkActionCreator(action.payload)
 
-  // Some type coercion because these types are gnarly af. If the code above
-  // type-checks, this assertion *should* be correct.
   return webextActionCreator
 }

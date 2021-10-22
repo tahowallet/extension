@@ -29,7 +29,7 @@ export default function WalletActivityList(): ReactElement {
   )
 
   const handleClose = useCallback(() => {
-    dispatch(setShowingActivityDetail(undefined))
+    dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
   if (!activities) return <></>
@@ -37,7 +37,7 @@ export default function WalletActivityList(): ReactElement {
   return (
     <>
       <SharedSlideUpMenu
-        isOpen={showingActivityDetail && true}
+        isOpen={showingActivityDetail !== null}
         close={handleClose}
       >
         {showingActivityDetail ? (

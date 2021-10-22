@@ -132,7 +132,7 @@ export default class IndexingService extends BaseService<Events> {
     account: string,
     network: Network,
     asset: FungibleAsset
-  ): Promise<AccountBalance> {
+  ): Promise<AccountBalance | null> {
     return this.db.getLatestAccountBalance(account, network, asset)
   }
 
@@ -330,7 +330,8 @@ export default class IndexingService extends BaseService<Events> {
         // TODO hardcoded to Ethereum
         const provider = this.chainService.pollingProviders.ethereum
         // pull metadata from Alchemy
-        customAsset = await getTokenMetadata(provider, contractAddress)
+        customAsset =
+          (await getTokenMetadata(provider, contractAddress)) || undefined
 
         if (customAsset) {
           await this.db.addCustomAsset(customAsset)
@@ -402,11 +403,13 @@ export default class IndexingService extends BaseService<Events> {
               amounts: [
                 BigInt(1),
                 BigInt(
-                  (Number(unitPricePoint.unitPrice.amount) /
-                    10 **
-                      (unitPricePoint.unitPrice.asset as FungibleAsset)
-                        .decimals) *
-                    10 ** USD.decimals
+                  Math.trunc(
+                    (Number(unitPricePoint.unitPrice.amount) /
+                      10 **
+                        (unitPricePoint.unitPrice.asset as FungibleAsset)
+                          .decimals) *
+                      10 ** USD.decimals
+                  )
                 ),
               ], // TODO not a big fan of this lost precision
               time: unitPricePoint.time,
@@ -428,7 +431,7 @@ export default class IndexingService extends BaseService<Events> {
         }
       )
     } catch (err) {
-      logger.error("Error getting token prices", mainnetAssetsToTrack)
+      logger.error("Error getting token prices", mainnetAssetsToTrack, err)
     }
   }
 

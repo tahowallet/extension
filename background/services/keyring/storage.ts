@@ -3,12 +3,14 @@ import { browser } from "webextension-polyfill-ts"
 import { EncryptedVault } from "./encryption"
 import { UNIXTime } from "../../types"
 
+type SerializedEncryptedVault = {
+  timeSaved: UNIXTime
+  vault: EncryptedVault
+}
+
 type SerializedEncryptedVaults = {
   version: 1
-  vaults: {
-    timeSaved: UNIXTime
-    vault: EncryptedVault
-  }[]
+  vaults: SerializedEncryptedVault[]
 }
 
 /**
@@ -60,7 +62,7 @@ export async function writeLatestEncryptedVault(
 ): Promise<void> {
   const serializedVaults = await getEncryptedVaults()
   const vaults = [...serializedVaults.vaults]
-  const currentLatest = vaults.reduce(
+  const currentLatest = vaults.reduce<SerializedEncryptedVault | null>(
     (newestVault, nextVault) =>
       newestVault && newestVault.timeSaved > nextVault.timeSaved
         ? newestVault

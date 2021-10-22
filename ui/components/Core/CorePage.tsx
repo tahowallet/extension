@@ -8,8 +8,8 @@ import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
 
 interface Props {
   children: React.ReactNode
-  hasTabBar?: boolean
-  hasTopBar?: boolean
+  hasTabBar: boolean
+  hasTopBar: boolean
 }
 
 export default function CorePage(props: Props): ReactElement {

@@ -3,7 +3,7 @@ import classNames from "classnames"
 
 interface OnboardingStepProps {
   label: string
-  isActive?: boolean
+  isActive: boolean
 }
 
 function OnboardingStep(props: OnboardingStepProps): ReactElement {

@@ -3,9 +3,8 @@ import Dexie from "dexie"
 import {
   AccountBalance,
   AccountNetwork,
+  AnyEVMBlock,
   AnyEVMTransaction,
-  BlockPrices,
-  EIP1559Block,
   FungibleAsset,
   Network,
   UNIXTime,
@@ -58,7 +57,7 @@ export class ChainDatabase extends Dexie {
    *
    * Keyed by the [block hash, network name] pair.
    */
-  private blocks!: Dexie.Table<EIP1559Block, [string, string]>
+  private blocks!: Dexie.Table<AnyEVMBlock, [string, string]>
 
   /*
    * Historic and pending chain transactions relevant to tracked accounts.
@@ -123,7 +122,7 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getLatestBlock(network: Network): Promise<EIP1559Block> {
+  async getLatestBlock(network: Network): Promise<AnyEVMBlock> {
     return (
       await this.blocks
         .where("[network.name+timestamp]")
@@ -150,7 +149,7 @@ export class ChainDatabase extends Dexie {
   async getBlock(
     network: Network,
     blockHash: string
-  ): Promise<EIP1559Block | null> {
+  ): Promise<AnyEVMBlock | null> {
     return (
       (
         await this.blocks
@@ -254,7 +253,7 @@ export class ChainDatabase extends Dexie {
     })
   }
 
-  async addBlock(block: EIP1559Block): Promise<void> {
+  async addBlock(block: AnyEVMBlock): Promise<void> {
     // TODO Consider exposing whether the block was added or updated.
     // TODO Consider tracking history of block changes, e.g. in case of reorg.
     await this.blocks.put(block)
