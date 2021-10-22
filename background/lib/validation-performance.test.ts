@@ -2,6 +2,9 @@ import AjvJTD from "ajv/dist/jtd"
 import AjvJSONSchema from "ajv"
 import { jsonSchemaValidatorFor, jtdValidatorFor } from "./validation"
 
+// this could be done in validation.ts without mocking the whole ajv module
+// but I think it worth to keep it like this here for showcasing this pattern
+// for mocking full node modules and wrinting tests agains them
 jest.mock("ajv/dist/jtd")
 jest.mock("ajv")
 
