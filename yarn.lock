@@ -7736,6 +7736,16 @@ mkdirp@^1.0.3, mkdirp@^1.0.4:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
 
+mockzilla-webextension@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/mockzilla-webextension/-/mockzilla-webextension-0.13.0.tgz#89a0d627d86e8a912abc149ee903882da0ebb648"
+  integrity sha512-HDfabHLTdd6p2OiFEFB7ravSVEN0HllAjMeWUP7iUNXuCQEkIMro6BzxRL/Xtfe6fKRqNRykTQcX/H8RbAkv0A==
+
+mockzilla@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/mockzilla/-/mockzilla-0.12.0.tgz#0916b16f955f1a5ef2df45cda0a9590428d80ae0"
+  integrity sha512-tbTdN9VDjy0wKl4w1nbwXzsaW7xJzFMr0Jgm/5RevN897Q4AIb1teBI2txbva41/H2uPo0fzbLgBd78tntfy4g==
+
 morgan@^1.7.0:
   version "1.10.0"
   resolved "https://registry.yarnpkg.com/morgan/-/morgan-1.10.0.tgz#091778abc1fc47cd3509824653dae1faab6b17d7"

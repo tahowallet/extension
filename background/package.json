@@ -49,6 +49,8 @@
     "@reduxjs/toolkit": "^1.6.1",
     "@types/webextension-polyfill": "^0.8.0",
     "crypto-browserify": "^3.12.0",
+    "mockzilla": "^0.12.0",
+    "mockzilla-webextension": "^0.13.0",
     "redux": "^4.1.1",
     "remote-redux-devtools": "^0.5.16",
     "remotedev-server": "^0.3.1",
