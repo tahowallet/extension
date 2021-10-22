@@ -239,14 +239,7 @@ export default class KeyringService extends BaseService<Events> {
     // parse the tx, then unpack it as best we can
     const tx = parseRawTransaction(signed)
 
-    if (
-      !tx.hash ||
-      !tx.from ||
-      !tx.to ||
-      !tx.r ||
-      !tx.s ||
-      tx.v === undefined
-    ) {
+    if (!tx.hash || !tx.from || !tx.r || !tx.s || typeof tx.v === "undefined") {
       throw new Error("Transaction doesn't appear to have been signed.")
     }
 
