@@ -300,10 +300,7 @@ export default class KeyringService extends BaseService<Events> {
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(
-        JSON.stringify(serializedKeyrings),
-        this.#cachedKey
-      )
+      const vault = await encryptVault(serializedKeyrings, this.#cachedKey)
       await writeLatestEncryptedVault(vault)
     }
   }
