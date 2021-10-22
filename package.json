@@ -28,7 +28,9 @@
     "lint:docs:fix": "prettier -w '**/*.md'",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "test": "jest"
+    "test": "jest",
+    "preversion": "which jq || (echo 'You must install jq; scripts/macos-setup.sh for macOS.' && exit 1)",
+    "version": "jq -w '.version=\"$npm_package_version\"' manifest/manifest.json"
   },
   "workspaces": [
     "ui",
