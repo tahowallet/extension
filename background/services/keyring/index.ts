@@ -243,7 +243,11 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Transaction doesn't appear to have been signed.")
     }
 
-    if (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas || tx.type !== 2) {
+    if (
+      typeof tx.maxPriorityFeePerGas === "undefined" ||
+      typeof tx.maxFeePerGas === "undefined" ||
+      tx.type !== 2
+    ) {
       throw new Error("Can only sign EIP-1559 conforming transactions")
     }
 
