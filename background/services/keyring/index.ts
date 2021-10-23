@@ -169,7 +169,7 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyrings.push(newKeyring)
     await this.persistKeyrings()
 
-    const [address] = newKeyring.addAccountsSync(1)
+    const [address] = newKeyring.addAddressesSync(1)
 
     this.emitter.emit("address", address)
     this.emitKeyrings()
@@ -197,9 +197,9 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyrings.push(newKeyring)
     await this.persistKeyrings()
 
-    newKeyring.addAccountsSync(1)
+    newKeyring.addAddressesSync(1)
 
-    this.emitter.emit("address", newKeyring.getAccountsSync()[0])
+    this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
 
     return newKeyring.id
@@ -218,10 +218,10 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
-      kr.getAccountsSync().includes(normalizeEVMAddress(account))
+      kr.getAddressesSync().includes(normalizeEVMAddress(account))
     )
     if (!keyring) {
-      throw new Error("Account keyring not found.")
+      throw new Error("Address keyring not found.")
     }
 
     // ethers has a looser / slightly different request type
@@ -283,7 +283,7 @@ export default class KeyringService extends BaseService<Events> {
   private emitKeyrings() {
     const keyrings = this.#keyrings.map((kr) => ({
       type: KeyringTypes.mnemonicBIP39S256,
-      addresses: [...kr.getAccountsSync()],
+      addresses: [...kr.getAddressesSync()],
       id: kr.id,
     }))
     this.emitter.emit("keyrings", keyrings)

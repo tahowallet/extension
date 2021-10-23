@@ -31,7 +31,7 @@
     "@ethersproject/providers": "^5.4.3",
     "@ethersproject/transactions": "^5.4.0",
     "@ethersproject/web": "^5.4.0",
-    "@tallyho/hd-keyring": "^0.2.3",
+    "@tallyho/hd-keyring": "^0.3.2",
     "@uniswap/token-lists": "^1.0.0-beta.25",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
