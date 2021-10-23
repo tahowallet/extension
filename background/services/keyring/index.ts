@@ -167,9 +167,8 @@ export default class KeyringService extends BaseService<Events> {
 
     const newKeyring = new HDKeyring({ strength: 256 })
     this.#keyrings.push(newKeyring)
-    await this.persistKeyrings()
-
     const [address] = newKeyring.addAddressesSync(1)
+    await this.persistKeyrings()
 
     this.emitter.emit("address", address)
     this.emitKeyrings()
@@ -195,9 +194,8 @@ export default class KeyringService extends BaseService<Events> {
 
     const newKeyring = new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
-    await this.persistKeyrings()
-
     newKeyring.addAddressesSync(1)
+    await this.persistKeyrings()
 
     this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
