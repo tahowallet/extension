@@ -78,7 +78,7 @@ export async function writeLatestEncryptedVault(
         vaults: [
           ...serializedVaults.vaults,
           {
-            timeSaved: new Date().getTime(),
+            timeSaved: Date.now(),
             vault: encryptedVault,
           },
         ],
