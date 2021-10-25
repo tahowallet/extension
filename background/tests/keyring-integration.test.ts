@@ -1,7 +1,7 @@
 import "mockzilla-webextension"
 
 import { webcrypto } from "crypto"
-import KeyringService from "../services/keyring"
+import KeyringService, { Keyring } from "../services/keyring"
 import { EIP1559TransactionRequest, KeyringTypes } from "../types"
 
 const originalCrypto = global.crypto
@@ -50,6 +50,17 @@ const startKeyringService = async () => {
   await service.startService()
 
   return service
+}
+
+function expectBase64String(
+  {
+    minLength: min,
+    maxLength: max,
+  }: { minLength: number; maxLength?: number } = { minLength: 1 }
+) {
+  return expect.stringMatching(
+    new RegExp(`^[0-9a-zA-Z=+/]{${min},${max ?? ""}}`)
+  )
 }
 
 describe("KeyringService when uninitialized", () => {
@@ -174,8 +185,118 @@ describe("KeyringService when initialized", () => {
   })
 })
 
-it("can generate a keyring (24 word)", async () => {})
+describe("KeyringService when saving keyrings", () => {
+  let localStorage: Record<string, Record<string, unknown>> = {}
+  let localStorageCalls: Record<string, unknown>[] = []
 
-it("can import a legacy mnemonic (12 word)", async () => {})
+  const dateNowValue = Date.now()
 
-it("save keyrings encrypted to browser extension storage. I suspect this will require mocking or something like Puppeteer to get this running in a real browser", async () => {})
+  beforeEach(() => {
+    localStorage = {}
+    localStorageCalls = []
+
+    mockBrowser.storage.local.get.mock((key) => {
+      if (typeof key === "string" && key in localStorage) {
+        return Promise.resolve({ [key]: localStorage[key] } || {})
+      }
+      return Promise.resolve({})
+    })
+    mockBrowser.storage.local.set.mock((values) => {
+      localStorage = {
+        ...localStorage,
+        ...values,
+      }
+      localStorageCalls.unshift(values)
+
+      return Promise.resolve()
+    })
+
+    jest.spyOn(Date, "now").mockReturnValue(dateNowValue)
+  })
+
+  it("saves data encrypted", async () => {
+    const service = await startKeyringService()
+    await service.unlock(testPassword)
+
+    expect(localStorageCalls.shift()).toMatchObject({
+      tallyVaults: expect.objectContaining({
+        vaults: [
+          expect.objectContaining({
+            timeSaved: dateNowValue,
+            vault: expect.objectContaining({
+              salt: expectBase64String(),
+              initializationVector: expectBase64String(),
+              cipherText: expectBase64String({ minLength: 24, maxLength: 24 }),
+            }),
+          }),
+        ],
+      }),
+    })
+
+    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+
+    expect(localStorageCalls.shift()).toMatchObject({
+      tallyVaults: expect.objectContaining({
+        vaults: [
+          expect.objectContaining({
+            timeSaved: dateNowValue,
+            vault: expect.objectContaining({
+              salt: expectBase64String(),
+              initializationVector: expectBase64String(),
+              cipherText: expectBase64String({ minLength: 24, maxLength: 24 }),
+            }),
+          }),
+          expect.objectContaining({
+            timeSaved: dateNowValue,
+            vault: expect.objectContaining({
+              salt: expectBase64String(),
+              initializationVector: expectBase64String(),
+              cipherText: expectBase64String({ minLength: 25 }),
+            }),
+          }),
+        ],
+      }),
+    })
+  })
+
+  it("loads encrypted data at instantiation time", async () => {
+    localStorage = {
+      tallyVaults: {
+        version: 1,
+        vaults: [
+          {
+            timeSaved: 1635201991098,
+            vault: {
+              salt: "XeQ9825jVp7rCq6f2vRySunT/G7Q4rbCcrWxKc/o6KiRCx27eyrQYHciGz4YB3wYCh6Po1liuffN7GIYqkxWJw==",
+              initializationVector: "K5/+ECJ2ei6Fy+x10TutgQ==",
+              cipherText:
+                "9tmTazKJT4tai1HdhT4pVD/o97QJG4KspsCqIp2Gpk0CsWxEIQ4FFJ4ecOOmW6+Gpojgh77N0sQsCU8LL4S43zK/XS5LzTtLNlPq9CQ9IRDt0SZQN4tD7/0/rO5H4wDRCaHxj0g49O5/n87ezlHvijYB+gr0d64OE96TyDkTuZZgrZg4jB4DL3aEebhZp+zKidofi0GCHqqKClzw2nwq7teasRYV6h69KcYibpITB0+FN1QSqP4c9Oblio3VTjfIubC8uINXhnKO5b1Pj6md4N6wj3RyFQVober45vRfl/WAGQF4pHM2KyvWFytZ+tQJ+QgBhTPwrJjMMmabnCok6MWLUApLOdddDHYyUfrUZuxp2xvw/A==",
+            },
+          },
+        ],
+      },
+    }
+
+    const storedKeyrings: Keyring[] = []
+
+    const service = await startKeyringService()
+    service.emitter.on("keyrings", (keyrings) => {
+      storedKeyrings.push(...keyrings)
+      return Promise.resolve()
+    })
+    await service.unlock(testPassword)
+
+    await expect(
+      // Wait for the emitter to emit the keyrings event.
+      new Promise((resolve) => {
+        resolve(storedKeyrings)
+      })
+    ).resolves.toHaveLength(1)
+
+    expect(storedKeyrings[0]).toMatchObject({
+      type: KeyringTypes.mnemonicBIP39S256,
+      id: "0x0f38729e",
+      addresses: ["0xf34d8078c80d4be6ff928ff794ab65aa535ead4c"],
+    })
+  })
+})
