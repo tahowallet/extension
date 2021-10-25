@@ -63,7 +63,7 @@ describe("KeyringService when uninitialized", () => {
   })
 
   describe("and locked", () => {
-    test("won't import or create accounts", async () => {
+    it("won't import or create accounts", async () => {
       await expect(
         service.importLegacyKeyring(validMnemonics.metamask[0])
       ).rejects.toThrow("KeyringService must be unlocked.")
@@ -77,7 +77,7 @@ describe("KeyringService when uninitialized", () => {
       )
     })
 
-    test("won't sign transactions", async () => {
+    it("won't sign transactions", async () => {
       await expect(
         service.signTransaction("0x0", validTransactionRequests.simple)
       ).rejects.toThrow("KeyringService must be unlocked.")
@@ -89,14 +89,14 @@ describe("KeyringService when uninitialized", () => {
       await service.unlock(testPassword)
     })
 
-    test.each(validMnemonics.metamask)(
+    it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
       async (mnemonic) => {
         return expect(service.importLegacyKeyring(mnemonic)).resolves
       }
     )
 
-    test("will create distinct BIP-39 S256 accounts", async () => {
+    it("will create multiple distinct BIP-39 S256 accounts", async () => {
       const idOne = service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
       await expect(idOne).resolves.toMatch(/.+/)
 
@@ -137,7 +137,7 @@ describe("KeyringService when initialized", () => {
     await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
   })
 
-  test("will sign a transaction", async () => {
+  it("will sign a transaction", async () => {
     const transactionWithFrom = {
       ...validTransactionRequests.simple,
       from: address,
@@ -154,19 +154,19 @@ describe("KeyringService when initialized", () => {
     // TODO assert correct recovered address
   })
 
-  test("does not overwrite data if unlocked with the wrong password", async () => {
-    await service.lock()
-
-    const unlockResult = await service.unlock("booyan")
-    expect(unlockResult).toEqual(false)
-
-    const goodUnlockResult = await service.unlock(testPassword)
-    expect(goodUnlockResult).toEqual(true)
-
+  it("does not overwrite data if unlocked with the wrong password", async () => {
     const transactionWithFrom = {
       ...validTransactionRequests.simple,
       from: address,
     }
+
+    await service.lock()
+
+    const badUnlockResult = await service.unlock("booyan")
+    expect(badUnlockResult).toEqual(false)
+
+    const goodUnlockResult = await service.unlock(testPassword)
+    expect(goodUnlockResult).toEqual(true)
 
     await expect(
       service.signTransaction(address, transactionWithFrom)
@@ -174,10 +174,8 @@ describe("KeyringService when initialized", () => {
   })
 })
 
-test("doesn't overwrite data if unlock() is called with the wrong password", async () => {})
+it("can generate a keyring (24 word)", async () => {})
 
-test("can generate a keyring (24 word)", async () => {})
+it("can import a legacy mnemonic (12 word)", async () => {})
 
-test("can import a legacy mnemonic (12 word)", async () => {})
-
-test("save keyrings encrypted to browser extension storage. I suspect this will require mocking or something like Puppeteer to get this running in a real browser", async () => {})
+it("save keyrings encrypted to browser extension storage. I suspect this will require mocking or something like Puppeteer to get this running in a real browser", async () => {})
