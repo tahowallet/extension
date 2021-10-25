@@ -115,6 +115,8 @@ export default class KeyringService extends BaseService<Events> {
         plainTextVault.forEach((kr) => {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
+
+        this.emitKeyrings()
       }
     }
 
