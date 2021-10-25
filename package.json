@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.6",
   "description": "Tally, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -28,7 +28,10 @@
     "lint:docs:fix": "prettier -w '**/*.md'",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "test": "jest"
+    "test": "jest",
+    "preversion": "which jq &>1 || (echo 'You must install jq; scripts/macos-setup.sh for macOS.' && exit 1)",
+    "version": "scripts/update-version.sh",
+    "postversion": "git push --tags origin release-$npm_package_version"
   },
   "workspaces": [
     "ui",

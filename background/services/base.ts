@@ -1,5 +1,5 @@
 import Emittery from "emittery"
-import { browser, Alarms } from "webextension-polyfill-ts"
+import browser, { Alarms } from "webextension-polyfill"
 import { Service, ServiceLifecycleEvents } from "./types"
 
 /**
