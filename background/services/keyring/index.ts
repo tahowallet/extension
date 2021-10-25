@@ -156,9 +156,13 @@ export default class KeyringService extends BaseService<Events> {
    *
    * @param type - the type of keyring to generate. Currently only supports 256-
    *        bit HD keys.
-   * @returns The string ID of the new keyring.
+   * @returns An object containing the string ID of the new keyring and the
+   *          mnemonic for the new keyring. Note that the mnemonic can only be
+   *          accessed at generation time through this return value.
    */
-  async generateNewKeyring(type: KeyringTypes): Promise<string> {
+  async generateNewKeyring(
+    type: KeyringTypes
+  ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
     if (type !== KeyringTypes.mnemonicBIP39S256) {
@@ -175,7 +179,9 @@ export default class KeyringService extends BaseService<Events> {
     this.emitter.emit("address", address)
     this.emitKeyrings()
 
-    return newKeyring.id
+    const { mnemonic } = newKeyring.serializeSync()
+
+    return { id: newKeyring.id, mnemonic: mnemonic.split(" ") }
   }
 
   /**

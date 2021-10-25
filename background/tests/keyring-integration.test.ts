@@ -107,14 +107,28 @@ describe("KeyringService when uninitialized", () => {
       }
     )
 
-    it("will create multiple distinct BIP-39 S256 accounts", async () => {
-      const idOne = service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
-      await expect(idOne).resolves.toMatch(/.+/)
+    it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {
+      const keyringOne = service.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S256
+      )
+      await expect(keyringOne).resolves.toMatchObject({
+        id: expect.stringMatching(/.+/),
+      })
 
-      const idTwo = service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
-      await expect(idTwo).resolves.toMatch(/.+/)
+      const keyringTwo = service.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S256
+      )
+      await expect(keyringTwo).resolves.toMatchObject({
+        id: expect.stringMatching(/.+/),
+      })
 
-      expect(await idOne).not.toEqual(await idTwo)
+      const { id: idOne, mnemonic: mnemonicOne } = await keyringOne
+      const { id: idTwo, mnemonic: mnemonicTwo } = await keyringTwo
+
+      expect(idOne).not.toEqual(idTwo)
+      expect(mnemonicOne).not.toEqual(mnemonicTwo)
+      expect(mnemonicOne.length).toEqual(24)
+      expect(mnemonicTwo.length).toEqual(24)
     })
   })
 })
