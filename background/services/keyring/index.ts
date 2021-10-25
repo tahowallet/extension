@@ -20,7 +20,7 @@ import {
 import BaseService from "../base"
 import { ETH, ETHEREUM } from "../../constants"
 
-type Keyring = {
+export type Keyring = {
   type: KeyringTypes
   id: string | null
   addresses: string[]
