@@ -31,7 +31,7 @@
     "@ethersproject/providers": "^5.4.3",
     "@ethersproject/transactions": "^5.4.0",
     "@ethersproject/web": "^5.4.0",
-    "@tallyho/hd-keyring": "^0.2.3",
+    "@tallyho/hd-keyring": "^0.3.2",
     "@uniswap/token-lists": "^1.0.0-beta.25",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
@@ -43,11 +43,14 @@
     "ethers": "^5.4.2",
     "node-fetch": "^2.6.1",
     "util": "^0.12.4",
-    "webextension-polyfill-ts": "^0.26.0"
+    "webextension-polyfill": "^0.8.0"
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^1.6.1",
+    "@types/webextension-polyfill": "^0.8.0",
     "crypto-browserify": "^3.12.0",
+    "mockzilla": "^0.12.0",
+    "mockzilla-webextension": "^0.13.0",
     "redux": "^4.1.1",
     "remote-redux-devtools": "^0.5.16",
     "remotedev-server": "^0.3.1",
