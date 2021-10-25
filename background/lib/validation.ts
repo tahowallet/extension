@@ -19,7 +19,7 @@ const ajvJTD = () => {
   return instantiatedAjvJTD
 }
 const ajvJSONSchema = () => {
-  instantiatedAjvJSONSchema = instantiatedAjvJSONSchema ?? new AjvJTD()
+  instantiatedAjvJSONSchema = instantiatedAjvJSONSchema ?? new AjvJSONSchema()
   return instantiatedAjvJSONSchema
 }
 
