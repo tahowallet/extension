@@ -1,17 +1,17 @@
 // It's necessary to have an object w/ the function on it so we can use spyOn
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
 
+import { jsonSchemaValidatorFor } from "../lib/validation"
+
+import logger from "../lib/logger"
+import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
+import { CoinGeckoAsset } from "../types"
 import {
   CoingeckoPriceData,
   coingeckoPriceSchema,
   getPrice,
   getPrices,
-} from "./prices"
-import { jsonSchemaValidatorFor } from "./validation"
-
-import logger from "./logger"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
-import { CoinGeckoAsset } from "../types"
+} from "../lib/prices"
 
 const dateNow = 1634911514834
 

@@ -1,6 +1,6 @@
 import AjvJTD from "ajv/dist/jtd"
 import AjvJSONSchema from "ajv"
-import { jsonSchemaValidatorFor, jtdValidatorFor } from "./validation"
+import { jtdValidatorFor, jsonSchemaValidatorFor } from "../lib/validation"
 
 // this could be done in validation.ts without mocking the whole ajv module
 // but I think it worth to keep it like this here for showcasing this pattern

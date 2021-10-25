@@ -1,4 +1,4 @@
-import { jsonSchemaValidatorFor, jtdValidatorFor } from "./validation"
+import { jsonSchemaValidatorFor, jtdValidatorFor } from "../lib/validation"
 
 describe("jtdValidatorFor", () => {
   it("the validation fn should pass for correct data", () => {
