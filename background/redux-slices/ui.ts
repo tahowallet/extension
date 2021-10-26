@@ -1,15 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { AnyEVMTransaction } from "../types"
 
-export type ActivityItem = AnyEVMTransaction & {
-  timestamp?: string
-  value: bigint
-  from?: string
-  isSent?: boolean
-}
-
 export type UIState = {
-  showingActivityDetail: ActivityItem | null
+  showingActivityDetail: string
   selectedAccount: string
 }
 
@@ -21,15 +14,12 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    setShowingActivityDetail: (
-      state,
-      { payload: activityItem }: { payload: ActivityItem | null }
-    ): UIState => ({
+    setShowingActivityDetail: (state, { payload: activityItemHash }) => ({
       ...state,
-      showingActivityDetail: activityItem,
+      showingActivityDetail: activityItemHash,
     }),
     setSelectedAccount: (immerState, { payload: address }) => {
-      immerState.selectedAccount = address
+      immerState.selectedAccount = address.toLowerCase()
     },
   },
 })
