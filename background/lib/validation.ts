@@ -41,7 +41,6 @@ export function jtdValidatorFor<SchemaType>(
           const result = compiled(json)
           // Copy errors and such, which Ajv carries on the validator function
           // object itself.
-          // NOTE: this changes the ajv api bc/ it won't copy the null vallues
           Object.assign(wrapper, compiled)
 
           return result
