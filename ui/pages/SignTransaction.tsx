@@ -7,12 +7,18 @@ import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 
+enum SignType {
+  Sign = "sign",
+  SignSwap = "sign-swap",
+  SignSpend = "sign-spend",
+}
+
 interface SignLocationState {
   token: string
   amount: number
   speed: number
   network: string
-  signType: string
+  signType: SignType
 }
 
 export default function SignTransaction(): ReactElement {
@@ -22,24 +28,24 @@ export default function SignTransaction(): ReactElement {
 
   const [panelNumber, setPanelNumber] = useState(0)
 
-  const spendOrSwapContent: {
-    [pageName: string]: {
+  const signContent: {
+    [signType in SignType]: {
       title: string
       component: () => ReactElement
       confirmButtonText: string
     }
   } = {
-    swap: {
+    [SignType.SignSwap]: {
       title: "Swap assets",
       component: () => <SignTransactionSwapAssetBlock />,
       confirmButtonText: "Confirm",
     },
-    spend: {
+    [SignType.SignSpend]: {
       title: "Approve asset spend",
       component: () => <SignTransactionApproveSpendAssetBlock />,
       confirmButtonText: "Approve",
     },
-    sign: {
+    [SignType.Sign]: {
       title: "Sign Transaction",
       component: () => (
         <SignTransactionSignBlock token={token} amount={amount} />
@@ -51,11 +57,9 @@ export default function SignTransaction(): ReactElement {
   return (
     <section>
       <SignTransactionNetworkAccountInfoTopBar />
-      <h1 className="serif_header title">
-        {spendOrSwapContent[signType].title}
-      </h1>
+      <h1 className="serif_header title">{signContent[signType].title}</h1>
       <div className="primary_info_card standard_width">
-        {spendOrSwapContent[signType].component()}
+        {signContent[signType].component()}
       </div>
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
@@ -80,7 +84,7 @@ export default function SignTransaction(): ReactElement {
           Reject
         </SharedButton>
         <SharedButton type="primary" iconSize="large" size="large">
-          {spendOrSwapContent[signType].confirmButtonText}
+          {signContent[signType].confirmButtonText}
         </SharedButton>
       </div>
       <style jsx>
