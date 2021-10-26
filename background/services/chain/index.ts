@@ -33,6 +33,7 @@ import {
   ethersTxFromSignedTx,
   txFromEthersTx,
   txFromWebsocketTx,
+  networkToEthersNetwork,
 } from "./utils"
 import Blocknative, {
   BlocknativeNetworkIds,
@@ -153,13 +154,13 @@ export default class ChainService extends BaseService<Events> {
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        { name: "kovan", chainId: 42 },
+        networkToEthersNetwork(ETHEREUM),
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        { name: "kovan", chainId: 42 },
+        networkToEthersNetwork(ETHEREUM),
         ALCHEMY_KEY
       ),
     }

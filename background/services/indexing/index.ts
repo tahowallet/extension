@@ -371,7 +371,7 @@ export default class IndexingService extends BaseService<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet
     const mainnetAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === "42"
+      (t) => t.homeNetwork.chainID === "1"
     )
 
     try {
@@ -463,7 +463,7 @@ export default class IndexingService extends BaseService<Events> {
     // TODO only supports Ethereum mainnet, doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const mainnetAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === "42"
+      (t) => t.homeNetwork.chainID === "1"
     )
 
     // wait on balances being written to the db, don't wait on event emission
