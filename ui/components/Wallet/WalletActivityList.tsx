@@ -15,15 +15,14 @@ export default function WalletActivityList(): ReactElement {
 
   const { activities, blocks } = useBackgroundSelector((background) => {
     return {
-      activities:
-        background.activities.activities[background.ui.selectedAccount],
+      activities: background.activities[background.ui.selectedAccount],
       blocks: background.account.blocks,
     }
   })
 
   const handleOpen = useCallback(
     (activityItem) => {
-      dispatch(setShowingActivityDetail(activityItem))
+      dispatch(setShowingActivityDetail(activityItem.hash))
     },
     [dispatch]
   )
@@ -41,7 +40,9 @@ export default function WalletActivityList(): ReactElement {
         close={handleClose}
       >
         {showingActivityDetail ? (
-          <WalletActivityDetails activityItem={showingActivityDetail} />
+          <WalletActivityDetails
+            activityItem={activities[showingActivityDetail]}
+          />
         ) : (
           <></>
         )}
