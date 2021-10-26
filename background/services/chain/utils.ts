@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-
+import { Network as EthersNetwork } from "@ethersproject/networks"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
@@ -12,7 +12,7 @@ import {
 } from "../../types"
 import { ETHEREUM } from "../../constants"
 
-/*
+/**
  * Parse a block as returned by a polling provider.
  */
 export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
@@ -33,7 +33,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
   }
 }
 
-/*
+/**
  * Parse a block as returned by a websocket provider subscription.
  */
 export function blockFromWebsocketBlock(
@@ -86,7 +86,7 @@ export function ethersTxFromSignedTx(
   }
 }
 
-/*
+/**
  * Parse a transaction as returned by a websocket provider subscription.
  */
 export function txFromWebsocketTx(
@@ -142,7 +142,7 @@ export function txFromWebsocketTx(
   }
 }
 
-/*
+/**
  * Parse a transaction as returned by a polling provider.
  */
 export function txFromEthersTx(
@@ -192,4 +192,22 @@ export function txFromEthersTx(
     return signedTx
   }
   return newTx
+}
+
+/**
+ * Convert Tally's Network type to Ethers' Network type.
+ */
+export function networkToEthersNetwork(network: EVMNetwork): EthersNetwork {
+  let networkName
+
+  if (network.name === "Ethereum") {
+    networkName = "homestead" // Ethers refers to mainnet as homestead
+  } else {
+    networkName = network.name.toLowerCase()
+  }
+
+  return {
+    name: networkName,
+    chainId: Number(network.chainID),
+  }
 }
