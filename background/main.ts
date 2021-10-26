@@ -242,7 +242,9 @@ export default class Main extends BaseService<never> {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    this.chainService.emitter.on("transaction", (transaction) => {
+    this.chainService.emitter.on("transaction", (payload) => {
+      const transaction = payload.tx
+
       if (
         transaction.blockHash &&
         "gasUsed" in transaction &&
@@ -252,7 +254,7 @@ export default class Main extends BaseService<never> {
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
-      this.store.dispatch(activityEncountered(transaction))
+      this.store.dispatch(activityEncountered(payload))
     })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
