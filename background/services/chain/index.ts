@@ -153,13 +153,13 @@ export default class ChainService extends BaseService<Events> {
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        { name: "homestead", chainId: 1 },
+        { name: "kovan", chainId: 42 },
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        { name: "homestead", chainId: 1 },
+        { name: "kovan", chainId: 42 },
         ALCHEMY_KEY
       ),
     }
@@ -169,7 +169,7 @@ export default class ChainService extends BaseService<Events> {
     if (typeof blocknativeApiKey !== "undefined") {
       this.blocknative = Blocknative.connect(
         blocknativeApiKey,
-        BlocknativeNetworkIds.ethereum.mainnet
+        BlocknativeNetworkIds.ethereum.mainnet // BlockNative only supports gas estimation for Ethereum mainnet
       )
     }
   }
