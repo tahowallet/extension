@@ -66,7 +66,7 @@ interface Events extends ServiceLifecycleEvents {
     assetTransfers: AssetTransfer[]
   }
   block: AnyEVMBlock
-  transaction: AnyEVMTransaction
+  transaction: { forAccounts: string[]; tx: AnyEVMTransaction }
   blockPrices: BlockPrices
 }
 
@@ -577,8 +577,20 @@ export default class ChainService extends BaseService<Events> {
       logger.error(`Error saving tx ${tx}`, error)
     }
     try {
+      const accounts = await this.getAccountsToTrack()
+
+      const forAccounts = accounts
+        .filter(
+          (accountNetwork) =>
+            tx.from === accountNetwork.account ||
+            tx.to === accountNetwork.account
+        )
+        .map((accountNetwork) => {
+          return accountNetwork.account
+        })
+
       // emit in a separate try so outside services still get the tx
-      this.emitter.emit("transaction", tx)
+      this.emitter.emit("transaction", { tx, forAccounts })
     } catch (err) {
       error = err
       logger.error(`Error emitting tx ${tx}`, error)
