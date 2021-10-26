@@ -83,19 +83,20 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
       <WalletName />
       <ul>
         {accountAddresses.map((item, index) => {
+          const lowerCaseItem = item.toLocaleLowerCase()
           return (
             <button
               type="button"
               onClick={() => {
                 setSelectedWallet(0)
                 setSelectedAccount(index)
-                dispatch(setSelectedAccount(item))
+                dispatch(setSelectedAccount(lowerCaseItem))
               }}
             >
               <AccountsNotificationPanelAccountItem
-                key={item}
-                address={item.slice(0, 16)}
-                isSelected={item === selectedAccount}
+                key={lowerCaseItem}
+                address={lowerCaseItem.slice(0, 16)}
+                isSelected={lowerCaseItem === selectedAccount}
               />
             </button>
           )
