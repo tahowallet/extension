@@ -15,7 +15,7 @@ export default function WalletActivityList(): ReactElement {
 
   const { activities, blocks } = useBackgroundSelector((background) => {
     return {
-      activities: background.activities[background.ui.selectedAccount],
+      activities: background.activities[background.ui.selectedAccount?.address],
       blocks: background.account.blocks,
     }
   })

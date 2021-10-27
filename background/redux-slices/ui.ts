@@ -1,15 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { AnyEVMTransaction } from "../types"
 
+type SelectedAccount = {
+  address: string
+  truncatedAddress: string
+}
+
 export type UIState = {
-  showingActivityDetail: string
-  selectedAccount: string
+  showingActivityDetail: string | null
+  selectedAccount: SelectedAccount
 }
 
 export const initialState: UIState = {
   showingActivityDetail: null,
-  selectedAccount: "",
+  selectedAccount: { address: "", truncatedAddress: "" },
 }
+
 const uiSlice = createSlice({
   name: "ui",
   initialState,
@@ -19,7 +25,12 @@ const uiSlice = createSlice({
       showingActivityDetail: activityItemHash,
     }),
     setSelectedAccount: (immerState, { payload: address }) => {
-      immerState.selectedAccount = address.toLowerCase()
+      const lowercaseAddress = address.toLowerCase()
+
+      immerState.selectedAccount = {
+        address: lowercaseAddress,
+        truncatedAddress: lowercaseAddress.slice(0, 7),
+      }
     },
   },
 })

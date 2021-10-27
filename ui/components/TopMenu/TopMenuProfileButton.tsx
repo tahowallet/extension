@@ -6,7 +6,7 @@ export default function TopMenuProfileButton(props: {
   const { account } = props
   return (
     <button type="button">
-      {account.slice(0, 8)}
+      {account}
       <div className="avatar" />
       <style jsx>
         {`

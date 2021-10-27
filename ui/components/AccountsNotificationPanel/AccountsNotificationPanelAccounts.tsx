@@ -75,7 +75,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
   })
 
   const selectedAccount = useBackgroundSelector((background) => {
-    return background.ui.selectedAccount
+    return background.ui.selectedAccount?.address
   })
 
   return (
