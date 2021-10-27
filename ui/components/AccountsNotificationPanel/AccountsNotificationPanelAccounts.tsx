@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
@@ -77,6 +77,15 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
   const selectedAccount = useBackgroundSelector((background) => {
     return background.ui.selectedAccount?.address
   })
+
+  useEffect(() => {
+    function selectFirstAccountIfNoneSelected() {
+      if (selectedAccount === "" && accountAddresses[0]) {
+        dispatch(setSelectedAccount(accountAddresses[0].toLowerCase()))
+      }
+    }
+    selectFirstAccountIfNoneSelected()
+  }, [dispatch, accountAddresses, selectedAccount])
 
   return (
     <div>
