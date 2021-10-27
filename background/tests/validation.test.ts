@@ -36,7 +36,7 @@ describe("lib/validation.ts", () => {
             },
           },
         ],
-      ] as Array<Array<{ [k: string]: unknown }>>
+      ] as const
 
       it.each(schemaDataArr)("%#", ({ schema, data }) => {
         const validatorFn = jtdValidatorFor(schema)
@@ -97,7 +97,7 @@ describe("lib/validation.ts", () => {
             ],
           },
         ],
-      ] as Array<Array<{ [k: string]: unknown }>>
+      ] as const
 
       it.each(schemaDataError)("%#", ({ schema, data, error }) => {
         const validatorFn = jtdValidatorFor(schema)
@@ -116,7 +116,7 @@ describe("lib/validation.ts", () => {
           {
             schema: {
               type: "object",
-              required: [] as any,
+              required: [],
               additionalProperties: {
                 type: "object",
                 properties: {
@@ -125,7 +125,7 @@ describe("lib/validation.ts", () => {
                     nullable: true
                   },
                 },
-                required: ["last_updated_at"],
+                required: ["last_updated_at"] as never[],
                 additionalProperties: { type: "number", nullable: true },
                 nullable: true,
               },
@@ -146,11 +146,12 @@ describe("lib/validation.ts", () => {
             },
           },
         ],
-      ]
+      ] as const
 
       it.each(schemaDataArr)("%#", ({ schema, data }) => {
-        // @ts-expect-error find out what's the problem with the argument typing
-        const validatorFn = jsonSchemaValidatorFor(schema)
+        const validatorFn = jsonSchemaValidatorFor<{
+          [coin: string]: { [curr: string]: number }
+        }>(schema)
         const validationResult = validatorFn(data)
 
         expect(validatorFn.errors).toBeNull()
@@ -202,11 +203,12 @@ describe("lib/validation.ts", () => {
             ],
           },
         ],
-      ]
+      ] as const
 
       it.each(schemaDataError)("%#", ({ schema, data, error }) => {
-        // @ts-expect-error find out what's the problem with the argument typing
-        const validatorFn = jsonSchemaValidatorFor(schema)
+        const validatorFn = jsonSchemaValidatorFor<{
+          [curr: string]: { [coin: string]: number }
+        }>(schema)
         const validationResult = validatorFn(data)
 
         expect(validatorFn.errors).toMatchObject(error)
