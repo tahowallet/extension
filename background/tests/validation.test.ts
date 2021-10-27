@@ -6,35 +6,39 @@ describe("lib/validation.ts", () => {
       const schemaDataArr = [
         [
           {
-            values: {
-              properties: {
-                last_updated_at: { type: "uint32" },
+            schema: {
+              values: {
+                properties: {
+                  last_updated_at: { type: "uint32" },
+                },
+                additionalProperties: true,
               },
-              additionalProperties: true,
             },
-          },
-          {
-            ethereum: {
-              usd: 3832.26,
-              last_updated_at: 1634671650,
+            data: {
+              ethereum: {
+                usd: 3832.26,
+                last_updated_at: 1634671650,
+              },
             },
           },
         ],
         [
           {
-            properties: {
-              transfers: {
-                elements: { type: "string" },
+            schema: {
+              properties: {
+                transfers: {
+                  elements: { type: "string" },
+                },
               },
             },
-          },
-          {
-            transfers: ["The Fifth"],
+            data: {
+              transfers: ["The Fifth"],
+            },
           },
         ],
       ] as Array<Array<{ [k: string]: unknown }>>
 
-      it.each(schemaDataArr)("%#", (schema, data) => {
+      it.each(schemaDataArr)("%#", ({ schema, data }) => {
         const validatorFn = jtdValidatorFor(schema)
         try {
           expect(validatorFn(data)).toBeTruthy()
@@ -50,49 +54,53 @@ describe("lib/validation.ts", () => {
       const schemaDataError = [
         [
           {
-            values: {
-              properties: {
-                last_updated_at: { type: "uint32" },
+            schema: {
+              values: {
+                properties: {
+                  last_updated_at: { type: "uint32" },
+                },
+                additionalProperties: true,
               },
-              additionalProperties: true,
             },
-          },
-          {
-            ethereum: {
-              usd: 3832.26,
-              last_updated_at: "this should be uint32 but it's not",
+            data: {
+              ethereum: {
+                usd: 3832.26,
+                last_updated_at: "this should be uint32 but it's not",
+              },
             },
-          },
-          {
-            instancePath: "/ethereum/last_updated_at",
-            schemaPath: "/values/properties/last_updated_at/type",
-            keyword: "type",
-            params: { type: "uint32", nullable: false },
-            message: "must be uint32",
+            error: {
+              instancePath: "/ethereum/last_updated_at",
+              schemaPath: "/values/properties/last_updated_at/type",
+              keyword: "type",
+              params: { type: "uint32", nullable: false },
+              message: "must be uint32",
+            },
           },
         ],
         [
           {
-            properties: {
-              transfers: {
-                elements: { type: "string" },
+            schema: {
+              properties: {
+                transfers: {
+                  elements: { type: "string" },
+                },
               },
             },
-          },
-          {
-            transfers: "this should be an array of strings but it's not",
-          },
-          {
-            instancePath: "/transfers",
-            schemaPath: "/properties/transfers/elements",
-            keyword: "elements",
-            params: { type: "array", nullable: false },
-            message: "must be array",
+            data: {
+              transfers: "this should be an array of strings but it's not",
+            },
+            error: {
+              instancePath: "/transfers",
+              schemaPath: "/properties/transfers/elements",
+              keyword: "elements",
+              params: { type: "array", nullable: false },
+              message: "must be array",
+            },
           },
         ],
       ] as Array<Array<{ [k: string]: unknown }>>
 
-      it.each(schemaDataError)("%#", (schema, data, error) => {
+      it.each(schemaDataError)("%#", ({ schema, data, error }) => {
         const validatorFn = jtdValidatorFor(schema)
 
         try {
@@ -119,39 +127,41 @@ describe("lib/validation.ts", () => {
       const schemaDataArr = [
         [
           {
-            type: "object",
-            required: [],
-            additionalProperties: {
+            schema: {
               type: "object",
-              properties: {
-                last_updated_at: { type: "number" } as {
-                  type: "number"
-                  nullable: true
+              required: [] as any,
+              additionalProperties: {
+                type: "object",
+                properties: {
+                  last_updated_at: { type: "number" } as {
+                    type: "number"
+                    nullable: true
+                  },
                 },
+                required: ["last_updated_at"],
+                additionalProperties: { type: "number", nullable: true },
+                nullable: true,
               },
-              required: ["last_updated_at"],
-              additionalProperties: { type: "number", nullable: true },
-              nullable: true,
             },
-          },
-          {
-            ethereum: {
-              usd: 3836.53,
-              eur: 3297.36,
-              cny: 24487,
-              last_updated_at: 1634672101,
-            },
-            bitcoin: {
-              usd: 63909,
-              eur: 54928,
-              cny: 407908,
-              last_updated_at: 1634672139,
+            data: {
+              ethereum: {
+                usd: 3836.53,
+                eur: 3297.36,
+                cny: 24487,
+                last_updated_at: 1634672101,
+              },
+              bitcoin: {
+                usd: 63909,
+                eur: 54928,
+                cny: 407908,
+                last_updated_at: 1634672139,
+              },
             },
           },
         ],
       ]
 
-      it.each(schemaDataArr)("$#", (schema, data) => {
+      it.each(schemaDataArr)("%#", ({ schema, data }) => {
         // @ts-expect-error find out what's the problem with the argument typing
         const validatorFn = jsonSchemaValidatorFor(schema)
 
@@ -169,46 +179,48 @@ describe("lib/validation.ts", () => {
       const schemaDataError = [
         [
           {
-            type: "object",
-            required: [],
-            additionalProperties: {
+            schema: {
               type: "object",
-              properties: {
-                last_updated_at: { type: "number" } as {
-                  type: "number"
-                  nullable: true
+              required: [] as any,
+              additionalProperties: {
+                type: "object",
+                properties: {
+                  last_updated_at: { type: "number" } as {
+                    type: "number"
+                    nullable: true
+                  },
                 },
+                required: ["last_updated_at"] as never[],
+                additionalProperties: { type: "number", nullable: true },
+                nullable: true,
               },
-              required: ["last_updated_at"] as never[],
-              additionalProperties: { type: "number", nullable: true },
-              nullable: true,
             },
-          },
-          {
-            ethereum: {
-              usd: "3836.53", // wrong type
-              eur: 3297.36,
-              cny: 24487,
-              // last_updated_at: 1634672101, // missing required prop
+            data: {
+              ethereum: {
+                usd: "3836.53", // wrong type
+                eur: 3297.36,
+                cny: 24487,
+                // last_updated_at: 1634672101, // missing required prop
+              },
+              bitcoin: {
+                usd: 63909,
+                eur: 54928,
+                cny: 407908,
+                last_updated_at: 1634672139,
+              },
             },
-            bitcoin: {
-              usd: 63909,
-              eur: 54928,
-              cny: 407908,
-              last_updated_at: 1634672139,
+            error: {
+              instancePath: "/ethereum",
+              schemaPath: "#/additionalProperties/required",
+              keyword: "required",
+              params: { missingProperty: "last_updated_at" },
+              message: "must have required property 'last_updated_at'",
             },
-          },
-          {
-            instancePath: "/ethereum",
-            schemaPath: "#/additionalProperties/required",
-            keyword: "required",
-            params: { missingProperty: "last_updated_at" },
-            message: "must have required property 'last_updated_at'",
           },
         ],
       ]
 
-      it.each(schemaDataError)("%#", (schema, data, error) => {
+      it.each(schemaDataError)("%#", ({ schema, data, error }) => {
         // @ts-expect-error find out what's the problem with the argument typing
         const validatorFn = jsonSchemaValidatorFor(schema)
 
