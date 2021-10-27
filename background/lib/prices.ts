@@ -56,8 +56,7 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  const validate =
-    jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
+  const validate = jsonSchemaValidatorFor(coingeckoPriceSchema)
 
   if (!validate(json)) {
     logger.warn(
@@ -94,8 +93,7 @@ export async function getPrices(
   const json = await fetchJson(url)
   // TODO fix loss of precision from json
   // TODO: TESTME
-  const validate =
-    jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
+  const validate = jsonSchemaValidatorFor(coingeckoPriceSchema)
 
   if (!validate(json)) {
     logger.warn(
