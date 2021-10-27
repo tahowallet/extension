@@ -24,9 +24,9 @@ describe("lib/prices.ts", () => {
     jest.spyOn(logger, "warn").mockImplementation()
   })
   describe("CoinGecko Price response validation", () => {
+    const validate =
+      jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
     it("passes for correct simple price response", () => {
-      const validate =
-        jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
       const apiResponse = {
         ethereum: {
           usd: 3832.26,
@@ -35,13 +35,10 @@ describe("lib/prices.ts", () => {
       }
 
       expect(validate(apiResponse)).toBeTruthy()
-      expect(validate.errors).toBeFalsy()
+      expect(validate.errors).toBeNull()
     })
 
     it("passes for correct complex price response", () => {
-      const validate =
-        jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
-
       const apiResponse = {
         ethereum: {
           usd: 3836.53,
@@ -58,12 +55,10 @@ describe("lib/prices.ts", () => {
       }
 
       expect(validate(apiResponse)).toBeTruthy()
-      expect(validate.errors).toBeFalsy()
+      expect(validate.errors).toBeNull()
     })
 
     it("fails if required prop is missing w/ the correct error", () => {
-      const validate =
-        jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
       const apiResponse = {
         ethereum: {
           usd: 3832.26,
@@ -78,8 +73,6 @@ describe("lib/prices.ts", () => {
     })
 
     it("fails if required prop is wrong type", () => {
-      const validate =
-        jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
       const apiResponse = {
         ethereum: {
           usd: 3832.26,
@@ -96,8 +89,6 @@ describe("lib/prices.ts", () => {
     })
 
     it("fails if additional prop is wrong type", () => {
-      const validate =
-        jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
       const apiResponse = {
         ethereum: {
           usd: "3832.26",
