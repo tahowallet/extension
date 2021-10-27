@@ -9,6 +9,8 @@ export type ActivityItem = AnyEVMTransaction & {
   value: bigint
   from?: string
   isSent?: boolean
+  gas: number
+  blockHeight: number
   detailRows: {
     [name: string]: {
       label: string
@@ -34,34 +36,37 @@ type KeyRenameAndPickMap<T> = {
   }
 }
 
-const renameAndPickKeys = <T extends unknown>(
-  keysMap: KeyRenameAndPickMap<T>,
-  item: T
-) =>
+function renameAndPickKeys<T>(keysMap: KeyRenameAndPickMap<T>, item: T) {
   // The as below is dicey but reasonable in our usage.
-  Object.keys(item).reduce((previousValue, key) => {
+  return Object.keys(item).reduce((previousValue, key) => {
     if (key in keysMap) {
       const knownKey = key as keyof KeyRenameAndPickMap<T> // guaranteed to be true by the `in` test
-      return {
-        ...previousValue,
-        ...{
-          [keysMap[knownKey].readableName]: keysMap[knownKey].transformer(
-            item[knownKey]
-          ),
-        },
-      }
+      const keyAdjustment = keysMap[knownKey]
+
+      return keyAdjustment === undefined
+        ? previousValue
+        : {
+            ...previousValue,
+            [keyAdjustment.readableName]: keyAdjustment.transformer(
+              item[knownKey]
+            ),
+          }
     }
     return previousValue
   }, {})
+}
 
-function ethTransformer(value: string | number | bigint) {
+function ethTransformer(value: string | number | bigint | null) {
+  if (value === null) {
+    return "(Unknown)"
+  }
   return `${convertToEth(value)} ETH`
 }
 
 const keysMap: KeyRenameAndPickMap<ActivityItem> = {
   blockHeight: {
     readableName: "Block Height",
-    transformer: (item) => item.toString(),
+    transformer: (item: number) => item.toString(),
     detailTransformer: () => {
       return ""
     },
@@ -89,7 +94,10 @@ const keysMap: KeyRenameAndPickMap<ActivityItem> = {
   timestamp: {
     readableName: "Timestamp",
     transformer: (item) => {
-      return dayjs.unix(item).format("MM/DD/YYYY hh:mm a")
+      if (typeof item !== "undefined") {
+        return dayjs.unix(item).format("MM/DD/YYYY hh:mm a")
+      }
+      return "(Unknown)"
     },
     detailTransformer: () => {
       return ""
