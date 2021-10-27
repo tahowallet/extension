@@ -65,11 +65,20 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeFalsy()
-      if (!Array.isArray(validate.errors)) return
-      expect(validate.errors[0].params.missingProperty).toEqual(
-        "last_updated_at"
-      )
+      const error = [
+        {
+          instancePath: "/ethereum",
+          keyword: "required",
+          message: "must have required property 'last_updated_at'",
+          params: { missingProperty: "last_updated_at" },
+          schemaPath: "#/additionalProperties/required",
+        },
+      ]
+
+      const validationResult = validate(apiResponse)
+
+      expect(validate.errors).toMatchObject(error)
+      expect(validationResult).toBeFalsy()
     })
 
     it("fails if required prop is wrong type", () => {
@@ -80,12 +89,20 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeFalsy()
-      if (!Array.isArray(validate.errors)) return
-      expect(validate.errors[0].instancePath).toEqual(
-        "/ethereum/last_updated_at"
-      )
-      expect(validate.errors[0].message).toEqual("must be number")
+      const error = [
+        {
+          instancePath: "/ethereum/last_updated_at",
+          keyword: "type",
+          message: "must be number",
+          params: { type: "number" },
+          schemaPath: "#/additionalProperties/properties/last_updated_at/type",
+        },
+      ]
+
+      const validationResult = validate(apiResponse)
+
+      expect(validate.errors).toMatchObject(error)
+      expect(validationResult).toBeFalsy()
     })
 
     it("fails if additional prop is wrong type", () => {
@@ -96,10 +113,20 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeFalsy()
-      if (!Array.isArray(validate.errors)) return
-      expect(validate.errors[0].instancePath).toEqual("/ethereum/usd")
-      expect(validate.errors[0].message).toEqual("must be number")
+      const error = [
+        {
+          instancePath: "/ethereum/usd",
+          keyword: "type",
+          message: "must be number",
+          params: { type: "number" },
+          schemaPath: "#/additionalProperties/additionalProperties/type",
+        },
+      ]
+
+      const validationResult = validate(apiResponse)
+
+      expect(validate.errors).toMatchObject(error)
+      expect(validationResult).toBeFalsy()
     })
   })
   describe("getPrice", () => {
