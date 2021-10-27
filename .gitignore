@@ -5,3 +5,4 @@ dist/
 size-plugin.json
 app/extension-scripts/api/playground/
 .env
+*.rest
