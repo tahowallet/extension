@@ -20,7 +20,7 @@ import {
 import BaseService from "../base"
 import { ETH, ETHEREUM } from "../../constants"
 
-type Keyring = {
+export type Keyring = {
   type: KeyringTypes
   id: string | null
   addresses: string[]
@@ -50,10 +50,6 @@ export default class KeyringService extends BaseService<Events> {
 
   private constructor() {
     super()
-  }
-
-  async internalStartService(): Promise<void> {
-    await super.internalStartService()
   }
 
   async internalStopService(): Promise<void> {
@@ -119,6 +115,8 @@ export default class KeyringService extends BaseService<Events> {
         plainTextVault.forEach((kr) => {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
+
+        this.emitKeyrings()
       }
     }
 
@@ -158,9 +156,13 @@ export default class KeyringService extends BaseService<Events> {
    *
    * @param type - the type of keyring to generate. Currently only supports 256-
    *        bit HD keys.
-   * @returns The string ID of the new keyring.
+   * @returns An object containing the string ID of the new keyring and the
+   *          mnemonic for the new keyring. Note that the mnemonic can only be
+   *          accessed at generation time through this return value.
    */
-  async generateNewKeyring(type: KeyringTypes): Promise<string> {
+  async generateNewKeyring(
+    type: KeyringTypes
+  ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
     if (type !== KeyringTypes.mnemonicBIP39S256) {
@@ -171,14 +173,15 @@ export default class KeyringService extends BaseService<Events> {
 
     const newKeyring = new HDKeyring({ strength: 256 })
     this.#keyrings.push(newKeyring)
+    const [address] = newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
-
-    const [address] = newKeyring.addAccountsSync(1)
 
     this.emitter.emit("address", address)
     this.emitKeyrings()
 
-    return newKeyring.id
+    const { mnemonic } = newKeyring.serializeSync()
+
+    return { id: newKeyring.id, mnemonic: mnemonic.split(" ") }
   }
 
   /**
@@ -199,11 +202,10 @@ export default class KeyringService extends BaseService<Events> {
 
     const newKeyring = new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
+    newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
-    newKeyring.addAccountsSync(1)
-
-    this.emitter.emit("address", newKeyring.getAccountsSync()[0])
+    this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
 
     return newKeyring.id
@@ -222,10 +224,10 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
-      kr.getAccountsSync().includes(normalizeEVMAddress(account))
+      kr.getAddressesSync().includes(normalizeEVMAddress(account))
     )
     if (!keyring) {
-      throw new Error("Account keyring not found.")
+      throw new Error("Address keyring not found.")
     }
 
     // ethers has a looser / slightly different request type
@@ -243,18 +245,15 @@ export default class KeyringService extends BaseService<Events> {
     // parse the tx, then unpack it as best we can
     const tx = parseRawTransaction(signed)
 
-    if (
-      !tx.hash ||
-      !tx.from ||
-      !tx.to ||
-      !tx.r ||
-      !tx.s ||
-      tx.v === undefined
-    ) {
+    if (!tx.hash || !tx.from || !tx.r || !tx.s || typeof tx.v === "undefined") {
       throw new Error("Transaction doesn't appear to have been signed.")
     }
 
-    if (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas || tx.type !== 2) {
+    if (
+      typeof tx.maxPriorityFeePerGas === "undefined" ||
+      typeof tx.maxFeePerGas === "undefined" ||
+      tx.type !== 2
+    ) {
       throw new Error("Can only sign EIP-1559 conforming transactions")
     }
 
@@ -290,7 +289,7 @@ export default class KeyringService extends BaseService<Events> {
   private emitKeyrings() {
     const keyrings = this.#keyrings.map((kr) => ({
       type: KeyringTypes.mnemonicBIP39S256,
-      addresses: [...kr.getAccountsSync()],
+      addresses: [...kr.getAddressesSync()],
       id: kr.id,
     }))
     this.emitter.emit("keyrings", keyrings)
@@ -307,10 +306,7 @@ export default class KeyringService extends BaseService<Events> {
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(
-        JSON.stringify(serializedKeyrings),
-        this.#cachedKey
-      )
+      const vault = await encryptVault(serializedKeyrings, this.#cachedKey)
       await writeLatestEncryptedVault(vault)
     }
   }

@@ -1,4 +1,4 @@
-import { browser } from "webextension-polyfill-ts"
+import browser from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"

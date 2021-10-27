@@ -84,3 +84,15 @@ The only public API of the Tally Background package is what is exported directly
 [`index.ts`](./index.ts). No submodule API is considered public, and all such
 APIs are subject to arbitrary change without warning. Any API from a child
 module that is meant for public consumption is re-exported in `index.ts`.
+
+## Tools we use
+
+### Data Validation - Ajv
+
+We use [ajv](https://ajv.js.org/) for data validation and most of the time the JTD schema definition. These are useful links to get up to speed w/ JTD quickly
+
+- https://github.com/ajv-validator/ajv/blob/master/spec/types/jtd-schema.spec.ts - jtd unit tests
+- https://ajv.js.org/json-type-definition.html - jtd spec ajv
+- https://jsontypedef.com/docs/jtd-in-5-minutes/ - jtd in 5 mins
+- https://ajv.js.org/guide/typescript.html - using with ts
+- https://github.com/jsontypedef/homebrew-jsontypedef - jtd tooling

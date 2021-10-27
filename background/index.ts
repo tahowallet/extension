@@ -1,9 +1,13 @@
+import browser from "webextension-polyfill"
+
 import { Store as ProxyStore } from "webext-redux"
 import { AnyAction } from "@reduxjs/toolkit"
+
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
 
-export { browser } from "webextension-polyfill-ts"
+export { browser }
+
 export type RootState = ReturnType<Main["store"]["getState"]>
 export type BackgroundDispatch = Main["store"]["dispatch"]
 
