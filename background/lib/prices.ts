@@ -20,14 +20,6 @@ export type CoingeckoPriceData = {
     | undefined
 }
 
-/**
- * https://github.com/ajv-validator/ajv/blob/master/spec/types/jtd-schema.spec.ts - jtd unit tests
- * https://ajv.js.org/json-type-definition.html - jtd spec ajv
- * https://jsontypedef.com/docs/jtd-in-5-minutes/ - jtd in 5 mins
- * https://github.com/jsontypedef/homebrew-jsontypedef - jtd tooling
- * https://ajv.js.org/guide/typescript.html - using with ts
- *
- */
 // Ajv's typing incorrectly requires nullable: true for last_updated_at because
 // the remaining keys in the coin entry are optional. This in turn interferes
 // with the fact that last_updated_at is listed in `required`. The two `as`
