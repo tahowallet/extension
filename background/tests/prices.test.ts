@@ -283,7 +283,7 @@ describe("lib/prices.ts", () => {
       ).resolves.toEqual(getPricesResponse)
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
-    it("should filter out unvalid pairs if the data DOESN'T exist", async () => {
+    it("should filter out invalid pairs if the data DOESN'T exist", async () => {
       const currencies = [
         USD,
         {
