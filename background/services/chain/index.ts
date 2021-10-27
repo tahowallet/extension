@@ -33,6 +33,7 @@ import {
   txFromWebsocketTx,
   networkToEthersNetwork,
 } from "./utils"
+import { getEthereumNetwork } from "../../lib/utils"
 import Blocknative, {
   BlocknativeNetworkIds,
 } from "../../third-party-data/blocknative"
@@ -152,13 +153,13 @@ export default class ChainService extends BaseService<Events> {
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        networkToEthersNetwork(ETHEREUM),
+        networkToEthersNetwork(getEthereumNetwork()),
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        networkToEthersNetwork(ETHEREUM),
+        networkToEthersNetwork(getEthereumNetwork()),
         ALCHEMY_KEY
       ),
     }

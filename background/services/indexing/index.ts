@@ -20,6 +20,7 @@ import {
   fetchAndValidateTokenList,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
+import { getEthereumNetwork } from "../../lib/utils"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -221,7 +222,7 @@ export default class IndexingService extends BaseService<Events> {
           .filter(isSmartContractFungibleAsset)
           .filter(
             (a: SmartContractFungibleAsset) =>
-              a.homeNetwork.chainID === ETHEREUM.chainID &&
+              a.homeNetwork.chainID === getEthereumNetwork().chainID &&
               !checkedContractAddresses.has(a.contractAddress)
           )
         await this.retrieveTokenBalances(
@@ -371,7 +372,7 @@ export default class IndexingService extends BaseService<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO only supports Ethereum mainnet
     const mainnetAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === ETHEREUM.chainID
+      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
     try {
@@ -463,7 +464,7 @@ export default class IndexingService extends BaseService<Events> {
     // TODO only supports Ethereum mainnet, doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const mainnetAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === ETHEREUM.chainID
+      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
     // wait on balances being written to the db, don't wait on event emission
