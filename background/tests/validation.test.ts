@@ -40,14 +40,9 @@ describe("lib/validation.ts", () => {
 
       it.each(schemaDataArr)("%#", ({ schema, data }) => {
         const validatorFn = jtdValidatorFor(schema)
-        try {
-          expect(validatorFn(data)).toBeTruthy()
-        } catch (e) {
-          console.log("schema: ", JSON.stringify(schema, null, 2))
-          console.log("data: ", JSON.stringify(data, null, 2))
-          console.log("validator error: ", validatorFn.errors)
-          throw e
-        }
+        const validationResult = validatorFn(data)
+        expect(validatorFn.errors).toBeNull()
+        expect(validationResult).toBeTruthy()
       })
     })
     describe("the validation fn should fail for incorrect data", () => {
@@ -68,13 +63,15 @@ describe("lib/validation.ts", () => {
                 last_updated_at: "this should be uint32 but it's not",
               },
             },
-            error: {
-              instancePath: "/ethereum/last_updated_at",
-              schemaPath: "/values/properties/last_updated_at/type",
-              keyword: "type",
-              params: { type: "uint32", nullable: false },
-              message: "must be uint32",
-            },
+            error: [
+              {
+                instancePath: "/ethereum/last_updated_at",
+                schemaPath: "/values/properties/last_updated_at/type",
+                keyword: "type",
+                params: { type: "uint32", nullable: false },
+                message: "must be uint32",
+              },
+            ],
           },
         ],
         [
@@ -89,35 +86,25 @@ describe("lib/validation.ts", () => {
             data: {
               transfers: "this should be an array of strings but it's not",
             },
-            error: {
-              instancePath: "/transfers",
-              schemaPath: "/properties/transfers/elements",
-              keyword: "elements",
-              params: { type: "array", nullable: false },
-              message: "must be array",
-            },
+            error: [
+              {
+                instancePath: "/transfers",
+                schemaPath: "/properties/transfers/elements",
+                keyword: "elements",
+                params: { type: "array", nullable: false },
+                message: "must be array",
+              },
+            ],
           },
         ],
       ] as Array<Array<{ [k: string]: unknown }>>
 
       it.each(schemaDataError)("%#", ({ schema, data, error }) => {
         const validatorFn = jtdValidatorFor(schema)
+        const validationResult = validatorFn(data)
 
-        try {
-          expect(validatorFn(data)).toBeFalsy()
-
-          if (!Array.isArray(validatorFn.errors)) return
-          expect(validatorFn.errors[0]).toEqual(error)
-        } catch (e) {
-          console.log("schema: ", JSON.stringify(schema, null, 2))
-          console.log("data: ", JSON.stringify(data, null, 2))
-          console.log(
-            "expected validator error: ",
-            JSON.stringify(error, null, 2)
-          )
-          console.log("validator error: ", validatorFn.errors)
-          throw e
-        }
+        expect(validatorFn.errors).toMatchObject(error)
+        expect(validationResult).toBeFalsy()
       })
     })
   })
@@ -164,15 +151,10 @@ describe("lib/validation.ts", () => {
       it.each(schemaDataArr)("%#", ({ schema, data }) => {
         // @ts-expect-error find out what's the problem with the argument typing
         const validatorFn = jsonSchemaValidatorFor(schema)
+        const validationResult = validatorFn(data)
 
-        try {
-          expect(validatorFn(data)).toBeTruthy()
-        } catch (e) {
-          console.log("schema: ", JSON.stringify(schema, null, 2))
-          console.log("data: ", JSON.stringify(data, null, 2))
-          console.log("validator error: ", validatorFn.errors)
-          throw e
-        }
+        expect(validatorFn.errors).toBeNull()
+        expect(validationResult).toBeTruthy()
       })
     })
     describe("the validation fn should fail for incorrect data", () => {
@@ -209,13 +191,15 @@ describe("lib/validation.ts", () => {
                 last_updated_at: 1634672139,
               },
             },
-            error: {
-              instancePath: "/ethereum",
-              schemaPath: "#/additionalProperties/required",
-              keyword: "required",
-              params: { missingProperty: "last_updated_at" },
-              message: "must have required property 'last_updated_at'",
-            },
+            error: [
+              {
+                instancePath: "/ethereum",
+                schemaPath: "#/additionalProperties/required",
+                keyword: "required",
+                params: { missingProperty: "last_updated_at" },
+                message: "must have required property 'last_updated_at'",
+              },
+            ],
           },
         ],
       ]
@@ -223,22 +207,10 @@ describe("lib/validation.ts", () => {
       it.each(schemaDataError)("%#", ({ schema, data, error }) => {
         // @ts-expect-error find out what's the problem with the argument typing
         const validatorFn = jsonSchemaValidatorFor(schema)
+        const validationResult = validatorFn(data)
 
-        try {
-          expect(validatorFn(data)).toBeFalsy()
-
-          if (!Array.isArray(validatorFn.errors)) return
-          expect(validatorFn.errors[0]).toEqual(error)
-        } catch (e) {
-          console.log("schema: ", JSON.stringify(schema, null, 2))
-          console.log("data: ", JSON.stringify(data, null, 2))
-          console.log(
-            "expected validator error: ",
-            JSON.stringify(error, null, 2)
-          )
-          console.log("validator error: ", validatorFn.errors)
-          throw e
-        }
+        expect(validatorFn.errors).toMatchObject(error)
+        expect(validationResult).toBeFalsy()
       })
     })
   })

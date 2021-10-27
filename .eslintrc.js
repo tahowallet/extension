@@ -72,12 +72,4 @@ module.exports = {
   parserOptions: {
     project: "./.tsconfig-eslint.json",
   },
-  overrides: [
-    {
-      files: ["*.test.ts", "*.spec.ts"],
-      rules: {
-        "no-console": "off",
-      },
-    },
-  ],
 }
