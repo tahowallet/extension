@@ -12,7 +12,7 @@ import {
   PricePoint,
   SmartContractFungibleAsset,
 } from "../../types"
-import { ETHEREUM, BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
+import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
 import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
@@ -146,7 +146,9 @@ export default class IndexingService extends BaseService<Events> {
    */
   async getCachedAssets(): Promise<AnyAsset[]> {
     const baseAssets = [BTC, ETH]
-    const customAssets = await this.db.getCustomAssetsByNetwork(ETHEREUM)
+    const customAssets = await this.db.getCustomAssetsByNetwork(
+      getEthereumNetwork()
+    )
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)

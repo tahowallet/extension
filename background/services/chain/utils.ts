@@ -10,7 +10,7 @@ import {
   SignedEVMTransaction,
   AnyEVMBlock,
 } from "../../types"
-import { ETHEREUM } from "../../constants"
+import { getEthereumNetwork } from "../../lib/utils"
 
 /**
  * Parse a block as returned by a polling provider.
@@ -29,7 +29,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
     difficulty: 0n,
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
-    network: ETHEREUM,
+    network: getEthereumNetwork(),
   }
 }
 
@@ -57,7 +57,7 @@ export function blockFromWebsocketBlock(
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)
       : undefined,
-    network: ETHEREUM,
+    network: getEthereumNetwork(),
   }
 }
 
