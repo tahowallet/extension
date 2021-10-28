@@ -419,59 +419,63 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
-    const accountAssets = account.combinedData.assets.map((assetItem) => {
-      const rawAsset = assets.find(
-        (asset) =>
-          asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
-      )
+    const accountAssets = account.combinedData.assets
+      .filter((assetItem) => {
+        return assetItem.localizedDecimalValue !== "∞"
+      })
+      .map((assetItem) => {
+        const rawAsset = assets.find(
+          (asset) =>
+            asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
+        )
 
-      // TODO Better determine which side is USD---possibly using
-      // TODO USD.pair[0|1].symbol and a known constant?
-      const possibleUsdAmount = rawAsset?.recentPrices?.USD?.amounts?.[1]
-      const usdIndex =
-        possibleUsdAmount !== undefined && possibleUsdAmount > 1 ? 1 : 0
-      const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
+        // TODO Better determine which side is USD---possibly using
+        // TODO USD.pair[0|1].symbol and a known constant?
+        const possibleUsdAmount = rawAsset?.recentPrices?.USD?.amounts?.[1]
+        const usdIndex =
+          possibleUsdAmount !== undefined && possibleUsdAmount > 1 ? 1 : 0
+        const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
 
-      if (
-        rawAsset &&
-        usdAsset &&
-        "decimals" in usdAsset &&
-        "decimals" in assetItem.asset
-      ) {
-        const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
+        if (
+          rawAsset &&
+          usdAsset &&
+          "decimals" in usdAsset &&
+          "decimals" in assetItem.asset
+        ) {
+          const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
 
-        const usdDecimals = usdAsset.decimals
-        const combinedDecimals = assetItem.asset.decimals + usdDecimals
+          const usdDecimals = usdAsset.decimals
+          const combinedDecimals = assetItem.asset.decimals + usdDecimals
 
-        // Choose the precision we actually want
-        const desiredDecimals = 2
+          // Choose the precision we actually want
+          const desiredDecimals = 2
 
-        // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
-        const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
+          // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
+          const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
 
-        const dividedOutDecimals =
-          userValue /
-          10n ** (BigInt(combinedDecimals) - BigInt(desiredDecimals))
-        const localizedUserValue =
-          Number(dividedOutDecimals) / 10 ** desiredDecimals
+          const dividedOutDecimals =
+            userValue /
+            10n ** (BigInt(combinedDecimals) - BigInt(desiredDecimals))
+          const localizedUserValue =
+            Number(dividedOutDecimals) / 10 ** desiredDecimals
 
-        // Add to total user value
-        totalUserValue += localizedUserValue
+          // Add to total user value
+          totalUserValue += localizedUserValue
 
+          return {
+            ...assetItem,
+            localizedUserValue: formatPrice(localizedUserValue),
+            localizedPricePerToken: formatPrice(
+              Number(usdNonDecimalValue) / 10 ** usdDecimals
+            ),
+          }
+        }
         return {
           ...assetItem,
-          localizedUserValue: formatPrice(localizedUserValue),
-          localizedPricePerToken: formatPrice(
-            Number(usdNonDecimalValue) / 10 ** usdDecimals
-          ),
+          localizedUserValue: "Unknown",
+          localizedPricePerToken: "Unknown",
         }
-      }
-      return {
-        ...assetItem,
-        localizedUserValue: "Unknown",
-        localizedPricePerToken: "Unknown",
-      }
-    })
+      })
 
     return {
       combinedData: {
