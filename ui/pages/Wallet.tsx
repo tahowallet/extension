@@ -22,6 +22,13 @@ export default function Wallet(): ReactElement {
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
+
+  useEffect(() => {
+    setTimeout(() => {
+      dispatch(countdownInitializationLoadingTimeLimit())
+    }, 1000 * 60 * 1.5)
+  }, [dispatch])
+
   // If an account doesn't exist, display view only
   // onboarding for the initial test release.
   if (Object.keys(accountData).length === 0) {
