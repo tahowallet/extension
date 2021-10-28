@@ -21,7 +21,6 @@ import {
   BlockPrices,
 } from "../../types"
 import { getAssetTransfers, getTokenMetadata } from "../../lib/alchemy"
-import { ETHEREUM } from "../../constants/networks"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -190,8 +189,8 @@ export default class ChainService extends BaseService<Events> {
         const block = blockFromEthersBlock(result)
         await this.db.addBlock(block)
       }),
-      // TODO subscribe to newHeads for other networks
-      this.subscribeToNewHeads(ETHEREUM),
+
+      this.subscribeToNewHeads(getEthereumNetwork()),
     ])
 
     Promise.all(
@@ -227,7 +226,7 @@ export default class ChainService extends BaseService<Events> {
         asset: ETH,
         amount: balance.toBigInt(),
       },
-      network: ETHEREUM,
+      network: getEthereumNetwork(),
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     } as AccountBalance
@@ -304,7 +303,7 @@ export default class ChainService extends BaseService<Events> {
     const gethResult = await this.pollingProviders.ethereum.getTransaction(
       txHash
     )
-    const newTx = txFromEthersTx(gethResult, ETH, ETHEREUM)
+    const newTx = txFromEthersTx(gethResult, ETH, getEthereumNetwork())
 
     if (!newTx.blockHash && !newTx.blockHeight) {
       this.subscribeToTransactionConfirmation(network, txHash)
@@ -516,7 +515,7 @@ export default class ChainService extends BaseService<Events> {
 
     /// send all found tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(ETHEREUM, a.txHash)
+      this.queueTransactionHashToRetrieve(getEthereumNetwork(), a.txHash)
     )
   }
 
@@ -555,7 +554,7 @@ export default class ChainService extends BaseService<Events> {
           asset = ETH
         }
 
-        const tx = txFromEthersTx(result, asset, ETHEREUM)
+        const tx = txFromEthersTx(result, asset, getEthereumNetwork())
 
         // TODO make this provider specific
         await this.saveTransaction(tx, "alchemy")
@@ -568,7 +567,7 @@ export default class ChainService extends BaseService<Events> {
         }
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
-        this.queueTransactionHashToRetrieve(ETHEREUM, hash)
+        this.queueTransactionHashToRetrieve(getEthereumNetwork(), hash)
       }
     })
   }
@@ -666,7 +665,7 @@ export default class ChainService extends BaseService<Events> {
         // handle incoming transactions for an account
         try {
           await this.saveTransaction(
-            txFromWebsocketTx(result, ETH, ETHEREUM),
+            txFromWebsocketTx(result, ETH, getEthereumNetwork()),
             "alchemy"
           )
         } catch (error) {
@@ -694,7 +693,7 @@ export default class ChainService extends BaseService<Events> {
     // TODO make proper use of the network
     this.websocketProviders.ethereum.once(txHash, (confirmedTx) => {
       this.saveTransaction(
-        txFromWebsocketTx(confirmedTx, ETH, ETHEREUM),
+        txFromWebsocketTx(confirmedTx, ETH, getEthereumNetwork()),
         "alchemy"
       )
     })

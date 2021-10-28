@@ -210,7 +210,7 @@ export default class IndexingService extends BaseService<Events> {
         const balances = await this.retrieveTokenBalances(accountNetwork)
 
         // Every asset we have that hasn't already been balance checked and is
-        // on mainnet Ethereum should be checked once.
+        // on the currently selected network should be checked once.
         //
         // Note that we'll want to move this to a queuing system that can be
         // easily rate-limited eventually.
@@ -218,7 +218,7 @@ export default class IndexingService extends BaseService<Events> {
           balances.map((b) => b.contractAddress).filter(Boolean)
         )
         const cachedAssets = await this.getCachedAssets()
-        const otherMainnetAssets = cachedAssets
+        const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
           .filter(
             (a: SmartContractFungibleAsset) =>
@@ -227,7 +227,7 @@ export default class IndexingService extends BaseService<Events> {
           )
         await this.retrieveTokenBalances(
           accountNetwork,
-          otherMainnetAssets.map((a) => a.contractAddress)
+          otherActiveAssets.map((a) => a.contractAddress)
         )
       }
     )
@@ -370,14 +370,15 @@ export default class IndexingService extends BaseService<Events> {
 
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
-    // TODO only supports Ethereum mainnet
-    const mainnetAssetsToTrack = assetsToTrack.filter(
+
+    // Filter all assets based on the currently selected network
+    const activeAssetsToTrack = assetsToTrack.filter(
       (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
     try {
       // TODO only uses USD
-      const mainnetAssetsByAddress = mainnetAssetsToTrack.reduce((agg, t) => {
+      const activeAssetsByAddress = activeAssetsToTrack.reduce((agg, t) => {
         const newAgg = {
           ...agg,
         }
@@ -385,13 +386,13 @@ export default class IndexingService extends BaseService<Events> {
         return newAgg
       }, {} as { [address: string]: SmartContractFungibleAsset })
       const measuredAt = Date.now()
-      const mainnetAssetPrices = await getEthereumTokenPrices(
-        Object.keys(mainnetAssetsByAddress),
+      const activeAssetPrices = await getEthereumTokenPrices(
+        Object.keys(activeAssetsByAddress),
         "USD"
       )
-      Object.entries(mainnetAssetPrices).forEach(
+      Object.entries(activeAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
-          const asset = mainnetAssetsByAddress[contractAddress.toLowerCase()]
+          const asset = activeAssetsByAddress[contractAddress.toLowerCase()]
           if (asset) {
             // TODO look up fiat currency
             const pricePoint = {
@@ -427,7 +428,7 @@ export default class IndexingService extends BaseService<Events> {
         }
       )
     } catch (err) {
-      logger.error("Error getting token prices", mainnetAssetsToTrack, err)
+      logger.error("Error getting token prices", activeAssetsToTrack, err)
     }
   }
 
@@ -461,9 +462,9 @@ export default class IndexingService extends BaseService<Events> {
     this.fetchAndCacheTokenLists()
 
     const assetsToTrack = await this.db.getAssetsToTrack()
-    // TODO only supports Ethereum mainnet, doesn't support multi-network assets
+    // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
-    const mainnetAssetsToTrack = assetsToTrack.filter(
+    const activeAssetsToTrack = assetsToTrack.filter(
       (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
@@ -475,7 +476,7 @@ export default class IndexingService extends BaseService<Events> {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
           this.chainService.pollingProviders.ethereum,
-          mainnetAssetsToTrack,
+          activeAssetsToTrack,
           account
         )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
