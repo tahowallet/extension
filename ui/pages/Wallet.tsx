@@ -1,7 +1,8 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
-import { useBackgroundSelector } from "../hooks"
+import { countdownInitializationLoadingTimeLimit } from "@tallyho/tally-background/redux-slices/ui"
+import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -10,11 +11,17 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+
+  const dispatch = useBackgroundDispatch()
+
   //  accountLoading, hasWalletErrorCode
   const { combinedData, accountData, activity } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
 
+  const initializationLoadingTimeExpired = useBackgroundSelector(
+    (background) => background.ui?.initializationLoadingTimeExpired
+  )
   // If an account doesn't exist, display view only
   // onboarding for the initial test release.
   if (Object.keys(accountData).length === 0) {
@@ -42,7 +49,12 @@ export default function Wallet(): ReactElement {
             />
             <div className="panel">
               {panelNumber === 0 ? (
-                <WalletAssetList assetAmounts={displayAssets} />
+                <WalletAssetList
+                  assetAmounts={displayAssets}
+                  initializationLoadingTimeExpired={
+                    initializationLoadingTimeExpired
+                  }
+                />
               ) : (
                 <WalletActivityList activity={activity} />
               )}

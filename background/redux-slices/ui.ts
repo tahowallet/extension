@@ -10,10 +10,12 @@ export type ActivityItem = AnyEVMTransaction & {
 
 export type UIState = {
   showingActivityDetail: ActivityItem | null
+  initializationLoadingTimeExpired: boolean
 }
 
 export const initialState: UIState = {
   showingActivityDetail: null,
+  initializationLoadingTimeExpired: false,
 }
 const uiSlice = createSlice({
   name: "ui",
@@ -26,8 +28,14 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetail: activityItem,
     }),
+    countdownInitializationLoadingTimeLimit: (immerState) => {
+      immerState.initializationLoadingTimeExpired = true
+    },
   },
 })
 
-export const { setShowingActivityDetail } = uiSlice.actions
+export const {
+  setShowingActivityDetail,
+  countdownInitializationLoadingTimeLimit,
+} = uiSlice.actions
 export default uiSlice.reducer
