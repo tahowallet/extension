@@ -9,7 +9,7 @@ import WalletActivityListItem from "./WalletActivityListItem"
 
 export default function WalletActivityList(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const showingActivityDetail: string | null = useBackgroundSelector(
+  const showingActivityDetail: ActivityItem | null = useBackgroundSelector(
     (background) => background.ui.showingActivityDetail
   )
 

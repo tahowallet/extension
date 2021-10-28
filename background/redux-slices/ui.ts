@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
+import { ActivityItem } from "./activities"
 import { AnyEVMTransaction } from "../types"
 
 type SelectedAccount = {
@@ -7,13 +8,15 @@ type SelectedAccount = {
 }
 
 export type UIState = {
-  showingActivityDetail: string | null
   selectedAccount: SelectedAccount
+  showingActivityDetail: ActivityItem | null
+  initializationLoadingTimeExpired: boolean
 }
 
 export const initialState: UIState = {
   showingActivityDetail: null,
   selectedAccount: { address: "", truncatedAddress: "" },
+  initializationLoadingTimeExpired: false,
 }
 
 const uiSlice = createSlice({
@@ -32,8 +35,16 @@ const uiSlice = createSlice({
         truncatedAddress: lowercaseAddress.slice(0, 7),
       }
     },
+    countdownInitializationLoadingTimeLimit: (immerState) => {
+      immerState.initializationLoadingTimeExpired = true
+    },
   },
 })
 
-export const { setShowingActivityDetail, setSelectedAccount } = uiSlice.actions
+export const {
+  setShowingActivityDetail,
+  setSelectedAccount,
+  countdownInitializationLoadingTimeLimit,
+} = uiSlice.actions
+
 export default uiSlice.reducer
