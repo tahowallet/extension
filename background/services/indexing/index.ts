@@ -269,13 +269,8 @@ export default class IndexingService extends BaseService<Events> {
             account: accountNetwork.account,
           } as const
           await this.db.addBalances([accountBalance])
-
+          this.emitter.emit("accountBalance", accountBalance)
           if (b.amount > 0) {
-            // The frontend only needs to know account balances on
-            // assets where a balance isn't none. Empty balances are
-            // basically useless to the account/home tab.
-            this.emitter.emit("accountBalance", accountBalance)
-
             await this.addAssetToTrack(knownAsset)
           }
         } else if (b.amount > 0) {
