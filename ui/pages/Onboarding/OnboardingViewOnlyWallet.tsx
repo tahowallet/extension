@@ -11,6 +11,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const data = useBackgroundSelector((background) => background.account)
   const [address, setAddress] = useState("")
+  const [redirect, setRedirect] = useState(false)
 
   // Quick temp solution grabbed from
   // https://ethereum.stackexchange.com/a/40670
@@ -26,13 +27,16 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
           network: ETHEREUM,
         })
       )
+
+      setRedirect(true)
     } else {
       alert("Please enter a valid address")
     }
   }, [dispatch, address])
 
   // Redirect to the home tab once an account is set
-  if (Object.keys(data.accountsData).length > 0) {
+
+  if (redirect) {
     return <Redirect to="/" />
   }
 

@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import BackButton from "../../components/Shared/SharedBackButton"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
 import SharedButton from "../../components/Shared/SharedButton"
 
@@ -12,14 +13,26 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
 
   return (
     <section className="start_wrap">
+      <BackButton />
       <div className="mascot" />
-      <h1 className="serif_header">Start the hunt</h1>
+      <h1 className="serif_header">Add Wallet</h1>
       <div className="subtitle subtitle_hunt">
         Let&apos;s set Tally up with a wallet. Select with what wallet you would
         like to continue.
       </div>
       <ul>
         <li className="label_small">Use an existing wallet</li>
+        <li className="option standard_width">
+          <div className="icon" />
+          <SharedButton
+            type="tertiary"
+            icon="chevron_right"
+            size="medium"
+            linkTo="/onboarding/viewOnlyWallet"
+          >
+            Preview an address
+          </SharedButton>
+        </li>
         <li className="option standard_width">
           <div className="icon metamask_icon" />
           <SharedButton
@@ -28,13 +41,7 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
             onClick={openMetamaskImportScreen}
             size="medium"
           >
-            Import Metamask
-          </SharedButton>
-        </li>
-        <li className="option standard_width">
-          <div className="icon trezor_icon" />
-          <SharedButton type="tertiary" icon="chevron_right" size="medium">
-            Connect hardware wallet
+            Import MetaMask
           </SharedButton>
         </li>
         <li className="label">
@@ -108,6 +115,8 @@ export default function OnboardingStartTheHunt(props: Props): ReactElement {
           .icon {
             width: 36px;
             height: 36px;
+            background-color: var(--gold-20);
+            border-radius: 50%;
           }
           .trezor_icon {
             background: url("./images/trezor_icon@2x.png");
