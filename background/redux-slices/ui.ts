@@ -35,7 +35,7 @@ const uiSlice = createSlice({
         truncatedAddress: lowercaseAddress.slice(0, 7),
       }
     },
-    countdownInitializationLoadingTimeLimit: (immerState) => {
+    initializationLoadingTimeHitLimit: (immerState) => {
       immerState.initializationLoadingTimeExpired = true
     },
   },
@@ -44,7 +44,7 @@ const uiSlice = createSlice({
 export const {
   setShowingActivityDetail,
   setSelectedAccount,
-  countdownInitializationLoadingTimeLimit,
+  initializationLoadingTimeHitLimit,
 } = uiSlice.actions
 
 export default uiSlice.reducer
