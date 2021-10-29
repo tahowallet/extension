@@ -1,7 +1,7 @@
 import React, { ReactElement, useState, useEffect } from "react"
 import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
-import { countdownInitializationLoadingTimeLimit } from "@tallyho/tally-background/redux-slices/ui"
+import { initializationLoadingTimeHitLimit } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -25,8 +25,10 @@ export default function Wallet(): ReactElement {
 
   useEffect(() => {
     setTimeout(() => {
-      dispatch(countdownInitializationLoadingTimeLimit())
-    }, 1000 * 60 * 1.5)
+      dispatch(initializationLoadingTimeHitLimit())
+      // I'm thinking of moving the time to an env var. And this
+      // is pretty hacky in general.
+    }, 1000 * 60 * 2.5)
   }, [dispatch])
 
   // If an account doesn't exist, display view only
@@ -46,6 +48,9 @@ export default function Wallet(): ReactElement {
           <div className="section">
             <WalletAccountBalanceControl
               balance={combinedData.totalUserValue}
+              initializationLoadingTimeExpired={
+                initializationLoadingTimeExpired
+              }
             />
           </div>
           <div className="section">
