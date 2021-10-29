@@ -50,10 +50,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                 </>
               ) : (
                 <div className="price">
-                  <div className="spinner_spacer">
-                    <SharedLoadingSpinner size="small" />
-                  </div>
-                  Fetching price info...
+                  <SharedLoadingSpinner size="small" />
                 </div>
               )}
             </div>
@@ -98,7 +95,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             letter-spacing: 0.42px;
             line-height: 16px;
             text-transform: uppercase;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
             margin-top: -1px;
           }
           .bold_amount_count {
@@ -118,9 +115,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             font-weight: 400;
             letter-spacing: 0.42px;
             line-height: 16px;
-          }
-          .spinner_spacer {
-            margin-right: 5px;
           }
           .icon_send_asset {
             background: url("./images/send_asset.svg");
