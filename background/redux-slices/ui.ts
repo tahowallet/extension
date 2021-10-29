@@ -28,14 +28,12 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetail: activityItem,
     }),
-    countdownInitializationLoadingTimeLimit: (immerState) => {
+    initializationLoadingTimeHitLimit: (immerState) => {
       immerState.initializationLoadingTimeExpired = true
     },
   },
 })
 
-export const {
-  setShowingActivityDetail,
-  countdownInitializationLoadingTimeLimit,
-} = uiSlice.actions
+export const { setShowingActivityDetail, initializationLoadingTimeHitLimit } =
+  uiSlice.actions
 export default uiSlice.reducer
