@@ -4,7 +4,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
 import { ethersTxFromSignedTx } from "./services/chain/utils"
 
