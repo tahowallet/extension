@@ -37,10 +37,19 @@ function dumbContentScriptProviderPortService() {
   browser.runtime.onConnect.addListener(async (port) => {
     if (port.name === CONTENT_BACKGROUND_PORT) {
       port.onMessage.addListener((msg) => {
+        const payload = JSON.parse(msg) // TODO try catch
+
+        if (payload.target !== "background") return
         // to demonstrate how it works it was necessary. Will remove later
         // eslint-disable-next-line no-console
-        console.log("background: Content script msg recieved: ", msg)
-        port.postMessage("pong")
+        console.log(`background: ${payload}`)
+        port.postMessage(
+          JSON.stringify({
+            target: payload.source,
+            source: payload.target,
+            message: `pong ${payload.message}`,
+          })
+        )
       })
     }
   })

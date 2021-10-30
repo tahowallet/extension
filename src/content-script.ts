@@ -15,12 +15,39 @@ function setupConnection() {
     name: CONTENT_BACKGROUND_PORT,
   })
 
-  setInterval(() => port.postMessage("ping"), 2000)
+  window.addEventListener("message", (event) => {
+    if (event.data.target !== "content") return
 
-  port.onMessage.addListener((msg) => {
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
-    console.log("content: bg msg received: ", msg)
+    console.log(
+      `%c content: inpage > background: ${JSON.stringify(event.data)}`,
+      "background: #bada55; color: #222"
+    )
+    port.postMessage(
+      JSON.stringify({
+        target: "background",
+        source: event.data.target,
+        message: `ping ${event.data.message}`,
+      })
+    )
+  })
+
+  port.onMessage.addListener((msg) => {
+    const payload = JSON.parse(msg) // TODO try catch
+
+    if (payload.target !== "content") return
+    // to demonstrate how it works it was necessary. Will remove later
+    // eslint-disable-next-line no-console
+    console.log(
+      `%c content: background > inpage: ${msg}`,
+      "background: #222; color: #bada55"
+    )
+    window.postMessage({
+      target: "inpage",
+      source: payload.target,
+      message: `ACK ${payload.message}`,
+    })
   })
 }
 
