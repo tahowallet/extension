@@ -18,7 +18,5 @@ export const ALARMS = {
   },
 }
 
-export const CONTENT_BACKGROUND_PORT = "content<->background"
-
 export * from "./currencies"
 export * from "./networks"

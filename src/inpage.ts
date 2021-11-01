@@ -6,7 +6,7 @@
 console.log("inpage.js in da house")
 
 setInterval(() => {
-  // ‼️ Alway include target orgiin to avoid unwanted attention
+  // ‼️ Always include target orgiin to avoid unwanted attention
   window.postMessage(
     {
       target: "content",
@@ -22,7 +22,12 @@ setInterval(() => {
 }, 3000)
 
 window.addEventListener("message", (event) => {
-  if (event.data.target !== "inpage") return
+  if (
+    event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
+    event.source !== window || // we want to recieve msgs only from the inpage script
+    event.data.target !== "inpage" // TODO: needs a better solution
+  )
+    return
 
   // to demonstrate how it works it was necessary. Will remove later
   // eslint-disable-next-line no-console

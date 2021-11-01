@@ -1,8 +1,6 @@
 // could not come up w/ any way to have sane organisation for this file and satisfy this rule. pls hAlp :)
 /* eslint @typescript-eslint/no-use-before-define: "off" */
 
-import { CONTENT_BACKGROUND_PORT } from "@tallyho/tally-background/constants"
-
 const browserApi = getBrowserApi()
 
 injectInpageScript()
@@ -11,10 +9,9 @@ setupConnection()
 // implementations
 
 function setupConnection() {
-  // TODO: algorithmic name generation
-  const port = browserApi.runtime.connect({
-    name: CONTENT_BACKGROUND_PORT,
-  })
+  // interesting idea: have a shared algorithm to generate the port name
+  // use this algo to create the name and again verify in bg script
+  const port = browserApi.runtime.connect()
 
   window.addEventListener("message", (event) => {
     if (
@@ -29,6 +26,8 @@ function setupConnection() {
       `%c content: inpage > background: ${JSON.stringify(event.data)}`,
       "background: #bada55; color: #222"
     )
+
+    // TODO: implement protection so only our bg can receive/read these
     port.postMessage(
       JSON.stringify({
         target: "background",
@@ -39,6 +38,8 @@ function setupConnection() {
   })
 
   port.onMessage.addListener((msg) => {
+    // TODO: implement recieve side sender origin validation
+    // hAlp: I don't have any ideas how to do this properly now - Greg
     const payload = JSON.parse(msg) // TODO try catch
 
     if (payload.target !== "content") return
@@ -48,16 +49,18 @@ function setupConnection() {
       `%c content: background > inpage: ${msg}`,
       "background: #222; color: #bada55"
     )
-    window.postMessage({
-      target: "inpage",
-      source: payload.target,
-      message: `ACK ${payload.message}`,
-    })
+    window.postMessage(
+      {
+        target: "inpage",
+        source: payload.target,
+        message: `ACK ${payload.message}`,
+      },
+      window.location.origin
+    )
   })
 }
 
 function injectInpageScript() {
-  // TODO: inject extensioin url so it can be used in port name
   // TODO: refactor to inject to content of the inpage script
   // TODO: set aysnc false and remove the script from the dom when done
   // TODO: replace inpage.js.map url

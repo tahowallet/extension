@@ -5,7 +5,6 @@ import { AnyAction } from "@reduxjs/toolkit"
 
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
-import { CONTENT_BACKGROUND_PORT } from "./constants"
 
 export { browser }
 
@@ -34,16 +33,44 @@ export async function newProxyStore(): Promise<
 }
 
 function dumbContentScriptProviderPortService() {
-  // TODO: protect against multiple connections
   browser.runtime.onConnect.addListener(async (port) => {
-    if (port.name === CONTENT_BACKGROUND_PORT) {
+    /**
+     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/getURL
+     * This will be the generated ID for the extension, known only at runtime but this URL
+     * also includes the id of the extension.
+     * e.g.:
+     *   chrome-extension://gkfdocgjpaiedapkhonocomfepcpnmhm/
+     *   moz-extension://2c127fa4-62c7-7e4f-90e5-472b45eecfdc/beasts/frog.html
+     */
+    const extensionBaseUrl = browser.runtime.getURL("")
+    /**
+     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/MessageSender
+     * id Optional
+     * string. The ID of the extension that sent the message, if the message was sent by an extension.
+     * If the sender set an ID explicitly using the applications key in manifest.json, then id will have this value.
+     * Otherwise it will have the ID that was generated for the sender.
+     *
+     * Note that in Firefox, before version 54, this value was the extension's internal ID
+     * (that is, the UUID that appears in the extension's URL).
+     *
+     * Note: Firefox 54 is from 2017 and firefox is evergreen so it's a pretty safe bet to assume that this will
+     * have what we expect here.
+     */
+    const senderId = port.sender?.id
+    // We care about only ports openb by our own content script
+    // Here we rely on the fact that to some extent both the content script
+    // and background script are part of the same extension.
+    // So a) we rely on built in apis b) we use info from both sides and compare them
+    if (senderId && extensionBaseUrl.includes(senderId)) {
+      // TODO: needs protection against others sending messages through our port
       port.onMessage.addListener((msg) => {
         const payload = JSON.parse(msg) // TODO try catch
 
         if (payload.target !== "background") return
         // to demonstrate how it works it was necessary. Will remove later
         // eslint-disable-next-line no-console
-        console.log(`background: ${payload}`)
+        console.log(`background: ${msg}`)
+        // TODO: implement protection that content script could use
         port.postMessage(
           JSON.stringify({
             target: payload.source,
