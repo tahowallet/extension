@@ -29,7 +29,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
     difficulty: 0n,
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
-    network: getEthereumNetwork(),
+    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
   }
 }
 
@@ -57,7 +57,7 @@ export function blockFromWebsocketBlock(
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)
       : undefined,
-    network: getEthereumNetwork(),
+    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
   }
 }
 
@@ -192,22 +192,4 @@ export function txFromEthersTx(
     return signedTx
   }
   return newTx
-}
-
-/**
- * Convert Tally's Network type to Ethers' Network type.
- */
-export function networkToEthersNetwork(network: EVMNetwork): EthersNetwork {
-  let networkName
-
-  if (network.name === "Ethereum") {
-    networkName = "homestead" // Ethers refers to mainnet as homestead
-  } else {
-    networkName = network.name.toLowerCase()
-  }
-
-  return {
-    name: networkName,
-    chainId: Number(network.chainID),
-  }
 }
