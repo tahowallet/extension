@@ -11,13 +11,18 @@ setupConnection()
 // implementations
 
 function setupConnection() {
+  // TODO: algorithmic name generation
   const port = browserApi.runtime.connect({
     name: CONTENT_BACKGROUND_PORT,
   })
 
   window.addEventListener("message", (event) => {
-    if (event.data.target !== "content") return
-
+    if (
+      event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
+      event.source !== window || // we want to recieve msgs only from the inpage script
+      event.data.target !== "content" // TODO: needs a better solution
+    )
+      return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
@@ -52,6 +57,10 @@ function setupConnection() {
 }
 
 function injectInpageScript() {
+  // TODO: inject extensioin url so it can be used in port name
+  // TODO: refactor to inject to content of the inpage script
+  // TODO: set aysnc false and remove the script from the dom when done
+  // TODO: replace inpage.js.map url
   try {
     const container = document.head || document.documentElement
     const scriptTag = document.createElement("script")

@@ -34,6 +34,7 @@ export async function newProxyStore(): Promise<
 }
 
 function dumbContentScriptProviderPortService() {
+  // TODO: protect against multiple connections
   browser.runtime.onConnect.addListener(async (port) => {
     if (port.name === CONTENT_BACKGROUND_PORT) {
       port.onMessage.addListener((msg) => {
