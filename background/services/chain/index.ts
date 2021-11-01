@@ -2,6 +2,7 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
+import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
 
@@ -32,7 +33,6 @@ import {
   ethersTxFromSignedTx,
   txFromEthersTx,
   txFromWebsocketTx,
-  networkToEthersNetwork,
 } from "./utils"
 import { getEthereumNetwork } from "../../lib/utils"
 import Blocknative, {
@@ -154,13 +154,13 @@ export default class ChainService extends BaseService<Events> {
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        networkToEthersNetwork(getEthereumNetwork()),
+        getNetwork(Number(getEthereumNetwork().chainID)),
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        networkToEthersNetwork(getEthereumNetwork()),
+        getNetwork(Number(getEthereumNetwork().chainID)),
         ALCHEMY_KEY
       ),
     }
