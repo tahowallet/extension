@@ -1,4 +1,4 @@
-import { browser } from "webextension-polyfill-ts"
+import browser from "webextension-polyfill"
 
 import { EncryptedVault } from "./encryption"
 import { UNIXTime } from "../../types"
@@ -78,7 +78,7 @@ export async function writeLatestEncryptedVault(
         vaults: [
           ...serializedVaults.vaults,
           {
-            timeSaved: new Date().getTime(),
+            timeSaved: Date.now(),
             vault: encryptedVault,
           },
         ],

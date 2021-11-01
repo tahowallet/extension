@@ -1,4 +1,4 @@
-import { browser } from "webextension-polyfill-ts"
+import browser from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
@@ -100,15 +100,18 @@ const initializeStore = (startupState = {}) =>
       return middleware
     },
     devTools: false,
-    enhancers: [
-      devToolsEnhancer({
-        hostname: "localhost",
-        port: 8000,
-        realtime: true,
-        actionSanitizer: devToolsSanitizer,
-        stateSanitizer: devToolsSanitizer,
-      }),
-    ],
+    enhancers:
+      process.env.NODE_ENV === "development"
+        ? [
+            devToolsEnhancer({
+              hostname: "localhost",
+              port: 8000,
+              realtime: true,
+              actionSanitizer: devToolsSanitizer,
+              stateSanitizer: devToolsSanitizer,
+            }),
+          ]
+        : [],
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
