@@ -1,7 +1,7 @@
 // could not come up w/ any way to have sane organisation for this file and satisfy this rule. pls hAlp :)
 /* eslint @typescript-eslint/no-use-before-define: "off" */
 
-const browserApi = getBrowserApi()
+import browser from "webextension-polyfill"
 
 injectInpageScript().then((_) => {
   setupConnection()
@@ -10,7 +10,7 @@ injectInpageScript().then((_) => {
 // implementations
 
 function setupConnection() {
-  const port = browserApi.runtime.connect()
+  const port = browser.runtime.connect()
 
   window.addEventListener("message", (event) => {
     if (
@@ -57,7 +57,7 @@ function setupConnection() {
 }
 
 function injectInpageScript() {
-  const baseUrl = browserApi.runtime.getURL("")
+  const baseUrl = browser.runtime.getURL("")
   return fetch(`${baseUrl}inpage.js`)
     .then((r) => r.text())
     .then((inpageSrc) => {
@@ -82,23 +82,4 @@ function injectInpageScript() {
         )
       }
     })
-}
-
-function getBrowserApi() {
-  // did not want to include the webextension polyfill as it makes this file huge 700B -> 3.3MB
-  // and as this file get injected into all webpages this could result in significant slow down
-  // and we don't use callback/promise apis so it would not give us any benefit
-  let api
-
-  if (window.chrome) {
-    api = window.chrome
-  } else {
-    api = browser
-  }
-
-  if (!api) {
-    throw new Error("Browser API is not present")
-  }
-
-  return api
 }
