@@ -3,8 +3,9 @@
 
 const browserApi = getBrowserApi()
 
-injectInpageScript()
-setupConnection()
+injectInpageScript().then((_) => {
+  setupConnection()
+})
 
 // implementations
 
@@ -13,7 +14,6 @@ function setupConnection() {
 
   window.addEventListener("message", (event) => {
     if (
-      window.location.origin !== "*" ||
       event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
       event.source !== window || // we want to recieve msgs only from the inpage script
       event.data.target !== "content" // TODO: needs a better solution
@@ -57,21 +57,31 @@ function setupConnection() {
 }
 
 function injectInpageScript() {
-  // TODO: refactor to inject to content of the inpage script
-  // TODO: set aysnc false and remove the script from the dom when done
-  // TODO: replace inpage.js.map url
-  try {
-    const container = document.head || document.documentElement
-    const scriptTag = document.createElement("script")
-    scriptTag.src = browserApi.runtime.getURL("inpage.js")
-    container.insertBefore(scriptTag, container.children[0])
-  } catch (e) {
-    throw new Error(
-      `Tally: oh nos the content-script failed to initilaize the inpage provider.
-      ${e}
-      It's time for a seppoku...🗡`
-    )
-  }
+  const baseUrl = browserApi.runtime.getURL("")
+  return fetch(`${baseUrl}inpage.js`)
+    .then((r) => r.text())
+    .then((inpageSrc) => {
+      try {
+        const container = document.head || document.documentElement
+        const scriptTag = document.createElement("script")
+        // this makes the script loading blocking which is good for us
+        // bc we want to load before anybody has a chance to temper w/ the window obj
+        scriptTag.setAttribute("async", "false")
+        // TODO: put env flag here so only dev env has sourcemaps
+        scriptTag.textContent = inpageSrc.replace(
+          "inpage.js.map",
+          `${baseUrl}inpage.js.map`
+        )
+        container.insertBefore(scriptTag, container.children[0])
+        container.removeChild(scriptTag) // nah, we don't need anybody to read the source
+      } catch (e) {
+        throw new Error(
+          `Tally: oh nos the content-script failed to initilaize the inpage provider.
+        ${e}
+        It's time for a seppoku...🗡`
+        )
+      }
+    })
 }
 
 function getBrowserApi() {
