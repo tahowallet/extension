@@ -26,23 +26,19 @@ function setupConnection() {
       "background: #bada55; color: #222"
     )
 
-    port.postMessage(
-      JSON.stringify({
-        target: "background",
-        source: event.data.target,
-        message: `ping ${event.data.message}`,
-      })
-    )
+    port.postMessage({
+      target: "background",
+      source: event.data.target,
+      message: `ping ${event.data.message}`,
+    })
   })
 
-  port.onMessage.addListener((msg) => {
-    const payload = JSON.parse(msg) // TODO try catch
-
+  port.onMessage.addListener((payload) => {
     if (payload.target !== "content") return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
-      `%c content: background > inpage: ${msg}`,
+      `%c content: background > inpage: ${JSON.stringify(payload)}`,
       "background: #222; color: #bada55"
     )
     window.postMessage(

@@ -35,21 +35,17 @@ export async function newProxyStore(): Promise<
 function dumbContentScriptProviderPortService() {
   browser.runtime.onConnect.addListener(async (port) => {
     if (port?.sender?.tab && port?.sender?.url) {
-      port.onMessage.addListener((msg) => {
-        const payload = JSON.parse(msg) // TODO try catch
-
+      port.onMessage.addListener((payload) => {
         if (payload.target !== "background") return
         // to demonstrate how it works it was necessary. Will remove later
         // eslint-disable-next-line no-console
-        console.log(`background: ${msg}`)
+        console.log(`background: ${JSON.stringify(payload)}`)
 
-        port.postMessage(
-          JSON.stringify({
-            target: payload.source,
-            source: payload.target,
-            message: `pong ${payload.message}`,
-          })
-        )
+        port.postMessage({
+          target: payload.source,
+          source: payload.target,
+          message: `pong ${payload.message}`,
+        })
       })
     }
   })
