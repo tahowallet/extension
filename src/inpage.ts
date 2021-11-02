@@ -23,6 +23,7 @@ setInterval(() => {
 
 window.addEventListener("message", (event) => {
   if (
+    window.location.origin !== "*" ||
     event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
     event.source !== window || // we want to recieve msgs only from the inpage script
     event.data.target !== "inpage" // TODO: needs a better solution

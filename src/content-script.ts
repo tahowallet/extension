@@ -9,12 +9,11 @@ setupConnection()
 // implementations
 
 function setupConnection() {
-  // interesting idea: have a shared algorithm to generate the port name
-  // use this algo to create the name and again verify in bg script
   const port = browserApi.runtime.connect()
 
   window.addEventListener("message", (event) => {
     if (
+      window.location.origin !== "*" ||
       event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
       event.source !== window || // we want to recieve msgs only from the inpage script
       event.data.target !== "content" // TODO: needs a better solution
@@ -27,7 +26,6 @@ function setupConnection() {
       "background: #bada55; color: #222"
     )
 
-    // TODO: implement protection so only our bg can receive/read these
     port.postMessage(
       JSON.stringify({
         target: "background",
@@ -38,8 +36,6 @@ function setupConnection() {
   })
 
   port.onMessage.addListener((msg) => {
-    // TODO: implement recieve side sender origin validation
-    // hAlp: I don't have any ideas how to do this properly now - Greg
     const payload = JSON.parse(msg) // TODO try catch
 
     if (payload.target !== "content") return
