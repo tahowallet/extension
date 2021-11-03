@@ -28,9 +28,10 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetail: activityItem,
     }),
-    initializationLoadingTimeHitLimit: (immerState) => {
-      immerState.initializationLoadingTimeExpired = true
-    },
+    initializationLoadingTimeHitLimit: (state) => ({
+      ...state,
+      initializationLoadingTimeExpired: true,
+    }),
   },
 })
 
