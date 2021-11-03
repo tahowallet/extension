@@ -73,7 +73,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-95);
             display: flex;
             flex-direction: column;
-            padding: 13px 19px 8px 8px;
+            padding: 11px 19px 8px 8px;
             box-sizing: border-box;
             margin-bottom: 16px;
             justify-content: space-between;
@@ -105,6 +105,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             justify-content: space-between;
             width: 100%;
             align-items: center;
+            margin-bottom: 4px;
           }
           .bottom {
             display: flex;
