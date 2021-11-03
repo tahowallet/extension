@@ -1,3 +1,5 @@
+// For design considerations see [in-page docs](../src/docs/inpage.md)
+
 // could not come up w/ any way to have sane organisation for this file and satisfy this rule. pls hAlp :)
 /* eslint @typescript-eslint/no-use-before-define: "off" */
 

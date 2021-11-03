@@ -1,8 +1,4 @@
-// it's still possible to tamper w/ postMessage or addEventListener
-// if some script gets loaded before our script (probably my a malicious extension)
-// but is't not a probable attack vector
-// TODO: somehow make sure to be the first to be loaded
-// https://link.springer.com/article/10.1007/s10207-019-00481-8
+// For design considerations see [in-page docs](../src/docs/inpage.md)
 
 // it's better to have our own copy of these functions so nobody
 // can temper w / them in any way we would not want to
