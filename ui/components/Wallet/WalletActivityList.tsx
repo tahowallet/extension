@@ -41,7 +41,7 @@ export default function WalletActivityList(): ReactElement {
       >
         {showingActivityDetail ? (
           <WalletActivityDetails
-            activityItem={activities[showingActivityDetail]}
+            activityItem={activities[showingActivityDetail as any]}
           />
         ) : (
           <></>

@@ -4,6 +4,11 @@ import dayjs from "dayjs"
 import { convertToEth } from "../lib/utils"
 import { AnyEVMTransaction } from "../types"
 
+const { compare } = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base",
+})
+
 export type ActivityItem = AnyEVMTransaction & {
   timestamp?: number
   value: bigint
@@ -21,9 +26,7 @@ export type ActivityItem = AnyEVMTransaction & {
 }
 
 export type ActivitiesState = {
-  [address: string]: {
-    [hash: string]: ActivityItem
-  }
+  [address: string]: ActivityItem[]
 }
 
 export const initialState: ActivitiesState = {}
@@ -54,6 +57,31 @@ function renameAndPickKeys<T>(keysMap: KeyRenameAndPickMap<T>, item: T) {
     }
     return previousValue
   }, {})
+}
+
+const insertActivityItemSorted = (
+  activityItems: ActivityItem[],
+  activityItem: ActivityItem
+) => {
+  let low = 0
+  let high = activityItems.length
+
+  while (low < high) {
+    const mid = (low + high) / 2
+
+    if (
+      compare(
+        `${activityItems[mid].blockHeight}`,
+        `${activityItem.blockHeight}`
+      ) > 0
+    ) {
+      low = mid + 1
+    } else {
+      high = mid
+    }
+  }
+
+  activityItems.splice(low, 0, activityItem)
 }
 
 function ethTransformer(value: string | number | bigint | null) {
@@ -117,13 +145,13 @@ const activitiesSlice = createSlice({
         const address = account.toLowerCase()
 
         if (!immerState[address]) {
-          immerState[address] = {}
+          immerState[address] = []
         }
 
-        immerState[address][activityItem.hash] = {
+        insertActivityItemSorted(immerState[address], {
           ...activityItem,
           detailRows,
-        }
+        })
       })
     },
   },
