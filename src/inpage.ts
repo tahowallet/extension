@@ -1,4 +1,4 @@
-// For design considerations see [in-page docs](../src/docs/inpage.md)
+// For design considerations see https://github.com/tallycash/tally-extension/blob/main/docs/inpage.md
 
 // it's better to have our own copy of these functions so nobody
 // can temper w / them in any way we would not want to
