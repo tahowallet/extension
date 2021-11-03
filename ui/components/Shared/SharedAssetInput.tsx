@@ -28,7 +28,7 @@ function SelectTokenMenuContent(
       </div>
       <div className="divider" />
       <ul>
-        {Array(13)
+        {Array(2)
           .fill("")
           .map(() => (
             <SharedAssetItem onClick={setSelectedTokenAndClose} />

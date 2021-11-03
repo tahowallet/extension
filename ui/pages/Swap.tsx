@@ -1,4 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { fetchJson } from "@ethersproject/web"
+import logger from "@tallyho/tally-background/lib/logger"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -15,8 +17,14 @@ export default function Swap(): ReactElement {
     setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
-  const handleAssetSelect = useCallback(() => {
+  const handleAssetSelect = useCallback(async () => {
     setSelectedCount((currentCount) => currentCount + 1)
+
+    const apiData = await fetchJson(
+      "https://api.0x.org/swap/v1/prices?perPage=1000"
+    )
+
+    logger.log(apiData)
   }, [])
 
   return (
