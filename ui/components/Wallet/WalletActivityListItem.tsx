@@ -3,6 +3,7 @@ import dayjs from "dayjs"
 import classNames from "classnames"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
@@ -35,13 +36,17 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="bottom">
           <div className="left">
             <div className="token_icon_wrap">
-              <span className="icon_eth" />
+              <SharedAssetIcon
+                logoURL={activity.asset.metadata?.logoURL}
+                symbol={activity.asset.symbol}
+                size="small"
+              />
             </div>
             <div className="amount">
               <span className="bold_amount_count">
                 {`${convertToEth(activity.value)}`.substring(0, 6)}
               </span>
-              ETH
+              {activity.asset.symbol}
             </div>
           </div>
           <div className="right">
