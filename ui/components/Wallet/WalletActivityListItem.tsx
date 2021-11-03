@@ -45,10 +45,23 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            <div className="outcome">
-              From:
-              {` ${activity.from.slice(0, 6)}...${activity.from.slice(37, 41)}`}
-            </div>
+            {activity.isSent ? (
+              <div className="outcome">
+                To:
+                {` ${activity?.to?.slice(0, 6)}...${activity?.to?.slice(
+                  37,
+                  41
+                )}`}
+              </div>
+            ) : (
+              <div className="outcome">
+                From:
+                {` ${activity?.from?.slice(0, 6)}...${activity?.from?.slice(
+                  37,
+                  41
+                )}`}
+              </div>
+            )}
           </div>
         </div>
       </button>

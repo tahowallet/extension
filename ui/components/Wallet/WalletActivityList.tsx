@@ -9,16 +9,20 @@ import WalletActivityListItem from "./WalletActivityListItem"
 
 export default function WalletActivityList(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const { showingActivityDetail } = useBackgroundSelector(
-    (background) => background.ui
+  const showingActivityDetail: string = useBackgroundSelector(
+    (background) => background.ui.showingActivityDetail
   )
 
-  const { activities, blocks } = useBackgroundSelector((background) => {
-    return {
-      activities: background.activities[background.ui.selectedAccount?.address],
-      blocks: background.account.blocks,
+  const { activities, blocks, currentAccount } = useBackgroundSelector(
+    (background) => {
+      return {
+        activities:
+          background.activities[background.ui.selectedAccount?.address],
+        blocks: background.account.blocks,
+        currentAccount: background.ui.selectedAccount?.address,
+      }
     }
-  })
+  )
 
   const handleOpen = useCallback(
     (activityItem) => {
@@ -65,6 +69,7 @@ export default function WalletActivityList(): ReactElement {
                   activity={{
                     ...activityItem,
                     timestamp: blocks[activityItem.blockHeight]?.timestamp,
+                    isSent: activityItem.from.toLowerCase() === currentAccount,
                   }}
                 />
               )
