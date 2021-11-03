@@ -7,13 +7,7 @@ export default function SharedLoadingSpinner(props: {
   const { size } = props
 
   return (
-    <div
-      className={classNames(
-        "spinner",
-        { small: size === "small" },
-        { medium: size === "medium" }
-      )}
-    >
+    <div className={classNames("spinner", size)}>
       <style jsx>
         {`
           .spinner {
