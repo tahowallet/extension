@@ -35,9 +35,10 @@ const uiSlice = createSlice({
         truncatedAddress: lowercaseAddress.slice(0, 7),
       }
     },
-    initializationLoadingTimeHitLimit: (immerState) => {
-      immerState.initializationLoadingTimeExpired = true
-    },
+    initializationLoadingTimeHitLimit: (state) => ({
+      ...state,
+      initializationLoadingTimeExpired: true,
+    }),
   },
 })
 
