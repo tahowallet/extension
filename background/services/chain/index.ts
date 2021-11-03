@@ -8,6 +8,8 @@ import logger from "../../lib/logger"
 import {
   AccountBalance,
   AccountNetwork,
+  FungibleAsset,
+  SmartContractFungibleAsset,
   AnyEVMBlock,
   AnyEVMTransaction,
   AssetTransfer,
@@ -18,7 +20,7 @@ import {
   SignedEVMTransaction,
   BlockPrices,
 } from "../../types"
-import { getAssetTransfers } from "../../lib/alchemy"
+import { getAssetTransfers, getTokenMetadata } from "../../lib/alchemy"
 import { ETHEREUM } from "../../constants/networks"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
@@ -540,7 +542,18 @@ export default class ChainService extends BaseService<Events> {
         // TODO make this multi network
         const result = await this.pollingProviders.ethereum.getTransaction(hash)
 
-        const tx = txFromEthersTx(result, ETH, ETHEREUM)
+        let asset: FungibleAsset | SmartContractFungibleAsset
+        try {
+          asset =
+            (await getTokenMetadata(
+              this.pollingProviders.ethereum,
+              result.to || ""
+            )) || ETH
+        } catch (err) {
+          asset = ETH
+        }
+
+        const tx = txFromEthersTx(result, asset, ETHEREUM)
 
         // TODO make this provider specific
         await this.saveTransaction(tx, "alchemy")
