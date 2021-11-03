@@ -1,6 +1,10 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  getHideDust,
+  selectAccountAndTimestampedActivities,
+} from "@tallyho/tally-background/redux-slices/accounts"
+import { useSelector } from "react-redux"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -10,6 +14,7 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+  const hideDust = useSelector(getHideDust)
   //  accountLoading, hasWalletErrorCode
   const { combinedData, accountData, activity } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -24,6 +29,8 @@ export default function Wallet(): ReactElement {
   const displayAssets = combinedData.assets.filter(
     ({ asset, amount }) => asset.symbol === "ETH" || amount > 0
   )
+
+  // TODO filter displayedAssets to hide dust balance tokens
 
   return (
     <div className="wrap">

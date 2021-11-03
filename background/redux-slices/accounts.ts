@@ -12,6 +12,9 @@ import {
   AnyEVMBlock,
 } from "../types"
 import { AssetsState } from "./assets"
+// TODO remove cycle dep
+// eslint-disable-next-line import/no-cycle
+import { RootState } from ".."
 
 // Adds user-specific values based on preferences. This is the combination of a
 // conversion to the user's preferred currency for viewing, as well as a
@@ -45,6 +48,9 @@ export type CombinedAccountData = {
 }
 
 type AccountState = {
+  settings: {
+    hideDust: boolean
+  }
   account?: any
   accountLoading?: string
   hasAccountError?: boolean
@@ -155,6 +161,9 @@ export const initialState = {
     activity: [],
   },
   blocks: {},
+  settings: {
+    hideDust: false,
+  },
 } as AccountState
 
 // Looks up existing account data in the given AccountState, dealing with
@@ -192,6 +201,9 @@ const accountSlice = createSlice({
             accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
           }
     },
+    toggleHideDust: (immerState, { payload: shouldHideDust }) => {
+      immerState.settings.hideDust = shouldHideDust
+    },
     updateAccountBalance: (
       immerState,
       { payload: updatedAccountBalance }: { payload: AccountBalance }
@@ -202,7 +214,6 @@ const accountSlice = createSlice({
           asset: { symbol: updatedAssetSymbol },
         },
       } = updatedAccountBalance
-
       const existingAccountData = immerState.accountsData[updatedAccount]
       if (existingAccountData && existingAccountData !== "loading") {
         existingAccountData.balances[updatedAssetSymbol] =
@@ -348,6 +359,7 @@ export const {
   transactionSeen,
   transactionConfirmed,
   blockSeen,
+  toggleHideDust,
 } = accountSlice.actions
 
 export default accountSlice.reducer
@@ -373,6 +385,11 @@ export const addAccountNetwork = createBackgroundAsyncThunk(
     dispatch(loadAccount(accountNetwork.account))
     await emitter.emit("addAccount", accountNetwork)
   }
+)
+
+export const getHideDust = createSelector(
+  (state: RootState) => state.account.settings.hideDust,
+  (hideDust: boolean) => hideDust
 )
 
 function formatPrice(price: number): string {

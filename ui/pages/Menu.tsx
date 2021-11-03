@@ -1,16 +1,36 @@
 import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
+import { useDispatch, useSelector } from "react-redux"
+import {
+  getHideDust,
+  toggleHideDust,
+} from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 
 function SettingRow(props: { title: string; action: any }): ReactElement {
   const { title, action } = props
+  const dispatch = useDispatch()
+  const hideDust = useSelector(getHideDust)
+
+  const toggleHideDustAssets = () => {
+    dispatch(toggleHideDust(!hideDust))
+  }
+
+  let actionFunction = () => {}
+  let isHideDustSwitch = false
+  if (title === "Hide asset balance under $2") {
+    actionFunction = toggleHideDustAssets
+    isHideDustSwitch = true
+  }
 
   return (
     <li>
       <div className="left">{title}</div>
-      <div className="right">{action()}</div>
+      <div className="right">
+        {action(actionFunction, hideDust, isHideDustSwitch)}
+      </div>
       <style jsx>
         {`
           li {
