@@ -4,8 +4,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
-import { ETHEREUM } from "./constants/networks"
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
 import { ethersTxFromSignedTx } from "./services/chain/utils"
 
@@ -289,7 +288,7 @@ export default class Main extends BaseService<never> {
 
         // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
         transaction.gasLimit = await this.chainService.estimateGasLimit(
-          ETHEREUM,
+          getEthereumNetwork(),
           transaction
         )
 
@@ -338,7 +337,7 @@ export default class Main extends BaseService<never> {
       this.chainService.addAccountToTrack({
         account: address,
         // TODO support other networks
-        network: ETHEREUM,
+        network: getEthereumNetwork(),
       })
     })
 

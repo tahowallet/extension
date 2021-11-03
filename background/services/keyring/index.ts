@@ -2,7 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
-import { normalizeEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, getEthereumNetwork } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -18,7 +18,7 @@ import {
   SignedEVMTransaction,
 } from "../../types"
 import BaseService from "../base"
-import { ETH, ETHEREUM } from "../../constants"
+import { ETH } from "../../constants"
 
 export type Keyring = {
   type: KeyringTypes
@@ -276,7 +276,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network: ETHEREUM,
+      network: getEthereumNetwork(),
     }
     this.emitter.emit("signedTx", signedTx)
     return signedTx

@@ -10,6 +10,34 @@ export const ETHEREUM: EVMNetwork = {
   family: "EVM",
 }
 
+export const ROPSTEN: EVMNetwork = {
+  name: "Ropsten",
+  baseAsset: ETH,
+  chainID: "3",
+  family: "EVM",
+}
+
+export const RINKEBY: EVMNetwork = {
+  name: "Rinkeby",
+  baseAsset: ETH,
+  chainID: "4",
+  family: "EVM",
+}
+
+export const GOERLI: EVMNetwork = {
+  name: "Goerli",
+  baseAsset: ETH,
+  chainID: "5",
+  family: "EVM",
+}
+
+export const KOVAN: EVMNetwork = {
+  name: "Kovan",
+  baseAsset: ETH,
+  chainID: "42",
+  family: "EVM",
+}
+
 export const BITCOIN: Network = {
   name: "Bitcoin",
   baseAsset: BTC,
