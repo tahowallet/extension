@@ -191,7 +191,12 @@ export default class Main extends BaseService<never> {
      */
     private keyringService: KeyringService
   ) {
-    super()
+    super({
+      initialLoadWaitExpired: {
+        schedule: { delayInMinutes: 2.5 },
+        handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
+      },
+    })
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState)
@@ -230,10 +235,6 @@ export default class Main extends BaseService<never> {
   async initializeRedux(): Promise<void> {
     this.connectIndexingService()
     this.connectKeyringService()
-
-    setTimeout(() => {
-      this.store.dispatch(initializationLoadingTimeHitLimit())
-    }, 1000 * 60 * 2.5)
     await this.connectChainService()
   }
 
