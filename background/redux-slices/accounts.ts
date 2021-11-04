@@ -469,7 +469,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
     return {
       combinedData: {
-        assets: accountAssets,
+        assets: accountAssets.filter(
+          ({ asset, amount }) => asset.symbol === "ETH" || amount > 0
+        ),
         totalUserValue: totalUserValue
           ? formatPrice(totalUserValue)
           : undefined,
