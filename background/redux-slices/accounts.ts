@@ -20,8 +20,8 @@ import { AssetsState } from "./assets"
 type UserValue = {
   userValue: number | "unknown"
   decimalValue: number | "unknown"
-  localizedUserValue: string
-  localizedDecimalValue: string
+  localizedUserValue?: string
+  localizedDecimalValue?: string
 }
 
 type AccountBalanceWithUserValue = AccountBalance & {
@@ -56,9 +56,6 @@ type AccountState = {
   blocks: { [blockHeight: number]: AnyEVMBlock }
 }
 
-// TODO Plug in price data and deal with non-USD target prices.
-const usdConversion2Decimals = BigInt(241144)
-
 // Type assertion to confirm an AnyAssetAmount is a FungibleAssetAmount.
 function isFungibleAssetAmount(
   assetAmount: AnyAssetAmount
@@ -75,28 +72,19 @@ function enrichAssetAmountWithUserAmounts(
       amount,
       asset: { decimals },
     } = assetAmount
-    // TODO Make this pull from the user's preferred currency and its
-    // TODO conversion info.
-    const userCurrencyConversion2Decimals = usdConversion2Decimals
+
     // TODO What actual precision do we want here? Probably more than 2
     // TODO decimals.
     const assetValue2Decimals = amount / 10n ** BigInt(decimals - 2)
 
-    const converted2Decimals =
-      assetValue2Decimals * userCurrencyConversion2Decimals
-
     // Multiplying two 2-decimal precision fixed-points means dividing by
     // 4-decimal precision.
-    const userValue = Number(converted2Decimals) / 10000
     const decimalValue = Number(assetValue2Decimals) / 100
 
     return {
       ...assetAmount,
-      userValue,
+      userValue: "unknown",
       decimalValue,
-      localizedUserValue: userValue.toLocaleString("default", {
-        maximumFractionDigits: 2,
-      }),
       localizedDecimalValue: decimalValue.toLocaleString("default", {
         maximumFractionDigits: 2,
       }),
@@ -106,8 +94,6 @@ function enrichAssetAmountWithUserAmounts(
     ...assetAmount,
     userValue: "unknown",
     decimalValue: "unknown",
-    localizedUserValue: "unknown",
-    localizedDecimalValue: "unknown",
   }
 }
 
@@ -472,8 +458,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
         }
         return {
           ...assetItem,
-          localizedUserValue: "Unknown",
-          localizedPricePerToken: "Unknown",
         }
       })
 
