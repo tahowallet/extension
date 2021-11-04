@@ -382,3 +382,17 @@ export type AccountState = {
   // compatible with the idea of multiple networks.
   blocks: { [blockHeight: number]: AnyEVMBlock }
 }
+
+export type ActivityItem = AnyEVMTransaction & {
+  timestamp?: string
+  value: bigint
+  from?: string
+  isSent?: boolean
+}
+
+export type UIState = {
+  showingActivityDetail: ActivityItem | null
+  settings: {
+    hideDust: boolean
+  }
+}

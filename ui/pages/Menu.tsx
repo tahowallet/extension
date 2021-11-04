@@ -2,35 +2,20 @@ import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
 import { useDispatch, useSelector } from "react-redux"
 import {
-  getHideDust,
+  selectHideDust,
   toggleHideDust,
-} from "@tallyho/tally-background/redux-slices/accounts"
+} from "@tallyho/tally-background/redux-slices/ui"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 
-function SettingRow(props: { title: string; action: any }): ReactElement {
-  const { title, action } = props
-  const dispatch = useDispatch()
-  const hideDust = useSelector(getHideDust)
-
-  const toggleHideDustAssets = () => {
-    dispatch(toggleHideDust(!hideDust))
-  }
-
-  let actionFunction = () => {}
-  let isHideDustSwitch = false
-  if (title === "Hide asset balance under $2") {
-    actionFunction = toggleHideDustAssets
-    isHideDustSwitch = true
-  }
+function SettingRow(props: { title: string; component: any }): ReactElement {
+  const { title, component } = props
 
   return (
     <li>
       <div className="left">{title}</div>
-      <div className="right">
-        {action(actionFunction, hideDust, isHideDustSwitch)}
-      </div>
+      <div className="right">{component()}</div>
       <style jsx>
         {`
           li {
@@ -71,44 +56,61 @@ function ArrowRightIcon() {
   )
 }
 
-const settings = {
-  general: [
-    {
-      title: "Main Currency",
-      action: () => {
-        return (
-          <SharedButton size="medium" type="secondary" icon="chevron">
-            USD
-          </SharedButton>
-        )
-      },
-    },
-    {
-      title: "Hide asset balance under $2",
-      action: SharedToggleButton,
-    },
-    {
-      title: "Use Tally as default wallet",
-      action: SharedToggleButton,
-    },
-    {
-      title: "Token list",
-      action: ArrowRightIcon,
-    },
-  ],
-  developer: [
-    {
-      title: "Show testnet networks",
-      action: SharedToggleButton,
-    },
-    {
-      title: "Contracts deployed by users",
-      action: ArrowRightIcon,
-    },
-  ],
-}
-
 export default function Menu(): ReactElement {
+  const dispatch = useDispatch()
+  const hideDust = useSelector(selectHideDust)
+
+  const toggleHideDustAssets = () => {
+    dispatch(toggleHideDust(!hideDust))
+  }
+  const settings = {
+    general: [
+      {
+        title: "Main Currency",
+        component: () => {
+          return (
+            <SharedButton size="medium" type="secondary" icon="chevron">
+              USD
+            </SharedButton>
+          )
+        },
+      },
+      {
+        title: "Hide asset balance under $2",
+        component: () => {
+          return (
+            <SharedToggleButton
+              onChange={toggleHideDustAssets}
+              value={hideDust}
+            />
+          )
+        },
+      },
+      {
+        title: "Use Tally as default wallet",
+        component: () => {
+          return <SharedToggleButton onChange={() => {}} />
+        },
+      },
+      {
+        title: "Token list",
+        component: ArrowRightIcon,
+      },
+    ],
+    developer: [
+      {
+        title: "Show testnet networks",
+        component: () => {
+          return <SharedToggleButton onChange={() => {}} />
+        },
+      },
+      {
+        title: "Contracts deployed by users",
+        component: ArrowRightIcon,
+      },
+    ],
+  }
+
   return (
     <>
       <CorePage hasTopBar={false}>
@@ -118,14 +120,14 @@ export default function Menu(): ReactElement {
           <h3>General</h3>
           <ul>
             {settings.general.map((setting) => (
-              <SettingRow title={setting.title} action={setting.action} />
+              <SettingRow title={setting.title} component={setting.component} />
             ))}
           </ul>
           <hr />
           <h3>Developer</h3>
           <ul>
             {settings.developer.map((setting) => (
-              <SettingRow title={setting.title} action={setting.action} />
+              <SettingRow title={setting.title} component={setting.component} />
             ))}
           </ul>
         </section>

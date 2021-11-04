@@ -8,17 +8,14 @@ import {
   AnyEVMTransaction,
   ConfirmedEVMTransaction,
   FungibleAssetAmount,
-  Network,
   AnyEVMBlock,
   UserValue,
   AccountBalanceWithUserValue,
   AccountState,
   AccountData,
+  UIState,
 } from "../types"
 import { AssetsState } from "./assets"
-// TODO remove cycle dep
-// eslint-disable-next-line import/no-cycle
-import { RootState } from ".."
 
 // Adds user-specific values based on preferences. This is the combination of a
 // conversion to the user's preferred currency for viewing, as well as a
@@ -216,7 +213,6 @@ const accountSlice = createSlice({
             amount:
               (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
           })
-
           return acc
         }, {})
       )
@@ -360,12 +356,13 @@ export const getAccountState = (state: {
 export const getFullState = (state: {
   account: AccountState
   assets: AssetsState
-}): { account: AccountState; assets: AssetsState } => state
+  ui: UIState
+}): { account: AccountState; assets: AssetsState; ui: UIState } => state
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
   (state) => {
-    const { account, assets } = state
+    const { account, assets, ui } = state
 
     // Derive activities with timestamps included
     const activity = account.combinedData.activity.map((activityItem) => {
@@ -387,7 +384,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
-    const accountAssets = account.combinedData.assets.map((assetItem) => {
+    let accountAssets = account.combinedData.assets.map((assetItem) => {
       const rawAsset = assets.find(
         (asset) =>
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
@@ -425,7 +422,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
         // Add to total user value
         totalUserValue += localizedUserValue
-
         return {
           ...assetItem,
           localizedUserValue: formatPrice(localizedUserValue),
@@ -440,6 +436,20 @@ export const selectAccountAndTimestampedActivities = createSelector(
         localizedPricePerToken: "Unknown",
       }
     })
+
+    // If hideDust is true the below will filter out tokens that have USD value set
+    // Value currently set to 2(usd) can be changed to a dynamic value later
+    // This will have to use a different method if we introduce other currencies
+    if (ui.settings.hideDust) {
+      accountAssets = accountAssets.filter((assetItem) => {
+        const reformat = parseFloat(
+          assetItem.localizedUserValue.replace(/,/g, "")
+        )
+        return reformat > 2 || assetItem.localizedUserValue === "Unknown"
+      })
+    }
+
+    accountAssets = accountAssets.filter((assetItem) => assetItem.amount > 0)
 
     return {
       combinedData: {

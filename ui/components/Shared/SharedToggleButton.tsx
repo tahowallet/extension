@@ -1,23 +1,21 @@
-import React, { useState, ReactElement, useEffect } from "react"
+import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
 
-export default function SharedToggleButton(
-  actionFunction: () => void,
-  isHideDustSwitch: boolean,
-  hideDust?: boolean
-): ReactElement {
-  const [isActive, setIsActive] = useState(false)
+interface SharedToggleButtonProps {
+  onChange: () => void
+  value?: boolean
+}
+
+export default function SharedToggleButton({
+  onChange,
+  value,
+}: SharedToggleButtonProps): ReactElement {
+  const [isActive, setIsActive] = useState(value || false)
 
   const handleToggleAction = () => {
     setIsActive(!isActive)
-    actionFunction()
+    onChange()
   }
-
-  useEffect(() => {
-    if (isHideDustSwitch && hideDust !== undefined) {
-      setIsActive(hideDust)
-    }
-  }, [isHideDustSwitch, hideDust])
 
   return (
     <button
