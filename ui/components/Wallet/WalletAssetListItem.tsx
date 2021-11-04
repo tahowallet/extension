@@ -39,18 +39,16 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                 </span>
                 {assetAmount.asset.symbol}
               </div>
-              {assetAmount.localizedUserValue !== "Unknown" ||
-              initializationLoadingTimeExpired ? (
-                <>
-                  {assetAmount.localizedUserValue === "Unknown" ? null : (
-                    <div className="price">
-                      ${assetAmount.localizedUserValue}
-                    </div>
-                  )}
-                </>
+              {initializationLoadingTimeExpired &&
+              assetAmount.localizedUserValue === "Unknown" ? (
+                <></>
               ) : (
                 <div className="price">
-                  <SharedLoadingSpinner size="small" />
+                  {assetAmount.localizedUserValue === "Unknown" ? (
+                    <SharedLoadingSpinner size="small" />
+                  ) : (
+                    `$${assetAmount.localizedUserValue}`
+                  )}
                 </div>
               )}
             </div>
