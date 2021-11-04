@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
+import { ActivityItem } from "@tallyho/tally-background/types"
 
 interface Props {
   onClick: () => void

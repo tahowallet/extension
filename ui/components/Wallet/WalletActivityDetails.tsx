@@ -1,7 +1,7 @@
 import React, { useCallback, ReactElement } from "react"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import dayjs from "dayjs"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
+import { ActivityItem } from "@tallyho/tally-background/types"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
 
