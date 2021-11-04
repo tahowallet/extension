@@ -10,6 +10,10 @@ import {
   FungibleAssetAmount,
   Network,
   AnyEVMBlock,
+  UserValue,
+  AccountBalanceWithUserValue,
+  AccountState,
+  AccountData,
 } from "../types"
 import { AssetsState } from "./assets"
 // TODO remove cycle dep
@@ -20,47 +24,6 @@ import { RootState } from ".."
 // conversion to the user's preferred currency for viewing, as well as a
 // conversion to a decimal amount for assets that are represented by
 // fixed-point integers.
-type UserValue = {
-  userValue: number | "unknown"
-  decimalValue: number | "unknown"
-  localizedUserValue: string
-  localizedDecimalValue: string
-}
-
-type AccountBalanceWithUserValue = AccountBalance & {
-  assetAmount: AnyAssetAmount & UserValue
-}
-
-type AccountData = {
-  account: string
-  network: Network
-  balances: {
-    [assetSymbol: string]: AccountBalanceWithUserValue
-  }
-  confirmedTransactions: ConfirmedEVMTransaction[]
-  unconfirmedTransactions: AnyEVMTransaction[]
-}
-
-export type CombinedAccountData = {
-  totalUserValue: string
-  assets: (AnyAssetAmount & UserValue)[]
-  activity: AnyEVMTransaction[]
-}
-
-type AccountState = {
-  settings: {
-    hideDust: boolean
-  }
-  account?: any
-  accountLoading?: string
-  hasAccountError?: boolean
-  // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
-  accountsData: { [account: string]: AccountData | "loading" }
-  combinedData: CombinedAccountData
-  // TODO the blockHeight key should be changed to something
-  // compatible with the idea of multiple networks.
-  blocks: { [blockHeight: number]: AnyEVMBlock }
-}
 
 // TODO Plug in price data and deal with non-USD target prices.
 const usdConversion2Decimals = BigInt(241144)
@@ -161,9 +124,6 @@ export const initialState = {
     activity: [],
   },
   blocks: {},
-  settings: {
-    hideDust: false,
-  },
 } as AccountState
 
 // Looks up existing account data in the given AccountState, dealing with
@@ -200,9 +160,6 @@ const accountSlice = createSlice({
             ...state,
             accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
           }
-    },
-    toggleHideDust: (immerState, { payload: shouldHideDust }) => {
-      immerState.settings.hideDust = shouldHideDust
     },
     updateAccountBalance: (
       immerState,
@@ -359,7 +316,6 @@ export const {
   transactionSeen,
   transactionConfirmed,
   blockSeen,
-  toggleHideDust,
 } = accountSlice.actions
 
 export default accountSlice.reducer
@@ -385,11 +341,6 @@ export const addAccountNetwork = createBackgroundAsyncThunk(
     dispatch(loadAccount(accountNetwork.account))
     await emitter.emit("addAccount", accountNetwork)
   }
-)
-
-export const getHideDust = createSelector(
-  (state: RootState) => state.account.settings.hideDust,
-  (hideDust: boolean) => hideDust
 )
 
 function formatPrice(price: number): string {
