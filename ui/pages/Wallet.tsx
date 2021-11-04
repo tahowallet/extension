@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useEffect } from "react"
+import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import { initializationLoadingTimeHitLimit } from "@tallyho/tally-background/redux-slices/ui"
@@ -22,14 +22,6 @@ export default function Wallet(): ReactElement {
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
-
-  useEffect(() => {
-    setTimeout(() => {
-      dispatch(initializationLoadingTimeHitLimit())
-      // I'm thinking of moving the time to an env var. And this
-      // is pretty hacky in general.
-    }, 1000 * 60 * 2.5)
-  }, [dispatch])
 
   // If an account doesn't exist, display view only
   // onboarding for the initial test release.

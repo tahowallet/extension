@@ -34,6 +34,7 @@ import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
 } from "./redux-slices/keyrings"
+import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
   gasEstimates,
   emitter as transactionSliceEmitter,
@@ -230,6 +231,10 @@ export default class Main extends BaseService<never> {
   async initializeRedux(): Promise<void> {
     this.connectIndexingService()
     this.connectKeyringService()
+
+    setTimeout(() => {
+      this.store.dispatch(initializationLoadingTimeHitLimit())
+    }, 1000 * 60 * 2.5)
     await this.connectChainService()
   }
 
