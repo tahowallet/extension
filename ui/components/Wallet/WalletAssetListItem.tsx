@@ -15,7 +15,9 @@ interface Props {
 export default function WalletAssetListItem(props: Props): ReactElement {
   const { assetAmount, initializationLoadingTimeExpired } = props
 
-  // TODO: ETH price hard-coded for demo
+  const isMissingLocalizedUserValue =
+    typeof assetAmount.localizedUserValue === "undefined"
+
   return (
     <li>
       <Link
@@ -40,11 +42,11 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                 {assetAmount.asset.symbol}
               </div>
               {initializationLoadingTimeExpired &&
-              assetAmount.localizedUserValue === "Unknown" ? (
+              isMissingLocalizedUserValue ? (
                 <></>
               ) : (
                 <div className="price">
-                  {assetAmount.localizedUserValue === "Unknown" ? (
+                  {isMissingLocalizedUserValue ? (
                     <SharedLoadingSpinner size="small" />
                   ) : (
                     `$${assetAmount.localizedUserValue}`
