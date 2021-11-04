@@ -132,7 +132,7 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
-  onAssetSelected?: () => void
+  onAssetSelected?: (token: { symbol: string }) => void
   label: string
   defaultToken: { symbol: string }
   isTokenOptionsLocked: boolean
@@ -155,14 +155,18 @@ export default function SharedAssetInput(
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
-      onAssetSelected?.()
     }
-  }, [isTokenOptionsLocked, onAssetSelected])
+  }, [isTokenOptionsLocked])
 
-  const setSelectedTokenAndClose = useCallback((token) => {
-    setSelectedToken(token)
-    setOpenAssetMenu(false)
-  }, [])
+  const setSelectedTokenAndClose = useCallback(
+    (token) => {
+      setSelectedToken(token)
+      setOpenAssetMenu(false)
+      onAssetSelected?.(token)
+    },
+
+    [onAssetSelected]
+  )
 
   return (
     <label className="label">

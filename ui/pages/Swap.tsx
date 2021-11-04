@@ -17,11 +17,13 @@ export default function Swap(): ReactElement {
     setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
-  const handleAssetSelect = useCallback(async () => {
+  const handleAssetSelect = useCallback(async (token) => {
+    logger.log("Asset selected!", token)
+
     setSelectedCount((currentCount) => currentCount + 1)
 
     const apiData = await fetchJson(
-      "https://api.0x.org/swap/v1/prices?perPage=1000"
+      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000`
     )
 
     logger.log(apiData)
