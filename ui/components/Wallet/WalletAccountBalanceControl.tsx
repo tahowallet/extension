@@ -36,7 +36,7 @@ function ReadOnlyNotice(): ReactElement {
 }
 
 interface Props {
-  balance: string
+  balance?: string
   initializationLoadingTimeExpired: boolean
 }
 
@@ -66,7 +66,7 @@ export default function WalletAccountBalanceControl(
   // An arbitrary minimum balance overrides loading state
   // to give the user faster results.
   const shouldIndicateLoading =
-    !initializationLoadingTimeExpired && !(parseInt(balance, 10) > 10)
+    !initializationLoadingTimeExpired && typeof balance === "undefined"
 
   return (
     <>
@@ -189,6 +189,7 @@ export default function WalletAccountBalanceControl(
             animation: pulse 1.1s infinite;
             transform: translateY(-10px);
             width: 250px;
+            height: 100%;
           }
           .balance_loading .dollar_sign {
             color: rgba(0, 0, 0, 0);
@@ -208,8 +209,4 @@ export default function WalletAccountBalanceControl(
       </style>
     </>
   )
-}
-
-WalletAccountBalanceControl.defaultProps = {
-  balance: "",
 }

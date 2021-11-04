@@ -39,7 +39,7 @@ type AccountData = {
 }
 
 export type CombinedAccountData = {
-  totalUserValue: string
+  totalUserValue?: string
   assets: (AnyAssetAmount & UserValue)[]
   activity: AnyEVMTransaction[]
 }
@@ -401,7 +401,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
     })
 
     // Keep a tally of the total user value
-    let totalUserValue = 0
+    let totalUserValue: number | undefined
 
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
@@ -446,7 +446,13 @@ export const selectAccountAndTimestampedActivities = createSelector(
             Number(dividedOutDecimals) / 10 ** desiredDecimals
 
           // Add to total user value
-          totalUserValue += localizedUserValue
+          if (localizedUserValue > 0) {
+            if (typeof totalUserValue === "undefined") {
+              totalUserValue = localizedUserValue
+            } else if (typeof totalUserValue === "number") {
+              totalUserValue += localizedUserValue
+            }
+          }
 
           return {
             ...assetItem,
@@ -464,7 +470,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
     return {
       combinedData: {
         assets: accountAssets,
-        totalUserValue: formatPrice(totalUserValue),
+        totalUserValue: totalUserValue
+          ? formatPrice(totalUserValue)
+          : undefined,
         activity: account.combinedData.activity,
       },
       accountData: account.accountsData,
