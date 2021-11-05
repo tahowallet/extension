@@ -63,8 +63,6 @@ export default function WalletAccountBalanceControl(
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
-  // An arbitrary minimum balance overrides loading state
-  // to give the user faster results.
   const shouldIndicateLoading =
     !initializationLoadingTimeExpired && typeof balance === "undefined"
 
