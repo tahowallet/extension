@@ -6,6 +6,7 @@ import EventEmitter from "events"
 // (lot of script does this kind of magic eg ads logging)
 const windowPostMessage = window.postMessage
 const windowAddEventListener = window.addEventListener
+const removeEventListener = window.removeEventListener
 
 console.log("inpage.js in da house")
 
@@ -15,17 +16,19 @@ export class InpageEip1193Bridge extends EventEmitter {
   }
 
   async send(method: string, params?: Array<any>): Promise<any> {
-    // ‼️ Always include target origin to avoid unwanted attention
-    windowPostMessage(
-      {
-        target: "content",
-        payload: {
-          method,
-          params,
-        },
+    const sendPayload = {
+      target: "content",
+      payload: {
+        method,
+        params,
       },
-      window.location.origin
-    )
+    }
+
+    console.log("inpage: ", JSON.stringify(sendPayload))
+
+    // ‼️ Always include target origin to avoid unwanted attention
+    windowPostMessage(sendPayload, window.location.origin)
+
     return new Promise((resolve) => {
       function listener(event: {
         origin: string
@@ -40,6 +43,13 @@ export class InpageEip1193Bridge extends EventEmitter {
           return
 
         console.log("inpage: ", JSON.stringify(event.data))
+
+        // this is to not have memoy leaks and infinite listeners
+        // should not be necessary per the docs because a named function is used in the listener
+        // but probably bc of promise wrapper and the resolve function it is always treated as a new listener
+        // but should implement a msg queue and have a fix eventlistener or use streams maybe?
+        // TODO: refactor this initial naive implementation
+        removeEventListener("message", listener, false)
 
         resolve(event.data.payload)
       }
