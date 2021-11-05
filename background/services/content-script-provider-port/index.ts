@@ -1,6 +1,7 @@
 import { ChainService } from ".."
 import { browser } from "../.."
 
+//TODO: change to normal service implementation
 export async function dumbContentScriptProviderPortService(
   chainService: ChainService
 ) {
@@ -12,7 +13,7 @@ export async function dumbContentScriptProviderPortService(
     // if (port?.sender?.tab && port?.sender?.url) { // TODO: put this back
     console.log("let's create listener")
     port.onMessage.addListener(async ({ target, payload }) => {
-      console.log("listener")
+      console.log("---")
       if (target !== "background") return
       console.log(`background: request payload: ${JSON.stringify(payload)}`)
       const response = {
@@ -28,7 +29,7 @@ export async function dumbContentScriptProviderPortService(
 
   async function provider(method: string, params?: Array<any>): Promise<any> {
     switch (method) {
-      case "eth_requestAccounts":
+      case "eth_requestAccounts": // TODO: get current account from redux store
         return chainService
           .getAccountsToTrack()
           .then(([acc]) => ({ result: [acc.account] }))

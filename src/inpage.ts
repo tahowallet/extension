@@ -24,6 +24,7 @@ export class InpageEip1193Bridge extends EventEmitter {
       },
     }
 
+    console.log("---")
     console.log("inpage: ", JSON.stringify(sendPayload))
 
     // ‼️ Always include target origin to avoid unwanted attention
