@@ -7,8 +7,6 @@ import EventEmitter from "events"
 const windowPostMessage = window.postMessage
 const windowAddEventListener = window.addEventListener
 
-// to demonstrate how it works it was necessary. Will remove later
-// eslint-disable-next-line no-console
 console.log("inpage.js in da house")
 
 export class InpageEip1193Bridge extends EventEmitter {
@@ -41,8 +39,6 @@ export class InpageEip1193Bridge extends EventEmitter {
         )
           return
 
-        // to demonstrate how it works it was necessary. Will remove later
-        // eslint-disable-next-line no-console
         console.log("inpage: ", JSON.stringify(event.data))
 
         resolve(event.data.payload)
@@ -53,32 +49,3 @@ export class InpageEip1193Bridge extends EventEmitter {
 }
 
 ;(window as any).ethereum = new InpageEip1193Bridge()
-
-// setInterval(() => {
-//   // ‼️ Always include target origin to avoid unwanted attention
-//   windowPostMessage(
-//     {
-//       target: "content",
-//       source: "inpage",
-//       message: "SYN",
-//     },
-//     window.location.origin
-//   )
-
-//   // to demonstrate how it works it was necessary. Will remove later
-//   // eslint-disable-next-line no-console
-//   console.log("-------------")
-// }, 3000)
-
-// windowAddEventListener("message", (event) => {
-//   if (
-//     event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
-//     event.source !== window || // we want to recieve msgs only from the inpage script
-//     event.data.target !== "inpage" // TODO: needs a better solution
-//   )
-//     return
-
-//   // to demonstrate how it works it was necessary. Will remove later
-//   // eslint-disable-next-line no-console
-//   console.log("inpage: ", event.data)
-// })

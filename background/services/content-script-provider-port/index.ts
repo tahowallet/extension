@@ -14,8 +14,6 @@ export async function dumbContentScriptProviderPortService(
     port.onMessage.addListener(async ({ target, payload }) => {
       console.log("listener")
       if (target !== "background") return
-      // to demonstrate how it works it was necessary. Will remove later
-      // eslint-disable-next-line no-console
       console.log(`background: request payload: ${JSON.stringify(payload)}`)
       const response = {
         target: "content",
