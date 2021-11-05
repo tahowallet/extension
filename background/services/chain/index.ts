@@ -66,7 +66,7 @@ interface Events extends ServiceLifecycleEvents {
     assetTransfers: AssetTransfer[]
   }
   block: AnyEVMBlock
-  transaction: { forAccounts: string[]; tx: AnyEVMTransaction }
+  transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
   blockPrices: BlockPrices
 }
 
@@ -590,7 +590,7 @@ export default class ChainService extends BaseService<Events> {
         })
 
       // emit in a separate try so outside services still get the tx
-      this.emitter.emit("transaction", { tx, forAccounts })
+      this.emitter.emit("transaction", { transaction: tx, forAccounts })
     } catch (err) {
       error = err
       logger.error(`Error emitting tx ${tx}`, error)

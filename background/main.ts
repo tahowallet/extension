@@ -240,7 +240,7 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
     this.chainService.emitter.on("transaction", (payload) => {
-      const transaction = payload.tx
+      const { transaction } = payload
 
       if (
         transaction.blockHash &&
