@@ -1,4 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import classNames from "classnames"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -35,13 +36,14 @@ function ReadOnlyNotice(): ReactElement {
 }
 
 interface Props {
-  balance: string
+  balance?: string
+  initializationLoadingTimeExpired: boolean
 }
 
 export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
-  const { balance } = props
+  const { balance, initializationLoadingTimeExpired } = props
   const keyringImport = useBackgroundSelector(
     (state) => state.keyrings.importing
   )
@@ -61,15 +63,28 @@ export default function WalletAccountBalanceControl(
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
+  const shouldIndicateLoading =
+    !initializationLoadingTimeExpired && typeof balance === "undefined"
+
   return (
     <>
       <SharedSlideUpMenu isOpen={openReceiveMenu} close={handleClick}>
         {Receive()}
       </SharedSlideUpMenu>
       <div className="wrap">
-        <div className="balance_label">Total account balance</div>
+        <div
+          className={classNames("balance_label", {
+            balance_label_loading: shouldIndicateLoading,
+          })}
+        >
+          Total account balance
+        </div>
         <span className="balance_area">
-          <span className="balance fade_in">
+          <span
+            className={classNames("balance", {
+              balance_loading: shouldIndicateLoading,
+            })}
+          >
             <span className="dollar_sign">$</span>
             {balance}
           </span>
@@ -162,12 +177,34 @@ export default function WalletAccountBalanceControl(
           .save_seed_button_wrap {
             margin-top: 10px;
           }
+          .balance_label_loading {
+            opacity: 0;
+          }
+          .balance_loading {
+            background-color: var(--hunter-green);
+            color: rgba(0, 0, 0, 0);
+            border-radius: 14px;
+            animation: pulse 1.1s infinite;
+            transform: translateY(-10px);
+            width: 250px;
+            height: 100%;
+          }
+          .balance_loading .dollar_sign {
+            color: rgba(0, 0, 0, 0);
+          }
+          @keyframes pulse {
+            0% {
+              background-color: var(--hunter-green);
+            }
+            50% {
+              background-color: var(--green-95);
+            }
+            100 {
+              background-color: var(--hunter-green);
+            }
+          }
         `}
       </style>
     </>
   )
-}
-
-WalletAccountBalanceControl.defaultProps = {
-  balance: "",
 }
