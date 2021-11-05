@@ -1,16 +1,20 @@
 import React, { ReactElement } from "react"
 
-interface Props {
+interface Asset {
   symbol: string
   name: string
-  onClick?: (token: { symbol: string }) => void
+}
+
+interface Props {
+  asset: Asset
+  onClick?: (asset: Asset) => void
 }
 
 export default function SharedAssetItem(props: Props): ReactElement {
-  const { onClick, symbol, name } = props
+  const { onClick, asset } = props
 
   function handleClick() {
-    onClick?.({ symbol })
+    onClick?.(asset)
   }
 
   return (
@@ -18,11 +22,11 @@ export default function SharedAssetItem(props: Props): ReactElement {
       <button type="button" className="token_group" onClick={handleClick}>
         <div className="left">
           <div className="token_icon_wrap">
-            {symbol === "ETH" && <span className="icon_eth" />}
+            {asset.symbol === "ETH" && <span className="icon_eth" />}
           </div>
           <div className="right">
-            <div className="symbol">{symbol}</div>
-            <div className="token_subtitle">{name}</div>
+            <div className="symbol">{asset.symbol}</div>
+            <div className="token_subtitle">{asset.name}</div>
           </div>
         </div>
       </button>
@@ -85,6 +89,8 @@ export default function SharedAssetItem(props: Props): ReactElement {
 }
 
 SharedAssetItem.defaultProps = {
-  symbol: "ETH",
-  name: "Ethereum",
+  asset: {
+    symbol: "ETH",
+    name: "Ethereum",
+  },
 }
