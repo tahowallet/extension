@@ -3,6 +3,7 @@ import { ActivityItem } from "../types"
 
 export type UIState = {
   showingActivityDetail: ActivityItem | null
+  initializationLoadingTimeExpired: boolean
   settings: {
     hideDust: boolean
   }
@@ -10,6 +11,7 @@ export type UIState = {
 
 export const initialState: UIState = {
   showingActivityDetail: null,
+  initializationLoadingTimeExpired: false,
   settings: {
     hideDust: false,
   },
@@ -28,10 +30,18 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetail: activityItem,
     }),
+    initializationLoadingTimeHitLimit: (state) => ({
+      ...state,
+      initializationLoadingTimeExpired: true,
+    }),
   },
 })
 
-export const { setShowingActivityDetail, toggleHideDust } = uiSlice.actions
+export const {
+  setShowingActivityDetail,
+  initializationLoadingTimeHitLimit,
+  toggleHideDust,
+} = uiSlice.actions
 export default uiSlice.reducer
 
 export const selectUI = createSelector(
