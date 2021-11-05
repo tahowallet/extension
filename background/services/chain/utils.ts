@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-
+import { Network as EthersNetwork } from "@ethersproject/networks"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
@@ -10,9 +10,9 @@ import {
   SignedEVMTransaction,
   AnyEVMBlock,
 } from "../../types"
-import { ETHEREUM } from "../../constants"
+import { getEthereumNetwork } from "../../lib/utils"
 
-/*
+/**
  * Parse a block as returned by a polling provider.
  */
 export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
@@ -29,11 +29,11 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
     difficulty: 0n,
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
-    network: ETHEREUM,
+    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
   }
 }
 
-/*
+/**
  * Parse a block as returned by a websocket provider subscription.
  */
 export function blockFromWebsocketBlock(
@@ -57,7 +57,7 @@ export function blockFromWebsocketBlock(
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)
       : undefined,
-    network: ETHEREUM,
+    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
   }
 }
 
@@ -86,7 +86,7 @@ export function ethersTxFromSignedTx(
   }
 }
 
-/*
+/**
  * Parse a transaction as returned by a websocket provider subscription.
  */
 export function txFromWebsocketTx(
@@ -142,7 +142,7 @@ export function txFromWebsocketTx(
   }
 }
 
-/*
+/**
  * Parse a transaction as returned by a polling provider.
  */
 export function txFromEthersTx(

@@ -3,7 +3,7 @@ import addAJVFormats from "ajv-formats"
 
 import { TokenList, schema } from "@uniswap/token-lists"
 
-import { ETHEREUM } from "../constants"
+import { getEthereumNetwork } from "./utils"
 import { SmartContractFungibleAsset, TokenListAndReference } from "../types"
 
 export async function fetchAndValidateTokenList(
@@ -54,7 +54,7 @@ function tokenListToFungibleAssets(
       name: t.name,
       symbol: t.symbol,
       decimals: t.decimals,
-      homeNetwork: ETHEREUM,
+      homeNetwork: getEthereumNetwork(),
       contractAddress: t.address,
     }
   })

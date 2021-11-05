@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { addAccountNetwork } from "@tallyho/tally-background/redux-slices/accounts"
-import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
+import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -23,7 +23,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       dispatch(
         addAccountNetwork({
           account: address,
-          network: ETHEREUM,
+          network: getEthereumNetwork(),
         })
       )
     } else {
