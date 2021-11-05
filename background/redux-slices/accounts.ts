@@ -14,6 +14,32 @@ import {
 import { AssetsState } from "./assets"
 import { UIState } from "./ui"
 
+// Adds user-specific values based on preferences. This is the combination of a
+// conversion to the user's preferred currency for viewing, as well as a
+// conversion to a decimal amount for assets that are represented by
+// fixed-point integers.
+type UserValue = {
+  userValue: number | "unknown"
+  decimalValue: number | "unknown"
+  localizedUserValue?: string
+  localizedDecimalValue?: string
+  localizedPricePerToken?: string
+}
+
+type AccountBalanceWithUserValue = AccountBalance & {
+  assetAmount: AnyAssetAmount & UserValue
+}
+
+type AccountData = {
+  account: string
+  network: Network
+  balances: {
+    [assetSymbol: string]: AccountBalanceWithUserValue
+  }
+  confirmedTransactions: ConfirmedEVMTransaction[]
+  unconfirmedTransactions: AnyEVMTransaction[]
+}
+
 export type AccountState = {
   account?: any
   accountLoading?: string
@@ -26,28 +52,6 @@ export type AccountState = {
   blocks: { [blockHeight: number]: AnyEVMBlock }
 }
 
-export type UserValue = {
-  userValue: number | "unknown"
-  decimalValue: number | "unknown"
-  localizedUserValue?: string
-  localizedDecimalValue?: string
-  localizedPricePerToken?: string
-}
-
-export type AccountBalanceWithUserValue = AccountBalance & {
-  assetAmount: AnyAssetAmount & UserValue
-}
-
-export type AccountData = {
-  account: string
-  network: Network
-  balances: {
-    [assetSymbol: string]: AccountBalanceWithUserValue
-  }
-  confirmedTransactions: ConfirmedEVMTransaction[]
-  unconfirmedTransactions: AnyEVMTransaction[]
-}
-
 export type CombinedAccountData = {
   totalUserValue?: string
   assets: (AnyAssetAmount & UserValue)[]
@@ -55,10 +59,6 @@ export type CombinedAccountData = {
 }
 
 const USER_VALUE_DUST_THRESHOLD = 2
-// Adds user-specific values based on preferences. This is the combination of a
-// conversion to the user's preferred currency for viewing, as well as a
-// conversion to a decimal amount for assets that are represented by
-// fixed-point integers.
 
 // Type assertion to confirm an AnyAssetAmount is a FungibleAssetAmount.
 function isFungibleAssetAmount(
