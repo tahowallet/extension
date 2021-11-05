@@ -10,9 +10,14 @@ export default function Overview(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const initializationLoadingTimeExpired = useBackgroundSelector(
-    (background) => background.ui?.initializationLoadingTimeExpired
-  )
+  const { initializationLoadingTimeExpired, numberOfAddresses } =
+    useBackgroundSelector((background) => {
+      return {
+        numberOfAddresses: Object.keys(background.account.accountsData).length,
+        initializationLoadingTimeExpired:
+          background.ui?.initializationLoadingTimeExpired,
+      }
+    })
 
   return (
     <CorePage hasTopBar={false}>
@@ -35,7 +40,8 @@ export default function Overview(): ReactElement {
         </div>
         <div className="sub_info_row">
           <div className="info_group_item">
-            <span className="info_left">Addresses</span>4
+            <span className="info_left">Addresses</span>
+            {numberOfAddresses}
           </div>
           <div className="info_group_item">
             <span className="info_left">Assets</span>
