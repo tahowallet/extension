@@ -1,7 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
-import { initializationLoadingTimeHitLimit } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -11,8 +10,6 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
-
-  const dispatch = useBackgroundDispatch()
 
   //  accountLoading, hasWalletErrorCode
   const { combinedData, accountData, activity } = useBackgroundSelector(

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { AnyEVMTransaction } from "../types"
 
 export type ActivityItem = AnyEVMTransaction & {
@@ -11,16 +11,25 @@ export type ActivityItem = AnyEVMTransaction & {
 export type UIState = {
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
+  settings: {
+    hideDust: boolean
+  }
 }
 
 export const initialState: UIState = {
   showingActivityDetail: null,
   initializationLoadingTimeExpired: false,
+  settings: {
+    hideDust: false,
+  },
 }
 const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
+    toggleHideDust: (immerState, { payload: shouldHideDust }) => {
+      immerState.settings.hideDust = shouldHideDust
+    },
     setShowingActivityDetail: (
       state,
       { payload: activityItem }: { payload: ActivityItem | null }
@@ -35,6 +44,21 @@ const uiSlice = createSlice({
   },
 })
 
-export const { setShowingActivityDetail, initializationLoadingTimeHitLimit } =
-  uiSlice.actions
+export const {
+  setShowingActivityDetail,
+  initializationLoadingTimeHitLimit,
+  toggleHideDust,
+} = uiSlice.actions
 export default uiSlice.reducer
+
+export const selectUI = createSelector(
+  (state: { ui: UIState }): UIState => state.ui,
+  (uiState) => uiState
+)
+
+export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
+
+export const selectHideDust = createSelector(
+  selectSettings,
+  (settings) => settings.hideDust
+)

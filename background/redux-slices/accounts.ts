@@ -8,10 +8,11 @@ import {
   AnyEVMTransaction,
   ConfirmedEVMTransaction,
   FungibleAssetAmount,
-  Network,
   AnyEVMBlock,
+  Network,
 } from "../types"
 import { AssetsState } from "./assets"
+import { UIState } from "./ui"
 
 // Adds user-specific values based on preferences. This is the combination of a
 // conversion to the user's preferred currency for viewing, as well as a
@@ -39,13 +40,7 @@ type AccountData = {
   unconfirmedTransactions: AnyEVMTransaction[]
 }
 
-export type CombinedAccountData = {
-  totalUserValue?: string
-  assets: (AnyAssetAmount & UserValue)[]
-  activity: AnyEVMTransaction[]
-}
-
-type AccountState = {
+export type AccountState = {
   account?: any
   accountLoading?: string
   hasAccountError?: boolean
@@ -56,6 +51,14 @@ type AccountState = {
   // compatible with the idea of multiple networks.
   blocks: { [blockHeight: number]: AnyEVMBlock }
 }
+
+export type CombinedAccountData = {
+  totalUserValue?: string
+  assets: (AnyAssetAmount & UserValue)[]
+  activity: AnyEVMTransaction[]
+}
+
+const USER_VALUE_DUST_THRESHOLD = 2
 
 // Type assertion to confirm an AnyAssetAmount is a FungibleAssetAmount.
 function isFungibleAssetAmount(
@@ -189,7 +192,6 @@ const accountSlice = createSlice({
           asset: { symbol: updatedAssetSymbol },
         },
       } = updatedAccountBalance
-
       const existingAccountData = immerState.accountsData[updatedAccount]
       if (existingAccountData && existingAccountData !== "loading") {
         existingAccountData.balances[updatedAssetSymbol] =
@@ -235,7 +237,6 @@ const accountSlice = createSlice({
             amount:
               (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
           })
-
           return acc
         }, {})
       )
@@ -379,12 +380,13 @@ export const getAccountState = (state: {
 export const getFullState = (state: {
   account: AccountState
   assets: AssetsState
-}): { account: AccountState; assets: AssetsState } => state
+  ui: UIState
+}): { account: AccountState; assets: AssetsState; ui: UIState } => state
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
   (state) => {
-    const { account, assets } = state
+    const { account, assets, ui } = state
 
     // Derive activities with timestamps included
     const activity = account.combinedData.activity.map((activityItem) => {
@@ -406,7 +408,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
-    const accountAssets = account.combinedData.assets
+    let accountAssets = account.combinedData.assets
       .filter((assetItem) => {
         return assetItem.localizedDecimalValue !== "∞"
       })
@@ -467,6 +469,26 @@ export const selectAccountAndTimestampedActivities = createSelector(
           ...assetItem,
         }
       })
+
+    // If hideDust is true the below will filter out tokens that have USD value set
+    // Value currently set to 2(usd) can be changed to a dynamic value later
+    // This will have to use a different method if we introduce other currencies
+    if (ui.settings.hideDust) {
+      accountAssets = accountAssets.filter((assetItem) => {
+        const reformat = parseFloat(
+          assetItem.localizedUserValue?.replace(/,/g, "") ?? "0"
+        )
+        return (
+          reformat > USER_VALUE_DUST_THRESHOLD ||
+          assetItem.localizedUserValue === "Unknown"
+        )
+      })
+    }
+
+    accountAssets = accountAssets.filter(
+      (assetItem) =>
+        assetItem.decimalValue > 0 || assetItem.decimalValue === null
+    )
 
     return {
       combinedData: {
