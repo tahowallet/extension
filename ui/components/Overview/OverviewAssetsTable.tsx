@@ -1,13 +1,15 @@
 import React, { ReactElement } from "react"
 import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 interface Props {
   assets: CombinedAccountData["assets"]
+  initializationLoadingTimeExpired: boolean
 }
 
 export default function OverviewAssetsTable(props: Props): ReactElement {
-  const { assets } = props
+  const { assets, initializationLoadingTimeExpired } = props
   if (!assets) return <></>
 
   return (
@@ -33,16 +35,28 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
               </div>
             </td>
             <td>
-              <div>
-                <span className="lighter_color">$</span>
-                {asset.localizedPricePerToken}
-              </div>
+              {asset.localizedPricePerToken ? (
+                <div>
+                  <span className="lighter_color">$</span>
+                  {asset.localizedPricePerToken}
+                </div>
+              ) : (
+                <div className="loading_wrap">
+                  {initializationLoadingTimeExpired ? (
+                    <></>
+                  ) : (
+                    <SharedLoadingSpinner size="small" />
+                  )}
+                </div>
+              )}
             </td>
             <td>
-              <div>
-                <span className="lighter_color">$</span>
-                {asset.localizedUserValue}
-              </div>
+              {asset.localizedUserValue && (
+                <div>
+                  <span className="lighter_color">$</span>
+                  {asset.localizedUserValue}
+                </div>
+              )}
               <div className="balance_token_amount">
                 {asset.localizedDecimalValue}
               </div>
@@ -98,6 +112,10 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         }
         .asset_name {
           margin-left: 7px;
+        }
+        .loading_wrap {
+          display: flex;
+          justify-content: flex-end;
         }
       `}</style>
     </table>

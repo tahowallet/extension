@@ -22,6 +22,7 @@ type UserValue = {
   decimalValue: number | "unknown"
   localizedUserValue?: string
   localizedDecimalValue?: string
+  localizedPricePerToken?: string
 }
 
 type AccountBalanceWithUserValue = AccountBalance & {
