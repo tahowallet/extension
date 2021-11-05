@@ -1,5 +1,12 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
-import { ActivityItem } from "../types"
+import { AnyEVMTransaction } from "../types"
+
+export type ActivityItem = AnyEVMTransaction & {
+  timestamp?: string
+  value: bigint
+  from?: string
+  isSent?: boolean
+}
 
 export type UIState = {
   showingActivityDetail: ActivityItem | null

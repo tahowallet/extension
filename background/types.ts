@@ -343,10 +343,3 @@ export type BlockEstimate = {
   maxPriorityFeePerGas: bigint | number
   maxFeePerGas: bigint | number
 }
-
-export type ActivityItem = AnyEVMTransaction & {
-  timestamp?: string
-  value: bigint
-  from?: string
-  isSent?: boolean
-}
