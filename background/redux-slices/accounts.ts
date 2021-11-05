@@ -9,13 +9,51 @@ import {
   ConfirmedEVMTransaction,
   FungibleAssetAmount,
   AnyEVMBlock,
-  UserValue,
-  AccountBalanceWithUserValue,
-  AccountState,
-  AccountData,
-  UIState,
+  Network,
 } from "../types"
 import { AssetsState } from "./assets"
+import { UIState } from "./ui"
+
+export type AccountState = {
+  account?: any
+  accountLoading?: string
+  hasAccountError?: boolean
+  // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
+  accountsData: { [account: string]: AccountData | "loading" }
+  combinedData: CombinedAccountData
+  // TODO the blockHeight key should be changed to something
+  // compatible with the idea of multiple networks.
+  blocks: { [blockHeight: number]: AnyEVMBlock }
+}
+
+export type UserValue = {
+  userValue: number | "unknown"
+  decimalValue: number | "unknown"
+  localizedUserValue: string
+  localizedDecimalValue: string
+}
+
+export type AccountBalanceWithUserValue = AccountBalance & {
+  assetAmount: AnyAssetAmount & UserValue
+}
+
+export type AccountData = {
+  account: string
+  network: Network
+  balances: {
+    [assetSymbol: string]: AccountBalanceWithUserValue
+  }
+  confirmedTransactions: ConfirmedEVMTransaction[]
+  unconfirmedTransactions: AnyEVMTransaction[]
+}
+
+export type CombinedAccountData = {
+  totalUserValue: string
+  assets: (AnyAssetAmount & UserValue)[]
+  activity: AnyEVMTransaction[]
+}
+
+const USER_VALUE_DUST_THRESHOLD = 2
 
 // Adds user-specific values based on preferences. This is the combination of a
 // conversion to the user's preferred currency for viewing, as well as a
@@ -445,7 +483,10 @@ export const selectAccountAndTimestampedActivities = createSelector(
         const reformat = parseFloat(
           assetItem.localizedUserValue.replace(/,/g, "")
         )
-        return reformat > 2 || assetItem.localizedUserValue === "Unknown"
+        return (
+          reformat > USER_VALUE_DUST_THRESHOLD ||
+          assetItem.localizedUserValue === "Unknown"
+        )
       })
     }
 

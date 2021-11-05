@@ -1,10 +1,12 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
-import {
-  AccountState,
-  ActivityItem,
-  AnyEVMTransaction,
-  UIState,
-} from "../types"
+import { ActivityItem } from "../types"
+
+export type UIState = {
+  showingActivityDetail: ActivityItem | null
+  settings: {
+    hideDust: boolean
+  }
+}
 
 export const initialState: UIState = {
   showingActivityDetail: null,
@@ -32,12 +34,12 @@ const uiSlice = createSlice({
 export const { setShowingActivityDetail, toggleHideDust } = uiSlice.actions
 export default uiSlice.reducer
 
-export const selectUi = createSelector(
+export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
 )
 
-export const selectSettings = createSelector(selectUi, (ui) => ui.settings)
+export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 
 export const selectHideDust = createSelector(
   selectSettings,

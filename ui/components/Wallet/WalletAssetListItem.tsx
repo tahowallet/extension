@@ -4,7 +4,7 @@ import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 
-import { CombinedAccountData } from "@tallyho/tally-background/types"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {

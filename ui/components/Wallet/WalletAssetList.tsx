@@ -1,6 +1,6 @@
 // @ts-check
 //
-import { CombinedAccountData } from "@tallyho/tally-background/types"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement } from "react"
 import WalletAssetListItem from "./WalletAssetListItem"
 
