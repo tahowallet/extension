@@ -1,10 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { keysMap, adaptForUI, ActivityItem } from "./utils"
 
-const { compare } = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: "base",
-})
 export { ActivityItem }
 
 export type ActivitiesState = {
@@ -23,15 +19,12 @@ const insertActivityItemSorted = (
   while (low < high) {
     const mid = (low + high) / 2
 
-    if (
-      compare(
-        `${activityItems[mid].blockHeight}`,
-        `${activityItem.blockHeight}`
-      ) > 0
-    ) {
-      low = mid + 1
-    } else {
-      high = mid
+    if (activityItems[mid]?.blockHeight) {
+      if (activityItems[mid].blockHeight > activityItem.blockHeight) {
+        low = mid + 1
+      } else {
+        high = mid
+      }
     }
   }
 
