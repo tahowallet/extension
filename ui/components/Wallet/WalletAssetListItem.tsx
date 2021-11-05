@@ -3,7 +3,6 @@
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
-import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
