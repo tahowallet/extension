@@ -1,9 +1,6 @@
 import React, { ReactElement } from "react"
-
-interface Asset {
-  symbol: string
-  name: string
-}
+import { Asset } from "@tallyho/tally-background/types"
+import SharedAssetIcon from "./SharedAssetIcon"
 
 interface Props {
   asset: Asset
@@ -20,18 +17,32 @@ export default function SharedAssetItem(props: Props): ReactElement {
   return (
     <li>
       <button type="button" className="token_group" onClick={handleClick}>
-        <div className="left">
-          <div className="token_icon_wrap">
-            {asset.symbol === "ETH" && <span className="icon_eth" />}
-          </div>
-          <div className="right">
-            <div className="symbol">{asset.symbol}</div>
-            <div className="token_subtitle">{asset.name}</div>
+        <div className="list_item standard_width">
+          <div className="left">
+            <SharedAssetIcon
+              logoURL={asset?.metadata?.logoURL}
+              symbol={asset?.symbol}
+            />
+
+            <div className="left_content">
+              <div className="symbol">{asset.symbol}</div>
+              <div className="token_subtitle">{asset.name}</div>
+            </div>
           </div>
         </div>
       </button>
       <style jsx>
         {`
+          .left {
+            display: flex;
+          }
+          .left_content {
+            display: flex;
+            flex-direction: column;
+            height: 41px;
+            justify-content: space-between;
+            margin-left: 16px;
+          }
           .token_group {
             display: flex;
             align-items: center;
