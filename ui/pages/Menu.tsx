@@ -9,7 +9,10 @@ import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 
-function SettingRow(props: { title: string; component: any }): ReactElement {
+function SettingRow(props: {
+  title: string
+  component: () => ReactElement
+}): ReactElement {
   const { title, component } = props
 
   return (
@@ -60,37 +63,31 @@ export default function Menu(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
 
-  const toggleHideDustAssets = () => {
-    dispatch(toggleHideDust(!hideDust))
+  const toggleHideDustAssets = (toggleValue: boolean) => {
+    dispatch(toggleHideDust(toggleValue))
   }
   const settings = {
     general: [
       {
         title: "Main Currency",
-        component: () => {
-          return (
-            <SharedButton size="medium" type="secondary" icon="chevron">
-              USD
-            </SharedButton>
-          )
-        },
+        component: () => (
+          <SharedButton size="medium" type="secondary" icon="chevron">
+            USD
+          </SharedButton>
+        ),
       },
       {
         title: "Hide asset balance under $2",
-        component: () => {
-          return (
-            <SharedToggleButton
-              onChange={toggleHideDustAssets}
-              value={hideDust}
-            />
-          )
-        },
+        component: () => (
+          <SharedToggleButton
+            onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
+            value={hideDust}
+          />
+        ),
       },
       {
         title: "Use Tally as default wallet",
-        component: () => {
-          return <SharedToggleButton onChange={() => {}} />
-        },
+        component: () => <SharedToggleButton onChange={() => {}} />,
       },
       {
         title: "Token list",
@@ -100,9 +97,7 @@ export default function Menu(): ReactElement {
     developer: [
       {
         title: "Show testnet networks",
-        component: () => {
-          return <SharedToggleButton onChange={() => {}} />
-        },
+        component: () => <SharedToggleButton onChange={() => {}} />,
       },
       {
         title: "Contracts deployed by users",

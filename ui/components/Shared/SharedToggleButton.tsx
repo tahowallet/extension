@@ -2,7 +2,7 @@ import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
 
 interface SharedToggleButtonProps {
-  onChange: () => void
+  onChange: (toggleValue: boolean) => void
   value?: boolean
 }
 
@@ -14,7 +14,7 @@ export default function SharedToggleButton({
 
   const handleToggleAction = () => {
     setIsActive(!isActive)
-    onChange()
+    onChange(!isActive)
   }
 
   return (
