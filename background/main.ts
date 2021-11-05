@@ -38,6 +38,7 @@ import {
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
+import { dumbContentScriptProviderPortService } from "./services/content-script-provider-port"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
@@ -212,6 +213,8 @@ export default class Main extends BaseService<never> {
       this.indexingService.startService(),
       this.keyringService.startService(),
     ])
+
+    await dumbContentScriptProviderPortService(this.chainService)
   }
 
   protected async internalStopService(): Promise<void> {

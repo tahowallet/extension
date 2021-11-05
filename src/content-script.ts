@@ -30,8 +30,7 @@ function setupConnection() {
 
     port.postMessage({
       target: "background",
-      source: event.data.target,
-      message: `ping ${event.data.message}`,
+      payload: event.data.payload,
     })
   })
 
@@ -46,8 +45,7 @@ function setupConnection() {
     window.postMessage(
       {
         target: "inpage",
-        source: payload.target,
-        message: `ACK ${payload.message}`,
+        payload: payload.payload,
       },
       window.location.origin
     )
