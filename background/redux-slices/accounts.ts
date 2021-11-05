@@ -490,7 +490,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
       })
     }
 
-    accountAssets = accountAssets.filter((assetItem) => assetItem.amount > 0)
+    accountAssets = accountAssets.filter(
+      (assetItem) => assetItem.decimalValue > 0
+    )
 
     return {
       combinedData: {
