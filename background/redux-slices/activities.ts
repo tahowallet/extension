@@ -161,7 +161,5 @@ export type Events = {
   activityEncountered: AnyEVMTransaction
 }
 
-export const emitter = new Emittery<Events>()
-
 export const { activityEncountered } = activitiesSlice.actions
 export default activitiesSlice.reducer

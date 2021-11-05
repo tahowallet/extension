@@ -28,10 +28,7 @@ import {
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
-import {
-  activityEncountered,
-  emitter as activitiesSliceEmitter,
-} from "./redux-slices/activities"
+import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
