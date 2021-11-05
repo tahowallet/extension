@@ -20,7 +20,7 @@ function SelectTokenMenuContent(
   )
 
   const displayAssets = combinedData.assets.filter(
-    ({ asset, amount }) => asset.symbol === "ETH" || amount > 0
+    ({ asset, amount }) => amount > 0 && !asset.symbol.match(/^yv|^uni/i)
   )
 
   return (
