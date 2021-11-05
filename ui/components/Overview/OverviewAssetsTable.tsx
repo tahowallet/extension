@@ -1,9 +1,9 @@
 import React, { ReactElement } from "react"
-import { convertToEth } from "@tallyho/tally-background/lib/utils"
+import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
-  assets: any[]
+  assets: CombinedAccountData["assets"]
 }
 
 export default function OverviewAssetsTable(props: Props): ReactElement {
