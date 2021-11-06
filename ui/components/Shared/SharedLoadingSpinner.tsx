@@ -1,9 +1,13 @@
 import React, { ReactElement } from "react"
+import classNames from "classnames"
 
-export default function SharedLoadingSpinner(): ReactElement {
+export default function SharedLoadingSpinner(props: {
+  size: "small" | "medium"
+}): ReactElement {
+  const { size } = props
+
   return (
-    <>
-      <div className="spinner" />
+    <div className={classNames("spinner", size)}>
       <style jsx>
         {`
           .spinner {
@@ -20,8 +24,17 @@ export default function SharedLoadingSpinner(): ReactElement {
               transform: rotate(360deg);
             }
           }
+          .small {
+            width: 14px;
+            height: 14px;
+            animation: spinner 0.8s linear infinite;
+          }
         `}
       </style>
-    </>
+    </div>
   )
+}
+
+SharedLoadingSpinner.defaultProps = {
+  size: "medium",
 }

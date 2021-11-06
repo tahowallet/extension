@@ -32,6 +32,7 @@ import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
 } from "./redux-slices/keyrings"
+import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
   gasEstimates,
   emitter as transactionSliceEmitter,
@@ -189,7 +190,12 @@ export default class Main extends BaseService<never> {
      */
     private keyringService: KeyringService
   ) {
-    super()
+    super({
+      initialLoadWaitExpired: {
+        schedule: { delayInMinutes: 2.5 },
+        handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
+      },
+    })
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState)
