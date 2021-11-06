@@ -1,7 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
-import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
+import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -32,7 +32,7 @@ export default function Wallet(): ReactElement {
         <div className="page_content">
           <div className="section">
             <WalletAccountBalanceControl
-              balance={combinedData.totalUserValue}
+              balance={combinedData.totalMainCurrencyValue}
               initializationLoadingTimeExpired={
                 initializationLoadingTimeExpired
               }

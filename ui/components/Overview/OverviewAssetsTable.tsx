@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react"
-import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 interface Props {
-  assets: CombinedAccountData["assets"]
+  assets: CompleteAssetAmount[]
   initializationLoadingTimeExpired: boolean
 }
 
@@ -51,14 +51,14 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
               )}
             </td>
             <td>
-              {asset.localizedUserValue && (
+              {asset.localizedDecimalAmount && (
                 <div>
                   <span className="lighter_color">$</span>
-                  {asset.localizedUserValue}
+                  {asset.localizedMainCurrencyValue}
                 </div>
               )}
               <div className="balance_token_amount">
-                {asset.localizedDecimalValue}
+                {asset.localizedMainCurrencyValue}
               </div>
             </td>
           </tr>

@@ -2,6 +2,7 @@ import { fetchJson } from "@ethersproject/web"
 import { JSONSchemaType } from "ajv"
 import logger from "./logger"
 import {
+  AnyAsset,
   CoinGeckoAsset,
   FiatCurrency,
   PricePoint,
@@ -79,7 +80,7 @@ function multiplyByFloat(n: bigint, f: number, precision: number) {
 }
 
 export async function getPrices(
-  assets: CoinGeckoAsset[],
+  assets: (AnyAsset & CoinGeckoAsset)[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
   const coinIds = assets.map((a) => a.metadata.coinGeckoId).join(",")
@@ -119,7 +120,10 @@ export async function getPrices(
             pair: [c, asset],
             amounts: [
               multiplyByFloat(BigInt(10) ** BigInt(c.decimals), coinPrice, 8),
-              BigInt(1),
+              // Scale the reference amount to the asset's decimals; if the
+              // asset is not fungible, assume 0 decimals, i.e. that this is a
+              // unit price.
+              1n * 10n ** ("decimals" in asset ? BigInt(asset.decimals) : 0n),
             ],
             time: resolutionTime,
           }

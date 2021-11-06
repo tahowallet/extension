@@ -12,6 +12,7 @@ export type UIState = {
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
   settings: {
+    mainCurrency: string
     hideDust: boolean
   }
 }
@@ -20,6 +21,7 @@ export const initialState: UIState = {
   showingActivityDetail: null,
   initializationLoadingTimeExpired: false,
   settings: {
+    mainCurrency: "USD",
     hideDust: false,
   },
 }
@@ -61,4 +63,9 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings.hideDust
+)
+
+export const selectMainCurrency = createSelector(
+  selectSettings,
+  (settings) => settings.mainCurrency
 )

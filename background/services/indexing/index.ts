@@ -351,7 +351,7 @@ export default class IndexingService extends BaseService<Events> {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const basicPrices = await getPrices(
-        [BTC, ETH] as CoinGeckoAsset[],
+        [BTC, ETH] as (CoinGeckoAsset & AnyAsset)[],
         FIAT_CURRENCIES
       )
 
@@ -363,7 +363,12 @@ export default class IndexingService extends BaseService<Events> {
         this.db
           .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
           .catch((err) =>
-            logger.error("Error saving price point", pricePoint, measuredAt)
+            logger.error(
+              "Error saving price point",
+              pricePoint,
+              measuredAt,
+              err
+            )
           )
       })
     } catch (e) {

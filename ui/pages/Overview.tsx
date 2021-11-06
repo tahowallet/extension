@@ -26,10 +26,10 @@ export default function Overview(): ReactElement {
           <span className="total_balance_label">Total balance</span>
           <div className="primary_balance">
             {initializationLoadingTimeExpired ||
-            combinedData?.totalUserValue ? (
+            combinedData?.totalMainCurrencyValue ? (
               <>
                 <span className="primary_money_sign">$</span>
-                {combinedData?.totalUserValue}
+                {combinedData?.totalMainCurrencyValue}
               </>
             ) : (
               <div className="loading_wrap">

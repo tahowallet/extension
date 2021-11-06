@@ -1,4 +1,5 @@
 import { browser, newProxyStore } from "@tallyho/tally-background"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 
 newProxyStore().then((backgroundStore) => {
   // undefined if no account has been resolved, string array with the latest
@@ -8,8 +9,8 @@ newProxyStore().then((backgroundStore) => {
   backgroundStore.subscribe(() => {
     const state = backgroundStore.getState()
     const {
-      combinedData: { totalUserValue, activity: updatedActivity },
-    } = state.account
+      combinedData: { totalMainCurrencyValue, activity: updatedActivity },
+    } = selectAccountAndTimestampedActivities(state)
 
     if (updatedActivity) {
       // Undefined activity hashes means we're initializing. Otherwise, notify
@@ -24,8 +25,8 @@ newProxyStore().then((backgroundStore) => {
         browser.notifications.create("balance-update", {
           type: "basic",
           title: "Balance Update",
-          message: `<address> has balance ${totalUserValue}`,
-          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalUserValue}`,
+          message: `<address> has balance ${totalMainCurrencyValue}`,
+          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalMainCurrencyValue}`,
         })
       }
 
