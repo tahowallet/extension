@@ -39,6 +39,9 @@ export async function dumbContentScriptProviderPortService(
           .then(([acc]) => ({ result: acc.network.chainID }))
       }
       case "eth_accounts":
+        return chainService
+          .getAccountsToTrack()
+          .then(([acc]) => ({ result: [acc.account] }))
       case "eth_gasPrice":
       case "eth_blockNumber":
       case "eth_getBalance":
