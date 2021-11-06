@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import { Asset } from "@tallyho/tally-background/types"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
@@ -7,7 +8,7 @@ import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface SelectTokenMenuContentProps {
-  setSelectedTokenAndClose: (token: { symbol: string }) => void
+  setSelectedTokenAndClose: (token: Asset) => void
 }
 
 function SelectTokenMenuContent(
@@ -20,7 +21,7 @@ function SelectTokenMenuContent(
   )
 
   const displayAssets = combinedData.assets.filter(
-    ({ asset, amount }) => amount > 0 && !asset.symbol.match(/^yv|^uni/i)
+    ({ asset, amount }) => amount > 0
   )
 
   return (
@@ -92,18 +93,24 @@ function SelectTokenMenuContent(
 }
 
 interface SelectedTokenButtonProps {
+  asset: Asset
   toggleIsTokenMenuOpen?: () => void
 }
 
 function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
-  const { toggleIsTokenMenuOpen } = props
+  const { asset, toggleIsTokenMenuOpen } = props
 
   return (
     <button type="button" onClick={toggleIsTokenMenuOpen}>
       <div className="asset_icon_wrap">
-        <SharedAssetIcon />
+        <SharedAssetIcon
+          logoURL={asset?.metadata?.logoURL}
+          symbol={asset?.symbol}
+        />
       </div>
-      ETH
+
+      {asset?.symbol}
+
       <style jsx>{`
         button {
           display: flex;
@@ -128,9 +135,9 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
-  onAssetSelected?: (token: { symbol: string }) => void
+  onAssetSelected?: (token: Asset) => void
   label: string
-  defaultToken: { symbol: string }
+  defaultToken: Asset
   isTokenOptionsLocked: boolean
 }
 
@@ -194,6 +201,7 @@ export default function SharedAssetInput(
           <>
             {selectedToken?.symbol ? (
               <SelectedTokenButton
+                asset={selectedToken}
                 toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
               />
             ) : (
@@ -267,6 +275,6 @@ export default function SharedAssetInput(
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isTokenOptionsLocked: false,
-  defaultToken: { symbol: "" },
+  defaultToken: { symbol: "", name: "" },
   label: "",
 }
