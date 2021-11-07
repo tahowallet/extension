@@ -1,7 +1,5 @@
 import { TokenList } from "@uniswap/token-lists"
 
-// Networks use FungibleAsset for base assets only.
-// eslint-disable-next-line import/no-cycle
 import { Network, NetworkSpecific, SmartContract } from "./networks"
 import { HexString, UNIXTime } from "./types"
 

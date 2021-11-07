@@ -1,13 +1,18 @@
-// For network base assets only.
-// eslint-disable-next-line import/no-cycle
-import { FungibleAsset } from "./assets"
 import { HexString, UNIXTime } from "./types"
 
 export type NetworkFamily = "EVM" | "BTC"
 
+// Should be structurally compatible with FungibleAsset or much code will
+// explode.
+type NetworkBaseAsset = {
+  symbol: string
+  name: string
+  decimals: number
+}
+
 export interface Network {
   name: string
-  baseAsset: FungibleAsset
+  baseAsset: NetworkBaseAsset
   family: NetworkFamily
   chainID?: string
 }
@@ -54,7 +59,7 @@ export type EVMTransaction = {
   value: bigint
   blockHash: string | null
   blockHeight: number | null
-  asset: FungibleAsset
+  asset: NetworkBaseAsset
   network: EVMNetwork
   /*
    * 0 - plain jane
