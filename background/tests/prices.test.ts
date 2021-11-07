@@ -191,7 +191,7 @@ describe("lib/prices.ts", () => {
 
       const getPricesResponse = [
         {
-          amounts: [639090000000000n, 1n],
+          amounts: [639090000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             {
@@ -208,7 +208,7 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [549280000000000n, 1n],
+          amounts: [549280000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "euro", symbol: "EUR" },
             {
@@ -225,7 +225,7 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [4079080000000000n, 1n],
+          amounts: [4079080000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "renminbi", symbol: "CNY" },
             {
@@ -242,7 +242,7 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [38365300000000n, 1n],
+          amounts: [38365300000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             {
@@ -259,7 +259,7 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [32973600000000n, 1n],
+          amounts: [32973600000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "euro", symbol: "EUR" },
             {
@@ -276,7 +276,7 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [244870000000000n, 1n],
+          amounts: [244870000000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "renminbi", symbol: "CNY" },
             {
@@ -328,7 +328,7 @@ describe("lib/prices.ts", () => {
       }
       const getPricesResponse = [
         {
-          amounts: [38365300000000n, 1n],
+          amounts: [38365300000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             {
