@@ -1,5 +1,5 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
-import { AnyAsset, PricePoint } from "../types"
+import { AnyAsset, PricePoint } from "../assets"
 
 type SingleAssetState = AnyAsset & {
   prices: PricePoint[]

@@ -1,15 +1,14 @@
 import { BigNumber } from "ethers"
 import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { Network as EthersNetwork } from "@ethersproject/networks"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
+import { FungibleAsset } from "../../assets"
 import {
   AnyEVMTransaction,
-  FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
   AnyEVMBlock,
-} from "../../types"
+} from "../../networks"
 import { getEthereumNetwork } from "../../lib/utils"
 
 /**

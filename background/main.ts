@@ -16,7 +16,8 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { SignedEVMTransaction, KeyringTypes } from "./types"
+import { SignedEVMTransaction } from "./networks"
+import { KeyringTypes } from "./types"
 
 import rootReducer from "./redux-slices"
 import {

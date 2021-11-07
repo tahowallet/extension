@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { EIP1559TransactionRequest, BlockPrices } from "../types"
+import { EIP1559TransactionRequest, BlockPrices } from "../networks"
 import { createBackgroundAsyncThunk } from "./utils"
 
 type TransactionConstruction = {

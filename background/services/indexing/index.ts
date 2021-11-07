@@ -1,17 +1,17 @@
 import logger from "../../lib/logger"
 
+import { AccountNetwork, AccountBalance } from "../../accounts"
+import { Network } from "../../networks"
+import { HexString } from "../../types"
 import {
-  AccountBalance,
-  AccountNetwork,
   AnyAsset,
   CoinGeckoAsset,
   FungibleAsset,
-  HexString,
   isSmartContractFungibleAsset,
-  Network,
   PricePoint,
   SmartContractFungibleAsset,
-} from "../../types"
+} from "../../assets"
+
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
 import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"

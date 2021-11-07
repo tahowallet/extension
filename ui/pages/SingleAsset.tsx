@@ -39,9 +39,9 @@ export default function SingleAsset(): ReactElement {
             <div className="balance">
               {filteredAsset.localizedDecimalAmount}
             </div>
-            {filteredAsset.localizedMainCurrencyValue && (
+            {filteredAsset.localizedMainCurrencyAmount && (
               <div className="usd_value">
-                ${filteredAsset.localizedMainCurrencyValue}
+                ${filteredAsset.localizedMainCurrencyAmount}
               </div>
             )}
           </div>

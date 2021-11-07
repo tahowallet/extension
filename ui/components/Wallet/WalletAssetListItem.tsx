@@ -15,7 +15,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   const { assetAmount, initializationLoadingTimeExpired } = props
 
   const isMissingMainCurrencyValue =
-    typeof assetAmount.localizedMainCurrencyValue === "undefined"
+    typeof assetAmount.localizedMainCurrencyAmount === "undefined"
 
   return (
     <li>
@@ -36,7 +36,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
-                  {assetAmount.localizedMainCurrencyValue}
+                  {assetAmount.localizedMainCurrencyAmount}
                 </span>
                 {assetAmount.asset.symbol}
               </div>
@@ -48,7 +48,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                   {isMissingMainCurrencyValue ? (
                     <SharedLoadingSpinner size="small" />
                   ) : (
-                    `$${assetAmount.localizedMainCurrencyValue}`
+                    `$${assetAmount.localizedMainCurrencyAmount}`
                   )}
                 </div>
               )}

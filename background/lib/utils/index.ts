@@ -1,6 +1,7 @@
 import { utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
-import { HexString, EVMNetwork } from "../../types"
+import { HexString } from "../../types"
+import { EVMNetwork } from "../../networks"
 import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {

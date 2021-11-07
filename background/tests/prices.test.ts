@@ -5,7 +5,7 @@ import { jsonSchemaValidatorFor } from "../lib/validation"
 
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
-import { CoinGeckoAsset } from "../types"
+import { CoinGeckoAsset } from "../assets"
 import {
   CoingeckoPriceData,
   coingeckoPriceSchema,

@@ -1,5 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
-import { AnyEVMTransaction } from "../types"
+import { AnyEVMTransaction } from "../networks"
 
 export type ActivityItem = AnyEVMTransaction & {
   timestamp?: string

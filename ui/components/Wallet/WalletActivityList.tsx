@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback } from "react"
 
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
-import { AnyEVMTransaction } from "@tallyho/tally-background/types"
+import { AnyEVMTransaction } from "@tallyho/tally-background/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"

@@ -1,15 +1,15 @@
 import Dexie from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
+import { Network } from "../../networks"
+import { AccountBalance } from "../../accounts"
 import {
-  AccountBalance,
   AnyAsset,
   FungibleAsset,
-  Network,
   PricePoint,
   SmartContractFungibleAsset,
   TokenListCitation,
-} from "../../types"
+} from "../../assets"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for

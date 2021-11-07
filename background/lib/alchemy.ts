@@ -5,7 +5,8 @@ import {
 import { utils } from "ethers"
 
 import logger from "./logger"
-import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
+import { HexString } from "../types"
+import { AssetTransfer, SmartContractFungibleAsset } from "../assets"
 import { ETH } from "../constants"
 import { jtdValidatorFor } from "./validation"
 import { getEthereumNetwork } from "./utils"
@@ -128,6 +129,7 @@ export async function getAssetTransfers(
             homeNetwork: getEthereumNetwork(), // TODO internally track the current network instead of relying on the .env file
           }
         : ETH
+
       return {
         network: getEthereumNetwork(), // TODO make this friendly across other networks
         assetAmount: {

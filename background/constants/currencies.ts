@@ -1,26 +1,26 @@
-import { FiatCurrency, FungibleAsset } from "../types"
+import { FiatCurrency, FungibleAsset } from "../assets"
 
-export const USD = {
+export const USD: FiatCurrency = {
   name: "United States Dollar",
   symbol: "USD",
   decimals: 10,
-} as FiatCurrency
+}
 
-export const EUR = {
+export const EUR: FiatCurrency = {
   name: "euro",
   symbol: "EUR",
   decimals: 10,
-} as FiatCurrency
+}
 
-export const CNY = {
+export const CNY: FiatCurrency = {
   name: "renminbi",
   symbol: "CNY",
   decimals: 10,
-} as FiatCurrency
+}
 
 export const FIAT_CURRENCIES = [USD, EUR, CNY]
 
-export const ETH = {
+export const ETH: FungibleAsset = {
   name: "Ether",
   symbol: "ETH",
   decimals: 18,
@@ -29,9 +29,9 @@ export const ETH = {
     tokenLists: [],
     websiteURL: "https://ethereum.org",
   },
-} as FungibleAsset
+}
 
-export const BTC = {
+export const BTC: FungibleAsset = {
   name: "Bitcoin",
   symbol: "BTC",
   decimals: 8,
@@ -40,7 +40,7 @@ export const BTC = {
     tokenLists: [],
     websiteURL: "https://bitcoin.org",
   },
-} as FungibleAsset
+}
 
 export const BASE_ASSETS = [ETH, BTC]
 

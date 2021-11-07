@@ -1,14 +1,9 @@
 import Dexie from "dexie"
 
-import {
-  AccountBalance,
-  AccountNetwork,
-  AnyEVMBlock,
-  AnyEVMTransaction,
-  FungibleAsset,
-  Network,
-  UNIXTime,
-} from "../../types"
+import { AccountBalance, AccountNetwork } from "../../accounts"
+import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
+import { FungibleAsset } from "../../assets"
+import { UNIXTime } from "../../types"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"

@@ -2,7 +2,8 @@ import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers } from "ethers"
 import { getTokenBalances } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
-import { AccountBalance, SmartContractFungibleAsset } from "../types"
+import { AccountBalance } from "../accounts"
+import { SmartContractFungibleAsset } from "../assets"
 
 /*
  * Get an account's balance from an ERC20-compliant contract.

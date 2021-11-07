@@ -6,19 +6,18 @@ import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
 
+import { HexString } from "../../types"
+import { AccountBalance, AccountNetwork } from "../../accounts"
 import {
-  AccountBalance,
-  AccountNetwork,
   AnyEVMBlock,
   AnyEVMTransaction,
-  AssetTransfer,
   EIP1559TransactionRequest,
   EVMNetwork,
-  HexString,
   Network,
   SignedEVMTransaction,
   BlockPrices,
-} from "../../types"
+} from "../../networks"
+import { AssetTransfer } from "../../assets"
 import { getAssetTransfers } from "../../lib/alchemy"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
