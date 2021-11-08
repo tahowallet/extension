@@ -1,6 +1,7 @@
 import { utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
-import { HexString } from "../../types"
+import { HexString, EVMNetwork } from "../../types"
+import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
@@ -44,4 +45,30 @@ export function decodeJSON(input: string): unknown {
       ? BigInt(value.B_I_G_I_N_T)
       : value
   )
+}
+
+/**
+ * Determine which Ethereum network should be used based on the .env file
+ */
+export function getEthereumNetwork(): EVMNetwork {
+  const ethereumNetwork = process.env.ETHEREUM_NETWORK?.toUpperCase()
+
+  if (ethereumNetwork === "ROPSTEN") {
+    return ROPSTEN
+  }
+
+  if (ethereumNetwork === "RINKEBY") {
+    return RINKEBY
+  }
+
+  if (ethereumNetwork === "GOERLI") {
+    return GOERLI
+  }
+
+  if (ethereumNetwork === "KOVAN") {
+    return KOVAN
+  }
+
+  // Default to mainnet
+  return ETHEREUM
 }

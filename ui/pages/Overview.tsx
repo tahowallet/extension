@@ -3,11 +3,21 @@ import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
+import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 
 export default function Overview(): ReactElement {
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
+
+  const { initializationLoadingTimeExpired, numberOfAddresses } =
+    useBackgroundSelector((background) => {
+      return {
+        numberOfAddresses: Object.keys(background.account.accountsData).length,
+        initializationLoadingTimeExpired:
+          background.ui?.initializationLoadingTimeExpired,
+      }
+    })
 
   return (
     <CorePage hasTopBar={false}>
@@ -15,13 +25,23 @@ export default function Overview(): ReactElement {
         <div className="header_primary_content standard_width">
           <span className="total_balance_label">Total balance</span>
           <div className="primary_balance">
-            <span className="primary_money_sign">$</span>
-            {combinedData?.totalUserValue}
+            {initializationLoadingTimeExpired ||
+            combinedData?.totalUserValue ? (
+              <>
+                <span className="primary_money_sign">$</span>
+                {combinedData?.totalUserValue}
+              </>
+            ) : (
+              <div className="loading_wrap">
+                <SharedLoadingSpinner />
+              </div>
+            )}
           </div>
         </div>
         <div className="sub_info_row">
           <div className="info_group_item">
-            <span className="info_left">Addresses</span>4
+            <span className="info_left">Addresses</span>
+            {numberOfAddresses}
           </div>
           <div className="info_group_item">
             <span className="info_left">Assets</span>
@@ -29,7 +49,10 @@ export default function Overview(): ReactElement {
           </div>
         </div>
       </header>
-      <OverviewAssetsTable assets={combinedData.assets} />
+      <OverviewAssetsTable
+        assets={combinedData.assets}
+        initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+      />
       <style jsx>
         {`
           .header_primary_content {
@@ -58,6 +81,9 @@ export default function Overview(): ReactElement {
             line-height: 32px;
             display: flex;
             align-self: center;
+          }
+          .loading_wrap {
+            margin-top: 10px;
           }
           .total_balance_label {
             color: var(--green-40);

@@ -4,8 +4,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import ethers from "ethers"
 
-import { ETHEREUM } from "./constants/networks"
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
 import { ethersTxFromSignedTx } from "./services/chain/utils"
 
@@ -33,6 +32,7 @@ import {
   emitter as keyringSliceEmitter,
   updateKeyrings,
 } from "./redux-slices/keyrings"
+import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
   gasEstimates,
   emitter as transactionSliceEmitter,
@@ -190,7 +190,12 @@ export default class Main extends BaseService<never> {
      */
     private keyringService: KeyringService
   ) {
-    super()
+    super({
+      initialLoadWaitExpired: {
+        schedule: { delayInMinutes: 2.5 },
+        handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
+      },
+    })
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState)
@@ -289,7 +294,7 @@ export default class Main extends BaseService<never> {
 
         // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
         transaction.gasLimit = await this.chainService.estimateGasLimit(
-          ETHEREUM,
+          getEthereumNetwork(),
           transaction
         )
 
@@ -338,7 +343,7 @@ export default class Main extends BaseService<never> {
       this.chainService.addAccountToTrack({
         account: address,
         // TODO support other networks
-        network: ETHEREUM,
+        network: getEthereumNetwork(),
       })
     })
 

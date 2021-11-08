@@ -1,7 +1,7 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers } from "ethers"
 import { getTokenBalances } from "./alchemy"
-import { ETHEREUM } from "../constants"
+import { getEthereumNetwork } from "./utils"
 import { AccountBalance, SmartContractFungibleAsset } from "../types"
 
 /*
@@ -57,7 +57,7 @@ export async function getBalances(
           asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
         },
         account,
-        network: ETHEREUM, // TODO go multi-network
+        network: getEthereumNetwork(), // TODO track networks outside of .env file
         retrievedAt: Date.now(),
         dataSource: "alchemy",
       } as AccountBalance
