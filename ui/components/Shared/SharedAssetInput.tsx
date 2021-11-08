@@ -1,28 +1,19 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import { Asset } from "@tallyho/tally-background/types"
-import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface SelectTokenMenuContentProps {
+  assets: Asset[]
   setSelectedTokenAndClose: (token: Asset) => void
 }
 
 function SelectTokenMenuContent(
   props: SelectTokenMenuContentProps
 ): ReactElement {
-  const { setSelectedTokenAndClose } = props
-
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
-
-  const displayAssets = combinedData.assets.filter(
-    ({ asset, amount }) => amount > 0
-  )
+  const { setSelectedTokenAndClose, assets } = props
 
   return (
     <>
@@ -39,7 +30,7 @@ function SelectTokenMenuContent(
       </div>
       <div className="divider" />
       <ul>
-        {displayAssets.map(({ asset }) => {
+        {assets.map((asset) => {
           return (
             <SharedAssetItem asset={asset} onClick={setSelectedTokenAndClose} />
           )
@@ -135,6 +126,7 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
+  assets: Asset[]
   onAssetSelected?: (token: Asset) => void
   label: string
   defaultToken: Asset
@@ -146,6 +138,7 @@ export default function SharedAssetInput(
 ): ReactElement {
   const {
     isTypeDestination,
+    assets,
     label,
     defaultToken,
     isTokenOptionsLocked,
@@ -181,6 +174,7 @@ export default function SharedAssetInput(
         }}
       >
         <SelectTokenMenuContent
+          assets={assets}
           setSelectedTokenAndClose={setSelectedTokenAndClose}
         />
       </SharedSlideUpMenu>
@@ -275,6 +269,7 @@ export default function SharedAssetInput(
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isTokenOptionsLocked: false,
+  assets: [{ symbol: "ETH", name: "Example Asset" }],
   defaultToken: { symbol: "", name: "" },
   label: "",
 }

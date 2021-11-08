@@ -1,6 +1,8 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { fetchJson } from "@ethersproject/web"
 import logger from "@tallyho/tally-background/lib/logger"
+import { Asset } from "@tallyho/tally-background/types"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -8,10 +10,17 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQoute from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
+import { useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
   const [selectedCount, setSelectedCount] = useState(0)
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+
+  const displayAssets = combinedData.assets.map(({ asset }) => asset)
 
   const handleClick = useCallback(() => {
     setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
@@ -44,6 +53,7 @@ export default function Swap(): ReactElement {
           <div className="form">
             <div className="form_input">
               <SharedAssetInput
+                assets={displayAssets}
                 onAssetSelected={handleAssetSelect}
                 label="Swap from:"
               />
