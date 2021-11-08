@@ -76,7 +76,6 @@ function enrichAssetAmountWithUserAmounts(
       amount,
       asset: { decimals },
     } = assetAmount
-
     // TODO What actual precision do we want here? Probably more than 2
     // TODO decimals.
     const assetValue2Decimals = amount / 10n ** BigInt(decimals - 2)
@@ -408,67 +407,63 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
-    let accountAssets = account.combinedData.assets
-      .filter((assetItem) => {
-        return assetItem.localizedDecimalValue !== "∞"
-      })
-      .map((assetItem) => {
-        const rawAsset = assets.find(
-          (asset) =>
-            asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
-        )
+    let accountAssets = account.combinedData.assets.map((assetItem) => {
+      const rawAsset = assets.find(
+        (asset) =>
+          asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
+      )
 
-        // TODO Better determine which side is USD---possibly using
-        // TODO USD.pair[0|1].symbol and a known constant?
-        const possibleUsdAmount = rawAsset?.recentPrices?.USD?.amounts?.[1]
-        const usdIndex =
-          possibleUsdAmount !== undefined && possibleUsdAmount > 1 ? 1 : 0
-        const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
+      // TODO Better determine which side is USD---possibly using
+      // TODO USD.pair[0|1].symbol and a known constant?
+      const possibleUsdAmount = rawAsset?.recentPrices?.USD?.amounts?.[1]
+      const usdIndex =
+        possibleUsdAmount !== undefined && possibleUsdAmount > 1 ? 1 : 0
+      const usdAsset = rawAsset?.recentPrices?.USD?.pair[usdIndex]
 
-        if (
-          rawAsset &&
-          usdAsset &&
-          "decimals" in usdAsset &&
-          "decimals" in assetItem.asset
-        ) {
-          const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
+      if (
+        rawAsset &&
+        usdAsset &&
+        "decimals" in usdAsset &&
+        "decimals" in assetItem.asset
+      ) {
+        const usdNonDecimalValue = rawAsset.recentPrices.USD.amounts[usdIndex]
 
-          const usdDecimals = usdAsset.decimals
-          const combinedDecimals = assetItem.asset.decimals + usdDecimals
+        const usdDecimals = usdAsset.decimals
+        const combinedDecimals = assetItem.asset.decimals + usdDecimals
 
-          // Choose the precision we actually want
-          const desiredDecimals = 2
+        // Choose the precision we actually want
+        const desiredDecimals = 2
 
-          // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
-          const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
+        // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
+        const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
 
-          const dividedOutDecimals =
-            userValue /
-            10n ** (BigInt(combinedDecimals) - BigInt(desiredDecimals))
-          const localizedUserValue =
-            Number(dividedOutDecimals) / 10 ** desiredDecimals
+        const dividedOutDecimals =
+          userValue /
+          10n ** (BigInt(combinedDecimals) - BigInt(desiredDecimals))
+        const localizedUserValue =
+          Number(dividedOutDecimals) / 10 ** desiredDecimals
 
-          // Add to total user value
-          if (localizedUserValue > 0) {
-            if (typeof totalUserValue === "undefined") {
-              totalUserValue = localizedUserValue
-            } else if (typeof totalUserValue === "number") {
-              totalUserValue += localizedUserValue
-            }
-          }
-
-          return {
-            ...assetItem,
-            localizedUserValue: formatPrice(localizedUserValue),
-            localizedPricePerToken: formatPrice(
-              Number(usdNonDecimalValue) / 10 ** usdDecimals
-            ),
+        // Add to total user value
+        if (localizedUserValue > 0) {
+          if (typeof totalUserValue === "undefined") {
+            totalUserValue = localizedUserValue
+          } else if (typeof totalUserValue === "number") {
+            totalUserValue += localizedUserValue
           }
         }
+
         return {
           ...assetItem,
+          localizedUserValue: formatPrice(localizedUserValue),
+          localizedPricePerToken: formatPrice(
+            Number(usdNonDecimalValue) / 10 ** usdDecimals
+          ),
         }
-      })
+      }
+      return {
+        ...assetItem,
+      }
+    })
 
     // If hideDust is true the below will filter out tokens that have USD value set
     // Value currently set to 2(usd) can be changed to a dynamic value later
