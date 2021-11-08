@@ -27,7 +27,10 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    toggleHideDust: (state, { payload: shouldHideDust }): UIState => ({
+    toggleHideDust: (
+      state,
+      { payload: shouldHideDust }: { payload: boolean | undefined }
+    ): UIState => ({
       ...state,
       settings: {
         hideDust: shouldHideDust,
