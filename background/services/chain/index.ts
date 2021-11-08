@@ -345,6 +345,13 @@ export default class ChainService extends BaseService<Events> {
     return BigInt(estimate.toString())
   }
 
+  async sendEthereumProvider(
+    method: string,
+    params: unknown[]
+  ): Promise<unknown> {
+    return this.pollingProviders.ethereum.send(method, params)
+  }
+
   /**
    * Broadcast a signed EVM transaction.
    *
