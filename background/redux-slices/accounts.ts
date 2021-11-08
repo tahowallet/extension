@@ -473,7 +473,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
     // If hideDust is true the below will filter out tokens that have USD value set
     // Value currently set to 2(usd) can be changed to a dynamic value later
     // This will have to use a different method if we introduce other currencies
-    if (ui.settings.hideDust) {
+    if (ui.settings?.hideDust) {
       accountAssets = accountAssets.filter((assetItem) => {
         const reformat = parseFloat(
           assetItem.localizedUserValue?.replace(/,/g, "") ?? "0"
