@@ -12,7 +12,7 @@ export type UIState = {
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
   settings: {
-    hideDust: boolean
+    hideDust: boolean | undefined
   }
 }
 
@@ -60,5 +60,5 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 
 export const selectHideDust = createSelector(
   selectSettings,
-  (settings) => settings.hideDust
+  (settings) => settings?.hideDust
 )
