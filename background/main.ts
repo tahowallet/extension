@@ -28,10 +28,7 @@ import {
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
-import {
-  activityEncountered,
-  emitter as activitiesSliceEmitter,
-} from "./redux-slices/activities"
+import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
@@ -243,7 +240,7 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
     this.chainService.emitter.on("transaction", (payload) => {
-      const transaction = payload.tx
+      const { transaction } = payload
 
       if (
         transaction.blockHash &&

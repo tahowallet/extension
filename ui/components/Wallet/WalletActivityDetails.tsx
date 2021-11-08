@@ -146,7 +146,7 @@ export default function WalletActivityDetails(
       </div>
       <ul>
         {activityItem &&
-          Object.entries(activityItem.detailRows).map(([key, value]) => {
+          Object.entries(activityItem.infoRows).map(([key, value]) => {
             return (
               <DetailRowItem
                 key={key}

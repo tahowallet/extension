@@ -59,21 +59,19 @@ export default function WalletActivityList(): ReactElement {
           </div>
         ) : (
           <>
-            {Object.entries(activities).map(
-              ([hash, activityItem]: [string, ActivityItem]) => (
-                <WalletActivityListItem
-                  onClick={() => {
-                    handleOpen(activityItem)
-                  }}
-                  key={hash}
-                  activity={{
-                    ...activityItem,
-                    timestamp: blocks[activityItem.blockHeight]?.timestamp,
-                    isSent: activityItem.from.toLowerCase() === currentAccount,
-                  }}
-                />
-              )
-            )}
+            {activities.map((activityItem) => (
+              <WalletActivityListItem
+                onClick={() => {
+                  handleOpen(activityItem)
+                }}
+                key={activityItem.hash}
+                activity={{
+                  ...activityItem,
+                  timestamp: blocks[activityItem.blockHeight]?.timestamp,
+                  isSent: activityItem.from.toLowerCase() === currentAccount,
+                }}
+              />
+            ))}
           </>
         )}
       </ul>
