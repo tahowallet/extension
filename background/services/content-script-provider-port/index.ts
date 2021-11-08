@@ -1,5 +1,6 @@
 import { ChainService } from ".."
 import { browser } from "../.."
+import { ETHEREUM } from "../../constants"
 
 //TODO: change to normal service implementation
 export async function dumbContentScriptProviderPortService(
@@ -44,7 +45,8 @@ export async function dumbContentScriptProviderPortService(
           .then(([acc]) => ({ result: [acc.account] }))
       case "eth_gasPrice":
       case "eth_blockNumber":
-      case "eth_getBalance":
+        return chainService.getBlockHeight(ETHEREUM)
+      case "eth_getBalance": // !!!
       case "eth_getStorageAt":
       case "eth_getTransactionCount":
       case "eth_getBlockTransactionCountByHash":

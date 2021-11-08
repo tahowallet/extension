@@ -10,7 +10,11 @@ const removeEventListener = window.removeEventListener
 
 console.log("inpage.js in da house")
 
-export class InpageEip1193Bridge extends EventEmitter {
+export class InpageEip1193Bridge {
+  isTally() {
+    return true
+  }
+
   request(request: { method: string; params?: Array<any> }): Promise<any> {
     return this.send(request.method, request.params || [])
   }
