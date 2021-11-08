@@ -39,7 +39,7 @@ const activitiesSlice = createSlice({
       const activityItem = payload.transaction
 
       if (activityItem.blockHeight) {
-        const detailRows = adaptForUI(keysMap, activityItem)
+        const infoRows = adaptForUI(keysMap, activityItem)
 
         payload.forAccounts.forEach((account: string) => {
           const address = account.toLowerCase()
@@ -50,7 +50,7 @@ const activitiesSlice = createSlice({
 
           insertActivityItemSorted(immerState[address], {
             ...activityItem,
-            detailRows,
+            infoRows,
           })
         })
       }
