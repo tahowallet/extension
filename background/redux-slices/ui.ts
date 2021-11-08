@@ -27,9 +27,12 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    toggleHideDust: (immerState, { payload: shouldHideDust }) => {
-      immerState.settings.hideDust = shouldHideDust
-    },
+    toggleHideDust: (state, { payload: shouldHideDust }): UIState => ({
+      ...state,
+      settings: {
+        hideDust: shouldHideDust,
+      },
+    }),
     setShowingActivityDetail: (
       state,
       { payload: activityItem }: { payload: ActivityItem | null }

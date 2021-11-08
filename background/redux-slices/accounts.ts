@@ -484,7 +484,11 @@ export const selectAccountAndTimestampedActivities = createSelector(
           (assetItem.decimalValue > 0 || assetItem.decimalValue === null)
         )
       }
-      return assetItem.decimalValue > 0 || assetItem.decimalValue === null
+      return (
+        assetItem.asset.symbol === "ETH" ||
+        assetItem.decimalValue > 0 ||
+        assetItem.decimalValue === null
+      )
     })
 
     return {
