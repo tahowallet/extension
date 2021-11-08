@@ -367,6 +367,10 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    keyringSliceEmitter.on("unlockKeyring", async (password) => {
+      await this.keyringService.unlock(password)
+    })
+
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
       await this.keyringService.generateNewKeyring(

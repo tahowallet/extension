@@ -67,7 +67,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       </div>
       <div className="portion bottom">
         <SharedButton size="medium" type="primary" onClick={importWallet}>
-          Import wallet
+          Import Wallet
         </SharedButton>
       </div>
       <style jsx>{`
