@@ -6,8 +6,9 @@ import { utils } from "ethers"
 
 import logger from "./logger"
 import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
-import { ETH, ETHEREUM } from "../constants"
+import { ETH } from "../constants"
 import { jtdValidatorFor } from "./validation"
+import { getEthereumNetwork } from "./utils"
 
 // JSON Type Definition for the Alchemy assetTransfers API.
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
@@ -125,11 +126,11 @@ export async function getAssetTransfers(
             contractAddress: transfer.rawContract.address,
             decimals: Number(BigInt(transfer.rawContract.decimal)),
             symbol: transfer.asset,
-            homeNetwork: ETHEREUM, // TODO is this true?
+            homeNetwork: getEthereumNetwork(), // TODO internally track the current network instead of relying on the .env file
           }
         : ETH
       return {
-        network: ETHEREUM, // TODO make this friendly across other networks
+        network: getEthereumNetwork(), // TODO make this friendly across other networks
         assetAmount: {
           asset,
           amount: BigInt(transfer.rawContract.value),
@@ -268,7 +269,7 @@ export async function getTokenMetadata(
       tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
-    homeNetwork: ETHEREUM, // TODO make multi-network friendly
+    homeNetwork: getEthereumNetwork(), // TODO make multi-network friendly
     contractAddress,
   }
 }

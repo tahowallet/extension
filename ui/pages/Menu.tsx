@@ -1,16 +1,24 @@
 import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
+import { useDispatch, useSelector } from "react-redux"
+import {
+  selectHideDust,
+  toggleHideDust,
+} from "@tallyho/tally-background/redux-slices/ui"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 
-function SettingRow(props: { title: string; action: any }): ReactElement {
-  const { title, action } = props
+function SettingRow(props: {
+  title: string
+  component: () => ReactElement
+}): ReactElement {
+  const { title, component } = props
 
   return (
     <li>
       <div className="left">{title}</div>
-      <div className="right">{action()}</div>
+      <div className="right">{component()}</div>
       <style jsx>
         {`
           li {
@@ -51,44 +59,53 @@ function ArrowRightIcon() {
   )
 }
 
-const settings = {
-  general: [
-    {
-      title: "Main Currency",
-      action: () => {
-        return (
+export default function Menu(): ReactElement {
+  const dispatch = useDispatch()
+  const hideDust = useSelector(selectHideDust)
+
+  const toggleHideDustAssets = (toggleValue: boolean) => {
+    dispatch(toggleHideDust(toggleValue))
+  }
+  const settings = {
+    general: [
+      {
+        title: "Main Currency",
+        component: () => (
           <SharedButton size="medium" type="secondary" icon="chevron">
             USD
           </SharedButton>
-        )
+        ),
       },
-    },
-    {
-      title: "Hide asset balance under $2",
-      action: SharedToggleButton,
-    },
-    {
-      title: "Use Tally as default wallet",
-      action: SharedToggleButton,
-    },
-    {
-      title: "Token list",
-      action: ArrowRightIcon,
-    },
-  ],
-  developer: [
-    {
-      title: "Show testnet networks",
-      action: SharedToggleButton,
-    },
-    {
-      title: "Contracts deployed by users",
-      action: ArrowRightIcon,
-    },
-  ],
-}
+      {
+        title: "Hide asset balance under $2",
+        component: () => (
+          <SharedToggleButton
+            onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
+            value={hideDust}
+          />
+        ),
+      },
+      {
+        title: "Use Tally as default wallet",
+        component: () => <SharedToggleButton onChange={() => {}} />,
+      },
+      {
+        title: "Token list",
+        component: ArrowRightIcon,
+      },
+    ],
+    developer: [
+      {
+        title: "Show testnet networks",
+        component: () => <SharedToggleButton onChange={() => {}} />,
+      },
+      {
+        title: "Contracts deployed by users",
+        component: ArrowRightIcon,
+      },
+    ],
+  }
 
-export default function Menu(): ReactElement {
   return (
     <>
       <CorePage hasTopBar={false}>
@@ -98,14 +115,14 @@ export default function Menu(): ReactElement {
           <h3>General</h3>
           <ul>
             {settings.general.map((setting) => (
-              <SettingRow title={setting.title} action={setting.action} />
+              <SettingRow title={setting.title} component={setting.component} />
             ))}
           </ul>
           <hr />
           <h3>Developer</h3>
           <ul>
             {settings.developer.map((setting) => (
-              <SettingRow title={setting.title} action={setting.action} />
+              <SettingRow title={setting.title} component={setting.component} />
             ))}
           </ul>
         </section>
