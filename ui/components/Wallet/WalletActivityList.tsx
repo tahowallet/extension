@@ -22,7 +22,7 @@ export default function WalletActivityList(): ReactElement {
 
   const handleOpen = useCallback(
     (activityItem) => {
-      dispatch(setShowingActivityDetail(activityItem.hash))
+      dispatch(setShowingActivityDetail(activityItem))
     },
     [dispatch]
   )
@@ -60,9 +60,7 @@ export default function WalletActivityList(): ReactElement {
         close={handleClose}
       >
         {showingActivityDetail ? (
-          <WalletActivityDetails
-            activityItem={activities[showingActivityDetail as any]}
-          />
+          <WalletActivityDetails activityItem={showingActivityDetail} />
         ) : (
           <></>
         )}
