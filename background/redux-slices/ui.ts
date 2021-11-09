@@ -11,9 +11,7 @@ export type ActivityItem = AnyEVMTransaction & {
 export type UIState = {
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
-  settings: {
-    hideDust: boolean | undefined
-  }
+  settings: Record<string, unknown> | undefined
 }
 
 export const initialState: UIState = {
