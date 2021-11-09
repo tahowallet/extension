@@ -37,9 +37,8 @@ export default function SharedButton(props: Props): ReactElement {
     showLoadingOnClick,
   } = props
 
-  const [navigateTo, setNavigateTo] = React.useState<History.LocationDescriptor<
-    unknown
-  > | null>(null)
+  const [navigateTo, setNavigateTo] =
+    React.useState<History.LocationDescriptor<unknown> | null>(null)
   const [isClicked, setIsClicked] = useState(false)
 
   if (navigateTo && navigateTo === linkTo) {

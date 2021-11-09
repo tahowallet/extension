@@ -31,7 +31,27 @@ export default function WalletActivityList(): ReactElement {
     dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
-  if (!activities) return <></>
+  if (!activities || activities.length === 0)
+    return (
+      <div className="loading">
+        <SharedLoadingSpinner />
+        <span>This may initially take awhile.</span>
+        <style jsx>{`
+          .loading {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+          }
+          .loading span {
+            color: var(--green-60);
+            margin-top: 12px;
+            font-size: 14px;
+          }
+        `}</style>
+      </div>
+    )
 
   return (
     <>
@@ -48,42 +68,19 @@ export default function WalletActivityList(): ReactElement {
         )}
       </SharedSlideUpMenu>
       <ul>
-        {Object.keys(activities).length === 0 ? (
-          <div className="loading">
-            <SharedLoadingSpinner />
-            <span>This may initially take awhile.</span>
-          </div>
-        ) : (
-          <>
-            {activities.map((activityItem) => (
-              <WalletActivityListItem
-                onClick={() => {
-                  handleOpen(activityItem)
-                }}
-                key={activityItem.hash}
-                activity={{
-                  ...activityItem,
-                  timestamp: blocks[activityItem.blockHeight]?.timestamp,
-                }}
-              />
-            ))}
-          </>
-        )}
+        {activities.map((activityItem) => (
+          <WalletActivityListItem
+            onClick={() => {
+              handleOpen(activityItem)
+            }}
+            key={activityItem.hash}
+            activity={{
+              ...activityItem,
+              timestamp: blocks[activityItem.blockHeight]?.timestamp,
+            }}
+          />
+        ))}
       </ul>
-      <style jsx>{`
-        .loading {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-top: 20px;
-        }
-        .loading span {
-          color: var(--green-60);
-          margin-top: 12px;
-          font-size: 14px;
-        }
-      `}</style>
     </>
   )
 }
