@@ -15,6 +15,7 @@ import { useBackgroundSelector } from "../hooks"
 export default function Swap(): ReactElement {
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
   const [selectedCount, setSelectedCount] = useState(0)
+  const [swapTokens, setSwapTokens] = useState<Asset[]>([])
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -32,8 +33,14 @@ export default function Swap(): ReactElement {
     setSelectedCount((currentCount) => currentCount + 1)
 
     const apiData = await fetchJson(
-      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000`
+      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000` // TODO Handle pagination instead of requesting so many records?
     )
+
+    setSwapTokens(() => {
+      return apiData.records.map((zrxToken) => {
+        return { ...zrxToken, name: "" } // TODO Populate this by using the assets redux slice?
+      })
+    })
 
     logger.log(apiData)
   }, [])
@@ -61,6 +68,7 @@ export default function Swap(): ReactElement {
             <div className="icon_change" />
             <div className="form_input">
               <SharedAssetInput
+                assets={swapTokens}
                 onAssetSelected={handleAssetSelect}
                 label="Swap to:"
               />
