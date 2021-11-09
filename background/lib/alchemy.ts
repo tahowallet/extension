@@ -211,8 +211,8 @@ export async function getTokenBalances(
     )
     .map((tokenBalance) => {
       let balance = tokenBalance.tokenBalance
-      if (balance.length > 72) {
-        balance = balance.substring(0, 63)
+      if (balance.length > 66) {
+        balance = balance.substring(0, 66)
       }
       return {
         contractAddress: tokenBalance.contractAddress,
