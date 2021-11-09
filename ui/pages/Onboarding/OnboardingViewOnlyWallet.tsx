@@ -28,14 +28,16 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
         })
       )
 
-      setRedirect(true)
+      // TODO Replace this magic
+      setTimeout(() => {
+        setRedirect(true)
+      }, 2000)
     } else {
       alert("Please enter a valid address")
     }
   }, [dispatch, address])
 
   // Redirect to the home tab once an account is set
-
   if (redirect) {
     return <Redirect to="/" />
   }
@@ -61,6 +63,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             type="primary"
             size="large"
             onClick={handleSubmitViewOnlyAddress}
+            showLoadingOnClick
           >
             Explore
           </SharedButton>
