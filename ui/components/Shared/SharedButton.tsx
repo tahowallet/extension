@@ -1,7 +1,8 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
+import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 interface Props {
   children: React.ReactNode
@@ -19,6 +20,7 @@ interface Props {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
+  showLoadingOnClick: boolean
 }
 
 export default function SharedButton(props: Props): ReactElement {
@@ -32,21 +34,27 @@ export default function SharedButton(props: Props): ReactElement {
     iconSize,
     iconPosition,
     linkTo,
+    showLoadingOnClick,
   } = props
 
-  const [navigateTo, setNavigateTo] =
-    React.useState<History.LocationDescriptor<unknown> | null>(null)
+  const [navigateTo, setNavigateTo] = React.useState<History.LocationDescriptor<
+    unknown
+  > | null>(null)
+  const [isClicked, setIsClicked] = useState(false)
 
   if (navigateTo && navigateTo === linkTo) {
     return <Redirect push to={linkTo} />
   }
 
   function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    setIsClicked(true)
     onClick?.(e)
     if (linkTo) {
       setNavigateTo(linkTo)
     }
   }
+
+  const isShowingLoadingSpinner = isClicked && showLoadingOnClick
 
   return (
     <button
@@ -64,16 +72,24 @@ export default function SharedButton(props: Props): ReactElement {
       )}
       onClick={handleClick}
     >
-      {children}
-      {icon ? (
-        <span
-          className={classNames(
-            { icon_button: true },
-            { icon_large: iconSize === "large" },
-            { icon_secondary_medium: iconSize === "secondaryMedium" }
-          )}
-        />
-      ) : null}
+      {isShowingLoadingSpinner && (
+        <div className="spinner_wrap">
+          <SharedLoadingSpinner />
+        </div>
+      )}
+      <div className={classNames({ hide_me: isShowingLoadingSpinner })}>
+        {children}
+        {icon ? (
+          <span
+            className={classNames(
+              { icon_button: true },
+              { icon_large: iconSize === "large" },
+              { icon_secondary_medium: iconSize === "secondaryMedium" }
+            )}
+          />
+        ) : null}
+      </div>
+
       <style jsx>
         {`
           button {
@@ -229,6 +245,10 @@ export default function SharedButton(props: Props): ReactElement {
             margin-left: 0px;
             margin-right: 9px;
           }
+          .hide_me {
+            opacity: 0;
+            position: absolute;
+          }
         `}
       </style>
     </button>
@@ -241,4 +261,5 @@ SharedButton.defaultProps = {
   iconSize: "medium",
   iconPosition: "right",
   linkTo: null,
+  showLoadingOnClick: false,
 }
