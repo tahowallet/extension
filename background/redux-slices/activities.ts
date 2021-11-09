@@ -9,28 +9,6 @@ export type ActivitiesState = {
 
 export const initialState: ActivitiesState = {}
 
-const insertActivityItemSorted = (
-  activityItems: ActivityItem[],
-  activityItem: ActivityItem
-) => {
-  let low = 0
-  let high = activityItems.length
-
-  while (low < high) {
-    const mid = (low + high) / 2
-
-    if (activityItems[mid]?.blockHeight) {
-      if (activityItems[mid].blockHeight > activityItem.blockHeight) {
-        low = mid + 1
-      } else {
-        high = mid
-      }
-    }
-  }
-
-  activityItems.splice(low, 0, activityItem)
-}
-
 const activitiesSlice = createSlice({
   name: "activities",
   initialState,
@@ -48,7 +26,7 @@ const activitiesSlice = createSlice({
             immerState[address] = []
           }
 
-          insertActivityItemSorted(immerState[address], {
+          immerState[address].push({
             ...activityItem,
             infoRows,
           })
