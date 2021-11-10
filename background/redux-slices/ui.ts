@@ -11,9 +11,7 @@ export type ActivityItem = AnyEVMTransaction & {
 export type UIState = {
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
-  settings: {
-    hideDust: boolean
-  }
+  settings: undefined | { hideDust: boolean | undefined }
 }
 
 export const initialState: UIState = {
@@ -27,8 +25,13 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    toggleHideDust: (immerState, { payload: shouldHideDust }) => {
-      immerState.settings.hideDust = shouldHideDust
+    toggleHideDust: (
+      immerState,
+      { payload: shouldHideDust }: { payload: boolean | undefined }
+    ): void => {
+      immerState.settings = {
+        hideDust: shouldHideDust,
+      }
     },
     setShowingActivityDetail: (
       state,
@@ -60,5 +63,5 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 
 export const selectHideDust = createSelector(
   selectSettings,
-  (settings) => settings.hideDust
+  (settings) => settings?.hideDust
 )
