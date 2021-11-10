@@ -1,4 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { BigNumber, utils as ethersUtils } from "ethers"
 import { fetchJson } from "@ethersproject/web"
 import logger from "@tallyho/tally-background/lib/logger"
 import { Asset } from "@tallyho/tally-background/types"
@@ -12,10 +13,25 @@ import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 import { useBackgroundSelector } from "../hooks"
 
+interface TradingPair {
+  from?: Asset
+  to?: Asset
+  price: BigNumber
+}
+
+interface ZrxToken {
+  symbol: string
+  price: string
+}
+
 export default function Swap(): ReactElement {
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
-  const [selectedCount, setSelectedCount] = useState(0)
   const [swapTokens, setSwapTokens] = useState<Asset[]>([])
+  const [swap, setSwap] = useState<TradingPair>({
+    from: undefined,
+    to: undefined,
+    price: BigNumber.from("0"),
+  })
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -27,22 +43,41 @@ export default function Swap(): ReactElement {
     setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
-  const handleAssetSelect = useCallback(async (token) => {
+  const fromAssetSelected = useCallback(async (token) => {
     logger.log("Asset selected!", token)
 
-    setSelectedCount((currentCount) => currentCount + 1)
-
     const apiData = await fetchJson(
-      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000` // TODO Handle pagination instead of requesting so many records?
+      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000` // TODO: Handle pagination instead of requesting so many records?
     )
 
     setSwapTokens(() => {
-      return apiData.records.map((zrxToken) => {
-        return { ...zrxToken, name: "" } // TODO Populate this by using the assets redux slice?
+      return apiData.records.map((zrxToken: ZrxToken) => {
+        return { ...zrxToken, name: "" } // TODO: Populate this by using the assets redux slice?
       })
     })
 
+    setSwap(() => {
+      // Reset the state whenever the from token is changed, because the price data we get from 0x is based on the from token
+      return {
+        from: token,
+        to: undefined,
+        price: BigNumber.from("0"),
+      }
+    })
+
     logger.log(apiData)
+  }, [])
+
+  const toAssetSelected = useCallback(async (token) => {
+    logger.log("Asset selected!", token)
+
+    setSwap((currentState) => {
+      return {
+        from: currentState.from,
+        to: token,
+        price: ethersUtils.parseUnits(token.price, 18), // TODO: We need to know the actual number of decimals the token is using
+      }
+    })
   }, [])
 
   return (
@@ -61,7 +96,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={displayAssets}
-                onAssetSelected={handleAssetSelect}
+                onAssetSelected={fromAssetSelected}
                 label="Swap from:"
               />
             </div>
@@ -69,7 +104,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={swapTokens}
-                onAssetSelected={handleAssetSelect}
+                onAssetSelected={toAssetSelected}
                 label="Swap to:"
               />
             </div>
@@ -77,7 +112,11 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {selectedCount < 2 ? (
+              {swap.to && swap.from ? (
+                <SharedButton type="primary" size="large" onClick={handleClick}>
+                  Get final quote
+                </SharedButton>
+              ) : (
                 <SharedButton
                   type="primary"
                   size="large"
@@ -85,10 +124,6 @@ export default function Swap(): ReactElement {
                   onClick={handleClick}
                 >
                   Review swap
-                </SharedButton>
-              ) : (
-                <SharedButton type="primary" size="large" onClick={handleClick}>
-                  Get final quote
                 </SharedButton>
               )}
             </div>
