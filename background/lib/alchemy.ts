@@ -209,13 +209,16 @@ export async function getTokenBalances(
         >
       } => b.error === null && b.tokenBalance !== null
     )
-    .map((tokenBalance) => ({
-      contractAddress: tokenBalance.contractAddress,
-      amount:
-        tokenBalance.tokenBalance === "0x"
-          ? BigInt(0)
-          : BigInt(tokenBalance.tokenBalance),
-    }))
+    .map((tokenBalance) => {
+      let balance = tokenBalance.tokenBalance
+      if (balance.length > 66) {
+        balance = balance.substring(0, 66)
+      }
+      return {
+        contractAddress: tokenBalance.contractAddress,
+        amount: balance === "0x" ? BigInt(0) : BigInt(balance),
+      }
+    })
 }
 
 // JSON Type Definition for the Alchemy token metadata API.

@@ -10,7 +10,7 @@ import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 
 import Wallet from "./Wallet"
-
+import SignTransaction from "./SignTransaction"
 import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
 import OnboardingViewOnlyWallet from "./Onboarding/OnboardingViewOnlyWallet"
 import Onboarding from "./Onboarding/Onboarding"
@@ -40,6 +40,9 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           </Route>
           <Route path="/onboarding/:startPage">
             <Onboarding />
+          </Route>
+          <Route path="/signTransaction">
+            <SignTransaction />
           </Route>
           <Route path="/overview">
             <Overview />
