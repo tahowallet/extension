@@ -31,7 +31,7 @@ export default function WalletActivityList(): ReactElement {
     dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
-  if (!activities || activities.length === 0)
+  if (!activities || activities.ids.length === 0)
     return (
       <div className="loading">
         <SharedLoadingSpinner />
@@ -66,18 +66,27 @@ export default function WalletActivityList(): ReactElement {
         )}
       </SharedSlideUpMenu>
       <ul>
-        {activities.map((activityItem) => (
-          <WalletActivityListItem
-            onClick={() => {
-              handleOpen(activityItem)
-            }}
-            key={activityItem.hash}
-            activity={{
-              ...activityItem,
-              timestamp: blocks[activityItem.blockHeight]?.timestamp,
-            }}
-          />
-        ))}
+        {activities.ids.map((activityItemHash) => {
+          const activityItem: ActivityItem | undefined =
+            activities.entities[activityItemHash]
+          if (activityItem) {
+            return (
+              <WalletActivityListItem
+                onClick={() => {
+                  handleOpen(activityItem)
+                }}
+                key={activityItem?.hash}
+                activity={{
+                  ...activityItem,
+                  timestamp:
+                    activityItem?.blockHeight &&
+                    blocks[activityItem?.blockHeight]?.timestamp,
+                }}
+              />
+            )
+          }
+          return <></>
+        })}
       </ul>
     </>
   )

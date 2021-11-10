@@ -1,35 +1,18 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
 import { keysMap, adaptForUI, ActivityItem } from "./utils"
 
 export { ActivityItem }
 
+const activitiesAdapter = createEntityAdapter<ActivityItem>({
+  selectId: (activityItem) => activityItem.hash,
+  sortComparer: (a, b) => (a.blockHeight < b.blockHeight ? 1 : -1),
+})
+
 export type ActivitiesState = {
-  [address: string]: ActivityItem[]
+  [address: string]: EntityState<ActivityItem>
 }
 
 export const initialState: ActivitiesState = {}
-
-const insertActivityItemSorted = (
-  activityItems: ActivityItem[],
-  activityItem: ActivityItem
-) => {
-  let low = 0
-  let high = activityItems.length
-
-  while (low < high) {
-    const mid = (low + high) / 2
-
-    if (activityItems[mid]?.blockHeight) {
-      if (activityItems[mid].blockHeight > activityItem.blockHeight) {
-        low = mid + 1
-      } else {
-        high = mid
-      }
-    }
-  }
-
-  activityItems.splice(low, 0, activityItem)
-}
 
 const activitiesSlice = createSlice({
   name: "activities",
@@ -45,10 +28,10 @@ const activitiesSlice = createSlice({
           const address = account.toLowerCase()
 
           if (!immerState[address]) {
-            immerState[address] = []
+            immerState[address] = activitiesAdapter.getInitialState()
           }
 
-          insertActivityItemSorted(immerState[address], {
+          activitiesAdapter.addOne(immerState[address], {
             ...activityItem,
             infoRows,
           })
