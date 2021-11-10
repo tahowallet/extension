@@ -13,13 +13,14 @@ export async function dumbContentScriptProviderPortService(
   browser.runtime.onConnect.addListener(async (port) => {
     // if (port?.sender?.tab && port?.sender?.url) { // TODO: put this back
     console.log("let's create listener")
-    port.onMessage.addListener(async ({ target, payload }) => {
+    port.onMessage.addListener(async ({ id, target, payload }) => {
       console.log("---")
       if (target !== "background") return
       console.log(`background: request payload: ${JSON.stringify(payload)}`)
       const response = {
         target: "content",
         payload: await provider(payload.method, payload.params),
+        id: id,
       }
       console.log("background response:", response)
 
@@ -30,30 +31,34 @@ export async function dumbContentScriptProviderPortService(
 
   async function provider(method: string, params?: Array<any>): Promise<any> {
     switch (method) {
+      case "eth_accounts":
       case "eth_requestAccounts": // TODO: get current account from redux store
         return chainService
           .getAccountsToTrack()
           .then(([acc]) => ({ result: [acc.account] }))
-      case "eth_chainId": {
-        return chainService
-          .getAccountsToTrack()
-          .then(([acc]) => ({ result: acc.network.chainID }))
-      }
-      case "eth_accounts":
-        return chainService
-          .getAccountsToTrack()
-          .then(([acc]) => ({ result: [acc.account] }))
-      case "eth_gasPrice":
+      case "net_version":
+      case "eth_chainId":
+        return Promise.resolve({ result: "0x1" })
+      //   return chainService
+      //     .getAccountsToTrack()
+      //     .then(([acc]) => ({ result: acc.network.chainID }))
+      case "eth_getBalance":
+        return Promise.resolve({ result: "0x8ef30df72da000" })
+      case "eth_call":
+        return Promise.resolve({
+          result:
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+        })
+
       case "eth_blockNumber":
-        return chainService.getBlockHeight(ETHEREUM)
-      case "eth_getBalance": // !!!
+        return Promise.resolve({ result: "0xcf5fef" })
+      case "eth_gasPrice":
       case "eth_getStorageAt":
       case "eth_getTransactionCount":
       case "eth_getBlockTransactionCountByHash":
       case "eth_getBlockTransactionCountByNumber":
       case "eth_getCode":
       case "eth_sendRawTransaction":
-      case "eth_call":
       case "estimateGas":
       case "eth_getBlockByHash":
       case "eth_getBlockByNumber":

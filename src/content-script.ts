@@ -29,23 +29,25 @@ function setupConnection() {
     )
 
     port.postMessage({
+      id: event.data.id,
       target: "background",
       payload: event.data.payload,
     })
   })
 
-  port.onMessage.addListener((payload) => {
-    if (payload.target !== "content") return
+  port.onMessage.addListener((data) => {
+    if (data.target !== "content") return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
-      `%c content: background > inpage: ${JSON.stringify(payload)}`,
+      `%c content: background > inpage: ${JSON.stringify(data)}`,
       "background: #222; color: #bada55"
     )
     window.postMessage(
       {
+        id: data.id,
         target: "inpage",
-        payload: payload.payload,
+        payload: data.payload,
       },
       window.location.origin
     )

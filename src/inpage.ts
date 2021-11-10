@@ -1,5 +1,8 @@
+// @ts-nocheck
+
 // For design considerations see https://github.com/tallycash/tally-extension/blob/main/docs/inpage.md
 import EventEmitter from "events"
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 
 // it's better to have our own copy of these functions so nobody
 // can temper w / them in any way we would not want to
@@ -9,18 +12,24 @@ const windowAddEventListener = window.addEventListener
 const removeEventListener = window.removeEventListener
 
 console.log("inpage.js in da house")
+export class InpageEip1193Bridge extends EventEmitter {
+  chainId: number | undefined = 1 // TODO: get this from bg
+  selectedAddress: string | undefined
+  isConnected = false
+  isTally = true
+  isMetaMask = true
+  listeners = new Map()
 
-export class InpageEip1193Bridge {
-  isTally() {
-    return true
-  }
-
-  request(request: { method: string; params?: Array<any> }): Promise<any> {
+  async request(request: {
+    method: string
+    params?: Array<any>
+  }): Promise<any> {
     return this.send(request.method, request.params || [])
   }
 
   async send(method: string, params?: Array<any>): Promise<any> {
-    const sendPayload = {
+    const sendData = {
+      id: Date.now().toString(),
       target: "content",
       payload: {
         method,
@@ -29,10 +38,10 @@ export class InpageEip1193Bridge {
     }
 
     console.log("---")
-    console.log("inpage: ", JSON.stringify(sendPayload))
+    console.log("inpage: ", JSON.stringify(sendData))
 
     // ‼️ Always include target origin to avoid unwanted attention
-    windowPostMessage(sendPayload, window.location.origin)
+    windowPostMessage(sendData, window.location.origin)
 
     return new Promise((resolve) => {
       function listener(event: {
@@ -43,22 +52,45 @@ export class InpageEip1193Bridge {
         if (
           event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
           event.source !== window || // we want to recieve msgs only from the inpage script
-          event.data.target !== "inpage" // TODO: needs a better solution
+          event.data.target !== "inpage"
         )
           return
 
+        if (sendData.id !== event.data.id) return
+
+        removeEventListener("message", this.listeners.get(sendData.id), false)
+        this.listeners.delete(sendData.id)
+
+        const { method, params } = sendData.payload
+        const { result } = event.data.payload
         console.log("inpage: ", JSON.stringify(event.data))
+        if (method === "eth_chainId") {
+          if (!this.isConnected) {
+            this.isConnected = true
+            this.emit("connect", { chainId: result })
+          }
 
-        // this is to not have memoy leaks and infinite listeners
-        // should not be necessary per the docs because a named function is used in the listener
-        // but probably bc of promise wrapper and the resolve function it is always treated as a new listener
-        // but should implement a msg queue and have a fix eventlistener or use streams maybe?
-        // TODO: refactor this initial naive implementation
-        removeEventListener("message", listener, false)
+          if (this.chainId !== result) {
+            this.chainId = result
+            this.emit("chainChanged", result)
+            this.emit("networkChanged", result)
+          }
+        }
 
-        resolve(event.data.payload)
+        if (method === "eth_accounts") {
+          if (this.selectedAddress !== result[0]) {
+            this.selectedAddress = result[0]
+            this.emit("accountsChanged", [this.selectedAddress])
+          }
+        }
+
+        resolve(result)
+        console.log(this.listeners.size)
+        return
       }
-      windowAddEventListener("message", listener)
+
+      this.listeners.set(sendData.id, listener.bind(this))
+      windowAddEventListener("message", this.listeners.get(sendData.id))
     })
   }
 }
