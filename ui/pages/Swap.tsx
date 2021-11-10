@@ -80,6 +80,10 @@ export default function Swap(): ReactElement {
     })
   }, [])
 
+  const onInputChanged = useCallback((event) => {
+    logger.log("Got input value!", event.target.value)
+  }, [])
+
   return (
     <>
       <CorePage>
@@ -97,6 +101,7 @@ export default function Swap(): ReactElement {
               <SharedAssetInput
                 assets={displayAssets}
                 onAssetSelected={fromAssetSelected}
+                onInputChanged={onInputChanged}
                 label="Swap from:"
               />
             </div>

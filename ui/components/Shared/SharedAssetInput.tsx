@@ -128,6 +128,7 @@ interface SharedAssetInputProps {
   isTypeDestination: boolean
   assets: Asset[]
   onAssetSelected?: (token: Asset) => void
+  onInputChanged?: (value: string) => void
   label: string
   defaultToken: Asset
   isTokenOptionsLocked: boolean
@@ -143,6 +144,7 @@ export default function SharedAssetInput(
     defaultToken,
     isTokenOptionsLocked,
     onAssetSelected,
+    onInputChanged,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
@@ -162,6 +164,14 @@ export default function SharedAssetInput(
     },
 
     [onAssetSelected]
+  )
+
+  const handleInputChanged = useCallback(
+    (event) => {
+      onInputChanged?.(event)
+    },
+
+    [onInputChanged]
   )
 
   return (
@@ -208,7 +218,12 @@ export default function SharedAssetInput(
                 Select token
               </SharedButton>
             )}
-            <input className="input_amount" type="text" placeholder="0.0" />
+            <input
+              className="input_amount"
+              type="text"
+              placeholder="0.0"
+              onInput={handleInputChanged}
+            />
           </>
         )}
       </div>
