@@ -1,5 +1,9 @@
 import { HexString, UNIXTime } from "./types"
 
+/**
+ * Each supported network family is generally incompatible with others from a
+ * transaction, consensus, and/or wire format perspective.
+ */
 export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
@@ -10,6 +14,9 @@ type NetworkBaseAsset = {
   decimals: number
 }
 
+/**
+ * Represents a cryptocurrency network; these can potentially be L1 or L2.
+ */
 export type Network = {
   name: string
   baseAsset: NetworkBaseAsset
@@ -17,10 +24,20 @@ export type Network = {
   chainID?: string
 }
 
+/**
+ * Mixed in to any other type, gives it the property of belonging to a
+ * particular network. Often used to delineate contracts or assets that are on
+ * a single network to distinguish from other versions of them on different
+ * networks.
+ */
 export type NetworkSpecific = {
   homeNetwork: Network
 }
 
+/**
+ * A smart contract on any network that tracks smart contracts via a hex
+ * contract address.
+ */
 export type SmartContract = NetworkSpecific & {
   contractAddress: HexString
 }
@@ -35,6 +52,7 @@ export type EVMNetwork = Network & {
 
 /**
  * An EVM-style block identifier, including difficulty, block height, and
+ * self/parent hash data.
  */
 export type EVMBlock = {
   hash: string
@@ -52,8 +70,15 @@ export type EIP1559Block = EVMBlock & {
   baseFeePerGas: bigint
 }
 
+/**
+ * A pre- or post-EIP1559 EVM-style block.
+ */
 export type AnyEVMBlock = EVMBlock | EIP1559Block
 
+/**
+ * Base EVM transaction fields; these are further specialized by particular
+ * subtypes.
+ */
 export type EVMTransaction = {
   hash: string
   from: HexString
@@ -77,6 +102,11 @@ export type EVMTransaction = {
   type: 0 | 1 | 2 | null
 }
 
+/**
+ * A legacy (pre-EIP1559) EVM transaction, whose type is fixed to `0` and whose
+ * EIP1559-related fields are mandated to be `null`, while `gasPrice` must be
+ * set.
+ */
 export type LegacyEVMTransaction = EVMTransaction & {
   gasPrice: bigint
   type: 0 | null
@@ -84,6 +114,12 @@ export type LegacyEVMTransaction = EVMTransaction & {
   maxPriorityFeePerGas: null
 }
 
+/**
+ * A legacy (pre-EIP1559) EVM transaction _request_, meaning only fields that
+ * are used to post a transaction for inclusion are required, including the gas
+ * limit used to limit the gas expenditure on a transaction. This is used to
+ * request a signed transaction, and does not include signature fields.
+ */
 export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
   "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
@@ -91,6 +127,11 @@ export type LegacyEVMTransactionRequest = Pick<
   gasLimit: bigint
 }
 
+/**
+ * An EIP1559 EVM transaction, whose type is set to `1` or `2` per EIP1559 and
+ * whose EIP1559-related fields are required, while `gasPrice` (pre-EIP1559) is
+ * mandated to be `null`.
+ */
 export type EIP1559Transaction = EVMTransaction & {
   gasPrice: null
   type: 1 | 2
@@ -98,6 +139,12 @@ export type EIP1559Transaction = EVMTransaction & {
   maxPriorityFeePerGas: bigint
 }
 
+/**
+ * An EIP1559 EVM transaction _request_, meaning only fields that are used to
+ * post a transaction for inclusion are required, including the gas limit used
+ * to limit the gas expenditure on a transaction. This is used to request a
+ * signed transaction, and does not include signature fields.
+ */
 export type EIP1559TransactionRequest = Pick<
   EIP1559Transaction,
   | "from"
@@ -113,44 +160,101 @@ export type EIP1559TransactionRequest = Pick<
   chainID: EIP1559Transaction["network"]["chainID"]
 }
 
+/**
+ * A confirmed EVM transaction that has been included in a block. Includes
+ * information about the gas actually used to execute the transaction, as well
+ * as the block hash and block height at which the transaction was included.
+ */
 export type ConfirmedEVMTransaction = EVMTransaction & {
   gasUsed: bigint
   blockHash: string
   blockHeight: number
 }
 
+/**
+ * An almost-signed EVM transaction, meaning a transaction that knows about the
+ * signature fields but may not have them all populated yet.
+ */
 export type AlmostSignedEVMTransaction = EVMTransaction & {
   r?: string
   s?: string
   v?: number
 }
 
+/**
+ * An EVM transaction with signature fields filled in and ready for broadcast
+ * to the network.
+ */
 export type SignedEVMTransaction = EVMTransaction & {
   r: string
   s: string
   v: number
 }
 
+/**
+ * An EVM transaction that has all signature fields and has been included in a
+ * block.
+ */
 export type SignedConfirmedEVMTransaction = SignedEVMTransaction &
   ConfirmedEVMTransaction
 
+/**
+ * Any EVM transaction, confirmed or unconfirmed and signed or unsigned.
+ */
 export type AnyEVMTransaction =
   | EVMTransaction
   | ConfirmedEVMTransaction
   | AlmostSignedEVMTransaction
   | SignedEVMTransaction
 
+/**
+ * The estimated gas prices for including a transaction in a block some number
+ * of blocks in the future.
+ *
+ * The estimated prices provide a certain confidence that a transaction with
+ * the given `baseFeePerGas` will be included in the block at height
+ * `blockNumber` for a given set of price parameters.
+ */
 export type BlockPrices = {
   network: Network
   blockNumber: number
   baseFeePerGas: bigint
+  /**
+   * An estimate of how many transactions will be included in the block at
+   * height `blockNumber`.
+   */
   estimatedTransactionCount: number
+  /**
+   * A choice of gas price parameters with associated confidence that a
+   * transaction using those parameters will be included in the block at height
+   * `blockNumber`.
+   */
   estimatedPrices: BlockEstimate[]
 }
 
+/**
+ * An estimate of the confidence that a given set of gas price parameters will
+ * will result in the inclusion of a transaction in a block.
+ *
+ * This estimate must be paired with a block number to be useful---it
+ * represents the confidence that a transaction will be included in that block
+ * if it uses the price parameters in this object.
+ */
 export type BlockEstimate = {
   confidence: number
+  /**
+   * For legacy (pre-EIP1559) transactions, the gas price that results in the
+   * above likelihood of inclusion.
+   */
   price: bigint | number
+  /**
+   * For EIP1559 transactions, the max priority fee per gas that results in the
+   * above likelihood of inclusion.
+   */
   maxPriorityFeePerGas: bigint | number
+  /**
+   * For EIP1559 transactions, the max fee per gas that results in the above
+   * likelihood of inclusion.
+   */
   maxFeePerGas: bigint | number
 }
