@@ -53,7 +53,7 @@ export default function Wallet(): ReactElement {
                   }
                 />
               ) : (
-                <WalletActivityList activity={activity} />
+                <WalletActivityList />
               )}
             </div>
           </div>

@@ -44,19 +44,21 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            <SharedButton
-              type="primary"
-              size="medium"
-              icon="send"
-              linkTo={{
-                pathname: "/send",
-                state: {
-                  token: { name: symbol },
-                },
-              }}
-            >
-              Send
-            </SharedButton>
+            {process.env.HIDE_SEND_BUTTON === "true" ? null : (
+              <SharedButton
+                type="primary"
+                size="medium"
+                icon="send"
+                linkTo={{
+                  pathname: "/send",
+                  state: {
+                    token: { name: symbol },
+                  },
+                }}
+              >
+                Send
+              </SharedButton>
+            )}
             <SharedButton type="primary" size="medium" icon="swap">
               Swap
             </SharedButton>
@@ -67,7 +69,7 @@ export default function SingleAsset(): ReactElement {
           <div className="right">Move to Ethereum</div>
         </div>
         <div className="label_light standard_width_padded">Activity</div>
-        <WalletActivityList activity={filteredActivity} />
+        <WalletActivityList />
       </CorePage>
       <style jsx>
         {`
