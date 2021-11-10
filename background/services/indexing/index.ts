@@ -1,7 +1,7 @@
 import logger from "../../lib/logger"
 
 import { HexString } from "../../types"
-import { AccountBalance, AccountNetwork } from "../../accounts"
+import { AccountBalance, AddressNetwork } from "../../accounts"
 import { Network } from "../../networks"
 import {
   AnyAsset,
@@ -188,13 +188,13 @@ export default class IndexingService extends BaseService<Events> {
     // TODO update for NFTs
     this.chainService.emitter.on(
       "assetTransfers",
-      async ({ accountNetwork, assetTransfers }) => {
+      async ({ addressNetwork, assetTransfers }) => {
         assetTransfers.forEach((transfer) => {
           const fungibleAsset = transfer.assetAmount
             .asset as SmartContractFungibleAsset
           if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
             this.addTokenToTrackByContract(
-              accountNetwork,
+              addressNetwork,
               fungibleAsset.contractAddress,
               fungibleAsset.decimals
             )
@@ -205,10 +205,10 @@ export default class IndexingService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async (accountNetwork) => {
+      async (addressNetwork) => {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
-        const balances = await this.retrieveTokenBalances(accountNetwork)
+        const balances = await this.retrieveTokenBalances(addressNetwork)
 
         // Every asset we have that hasn't already been balance checked and is
         // on the currently selected network should be checked once.
@@ -227,7 +227,7 @@ export default class IndexingService extends BaseService<Events> {
               !checkedContractAddresses.has(a.contractAddress)
           )
         await this.retrieveTokenBalances(
-          accountNetwork,
+          addressNetwork,
           otherActiveAssets.map((a) => a.contractAddress)
         )
       }
@@ -239,16 +239,16 @@ export default class IndexingService extends BaseService<Events> {
    * saving the resulting balances and adding any asset with a non-zero balance
    * to the list of assets to track.
    *
-   * @param accountNetwork
+   * @param addressNetwork
    * @param contractAddresses
    */
   private async retrieveTokenBalances(
-    accountNetwork: AccountNetwork,
+    addressNetwork: AddressNetwork,
     contractAddresses?: HexString[]
   ): ReturnType<typeof getTokenBalances> {
     const balances = await getTokenBalances(
       this.chainService.pollingProviders.ethereum,
-      accountNetwork.account,
+      addressNetwork.address,
       contractAddresses || undefined
     )
 
@@ -256,19 +256,18 @@ export default class IndexingService extends BaseService<Events> {
     await Promise.allSettled(
       balances.map(async (b) => {
         const knownAsset = await this.getKnownSmartContractAsset(
-          accountNetwork.network,
+          addressNetwork.network,
           b.contractAddress
         )
         if (knownAsset) {
           const accountBalance = {
+            ...addressNetwork,
             assetAmount: {
               asset: knownAsset,
               amount: b.amount,
             },
             retrievedAt: Date.now(),
-            network: accountNetwork.network,
             dataSource: "alchemy",
-            account: accountNetwork.account,
           } as const
           await this.db.addBalances([accountBalance])
           this.emitter.emit("accountBalance", accountBalance)
@@ -277,7 +276,7 @@ export default class IndexingService extends BaseService<Events> {
           }
         } else if (b.amount > 0) {
           await this.addTokenToTrackByContract(
-            accountNetwork,
+            addressNetwork,
             b.contractAddress
           )
           // TODO we're losing balance information here, consider an
@@ -295,7 +294,7 @@ export default class IndexingService extends BaseService<Events> {
    * If the asset has already been cached, use that. Otherwise, infer asset
    * details from the contract and outside services.
    *
-   * @param accountNetwork the account and network on which this asset should
+   * @param addressNetwork the account and network on which this asset should
    *        be tracked
    * @param contractAddress the address of the token contract on this network
    * @param decimals optionally include the number of decimals tracked by a
@@ -303,7 +302,7 @@ export default class IndexingService extends BaseService<Events> {
    *        metadata.
    */
   private async addTokenToTrackByContract(
-    accountNetwork: AccountNetwork,
+    addressNetwork: AddressNetwork,
     contractAddress: string,
     decimals?: number
   ): Promise<void> {
@@ -312,7 +311,7 @@ export default class IndexingService extends BaseService<Events> {
       (asset) =>
         "decimals" in asset &&
         "homeNetwork" in asset &&
-        asset.homeNetwork.name === accountNetwork.network.name &&
+        asset.homeNetwork.name === addressNetwork.network.name &&
         "contractAddress" in asset &&
         asset.contractAddress === contractAddress
     )
@@ -320,7 +319,7 @@ export default class IndexingService extends BaseService<Events> {
       this.addAssetToTrack(found as SmartContractFungibleAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
-        accountNetwork.network,
+        addressNetwork.network,
         contractAddress
       )
       if (!customAsset) {
@@ -473,7 +472,7 @@ export default class IndexingService extends BaseService<Events> {
     await Promise.allSettled(
       (
         await this.chainService.getAccountsToTrack()
-      ).map(async ({ account }) => {
+      ).map(async ({ address: account }) => {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
           this.chainService.pollingProviders.ethereum,

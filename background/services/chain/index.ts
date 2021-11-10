@@ -7,7 +7,7 @@ import { utils } from "ethers"
 import logger from "../../lib/logger"
 
 import { HexString } from "../../types"
-import { AccountBalance, AccountNetwork } from "../../accounts"
+import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
@@ -59,10 +59,10 @@ const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 const NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
 interface Events extends ServiceLifecycleEvents {
-  newAccountToTrack: AccountNetwork
+  newAccountToTrack: AddressNetwork
   accountBalance: AccountBalance
   assetTransfers: {
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
     assetTransfers: AssetTransfer[]
   }
   block: AnyEVMBlock
@@ -206,19 +206,19 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  async getAccountsToTrack(): Promise<AccountNetwork[]> {
+  async getAccountsToTrack(): Promise<AddressNetwork[]> {
     return this.db.getAccountsToTrack()
   }
 
   async getLatestBaseAccountBalance(
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
   ): Promise<AccountBalance> {
     // TODO look up provider network properly
     const balance = await this.pollingProviders.ethereum.getBalance(
-      accountNetwork.account
+      addressNetwork.address
     )
     const accountBalance = {
-      account: accountNetwork.account,
+      address: addressNetwork.address,
       assetAmount: {
         asset: ETH,
         amount: balance.toBigInt(),
@@ -232,12 +232,12 @@ export default class ChainService extends BaseService<Events> {
     return accountBalance
   }
 
-  async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
-    await this.db.addAccountToTrack(accountNetwork)
-    this.emitter.emit("newAccountToTrack", accountNetwork)
-    this.getLatestBaseAccountBalance(accountNetwork)
-    this.subscribeToAccountTransactions(accountNetwork)
-    this.loadRecentAssetTransfers(accountNetwork)
+  async addAccountToTrack(addressNetwork: AddressNetwork): Promise<void> {
+    await this.db.addAccountToTrack(addressNetwork)
+    this.emitter.emit("newAccountToTrack", addressNetwork)
+    this.getLatestBaseAccountBalance(addressNetwork)
+    this.subscribeToAccountTransactions(addressNetwork)
+    this.loadRecentAssetTransfers(addressNetwork)
   }
 
   async getBlockHeight(network: Network): Promise<number> {
@@ -390,23 +390,23 @@ export default class ChainService extends BaseService<Events> {
    * Load recent asset transfers from an account on a particular network. Backs
    * off exponentially (in block range, not in time) on failure.
    *
-   * @param accountNetwork the account and network whose asset transfers we need
+   * @param addressNetwork the address and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
   ): Promise<void> {
-    const blockHeight = await this.getBlockHeight(accountNetwork.network)
+    const blockHeight = await this.getBlockHeight(addressNetwork.network)
     let fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
     try {
       return await this.loadAssetTransfers(
-        accountNetwork,
+        addressNetwork,
         BigInt(fromBlock),
         BigInt(blockHeight)
       )
     } catch (err) {
       logger.error(
         "Failed loaded recent assets, retrying with shorter block range",
-        accountNetwork,
+        addressNetwork,
         err
       )
     }
@@ -416,14 +416,14 @@ export default class ChainService extends BaseService<Events> {
       blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 2)
     try {
       return await this.loadAssetTransfers(
-        accountNetwork,
+        addressNetwork,
         BigInt(fromBlock),
         BigInt(blockHeight)
       )
     } catch (err) {
       logger.error(
         "Second failure loading recent assets, retrying with shorter block range",
-        accountNetwork,
+        addressNetwork,
         err
       )
     }
@@ -432,14 +432,14 @@ export default class ChainService extends BaseService<Events> {
       blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 4)
     try {
       return await this.loadAssetTransfers(
-        accountNetwork,
+        addressNetwork,
         BigInt(fromBlock),
         BigInt(blockHeight)
       )
     } catch (err) {
       logger.error(
         "Final failure loading recent assets for account",
-        accountNetwork,
+        addressNetwork,
         err
       )
     }
@@ -450,16 +450,16 @@ export default class ChainService extends BaseService<Events> {
    * Continue to load historic asset transfers, finding the oldest lookup and
    * searching for asset transfers before that block.
    *
-   * @param accountNetwork The account whose asset transfers are being loaded.
+   * @param addressNetwork The account whose asset transfers are being loaded.
    */
   private async loadHistoricAssetTransfers(
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
   ): Promise<void> {
     const oldest = await this.db.getOldestAccountAssetTransferLookup(
-      accountNetwork
+      addressNetwork
     )
     const newest = await this.db.getNewestAccountAssetTransferLookup(
-      accountNetwork
+      addressNetwork
     )
 
     if (newest !== null && oldest !== null) {
@@ -471,7 +471,7 @@ export default class ChainService extends BaseService<Events> {
       ) {
         // if we haven't hit 10x the single-call limit, pull another.
         await this.loadAssetTransfers(
-          accountNetwork,
+          addressNetwork,
           oldest - BigInt(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY),
           oldest
         )
@@ -484,29 +484,29 @@ export default class ChainService extends BaseService<Events> {
    * particular block range. Emit events for any transfers found, and look up
    * any related transactions and blocks.
    *
-   * @param accountNetwork the account and network whose asset transfers we need
+   * @param addressNetwork the address and network whose asset transfers we need
    */
   private async loadAssetTransfers(
-    accountNetwork: AccountNetwork,
+    addressNetwork: AddressNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
     // TODO only works on Ethereum today
     const assetTransfers = await getAssetTransfers(
       this.pollingProviders.ethereum,
-      accountNetwork.account,
+      addressNetwork.address,
       Number(startBlock),
       Number(endBlock)
     )
 
     await this.db.recordAccountAssetTransferLookup(
-      accountNetwork,
+      addressNetwork,
       startBlock,
       endBlock
     )
 
     this.emitter.emit("assetTransfers", {
-      accountNetwork,
+      addressNetwork,
       assetTransfers,
     })
 
@@ -581,12 +581,12 @@ export default class ChainService extends BaseService<Events> {
 
       const forAccounts = accounts
         .filter(
-          (accountNetwork) =>
-            tx.from.toLowerCase() === accountNetwork.account.toLowerCase() ||
-            tx.to?.toLowerCase() === accountNetwork.account.toLowerCase()
+          (addressNetwork) =>
+            tx.from.toLowerCase() === addressNetwork.address.toLowerCase() ||
+            tx.to?.toLowerCase() === addressNetwork.address.toLowerCase()
         )
-        .map((accountNetwork) => {
-          return accountNetwork.account.toLowerCase()
+        .map((addressNetwork) => {
+          return addressNetwork.address.toLowerCase()
         })
 
       // emit in a separate try so outside services still get the tx
@@ -632,10 +632,10 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Watch logs for an account's transactions on a particular network.
    *
-   * @param accountNetwork The network and account to watch.
+   * @param addressNetwork The network and address to watch.
    */
   private async subscribeToAccountTransactions(
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
   ): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
@@ -644,7 +644,7 @@ export default class ChainService extends BaseService<Events> {
       "filteredNewFullPendingTransactionsSubscriptionID",
       [
         "alchemy_filteredNewFullPendingTransactions",
-        { address: accountNetwork.account },
+        { address: addressNetwork.address },
       ],
       async (result: unknown) => {
         // TODO use proper provider string
@@ -660,7 +660,7 @@ export default class ChainService extends BaseService<Events> {
       }
     )
     this.subscribedAccounts.push({
-      account: accountNetwork.account,
+      account: addressNetwork.address,
       provider,
     })
   }

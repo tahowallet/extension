@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { addAccountNetwork } from "@tallyho/tally-background/redux-slices/accounts"
+import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
@@ -22,8 +22,8 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   const handleSubmitViewOnlyAddress = useCallback(async () => {
     if (checkIfPlausibleETHAddress(address)) {
       dispatch(
-        addAccountNetwork({
-          account: address,
+        addAddressNetwork({
+          address,
           network: getEthereumNetwork(),
         })
       )

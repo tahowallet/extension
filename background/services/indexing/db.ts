@@ -174,7 +174,7 @@ export class IndexingDatabase extends Dexie {
       .above(Date.now() - 7 * 24 * 60 * 60 * 1000)
       .filter(
         (balance) =>
-          balance.account === account &&
+          balance.address === account &&
           balance.assetAmount.asset.symbol === asset.symbol &&
           balance.network.name === network.name
       )

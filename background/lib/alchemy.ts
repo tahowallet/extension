@@ -176,18 +176,18 @@ const isValidAlchemyTokenBalanceResponse = jtdValidatorFor(
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
  *
  * @param provider an Alchemy ethers provider
- * @param account the account whose balances we're fetching
+ * @param address the address whose balances we're fetching
  * @param tokens An optional list of hex-string contract addresses. If the list
  *        isn't provided, Alchemy will choose based on the top 100 high-volume
  *        tokens on its platform
  */
 export async function getTokenBalances(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  account: HexString,
+  address: HexString,
   tokens?: HexString[]
 ): Promise<{ contractAddress: string; amount: bigint }[]> {
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
-    account,
+    address,
     tokens || "DEFAULT_TOKENS",
   ])
   if (!isValidAlchemyTokenBalanceResponse(json)) {

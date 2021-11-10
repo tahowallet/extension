@@ -9,9 +9,9 @@ import { HexString } from "./types"
  */
 export type AccountBalance = {
   /**
-   * The account whose balance was measured.
+   * The address whose balance was measured.
    */
-  account: HexString
+  address: HexString
   /**
    * The measured balance and the asset in which it's denominated.
    */
@@ -36,9 +36,9 @@ export type AccountBalance = {
 }
 
 /**
- * An account on a particular network. That's it. That's the comment.
+ * An address on a particular network. That's it. That's the comment.
  */
-export type AccountNetwork = {
-  account: HexString
+export type AddressNetwork = {
+  address: HexString
   network: Network
 }
