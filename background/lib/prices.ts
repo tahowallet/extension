@@ -6,7 +6,7 @@ import {
   FiatCurrency,
   PricePoint,
   UnitPricePoint,
-} from "../types"
+} from "../assets"
 import { jsonSchemaValidatorFor } from "./validation"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"

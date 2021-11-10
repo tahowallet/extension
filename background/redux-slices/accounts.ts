@@ -1,16 +1,14 @@
 import { createSlice, createSelector, current } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
+import { AccountBalance, AccountNetwork } from "../accounts"
 import {
-  AccountBalance,
-  AccountNetwork,
-  AnyAssetAmount,
   AnyEVMTransaction,
   ConfirmedEVMTransaction,
-  FungibleAssetAmount,
   AnyEVMBlock,
   Network,
-} from "../types"
+} from "../networks"
+import { AnyAssetAmount, FungibleAssetAmount } from "../assets"
 import { AssetsState } from "./assets"
 import { UIState } from "./ui"
 

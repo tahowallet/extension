@@ -5,7 +5,8 @@ import {
 import { utils } from "ethers"
 
 import logger from "./logger"
-import { AssetTransfer, HexString, SmartContractFungibleAsset } from "../types"
+import { HexString } from "../types"
+import { AssetTransfer, SmartContractFungibleAsset } from "../assets"
 import { ETH } from "../constants"
 import { jtdValidatorFor } from "./validation"
 import { getEthereumNetwork } from "./utils"

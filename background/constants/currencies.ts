@@ -1,4 +1,4 @@
-import { FiatCurrency, FungibleAsset } from "../types"
+import { FiatCurrency, FungibleAsset } from "../assets"
 
 export const USD = {
   name: "United States Dollar",
