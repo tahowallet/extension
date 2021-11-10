@@ -27,6 +27,7 @@ import {
   updateAccountBalance,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
+import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
@@ -243,7 +244,9 @@ export default class Main extends BaseService<never> {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    this.chainService.emitter.on("transaction", (transaction) => {
+    this.chainService.emitter.on("transaction", (payload) => {
+      const { transaction } = payload
+
       if (
         transaction.blockHash &&
         "gasUsed" in transaction &&
@@ -253,6 +256,7 @@ export default class Main extends BaseService<never> {
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
+      this.store.dispatch(activityEncountered(payload))
     })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))

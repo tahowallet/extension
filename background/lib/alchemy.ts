@@ -42,6 +42,7 @@ const alchemyGetAssetTransfersJTD = {
       elements: alchemyAssetTransferJTD,
     },
   },
+  additionalProperties: true,
 } as const
 
 const isValidAlchemyAssetTransferResponse = jtdValidatorFor(

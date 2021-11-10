@@ -1,9 +1,12 @@
 import React, { ReactElement } from "react"
 
-export default function TopMenuProfileButton(): ReactElement {
+export default function TopMenuProfileButton(props: {
+  account: string
+}): ReactElement {
+  const { account } = props
   return (
     <button type="button">
-      Foxhunter
+      {account}
       <div className="avatar" />
       <style jsx>
         {`
