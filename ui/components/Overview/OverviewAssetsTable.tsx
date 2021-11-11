@@ -1,10 +1,11 @@
+import { AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { UserValue } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement } from "react"
-import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 interface Props {
-  assets: CombinedAccountData["assets"]
+  assets: (AnyAssetAmount & UserValue)[]
   initializationLoadingTimeExpired: boolean
 }
 

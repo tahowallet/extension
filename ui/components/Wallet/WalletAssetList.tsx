@@ -1,11 +1,12 @@
 // @ts-check
 //
-import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
+import { AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { UserValue } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement } from "react"
 import WalletAssetListItem from "./WalletAssetListItem"
 
 interface Props {
-  assetAmounts: CombinedAccountData["assets"]
+  assetAmounts: (AnyAssetAmount & UserValue)[]
   initializationLoadingTimeExpired: boolean
 }
 

@@ -12,27 +12,11 @@ import { AnyAssetAmount, FungibleAssetAmount } from "../assets"
 import { AssetsState } from "./assets"
 import { UIState } from "./ui"
 
-// Adds user-specific values based on preferences. This is the combination of a
-// conversion to the user's preferred currency for viewing, as well as a
-// conversion to a decimal amount for assets that are represented by
-// fixed-point integers.
-type UserValue = {
-  userValue: number | "unknown"
-  decimalValue: number | "unknown"
-  localizedUserValue?: string
-  localizedDecimalValue?: string
-  localizedPricePerToken?: string
-}
-
-type AccountBalanceWithUserValue = AccountBalance & {
-  assetAmount: AnyAssetAmount & UserValue
-}
-
 type AccountData = {
   account: string
   network: Network
   balances: {
-    [assetSymbol: string]: AccountBalanceWithUserValue
+    [assetSymbol: string]: AccountBalance
   }
   confirmedTransactions: ConfirmedEVMTransaction[]
   unconfirmedTransactions: AnyEVMTransaction[]
@@ -52,61 +36,11 @@ export type AccountState = {
 
 export type CombinedAccountData = {
   totalUserValue?: string
-  assets: (AnyAssetAmount & UserValue)[]
+  assets: AnyAssetAmount[]
   activity: AnyEVMTransaction[]
 }
 
 const USER_VALUE_DUST_THRESHOLD = 2
-
-// Type assertion to confirm an AnyAssetAmount is a FungibleAssetAmount.
-function isFungibleAssetAmount(
-  assetAmount: AnyAssetAmount
-): assetAmount is FungibleAssetAmount {
-  return "decimals" in assetAmount.asset
-}
-
-// Fill in USD amounts for an asset.
-function enrichAssetAmountWithUserAmounts(
-  assetAmount: AnyAssetAmount
-): AnyAssetAmount & UserValue {
-  if (isFungibleAssetAmount(assetAmount)) {
-    const {
-      amount,
-      asset: { decimals },
-    } = assetAmount
-    // TODO What actual precision do we want here? Probably more than 2
-    // TODO decimals.
-    const assetValue2Decimals = amount / 10n ** BigInt(decimals - 2)
-
-    // Multiplying two 2-decimal precision fixed-points means dividing by
-    // 4-decimal precision.
-    const decimalValue = Number(assetValue2Decimals) / 100
-
-    return {
-      ...assetAmount,
-      userValue: "unknown",
-      decimalValue,
-      localizedDecimalValue: decimalValue.toLocaleString("default", {
-        maximumFractionDigits: 2,
-      }),
-    }
-  }
-  return {
-    ...assetAmount,
-    userValue: "unknown",
-    decimalValue: "unknown",
-  }
-}
-
-// Fill in USD amounts for an account balance.
-function enrichWithUserAmounts(
-  accountBalance: AccountBalance
-): AccountBalanceWithUserValue {
-  return {
-    ...accountBalance,
-    assetAmount: enrichAssetAmountWithUserAmounts(accountBalance.assetAmount),
-  }
-}
 
 // Comparator for two transactions by block height. Can be used to sort in
 // descending order of block height, with unspecified block heights (i.e.,
@@ -191,14 +125,13 @@ const accountSlice = createSlice({
       } = updatedAccountBalance
       const existingAccountData = immerState.accountsData[updatedAccount]
       if (existingAccountData && existingAccountData !== "loading") {
-        existingAccountData.balances[updatedAssetSymbol] =
-          enrichWithUserAmounts(updatedAccountBalance)
+        existingAccountData.balances[updatedAssetSymbol] = updatedAccountBalance
       } else {
         immerState.accountsData[updatedAccount] = {
-          account: updatedAccount,
+          address: updatedAccount,
           network: updatedAccountBalance.network,
           balances: {
-            [updatedAssetSymbol]: enrichWithUserAmounts(updatedAccountBalance),
+            [updatedAssetSymbol]: updatedAccountBalance,
           },
           unconfirmedTransactions: [],
           confirmedTransactions: [],
@@ -217,23 +150,16 @@ const accountSlice = createSlice({
         )
         .filter((b) => b)
 
-      immerState.combinedData.totalUserValue = combinedAccountBalances
-        .reduce(
-          (acc, { userValue }) =>
-            userValue === "unknown" ? acc : acc + userValue,
-          0
-        )
-        .toLocaleString("default", { maximumFractionDigits: 2 })
       immerState.combinedData.assets = Object.values(
         combinedAccountBalances.reduce<{
-          [symbol: string]: AnyAssetAmount & UserValue
+          [symbol: string]: AnyAssetAmount
         }>((acc, combinedAssetAmount) => {
           const assetSymbol = combinedAssetAmount.asset.symbol
-          acc[assetSymbol] = enrichAssetAmountWithUserAmounts({
+          acc[assetSymbol] = {
             ...combinedAssetAmount,
             amount:
               (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
-          })
+          }
           return acc
         }, {})
       )
@@ -379,6 +305,17 @@ export const getFullState = (state: {
   ui: UIState
 }): { account: AccountState; assets: AssetsState; ui: UIState } => state
 
+// Adds user-specific values based on preferences. This is the combination of a
+// conversion to the user's preferred currency for viewing, as well as a
+// conversion to a decimal amount for assets that are represented by
+// fixed-point integers.
+export type UserValue = {
+  decimalValue: number | "unknown"
+  localizedUserValue?: string
+  localizedDecimalValue?: string
+  localizedPricePerToken?: string
+}
+
 export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
   (state) => {
@@ -404,7 +341,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
-    const accountAssets = account.combinedData.assets.map((assetItem) => {
+    const accountAssets = account.combinedData.assets.map<
+      AnyAssetAmount & UserValue
+    >((assetItem) => {
       const rawAsset = assets.find(
         (asset) =>
           asset.symbol === assetItem.asset.symbol && asset.recentPrices.USD
@@ -451,6 +390,11 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
         return {
           ...assetItem,
+          decimalValue:
+            Number(
+              assetItem.amount /
+                10n ** BigInt(assetItem.asset.decimals - desiredDecimals)
+            ) / 100,
           localizedUserValue: formatPrice(localizedUserValue),
           localizedPricePerToken: formatPrice(
             Number(usdNonDecimalValue) / 10 ** usdDecimals
@@ -459,6 +403,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
       }
       return {
         ...assetItem,
+        decimalValue: "unknown",
       }
     })
 
