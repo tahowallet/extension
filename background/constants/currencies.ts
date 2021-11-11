@@ -25,7 +25,7 @@ export const ETH: FungibleAsset = {
   symbol: "ETH",
   decimals: 18,
   metadata: {
-    coinGeckoId: "ethereum",
+    coinGeckoID: "ethereum",
     tokenLists: [],
     websiteURL: "https://ethereum.org",
   },
@@ -36,7 +36,7 @@ export const BTC: FungibleAsset = {
   symbol: "BTC",
   decimals: 8,
   metadata: {
-    coinGeckoId: "bitcoin",
+    coinGeckoID: "bitcoin",
     tokenLists: [],
     websiteURL: "https://bitcoin.org",
   },
