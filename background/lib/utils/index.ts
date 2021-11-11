@@ -7,6 +7,13 @@ export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
 }
 
+export function sameEVMAddress(
+  address1: string | Buffer,
+  address2: string | Buffer
+): boolean {
+  return normalizeHexAddress(address1) === normalizeHexAddress(address2)
+}
+
 export function gweiToWei(value: number | bigint): bigint {
   return BigInt(utils.parseUnits(value.toString(), "gwei").toString())
 }

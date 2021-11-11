@@ -1,22 +1,24 @@
 import { TokenList } from "@uniswap/token-lists"
 
 export type HexString = string
+export type URI = string
+export type DomainName = string
 
 export interface TokenListCitation {
   name: string
   url: string
-  logoURL?: string
+  logoURL?: URI
 }
 
 export interface TokenListAndReference {
-  url: string
+  url: URI
   tokenList: TokenList
 }
 
 export interface AssetMetadata {
   coinGeckoId?: string
-  logoURL?: string
-  websiteURL?: string
+  logoURL?: URI
+  websiteURL?: URI
   tokenLists: TokenListCitation[]
 }
 

@@ -13,6 +13,7 @@ import {
   ChainService,
   IndexingService,
   KeyringService,
+  NameService,
   ServiceCreatorFunction,
 } from "./services"
 
@@ -25,6 +26,8 @@ import {
   transactionSeen,
   blockSeen,
   updateAccountBalance,
+  updateENSName,
+  updateENSAvatar,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
@@ -137,6 +140,7 @@ export default class Main extends BaseService<never> {
       chainService
     )
     const keyringService = KeyringService.create()
+    const nameService = NameService.create(chainService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -162,7 +166,8 @@ export default class Main extends BaseService<never> {
       await preferenceService,
       await chainService,
       await indexingService,
-      await keyringService
+      await keyringService,
+      await nameService
     )
   }
 
@@ -189,7 +194,12 @@ export default class Main extends BaseService<never> {
      * accounts, and signs messagees and transactions. The promise will be
      * resolved when the service is initialized.
      */
-    private keyringService: KeyringService
+    private keyringService: KeyringService,
+    /**
+     * A promise to the name service, responsible for resolving names to
+     * addresses and content.
+     */
+    private nameService: NameService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -218,6 +228,7 @@ export default class Main extends BaseService<never> {
       this.chainService.startService(),
       this.indexingService.startService(),
       this.keyringService.startService(),
+      this.nameService.startService(),
     ])
   }
 
@@ -227,6 +238,7 @@ export default class Main extends BaseService<never> {
       this.chainService.stopService(),
       this.indexingService.stopService(),
       this.keyringService.stopService(),
+      this.nameService.stopService(),
     ])
 
     await super.internalStopService()
@@ -235,6 +247,7 @@ export default class Main extends BaseService<never> {
   async initializeRedux(): Promise<void> {
     this.connectIndexingService()
     this.connectKeyringService()
+    this.connectNameService()
     await this.connectChainService()
   }
 
@@ -321,6 +334,38 @@ export default class Main extends BaseService<never> {
 
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
       this.store.dispatch(gasEstimates(blockPrices))
+    })
+  }
+
+  async connectNameService(): Promise<void> {
+    accountSliceEmitter.on("addAccount", async (accountNetwork) => {
+      let name: string | null = null
+      try {
+        name = await this.nameService.lookUpName(
+          accountNetwork.account,
+          accountNetwork.network
+        )
+        if (name) {
+          this.store.dispatch(updateENSName({ ...accountNetwork, name }))
+        }
+      } catch (err) {
+        logger.error(
+          "Error fetching ENS name for address",
+          accountNetwork.account,
+          err
+        )
+      }
+
+      if (name) {
+        const avatar = await this.nameService.lookUpAvatar(
+          accountNetwork.account,
+          accountNetwork.network
+        )
+
+        if (avatar) {
+          this.store.dispatch(updateENSAvatar({ ...accountNetwork, avatar }))
+        }
+      }
     })
   }
 
