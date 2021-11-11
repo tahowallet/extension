@@ -1,14 +1,12 @@
-// @ts-check
-//
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
-import { MainCurrencyAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import { AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
-  assetAmount: AnyAssetAmount & MainCurrencyAmount
+  assetAmount: CompleteAssetAmount
   initializationLoadingTimeExpired: boolean
 }
 
