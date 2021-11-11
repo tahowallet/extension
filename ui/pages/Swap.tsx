@@ -13,6 +13,11 @@ import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 import { useBackgroundSelector } from "../hooks"
 
+interface SwapAmount {
+  from: string
+  to: string
+}
+
 interface TradingPair {
   from?: Asset
   to?: Asset
@@ -27,6 +32,11 @@ interface ZrxToken {
 export default function Swap(): ReactElement {
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
   const [swapTokens, setSwapTokens] = useState<Asset[]>([])
+  const [swapAmount, setSwapAmount] = useState<SwapAmount>({
+    from: "0",
+    to: "0",
+  })
+
   const [swap, setSwap] = useState<TradingPair>({
     from: undefined,
     to: undefined,
@@ -80,9 +90,37 @@ export default function Swap(): ReactElement {
     })
   }, [])
 
-  const onInputChanged = useCallback((event) => {
-    logger.log("Got input value!", event.target.value)
-  }, [])
+  const fromInputChanged = useCallback(
+    (event) => {
+      setSwapAmount(() => {
+        return {
+          from: event.target.value,
+          to: ethersUtils
+            .parseUnits(event.target.value, 18)
+            .div(swap.price)
+            .toString(), // TODO: Actual decimals
+        }
+      })
+    },
+
+    [swap]
+  )
+
+  const toInputChanged = useCallback(
+    (event) => {
+      setSwapAmount(() => {
+        return {
+          from: ethersUtils
+            .parseUnits(event.target.value, 18)
+            .mul(swap.price)
+            .toString(), // TODO: Actual decimals
+          to: event.target.value,
+        }
+      })
+    },
+
+    [swap]
+  )
 
   return (
     <>
@@ -101,7 +139,8 @@ export default function Swap(): ReactElement {
               <SharedAssetInput
                 assets={displayAssets}
                 onAssetSelected={fromAssetSelected}
-                onInputChanged={onInputChanged}
+                onInputChanged={fromInputChanged}
+                amount={swapAmount.from}
                 label="Swap from:"
               />
             </div>
@@ -110,6 +149,8 @@ export default function Swap(): ReactElement {
               <SharedAssetInput
                 assets={swapTokens}
                 onAssetSelected={toAssetSelected}
+                onInputChanged={toInputChanged}
+                amountValue={swapAmount.to}
                 label="Swap to:"
               />
             </div>
@@ -117,7 +158,7 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {swap.to && swap.from ? (
+              {swap.from && swap.to ? (
                 <SharedButton type="primary" size="large" onClick={handleClick}>
                   Get final quote
                 </SharedButton>

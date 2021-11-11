@@ -131,6 +131,7 @@ interface SharedAssetInputProps {
   onInputChanged?: (value: string) => void
   label: string
   defaultToken: Asset
+  amount: string
   isTokenOptionsLocked: boolean
 }
 
@@ -142,6 +143,7 @@ export default function SharedAssetInput(
     assets,
     label,
     defaultToken,
+    amount,
     isTokenOptionsLocked,
     onAssetSelected,
     onInputChanged,
@@ -222,6 +224,7 @@ export default function SharedAssetInput(
               className="input_amount"
               type="text"
               placeholder="0.0"
+              value={amount}
               onInput={handleInputChanged}
             />
           </>
@@ -287,4 +290,5 @@ SharedAssetInput.defaultProps = {
   assets: [{ symbol: "ETH", name: "Example Asset" }],
   defaultToken: { symbol: "", name: "" },
   label: "",
+  amount: "0.0",
 }
