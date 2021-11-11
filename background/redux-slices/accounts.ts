@@ -16,19 +16,24 @@ import {
   AssetDecimalAmount,
   formatCurrencyAmount,
 } from "./utils/asset-utils"
+import { DomainName, HexString, URI } from "../types"
 
 type AccountData = {
-  address: string
+  address: HexString
   network: Network
   balances: {
     [assetSymbol: string]: AccountBalance
   }
   confirmedTransactions: ConfirmedEVMTransaction[]
   unconfirmedTransactions: AnyEVMTransaction[]
+  ens: {
+    name: DomainName | null
+    avatar: URI | null
+  }
 }
 
 export type AccountState = {
-  account?: any
+  account?: AddressNetwork
   accountLoading?: string
   hasAccountError?: boolean
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
@@ -109,6 +114,31 @@ function lookUpExistingAccountData(
     )
 }
 
+function newAccountData(address: HexString, network: Network): AccountData {
+  return {
+    address,
+    network,
+    balances: {},
+    unconfirmedTransactions: [],
+    confirmedTransactions: [],
+    ens: {
+      name: null,
+      avatar: null,
+    },
+  }
+}
+
+function getOrCreateAccountData(
+  data: AccountData | "loading" | undefined,
+  account: HexString,
+  network: Network
+): AccountData {
+  if (data === "loading" || !data) {
+    return newAccountData(account, network)
+  }
+  return data
+}
+
 // TODO Much of the combinedData bits should probably be done in a Reselect
 // TODO selector.
 const accountSlice = createSlice({
@@ -141,13 +171,10 @@ const accountSlice = createSlice({
         existingAccountData.balances[updatedAssetSymbol] = updatedAccountBalance
       } else {
         immerState.accountsData[updatedAccount] = {
-          address: updatedAccount,
-          network: updatedAccountBalance.network,
+          ...newAccountData(updatedAccount, updatedAccountBalance.network),
           balances: {
             [updatedAssetSymbol]: updatedAccountBalance,
           },
-          unconfirmedTransactions: [],
-          confirmedTransactions: [],
         }
       }
 
@@ -176,6 +203,42 @@ const accountSlice = createSlice({
           return acc
         }, {})
       )
+    },
+    updateENSName: (
+      immerState,
+      {
+        payload: addressNetworkName,
+      }: { payload: AddressNetwork & { name: DomainName } }
+    ) => {
+      // TODO Refactor when accounts are also keyed per network.
+      const address = addressNetworkName.address.toLowerCase()
+      const baseAccountData = getOrCreateAccountData(
+        immerState.accountsData[address],
+        address,
+        addressNetworkName.network
+      )
+      immerState.accountsData[address] = {
+        ...baseAccountData,
+        ens: { ...baseAccountData.ens, name: addressNetworkName.name },
+      }
+    },
+    updateENSAvatar: (
+      immerState,
+      {
+        payload: addressNetworkAvatar,
+      }: { payload: AddressNetwork & { avatar: URI } }
+    ) => {
+      // TODO Refactor when accounts are also keyed per network.
+      const address = addressNetworkAvatar.address.toLowerCase()
+      const baseAccountData = getOrCreateAccountData(
+        immerState.accountsData[address],
+        address,
+        addressNetworkAvatar.network
+      )
+      immerState.accountsData[address] = {
+        ...baseAccountData,
+        ens: { ...baseAccountData.ens, name: addressNetworkAvatar.avatar },
+      }
     },
     transactionSeen: (
       immerState,
@@ -269,6 +332,8 @@ const accountSlice = createSlice({
 export const {
   loadAccount,
   updateAccountBalance,
+  updateENSName,
+  updateENSAvatar,
   transactionSeen,
   transactionConfirmed,
   blockSeen,
