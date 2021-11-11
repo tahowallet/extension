@@ -11,8 +11,22 @@ interface Props {
 export default function TopMenu(props: Props): ReactElement {
   const { toggleOpenProtocolList, toggleOpenNotifications } = props
 
-  const truncatedAccountAddress = useBackgroundSelector((background) => {
-    return background.ui.selectedAccount?.truncatedAddress
+  const [address, truncatedAddress] = useBackgroundSelector((background) => {
+    return [
+      background.ui.selectedAccount?.address,
+      background.ui.selectedAccount?.truncatedAddress,
+    ]
+  })
+
+  const { name, avatar } = useBackgroundSelector((background) => {
+    const data = background.account.accountsData[address.toLowerCase()]
+    if (typeof data === "object") {
+      return data.ens
+    }
+    return {
+      name: null,
+      avatar: null,
+    }
   })
 
   return (
@@ -22,7 +36,11 @@ export default function TopMenu(props: Props): ReactElement {
           <TopMenuProtocolSwitcher />
         </button>
         <button type="button" onClick={toggleOpenNotifications}>
-          <TopMenuProfileButton account={truncatedAccountAddress} />
+          <TopMenuProfileButton
+            address={truncatedAddress}
+            nickname={name || undefined}
+            avatar={avatar || undefined}
+          />
         </button>
       </nav>
       <style jsx>
