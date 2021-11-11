@@ -2,13 +2,13 @@
 //
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
-import { UserValue } from "@tallyho/tally-background/redux-slices/accounts"
+import { MainCurrencyAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { AnyAssetAmount } from "@tallyho/tally-background/assets"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
-  assetAmount: AnyAssetAmount & UserValue
+  assetAmount: AnyAssetAmount & MainCurrencyAmount
   initializationLoadingTimeExpired: boolean
 }
 
@@ -16,7 +16,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   const { assetAmount, initializationLoadingTimeExpired } = props
 
   const isMissingLocalizedUserValue =
-    typeof assetAmount.localizedUserValue === "undefined"
+    typeof assetAmount.localizedMainCurrencyAmount === "undefined"
 
   return (
     <li>
@@ -37,7 +37,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             <div className="left_content">
               <div className="amount">
                 <span className="bold_amount_count">
-                  {assetAmount.localizedDecimalValue}
+                  {assetAmount.localizedDecimalAmount}
                 </span>
                 {assetAmount.asset.symbol}
               </div>
@@ -49,7 +49,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                   {isMissingLocalizedUserValue ? (
                     <SharedLoadingSpinner size="small" />
                   ) : (
-                    `$${assetAmount.localizedUserValue}`
+                    `$${assetAmount.localizedMainCurrencyAmount}`
                   )}
                 </div>
               )}

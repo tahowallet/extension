@@ -35,7 +35,7 @@ export type AccountState = {
 }
 
 export type CombinedAccountData = {
-  totalUserValue?: string
+  totalMainCurrencyValue?: string
   assets: AnyAssetAmount[]
   activity: AnyEVMTransaction[]
 }
@@ -71,7 +71,7 @@ function transactionBlockComparator(
 export const initialState = {
   accountsData: {},
   combinedData: {
-    totalUserValue: "",
+    totalMainCurrencyValue: "",
     assets: [],
     activity: [],
   },
@@ -305,14 +305,14 @@ export const getFullState = (state: {
   ui: UIState
 }): { account: AccountState; assets: AssetsState; ui: UIState } => state
 
-// Adds user-specific values based on preferences. This is the combination of a
-// conversion to the user's preferred currency for viewing, as well as a
+// Adds user-specific amounts based on preferences. This is the combination of
+// a conversion to the user's preferred currency for viewing, as well as a
 // conversion to a decimal amount for assets that are represented by
 // fixed-point integers.
-export type UserValue = {
-  decimalValue: number | "unknown"
-  localizedUserValue?: string
-  localizedDecimalValue?: string
+export type MainCurrencyAmount = {
+  decimalAmount: number | "unknown"
+  localizedMainCurrencyAmount?: string
+  localizedDecimalAmount?: string
   localizedPricePerToken?: string
 }
 
@@ -342,7 +342,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
     // Derive account "assets"/assetAmount which include USD values using
     // data from the assets slice
     const accountAssets = account.combinedData.assets.map<
-      AnyAssetAmount & UserValue
+      AnyAssetAmount & MainCurrencyAmount
     >((assetItem) => {
       const rawAsset = assets.find(
         (asset) =>
@@ -390,12 +390,12 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
         return {
           ...assetItem,
-          decimalValue:
+          decimalAmount:
             Number(
               assetItem.amount /
                 10n ** BigInt(assetItem.asset.decimals - desiredDecimals)
             ) / 100,
-          localizedUserValue: formatPrice(localizedUserValue),
+          localizedMainCurrencyAmount: formatPrice(localizedUserValue),
           localizedPricePerToken: formatPrice(
             Number(usdNonDecimalValue) / 10 ** usdDecimals
           ),
@@ -403,7 +403,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
       }
       return {
         ...assetItem,
-        decimalValue: "unknown",
+        decimalAmount: "unknown",
       }
     })
 
@@ -413,18 +413,18 @@ export const selectAccountAndTimestampedActivities = createSelector(
       // This will have to use a different method if we introduce other currencies
       if (ui.settings?.hideDust) {
         const reformat = parseFloat(
-          assetItem.localizedUserValue?.replace(/,/g, "") ?? "0"
+          assetItem.localizedMainCurrencyAmount?.replace(/,/g, "") ?? "0"
         )
         return (
           (reformat > USER_VALUE_DUST_THRESHOLD ||
-            assetItem.localizedUserValue === "Unknown") &&
-          (assetItem.decimalValue > 0 || assetItem.decimalValue === null)
+            assetItem.localizedMainCurrencyAmount === "Unknown") &&
+          (assetItem.decimalAmount > 0 || assetItem.decimalAmount === null)
         )
       }
       return (
         assetItem.asset.symbol === "ETH" ||
-        assetItem.decimalValue > 0 ||
-        assetItem.decimalValue === null
+        assetItem.decimalAmount > 0 ||
+        assetItem.decimalAmount === null
       )
     })
 

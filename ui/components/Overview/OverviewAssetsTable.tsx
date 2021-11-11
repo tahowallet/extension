@@ -1,11 +1,11 @@
 import { AnyAssetAmount } from "@tallyho/tally-background/assets"
-import { UserValue } from "@tallyho/tally-background/redux-slices/accounts"
+import { MainCurrencyAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement } from "react"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 interface Props {
-  assets: (AnyAssetAmount & UserValue)[]
+  assets: (AnyAssetAmount & MainCurrencyAmount)[]
   initializationLoadingTimeExpired: boolean
 }
 
@@ -52,14 +52,14 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
               )}
             </td>
             <td>
-              {asset.localizedUserValue && (
+              {asset.localizedMainCurrencyAmount && (
                 <div>
                   <span className="lighter_color">$</span>
-                  {asset.localizedUserValue}
+                  {asset.localizedMainCurrencyAmount}
                 </div>
               )}
               <div className="balance_token_amount">
-                {asset.localizedDecimalValue}
+                {asset.localizedDecimalAmount}
               </div>
             </td>
           </tr>
