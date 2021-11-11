@@ -14,6 +14,7 @@ import { UIState } from "./ui"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
+  formatCurrencyAmount,
 } from "./utils/asset-utils"
 
 type AccountData = {
@@ -297,15 +298,6 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
   }
 )
 
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  })
-    .format(price)
-    .split("$")[1]
-}
-
 export const getAccountState = (state: {
   account: AccountState
 }): AccountState => state.account
@@ -321,6 +313,11 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getFullState,
   (state) => {
     const { account, assets, ui } = state
+
+    // Choose the precision we actually want
+    const desiredDecimals = 2
+    // TODO Read this from settings.
+    const mainCurrency = "USD"
 
     // Derive activities with timestamps included
     const activity = account.combinedData.activity.map((activityItem) => {
@@ -367,9 +364,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
           const usdDecimals = usdAsset.decimals
           const combinedDecimals = assetItem.asset.decimals + usdDecimals
 
-          // Choose the precision we actually want
-          const desiredDecimals = 2
-
           // Multiply the amount by the conversion factor (usdNonDecimalValue) as BigInts
           const userValue = usdNonDecimalValue * BigInt(assetItem.amount)
 
@@ -395,9 +389,15 @@ export const selectAccountAndTimestampedActivities = createSelector(
                 assetItem.amount /
                   10n ** BigInt(assetItem.asset.decimals - desiredDecimals)
               ) / 100,
-            localizedMainCurrencyAmount: formatPrice(localizedUserValue),
-            localizedPricePerToken: formatPrice(
-              Number(usdNonDecimalValue) / 10 ** usdDecimals
+            localizedMainCurrencyAmount: formatCurrencyAmount(
+              mainCurrency,
+              localizedUserValue,
+              desiredDecimals
+            ),
+            localizedPricePerToken: formatCurrencyAmount(
+              mainCurrency,
+              Number(usdNonDecimalValue) / 10 ** usdDecimals,
+              desiredDecimals
             ),
           }
         }
@@ -434,7 +434,11 @@ export const selectAccountAndTimestampedActivities = createSelector(
       combinedData: {
         assets: updatedAccountAssets,
         totalUserValue: totalMainCurrencyAmount
-          ? formatPrice(totalMainCurrencyAmount)
+          ? formatCurrencyAmount(
+              mainCurrency,
+              totalMainCurrencyAmount,
+              desiredDecimals
+            )
           : undefined,
         activity: account.combinedData.activity,
       },
