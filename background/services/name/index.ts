@@ -1,7 +1,7 @@
 import { DomainName, HexString, Network, URI } from "../../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
-
 import { ETHEREUM } from "../../constants/networks"
+import { getTokenURI, getTokenMetadata } from "../../lib/erc721"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
@@ -19,6 +19,7 @@ interface ResolvedAddressRecord {
   }
   system: "ENS" | "UNS"
 }
+
 interface ResolvedNameRecord {
   from: {
     addressNetwork: {
@@ -37,6 +38,18 @@ type Events = ServiceLifecycleEvents & {
   resolvedName: ResolvedNameRecord
 }
 
+// TODO eventually we want proper IPFS and Arweave support
+function storageGatewayURL(uri: URI): string {
+  // TODO proper URI parsing and replace
+  if (uri.match(/^ipfs:\/\//)) {
+    return `https://ipfs.io/ipfs/${uri.replace(/^ipfs:\/\//, "")}`
+  }
+  if (uri.match(/^ar:\/\//)) {
+    return `https://arweave.net/${uri.replace(/^ar:\/\//, "")}`
+  }
+  return uri
+}
+
 /**
  * The NameService is responsible for resolving human-readable names into
  * addresses and other metadata across multiple networks, caching where
@@ -45,6 +58,8 @@ type Events = ServiceLifecycleEvents & {
  * Initially, the service supports ENS on mainnet Ethereum.
  */
 export default class NameService extends BaseService<Events> {
+  private cachedEIP155AvatarURLs: Record<URI, URI> = {}
+
   /**
    * Create a new NameService. The service isn't initialized until
    * startService() is called and resolved.
@@ -141,14 +156,35 @@ export default class NameService extends BaseService<Events> {
     const avatar = await resolver.getText("avatar")
 
     if (avatar) {
-      // TODO this is naughty, do proper URI parsing
+      if (avatar.match(/^eip155:1\/erc721:/)) {
+        // check if we've cached the resolved URI, otherwise hit the chain
+        if (avatar.toLowerCase() in this.cachedEIP155AvatarURLs) {
+          // TODO properly cache this with any other non-ENS NFT stuff we do
+          return this.cachedEIP155AvatarURLs[avatar.toLowerCase()]
+        }
+        // these URIs look like eip155:1/erc721:0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6/2430
+        // check the spec for more details https://gist.github.com/Arachnid/9db60bd75277969ee1689c8742b75182
+        const components = avatar.split(/[:/]/)
+        if (components.length === 5) {
+          const metadata = await getTokenMetadata(
+            provider,
+            components[3],
+            BigInt(components[4])
+          )
+
+          if (metadata && metadata.image) {
+            const { image } = metadata
+            const resolvedGateway = storageGatewayURL(image)
+            this.cachedEIP155AvatarURLs[avatar] = resolvedGateway
+            return resolvedGateway
+          }
+        }
+      }
+      if (avatar.match(/^(ipfs|ar):/)) {
+        return storageGatewayURL(avatar)
+      }
       if (avatar.match(/^https:/)) {
         return avatar
-      }
-      if (avatar.match(/^ipfs:\/\//)) {
-        // TODO proper parsing and replace
-        // TODO real IPFS support!
-        return `https://ipfs.io/ipfs/${avatar.replace(/^ipfs:\/\//, "")}`
       }
     }
 

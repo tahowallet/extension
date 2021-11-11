@@ -190,8 +190,8 @@ function getOrCreateAccountData(
   account: HexString,
   network: Network
 ): AccountData {
-  if (data === "loading" || typeof data === "undefined") {
-    newAccountData(account, network)
+  if (data === "loading" || !data) {
+    return newAccountData(account, network)
   }
   return data as AccountData
 }
@@ -302,7 +302,7 @@ const accountSlice = createSlice({
       )
       immerState.accountsData[address] = {
         ...baseAccountData,
-        ens: { ...baseAccountData.ens, name: accountNetworkAvatar.avatar },
+        ens: { ...baseAccountData.ens, avatar: accountNetworkAvatar.avatar },
       }
     },
     transactionSeen: (
