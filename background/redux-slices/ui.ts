@@ -1,16 +1,24 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { ActivityItem } from "./activities"
+import { PropertiesOfType } from "./utils/type-utils"
 
 type SelectedAccount = {
   address: string
   truncatedAddress: string
 }
 
+type AvailableSettings = {
+  hideDust: boolean
+  mainCurrency: string
+}
+
+type SettingsOfType<T> = PropertiesOfType<AvailableSettings, T>
+
 export type UIState = {
   selectedAccount: SelectedAccount
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
-  settings: undefined | { hideDust: boolean | undefined }
+  settings: AvailableSettings
 }
 
 export const initialState: UIState = {
@@ -19,6 +27,7 @@ export const initialState: UIState = {
   initializationLoadingTimeExpired: false,
   settings: {
     hideDust: false,
+    mainCurrency: "USD",
   },
 }
 
@@ -26,14 +35,28 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    toggleHideDust: (
-      immerState,
-      { payload: shouldHideDust }: { payload: boolean | undefined }
-    ): void => {
-      immerState.settings = {
-        hideDust: shouldHideDust,
-      }
-    },
+    toggleSetting: (
+      state,
+      { payload: setting }: { payload: SettingsOfType<boolean> }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        [setting]: !state.settings[setting],
+      },
+    }),
+    updateSetting: (
+      state,
+      {
+        payload: { setting, value },
+      }: { payload: { setting: SettingsOfType<string>; value: string } }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        [setting]: value,
+      },
+    }),
     setShowingActivityDetail: (
       state,
       { payload: activityItem }: { payload: ActivityItem | null }
@@ -59,7 +82,8 @@ const uiSlice = createSlice({
 export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
-  toggleHideDust,
+  toggleSetting,
+  updateSetting,
   setSelectedAccount,
 } = uiSlice.actions
 
@@ -76,3 +100,13 @@ export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust
 )
+
+export const selectSetting = <T extends keyof AvailableSettings>(
+  setting: T
+) => {
+  return createSelector<
+    { ui: UIState },
+    AvailableSettings,
+    AvailableSettings[T]
+  >(selectSettings, (settings) => settings?.[setting])
+}

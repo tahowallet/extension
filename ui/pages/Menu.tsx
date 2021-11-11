@@ -1,9 +1,8 @@
 import React, { ReactElement } from "react"
-import classNames from "classnames"
 import { useDispatch, useSelector } from "react-redux"
 import {
-  selectHideDust,
-  toggleHideDust,
+  selectSetting,
+  toggleSetting,
 } from "@tallyho/tally-background/redux-slices/ui"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
@@ -61,10 +60,11 @@ function ArrowRightIcon() {
 
 export default function Menu(): ReactElement {
   const dispatch = useDispatch()
-  const hideDust = useSelector(selectHideDust)
+  const hideDust = useSelector(selectSetting("hideDust"))
+  const mainCurrency = useSelector(selectSetting("mainCurrency"))
 
-  const toggleHideDustAssets = (toggleValue: boolean | undefined) => {
-    dispatch(toggleHideDust(toggleValue))
+  const toggleHideDustAssets = () => {
+    dispatch(toggleSetting("hideDust"))
   }
   const settings = {
     general: [
@@ -72,7 +72,7 @@ export default function Menu(): ReactElement {
         title: "Main Currency",
         component: () => (
           <SharedButton size="medium" type="secondary" icon="chevron">
-            USD
+            {mainCurrency}
           </SharedButton>
         ),
       },
@@ -80,7 +80,7 @@ export default function Menu(): ReactElement {
         title: "Hide asset balance under $2",
         component: () => (
           <SharedToggleButton
-            onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
+            onChange={() => toggleHideDustAssets()}
             value={hideDust}
           />
         ),

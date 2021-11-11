@@ -126,6 +126,11 @@ interface SharedAssetInputProps {
   onSendToAddressChange: (value: string) => void
 }
 
+export function SharedAssetMenu(
+): ReactElement {
+  return <></>
+}
+
 export default function SharedAssetInput(
   props: SharedAssetInputProps
 ): ReactElement {
