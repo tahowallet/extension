@@ -21,6 +21,7 @@ import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
+import Eligible from "./Claiming/Eligible"
 
 export default function Popup({ store }: { store: Store }): ReactElement {
   const history = useHistory()
@@ -46,6 +47,9 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           </Route>
           <Route path="/overview">
             <Overview />
+          </Route>
+          <Route path="/claim">
+            <Eligible />
           </Route>
           <Route path="/earn/deposit">
             <EarnDeposit />
