@@ -140,10 +140,10 @@ export type EIP1559Transaction = EVMTransaction & {
 }
 
 /**
- * An EIP1559 EVM transaction _request_, meaning only fields that are used to
- * post a transaction for inclusion are required, including the gas limit used
- * to limit the gas expenditure on a transaction. This is used to request a
- * signed transaction, and does not include signature fields.
+ * An EIP1559 EVM transaction _request_, meaning only fields used to post a
+ * transaction for inclusion are required, including the gas limit used to
+ * limit the gas expenditure on a transaction. This is used to request a signed
+ * transaction, and does not include signature fields.
  */
 export type EIP1559TransactionRequest = Pick<
   EIP1559Transaction,
