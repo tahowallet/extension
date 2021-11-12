@@ -8,7 +8,7 @@ export default function TopMenuProfileButton(props: {
   const { address, nickname, avatar } = props
   return (
     <button type="button">
-      {nickname || address}
+      {nickname ?? address}
       <div className="avatar" />
       <style jsx>
         {`
@@ -25,7 +25,7 @@ export default function TopMenuProfileButton(props: {
             height: 32px;
             background-color: white;
             margin-left: 8px;
-            background: url("${avatar || "./images/portrait.png"}");
+            background: url("${avatar ?? "./images/portrait.png"}");
           }
         `}
       </style>
