@@ -1,16 +1,14 @@
 import { createSlice, createSelector, current } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
+import { AccountBalance, AddressNetwork } from "../accounts"
 import {
-  AccountBalance,
-  AccountNetwork,
-  AnyAssetAmount,
   AnyEVMTransaction,
   ConfirmedEVMTransaction,
-  FungibleAssetAmount,
   AnyEVMBlock,
   Network,
-} from "../types"
+} from "../networks"
+import { AnyAssetAmount, FungibleAssetAmount } from "../assets"
 import { AssetsState } from "./assets"
 import { UIState } from "./ui"
 
@@ -186,7 +184,7 @@ const accountSlice = createSlice({
       { payload: updatedAccountBalance }: { payload: AccountBalance }
     ) => {
       const {
-        account: updatedAccount,
+        address: updatedAccount,
         assetAmount: {
           asset: { symbol: updatedAssetSymbol },
         },
@@ -340,7 +338,7 @@ export const {
 export default accountSlice.reducer
 
 export type Events = {
-  addAccount: AccountNetwork
+  addAccount: AddressNetwork
 }
 
 export const emitter = new Emittery<Events>()
@@ -353,12 +351,11 @@ export const emitter = new Emittery<Events>()
  * the promise returned from this action's dispatch will be fulfilled by a void
  * value.
  */
-
-export const addAccountNetwork = createBackgroundAsyncThunk(
+export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
-  async (accountNetwork: AccountNetwork, { dispatch }) => {
-    dispatch(loadAccount(accountNetwork.account))
-    await emitter.emit("addAccount", accountNetwork)
+  async (addressNetwork: AddressNetwork, { dispatch }) => {
+    dispatch(loadAccount(addressNetwork.address))
+    await emitter.emit("addAccount", addressNetwork)
   }
 )
 

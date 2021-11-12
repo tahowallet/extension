@@ -5,11 +5,11 @@ import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
-  FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
   AnyEVMBlock,
-} from "../../types"
+} from "../../networks"
+import { FungibleAsset } from "../../assets"
 import { getEthereumNetwork } from "../../lib/utils"
 
 /**

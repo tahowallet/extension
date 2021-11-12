@@ -11,12 +11,8 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import {
-  EIP1559TransactionRequest,
-  HexString,
-  KeyringTypes,
-  SignedEVMTransaction,
-} from "../../types"
+import { HexString, KeyringTypes } from "../../types"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH } from "../../constants"
 
