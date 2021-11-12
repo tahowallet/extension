@@ -164,10 +164,7 @@ export type UIAdaptationMap<T> = {
 
 export type ActivityItem = AnyEVMTransaction & {
   timestamp?: number
-  value: bigint
-  from?: string
   isSent?: boolean
-  gas: number
   blockHeight: number
   infoRows: {
     [name: string]: {
