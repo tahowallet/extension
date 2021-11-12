@@ -208,37 +208,29 @@ export type AnyEVMTransaction =
   | SignedEVMTransaction
 
 /**
- * The estimated gas prices for including a transaction in a block some number
- * of blocks in the future.
+ * The estimated gas prices for including a transaction in the next block.
  *
- * The estimated prices provide a certain confidence that a transaction with
- * the given `baseFeePerGas` will be included in the block at height
- * `blockNumber` for a given set of price parameters.
+ * The estimated prices include a percentage (confidence) that a transaction with
+ * the given `baseFeePerGas` will be included in the next block.
  */
 export type BlockPrices = {
   network: Network
   blockNumber: number
   baseFeePerGas: bigint
   /**
-   * An estimate of how many transactions will be included in the block at
-   * height `blockNumber`.
+   * An estimate of how many transactions will be included in the next block.
    */
   estimatedTransactionCount: number
   /**
    * A choice of gas price parameters with associated confidence that a
-   * transaction using those parameters will be included in the block at height
-   * `blockNumber`.
+   * transaction using those parameters will be included in the next block.
    */
   estimatedPrices: BlockEstimate[]
 }
 
 /**
  * An estimate of the confidence that a given set of gas price parameters will
- * will result in the inclusion of a transaction in a block.
- *
- * This estimate must be paired with a block number to be useful---it
- * represents the confidence that a transaction will be included in that block
- * if it uses the price parameters in this object.
+ * will result in the inclusion of a transaction in the next block.
  */
 export type BlockEstimate = {
   confidence: number
