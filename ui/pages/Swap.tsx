@@ -150,7 +150,7 @@ export default function Swap(): ReactElement {
                 assets={swapTokens}
                 onAssetSelected={toAssetSelected}
                 onInputChanged={toInputChanged}
-                amountValue={swapAmount.to}
+                amount={swapAmount.to}
                 label="Swap to:"
               />
             </div>
