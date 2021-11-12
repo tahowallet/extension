@@ -41,7 +41,9 @@
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
+    "@web3-react/core": "^6.1.9",
     "buffer": "^6.0.3",
+    "ethers": "^5.5.1",
     "react": "^17.0.2",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"

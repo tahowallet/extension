@@ -1,6 +1,7 @@
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
+import useDistributorContract from "../../../contracts/MerkeleDistributor"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedInput from "../../components/Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
@@ -11,6 +12,8 @@ export default function Eligible(): ReactElement {
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
+
+  const { claimTally } = useDistributorContract()
 
   useEffect(() => {
     if (Object.keys(accountData)) {
@@ -26,6 +29,9 @@ export default function Eligible(): ReactElement {
   const claim = () => {
     alreadyClaimedAddresses.push(account)
     setAlreadyClaimed(true)
+
+    // console.log(claimTally())
+    // await claimTally()
   }
 
   return (
