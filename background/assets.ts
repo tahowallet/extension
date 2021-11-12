@@ -167,10 +167,26 @@ export type AssetTransfer = {
 }
 
 /**
- * A type guard to narrow an AnyAsset to a SmartContractFungibleAsset.
+ * Type guard to check if an AnyAsset is actually a FungibleAsset.
+ */
+function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
+  return "decimals" in asset
+}
+
+/**
+ * Type guard to check if an AnyAsset is actually a SmartContractFungibleAsset.
  */
 export function isSmartContractFungibleAsset(
   asset: AnyAsset
 ): asset is SmartContractFungibleAsset {
-  return "homeNetwork" in asset && "contractAddress" in asset
+  return "homeNetwork" in asset && isFungibleAsset(asset)
+}
+
+/**
+ * Type guard to check if an AnyAssetAmount is actually a FungibleAssetAmount.
+ */
+export function isFungibleAssetAmount(
+  assetAmount: AnyAssetAmount
+): assetAmount is FungibleAssetAmount {
+  return isFungibleAsset(assetAmount.asset)
 }
