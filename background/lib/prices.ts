@@ -2,12 +2,15 @@ import { fetchJson } from "@ethersproject/web"
 import { JSONSchemaType } from "ajv"
 import logger from "./logger"
 import {
+  AnyAsset,
   CoinGeckoAsset,
   FiatCurrency,
   PricePoint,
   UnitPricePoint,
 } from "../assets"
 import { jsonSchemaValidatorFor } from "./validation"
+
+import { multiplyByFloat, toFixedPoint } from "./fixed-point"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
@@ -71,15 +74,8 @@ export async function getPrice(
   return json?.[coingeckoCoinId]?.[currencySymbol] || null
 }
 
-function multiplyByFloat(n: bigint, f: number, precision: number) {
-  return (
-    (n * BigInt(Math.floor(f * 10 ** precision))) /
-    BigInt(10) ** BigInt(precision)
-  )
-}
-
 export async function getPrices(
-  assets: CoinGeckoAsset[],
+  assets: (AnyAsset & CoinGeckoAsset)[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
   const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
@@ -110,16 +106,20 @@ export async function getPrices(
     const simpleCoinPrices = json[asset.metadata.coinGeckoID]
 
     return vsCurrencies
-      .map<PricePoint | undefined>((c) => {
-        const symbol = c.symbol.toLowerCase()
+      .map<PricePoint | undefined>((currency) => {
+        const symbol = currency.symbol.toLowerCase()
         const coinPrice = simpleCoinPrices?.[symbol]
 
         if (coinPrice) {
+          // Scale amounts to the asset's decimals; if the asset is not fungible,
+          // assume 0 decimals, i.e. that this is a unit price.
+          const assetPrecision = "decimals" in asset ? asset.decimals : 0
+
           return {
-            pair: [c, asset],
+            pair: [currency, asset],
             amounts: [
-              multiplyByFloat(BigInt(10) ** BigInt(c.decimals), coinPrice, 8),
-              BigInt(1),
+              toFixedPoint(coinPrice, currency.decimals),
+              10n ** BigInt(assetPrecision),
             ],
             time: resolutionTime,
           }
