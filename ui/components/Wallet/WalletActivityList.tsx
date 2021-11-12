@@ -15,11 +15,7 @@ export default function WalletActivityList(): ReactElement {
 
   const { activities, blocks } = useBackgroundSelector((background) => {
     return {
-      activities: background.activities[
-        background.ui.selectedAccount?.address
-      ]?.sort((first: ActivityItem, second: ActivityItem) =>
-        first.blockHeight < second.blockHeight ? 1 : -1
-      ),
+      activities: background.activities[background.ui.selectedAccount?.address],
       blocks: background.account.blocks,
     }
   })
