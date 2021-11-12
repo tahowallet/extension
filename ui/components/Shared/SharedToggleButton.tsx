@@ -3,7 +3,7 @@ import classNames from "classnames"
 
 interface SharedToggleButtonProps {
   onChange: (toggleValue: boolean) => void
-  value?: boolean
+  value?: boolean | undefined
 }
 
 export default function SharedToggleButton({

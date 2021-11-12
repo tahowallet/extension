@@ -60,7 +60,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           </div>
         </div>
       </Link>
-
       <style jsx>
         {`
           .list_item {
