@@ -229,7 +229,7 @@ export type BlockPrices = {
 }
 
 /**
- * An estimate of the confidence that a given set of gas price parameters will
+ * An estimate of the confidence that a given set of gas price parameters
  * will result in the inclusion of a transaction in the next block.
  */
 export type BlockEstimate = {
