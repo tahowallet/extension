@@ -21,11 +21,11 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
 export const selectSelectedAccountActivitiesWithTimestamps = createSelector(
   selectAcrossActivityRelevantStates,
   ({ activities, ui, account }) => {
-    const activitiesNew = activities[ui.selectedAccount?.address]
+    const currentAccountActivities = activities[ui.selectedAccount?.address]
     return {
-      activities: activitiesNew?.ids?.map(
+      activities: currentAccountActivities?.ids.map(
         (id: EntityId): ActivityItem | undefined => {
-          const activityItem = activitiesNew.entities[id]
+          const activityItem = currentAccountActivities.entities[id]
           if (activityItem) {
             return {
               ...activityItem,
