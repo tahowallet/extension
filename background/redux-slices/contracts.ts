@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import ethers, { BigNumber } from "ethers"
 import { DISTRIBUTOR_ABI } from "../constants/abi"
 import balances from "../constants/balances"
+import Contracts from "../constants/contracts"
 import BalanceTree from "../lib/balance-tree"
 
 const newBalanceTree = new BalanceTree(balances)
@@ -39,8 +40,13 @@ const findIndexAndBalance = (address: string) => {
   return { index, balance }
 }
 
-const getDistributorContract = async (chainId: number, address: string) => {
-  const distributor = await getContract(chainId, address, DISTRIBUTOR_ABI)
+const getDistributorContract = async (chainId: number) => {
+  const contractAddress: string = Contracts[chainId].distributor
+  const distributor = await getContract(
+    chainId,
+    contractAddress,
+    DISTRIBUTOR_ABI
+  )
   return distributor
 }
 
@@ -63,16 +69,11 @@ const fetchDistributorContract = createAsyncThunk(
 
 const claim = createAsyncThunk(
   "contracts/distributorClaim",
-  async (data: {
-    chainId: number
-    address: string
-    account: string
-    referralCode?: string
-  }) => {
-    const { chainId, address, account, referralCode } = data
+  async (data: { chainId: number; account: string; referralCode?: string }) => {
+    const { chainId, account, referralCode } = data
     const { index, balance } = await findIndexAndBalance(account)
     const proof = getProof(index, account, balance)
-    const distributor = await getDistributorContract(chainId, address)
+    const distributor = await getDistributorContract(chainId)
     if (!referralCode) {
       const tx = await distributor.claim(index, account, balance, proof)
       const receipt = await tx.wait()
