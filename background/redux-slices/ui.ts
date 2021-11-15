@@ -1,6 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { ActivityItem } from "./activities"
-import { AnyEVMTransaction } from "../types"
 
 type SelectedAccount = {
   address: string

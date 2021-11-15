@@ -8,7 +8,7 @@ import {
 } from "@reduxjs/toolkit"
 import dayjs from "dayjs"
 import { convertToEth } from "../lib/utils"
-import { AnyEVMTransaction } from "../types"
+import { AnyEVMTransaction } from "../networks"
 
 // Below, we use `any` to deal with the fact that allAliases is a heterogeneous
 // collection of async thunk actions whose payload types have little in common

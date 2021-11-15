@@ -1,4 +1,4 @@
-import { FiatCurrency } from "../../types"
+import { FiatCurrency } from "../../assets"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
 import { Preferences, TokenListPreferences } from "./types"

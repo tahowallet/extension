@@ -36,10 +36,12 @@ export default function SingleAsset(): ReactElement {
               />
               <span className="asset_name">{symbol}</span>
             </div>
-            <div className="balance">{filteredAsset.localizedDecimalValue}</div>
-            {filteredAsset.localizedUserValue && (
+            <div className="balance">
+              {filteredAsset.localizedDecimalAmount}
+            </div>
+            {filteredAsset.localizedMainCurrencyAmount && (
               <div className="usd_value">
-                ${filteredAsset.localizedUserValue}
+                ${filteredAsset.localizedMainCurrencyAmount}
               </div>
             )}
           </div>
