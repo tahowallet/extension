@@ -166,12 +166,15 @@ export default class NameService extends BaseService<Events> {
         }
         // these URIs look like eip155:1/erc721:0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6/2430
         // check the spec for more details https://gist.github.com/Arachnid/9db60bd75277969ee1689c8742b75182
-        const components = avatar.split(/[:/]/)
-        if (components.length === 5) {
+        const [, , , erc721Address, nftID] = avatar.split(/[:/]/)
+        if (
+          typeof erc721Address !== "undefined" &&
+          typeof nftID !== "undefined"
+        ) {
           const metadata = await getTokenMetadata(
             provider,
-            components[3],
-            BigInt(components[4])
+            erc721Address,
+            BigInt(nftID)
           )
 
           if (metadata && metadata.image) {
