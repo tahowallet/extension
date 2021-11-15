@@ -13,19 +13,20 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     const currentAccountActivities = activities[ui.selectedAccount?.address]
     return {
       activities: currentAccountActivities?.ids.map(
-        (id: EntityId): ActivityItem | undefined => {
-          const activityItem = currentAccountActivities.entities[id]
-          if (activityItem) {
-            return {
-              ...activityItem,
-              timestamp:
-                activityItem?.blockHeight &&
-                account.blocks[activityItem?.blockHeight]?.timestamp,
-            }
+        (id: EntityId): ActivityItem => {
+          const activityItem = currentAccountActivities.entities[
+            id
+          ] as ActivityItem
+          return {
+            ...activityItem,
+            timestamp:
+              activityItem?.blockHeight &&
+              account.blocks[activityItem?.blockHeight]?.timestamp,
           }
-          return undefined
         }
       ),
     }
   }
 )
+
+export default selectCurrentAccountActivitiesWithTimestamps
