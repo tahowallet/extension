@@ -193,7 +193,7 @@ function getOrCreateAccountData(
   if (data === "loading" || !data) {
     return newAccountData(account, network)
   }
-  return data as AccountData
+  return data
 }
 
 // TODO Much of the combinedData bits should probably be done in a Reselect
