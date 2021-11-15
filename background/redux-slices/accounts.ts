@@ -207,7 +207,7 @@ const accountSlice = createSlice({
       immerState,
       {
         payload: accountNetworkName,
-      }: { payload: AccountNetwork & { name: DomainName } }
+      }: { payload: AddressNetwork & { name: DomainName } }
     ) => {
       // TODO Refactor when accounts are also keyed per network.
       const address = accountNetworkName.account.toLowerCase()

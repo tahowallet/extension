@@ -9,7 +9,7 @@ import ChainService from "../chain"
 import logger from "../../lib/logger"
 import { AddressNetwork } from "../../accounts"
 
-interface ResolvedAddressRecord {
+type ResolvedAddressRecord = {
   from: {
     name: DomainName
   }
@@ -19,12 +19,22 @@ interface ResolvedAddressRecord {
   system: "ENS" | "UNS"
 }
 
-interface ResolvedNameRecord {
+type ResolvedNameRecord = {
   from: {
     addressNetwork: AddressNetwork
   }
   resolved: {
     name: DomainName
+  }
+  system: "ENS" | "UNS"
+}
+
+type ResolvedAvatarRecord = {
+  from: {
+    addressNetwork: AddressNetwork
+  }
+  resolved: {
+    avatar: URL
   }
   system: "ENS" | "UNS"
 }
@@ -32,6 +42,7 @@ interface ResolvedNameRecord {
 type Events = ServiceLifecycleEvents & {
   resolvedAddress: ResolvedAddressRecord
   resolvedName: ResolvedNameRecord
+  resolvedAvatar: ResolvedAvatarRecord
 }
 
 const ipfsGateway = new URL("https://ipfs.io/ipfs/")
@@ -101,6 +112,39 @@ export default class NameService extends BaseService<Events> {
 
   private constructor(private chainService: ChainService) {
     super({})
+
+    chainService.emitter.on(
+      "newAccountToTrack",
+      async ({ address, network }) => {
+        try {
+          await this.lookUpName(address, network)
+        } catch (error) {
+          logger.error("Error fetching ENS name for address", address, error)
+        }
+      }
+    )
+    this.emitter.on(
+      "resolvedName",
+      async ({
+        from: {
+          addressNetwork: { address, network },
+        },
+      }) => {
+        try {
+          const avatar = await this.lookUpAvatar(address, network)
+
+          if (avatar) {
+            this.emitter.emit("resolvedAvatar", {
+              from: { addressNetwork: { address, network } },
+              resolved: { avatar },
+              system: "ENS",
+            })
+          }
+        } catch (error) {
+          logger.error("Error fetching avatar for address", address, error)
+        }
+      }
+    )
   }
 
   async lookUpEthereumAddress(
