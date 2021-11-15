@@ -31,7 +31,7 @@ const activitiesSlice = createSlice({
             immerState[address] = activitiesAdapter.getInitialState()
           }
 
-          activitiesAdapter.addOne(immerState[address], {
+          activitiesAdapter.upsertOne(immerState[address], {
             ...activityItem,
             infoRows,
           })
