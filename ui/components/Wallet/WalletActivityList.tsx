@@ -13,7 +13,7 @@ export default function WalletActivityList(): ReactElement {
     (background) => background.ui
   )
 
-  const { activities } = useBackgroundSelector(
+  const activities = useBackgroundSelector(
     selectCurrentAccountActivitiesWithTimestamps
   )
 
