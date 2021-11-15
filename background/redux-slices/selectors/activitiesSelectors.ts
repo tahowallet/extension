@@ -8,18 +8,7 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     ui: UIState
     activities: ActivitiesState
     account: AccountState
-  }) => {
-    return {
-      activities: state.activities,
-      ui: state.ui,
-      account: state.account,
-    }
-  },
-  (relevantState) => relevantState
-)
-
-export const selectSelectedAccountActivitiesWithTimestamps = createSelector(
-  selectAcrossActivityRelevantStates,
+  }) => state,
   ({ activities, ui, account }) => {
     const currentAccountActivities = activities[ui.selectedAccount?.address]
     return {
