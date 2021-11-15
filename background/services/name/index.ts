@@ -80,7 +80,9 @@ export default class NameService extends BaseService<Events> {
     super({})
   }
 
-  async lookUpEthereumAddress(name: DomainName): Promise<HexString | null> {
+  async lookUpEthereumAddress(
+    name: DomainName
+  ): Promise<HexString | undefined> {
     // if doesn't end in .eth, throw. TODO turn on other domain endings soon +
     // include support for UNS
     if (!name.match(/.*\.eth$/)) {
@@ -93,7 +95,7 @@ export default class NameService extends BaseService<Events> {
     // TODO cache name resolution and TTL
     const address = await provider.resolveName(name)
     if (!address || !address.match(/^0x[a-zA-Z0-9]*$/)) {
-      return null
+      return undefined
     }
     const normalized = normalizeEVMAddress(address)
     this.emitter.emit("resolvedAddress", {
@@ -107,7 +109,7 @@ export default class NameService extends BaseService<Events> {
   async lookUpName(
     address: HexString,
     network: Network
-  ): Promise<DomainName | null> {
+  ): Promise<DomainName | undefined> {
     // TODO ENS lookups should work on a few testnets as well
     if (network.chainID !== "1") {
       throw new Error("Only Ethereum mainnet is supported.")
@@ -125,7 +127,7 @@ export default class NameService extends BaseService<Events> {
         )
       )
     ) {
-      return null
+      return undefined
     }
     this.emitter.emit("resolvedName", {
       from: { addressNetwork: { address, network } },
@@ -138,20 +140,20 @@ export default class NameService extends BaseService<Events> {
   async lookUpAvatar(
     address: HexString,
     network: Network
-  ): Promise<URI | null> {
+  ): Promise<URL | undefined> {
     // TODO ENS lookups should work on a few testnets as well
     if (network.chainID !== "1") {
       throw new Error("Only Ethereum mainnet is supported.")
     }
     const name = await this.lookUpName(address, network)
     if (!name) {
-      return null
+      return undefined
     }
     // TODO handle if it doesn't exist
     const provider = this.chainService.pollingProviders.ethereum
     const resolver = await provider.getResolver(name)
     if (!sameEVMAddress(await resolver.getAddress(), address)) {
-      return null
+      return undefined
     }
 
     const avatar = await resolver.getText("avatar")
@@ -189,7 +191,7 @@ export default class NameService extends BaseService<Events> {
       }
     }
 
-    return null
+    return undefined
   }
 }
 // TODO resolve other network addresses (eg Bitcoin)
