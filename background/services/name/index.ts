@@ -7,26 +7,21 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
+import { AddressNetwork } from "../../accounts"
 
 interface ResolvedAddressRecord {
   from: {
     name: DomainName
   }
   resolved: {
-    addressNetwork: {
-      address: HexString
-      network: Network
-    }
+    addressNetwork: AddressNetwork
   }
   system: "ENS" | "UNS"
 }
 
 interface ResolvedNameRecord {
   from: {
-    addressNetwork: {
-      address: HexString
-      network: Network
-    }
+    addressNetwork: AddressNetwork
   }
   resolved: {
     name: DomainName
