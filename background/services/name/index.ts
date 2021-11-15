@@ -7,6 +7,7 @@ import { getTokenURI, getTokenMetadata } from "../../lib/erc721"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import ChainService from "../chain"
+import logger from "../../lib/logger"
 
 interface ResolvedAddressRecord {
   from: {
@@ -39,16 +40,44 @@ type Events = ServiceLifecycleEvents & {
   resolvedName: ResolvedNameRecord
 }
 
+const ipfsGateway = new URL("https://ipfs.io/ipfs/")
+const arweaveGateway = new URL("https://arweave.net/")
+
+/**
+ * Given a url and a base URL, adjust the url to match the protocol and
+ * hostname of the base URL, and append the hostname and remaining path of the
+ * original url as path components in the base URL. Preserves querystrings and
+ * hash data if present.
+ *
+ * @example
+ * url: `ipfs://CID/path/to/resource`
+ * baseURL: `https://ipfs.io/ipfs/`
+ * result: `https://ipfs.io/ipfs/CID/path/to/resource`
+ *
+ * @example
+ * url: `ipfs://CID/path/to/resource?parameters#hash`
+ * baseURL: `https://ipfs.io/ipfs/`
+ * result: `https://ipfs.io/ipfs/CID/path/to/resource?parameters#hash`
+ */
+function changeURLProtocolAndBase(url: URL, baseURL: URL) {
+  const newURL = new URL(url)
+  newURL.protocol = baseURL.protocol
+  newURL.hostname = baseURL.hostname
+  newURL.pathname = `${baseURL.pathname}/${url.hostname}/${url.pathname}`
+
+  return newURL
+}
+
 // TODO eventually we want proper IPFS and Arweave support
-function storageGatewayURL(uri: URI): string {
-  // TODO proper URI parsing and replace
-  if (uri.match(/^ipfs:\/\//)) {
-    return `https://ipfs.io/ipfs/${uri.replace(/^ipfs:\/\//, "")}`
+function storageGatewayURL(url: URL): URL {
+  switch (url.protocol) {
+    case "ipfs":
+      return changeURLProtocolAndBase(url, ipfsGateway)
+    case "ar":
+      return changeURLProtocolAndBase(url, arweaveGateway)
+    default:
+      return url
   }
-  if (uri.match(/^ar:\/\//)) {
-    return `https://arweave.net/${uri.replace(/^ar:\/\//, "")}`
-  }
-  return uri
 }
 
 /**
@@ -59,7 +88,7 @@ function storageGatewayURL(uri: URI): string {
  * Initially, the service supports ENS on mainnet Ethereum.
  */
 export default class NameService extends BaseService<Events> {
-  private cachedEIP155AvatarURLs: Record<URI, URI> = {}
+  private cachedEIP155AvatarURLs: Record<string, URL> = {}
 
   /**
    * Create a new NameService. The service isn't initialized until
@@ -180,18 +209,13 @@ export default class NameService extends BaseService<Events> {
 
           if (metadata && metadata.image) {
             const { image } = metadata
-            const resolvedGateway = storageGatewayURL(image)
+            const resolvedGateway = storageGatewayURL(new URL(image))
             this.cachedEIP155AvatarURLs[avatar] = resolvedGateway
             return resolvedGateway
           }
         }
       }
-      if (avatar.match(/^(ipfs|ar):/)) {
-        return storageGatewayURL(avatar)
-      }
-      if (avatar.match(/^https:/)) {
-        return avatar
-      }
+      return storageGatewayURL(new URL(avatar))
     }
 
     return undefined
