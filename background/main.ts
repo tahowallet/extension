@@ -339,35 +339,20 @@ export default class Main extends BaseService<never> {
   }
 
   async connectNameService(): Promise<void> {
-    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
-      let name: string | null = null
-      try {
-        name = await this.nameService.lookUpName(
-          addressNetwork.address,
-          addressNetwork.network
-        )
-        if (name) {
-          this.store.dispatch(updateENSName({ ...addressNetwork, name }))
-        }
-      } catch (err) {
-        logger.error(
-          "Error fetching ENS name for address",
-          addressNetwork.address,
-          err
+    this.nameService.emitter.on(
+      "resolvedName",
+      async ({ from: { addressNetwork }, resolved: { name } }) => {
+        this.store.dispatch(updateENSName({ ...addressNetwork, name }))
+      }
+    )
+    this.nameService.emitter.on(
+      "resolvedAvatar",
+      async ({ from: { addressNetwork }, resolved: { avatar } }) => {
+        this.store.dispatch(
+          updateENSAvatar({ ...addressNetwork, avatar: avatar.toString() })
         )
       }
-
-      if (name) {
-        const avatar = await this.nameService.lookUpAvatar(
-          addressNetwork.address,
-          addressNetwork.network
-        )
-
-        if (avatar) {
-          this.store.dispatch(updateENSAvatar({ ...addressNetwork, avatar }))
-        }
-      }
-    })
+    )
   }
 
   async connectIndexingService(): Promise<void> {
