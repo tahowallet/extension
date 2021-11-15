@@ -2,7 +2,8 @@ import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers } from "ethers"
 import { getTokenBalances } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
-import { AccountBalance, SmartContractFungibleAsset } from "../types"
+import { AccountBalance } from "../accounts"
+import { SmartContractFungibleAsset } from "../assets"
 
 /*
  * Get an account's balance from an ERC20-compliant contract.
@@ -26,7 +27,7 @@ export async function getBalance(
 export async function getBalances(
   provider: AlchemyProvider,
   tokens: SmartContractFungibleAsset[],
-  account: string
+  address: string
 ): Promise<AccountBalance[]> {
   if (tokens.length === 0) {
     return [] as AccountBalance[]
@@ -34,7 +35,7 @@ export async function getBalances(
 
   const tokenBalances = await getTokenBalances(
     provider,
-    account,
+    address,
     tokens.map((t) => t.contractAddress)
   )
 
@@ -56,7 +57,7 @@ export async function getBalances(
           amount: tokenDetail.amount,
           asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
         },
-        account,
+        address,
         network: getEthereumNetwork(), // TODO track networks outside of .env file
         retrievedAt: Date.now(),
         dataSource: "alchemy",

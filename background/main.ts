@@ -17,7 +17,8 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { SignedEVMTransaction, KeyringTypes } from "./types"
+import { KeyringTypes } from "./types"
+import { SignedEVMTransaction } from "./networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -274,8 +275,8 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
-    accountSliceEmitter.on("addAccount", async (accountNetwork) => {
-      await this.chainService.addAccountToTrack(accountNetwork)
+    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
+      await this.chainService.addAccountToTrack(addressNetwork)
     })
 
     transactionSliceEmitter.on("updateOptions", async (options) => {
@@ -321,12 +322,12 @@ export default class Main extends BaseService<never> {
 
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
-    existingAccounts.forEach((accountNetwork) => {
+    existingAccounts.forEach((addressNetwork) => {
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(accountNetwork.account))
+      this.store.dispatch(loadAccount(addressNetwork.address))
 
       // Force a refresh of the account balance to populate the store.
-      this.chainService.getLatestBaseAccountBalance(accountNetwork)
+      this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
     // Start polling for blockPrices
@@ -390,7 +391,7 @@ export default class Main extends BaseService<never> {
 
     this.keyringService.emitter.on("address", (address) => {
       this.chainService.addAccountToTrack({
-        account: address,
+        address,
         // TODO support other networks
         network: getEthereumNetwork(),
       })

@@ -1,15 +1,15 @@
 import Dexie from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
+import { AccountBalance } from "../../accounts"
+import { Network } from "../../networks"
 import {
-  AccountBalance,
   AnyAsset,
   FungibleAsset,
-  Network,
   PricePoint,
   SmartContractFungibleAsset,
   TokenListCitation,
-} from "../../types"
+} from "../../assets"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -174,7 +174,7 @@ export class IndexingDatabase extends Dexie {
       .above(Date.now() - 7 * 24 * 60 * 60 * 1000)
       .filter(
         (balance) =>
-          balance.account === account &&
+          balance.address === account &&
           balance.assetAmount.asset.symbol === asset.symbol &&
           balance.network.name === network.name
       )

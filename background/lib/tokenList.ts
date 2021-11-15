@@ -4,7 +4,7 @@ import addAJVFormats from "ajv-formats"
 import { TokenList, schema } from "@uniswap/token-lists"
 
 import { getEthereumNetwork } from "./utils"
-import { SmartContractFungibleAsset, TokenListAndReference } from "../types"
+import { SmartContractFungibleAsset, TokenListAndReference } from "../assets"
 
 export async function fetchAndValidateTokenList(
   url: string
