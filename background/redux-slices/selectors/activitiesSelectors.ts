@@ -3,7 +3,7 @@ import { AccountState } from "../accounts"
 import { UIState } from "../ui"
 import { ActivitiesState, ActivityItem } from "../activities"
 
-export const selectAcrossActivityRelevantStates = createSelector(
+export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
   (state: {
     ui: UIState
     activities: ActivitiesState
