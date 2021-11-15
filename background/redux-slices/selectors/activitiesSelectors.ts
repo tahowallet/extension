@@ -10,10 +10,9 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     account: AccountState
   }) => state,
   ({ activities, ui, account }) => {
-    const currentAccountActivities = Object.values(
-      activities[ui.selectedAccount?.address]?.entities ?? {}
-    )
-    return currentAccountActivities?.map((activityItem) => {
+    const currentAccountActivities = activities[ui.selectedAccount?.address]
+    return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
+      const activityItem = currentAccountActivities.entities[id] as ActivityItem
       return {
         ...activityItem,
         timestamp:
