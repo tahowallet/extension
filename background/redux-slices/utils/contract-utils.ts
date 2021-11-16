@@ -26,6 +26,7 @@ const getContract = async (address: string, abi: any[]): Promise<Contract> => {
   return new ethers.Contract(address, abi, provider)
 }
 
+// TODO missing slice in which this will be handled
 const createFetchContractThunk = (contractName: string, abi: any[]): any => {
   return createBackgroundAsyncThunk(
     `***SOMESLICE***/fetch${
