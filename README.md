@@ -54,18 +54,20 @@ $ yarn start --config-name firefox --config-name brave
 
 ## Package Structure, Build Structure, and Threat Model
 
-The extension is built as two packages, one for the wallet "backend" and one
-for the frontend UI. These are separate packages in order to emphasize the difference
-in attack surface and clearly separate the threat models of the two packages.
-In particular, the frontend UI is considered completely untrusted code, while
-the wallet is considered trusted code. Only the wallet should interact directly
-with key material, while the frontend should only interact with key material
-via a carefully-maintained public API.
+The extension is built as two packages, `background` and `ui`. `background`
+contains the bulk of the extension's [background script](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background),
+while `ui` contains the code powering extension popups.
 
-The wallet package is also intended to minimize external dependencies where
-possible, to reduce the surface exposed to a supply chain attack. Dependencies
-are generally version-pinned, and yarn is used to ensure the integrity of
-builds.
+These are separate packages in order to emphasize the difference in attack
+surface and clearly separate the threat models of each. In particular, `ui`
+is considered untrusted code, while `background` is considered trusted code.
+Only `background` should interact with key material regularly, while `ui` should
+only interact with key material via a carefully maintained API.
+
+The `background` package is also intended to minimize external dependencies
+where possible, reducing the surface exposed to a supply chain attack.
+Dependencies are generally version-pinned, and `yarn` is used to ensure the
+integrity of builds.
 
 ## Building and Developing
 
@@ -270,9 +272,9 @@ manifest/         # extension manifest data
   manifest.dev.json         # manifest adjustments for dev environment
   manifest.firefox.dev.json # manifest adjustments for Firefox in dev
 
-ui/ # @tallyho/tally-ui package
+background/ # @tallyho/tally-background package with trusted wallet core
   package.json
 
-wallet/ # @tallyho/tally-wallet package with trusted wallet core
+ui/ # @tallyho/tally-ui package
   package.json
 ```
