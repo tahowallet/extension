@@ -1,12 +1,28 @@
 # tally-extension
 
-Tally is a community owned and operated Web3 wallet, built as a
-[WebExtension](https://browserext.github.io/browserext/).
+[Tally](https://blog.tally.cash/a-community-owned-wallet-for-the-new-internet/)
+is a community owned and operated Web3 wallet, built as a
+[browser extension](https://browserext.github.io/browserext/).
+
+## Why not MetaMask?
+
+Today's Web3 landscape is dominated by a [single wallet](https://metamask.io/)
+and a [single infrastructure provider](https://infura.io/), both owned by a
+[single conglomerate](https://consensys.net/). These facts undermine the
+censorship resistance of Ethereum today... and they're also against Web3's
+spirit of community ownership.
+
+We can do better.
+
+Tally will be
+- Fairly launched ⚖️
+- Sustainably aligned with users 🤲
+- Wholly owned by the community 👪
 
 ## Package Structure, Build Structure, and Threat Model
 
-The extension is built as two packages, one for the wallet and one for the
-frontend UI. These are separate packages in order to emphasize the difference
+The extension is built as two packages, one for the wallet "backend" and one
+for the frontend UI. These are separate packages in order to emphasize the difference
 in attack surface and clearly separate the threat models of the two packages.
 In particular, the frontend UI is considered completely untrusted code, while
 the wallet is considered trusted code. Only the wallet should interact directly
