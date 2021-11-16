@@ -1,4 +1,4 @@
-import { EVMNetwork, Network } from "../types"
+import { EVMNetwork, Network } from "../networks"
 import { BTC, ETH } from "./currencies"
 
 // TODO integrate this with /api/networks

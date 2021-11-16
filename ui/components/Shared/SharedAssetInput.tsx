@@ -127,12 +127,13 @@ SelectedTokenButton.defaultProps = {
 interface SharedAssetInputProps {
   isTypeDestination: boolean
   assets: Asset[]
-  onAssetSelected?: (token: Asset) => void
-  onInputChanged?: (value: string) => void
   label: string
   defaultToken: Asset
   amount: string
   isTokenOptionsLocked: boolean
+  onAssetSelected: (token: Asset) => void
+  onAmountChange: (value: number) => void
+  onSendToAddressChange: (value: string) => void
 }
 
 export default function SharedAssetInput(
@@ -146,7 +147,8 @@ export default function SharedAssetInput(
     amount,
     isTokenOptionsLocked,
     onAssetSelected,
-    onInputChanged,
+    onAmountChange,
+    onSendToAddressChange,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
@@ -168,14 +170,6 @@ export default function SharedAssetInput(
     [onAssetSelected]
   )
 
-  const handleInputChanged = useCallback(
-    (event) => {
-      onInputChanged?.(event)
-    },
-
-    [onInputChanged]
-  )
-
   return (
     <label className="label">
       {label}
@@ -193,7 +187,14 @@ export default function SharedAssetInput(
       <div className="asset_input standard_width">
         {isTypeDestination ? (
           <>
-            <input className="token_input" type="text" value="0x..." />
+            <input
+              className="token_input"
+              type="text"
+              placeholder="0x..."
+              onChange={(event) => {
+                onSendToAddressChange(event.target.value)
+              }}
+            />
             <SharedButton
               type="tertiary"
               size="medium"
@@ -225,7 +226,9 @@ export default function SharedAssetInput(
               type="text"
               placeholder="0.0"
               value={amount}
-              onInput={handleInputChanged}
+              onChange={(event) => {
+                onAmountChange(event)
+              }}
             />
           </>
         )}
@@ -245,10 +248,14 @@ export default function SharedAssetInput(
           .token_input {
             width: 204px;
             height: 34px;
-            color: var(--green-40);
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
+            color: #fff;
+          }
+          .token_input::placeholder {
+            color: var(--green-40);
+            opacity: 1;
           }
           .paste_button {
             height: 24px;
@@ -291,4 +298,10 @@ SharedAssetInput.defaultProps = {
   defaultToken: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
+  onAssetSelected: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
+  onAmountChange: () => {},
+  onSendToAddressChange: () => {},
 }

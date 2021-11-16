@@ -2,12 +2,13 @@ import React, { ReactElement } from "react"
 
 interface Props {
   isSelected: boolean
+  address: string
 }
 
 export default function AccountsNotificationPanelAccountItem(
   props: Props
 ): ReactElement {
-  const { isSelected } = props
+  const { isSelected, address } = props
 
   return (
     <li className="standard_width">
@@ -22,7 +23,7 @@ export default function AccountsNotificationPanelAccountItem(
 
         <div className="info">
           <div className="address_name">Foxrunner</div>
-          <div className="address">0x3cd…xg23</div>
+          <div className="address">{address}</div>
         </div>
       </div>
       <div className="right">

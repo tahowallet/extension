@@ -1,7 +1,5 @@
 import React, { useCallback, ReactElement } from "react"
-import { convertToEth } from "@tallyho/tally-background/lib/utils"
-import dayjs from "dayjs"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/ui"
+import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
 
@@ -97,41 +95,6 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   )
 }
 
-type KeyRenameAndPickMap<T> = {
-  [P in keyof T]?: {
-    readableName: string
-    transformer: (value: T[P]) => string
-    detailTransformer: (value: T[P]) => string
-  }
-}
-
-function renameAndPickKeys<T>(keysMap: KeyRenameAndPickMap<T>, item: T) {
-  // The as below is dicey but reasonable in our usage.
-  return Object.keys(item).reduce((previousValue, key) => {
-    if (key in keysMap) {
-      const knownKey = key as keyof KeyRenameAndPickMap<T> // guaranteed to be true by the `in` test
-      const keyAdjustment = keysMap[knownKey]
-
-      return keyAdjustment === undefined
-        ? previousValue
-        : {
-            ...previousValue,
-            [keyAdjustment.readableName]: keyAdjustment.transformer(
-              item[knownKey]
-            ),
-          }
-    }
-    return previousValue
-  }, {})
-}
-
-function ethTransformer(value: string | number | bigint | null) {
-  if (value === null) {
-    return "(Unknown)"
-  }
-  return `${convertToEth(value)} ETH`
-}
-
 interface WalletActivityDetailsProps {
   activityItem: ActivityItem
 }
@@ -148,54 +111,11 @@ export default function WalletActivityDetails(
     window
       .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
       ?.focus()
-  }, [activityItem.hash])
+  }, [activityItem?.hash])
 
   if (!activityItem) return <></>
 
   const headerTitle = `${activityItem.isSent ? "Sent Asset" : "Received"}`
-
-  const keysMap: KeyRenameAndPickMap<ActivityItem> = {
-    blockHeight: {
-      readableName: "Block Height",
-      transformer: (item: number) => item.toString(),
-      detailTransformer: () => {
-        return ""
-      },
-    },
-    value: {
-      readableName: "Amount",
-      transformer: ethTransformer,
-      detailTransformer: ethTransformer,
-    },
-    gasUsed: {
-      readableName: "Gas",
-      transformer: ethTransformer,
-      detailTransformer: ethTransformer,
-    },
-    maxFeePerGas: {
-      readableName: "Max Fee/Gas",
-      transformer: ethTransformer,
-      detailTransformer: ethTransformer,
-    },
-    gasPrice: {
-      readableName: "Gas Price",
-      transformer: ethTransformer,
-      detailTransformer: ethTransformer,
-    },
-    timestamp: {
-      readableName: "Timestamp",
-      transformer: (item) => {
-        if (typeof item !== "undefined") {
-          return dayjs.unix(parseInt(item, 10)).format("MM/DD/YYYY hh:mm a")
-        }
-        return "(Unknown)"
-      },
-      detailTransformer: () => {
-        return ""
-      },
-    },
-  }
-  const trimmedActivityItem = renameAndPickKeys(keysMap, activityItem)
 
   return (
     <div className="wrap standard_width center_horizontal">
@@ -226,7 +146,7 @@ export default function WalletActivityDetails(
       </div>
       <ul>
         {activityItem &&
-          Object.entries(trimmedActivityItem).map(([key, value]) => {
+          Object.entries(activityItem.infoRows).map(([key, value]) => {
             return (
               <DetailRowItem
                 key={key}
