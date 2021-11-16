@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { Link } from "react-router-dom"
 
 export default function ClaimReferBanner(): ReactElement {
   return (
@@ -9,9 +10,13 @@ export default function ClaimReferBanner(): ReactElement {
         </div>
         <div className="banner__claimable">
           <div className="banner__claimable__woohoo">Wohoo! You can claim</div>
-          <div>10 Tally</div>
+          <div>
+            <span className="banner__claimable__amount">10,989</span> TALLY
+          </div>
         </div>
-        <div>Button</div>
+        <Link to="/claim">
+          <div className="banner__button">{">"}</div>
+        </Link>
       </div>
 
       <style jsx>
@@ -22,22 +27,42 @@ export default function ClaimReferBanner(): ReactElement {
             border-radius: 16px;
             background-color: var(--green-95);
             display: flex;
-            padding: 16px;
+            padding: 0 16px;
             box-sizing: border-box;
             margin-bottom: 48px;
             justify-content: space-between;
             align-items: center;
           }
           .banner__image {
-            width: 80px;
+            width: 90px;
+            position: relative;
+            top: -6px;
+            left: -10px;
           }
           .banner__claimable {
             display: flex;
             flex-flow: column;
-          }
-          .banner__claimable__woohoo {
+            position: relative;
+            top: 4px;
+            left: -20px;
             color: var(--green-40);
             font-size: 14px;
+          }
+          .banner__claimable__amount {
+            font-family: Quincy CF;
+            font-size: 36px;
+            color: #22c480;
+          }
+          .banner__button {
+            width: 40px;
+            height: 40px;
+            background: #d08e39;
+            border-radius: 8px;
+            color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
           }
         `}
       </style>

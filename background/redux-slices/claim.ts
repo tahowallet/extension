@@ -49,7 +49,7 @@ const fetchDistributorContract = createFetchContractThunk(
 )
 
 const claim = createBackgroundAsyncThunk(
-  "claiming/distributorClaim",
+  "claim/distributorClaim",
   async (
     {
       account,
@@ -91,7 +91,7 @@ const initialState = {
 } as ClaimingState
 
 const claimingSlice = createSlice({
-  name: "claiming",
+  name: "claim",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
