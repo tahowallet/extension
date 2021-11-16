@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { BigNumber } from "ethers"
-import { DISTRIBUTOR_ABI } from "../constants/abi"
+import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 import balances from "../constants/balances"
 import BalanceTree from "../lib/balance-tree"
 import { createBackgroundAsyncThunk } from "./utils"

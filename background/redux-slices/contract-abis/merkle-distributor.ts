@@ -1,4 +1,4 @@
-export const DISTRIBUTOR_ABI = [
+const DISTRIBUTOR_ABI = [
   {
     inputs: [
       {
@@ -115,4 +115,4 @@ export const DISTRIBUTOR_ABI = [
   },
 ]
 
-export const EMPTTY = {}
+export default DISTRIBUTOR_ABI
