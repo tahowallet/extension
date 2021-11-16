@@ -5,7 +5,15 @@ export { ActivityItem }
 
 const activitiesAdapter = createEntityAdapter<ActivityItem>({
   selectId: (activityItem) => activityItem.hash,
-  sortComparer: (a, b) => (a.blockHeight < b.blockHeight ? 1 : -1),
+  sortComparer: (a, b) => {
+    if (a.blockHeight === b.blockHeight) {
+      return 0
+    }
+    if (a.blockHeight < b.blockHeight) {
+      return 1
+    }
+    return -1
+  },
 })
 
 export type ActivitiesState = {
