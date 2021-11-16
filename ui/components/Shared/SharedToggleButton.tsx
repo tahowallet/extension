@@ -1,16 +1,27 @@
 import React, { useState, ReactElement } from "react"
 import classNames from "classnames"
 
-export default function SharedToggleButton(): ReactElement {
-  const [isActive, setIsActive] = useState(false)
+interface SharedToggleButtonProps {
+  onChange: (toggleValue: boolean) => void
+  value?: boolean | undefined
+}
+
+export default function SharedToggleButton({
+  onChange,
+  value,
+}: SharedToggleButtonProps): ReactElement {
+  const [isActive, setIsActive] = useState(value || false)
+
+  const handleToggleAction = () => {
+    setIsActive(!isActive)
+    onChange(!isActive)
+  }
 
   return (
     <button
       type="button"
       className={classNames("container", { is_active: isActive })}
-      onClick={() => {
-        setIsActive(!isActive)
-      }}
+      onClick={handleToggleAction}
     >
       <div className="bulb" />
       <style jsx>

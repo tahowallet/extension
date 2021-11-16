@@ -5,7 +5,7 @@ import { jsonSchemaValidatorFor } from "../lib/validation"
 
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
-import { CoinGeckoAsset } from "../types"
+import { CoinGeckoAsset } from "../assets"
 import {
   CoingeckoPriceData,
   coingeckoPriceSchema,
@@ -197,7 +197,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 8,
               metadata: {
-                coinGeckoId: "bitcoin",
+                coinGeckoID: "bitcoin",
                 tokenLists: [],
                 websiteURL: "https://bitcoin.org",
               },
@@ -214,7 +214,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 8,
               metadata: {
-                coinGeckoId: "bitcoin",
+                coinGeckoID: "bitcoin",
                 tokenLists: [],
                 websiteURL: "https://bitcoin.org",
               },
@@ -231,7 +231,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 8,
               metadata: {
-                coinGeckoId: "bitcoin",
+                coinGeckoID: "bitcoin",
                 tokenLists: [],
                 websiteURL: "https://bitcoin.org",
               },
@@ -248,7 +248,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
@@ -265,7 +265,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
@@ -282,7 +282,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
@@ -315,7 +315,7 @@ describe("lib/prices.ts", () => {
         symbol: "qwerqwer",
         decimals: 18,
         metadata: {
-          coinGeckoId: "qwerqwer",
+          coinGeckoID: "qwerqwer",
           tokenLists: [],
           websiteURL: "https://www.youtube.com/watch?v=xvFZjo5PgG0",
         },
@@ -334,7 +334,7 @@ describe("lib/prices.ts", () => {
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
