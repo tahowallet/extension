@@ -25,7 +25,13 @@
     "default_title": "Tally",
     "default_popup": "popup.html"
   },
-  "permissions": ["alarms", "storage", "unlimitedStorage", "notifications"],
+  "permissions": [
+    "alarms",
+    "storage",
+    "unlimitedStorage",
+    "notifications",
+    "<all_urls>"
+  ],
   "background": {
     "persistent": true,
     "scripts": ["background.js", "background-ui.js"]
