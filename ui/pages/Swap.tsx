@@ -92,15 +92,20 @@ export default function Swap(): ReactElement {
 
   const fromInputChanged = useCallback(
     (event) => {
-      setSwapAmount(() => {
-        return {
-          from: event.target.value,
-          to: ethersUtils
-            .parseUnits(event.target.value, 18)
-            .div(swap.price)
-            .toString(), // TODO: Actual decimals
-        }
-      })
+      // Basic validation to ensure we don't break the Ethers.js BigNumber parser
+      const inputValue = parseFloat(event.target.value)
+
+      if (!Number.isNaN(inputValue) && !swap.price.isZero()) {
+        setSwapAmount(() => {
+          return {
+            from: event.target.value,
+            to: ethersUtils
+              .parseUnits(inputValue.toString(), 18) // TODO: Fetch decimals from 0x tokens API
+              .div(swap.price)
+              .toString(),
+          }
+        })
+      }
     },
 
     [swap]
@@ -108,15 +113,19 @@ export default function Swap(): ReactElement {
 
   const toInputChanged = useCallback(
     (event) => {
-      setSwapAmount(() => {
-        return {
-          from: ethersUtils
-            .parseUnits(event.target.value, 18)
-            .mul(swap.price)
-            .toString(), // TODO: Actual decimals
-          to: event.target.value,
-        }
-      })
+      const inputValue = parseFloat(event.target.value)
+
+      if (!Number.isNaN(inputValue) && !swap.price.isZero()) {
+        setSwapAmount(() => {
+          return {
+            from: ethersUtils
+              .parseUnits(inputValue.toString(), 18) // TODO: Actual decimals
+              .mul(swap.price)
+              .toString(),
+            to: event.target.value,
+          }
+        })
+      }
     },
 
     [swap]
