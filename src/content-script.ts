@@ -18,7 +18,7 @@ function setupConnection() {
     if (
       event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
       event.source !== window || // we want to recieve msgs only from the inpage script
-      event.data.target !== "content" // TODO: needs a better solution
+      event.data.target !== "tally-content" // TODO: needs a better solution
     )
       return
     // to demonstrate how it works it was necessary. Will remove later
@@ -29,14 +29,13 @@ function setupConnection() {
     )
 
     port.postMessage({
-      target: "background",
-      source: event.data.target,
+      target: "tally-content-script-service",
       message: `ping ${event.data.message}`,
     })
   })
 
   port.onMessage.addListener((payload) => {
-    if (payload.target !== "content") return
+    if (payload.target !== "tally-content") return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
@@ -45,8 +44,7 @@ function setupConnection() {
     )
     window.postMessage(
       {
-        target: "inpage",
-        source: payload.target,
+        target: "tally-inpage",
         message: `ACK ${payload.message}`,
       },
       window.location.origin

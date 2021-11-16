@@ -14,8 +14,7 @@ setInterval(() => {
   // ‼️ Always include target origin to avoid unwanted attention
   windowPostMessage(
     {
-      target: "content",
-      source: "inpage",
+      target: "tally-content",
       message: "SYN",
     },
     window.location.origin
@@ -28,9 +27,9 @@ setInterval(() => {
 
 windowAddEventListener("message", (event) => {
   if (
-    event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
-    event.source !== window || // we want to recieve msgs only from the inpage script
-    event.data.target !== "inpage" // TODO: needs a better solution
+    event.origin !== window.location.origin || // we want to recieve msgs only from the content script
+    event.source !== window || // we want to recieve msgs only from the content script
+    event.data.target !== "tally-inpage"
   )
     return
 

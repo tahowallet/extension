@@ -36,14 +36,13 @@ function dumbContentScriptProviderPortService() {
   browser.runtime.onConnect.addListener(async (port) => {
     if (port?.sender?.tab && port?.sender?.url) {
       port.onMessage.addListener((payload) => {
-        if (payload.target !== "background") return
+        if (payload.target !== "tally-content-script-service") return
         // to demonstrate how it works it was necessary. Will remove later
         // eslint-disable-next-line no-console
         console.log(`background: ${JSON.stringify(payload)}`)
 
         port.postMessage({
-          target: payload.source,
-          source: payload.target,
+          target: "tally-content",
           message: `pong ${payload.message}`,
         })
       })
