@@ -95,7 +95,14 @@ export default function Swap(): ReactElement {
       // Basic validation to ensure we don't break the Ethers.js BigNumber parser
       const inputValue = parseFloat(event.target.value)
 
-      if (!Number.isNaN(inputValue) && !swap.price.isZero()) {
+      if (Number.isNaN(inputValue) || swap.price.isZero()) {
+        setSwapAmount(() => {
+          return {
+            from: event.target.value, // We have to preserve the original input value, otherwise users won't be able to type decimals
+            to: 0,
+          }
+        })
+      } else {
         setSwapAmount(() => {
           return {
             from: event.target.value,
@@ -118,10 +125,14 @@ export default function Swap(): ReactElement {
       if (!Number.isNaN(inputValue) && !swap.price.isZero()) {
         setSwapAmount(() => {
           return {
+            /*
+            The decimal math on this is messed up because of Ethers.js BigNumber library
+
             from: ethersUtils
               .parseUnits(inputValue.toString(), 18) // TODO: Actual decimals
               .mul(swap.price)
               .toString(),
+            */
             to: event.target.value,
           }
         })
