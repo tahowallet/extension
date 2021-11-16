@@ -1,9 +1,10 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import ethers, { BigNumber } from "ethers"
+import { createSlice } from "@reduxjs/toolkit"
+import { BigNumber } from "ethers"
 import { DISTRIBUTOR_ABI } from "../constants/abi"
 import balances from "../constants/balances"
-import Contracts from "../constants/contracts"
 import BalanceTree from "../lib/balance-tree"
+import { createBackgroundAsyncThunk } from "./utils"
+import { createFetchContractThunk, getContract } from "./utils/contract-utils"
 
 const newBalanceTree = new BalanceTree(balances)
 
@@ -13,25 +14,12 @@ declare global {
   }
 }
 
-interface ContractsState {
+interface ClaimingState {
   status: string
   claimed: {
     [address: string]: boolean
   }
-  contracts: {
-    distributor: any
-  }
-}
-
-const getContract = async (chainId: number, address: string, abi: any[]) => {
-  if (chainId) {
-    await window.ethereum.enable()
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const signer = provider.getSigner()
-    return new ethers.Contract(address, abi, signer)
-  }
-  const provider = new ethers.providers.JsonRpcProvider("some rpc url here")
-  return new ethers.Contract(address, abi, provider)
+  distributor: any
 }
 
 const findIndexAndBalance = (address: string) => {
@@ -40,13 +28,9 @@ const findIndexAndBalance = (address: string) => {
   return { index, balance }
 }
 
-const getDistributorContract = async (chainId: number) => {
-  const contractAddress: string = Contracts[chainId].distributor
-  const distributor = await getContract(
-    chainId,
-    contractAddress,
-    DISTRIBUTOR_ABI
-  )
+const getDistributorContract = async () => {
+  const contractAddress = "0x123"
+  const distributor = await getContract(contractAddress, DISTRIBUTOR_ABI)
   return distributor
 }
 
@@ -58,22 +42,31 @@ const getProof = (
   newBalanceTree.getProof(index, account, amount)
 }
 
-const fetchDistributorContract = createAsyncThunk(
-  "contracts/fetchDistributorContract",
-  async (data: { chainId: number; address: string }) => {
-    const { chainId, address } = data
-    const distributor = await getContract(chainId, address, DISTRIBUTOR_ABI)
-    return distributor
-  }
+// An example usage of how we can get a contract instance but imo uncessary
+const fetchDistributorContract = createFetchContractThunk(
+  "distributor",
+  DISTRIBUTOR_ABI
 )
 
-const claim = createAsyncThunk(
-  "contracts/distributorClaim",
-  async (data: { chainId: number; account: string; referralCode?: string }) => {
-    const { chainId, account, referralCode } = data
+const claim = createBackgroundAsyncThunk(
+  "claiming/distributorClaim",
+  async (
+    {
+      account,
+      referralCode,
+    }: {
+      account: string
+      referralCode?: string
+    },
+    { getState }
+  ) => {
+    const state: any = getState()
+    if (state.claimed[account]) {
+      throw new Error("already claimed")
+    }
     const { index, balance } = await findIndexAndBalance(account)
     const proof = getProof(index, account, balance)
-    const distributor = await getDistributorContract(chainId)
+    const distributor = await getDistributorContract()
     if (!referralCode) {
       const tx = await distributor.claim(index, account, balance, proof)
       const receipt = await tx.wait()
@@ -94,20 +87,18 @@ const claim = createAsyncThunk(
 const initialState = {
   status: "idle",
   claimed: {},
-  contracts: {
-    distributor: {},
-  },
-} as ContractsState
+  distributor: {},
+} as ClaimingState
 
-const contractsSlice = createSlice({
-  name: "contracts",
+const claimingSlice = createSlice({
+  name: "claiming",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(
       fetchDistributorContract.fulfilled,
       (immerState, { payload }) => {
-        immerState.contracts.distributor = payload
+        immerState.distributor = payload
       }
     )
     builder.addCase(claim.pending, (immerState) => {
@@ -124,4 +115,4 @@ const contractsSlice = createSlice({
   },
 })
 
-export default contractsSlice.reducer
+export default claimingSlice.reducer

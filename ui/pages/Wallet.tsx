@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from "react"
-import { Redirect, Link } from "react-router-dom"
+import { Redirect } from "react-router-dom"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
 import CorePage from "../components/Core/CorePage"
@@ -7,6 +7,7 @@ import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
+import ClaimReferBanner from "../components/ClaimRefer/ClaimReferBanner"
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
@@ -38,7 +39,7 @@ export default function Wallet(): ReactElement {
               }
             />
           </div>
-          <Link to="/claim">Claim</Link>
+          <ClaimReferBanner />
           <div className="section">
             <SharedPanelSwitcher
               setPanelNumber={setPanelNumber}
