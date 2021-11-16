@@ -4,7 +4,7 @@ import { DISTRIBUTOR_ABI } from "../constants/abi"
 import balances from "../constants/balances"
 import BalanceTree from "../lib/balance-tree"
 import { createBackgroundAsyncThunk } from "./utils"
-import { createFetchContractThunk, getContract } from "./utils/contract-utils"
+import { getContract } from "./utils/contract-utils"
 
 const newBalanceTree = new BalanceTree(balances)
 
@@ -41,12 +41,6 @@ const getProof = (
 ) => {
   newBalanceTree.getProof(index, account, amount)
 }
-
-// An example usage of how we can get a contract instance but imo uncessary
-const fetchDistributorContract = createFetchContractThunk(
-  "distributor",
-  DISTRIBUTOR_ABI
-)
 
 const claim = createBackgroundAsyncThunk(
   "claim/distributorClaim",
@@ -95,12 +89,6 @@ const claimingSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(
-      fetchDistributorContract.fulfilled,
-      (immerState, { payload }) => {
-        immerState.distributor = payload
-      }
-    )
     builder.addCase(claim.pending, (immerState) => {
       immerState.status = "loading"
     })
