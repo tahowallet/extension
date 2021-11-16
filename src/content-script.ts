@@ -5,7 +5,7 @@
 
 import browser from "webextension-polyfill"
 
-injectInpageScript().then((_) => {
+injectInpageScript().then(() => {
   setupConnection()
 })
 
