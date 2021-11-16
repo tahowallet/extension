@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { selectCurrentAccountActivitiesWithTimestamps } from "@tallyho/tally-background/redux-slices/selectors/activitiesSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -13,16 +13,9 @@ export default function WalletActivityList(): ReactElement {
     (background) => background.ui
   )
 
-  const { activities, blocks } = useBackgroundSelector((background) => {
-    return {
-      activities: background.activities[
-        background.ui.selectedAccount?.address
-      ]?.sort((first: ActivityItem, second: ActivityItem) =>
-        first.blockHeight < second.blockHeight ? 1 : -1
-      ),
-      blocks: background.account.blocks,
-    }
-  })
+  const activities = useBackgroundSelector(
+    selectCurrentAccountActivitiesWithTimestamps
+  )
 
   const handleOpen = useCallback(
     (activityItem) => {
@@ -70,18 +63,20 @@ export default function WalletActivityList(): ReactElement {
         )}
       </SharedSlideUpMenu>
       <ul>
-        {activities.map((activityItem) => (
-          <WalletActivityListItem
-            onClick={() => {
-              handleOpen(activityItem)
-            }}
-            key={activityItem.hash}
-            activity={{
-              ...activityItem,
-              timestamp: blocks[activityItem.blockHeight]?.timestamp,
-            }}
-          />
-        ))}
+        {activities.map((activityItem) => {
+          if (activityItem) {
+            return (
+              <WalletActivityListItem
+                onClick={() => {
+                  handleOpen(activityItem)
+                }}
+                key={activityItem?.hash}
+                activity={activityItem}
+              />
+            )
+          }
+          return <></>
+        })}
       </ul>
     </>
   )

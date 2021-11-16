@@ -21,17 +21,13 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
     if (checkIfPlausibleETHAddress(address)) {
-      dispatch(
+      await dispatch(
         addAddressNetwork({
           address,
           network: getEthereumNetwork(),
         })
       )
-
-      // TODO Replace this magic
-      setTimeout(() => {
-        setRedirect(true)
-      }, 2000)
+      setRedirect(true)
     } else {
       alert("Please enter a valid address")
     }
