@@ -19,6 +19,39 @@ Tally will be
 - Sustainably aligned with users 🤲
 - Wholly owned by the community 👪
 
+## Quickstart
+
+Try this.
+
+```sh
+$ nvm use
+$ npm install -g yarn # if you don't have yarn globally installed
+$ yarn install # install all dependencies; rerun with --ignore-scripts if
+               # scrypt node-gyp failures prevent the install from completing
+$ yarn start # start a continuous webpack build that will auto-update with changes
+```
+
+Once the build is running, you can install the extension in your browser of choice:
+
+- [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
+  - Note that these instructions are for Chrome, but substituting
+    `brave://extensions` or `opera://extensions` for `chrome://extensions`
+    depending on browser should get you to the same buttons.
+
+Extension bundles for each browser are in `dist/<browser>`.
+
+By default, the `yarn start` command rebuilds the extension for each browser on
+save. You can target a particular browser by specifying it in the command, e.g.
+to only rebuild the Firefox extension on change:
+
+```sh
+# On change, rebuild the firefox extension but not others.
+$ yarn start --config-name firefox
+# On change, rebuild the firefox and brave extensions but not others.
+$ yarn start --config-name firefox --config-name brave
+```
+
 ## Package Structure, Build Structure, and Threat Model
 
 The extension is built as two packages, one for the wallet "backend" and one
@@ -62,38 +95,6 @@ install:
 Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
 by running `pre-commit --install`. The macOS setup script does this for you.
-
-### Quickstart
-
-```sh
-$ nvm use
-$ npm install -g yarn # if you don't have yarn globally installed
-$ yarn install # install all dependencies; rerun with --ignore-scripts if
-               # scrypt node-gyp failures prevent the install from completing
-$ yarn start # start a continuous webpack build that will auto-update with changes
-```
-
-Once the continuous webpack build is running, you can install the extension in
-your dev browser of choice:
-
-- [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
-- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
-  - Note that these instructions are for Chrome, but substituting
-    `brave://extensions` or `opera://extensions` for `chrome://extensions`
-    depending on browser should get you to the same buttons.
-
-Extension bundles for each browser are in `dist/<browser>`.
-
-By default, the `yarn start` command rebuilds the extension for each browser on
-save. You can target a particular browser by specifying it in the command, e.g.
-to only rebuild the Firefox extension on change:
-
-```sh
-# On change, rebuild the firefox extension but not others.
-$ yarn start --config-name firefox
-# On change, rebuild the firefox and brave extensions but not others.
-$ yarn start --config-name firefox --config-name brave
-```
 
 ### Releasing a version
 
