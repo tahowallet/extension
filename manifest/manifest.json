@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://*/*", "https://*/*"],
-      "js": ["content-script.js"],
+      "js": ["tally-provider-bridge.js"],
       "run_at": "document_start",
       "all_frames": true
     }

@@ -8,13 +8,13 @@ const windowAddEventListener = window.addEventListener
 
 // to demonstrate how it works it was necessary. Will remove later
 // eslint-disable-next-line no-console
-console.log("inpage.js in da house")
+console.log("inpage.js in da house", Date.now())
 
 setInterval(() => {
   // ‼️ Always include target origin to avoid unwanted attention
   windowPostMessage(
     {
-      target: "tally-content",
+      target: "tally-provider-bridge",
       message: "SYN",
     },
     window.location.origin
@@ -23,13 +23,13 @@ setInterval(() => {
   // to demonstrate how it works it was necessary. Will remove later
   // eslint-disable-next-line no-console
   console.log("-------------")
-}, 3000)
+}, 1000)
 
 windowAddEventListener("message", (event) => {
   if (
-    event.origin !== window.location.origin || // we want to recieve msgs only from the content script
-    event.source !== window || // we want to recieve msgs only from the content script
-    event.data.target !== "tally-inpage"
+    event.origin !== window.location.origin || // we want to recieve msgs only from the provider bridge
+    event.source !== window || // we want to recieve msgs only from the provider bridge
+    event.data.target !== "tally-window-provider"
   )
     return
 
