@@ -3,8 +3,11 @@
 // it's better to have our own copy of these functions so nobody
 // can temper w / them in any way we would not want to
 // (lot of script does this kind of magic eg ads logging)
-const windowPostMessage = window.postMessage
-const windowAddEventListener = window.addEventListener
+// An extenstion before us in the runing queue still can modify these fns
+// so it's not 100% safe but safe enough (for 100% iframe trick is necessary)
+const unsafePostMessage = window.postMessage
+const unsafeAddEventListener = window.addEventListener
+const unsafeOrigin = window.location.origin
 
 // to demonstrate how it works it was necessary. Will remove later
 // eslint-disable-next-line no-console
@@ -12,12 +15,12 @@ console.log("inpage.js in da house", Date.now())
 
 setInterval(() => {
   // ‼️ Always include target origin to avoid unwanted attention
-  windowPostMessage(
+  unsafePostMessage(
     {
       target: "tally-provider-bridge",
       message: "SYN",
     },
-    window.location.origin
+    unsafeOrigin
   )
 
   // to demonstrate how it works it was necessary. Will remove later
@@ -25,9 +28,9 @@ setInterval(() => {
   console.log("-------------")
 }, 1000)
 
-windowAddEventListener("message", (event) => {
+unsafeAddEventListener("message", (event) => {
   if (
-    event.origin !== window.location.origin || // we want to recieve msgs only from the provider bridge
+    event.origin !== unsafeOrigin || // we want to recieve msgs only from the provider bridge
     event.source !== window || // we want to recieve msgs only from the provider bridge
     event.data.target !== "tally-window-provider"
   )
