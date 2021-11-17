@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "Discord #feature-requests"
+    url: https://discord.gg/AF3aWeJv
+    about: Please discuss feature requests here before filing an issue.
+  - name: "Discord #feedback for bugs"
+    url: https://discord.gg/tfU8ejqr
+    about: Please discuss bugs here before filing an issue.
