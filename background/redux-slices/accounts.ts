@@ -27,8 +27,8 @@ type AccountData = {
   confirmedTransactions: ConfirmedEVMTransaction[]
   unconfirmedTransactions: AnyEVMTransaction[]
   ens: {
-    name: DomainName | null
-    avatar: URI | null
+    name?: DomainName
+    avatarURL?: URI
   }
 }
 
@@ -121,10 +121,7 @@ function newAccountData(address: HexString, network: Network): AccountData {
     balances: {},
     unconfirmedTransactions: [],
     confirmedTransactions: [],
-    ens: {
-      name: null,
-      avatar: null,
-    },
+    ens: {},
   }
 }
 

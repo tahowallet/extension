@@ -18,15 +18,12 @@ export default function TopMenu(props: Props): ReactElement {
     ]
   })
 
-  const { name, avatar } = useBackgroundSelector((background) => {
+  const { name, avatarURL } = useBackgroundSelector((background) => {
     const data = background.account.accountsData[address.toLowerCase()]
     if (typeof data === "object") {
       return data.ens
     }
-    return {
-      name: null,
-      avatar: null,
-    }
+    return {}
   })
 
   return (
@@ -39,7 +36,7 @@ export default function TopMenu(props: Props): ReactElement {
           <TopMenuProfileButton
             address={truncatedAddress}
             nickname={name || undefined}
-            avatar={avatar || undefined}
+            avatar={avatarURL || undefined}
           />
         </button>
       </nav>
