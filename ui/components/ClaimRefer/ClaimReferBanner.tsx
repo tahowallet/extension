@@ -34,9 +34,9 @@ export default function ClaimReferBanner(): ReactElement {
             align-items: center;
           }
           .banner__image {
-            width: 90px;
+            width: 72px;
             position: relative;
-            top: -6px;
+            top: -4px;
             left: -10px;
           }
           .banner__claimable {
@@ -51,6 +51,7 @@ export default function ClaimReferBanner(): ReactElement {
           .banner__claimable__amount {
             font-family: Quincy CF;
             font-size: 36px;
+            line-height: 38px;
             color: #22c480;
           }
           .banner__button {
