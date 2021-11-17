@@ -234,7 +234,7 @@ const accountSlice = createSlice({
       )
       immerState.accountsData[address] = {
         ...baseAccountData,
-        ens: { ...baseAccountData.ens, name: addressNetworkAvatar.avatar },
+        ens: { ...baseAccountData.ens, avatarURL: addressNetworkAvatar.avatar },
       }
     },
     transactionSeen: (
