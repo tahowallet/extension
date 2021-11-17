@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { Asset } from "@tallyho/tally-background/types"
+import { Asset } from "@tallyho/tally-background/assets"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -132,7 +132,7 @@ interface SharedAssetInputProps {
   amount: string
   isTokenOptionsLocked: boolean
   onAssetSelected: (token: Asset) => void
-  onAmountChange: (value: number) => void
+  onAmountChanged: (value: string) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -147,7 +147,7 @@ export default function SharedAssetInput(
     amount,
     isTokenOptionsLocked,
     onAssetSelected,
-    onAmountChange,
+    onAmountChanged,
     onSendToAddressChange,
   } = props
 
@@ -168,6 +168,14 @@ export default function SharedAssetInput(
     },
 
     [onAssetSelected]
+  )
+
+  const assetAmountChanged = useCallback(
+    (event) => {
+      onAmountChanged?.(event)
+    },
+
+    [onAmountChanged]
   )
 
   return (
@@ -226,9 +234,7 @@ export default function SharedAssetInput(
               type="text"
               placeholder="0.0"
               value={amount}
-              onChange={(event) => {
-                onAmountChange(event)
-              }}
+              onChange={assetAmountChanged}
             />
           </>
         )}
@@ -302,6 +308,6 @@ SharedAssetInput.defaultProps = {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },
-  onAmountChange: () => {},
+  onAmountChanged: () => {},
   onSendToAddressChange: () => {},
 }

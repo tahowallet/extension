@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { BigNumber, utils as ethersUtils } from "ethers"
 import { fetchJson } from "@ethersproject/web"
 import logger from "@tallyho/tally-background/lib/logger"
-import { Asset } from "@tallyho/tally-background/types"
+import { Asset } from "@tallyho/tally-background/assets"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
@@ -90,7 +90,7 @@ export default function Swap(): ReactElement {
     })
   }, [])
 
-  const fromInputChanged = useCallback(
+  const fromAmountChanged = useCallback(
     (event) => {
       // Basic validation to ensure we don't break the Ethers.js BigNumber parser
       const inputValue = parseFloat(event.target.value)
@@ -99,7 +99,7 @@ export default function Swap(): ReactElement {
         setSwapAmount(() => {
           return {
             from: event.target.value, // We have to preserve the original input value, otherwise users won't be able to type decimals
-            to: 0,
+            to: "0",
           }
         })
       } else {
@@ -118,7 +118,7 @@ export default function Swap(): ReactElement {
     [swap]
   )
 
-  const toInputChanged = useCallback(
+  const toAmountChanged = useCallback(
     (event) => {
       const inputValue = parseFloat(event.target.value)
 
@@ -133,6 +133,7 @@ export default function Swap(): ReactElement {
               .mul(swap.price)
               .toString(),
             */
+            from: "0",
             to: event.target.value,
           }
         })
@@ -159,7 +160,7 @@ export default function Swap(): ReactElement {
               <SharedAssetInput
                 assets={displayAssets}
                 onAssetSelected={fromAssetSelected}
-                onInputChanged={fromInputChanged}
+                onAmountChanged={fromAmountChanged}
                 amount={swapAmount.from}
                 label="Swap from:"
               />
@@ -169,7 +170,7 @@ export default function Swap(): ReactElement {
               <SharedAssetInput
                 assets={swapTokens}
                 onAssetSelected={toAssetSelected}
-                onInputChanged={toInputChanged}
+                onAmountChanged={toAmountChanged}
                 amount={swapAmount.to}
                 label="Swap to:"
               />

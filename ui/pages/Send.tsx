@@ -32,8 +32,10 @@ export default function Send(): ReactElement {
                 onAssetSelected={() => {
                   setSelectedCount(1)
                 }}
-                onAmountChange={setAmount}
-                defaultToken={{ name: token }}
+                onAmountChanged={(newAmount) => {
+                  setAmount(parseFloat(newAmount))
+                }}
+                defaultToken={{ name: token, symbol: token }}
               />
             </div>
             <div className="form_input">

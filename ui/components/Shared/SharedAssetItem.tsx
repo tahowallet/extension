@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { Asset } from "@tallyho/tally-background/types"
+import { Asset } from "@tallyho/tally-background/assets"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface Props {
