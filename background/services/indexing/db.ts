@@ -139,7 +139,7 @@ export class IndexingDatabase extends Dexie {
       migrations: "++id,appliedAt",
       prices: "++id,time,[asset1ID+asset2ID]",
       balances:
-        "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
+        "++id,address,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       tokenLists: "++id,url,retrievedAt",
       customAssets:
         "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainId,homeNetwork.name",
@@ -164,7 +164,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getLatestAccountBalance(
-    account: string,
+    address: string,
     network: Network,
     asset: FungibleAsset
   ): Promise<AccountBalance | null> {
@@ -174,7 +174,7 @@ export class IndexingDatabase extends Dexie {
       .above(Date.now() - 7 * 24 * 60 * 60 * 1000)
       .filter(
         (balance) =>
-          balance.address === account &&
+          balance.address === address &&
           balance.assetAmount.asset.symbol === asset.symbol &&
           balance.network.name === network.name
       )
