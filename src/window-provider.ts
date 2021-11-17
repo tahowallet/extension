@@ -13,30 +13,37 @@ const unsafeOrigin = window.location.origin
 // eslint-disable-next-line no-console
 console.log("inpage.js in da house", Date.now())
 
-setInterval(() => {
-  // ‼️ Always include target origin to avoid unwanted attention
-  unsafePostMessage(
-    {
-      target: "tally-provider-bridge",
-      message: "SYN",
-    },
-    unsafeOrigin
-  )
+const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
 
-  // to demonstrate how it works it was necessary. Will remove later
-  // eslint-disable-next-line no-console
-  console.log("-------------")
-}, 1000)
+const enabled = window.localStorage.getItem(WINDOW_PROVIDER_FLAG)
 
-unsafeAddEventListener("message", (event) => {
-  if (
-    event.origin !== unsafeOrigin || // we want to recieve msgs only from the provider bridge
-    event.source !== window || // we want to recieve msgs only from the provider bridge
-    event.data.target !== "tally-window-provider"
-  )
-    return
+if (enabled === "true") {
+  debugger
+  setInterval(() => {
+    // ‼️ Always include target origin to avoid unwanted attention
+    unsafePostMessage(
+      {
+        target: "tally-provider-bridge",
+        message: "SYN",
+      },
+      unsafeOrigin
+    )
 
-  // to demonstrate how it works it was necessary. Will remove later
-  // eslint-disable-next-line no-console
-  console.log("inpage: ", event.data)
-})
+    // to demonstrate how it works it was necessary. Will remove later
+    // eslint-disable-next-line no-console
+    console.log("-------------")
+  }, 1000)
+
+  unsafeAddEventListener("message", (event) => {
+    if (
+      event.origin !== unsafeOrigin || // we want to recieve msgs only from the provider bridge
+      event.source !== window || // we want to recieve msgs only from the provider bridge
+      event.data.target !== "tally-window-provider"
+    )
+      return
+
+    // to demonstrate how it works it was necessary. Will remove later
+    // eslint-disable-next-line no-console
+    console.log("inpage: ", event.data)
+  })
+}

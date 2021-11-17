@@ -5,6 +5,8 @@
 
 import browser from "webextension-polyfill"
 
+export { browser }
+
 export function setupConnection() {
   const port = browser.runtime.connect()
 
