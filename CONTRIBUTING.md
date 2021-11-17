@@ -44,7 +44,7 @@ in Discord before going all in.
    you are intending to do—there could be a duplicate issue, or someone else
    could already be working on it!
 5. Build!
-6. Open a PR against the main branch and describe the change you the PR has
+6. Open a PR against the main branch and describe the change the PR has
    implemented. You may break out a larger piece of work over several PRs (in
    fact, we encourage it!). In your PR description, make sure to mark that your
    PR closes the associated issue from step 4.
