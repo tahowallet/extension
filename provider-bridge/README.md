@@ -1,4 +1,4 @@
-# inpage and content script design
+# Provider Bridge
 
 ## Security model
 
@@ -77,5 +77,28 @@ This script can be put in [tamper monkey](https://chrome.google.com/webstore/det
       .filter(i => typeof ethOrigi[i] === 'function' )
       .forEach(f => window.ethereum[f] = new Proxy(ethOrigi[f], rubberNeck))
     // Your code here...
+})();
+```
+
+## window.postMessage debug
+
+```
+// ==UserScript==
+// @name         postMessage debugger
+// @description  Logs all the postMessage calls to the console
+// @match        *://*/*
+// ==/UserScript==
+
+(function() {
+  'use strict';
+
+  const source = document.title || window.location.href;
+  console.debug(`postMessageDebugger activated on '${source}'`);
+  addEventListener('message', function(event) {
+    console.log(
+      `postMessage received by '${source}' from '${event.origin}' with data:`,
+      JSON.stringify(event.data,null,2)
+    );
+  });
 })();
 ```
