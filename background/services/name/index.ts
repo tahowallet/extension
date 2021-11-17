@@ -1,14 +1,15 @@
-import { DomainName, HexString, URI } from "../../types"
+import { DomainName, HexString, UNIXTime } from "../../types"
 import { Network } from "../../networks"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
-import { getTokenURI, getTokenMetadata } from "../../lib/erc721"
+import { getTokenMetadata } from "../../lib/erc721"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
 import { AddressNetwork } from "../../accounts"
+import { SECOND } from "../../constants"
 
 type ResolvedAddressRecord = {
   from: {
@@ -26,6 +27,7 @@ type ResolvedNameRecord = {
   }
   resolved: {
     name: DomainName
+    expiresAt: UNIXTime
   }
   system: "ENS" | "UNS"
 }
@@ -95,6 +97,8 @@ function storageGatewayURL(url: URL): URL {
  */
 export default class NameService extends BaseService<Events> {
   private cachedEIP155AvatarURLs: Record<string, URL> = {}
+
+  private cachedResolvedNames: Record<string, ResolvedNameRecord> = {}
 
   /**
    * Create a new NameService. The service isn't initialized until
@@ -176,12 +180,24 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpName(
     address: HexString,
-    network: Network
+    network: Network,
+    checkCache = true
   ): Promise<DomainName | undefined> {
     // TODO ENS lookups should work on a few testnets as well
     if (network.chainID !== "1") {
       throw new Error("Only Ethereum mainnet is supported.")
     }
+
+    if (checkCache && address in this.cachedResolvedNames) {
+      const {
+        resolved: { name, expiresAt },
+      } = this.cachedResolvedNames[address]
+
+      if (expiresAt >= Date.now()) {
+        return name
+      }
+    }
+
     const provider = this.chainService.pollingProviders.ethereum
     // TODO cache name resolution and TTL
     const name = await provider.lookupAddress(address)
@@ -197,11 +213,25 @@ export default class NameService extends BaseService<Events> {
     ) {
       return undefined
     }
-    this.emitter.emit("resolvedName", {
+
+    const nameRecord = {
       from: { addressNetwork: { address, network } },
-      resolved: { name },
+      resolved: {
+        name,
+        // TODO Read this from the name service; for now, this avoids infinite
+        // TODO resolution loops.
+        expiresAt: Date.now() + 10 * SECOND,
+      },
       system: "ENS",
-    })
+    } as const
+
+    const existingName = this.cachedResolvedNames[address]?.resolved?.name
+    this.cachedResolvedNames[address] = nameRecord
+
+    // Only emit an event if the resolved name changed.
+    if (existingName !== name) {
+      this.emitter.emit("resolvedName", nameRecord)
+    }
     return name
   }
 
