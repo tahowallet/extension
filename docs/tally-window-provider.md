@@ -15,6 +15,7 @@
   - that validation is the responsibility of the ContentScriptProviderPortService.
 - We should def think about extension ordering issues, but for the most part our in-page aspects shouldn't really interact with the DOM beyond the initial injection of our code, I believe.
 - The greater concern is some script or extension on the page simply doing a postMessage to request the signing of a transaction the user didn't actually want to sign.
+  - It is still a vector for interfering with the dApp transactions
 
 ### Implemented strategies
 
