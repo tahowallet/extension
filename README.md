@@ -1,10 +1,8 @@
 # tally-extension
 
-<p align="center">
-  <img alt="The community owned & operated wallet."
-       src="./github_cover@2x.png"
-       width="500" />
-</p>
+<img alt="The community owned & operated wallet."
+     src="./github_cover@2x.png"
+     width="630" />
 
 [Tally](https://blog.tally.cash/a-community-owned-wallet-for-the-new-internet/)
 is a community owned and operated Web3 wallet, built as a
