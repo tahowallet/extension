@@ -1,20 +1,21 @@
 name: Bug Report
+description: File a bug report
 title: "[Bug]: "
 labels: ["🐛 bug", "👩‍⚕️ triage"]
+assignees: []
 body:
   - type: markdown
     attributes:
-      value: |
-        Thanks for taking the time to fill out this bug report!
-
-        Note that bug reports should start [in
-        Discord](https://discord.gg/AF3aWeJv). Please file them as issues only
-        when suggested by a moderator so that issues can be kept organized.
+      value: >-
+        Thanks for taking the time to fill out this bug report! Note that bug
+        reports should start [in Discord](https://discord.gg/AF3aWeJv). Please
+        file them as issues only when suggested by a moderator so that issues
+        can be kept organized.
   - type: input
     id: discord-link
     attributes:
       label: Discord Discussion Link
-      description: |
+      description: >-
         The link to where this issue was discussed in Discord, either the
         starting message or the moderator message suggesting that an issue be
         posted.
