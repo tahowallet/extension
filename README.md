@@ -15,6 +15,7 @@ spirit of community ownership.
 We can do better.
 
 Tally will be
+
 - Fairly launched ⚖️
 - Sustainably aligned with users 🤲
 - Wholly owned by the community 👪
