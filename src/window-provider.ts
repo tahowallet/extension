@@ -18,7 +18,6 @@ const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
 const enabled = window.localStorage.getItem(WINDOW_PROVIDER_FLAG)
 
 if (enabled === "true") {
-  debugger
   setInterval(() => {
     // ‼️ Always include target origin to avoid unwanted attention
     unsafePostMessage(
