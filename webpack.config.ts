@@ -23,8 +23,8 @@ const baseConfig: Configuration = {
     ui: "./src/ui.ts",
     background: "./src/background.ts",
     "background-ui": "./src/background-ui.ts",
-    "tally-window-provider": "./src/tally-window-provider.ts",
-    "tally-provider-bridge": "./src/tally-provider-bridge.ts",
+    "window-provider": "./src/window-provider.ts",
+    "provider-bridge": "./src/provider-bridge.ts",
   },
   module: {
     rules: [

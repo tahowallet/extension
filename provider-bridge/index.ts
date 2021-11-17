@@ -5,13 +5,7 @@
 
 import browser from "webextension-polyfill"
 
-injectTallyWindowProvider().then(() => {
-  setupConnection()
-})
-
-// implementations
-
-function setupConnection() {
+export function setupConnection() {
   const port = browser.runtime.connect()
 
   window.addEventListener("message", (event) => {
@@ -52,7 +46,7 @@ function setupConnection() {
   })
 }
 
-function injectTallyWindowProvider() {
+export function injectTallyWindowProvider() {
   const baseUrl = browser.runtime.getURL("")
   return fetch(`${baseUrl}tally-window-provider.js`)
     .then((r) => r.text())
