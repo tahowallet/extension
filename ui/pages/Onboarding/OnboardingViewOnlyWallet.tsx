@@ -19,8 +19,12 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
     return /^(0x){1}[0-9a-fA-F]{40}$/i.test(checkAddress)
   }
 
+  function checkIfPlausibleENSAddress(checkAddress: string) {
+    return /^[a-z0-9-]{1,63}(.eth)$/i.test(checkAddress)
+  }
+
   const handleSubmitViewOnlyAddress = useCallback(async () => {
-    if (checkIfPlausibleETHAddress(address)) {
+    if (checkIfPlausibleETHAddress(address) || checkIfPlausibleENSAddress(address)) {
       await dispatch(
         addAddressNetwork({
           address,
@@ -29,7 +33,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       )
       setRedirect(true)
     } else {
-      alert("Please enter a valid address")
+      alert("Please enter a valid address or ENS address")
     }
   }, [dispatch, address])
 
