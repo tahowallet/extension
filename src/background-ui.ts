@@ -8,7 +8,7 @@ newProxyStore().then((backgroundStore) => {
   backgroundStore.subscribe(() => {
     const state = backgroundStore.getState()
     const {
-      combinedData: { totalUserValue, activity: updatedActivity },
+      combinedData: { totalMainCurrencyValue, activity: updatedActivity },
     } = state.account
 
     if (updatedActivity) {
@@ -24,8 +24,8 @@ newProxyStore().then((backgroundStore) => {
         browser.notifications.create("balance-update", {
           type: "basic",
           title: "Balance Update",
-          message: `<address> has balance ${totalUserValue}`,
-          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalUserValue}`,
+          message: `<address> has balance ${totalMainCurrencyValue}`,
+          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalMainCurrencyValue}`,
         })
       }
 

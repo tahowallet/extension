@@ -1,4 +1,4 @@
-# inpage and content script design
+# Provider Bridge
 
 ## Security model
 
@@ -15,6 +15,7 @@
   - that validation is the responsibility of the ContentScriptProviderPortService.
 - We should def think about extension ordering issues, but for the most part our in-page aspects shouldn't really interact with the DOM beyond the initial injection of our code, I believe.
 - The greater concern is some script or extension on the page simply doing a postMessage to request the signing of a transaction the user didn't actually want to sign.
+  - It is still a vector for interfering with the dApp transactions
 
 ### Implemented strategies
 
@@ -76,5 +77,28 @@ This script can be put in [tamper monkey](https://chrome.google.com/webstore/det
       .filter(i => typeof ethOrigi[i] === 'function' )
       .forEach(f => window.ethereum[f] = new Proxy(ethOrigi[f], rubberNeck))
     // Your code here...
+})();
+```
+
+## window.postMessage debug
+
+```
+// ==UserScript==
+// @name         postMessage debugger
+// @description  Logs all the postMessage calls to the console
+// @match        *://*/*
+// ==/UserScript==
+
+(function() {
+  'use strict';
+
+  const source = document.title || window.location.href;
+  console.debug(`postMessageDebugger activated on '${source}'`);
+  addEventListener('message', function(event) {
+    console.log(
+      `postMessage received by '${source}' from '${event.origin}' with data:`,
+      JSON.stringify(event.data,null,2)
+    );
+  });
 })();
 ```

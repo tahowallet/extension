@@ -1,14 +1,9 @@
 import Dexie from "dexie"
 
-import {
-  AccountBalance,
-  AccountNetwork,
-  AnyEVMBlock,
-  AnyEVMTransaction,
-  FungibleAsset,
-  Network,
-  UNIXTime,
-} from "../../types"
+import { UNIXTime } from "../../types"
+import { AccountBalance, AddressNetwork } from "../../accounts"
+import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
+import { FungibleAsset } from "../../assets"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -16,7 +11,7 @@ type Transaction = AnyEVMTransaction & {
 }
 
 type AccountAssetTransferLookup = {
-  accountNetwork: AccountNetwork
+  addressNetwork: AddressNetwork
   retrievedAt: UNIXTime
   startBlock: bigint
   endBlock: bigint
@@ -35,11 +30,10 @@ export class ChainDatabase extends Dexie {
    * Accounts whose transaction and balances should be tracked on a particular
    * network.
    *
-   * Keyed by the [account, network name, network chain ID] triplet. Note that
-   * "account" in this context refers to e.g. an Ethereum address.
+   * Keyed by the [address, network name, network chain ID] triplet.
    */
   private accountsToTrack!: Dexie.Table<
-    AccountNetwork,
+    AddressNetwork,
     [string, string, string]
   >
 
@@ -80,11 +74,11 @@ export class ChainDatabase extends Dexie {
     this.version(1).stores({
       migrations: "++id,appliedAt",
       accountsToTrack:
-        "&[account+network.name+network.chainID],account,network.family,network.chainID,network.name",
+        "&[address+network.name+network.chainID],address,network.family,network.chainID,network.name",
       accountAssetTransferLookups:
-        "++id,[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+startBlock],[accountNetwork.account+accountNetwork.network.name+accountNetwork.network.chainID+endBlock],accountNetwork.account,accountNetwork.network.chainID,accountNetwork.network.name,startBlock,endBlock",
+        "++id,[addressNetwork.address+addressNetwork.network.name+addressNetwork.network.chainID],[addressNetwork.address+addressNetwork.network.name+addressNetwork.network.chainID+startBlock],[addressNetwork.address+addressNetwork.network.name+addressNetwork.network.chainID+endBlock],addressNetwork.address,addressNetwork.network.chainID,addressNetwork.network.name,startBlock,endBlock",
       balances:
-        "++id,account,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
+        "++id,address,assetAmount.amount,assetAmount.asset.symbol,network.name,blockHeight,retrievedAt",
       chainTransactions:
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
@@ -174,7 +168,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getLatestAccountBalance(
-    account: string,
+    address: string,
     network: Network,
     asset: FungibleAsset
   ): Promise<AccountBalance | null> {
@@ -184,7 +178,7 @@ export class ChainDatabase extends Dexie {
       .above(Date.now() - 7 * 24 * 60 * 60 * 1000)
       .filter(
         (balance) =>
-          balance.account === account &&
+          balance.address === address &&
           balance.assetAmount.asset.symbol === asset.symbol &&
           balance.network.name === network.name
       )
@@ -193,26 +187,26 @@ export class ChainDatabase extends Dexie {
     return balanceCandidates.length > 0 ? balanceCandidates[0] : null
   }
 
-  async addAccountToTrack(accountNetwork: AccountNetwork): Promise<void> {
-    await this.accountsToTrack.put(accountNetwork)
+  async addAccountToTrack(addressNetwork: AddressNetwork): Promise<void> {
+    await this.accountsToTrack.put(addressNetwork)
   }
 
   async setAccountsToTrack(
-    accountAndNetworks: Set<AccountNetwork>
+    addressesAndNetworks: Set<AddressNetwork>
   ): Promise<void> {
     await this.transaction("rw", this.accountsToTrack, () => {
       this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd([...accountAndNetworks])
+      this.accountsToTrack.bulkAdd([...addressesAndNetworks])
     })
   }
 
   async getOldestAccountAssetTransferLookup(
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
-      .where("accountNetwork.account")
-      .equals(accountNetwork.account)
+      .where("addressNetwork.address")
+      .equals(addressNetwork.address)
       .toArray()
     return lookups.reduce(
       (oldestBlock: bigint | null, lookup) =>
@@ -224,12 +218,12 @@ export class ChainDatabase extends Dexie {
   }
 
   async getNewestAccountAssetTransferLookup(
-    accountNetwork: AccountNetwork
+    addressNetwork: AddressNetwork
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
-      .where("accountNetwork.account")
-      .equals(accountNetwork.account)
+      .where("addressNetwork.address")
+      .equals(addressNetwork.address)
       .toArray()
     return lookups.reduce(
       (newestBlock: bigint | null, lookup) =>
@@ -241,12 +235,12 @@ export class ChainDatabase extends Dexie {
   }
 
   async recordAccountAssetTransferLookup(
-    accountNetwork: AccountNetwork,
+    addressNetwork: AddressNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
     await this.accountAssetTransferLookups.add({
-      accountNetwork,
+      addressNetwork,
       startBlock,
       endBlock,
       retrievedAt: Date.now(),
@@ -263,7 +257,7 @@ export class ChainDatabase extends Dexie {
     await this.balances.add(accountBalance)
   }
 
-  async getAccountsToTrack(): Promise<AccountNetwork[]> {
+  async getAccountsToTrack(): Promise<AddressNetwork[]> {
     return this.accountsToTrack.toArray()
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "Tally",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://*/*", "https://*/*"],
-      "js": ["content-script.js"],
+      "js": ["provider-bridge.js"],
       "run_at": "document_start",
       "all_frames": true
     }

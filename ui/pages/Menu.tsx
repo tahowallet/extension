@@ -1,4 +1,4 @@
-import React, { useState, ReactElement } from "react"
+import React, { ReactElement } from "react"
 import classNames from "classnames"
 import { useDispatch, useSelector } from "react-redux"
 import {
@@ -63,7 +63,7 @@ export default function Menu(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
 
-  const toggleHideDustAssets = (toggleValue: boolean) => {
+  const toggleHideDustAssets = (toggleValue: boolean | undefined) => {
     dispatch(toggleHideDust(toggleValue))
   }
   const settings = {

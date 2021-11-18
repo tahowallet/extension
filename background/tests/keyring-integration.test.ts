@@ -2,7 +2,8 @@ import "mockzilla-webextension"
 
 import { webcrypto } from "crypto"
 import KeyringService, { Keyring } from "../services/keyring"
-import { EIP1559TransactionRequest, KeyringTypes } from "../types"
+import { KeyringTypes } from "../types"
+import { EIP1559TransactionRequest } from "../networks"
 
 const originalCrypto = global.crypto
 beforeEach(() => {

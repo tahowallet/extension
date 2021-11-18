@@ -1,37 +1,65 @@
 import React, { ReactElement, useState } from "react"
+import { useHistory, useLocation } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
+import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 
-interface Props {
-  approveSpendOrSwap: "swap" | "spend"
+enum SignType {
+  Sign = "sign",
+  SignSwap = "sign-swap",
+  SignSpend = "sign-spend",
 }
 
-export default function SignTransaction(props: Props): ReactElement {
-  const { approveSpendOrSwap } = props
+interface SignLocationState {
+  token: string
+  amount: number
+  speed: number
+  network: string
+  signType: SignType
+}
+
+export default function SignTransaction(): ReactElement {
+  const history = useHistory()
+  const location = useLocation<SignLocationState>()
+  const { token, amount, speed, network, signType } = location.state
+
   const [panelNumber, setPanelNumber] = useState(0)
 
-  const spendOrSwapContent = {
-    swap: {
+  const signContent: {
+    [signType in SignType]: {
+      title: string
+      component: () => ReactElement
+      confirmButtonText: string
+    }
+  } = {
+    [SignType.SignSwap]: {
       title: "Swap assets",
       component: () => <SignTransactionSwapAssetBlock />,
+      confirmButtonText: "Confirm",
     },
-    spend: {
+    [SignType.SignSpend]: {
       title: "Approve asset spend",
       component: () => <SignTransactionApproveSpendAssetBlock />,
+      confirmButtonText: "Approve",
+    },
+    [SignType.Sign]: {
+      title: "Sign Transaction",
+      component: () => (
+        <SignTransactionSignBlock token={token} amount={amount} />
+      ),
+      confirmButtonText: "Sign",
     },
   }
 
   return (
     <section>
       <SignTransactionNetworkAccountInfoTopBar />
-      <h1 className="serif_header title">
-        {spendOrSwapContent[approveSpendOrSwap].title}
-      </h1>
+      <h1 className="serif_header title">{signContent[signType].title}</h1>
       <div className="primary_info_card standard_width">
-        {spendOrSwapContent[approveSpendOrSwap].component()}
+        {signContent[signType].component()}
       </div>
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
@@ -47,11 +75,16 @@ export default function SignTransaction(props: Props): ReactElement {
         </div>
       ) : null}
       <div className="footer_actions">
-        <SharedButton iconSize="large" size="large" type="secondary">
+        <SharedButton
+          iconSize="large"
+          size="large"
+          type="secondary"
+          onClick={() => history.goBack()}
+        >
           Reject
         </SharedButton>
         <SharedButton type="primary" iconSize="large" size="large">
-          Confirm
+          {signContent[signType].confirmButtonText}
         </SharedButton>
       </div>
       <style jsx>
@@ -115,8 +148,4 @@ export default function SignTransaction(props: Props): ReactElement {
       </style>
     </section>
   )
-}
-
-SignTransaction.defaultProps = {
-  approveSpendOrSwap: "spend",
 }

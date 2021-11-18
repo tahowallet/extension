@@ -1,9 +1,14 @@
 import React, { ReactElement } from "react"
 
-export default function TopMenuProfileButton(): ReactElement {
+export default function TopMenuProfileButton(props: {
+  address: string
+  nickname?: string
+  avatar?: string
+}): ReactElement {
+  const { address, nickname, avatar } = props
   return (
     <button type="button">
-      Foxhunter
+      {nickname ?? address}
       <div className="avatar" />
       <style jsx>
         {`
@@ -20,7 +25,7 @@ export default function TopMenuProfileButton(): ReactElement {
             height: 32px;
             background-color: white;
             margin-left: 8px;
-            background: url("./images/portrait.png");
+            background: url("${avatar ?? "./images/portrait.png"}");
           }
         `}
       </style>

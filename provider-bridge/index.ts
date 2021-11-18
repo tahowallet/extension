@@ -5,20 +5,16 @@
 
 import browser from "webextension-polyfill"
 
-injectInpageScript().then((_) => {
-  setupConnection()
-})
+export { browser }
 
-// implementations
-
-function setupConnection() {
+export function setupConnection() {
   const port = browser.runtime.connect()
 
   window.addEventListener("message", (event) => {
     if (
-      event.origin !== window.location.origin || // we want to recieve msgs only from the inpage script
-      event.source !== window || // we want to recieve msgs only from the inpage script
-      event.data.target !== "content" // TODO: needs a better solution
+      event.origin !== window.location.origin || // we want to recieve msgs only from the in-page script
+      event.source !== window || // we want to recieve msgs only from the in-page script
+      event.data.target !== "tally-provider-bridge"
     )
       return
     // to demonstrate how it works it was necessary. Will remove later
@@ -30,13 +26,13 @@ function setupConnection() {
 
     port.postMessage({
       id: event.data.id,
-      target: "background",
+      target: "tally-provider-bridge-service",
       payload: event.data.payload,
     })
   })
 
   port.onMessage.addListener((data) => {
-    if (data.target !== "content") return
+    if (data.target !== "tally-provider-bridge") return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
@@ -46,7 +42,7 @@ function setupConnection() {
     window.postMessage(
       {
         id: data.id,
-        target: "inpage",
+        target: "tally-window-provider",
         payload: data.payload,
       },
       window.location.origin
@@ -54,11 +50,11 @@ function setupConnection() {
   })
 }
 
-function injectInpageScript() {
+export function injectTallyWindowProvider() {
   const baseUrl = browser.runtime.getURL("")
-  return fetch(`${baseUrl}inpage.js`)
+  return fetch(`${baseUrl}window-provider.js`)
     .then((r) => r.text())
-    .then((inpageSrc) => {
+    .then((windowProviderSrc) => {
       try {
         const container = document.head || document.documentElement
         const scriptTag = document.createElement("script")
@@ -66,15 +62,15 @@ function injectInpageScript() {
         // bc we want to load before anybody has a chance to temper w/ the window obj
         scriptTag.setAttribute("async", "false")
         // TODO: put env flag here so only dev env has sourcemaps
-        scriptTag.textContent = inpageSrc.replace(
-          "inpage.js.map",
-          `${baseUrl}inpage.js.map`
+        scriptTag.textContent = windowProviderSrc.replace(
+          "window-provider.js.map",
+          `${baseUrl}window-provider.js.map`
         )
         container.insertBefore(scriptTag, container.children[0])
         container.removeChild(scriptTag) // nah, we don't need anybody to read the source
       } catch (e) {
         throw new Error(
-          `Tally: oh nos the content-script failed to initilaize the inpage provider.
+          `Tally: oh nos the content-script failed to initilaize the Tally window provider.
         ${e}
         It's time for a seppoku...🗡`
         )

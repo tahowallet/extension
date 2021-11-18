@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
+import { useBackgroundSelector } from "../../hooks"
 
 interface Props {
   toggleOpenProtocolList: () => void
@@ -10,6 +11,21 @@ interface Props {
 export default function TopMenu(props: Props): ReactElement {
   const { toggleOpenProtocolList, toggleOpenNotifications } = props
 
+  const [address, truncatedAddress] = useBackgroundSelector((background) => {
+    return [
+      background.ui.selectedAccount?.address,
+      background.ui.selectedAccount?.truncatedAddress,
+    ]
+  })
+
+  const { name, avatarURL } = useBackgroundSelector((background) => {
+    const data = background.account.accountsData[address.toLowerCase()]
+    if (typeof data === "object") {
+      return data.ens
+    }
+    return {}
+  })
+
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
@@ -17,7 +33,11 @@ export default function TopMenu(props: Props): ReactElement {
           <TopMenuProtocolSwitcher />
         </button>
         <button type="button" onClick={toggleOpenNotifications}>
-          <TopMenuProfileButton />
+          <TopMenuProfileButton
+            address={truncatedAddress}
+            nickname={name || undefined}
+            avatar={avatarURL || undefined}
+          />
         </button>
       </nav>
       <style jsx>

@@ -23,8 +23,8 @@ const baseConfig: Configuration = {
     ui: "./src/ui.ts",
     background: "./src/background.ts",
     "background-ui": "./src/background-ui.ts",
-    inpage: "./src/inpage.ts",
-    "content-script": "./src/content-script.ts",
+    "window-provider": "./src/window-provider.ts",
+    "provider-bridge": "./src/provider-bridge.ts",
   },
   module: {
     rules: [
