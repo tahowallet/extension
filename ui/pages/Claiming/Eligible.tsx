@@ -1,6 +1,8 @@
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement, useEffect, useState } from "react"
-import { Redirect } from "react-router-dom"
+import { Link, Redirect } from "react-router-dom"
+import TopMenu from "../../components/TopMenu/TopMenu"
+import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
 import { useBackgroundSelector } from "../../hooks"
 
 export default function Eligible(): ReactElement {
@@ -11,6 +13,9 @@ export default function Eligible(): ReactElement {
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
+  const truncatedAccountAddress = useBackgroundSelector((background) => {
+    return background.ui.selectedAccount?.truncatedAddress
+  })
 
   useEffect(() => {
     if (Object.keys(accountData)) {
@@ -32,33 +37,50 @@ export default function Eligible(): ReactElement {
   }
 
   return (
-    <div className="wrap">
-      <div
-        className="background"
-        style={{ backgroundPositionX: `${(step - 1) * 80}%` }}
-      />
-      <div className="eligible">
-        <div className=" banner banner-primary">
-          <div>
-            <img className="banner__image" src="./images/claim.png" alt="" />
+    <>
+      <div className="wrap">
+        <div
+          className="background"
+          style={{ backgroundPositionX: `${(step - 1) * 80}%` }}
+        />
+        <div className="nav">
+          <Link to="/wallet">
+            <img
+              src="./images/transfer@2x.png"
+              alt="return"
+              className="nav__back"
+            />
+          </Link>
+          <div className="account">
+            {truncatedAccountAddress}
+            <div className="avatar" />
           </div>
-          <div className="banner__claimable">
-            <div className="banner__claimable__amount">10,989</div>
-            {/* I KNOW THIS SHOULD BE UPPERCASE IN CSS */}
-            <div>TALLY</div>
+        </div>
+        <div
+          className="background"
+          style={{ backgroundPositionX: `${(step - 1) * 80}%` }}
+        />
+        <div className="eligible">
+          <div className=" banner banner-primary">
+            <div>
+              <img className="banner__image" src="./images/claim.png" alt="" />
+            </div>
+            <div className="banner__claimable">
+              <div className="banner__claimable__amount">10,989</div>
+              {/* I KNOW THIS SHOULD BE UPPERCASE IN CSS */}
+              <div>TALLY</div>
+            </div>
           </div>
-        </div>
-        <div className="banner banner-secondary">
-          <div>Referral</div>
-          <div className="banner__percentage">+5%</div>
-        </div>
-        <div className="banner banner-secondary">
-          <div>Delegate</div>
-          <div className="banner__percentage">+2.5%</div>
-        </div>
-        <div className="claim">
+          <div className="banner banner-secondary">
+            <div>Referral</div>
+            <div className="banner__percentage">+5%</div>
+          </div>
+          <div className="banner banner-secondary">
+            <div>Delegate</div>
+            <div className="banner__percentage">+2.5%</div>
+          </div>
           {step === 1 && (
-            <>
+            <div className="claim standard_width">
               <div className="claim__title">Claim Tally</div>
               <div className="claim__description">
                 Tally is an open source wallet that is run by the community and
@@ -67,10 +89,10 @@ export default function Eligible(): ReactElement {
               <button className="claim__button" type="button" onClick={claim}>
                 Start Process
               </button>
-            </>
+            </div>
           )}
           {step === 2 && (
-            <>
+            <div className="claim standard_width fade-in">
               <div className="claim__title">Reffer a friend</div>
               <div className="claim__description">
                 Do you have a referral code? Referral codes come in the shape of
@@ -91,10 +113,10 @@ export default function Eligible(): ReactElement {
               <button className="claim__button" type="button" onClick={claim}>
                 Select degenerate
               </button>
-            </>
+            </div>
           )}
           {step === 3 && (
-            <>
+            <div className="claim standard_width fade-in">
               <div className="claim__title">Choose a delegate!</div>
               <div className="claim__description">
                 Delegates are your north-star.
@@ -116,12 +138,86 @@ export default function Eligible(): ReactElement {
               <button className="claim__button" type="button" onClick={claim}>
                 Delegate and Claim
               </button>
-            </>
+            </div>
           )}
+          {step === 4 && (
+            <div className="claim standard_width fade-in">
+              <div className="claim__title">Review claim</div>
+              <div className="claim__description">
+                Delegates are your north-star.
+              </div>
+              <div className=" banner banner-primary">
+                <div>
+                  <img
+                    className="banner__image"
+                    src="./images/claim.png"
+                    alt=""
+                  />
+                </div>
+                <div className="banner__claimable">
+                  <div className="banner__claimable__amount">10,989</div>
+                  {/* I KNOW THIS SHOULD BE UPPERCASE IN CSS */}
+                  <div>TALLY</div>
+                </div>
+              </div>
+              <button
+                className="claim__button"
+                type="button"
+                onClick={() => {}}
+              >
+                Claim
+              </button>
+            </div>
+          )}
+          <div className="step">
+            {new Array(4).fill(null).map((el, index) => {
+              return (
+                <button
+                  type="button"
+                  aria-label="Change step"
+                  onClick={() => setStep(index + 1)}
+                  className={step === index + 1 ? "active" : "inactive"}
+                />
+              )
+            })}
+          </div>
         </div>
-      </div>
-      <style jsx>
-        {`
+
+        <style jsx>
+          {`
+          .fade-in{
+            animation-name: fadein;
+            animation-duration: 0.6s;
+          }
+          @keyframes fadein{
+            from {
+              opacity: 0;
+              transform: translateX(100%);
+            }
+            to{
+              opacity: 1
+              transform: translateX(0%)
+            }
+          }
+          .active{
+            width: 16px;
+            height: 6px;
+            background: #D08E39;
+            border-radius: 100px;
+            transition: all 0.5s ease-out;
+            margin: 0 2px;
+          }
+          .inactive {
+            width: 6px;
+            height: 6px;
+            background: #667C7A;
+            border-radius: 100px;
+            transition: all 0.5s ease-in;
+            margin: 0 2px;
+          }
+          .nav__back{
+            transform: rotate(180deg)
+          }
           .claim__button {
             height: 40px;
             border-radius: 4px;
@@ -158,6 +254,8 @@ export default function Eligible(): ReactElement {
             width: 100%;
             height: 100vh;
             background-color: #193330;
+            display: flex;
+            flex-flow: column;
           }
           .background {
             width: 100%;
@@ -166,14 +264,14 @@ export default function Eligible(): ReactElement {
             background-image: url("./images/dark_forest@2x.png");
             background-repeat: repeat-x;
             background-position: bottom;
-            transition: all 0.6s ease-in;
+            transition: all 0.6s ;
           }
           .eligible {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            height: 100%;
+            flex-grow:1;
             width: 352px;
             margin: 0 auto;
           }
@@ -204,6 +302,14 @@ export default function Eligible(): ReactElement {
             margin-bottom: 8px;
             font-size: 14px;
             letter-spacing: 0.03em;
+          }
+          .step{
+            position: absolute;
+            bottom: 32px;
+            left: 24px;
+            margin-top: auto;
+            display: flex;
+            z-index:2;
           }
           .banner-primary {
             height: 58px;
@@ -274,8 +380,31 @@ export default function Eligible(): ReactElement {
             width: 40px;
             opacity: 0.5
           }
+          .nav{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 24px;
+            z-index:2;
+          }
+          .account {
+            flex-shrink: 0;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            user-select: none;
+          }
+          .avatar {
+            border-radius: 12px;
+            width: 32px;
+            height: 32px;
+            background-color: white;
+            margin-left: 8px;
+            background: url("./images/portrait.png");
+          }
         `}
-      </style>
-    </div>
+        </style>
+      </div>
+    </>
   )
 }
