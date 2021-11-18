@@ -1,31 +1,48 @@
 import React, { ReactElement } from "react"
+import { Asset } from "@tallyho/tally-background/assets"
+import SharedAssetIcon from "./SharedAssetIcon"
 
 interface Props {
-  onClick?: (token: { name: string }) => void
+  asset: Asset
+  onClick?: (asset: Asset) => void
 }
 
 export default function SharedAssetItem(props: Props): ReactElement {
-  const { onClick } = props
+  const { onClick, asset } = props
 
   function handleClick() {
-    onClick?.({ name: "ETH" })
+    onClick?.(asset)
   }
 
   return (
     <li>
       <button type="button" className="token_group" onClick={handleClick}>
-        <div className="left">
-          <div className="token_icon_wrap">
-            <span className="icon_eth" />
-          </div>
-          <div className="right">
-            <div className="name">ETH</div>
-            <div className="token_subtitle">Ethereum</div>
+        <div className="list_item standard_width">
+          <div className="left">
+            <SharedAssetIcon
+              logoURL={asset?.metadata?.logoURL}
+              symbol={asset?.symbol}
+            />
+
+            <div className="left_content">
+              <div className="symbol">{asset.symbol}</div>
+              <div className="token_subtitle">{asset.name}</div>
+            </div>
           </div>
         </div>
       </button>
       <style jsx>
         {`
+          .left {
+            display: flex;
+          }
+          .left_content {
+            display: flex;
+            flex-direction: column;
+            height: 41px;
+            justify-content: space-between;
+            margin-left: 16px;
+          }
           .token_group {
             display: flex;
             align-items: center;
@@ -51,7 +68,6 @@ export default function SharedAssetItem(props: Props): ReactElement {
             background-color: var(--green-120);
           }
           .token_subtitle {
-            width: 65px;
             height: 17px;
             color: var(--green-60);
             font-size: 14px;
@@ -69,7 +85,7 @@ export default function SharedAssetItem(props: Props): ReactElement {
           .left {
             display: flex;
           }
-          .name {
+          .symbol {
             color: #fff;
             font-size: 16px;
             font-weight: 500;
@@ -83,4 +99,9 @@ export default function SharedAssetItem(props: Props): ReactElement {
   )
 }
 
-SharedAssetItem.defaultProps = {}
+SharedAssetItem.defaultProps = {
+  asset: {
+    symbol: "ETH",
+    name: "Ethereum",
+  },
+}

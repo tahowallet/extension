@@ -1,17 +1,19 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { Asset } from "@tallyho/tally-background/assets"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface SelectTokenMenuContentProps {
-  setSelectedTokenAndClose: (token: { name: string }) => void
+  assets: Asset[]
+  setSelectedTokenAndClose: (token: Asset) => void
 }
 
 function SelectTokenMenuContent(
   props: SelectTokenMenuContentProps
 ): ReactElement {
-  const { setSelectedTokenAndClose } = props
+  const { setSelectedTokenAndClose, assets } = props
 
   return (
     <>
@@ -28,11 +30,11 @@ function SelectTokenMenuContent(
       </div>
       <div className="divider" />
       <ul>
-        {Array(13)
-          .fill("")
-          .map(() => (
-            <SharedAssetItem onClick={setSelectedTokenAndClose} />
-          ))}
+        {assets.map((asset) => {
+          return (
+            <SharedAssetItem asset={asset} onClick={setSelectedTokenAndClose} />
+          )
+        })}
       </ul>
       <style jsx>
         {`
@@ -82,18 +84,24 @@ function SelectTokenMenuContent(
 }
 
 interface SelectedTokenButtonProps {
+  asset: Asset
   toggleIsTokenMenuOpen?: () => void
 }
 
 function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
-  const { toggleIsTokenMenuOpen } = props
+  const { asset, toggleIsTokenMenuOpen } = props
 
   return (
     <button type="button" onClick={toggleIsTokenMenuOpen}>
       <div className="asset_icon_wrap">
-        <SharedAssetIcon />
+        <SharedAssetIcon
+          logoURL={asset?.metadata?.logoURL}
+          symbol={asset?.symbol}
+        />
       </div>
-      ETH
+
+      {asset?.symbol}
+
       <style jsx>{`
         button {
           display: flex;
@@ -118,11 +126,13 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
-  onAssetSelected?: () => void
+  assets: Asset[]
   label: string
-  defaultToken: { name: string }
+  defaultToken: Asset
+  amount: string
   isTokenOptionsLocked: boolean
-  onAmountChange: (value: number) => void
+  onAssetSelected: (token: Asset) => void
+  onAmountChanged: (value: string) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -131,11 +141,13 @@ export default function SharedAssetInput(
 ): ReactElement {
   const {
     isTypeDestination,
+    assets,
     label,
     defaultToken,
+    amount,
     isTokenOptionsLocked,
     onAssetSelected,
-    onAmountChange,
+    onAmountChanged,
     onSendToAddressChange,
   } = props
 
@@ -145,14 +157,26 @@ export default function SharedAssetInput(
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
-      onAssetSelected?.()
     }
-  }, [isTokenOptionsLocked, onAssetSelected])
+  }, [isTokenOptionsLocked])
 
-  const setSelectedTokenAndClose = useCallback((token) => {
-    setSelectedToken(token)
-    setOpenAssetMenu(false)
-  }, [])
+  const setSelectedTokenAndClose = useCallback(
+    (token) => {
+      setSelectedToken(token)
+      setOpenAssetMenu(false)
+      onAssetSelected?.(token)
+    },
+
+    [onAssetSelected]
+  )
+
+  const assetAmountChanged = useCallback(
+    (event) => {
+      onAmountChanged?.(event)
+    },
+
+    [onAmountChanged]
+  )
 
   return (
     <label className="label">
@@ -164,6 +188,7 @@ export default function SharedAssetInput(
         }}
       >
         <SelectTokenMenuContent
+          assets={assets}
           setSelectedTokenAndClose={setSelectedTokenAndClose}
         />
       </SharedSlideUpMenu>
@@ -189,8 +214,9 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            {selectedToken?.name ? (
+            {selectedToken?.symbol ? (
               <SelectedTokenButton
+                asset={selectedToken}
                 toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
               />
             ) : (
@@ -207,9 +233,8 @@ export default function SharedAssetInput(
               className="input_amount"
               type="text"
               placeholder="0.0"
-              onChange={(event) => {
-                onAmountChange(parseInt(event.target.value, 10))
-              }}
+              value={amount}
+              onChange={assetAmountChanged}
             />
           </>
         )}
@@ -275,12 +300,14 @@ export default function SharedAssetInput(
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isTokenOptionsLocked: false,
-  defaultToken: { name: "" },
+  assets: [{ symbol: "ETH", name: "Example Asset" }],
+  defaultToken: { symbol: "", name: "" },
   label: "",
+  amount: "0.0",
   onAssetSelected: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },
-  onAmountChange: () => {},
+  onAmountChanged: () => {},
   onSendToAddressChange: () => {},
 }
