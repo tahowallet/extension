@@ -13,10 +13,12 @@ import {
   ChainService,
   IndexingService,
   KeyringService,
+  NameService,
   ServiceCreatorFunction,
 } from "./services"
 
-import { SignedEVMTransaction, KeyringTypes } from "./types"
+import { KeyringTypes } from "./types"
+import { SignedEVMTransaction } from "./networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -25,6 +27,8 @@ import {
   transactionSeen,
   blockSeen,
   updateAccountBalance,
+  updateENSName,
+  updateENSAvatar,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
@@ -137,6 +141,7 @@ export default class Main extends BaseService<never> {
       chainService
     )
     const keyringService = KeyringService.create()
+    const nameService = NameService.create(chainService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -162,7 +167,8 @@ export default class Main extends BaseService<never> {
       await preferenceService,
       await chainService,
       await indexingService,
-      await keyringService
+      await keyringService,
+      await nameService
     )
   }
 
@@ -189,7 +195,12 @@ export default class Main extends BaseService<never> {
      * accounts, and signs messagees and transactions. The promise will be
      * resolved when the service is initialized.
      */
-    private keyringService: KeyringService
+    private keyringService: KeyringService,
+    /**
+     * A promise to the name service, responsible for resolving names to
+     * addresses and content.
+     */
+    private nameService: NameService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -218,6 +229,7 @@ export default class Main extends BaseService<never> {
       this.chainService.startService(),
       this.indexingService.startService(),
       this.keyringService.startService(),
+      this.nameService.startService(),
     ])
   }
 
@@ -227,6 +239,7 @@ export default class Main extends BaseService<never> {
       this.chainService.stopService(),
       this.indexingService.stopService(),
       this.keyringService.stopService(),
+      this.nameService.stopService(),
     ])
 
     await super.internalStopService()
@@ -235,6 +248,7 @@ export default class Main extends BaseService<never> {
   async initializeRedux(): Promise<void> {
     this.connectIndexingService()
     this.connectKeyringService()
+    this.connectNameService()
     await this.connectChainService()
   }
 
@@ -261,8 +275,8 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
-    accountSliceEmitter.on("addAccount", async (accountNetwork) => {
-      await this.chainService.addAccountToTrack(accountNetwork)
+    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
+      await this.chainService.addAccountToTrack(addressNetwork)
     })
 
     transactionSliceEmitter.on("updateOptions", async (options) => {
@@ -308,12 +322,12 @@ export default class Main extends BaseService<never> {
 
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
-    existingAccounts.forEach((accountNetwork) => {
+    existingAccounts.forEach((addressNetwork) => {
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(accountNetwork.account))
+      this.store.dispatch(loadAccount(addressNetwork.address))
 
       // Force a refresh of the account balance to populate the store.
-      this.chainService.getLatestBaseAccountBalance(accountNetwork)
+      this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
     // Start polling for blockPrices
@@ -322,6 +336,23 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
       this.store.dispatch(gasEstimates(blockPrices))
     })
+  }
+
+  async connectNameService(): Promise<void> {
+    this.nameService.emitter.on(
+      "resolvedName",
+      async ({ from: { addressNetwork }, resolved: { name } }) => {
+        this.store.dispatch(updateENSName({ ...addressNetwork, name }))
+      }
+    )
+    this.nameService.emitter.on(
+      "resolvedAvatar",
+      async ({ from: { addressNetwork }, resolved: { avatar } }) => {
+        this.store.dispatch(
+          updateENSAvatar({ ...addressNetwork, avatar: avatar.toString() })
+        )
+      }
+    )
   }
 
   async connectIndexingService(): Promise<void> {
@@ -345,7 +376,7 @@ export default class Main extends BaseService<never> {
 
     this.keyringService.emitter.on("address", (address) => {
       this.chainService.addAccountToTrack({
-        account: address,
+        address,
         // TODO support other networks
         network: getEthereumNetwork(),
       })
@@ -370,6 +401,10 @@ export default class Main extends BaseService<never> {
         logger.log(response)
       }
     )
+
+    keyringSliceEmitter.on("unlockKeyring", async (password) => {
+      await this.keyringService.unlock(password)
+    })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow

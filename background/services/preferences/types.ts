@@ -1,4 +1,4 @@
-import { FiatCurrency } from "../../types"
+import { FiatCurrency } from "../../assets"
 
 export interface TokenListPreferences {
   autoUpdate: boolean

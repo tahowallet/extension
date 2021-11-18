@@ -1,11 +1,21 @@
 import React, { ReactElement, useState } from "react"
+import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedNetworkFeeGroup from "../components/Shared/SharedNetworkFeeGroup"
 
+interface SendLocationState {
+  token: string
+}
+
 export default function Send(): ReactElement {
+  const location = useLocation<SendLocationState>()
+  const token = location?.state?.token
+
   const [selectedCount, setSelectedCount] = useState(0)
+  const [destinationAddress, setDestinationAddress] = useState("")
+  const [amount, setAmount] = useState(0)
 
   return (
     <>
@@ -22,10 +32,18 @@ export default function Send(): ReactElement {
                 onAssetSelected={() => {
                   setSelectedCount(1)
                 }}
+                onAmountChanged={(newAmount) => {
+                  setAmount(parseFloat(newAmount))
+                }}
+                defaultToken={{ name: token, symbol: token }}
               />
             </div>
             <div className="form_input">
-              <SharedAssetInput isTypeDestination label="Send To:" />
+              <SharedAssetInput
+                isTypeDestination
+                label="Send To:"
+                onSendToAddressChange={setDestinationAddress}
+              />
             </div>
             <span className="label">Network Fee/Speed</span>
             <SharedNetworkFeeGroup />
@@ -33,12 +51,23 @@ export default function Send(): ReactElement {
             <div className="total_footer standard_width_padded">
               <div className="total_amount">
                 <div className="total_label">Total</div>
-                <div className="total_amount_number">0.0</div>
+                <div className="total_amount_number">{amount}</div>
               </div>
               <SharedButton
                 type="primary"
                 size="large"
                 isDisabled={selectedCount <= 0}
+                linkTo={{
+                  pathname: "/signTransaction",
+                  state: {
+                    token: "ETH",
+                    amount,
+                    speed: 10,
+                    network: "mainnet",
+                    to: destinationAddress,
+                    signType: "sign",
+                  },
+                }}
               >
                 Send
               </SharedButton>

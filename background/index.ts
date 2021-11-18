@@ -32,6 +32,24 @@ export async function newProxyStore(): Promise<
   return proxyStore
 }
 
+function dumbProviderBridgeService() {
+  browser.runtime.onConnect.addListener(async (port) => {
+    if (port?.sender?.tab && port?.sender?.url) {
+      port.onMessage.addListener((payload) => {
+        if (payload.target !== "tally-provider-bridge-service") return
+        // to demonstrate how it works it was necessary. Will remove later
+        // eslint-disable-next-line no-console
+        console.log(`background: ${JSON.stringify(payload)}`)
+
+        port.postMessage({
+          target: "tally-provider-bridge",
+          message: `pong ${payload.message}`,
+        })
+      })
+    }
+  })
+}
+
 /**
  * Starts the API subsystems, including all services.
  */
@@ -39,6 +57,8 @@ export async function startApi(): Promise<Main> {
   const mainService = await Main.create()
 
   mainService.startService()
+
+  dumbProviderBridgeService()
 
   return mainService.started()
 }

@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { addAccountNetwork } from "@tallyho/tally-background/redux-slices/accounts"
+import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
@@ -21,13 +21,12 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
     if (checkIfPlausibleETHAddress(address)) {
-      dispatch(
-        addAccountNetwork({
-          account: address,
+      await dispatch(
+        addAddressNetwork({
+          address,
           network: getEthereumNetwork(),
         })
       )
-
       setRedirect(true)
     } else {
       alert("Please enter a valid address")
@@ -35,7 +34,6 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   }, [dispatch, address])
 
   // Redirect to the home tab once an account is set
-
   if (redirect) {
     return <Redirect to="/" />
   }
@@ -61,6 +59,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             type="primary"
             size="large"
             onClick={handleSubmitViewOnlyAddress}
+            showLoadingOnClick
           >
             Explore
           </SharedButton>

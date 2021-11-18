@@ -24,6 +24,7 @@ export const initialState: KeyringsState = {
 }
 
 export type Events = {
+  unlockKeyring: string
   generateNewKeyring: never
   importLegacyKeyring: { mnemonic: string }
 }
@@ -34,6 +35,10 @@ export const emitter = new Emittery<Events>()
 export const importLegacyKeyring = createBackgroundAsyncThunk(
   "keyrings/importLegacyKeyring",
   async ({ mnemonic }: { mnemonic: string }) => {
+    // If no keyring exists, a new one is generated and sets password to password.
+    // TODO: Make password set by the UI
+    await emitter.emit("unlockKeyring", "password")
+
     await emitter.emit("importLegacyKeyring", { mnemonic })
   }
 )

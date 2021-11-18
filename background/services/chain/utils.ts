@@ -5,12 +5,11 @@ import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
-  FungibleAsset,
-  SmartContractFungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
   AnyEVMBlock,
-} from "../../types"
+} from "../../networks"
+import { FungibleAsset } from "../../assets"
 import { getEthereumNetwork } from "../../lib/utils"
 
 /**
@@ -153,7 +152,7 @@ export function txFromEthersTx(
     blockNumber?: number
     type?: number | null
   },
-  asset: FungibleAsset | SmartContractFungibleAsset,
+  asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
@@ -161,13 +160,6 @@ export function txFromEthersTx(
   }
   if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
     throw Error(`Unknown transaction type ${tx.type}`)
-  }
-
-  let value = tx.value.toBigInt()
-
-  // Derive value from transaction transfer data if not ETH
-  if (asset.symbol !== "ETH") {
-    value = BigInt(parseInt(tx.data.slice(-64), 16))
   }
 
   const newTx = {
@@ -181,7 +173,7 @@ export function txFromEthersTx(
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas
       ? tx.maxPriorityFeePerGas.toBigInt()
       : null,
-    value,
+    value: tx.value.toBigInt(),
     input: tx.data,
     type: tx.type,
     blockHash: tx.blockHash || null,

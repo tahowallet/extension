@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { selectCurrentAccountActivitiesWithTimestamps } from "@tallyho/tally-background/redux-slices/selectors/activitiesSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -9,24 +9,17 @@ import WalletActivityListItem from "./WalletActivityListItem"
 
 export default function WalletActivityList(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const showingActivityDetail: ActivityItem | null = useBackgroundSelector(
-    (background) => background.ui.showingActivityDetail
+  const { showingActivityDetail } = useBackgroundSelector(
+    (background) => background.ui
   )
 
-  const { activities, blocks, currentAccount } = useBackgroundSelector(
-    (background) => {
-      return {
-        activities:
-          background.activities[background.ui.selectedAccount?.address],
-        blocks: background.account.blocks,
-        currentAccount: background.ui.selectedAccount?.address,
-      }
-    }
+  const activities = useBackgroundSelector(
+    selectCurrentAccountActivitiesWithTimestamps
   )
 
   const handleOpen = useCallback(
     (activityItem) => {
-      dispatch(setShowingActivityDetail(activityItem.hash))
+      dispatch(setShowingActivityDetail(activityItem))
     },
     [dispatch]
   )
@@ -35,7 +28,27 @@ export default function WalletActivityList(): ReactElement {
     dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
-  if (!activities) return <></>
+  if (!activities || activities.length === 0)
+    return (
+      <div className="loading">
+        <SharedLoadingSpinner />
+        <span>This may initially take awhile.</span>
+        <style jsx>{`
+          .loading {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+          }
+          .loading span {
+            color: var(--green-60);
+            margin-top: 12px;
+            font-size: 14px;
+          }
+        `}</style>
+      </div>
+    )
 
   return (
     <>
@@ -44,51 +57,27 @@ export default function WalletActivityList(): ReactElement {
         close={handleClose}
       >
         {showingActivityDetail ? (
-          <WalletActivityDetails
-            activityItem={activities[showingActivityDetail as any]}
-          />
+          <WalletActivityDetails activityItem={showingActivityDetail} />
         ) : (
           <></>
         )}
       </SharedSlideUpMenu>
       <ul>
-        {Object.keys(activities).length === 0 ? (
-          <div className="loading">
-            <SharedLoadingSpinner />
-            <span>This may initially take awhile.</span>
-          </div>
-        ) : (
-          <>
-            {activities.map((activityItem) => (
+        {activities.map((activityItem) => {
+          if (activityItem) {
+            return (
               <WalletActivityListItem
                 onClick={() => {
                   handleOpen(activityItem)
                 }}
-                key={activityItem.hash}
-                activity={{
-                  ...activityItem,
-                  timestamp: blocks[activityItem.blockHeight]?.timestamp,
-                  isSent: activityItem.from.toLowerCase() === currentAccount,
-                }}
+                key={activityItem?.hash}
+                activity={activityItem}
               />
-            ))}
-          </>
-        )}
+            )
+          }
+          return <></>
+        })}
       </ul>
-      <style jsx>{`
-        .loading {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-top: 20px;
-        }
-        .loading span {
-          color: var(--green-60);
-          margin-top: 12px;
-          font-size: 14px;
-        }
-      `}</style>
     </>
   )
 }

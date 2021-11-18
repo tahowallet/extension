@@ -1,17 +1,19 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { Asset } from "@tallyho/tally-background/assets"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
 interface SelectTokenMenuContentProps {
-  setSelectedTokenAndClose: (token: { name: string }) => void
+  assets: Asset[]
+  setSelectedTokenAndClose: (token: Asset) => void
 }
 
 function SelectTokenMenuContent(
   props: SelectTokenMenuContentProps
 ): ReactElement {
-  const { setSelectedTokenAndClose } = props
+  const { setSelectedTokenAndClose, assets } = props
 
   return (
     <>
@@ -28,11 +30,11 @@ function SelectTokenMenuContent(
       </div>
       <div className="divider" />
       <ul>
-        {Array(13)
-          .fill("")
-          .map(() => (
-            <SharedAssetItem onClick={setSelectedTokenAndClose} />
-          ))}
+        {assets.map((asset) => {
+          return (
+            <SharedAssetItem asset={asset} onClick={setSelectedTokenAndClose} />
+          )
+        })}
       </ul>
       <style jsx>
         {`
@@ -82,18 +84,24 @@ function SelectTokenMenuContent(
 }
 
 interface SelectedTokenButtonProps {
+  asset: Asset
   toggleIsTokenMenuOpen?: () => void
 }
 
 function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
-  const { toggleIsTokenMenuOpen } = props
+  const { asset, toggleIsTokenMenuOpen } = props
 
   return (
     <button type="button" onClick={toggleIsTokenMenuOpen}>
       <div className="asset_icon_wrap">
-        <SharedAssetIcon />
+        <SharedAssetIcon
+          logoURL={asset?.metadata?.logoURL}
+          symbol={asset?.symbol}
+        />
       </div>
-      ETH
+
+      {asset?.symbol}
+
       <style jsx>{`
         button {
           display: flex;
@@ -118,10 +126,14 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
-  onAssetSelected?: () => void
+  assets: Asset[]
   label: string
-  defaultToken: { name: string }
+  defaultToken: Asset
+  amount: string
   isTokenOptionsLocked: boolean
+  onAssetSelected: (token: Asset) => void
+  onAmountChanged: (value: string) => void
+  onSendToAddressChange: (value: string) => void
 }
 
 export default function SharedAssetInput(
@@ -129,10 +141,14 @@ export default function SharedAssetInput(
 ): ReactElement {
   const {
     isTypeDestination,
+    assets,
     label,
     defaultToken,
+    amount,
     isTokenOptionsLocked,
     onAssetSelected,
+    onAmountChanged,
+    onSendToAddressChange,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
@@ -141,14 +157,26 @@ export default function SharedAssetInput(
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
-      onAssetSelected?.()
     }
-  }, [isTokenOptionsLocked, onAssetSelected])
+  }, [isTokenOptionsLocked])
 
-  const setSelectedTokenAndClose = useCallback((token) => {
-    setSelectedToken(token)
-    setOpenAssetMenu(false)
-  }, [])
+  const setSelectedTokenAndClose = useCallback(
+    (token) => {
+      setSelectedToken(token)
+      setOpenAssetMenu(false)
+      onAssetSelected?.(token)
+    },
+
+    [onAssetSelected]
+  )
+
+  const assetAmountChanged = useCallback(
+    (event) => {
+      onAmountChanged?.(event)
+    },
+
+    [onAmountChanged]
+  )
 
   return (
     <label className="label">
@@ -160,13 +188,21 @@ export default function SharedAssetInput(
         }}
       >
         <SelectTokenMenuContent
+          assets={assets}
           setSelectedTokenAndClose={setSelectedTokenAndClose}
         />
       </SharedSlideUpMenu>
       <div className="asset_input standard_width">
         {isTypeDestination ? (
           <>
-            <input className="token_input" type="text" value="0x..." />
+            <input
+              className="token_input"
+              type="text"
+              placeholder="0x..."
+              onChange={(event) => {
+                onSendToAddressChange(event.target.value)
+              }}
+            />
             <SharedButton
               type="tertiary"
               size="medium"
@@ -178,8 +214,9 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            {selectedToken?.name ? (
+            {selectedToken?.symbol ? (
               <SelectedTokenButton
+                asset={selectedToken}
                 toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
               />
             ) : (
@@ -192,7 +229,13 @@ export default function SharedAssetInput(
                 Select token
               </SharedButton>
             )}
-            <input className="input_amount" type="text" placeholder="0.0" />
+            <input
+              className="input_amount"
+              type="text"
+              placeholder="0.0"
+              value={amount}
+              onChange={assetAmountChanged}
+            />
           </>
         )}
       </div>
@@ -211,10 +254,14 @@ export default function SharedAssetInput(
           .token_input {
             width: 204px;
             height: 34px;
-            color: var(--green-40);
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
+            color: #fff;
+          }
+          .token_input::placeholder {
+            color: var(--green-40);
+            opacity: 1;
           }
           .paste_button {
             height: 24px;
@@ -253,6 +300,14 @@ export default function SharedAssetInput(
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isTokenOptionsLocked: false,
-  defaultToken: { name: "" },
+  assets: [{ symbol: "ETH", name: "Example Asset" }],
+  defaultToken: { symbol: "", name: "" },
   label: "",
+  amount: "0.0",
+  onAssetSelected: () => {
+    // do nothing by default
+    // TODO replace this with support for undefined onClick
+  },
+  onAmountChanged: () => {},
+  onSendToAddressChange: () => {},
 }

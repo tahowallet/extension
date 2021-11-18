@@ -6,7 +6,7 @@ import {
   FiatCurrency,
   PricePoint,
   UnitPricePoint,
-} from "../types"
+} from "../assets"
 import { jsonSchemaValidatorFor } from "./validation"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
@@ -82,7 +82,7 @@ export async function getPrices(
   assets: CoinGeckoAsset[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoId).join(",")
+  const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
 
   const currencySymbols = vsCurrencies
     .map((c) => c.symbol.toLowerCase())
@@ -107,7 +107,7 @@ export async function getPrices(
 
   const resolutionTime = Date.now()
   return assets.flatMap((asset) => {
-    const simpleCoinPrices = json[asset.metadata.coinGeckoId]
+    const simpleCoinPrices = json[asset.metadata.coinGeckoID]
 
     return vsCurrencies
       .map<PricePoint | undefined>((c) => {

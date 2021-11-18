@@ -8,7 +8,8 @@ import {
 } from "@reduxjs/toolkit"
 import dayjs from "dayjs"
 import { convertToEth } from "../lib/utils"
-import { AnyEVMTransaction } from "../types"
+import { Asset } from "../assets"
+import { AnyEVMTransaction } from "../networks"
 
 // Below, we use `any` to deal with the fact that allAliases is a heterogeneous
 // collection of async thunk actions whose payload types have little in common
@@ -164,10 +165,7 @@ export type UIAdaptationMap<T> = {
 
 export type ActivityItem = AnyEVMTransaction & {
   timestamp?: number
-  value: bigint
-  from?: string
   isSent?: boolean
-  gas: number
   blockHeight: number
   infoRows: {
     [name: string]: {
@@ -175,6 +173,9 @@ export type ActivityItem = AnyEVMTransaction & {
       value: unknown
       valueDetail: string
     }
+  }
+  asset: {
+    metadata: Asset["metadata"]
   }
 }
 
