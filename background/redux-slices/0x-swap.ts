@@ -1,5 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import { BigNumber } from "ethers"
+import { fetchJson } from "@ethersproject/web"
 
 import { Asset } from "../assets"
 
@@ -21,9 +22,22 @@ interface ZrxToken {
 
 interface ZrxSwap {
   amount: SwapAmount
-  tokens: ZrxToken[]
+  tokens: Asset[]
   tradingPair: TradingPair
 }
+
+export const fetchSwapPrices = createAsyncThunk(
+  "0x-swap/fetchPrices",
+  async (token: Asset) => {
+    const apiData = await fetchJson(
+      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000`
+    )
+
+    return apiData.records.map((zrxToken: ZrxToken) => {
+      return { ...zrxToken, name: "" } // TODO: Populate this by using the assets redux slice?
+    })
+  }
+)
 
 export const initialState: ZrxSwap = {
   amount: {
@@ -49,13 +63,6 @@ const transactionSlice = createSlice({
       return { ...immerState, amount }
     },
 
-    setSwapTokens: (
-      immerState,
-      { payload: tokens }: { payload: ZrxToken[] }
-    ) => {
-      return { ...immerState, tokens }
-    },
-
     setSwapTrade: (
       immerState,
       { payload: tradingPair }: { payload: TradingPair }
@@ -63,9 +70,16 @@ const transactionSlice = createSlice({
       return { ...immerState, tradingPair }
     },
   },
+
+  extraReducers: (builder) => {
+    builder.addCase(
+      fetchSwapPrices.fulfilled,
+      (immerState, { payload: tokens }: { payload: Asset[] }) => {
+        return { ...immerState, tokens }
+      }
+    )
+  },
 })
 
-export const { setSwapAmount, setSwapTokens, setSwapTrade } =
-  transactionSlice.actions
-
+export const { setSwapAmount, setSwapTrade } = transactionSlice.actions
 export default transactionSlice.reducer
