@@ -1,22 +1,78 @@
 # tally-extension
 
-Tally is a community owned and operated Web3 wallet, built as a
-[WebExtension](https://browserext.github.io/browserext/).
+<img alt="The community owned & operated wallet."
+     src="./github_cover@2x.png"
+     width="630" />
+
+[Tally](https://blog.tally.cash/a-community-owned-wallet-for-the-new-internet/)
+is a community owned and operated Web3 wallet, built as a
+[browser extension](https://browserext.github.io/browserext/).
+
+## Why not MetaMask?
+
+Today's Web3 landscape is dominated by a [single wallet](https://metamask.io/)
+and a [single infrastructure provider](https://infura.io/), both owned by a
+[single conglomerate](https://consensys.net/). These facts undermine the
+censorship resistance of Ethereum today... and they're also against Web3's
+spirit of community ownership.
+
+We can do better.
+
+Tally will be
+
+- Fairly launched ⚖️
+- Sustainably aligned with users 🤲
+- Wholly owned by the community 👪
+
+## Quickstart
+
+Try this.
+
+```sh
+$ nvm use
+$ npm install -g yarn # if you don't have yarn globally installed
+$ yarn install # install all dependencies; rerun with --ignore-scripts if
+               # scrypt node-gyp failures prevent the install from completing
+$ yarn start # start a continuous webpack build that will auto-update with changes
+```
+
+Once the build is running, you can install the extension in your browser of choice:
+
+- [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
+  - Note that these instructions are for Chrome, but substituting
+    `brave://extensions` or `opera://extensions` for `chrome://extensions`
+    depending on browser should get you to the same buttons.
+
+Extension bundles for each browser are in `dist/<browser>`.
+
+By default, the `yarn start` command rebuilds the extension for each browser on
+save. You can target a particular browser by specifying it in the command, e.g.
+to only rebuild the Firefox extension on change:
+
+```sh
+# On change, rebuild the firefox extension but not others.
+$ yarn start --config-name firefox
+# On change, rebuild the firefox and brave extensions but not others.
+$ yarn start --config-name firefox --config-name brave
+```
 
 ## Package Structure, Build Structure, and Threat Model
 
-The extension is built as two packages, one for the wallet and one for the
-frontend UI. These are separate packages in order to emphasize the difference
-in attack surface and clearly separate the threat models of the two packages.
-In particular, the frontend UI is considered completely untrusted code, while
-the wallet is considered trusted code. Only the wallet should interact directly
-with key material, while the frontend should only interact with key material
-via a carefully-maintained public API.
+The extension is built as two packages, `background` and `ui`. `background`
+contains the bulk of the extension's [background script](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background),
+while `ui` contains the code powering extension popups.
 
-The wallet package is also intended to minimize external dependencies where
-possible, to reduce the surface exposed to a supply chain attack. Dependencies
-are generally version-pinned, and yarn is used to ensure the integrity of
-builds.
+These are separate packages in order to emphasize the difference in attack
+surface and clearly separate the threat models of each. In particular, `ui`
+is considered untrusted code, while `background` is considered trusted code.
+Only `background` should interact with key material regularly, while `ui` should
+only interact with key material via a carefully maintained API.
+
+The `background` package is also intended to minimize external dependencies
+where possible, reducing the surface exposed to a supply chain attack.
+Dependencies are generally version-pinned, and `yarn` is used to ensure the
+integrity of builds.
 
 ## Building and Developing
 
@@ -46,38 +102,6 @@ install:
 Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
 by running `pre-commit --install`. The macOS setup script does this for you.
-
-### Quickstart
-
-```sh
-$ nvm use
-$ npm install -g yarn # if you don't have yarn globally installed
-$ yarn install # install all dependencies; rerun with --ignore-scripts if
-               # scrypt node-gyp failures prevent the install from completing
-$ yarn start # start a continuous webpack build that will auto-update with changes
-```
-
-Once the continuous webpack build is running, you can install the extension in
-your dev browser of choice:
-
-- [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
-- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
-  - Note that these instructions are for Chrome, but substituting
-    `brave://extensions` or `opera://extensions` for `chrome://extensions`
-    depending on browser should get you to the same buttons.
-
-Extension bundles for each browser are in `dist/<browser>`.
-
-By default, the `yarn start` command rebuilds the extension for each browser on
-save. You can target a particular browser by specifying it in the command, e.g.
-to only rebuild the Firefox extension on change:
-
-```sh
-# On change, rebuild the firefox extension but not others.
-$ yarn start --config-name firefox
-# On change, rebuild the firefox and brave extensions but not others.
-$ yarn start --config-name firefox --config-name brave
-```
 
 ### Releasing a version
 
@@ -253,9 +277,9 @@ manifest/         # extension manifest data
   manifest.dev.json         # manifest adjustments for dev environment
   manifest.firefox.dev.json # manifest adjustments for Firefox in dev
 
-ui/ # @tallyho/tally-ui package
+background/ # @tallyho/tally-background package with trusted wallet core
   package.json
 
-wallet/ # @tallyho/tally-wallet package with trusted wallet core
+ui/ # @tallyho/tally-ui package
   package.json
 ```

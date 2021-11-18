@@ -1,0 +1,32 @@
+name: Feature Request
+description: File a feature request
+title: "[Feature]: "
+labels: ["✏️ enhancement", "👩‍⚕️ triage"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for taking the time to fill out this feature request! Note that
+        feature requests should start [in
+        Discord](https://discord.gg/tfU8ejqr). Please file them as issues only
+        when suggested by a moderator so that issues can be kept organized.
+  - type: input
+    id: discord-link
+    attributes:
+      label: Discord Discussion Link
+      description: >-
+        The link to where this issue was discussed in Discord, either the
+        starting message or the moderator message suggesting that an issue be
+        posted.
+      placeholder: https://discord.com/channels/.../.../...
+    validations:
+      required: true
+  - type: textarea
+    id: feature
+    attributes:
+      label: What would you like to be able to do?
+      description: >-
+        Please describe what you would like to be able to achieve/what problem
+        you would like to be able to solve with Tally that you currently can't.
+    validations:
+      required: true
