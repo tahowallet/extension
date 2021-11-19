@@ -5,6 +5,7 @@ import { AnyAction } from "@reduxjs/toolkit"
 
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
+import logger from "./lib/logger"
 
 export { browser }
 
@@ -40,9 +41,7 @@ function dumbProviderBridgeService() {
     if (port?.sender?.tab && port?.sender?.url) {
       port.onMessage.addListener((payload) => {
         if (payload.target !== PROVIDER_BRIDGE_SERVICE_TARGET) return
-        // to demonstrate how it works it was necessary. Will remove later
-        // eslint-disable-next-line no-console
-        console.log(`background: ${JSON.stringify(payload)}`)
+        logger.log(`background: ${JSON.stringify(payload)}`)
 
         port.postMessage({
           target: PROVIDER_BRIDGE_TARGET,
