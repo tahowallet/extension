@@ -10,6 +10,7 @@ export default function Eligible(): ReactElement {
   const [step, setStep] = useState(1)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
   const [referrCode, setReferrCode] = useState("")
+  const [modalVisible, setModalVisible] = useState(false)
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
@@ -36,9 +37,99 @@ export default function Eligible(): ReactElement {
     // await claimTally()
   }
 
+  const openModal = () => {
+    setModalVisible(true)
+  }
+
+  const modal = (
+    <div className="modal__wrap">
+      <div className="modal__backdrop" />
+
+      <div className="modal__content">
+        <div className="modal__title"> Why Delegate?</div>
+        <div>Read this text and chose your own degenerate.</div>
+        <button
+          className="modal__button"
+          type="button"
+          onClick={() => setModalVisible(false)}
+        >
+          Understood
+        </button>
+      </div>
+      <style jsx>{`
+        .modal__wrap {
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          position: absolute;
+          justify-content: center;
+          align-items: center;
+          z-index: 3;
+        }
+
+        @keyframes slideup {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0%);
+          }
+        }
+        .modal__backdrop {
+          opacity: 0.7;
+          width: 100vw;
+          height: 100vh;
+          background: #001413;
+          position: absolute;
+          z-index: 3;
+        }
+        .modal__content {
+          width: 70vw;
+          height: 70vh;
+          padding: 24px;
+          background: #001413;
+          z-index: 4;
+          text-align: center;
+          display: flex;
+          flex-flow: column;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+          border-radius: 12px;
+          animation-name: slideup;
+          animation-duration: 0.4s;
+        }
+        .modal__title {
+          font-family: Segment;
+          font-size: 18px;
+          line-height: 24px;
+          text-transform: uppercase;
+          display: flex;
+          align-items: center;
+          color: #d64045;
+        }
+        .modal__button {
+          height: 40px;
+          border-radius: 4px;
+          background-color: var(--trophy-gold);
+          color: #002522;
+          font-size: 20px;
+          letter-spacing: 0.48px;
+          line-height: 24px;
+          text-align: center;
+          padding: 0px 17px;
+          margin-bottom: 16px;
+          margin-right: 8px;
+          z-index: 2;
+        }
+      `}</style>
+    </div>
+  )
+
   return (
     <>
       <div className="wrap">
+        {modalVisible ? modal : null}
         <div
           className="background"
           style={{ backgroundPositionX: `${(step - 1) * 80}%` }}
@@ -61,38 +152,82 @@ export default function Eligible(): ReactElement {
           style={{ backgroundPositionX: `${(step - 1) * 80}%` }}
         />
         <div className="eligible">
-          <div className=" banner banner-primary">
-            <div>
-              <img className="banner__image" src="./images/claim.png" alt="" />
+          {step < 3 && (
+            <div className="eligible__container">
+              <div className="banner banner-primary">
+                <div>
+                  <img
+                    className="banner__image"
+                    src="./images/claim.png"
+                    alt=""
+                  />
+                </div>
+                <div className="banner__claimable">
+                  <div className="banner__claimable__amount">10,989</div>
+                  <div className="banner__claimable__currency">TALLY</div>
+                </div>
+              </div>
+              <div
+                className={`banner__plus ${step === 1 && "banner__inactive"}`}
+              >
+                <img
+                  className="banner__plus__image"
+                  src="./images/plus@2x.png"
+                  alt=""
+                />
+              </div>
+              <div
+                className={`banner banner-secondary ${
+                  step === 1 && "banner__inactive"
+                }`}
+              >
+                <div>Referral Bonus</div>
+                <div className="banner__claimable">
+                  <div className="banner__claimable__amount">833</div>
+                  <div className="banner__claimable__currency">TALLY</div>
+                </div>
+              </div>
             </div>
-            <div className="banner__claimable">
-              <div className="banner__claimable__amount">10,989</div>
-              {/* I KNOW THIS SHOULD BE UPPERCASE IN CSS */}
-              <div>TALLY</div>
+          )}{" "}
+          {step >= 3 && (
+            // <div className="eligible__container">
+            <div
+              className="banner banner-primary-combined"
+              style={
+                step === 4
+                  ? { opacity: 0, height: 0, margin: 0 }
+                  : { opacity: 1, height: 106 }
+              }
+            >
+              <div>
+                <img
+                  className="banner__image-combined"
+                  src="./images/claim.png"
+                  alt=""
+                />
+              </div>
+              <div className="banner__claimable-combined">
+                <div className="banner_claimable__title">Claim + Bonus</div>
+                <div className="banner__claimable__amount">10,989</div>
+                <div className="banner__claimable__currency">TALLY</div>
+              </div>
             </div>
-          </div>
-          <div className="banner banner-secondary">
-            <div>Referral</div>
-            <div className="banner__percentage">+5%</div>
-          </div>
-          <div className="banner banner-secondary">
-            <div>Delegate</div>
-            <div className="banner__percentage">+2.5%</div>
-          </div>
-          {step === 1 && (
+            // </div>
+          )}
+          {/* <div className="claim standard_width"> */}
+          <div
+            className="steps-container"
+            style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
+          >
             <div className="claim standard_width">
               <div className="claim__title">Claim Tally</div>
               <div className="claim__description">
                 Tally is an open source wallet that is run by the community and
                 token holders.
               </div>
-              <button className="claim__button" type="button" onClick={claim}>
-                Start Process
-              </button>
             </div>
-          )}
-          {step === 2 && (
-            <div className="claim standard_width fade-in">
+
+            <div className={`claim standard_width ${step === 2 && "fade-in"}`}>
               <div className="claim__title">Reffer a friend</div>
               <div className="claim__description">
                 Do you have a referral code? Referral codes come in the shape of
@@ -109,17 +244,22 @@ export default function Eligible(): ReactElement {
                   type="text"
                 />
               </div>
-
-              <button className="claim__button" type="button" onClick={claim}>
-                Select degenerate
-              </button>
             </div>
-          )}
-          {step === 3 && (
+
             <div className="claim standard_width fade-in">
               <div className="claim__title">Choose a delegate!</div>
               <div className="claim__description">
-                Delegates are your north-star.
+                Delegates are your north-star, you trust them to represent you
+                in a DAO voting.{" "}
+                <span
+                  onClick={openModal}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={openModal}
+                  className="claim__seemore"
+                >
+                  Read more{" "}
+                </span>
               </div>
               <div className=" banner banner-delegate">
                 {new Array(4).fill(null).map(() => (
@@ -135,40 +275,30 @@ export default function Eligible(): ReactElement {
                   alt=""
                 />
               </div>
-              <button className="claim__button" type="button" onClick={claim}>
-                Delegate and Claim
-              </button>
             </div>
-          )}
-          {step === 4 && (
+
             <div className="claim standard_width fade-in">
               <div className="claim__title">Review claim</div>
-              <div className="claim__description">
-                Delegates are your north-star.
-              </div>
-              <div className=" banner banner-primary">
-                <div>
-                  <img
-                    className="banner__image"
-                    src="./images/claim.png"
-                    alt=""
-                  />
+              <div className="claim__description-review">You will receive</div>
+              <div className="eligible__container">
+                <div className="banner banner-primary-combined">
+                  <div>
+                    <img
+                      className="banner__image-combined"
+                      src="./images/claim.png"
+                      alt=""
+                    />
+                  </div>
+                  <div className="banner__claimable-combined">
+                    <div className="banner_claimable__title">Claim + Bonus</div>
+                    <div className="banner__claimable__amount">10,989</div>
+                    <div className="banner__claimable__currency">TALLY</div>
+                  </div>
                 </div>
-                <div className="banner__claimable">
-                  <div className="banner__claimable__amount">10,989</div>
-                  {/* I KNOW THIS SHOULD BE UPPERCASE IN CSS */}
-                  <div>TALLY</div>
-                </div>
+                <div className="claim__description-review">Your delegate</div>
               </div>
-              <button
-                className="claim__button"
-                type="button"
-                onClick={() => {}}
-              >
-                Claim
-              </button>
             </div>
-          )}
+          </div>
           <div className="step">
             {new Array(4).fill(null).map((el, index) => {
               return (
@@ -181,14 +311,30 @@ export default function Eligible(): ReactElement {
               )
             })}
           </div>
+          <button className="claim__button" type="button" onClick={claim}>
+            Claim
+          </button>
         </div>
 
         <style jsx>
           {`
-          .fade-in{
+          .steps-container{
+            display: flex;
+            position: relative;
+            gap: 32px;
+            align-self: flex-start;
+            transition: all 0.6s ease-in-out;
+          }
+
+          {/* .fade-in{
             animation-name: fadein;
             animation-duration: 0.6s;
           }
+
+          .fade-out {
+            animation-name: fadeout;
+            animation-duration: 0.6s;
+          } */}
           @keyframes fadein{
             from {
               opacity: 0;
@@ -199,6 +345,17 @@ export default function Eligible(): ReactElement {
               transform: translateX(0%)
             }
           }
+          @keyframes fadeout{
+            from {
+              opacity: 1;
+              transform: translateX(0%);
+            }
+            to{
+              opacity: 0
+              transform: translateX(-100%)
+            }
+          }
+
           .active{
             width: 16px;
             height: 6px;
@@ -264,7 +421,7 @@ export default function Eligible(): ReactElement {
             background-image: url("./images/dark_forest@2x.png");
             background-repeat: repeat-x;
             background-position: bottom;
-            transition: all 0.6s ;
+            transition: all 0.6s ease-in-out;
           }
           .eligible {
             display: flex;
@@ -275,6 +432,11 @@ export default function Eligible(): ReactElement {
             width: 352px;
             margin: 0 auto;
           }
+          .eligible__container{
+            width: 100%;
+            transition: all 0.3s;
+          }
+
           .wrap__claim-button {
             padding: 16px;
           }
@@ -283,16 +445,16 @@ export default function Eligible(): ReactElement {
           }
           .banner {
             width: 100%;
-            border-radius: 16px;
+            border-radius: 12px;
             display: flex;
             padding: 0 4px;
             box-sizing: border-box;
             justify-content: space-between;
             align-items: center;
+            padding: 0 24px;
           }
           .banner-secondary {
-            opacity: 0.5;
-            height: 42px;
+            height: 56px;
             font-family: Segment;
             font-style: normal;
             font-weight: 500;
@@ -302,6 +464,31 @@ export default function Eligible(): ReactElement {
             margin-bottom: 8px;
             font-size: 14px;
             letter-spacing: 0.03em;
+            transition: all 0.3s;
+          }
+          .banner__plus{
+            width: 24px;
+            height: 24px;
+            background: #002522;
+            align-self: flex-start;
+            border-radius: 4px;
+            border: 2px solid #193330;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 169px;
+            left: 38px;
+            transition: all 0.3s;
+          }
+
+          .banner__inactive{
+            opacity: 0.5;
+          }
+          .banner__plus__image{
+            width: 12px;
+            height: 12px;
+            filter: grayscale(100%);
           }
           .step{
             position: absolute;
@@ -312,9 +499,16 @@ export default function Eligible(): ReactElement {
             z-index:2;
           }
           .banner-primary {
-            height: 58px;
-            margin: 20px 0 10px 0;
+            height: 96px;
+            margin: 20px 0 8px 0;
             background-color: var(--hunter-green);
+          }
+          .banner-primary-combined {
+            height: 106px;
+            margin-top: 20px;
+            background-color: var(--hunter-green);
+            transition: height 0.2s;
+            opacity: 1;
           }
           .banner-delegate {
             height: 58px;
@@ -327,16 +521,38 @@ export default function Eligible(): ReactElement {
             position: relative;
             top: -4px;
           }
+          .banner__image-combined{
+            width: 100px;
+          }
           .banner__claimable__amount {
             font-family: Quincy CF;
-            font-size: 30px;
+            font-size: 36px;
             color: #22c480;
+          }
+          .banner__claimable__currency {
+           color: #667C7A
           }
           .banner__claimable {
             padding: 0 8px;
             text-align: right;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
             font-size: 14px;
           }
+          .banner__claimable-combined {
+            display: flex;
+            align-items: center;
+            flex-flow: column;
+            gap: 4px;
+            font-size: 14px;
+            padding-right: 32px;
+          }
+          .banner_claimable__title{
+            color: #99A8A7;
+            font-size: 14px;
+          }
+          
           .banner__percentage {
             font-family: Segment;
             font-size: 18px;
@@ -354,6 +570,17 @@ export default function Eligible(): ReactElement {
             font-size: 16px;
             line-height: 24px;
             color: #99a8a7;
+          }
+          .claim__description-review {
+            font-family: Segment;
+            font-size: 16px;
+            line-height: 24px;
+            margin-top: 24px;
+            color: #99a8a7;
+          }
+          .claim__seemore{
+            color: #D08E39;
+            cursor: pointer;
           }
           .claim {
             display: flex;
