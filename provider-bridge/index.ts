@@ -62,7 +62,6 @@ export function injectTallyWindowProvider() {
           browser.runtime.getURL("window-provider.js.map")
         )
         container.insertBefore(scriptTag, container.children[0])
-        container.removeChild(scriptTag) // nah, we don't need anybody to read the source
       } catch (e) {
         throw new Error(
           `Tally: oh nos the content-script failed to initilaize the Tally window provider.
