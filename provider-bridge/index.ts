@@ -3,6 +3,8 @@ import browser from "webextension-polyfill"
 const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 
+const windowOriginAtLoadTime = window.location.origin
+
 export function connectProviderBridge() {
   const port = browser.runtime.connect()
 
@@ -39,7 +41,7 @@ export function connectProviderBridge() {
         target: WINDOW_PROVIDER_TARGET,
         message: `ACK ${payload.message}`,
       },
-      window.location.origin
+      windowOriginAtLoadTime
     )
   })
 }
