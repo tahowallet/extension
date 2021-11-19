@@ -1,5 +1,13 @@
 {
   "background": {
     "scripts": ["dev-utils/extension-reload.js"]
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["file://*/*", "http://*/*", "https://*/*"],
+      "js": ["provider-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
 }
