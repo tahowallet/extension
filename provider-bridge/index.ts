@@ -13,8 +13,10 @@ export function setupConnection() {
       event.origin !== window.location.origin || // we want to recieve msgs only from the in-page script
       event.source !== window || // we want to recieve msgs only from the in-page script
       event.data.target !== PROVIDER_BRIDGE_TARGET
-    )
+    ) {
       return
+    }
+
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
