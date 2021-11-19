@@ -1,5 +1,3 @@
-// For design considerations see https://github.com/tallycash/tally-extension/blob/main/docs/inpage.md
-
 // could not come up w/ any way to have sane organisation for this file and satisfy this rule. pls hAlp :)
 /* eslint @typescript-eslint/no-use-before-define: "off" */
 

@@ -1,5 +1,3 @@
-// For design considerations see https://github.com/tallycash/tally-extension/blob/main/docs/inpage.md
-
 const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 
