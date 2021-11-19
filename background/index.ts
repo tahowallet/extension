@@ -34,13 +34,11 @@ export async function newProxyStore(): Promise<
 }
 
 function dumbProviderBridgeService() {
-  const PROVIDER_BRIDGE_SERVICE_TARGET = "tally-provider-bridge-service"
   const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 
   browser.runtime.onConnect.addListener(async (port) => {
     if (port?.sender?.tab && port?.sender?.url) {
       port.onMessage.addListener((payload) => {
-        if (payload.target !== PROVIDER_BRIDGE_SERVICE_TARGET) return
         logger.log(`background: ${JSON.stringify(payload)}`)
 
         port.postMessage({

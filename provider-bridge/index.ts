@@ -9,7 +9,6 @@ export { browser }
 
 const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
-const PROVIDER_BRIDGE_SERVICE_TARGET = "tally-provider-bridge-service"
 
 export function setupConnection() {
   const port = browser.runtime.connect()
@@ -29,13 +28,11 @@ export function setupConnection() {
     )
 
     port.postMessage({
-      target: PROVIDER_BRIDGE_SERVICE_TARGET,
       message: `ping ${event.data.message}`,
     })
   })
 
   port.onMessage.addListener((payload) => {
-    if (payload.target !== PROVIDER_BRIDGE_TARGET) return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
