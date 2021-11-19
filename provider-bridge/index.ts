@@ -3,7 +3,7 @@ import browser from "webextension-polyfill"
 const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 
-export function setupConnection() {
+export function connectProviderBridge() {
   const port = browser.runtime.connect()
 
   window.addEventListener("message", (event) => {
