@@ -1,11 +1,10 @@
 const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 
-// it's better to have our own copy of these functions so nobody
-// can temper w / them in any way we would not want to
-// (lot of script does this kind of magic eg ads logging)
-// An extenstion before us in the runing queue still can modify these fns
-// so it's not 100% safe but safe enough (for 100% iframe trick is necessary)
+// We want our own functions to minimize tampering.
+// We still consider them unsafe because there's no guarantee they weren't tampered with before we stored them.
+// For 100% certainty we could create an iframe here, store the references and then destoroy the iframe.
+//   something like this: https://speakerdeck.com/fransrosen/owasp-appseceu-2018-attacking-modern-web-technologies?slide=95
 const unsafePostMessage = window.postMessage
 const unsafeAddEventListener = window.addEventListener
 const unsafeOrigin = window.location.origin
