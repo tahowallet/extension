@@ -40,7 +40,7 @@ export default function EarnDeposit(): ReactElement {
         <div className="deposit_wrap">
           <SharedAssetInput
             label="Deposit amount"
-            defaultToken={{ name: "ETH" }}
+            defaultToken={{ symbol: "ETH", name: "Ether" }}
           />
           <SharedButton type="primary" size="large">
             Approve & Deposit

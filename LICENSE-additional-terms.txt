@@ -1,0 +1,35 @@
+The licensors of the Program authorize the entities identified at
+additional-license-grants.tally.eth (the “Authorized Entities”) to convey the
+Program or any Covered work via the application stores or other distribution
+channels listed at additional-license-grants.tally.eth (the “Authorized
+Channels”), even if such distribution channels require that material which is
+conveyed through them be licensed and/or sublicensed under terms which are
+incompatible with the GNU GPL version 3, provided that the following
+requirements are met:
+
+1)            the covered work includes, or is distributed with, information
+              which may be used to obtain a copy of the Corresponding Source
+              from a location which the Authorized Entity distributing the
+              covered work shall ensure remains accessible to the public
+              without charge for at least the period during which the covered
+              work is distributed through that Authorized Channel; and
+2)            the Corresponding Source for the covered work which is made
+              available from the location referred to in the preceding
+              requirement is licensed pursuant to the GNU General Public
+              License (either version 3 or any later version), as well as to
+              these additional permissions.
+ 
+For the avoidance of doubt, the licensors of the Program acknowledge that the
+Authorized Entities and Authorized Channels identified at
+additional-license-grants.tally.eth may be changed from time to time. In the
+event an entity wishes to rely on this additional permission to convey a
+covered work through a distribution channel, it may do so if it is identified
+as an Authorized Entity and the distribution channel is identified as an
+Authorized Channel at the time of conveyance. In the event that no entities are
+identified at additional-license-grants.tally.eth, then no entities (which, for
+the avoidance of doubt, includes all natural persons) shall be deemed to be
+Authorized Entities for the purpose of this additional permission. Similarly,
+in the event that no application stores or distribution channels are identified
+at additional-license-grants.tally.eth, then all application stores and
+distribution channels shall be deemed to be Authorized Channels for the purpose
+of this additional permission.

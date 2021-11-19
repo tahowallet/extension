@@ -1,0 +1,68 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["🐛 bug", "👩‍⚕️ triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for taking the time to fill out this bug report! Note that bug
+        reports should start [in Discord](https://discord.gg/AF3aWeJv). Please
+        file them as issues only when suggested by a moderator so that issues
+        can be kept organized.
+  - type: input
+    id: discord-link
+    attributes:
+      label: Discord Discussion Link
+      description: >-
+        The link to where this issue was discussed in Discord, either the
+        starting message or the moderator message suggesting that an issue be
+        posted.
+      placeholder: https://discord.com/channels/.../.../...
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: What browsers are you seeing the problem on?
+      multiple: true
+      options:
+        - Firefox
+        - Chrome
+        - Opera (unsupported)
+        - Safari (unsupported)
+        - Microsoft Edge (unsupported)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What were you trying to do?
+      description: Please describe the steps you were taking and what you were trying to achieve.
+    validations:
+      required: true
+  - type: textarea
+    id: what-did-not-work
+    attributes:
+      label: What did not work?
+      description: Please describe exactly what you saw that was unexpected.
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of the extension are you running?
+      options:
+        - OG Edition v0.0.7
+        - OG Edition v0.0.6
+        - OG Edition v0.0.5
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell

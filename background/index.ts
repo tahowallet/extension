@@ -5,6 +5,7 @@ import { AnyAction } from "@reduxjs/toolkit"
 
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
+import logger from "./lib/logger"
 
 export { browser }
 
@@ -32,6 +33,23 @@ export async function newProxyStore(): Promise<
   return proxyStore
 }
 
+function dumbProviderBridgeService() {
+  const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
+
+  browser.runtime.onConnect.addListener(async (port) => {
+    if (port?.sender?.tab && port?.sender?.url) {
+      port.onMessage.addListener((payload) => {
+        logger.log(`background: ${JSON.stringify(payload)}`)
+
+        port.postMessage({
+          target: PROVIDER_BRIDGE_TARGET,
+          message: `pong ${payload.message}`,
+        })
+      })
+    }
+  })
+}
+
 /**
  * Starts the API subsystems, including all services.
  */
@@ -39,6 +57,8 @@ export async function startApi(): Promise<Main> {
   const mainService = await Main.create()
 
   mainService.startService()
+
+  dumbProviderBridgeService()
 
   return mainService.started()
 }
