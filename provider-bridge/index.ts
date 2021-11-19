@@ -7,6 +7,10 @@ import browser from "webextension-polyfill"
 
 export { browser }
 
+const WINDOW_PROVIDER_TARGET = "tally-window-provider"
+const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
+const PROVIDER_BRIDGE_SERVICE_TARGET = "tally-provider-bridge-service"
+
 export function setupConnection() {
   const port = browser.runtime.connect()
 
@@ -14,7 +18,7 @@ export function setupConnection() {
     if (
       event.origin !== window.location.origin || // we want to recieve msgs only from the in-page script
       event.source !== window || // we want to recieve msgs only from the in-page script
-      event.data.target !== "tally-provider-bridge"
+      event.data.target !== PROVIDER_BRIDGE_TARGET
     )
       return
     // to demonstrate how it works it was necessary. Will remove later
@@ -25,13 +29,13 @@ export function setupConnection() {
     )
 
     port.postMessage({
-      target: "tally-provider-bridge-service",
+      target: PROVIDER_BRIDGE_SERVICE_TARGET,
       message: `ping ${event.data.message}`,
     })
   })
 
   port.onMessage.addListener((payload) => {
-    if (payload.target !== "tally-provider-bridge") return
+    if (payload.target !== PROVIDER_BRIDGE_TARGET) return
     // to demonstrate how it works it was necessary. Will remove later
     // eslint-disable-next-line no-console
     console.log(
@@ -40,7 +44,7 @@ export function setupConnection() {
     )
     window.postMessage(
       {
-        target: "tally-window-provider",
+        target: WINDOW_PROVIDER_TARGET,
         message: `ACK ${payload.message}`,
       },
       window.location.origin

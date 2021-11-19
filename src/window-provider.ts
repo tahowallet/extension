@@ -1,5 +1,8 @@
 // For design considerations see https://github.com/tallycash/tally-extension/blob/main/docs/inpage.md
 
+const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
+const WINDOW_PROVIDER_TARGET = "tally-window-provider"
+
 // it's better to have our own copy of these functions so nobody
 // can temper w / them in any way we would not want to
 // (lot of script does this kind of magic eg ads logging)
@@ -22,7 +25,7 @@ if (enabled === "true") {
     // ‼️ Always include target origin to avoid unwanted attention
     unsafePostMessage(
       {
-        target: "tally-provider-bridge",
+        target: PROVIDER_BRIDGE_TARGET,
         message: "SYN",
       },
       unsafeOrigin
@@ -37,7 +40,7 @@ if (enabled === "true") {
     if (
       event.origin !== unsafeOrigin || // we want to recieve msgs only from the provider bridge
       event.source !== window || // we want to recieve msgs only from the provider bridge
-      event.data.target !== "tally-window-provider"
+      event.data.target !== WINDOW_PROVIDER_TARGET
     )
       return
 

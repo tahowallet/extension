@@ -33,16 +33,19 @@ export async function newProxyStore(): Promise<
 }
 
 function dumbProviderBridgeService() {
+  const PROVIDER_BRIDGE_SERVICE_TARGET = "tally-provider-bridge-service"
+  const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
+
   browser.runtime.onConnect.addListener(async (port) => {
     if (port?.sender?.tab && port?.sender?.url) {
       port.onMessage.addListener((payload) => {
-        if (payload.target !== "tally-provider-bridge-service") return
+        if (payload.target !== PROVIDER_BRIDGE_SERVICE_TARGET) return
         // to demonstrate how it works it was necessary. Will remove later
         // eslint-disable-next-line no-console
         console.log(`background: ${JSON.stringify(payload)}`)
 
         port.postMessage({
-          target: "tally-provider-bridge",
+          target: PROVIDER_BRIDGE_TARGET,
           message: `pong ${payload.message}`,
         })
       })
