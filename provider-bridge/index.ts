@@ -1,6 +1,3 @@
-// could not come up w/ any way to have sane organisation for this file and satisfy this rule. pls hAlp :)
-/* eslint @typescript-eslint/no-use-before-define: "off" */
-
 import browser from "webextension-polyfill"
 
 export { browser }
