@@ -1,7 +1,5 @@
 import browser from "webextension-polyfill"
 
-export { browser }
-
 const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 
