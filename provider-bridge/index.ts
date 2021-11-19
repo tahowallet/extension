@@ -44,28 +44,29 @@ export function connectProviderBridge() {
   })
 }
 
-export function injectTallyWindowProvider() {
-  return fetch(browser.runtime.getURL("window-provider.js"))
-    .then((r) => r.text())
-    .then((windowProviderSrc) => {
-      try {
-        const container = document.head || document.documentElement
-        const scriptTag = document.createElement("script")
-        // this makes the script loading blocking which is good for us
-        // bc we want to load before anybody has a chance to temper w/ the window obj
-        scriptTag.setAttribute("async", "false")
-        // TODO: put env flag here so only dev env has sourcemaps
-        scriptTag.textContent = windowProviderSrc.replace(
-          "window-provider.js.map",
-          browser.runtime.getURL("window-provider.js.map")
-        )
-        container.insertBefore(scriptTag, container.children[0])
-      } catch (e) {
-        throw new Error(
-          `Tally: oh nos the content-script failed to initilaize the Tally window provider.
+export async function injectTallyWindowProvider() {
+  try {
+    const windowProviderSourceResponse = await fetch(
+      browser.runtime.getURL("window-provider.js")
+    )
+    const windowProviderSource = await windowProviderSourceResponse.text()
+
+    const container = document.head || document.documentElement
+    const scriptTag = document.createElement("script")
+    // this makes the script loading blocking which is good for us
+    // bc we want to load before anybody has a chance to temper w/ the window obj
+    scriptTag.setAttribute("async", "false")
+    // TODO: put env flag here so only dev env has sourcemaps
+    scriptTag.textContent = windowProviderSource.replace(
+      "window-provider.js.map",
+      browser.runtime.getURL("window-provider.js.map")
+    )
+    container.insertBefore(scriptTag, container.children[0])
+  } catch (e) {
+    throw new Error(
+      `Tally: oh nos the content-script failed to initilaize the Tally window provider.
         ${e}
         It's time for a seppoku...🗡`
-        )
-      }
-    })
+    )
+  }
 }
