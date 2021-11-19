@@ -47,8 +47,7 @@ export function setupConnection() {
 }
 
 export function injectTallyWindowProvider() {
-  const baseUrl = browser.runtime.getURL("")
-  return fetch(`${baseUrl}window-provider.js`)
+  return fetch(browser.runtime.getURL("window-provider.js"))
     .then((r) => r.text())
     .then((windowProviderSrc) => {
       try {
@@ -60,7 +59,7 @@ export function injectTallyWindowProvider() {
         // TODO: put env flag here so only dev env has sourcemaps
         scriptTag.textContent = windowProviderSrc.replace(
           "window-provider.js.map",
-          `${baseUrl}window-provider.js.map`
+          browser.runtime.getURL("window-provider.js.map")
         )
         container.insertBefore(scriptTag, container.children[0])
         container.removeChild(scriptTag) // nah, we don't need anybody to read the source
