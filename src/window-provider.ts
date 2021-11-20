@@ -59,7 +59,7 @@ class TallyWindowProvider extends EventEmitter {
         }
       ) {
         if (
-          event.origin !== unsafeOrigin || // we want to recieve messages only from the provider-bridge script
+          event.origin !== unsafeOrigin || // filter to messages claiming to be from the provider-bridge script
           event.source !== window || // we want to recieve messages only from the provider-bridge script
           event.data.target !== WINDOW_PROVIDER_TARGET
         ) {
