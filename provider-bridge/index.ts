@@ -10,23 +10,21 @@ export function connectProviderBridge() {
 
   window.addEventListener("message", (event) => {
     if (
-      event.origin !== window.location.origin || // we want to recieve msgs only from the in-page script
-      event.source !== window || // we want to recieve msgs only from the in-page script
-      event.data.target !== PROVIDER_BRIDGE_TARGET
+      event.origin === windowOriginAtLoadTime && // we want to recieve msgs only from the in-page script
+      event.source === window && // we want to recieve msgs only from the in-page script
+      event.data.target === PROVIDER_BRIDGE_TARGET
     ) {
-      return
+      // to demonstrate how it works it was necessary. Will remove later
+      // eslint-disable-next-line no-console
+      console.log(
+        `%c content: inpage > background: ${JSON.stringify(event.data)}`,
+        "background: #bada55; color: #222"
+      )
+
+      port.postMessage({
+        message: `ping ${event.data.message}`,
+      })
     }
-
-    // to demonstrate how it works it was necessary. Will remove later
-    // eslint-disable-next-line no-console
-    console.log(
-      `%c content: inpage > background: ${JSON.stringify(event.data)}`,
-      "background: #bada55; color: #222"
-    )
-
-    port.postMessage({
-      message: `ping ${event.data.message}`,
-    })
   })
 
   port.onMessage.addListener((payload) => {
