@@ -59,51 +59,49 @@ class TallyWindowProvider extends EventEmitter {
         }
       ) {
         if (
-          event.origin !== unsafeOrigin || // filter to messages claiming to be from the provider-bridge script
-          event.source !== window || // we want to recieve messages only from the provider-bridge script
-          event.data.target !== WINDOW_PROVIDER_TARGET
+          event.origin === unsafeOrigin && // filter to messages claiming to be from the provider-bridge script
+          event.source === window && // we want to recieve messages only from the provider-bridge script
+          event.data.target === WINDOW_PROVIDER_TARGET
         ) {
-          return
-        }
+          if (sendData.id !== event.data.id) return
 
-        if (sendData.id !== event.data.id) return
+          unsafeRemoveEventListener(
+            "message",
+            this.bridgeListeners.get(sendData.id),
+            false
+          )
+          this.bridgeListeners.delete(sendData.id)
 
-        unsafeRemoveEventListener(
-          "message",
-          this.bridgeListeners.get(sendData.id),
-          false
-        )
-        this.bridgeListeners.delete(sendData.id)
+          const { method: payloadMethod } = sendData.payload
+          const { result } = event.data.payload
 
-        const { method: payloadMethod } = sendData.payload
-        const { result } = event.data.payload
+          if (payloadMethod === "eth_chainId") {
+            if (!this.isConnected) {
+              this.isConnected = true
+              this.emit("connect", { chainId: result })
+            }
 
-        if (payloadMethod === "eth_chainId") {
-          if (!this.isConnected) {
-            this.isConnected = true
-            this.emit("connect", { chainId: result })
+            if (this.chainId !== result) {
+              this.chainId = Number(result)
+              this.emit("chainChanged", result)
+              this.emit("networkChanged", result)
+            }
           }
 
-          if (this.chainId !== result) {
-            this.chainId = Number(result)
-            this.emit("chainChanged", result)
-            this.emit("networkChanged", result)
+          if (
+            payloadMethod === "eth_accounts" &&
+            Array.isArray(result) &&
+            result.length !== 0
+          ) {
+            const [address] = result
+            if (this.selectedAddress !== address) {
+              this.selectedAddress = address
+              this.emit("accountsChanged", [this.selectedAddress])
+            }
           }
-        }
 
-        if (
-          payloadMethod === "eth_accounts" &&
-          Array.isArray(result) &&
-          result.length !== 0
-        ) {
-          const [address] = result
-          if (this.selectedAddress !== address) {
-            this.selectedAddress = address
-            this.emit("accountsChanged", [this.selectedAddress])
-          }
+          resolve(result)
         }
-
-        resolve(result)
       }
 
       this.bridgeListeners.set(sendData.id, listener.bind(this))
