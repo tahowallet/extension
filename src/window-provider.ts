@@ -46,7 +46,7 @@ class TallyWindowProvider extends EventEmitter {
       },
     }
 
-    // ‼️ Always include target origin to avoid unwanted attention
+    // ‼️ Always include target origin to only trigger frames with the same origin as ours.
     unsafePostMessage(sendData, unsafeOrigin)
 
     return new Promise((resolve) => {
