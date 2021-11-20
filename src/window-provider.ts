@@ -73,12 +73,12 @@ class TallyWindowProvider extends EventEmitter {
           )
           this.bridgeListeners.delete(sendData.id)
 
-          const { method: payloadMethod } = sendData.payload
+          const { method: sentMethod } = sendData.payload
           const { result } = event.data.payload
 
           // TODOO: refactor these into their own function handler
           // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
-          if (payloadMethod === "eth_chainId") {
+          if (sentMethod === "eth_chainId") {
             if (!this.isConnected) {
               this.isConnected = true
               this.emit("connect", { chainId: result })
@@ -92,7 +92,7 @@ class TallyWindowProvider extends EventEmitter {
           }
 
           if (
-            payloadMethod === "eth_accounts" &&
+            sentMethod === "eth_accounts" &&
             Array.isArray(result) &&
             result.length !== 0
           ) {
