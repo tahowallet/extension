@@ -50,6 +50,7 @@ class TallyWindowProvider extends EventEmitter {
     unsafePostMessage(sendData, unsafeOrigin)
 
     return new Promise((resolve) => {
+      // TODO: refactor the listener function out of the Promise
       function listener(
         this: TallyWindowProvider,
         event: {
@@ -75,6 +76,8 @@ class TallyWindowProvider extends EventEmitter {
           const { method: payloadMethod } = sendData.payload
           const { result } = event.data.payload
 
+          // TODOO: refactor these into their own function handler
+          // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
           if (payloadMethod === "eth_chainId") {
             if (!this.isConnected) {
               this.isConnected = true
@@ -105,6 +108,8 @@ class TallyWindowProvider extends EventEmitter {
       }
 
       this.bridgeListeners.set(sendData.id, listener.bind(this))
+      // TODO: refactor this to have a single `unsafeAddEventListener` call in the constructor
+      // https://github.com/tallycash/tally-extension/pull/440#discussion_r753509947
       unsafeAddEventListener("message", this.bridgeListeners.get(sendData.id))
     })
   }
