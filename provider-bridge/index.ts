@@ -10,7 +10,7 @@ export function connectProviderBridge() {
 
   window.addEventListener("message", (event) => {
     if (
-      event.origin !== window.location.origin || // we want to recieve msgs only from the in-page script
+      event.origin !== windowOriginAtLoadTime || // we want to recieve msgs only from the in-page script
       event.source !== window || // we want to recieve msgs only from the in-page script
       event.data.target !== PROVIDER_BRIDGE_TARGET
     ) {
