@@ -4,6 +4,7 @@ import classNames from "classnames"
 import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import { determineActivityValue } from "../../utils/transactionInputInterpretionHelper"
 
 interface Props {
   onClick: () => void
@@ -37,14 +38,17 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
-                logoURL={activity.asset.metadata?.logoURL}
+                logoURL={activity?.asset?.metadata?.logoURL}
                 symbol={activity.asset.symbol}
                 size="small"
               />
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {`${convertToEth(activity.value)}`.substring(0, 6)}
+                {`${convertToEth(determineActivityValue(activity))}`.substring(
+                  0,
+                  6
+                )}
               </span>
               {activity.asset.symbol}
             </div>
