@@ -1,8 +1,10 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { useDispatch } from "react-redux"
 import { BigNumber, utils as ethersUtils } from "ethers"
 import { fetchJson } from "@ethersproject/web"
 import logger from "@tallyho/tally-background/lib/logger"
 import { Asset } from "@tallyho/tally-background/assets"
+import { fetchSwapPrices } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
@@ -11,7 +13,7 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQoute from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
-import { useBackgroundSelector } from "../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 interface SwapAmount {
   from: string
@@ -30,6 +32,9 @@ interface ZrxToken {
 }
 
 export default function Swap(): ReactElement {
+  const dispatch = useDispatch()
+  //  const dispatch = useBackgroundDispatch()
+
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
   const [swapTokens, setSwapTokens] = useState<Asset[]>([])
   const [swapAmount, setSwapAmount] = useState<SwapAmount>({
@@ -53,30 +58,38 @@ export default function Swap(): ReactElement {
     setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
-  const fromAssetSelected = useCallback(async (token) => {
-    logger.log("Asset selected!", token)
+  const fromAssetSelected = useCallback(
+    (token) => {
+      logger.log("Asset selected!", token)
 
-    const apiData = await fetchJson(
-      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000` // TODO: Handle pagination instead of requesting so many records?
-    )
+      dispatch(fetchSwapPrices(token))
 
-    setSwapTokens(() => {
-      return apiData.records.map((zrxToken: ZrxToken) => {
-        return { ...zrxToken, name: "" } // TODO: Populate this by using the assets redux slice?
+      /*
+      const apiData = await fetchJson(
+        `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000` // TODO: Handle pagination instead of requesting so many records?
+      )
+
+      setSwapTokens(() => {
+        return apiData.records.map((zrxToken: ZrxToken) => {
+          return { ...zrxToken, name: "" } // TODO: Populate this by using the assets redux slice?
+        })
       })
-    })
 
-    setSwap(() => {
-      // Reset the state whenever the from token is changed, because the price data we get from 0x is based on the from token
-      return {
-        from: token,
-        to: undefined,
-        price: BigNumber.from("0"),
-      }
-    })
+      setSwap(() => {
+        // Reset the state whenever the from token is changed, because the price data we get from 0x is based on the from token
+        return {
+          from: token,
+          to: undefined,
+          price: BigNumber.from("0"),
+        }
+      })
 
-    logger.log(apiData)
-  }, [])
+      logger.log(apiData)
+      */
+    },
+
+    [dispatch]
+  )
 
   const toAssetSelected = useCallback(async (token) => {
     logger.log("Asset selected!", token)
