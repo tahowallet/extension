@@ -167,6 +167,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       case "+wallet_registeronboarding":
       case "+wallet_route":
       case "+wallet_type":
+      case "---------------------------- mm docs only methods https://metamask.github.io/api-playground/api-documentation/ ---":
+      case "+?eth_getRawTransactionByHash":
+      case "+?eth_getRawTransactionByBlockHashAndIndex":
+      case "+?eth_getRawTransactionByBlockNumberAndIndex":
+      case "+?eth_pendingTransactions":
       default:
         break
     }
