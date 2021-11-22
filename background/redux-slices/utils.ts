@@ -177,6 +177,8 @@ export type ActivityItem = AnyEVMTransaction & {
   asset: {
     metadata: Asset["metadata"]
   }
+  fromTruncated: string
+  toTruncated: string
 }
 
 export function adaptForUI<T>(keysMap: UIAdaptationMap<T>, item: T) {

@@ -57,18 +57,12 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             {activity.isSent ? (
               <div className="outcome">
                 To:
-                {` ${activity?.to?.slice(0, 6)}...${activity?.to?.slice(
-                  37,
-                  41
-                )}`}
+                {` ${activity.toTruncated}`}
               </div>
             ) : (
               <div className="outcome">
                 From:
-                {` ${activity?.from?.slice(0, 6)}...${activity?.from?.slice(
-                  37,
-                  41
-                )}`}
+                {` ${activity.fromTruncated}`}
               </div>
             )}
           </div>

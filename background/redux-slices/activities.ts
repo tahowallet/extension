@@ -16,6 +16,10 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
   },
 })
 
+function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
+}
+
 export type ActivitiesState = {
   [address: string]: EntityState<ActivityItem>
 }
@@ -42,6 +46,8 @@ const activitiesSlice = createSlice({
           activitiesAdapter.upsertOne(immerState[address], {
             ...activityItem,
             infoRows,
+            fromTruncated: truncateAddress(activityItem.from),
+            toTruncated: truncateAddress(activityItem.to),
           })
         })
       }
