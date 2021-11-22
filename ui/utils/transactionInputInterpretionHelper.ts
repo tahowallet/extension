@@ -4,7 +4,7 @@ export function determineActivityValue(activityItem: ActivityItem) {
   const { asset } = activityItem
   let { value } = activityItem
   // Derive value from transaction transfer input if not ETH
-  if (asset && asset.symbol !== "ETH" && activityItem?.input) {
+  if (asset && !asset.symbol.includes("ETH") && activityItem?.input) {
     const isSwap =
       activityItem.input.includes("0x38") || activityItem.input.includes("0x18")
 

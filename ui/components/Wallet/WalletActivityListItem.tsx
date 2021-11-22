@@ -45,10 +45,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {`${convertToEth(determineActivityValue(activity))}`.substring(
-                  0,
-                  6
-                )}
+                {`${
+                  Number(determineActivityValue(activity)) /
+                  10 ** activity.asset.decimals
+                }`.substring(0, 6)}
               </span>
               {activity.asset.symbol}
             </div>
