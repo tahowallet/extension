@@ -18,7 +18,7 @@ import {
   SignedEVMTransaction,
   BlockPrices,
 } from "../../networks"
-import { AssetTransfer } from "../../assets"
+import { AssetTransfer, SmartContractFungibleAsset } from "../../assets"
 import { getAssetTransfers, getTokenMetadata } from "../../lib/alchemy"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
@@ -535,7 +535,7 @@ export default class ChainService extends BaseService<Events> {
 
     let asset = ETH
     try {
-      let meta: any = false
+      let meta: SmartContractFungibleAsset | null = null
       if (isSwap) {
         const firstSwapAssetAddress = `0x${data
           .substring(data.indexOf(assetAddressInputPrefix))
