@@ -1,10 +1,9 @@
 import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
-import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
-import { determineActivityValue } from "../../utils/transactionInputInterpretionHelper"
+import { determineActivityDecimalValue } from "../../utils/transactionInputInterpretionHelper"
 
 interface Props {
   onClick: () => void
@@ -45,10 +44,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {`${
-                  Number(determineActivityValue(activity)) /
-                  10 ** activity.asset.decimals
-                }`.substring(0, 6)}
+                {`${determineActivityDecimalValue(activity)}`.substring(0, 6)}
               </span>
               {activity.asset.symbol}
             </div>
