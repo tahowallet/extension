@@ -1,0 +1,144 @@
+:toc: macro
+
+= RFC 1: Keyring Design
+
+== Background
+
+The Tally wallet allows users to both view data associated with an account of
+theirs, and sign transactions on behalf of that account using private key
+material. Users can set up new accounts rooted in fresh private key material,
+and accounts can derive many addresses via derivation paths as specified in
+BIP33.
+
+To properly interact with key material, the wallet needs an underlying
+abstraction that is safe and functional.
+
+== Proposal
+
+=== Goal
+
+The keyring is the core key management abstraction used by the Tally wallet. It
+is responsible for managing, securing access to, and protecting a user's
+private key material, as well as exposing access to the public aspects of that
+private key material.
+
+The desired abstraction should be safe, minimize the possibility to lose key
+material, and minimize the possibility of exfiltrating key material
+unintentionally.
+
+=== Implementation
+
+The proposed structure consists of two components, the `@tallycash/hd-keyring`
+package, which implements the core keyring abstraction, and the
+`KeyringService` in the `tally-background` package in the
+`@tallycash/tally-extension` repository, which mediates access to the core
+keyring abstraction for the extension.
+
+==== Core Keyring
+
+The hd-keyring package exports two primary constructs: the HDKeyring and the
+SerializedHDKeyring. The HDKeyring is designed to maintain the privacy of all
+sensitive data and only allow access through a defined interface. To this end,
+it leverages ECMAScript private variables to ensure that callers cannot access
+internal data through JavaScript escape hatches. The only way to access
+mnemonic information is through the serialize function, which returns a
+SerializedHDKeyring.
+
+The core keyring interface is inspired by the Metamask https://github.com/MetaMask/eth-simple-keyring[`eth-simple-keyring`]
+package, replacing “account” language with “address” language to reflect the
+fact that the default derivation path is fixed at a single account and new
+addresses are derived at the address index depth (see
+https://en.bitcoin.it/wiki/BIP_0044#Path_levels). Internally, the account
+derivation, signing, and related wallet work is done entirely by
+http://ethers.io[Ethers]. 
+
+Mnemonic management is done by the https://www.npmjs.com/package/bip39[bip39]
+package. Tally ``HDKeyring``s currently support any BIP39 mnemonics and
+mnemonic generation for any strength supported by the bip39 package.
+
+Serialization of keyrings includes version information to allow for future
+adjustments to the data format. It is currently not access-controlled; instead,
+the keyring consumer is expected to control access to the serialization routine
+in order to protect the underlying mnemonic (and therefore private key).
+
+==== Service
+
+===== Tally Services Abstraction
+
+Tally services are runtime singletons that are charged with managing a single
+slice of functionality for the extension. They manage data storage and
+interactions with other services, as well as maintaining internal state.
+Triggering a service’s functionality is currently done by invoking a method on
+the service; for example, the KeyringService has an unlock method that is used
+to unlock the extension’s current keyrings.
+
+The service abstraction is intended to prevent leakage of the service’s
+internal storage requirements, as well as to expose a clear availability
+lifecycle for consumers. Generally, services can be created, during which phase
+any asynchronous starting data such as storage and deserialization is resolved.
+Once a service is created, it can be started and stopped. Currently services
+can only walk through their lifecycle once, so once a service is stopped, it
+can no longer be restarted.
+
+Tally services communicate data outwards in two ways:
+
+* All services have a set of events they may broadcast. These are expected to
+  be viewable by any external entity, and should only carry public (to the rest
+  of the extension) data.
+* Service method calls may return data. This data is expected to only be
+  viewable by the caller, though generally any outsider is expected to be able
+  to call into the service. This means the restriction on returned data is
+  effectively the same; namely, the caller should only receive sensitive data
+  they have proven they have access to.
+
+==== The `KeyringService`
+
+`KeyringService` provides access to one or more internal keyrings (``HDKeyring``s
+from the core keyring package). It also persists these keyrings when necessary
+and loads them from storage at unlock time. The keyring service can be locked
+or unlocked. When unlocked, it has direct access to `HDKeyring` instances and
+their data  (including serialized mnemonics) and mediates access to those
+keyrings by the rest of the extension. When locked, the keyring service clears
+all references to keyrings.
+
+`KeyringService` stores serialized keyrings encrypted by a key derived from a
+user-specified password. Encryption is performed using the browser-provided
+Web Crypto tools, and is designed to avoid hand-rolled encryption. Both the key
+derivation from the password and the encryption of serialized keyring data is
+performed using Web Crypto. Decryption is similarly managed by Web Crypto.
+
+As with `HDKeyring`, `KeyringService` protects access to cached key information
+and keyrings by using ECMAScript private variables so external observers cannot
+use JavaScript features to read the data.
+
+`KeyringService` allows generating keyrings of a fixed strength (256 bits) as
+well as importing legacy keyrings generated by MetaMask (as 12-word seed
+phrases). Currently, only one address is supported for a given keyring.
+
+The security expectations of the `KeyringService` are as follows:
+
+* When locked, the service should have no access to key material.
+* When unlocked, the service should never expose mnemonic information, via
+  method call or event, with the one exception below.
+* When a new keyring is generated, the service should provide one-time access
+  to the mnemonic to the caller of generateNewKeyring . This mnemonic should
+  not be emitted in an event.
+* When unlocked, the service should permit unlimited access to signing
+  requests.
+* No interaction with the keyring service should lead to the loss of
+  previously-used key material. In particular, persisting keys should never
+  override previously-persisted keys in a way that could lose old key material.
+  Currently the service does not provide a way to recover older key material,
+  but losing it is strictly avoided by the code.
+* Persisted key material should always be encrypted.
+
+[bibliography]
+== Related Links
+
+* https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki[BIP32:
+  Hierarchical Deterministic Wallets]
+* https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki[BIP39:
+  Mnemonic code for generating deterministic keys]
+* https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki[BIP44:
+  Multi-Account Hierarchy for Deterministic Wallets]
+* https://w3c.github.io/webcrypto/[Web Cryptography API]

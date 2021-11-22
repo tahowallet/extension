@@ -5,6 +5,7 @@ import { AnyAction } from "@reduxjs/toolkit"
 
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
+import logger from "./lib/logger"
 
 export { browser }
 
@@ -33,16 +34,15 @@ export async function newProxyStore(): Promise<
 }
 
 function dumbProviderBridgeService() {
+  const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
+
   browser.runtime.onConnect.addListener(async (port) => {
     if (port?.sender?.tab && port?.sender?.url) {
       port.onMessage.addListener((payload) => {
-        if (payload.target !== "tally-provider-bridge-service") return
-        // to demonstrate how it works it was necessary. Will remove later
-        // eslint-disable-next-line no-console
-        console.log(`background: ${JSON.stringify(payload)}`)
+        logger.log(`background: ${JSON.stringify(payload)}`)
 
         port.postMessage({
-          target: "tally-provider-bridge",
+          target: PROVIDER_BRIDGE_TARGET,
           message: `pong ${payload.message}`,
         })
       })

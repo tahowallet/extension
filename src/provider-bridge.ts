@@ -1,8 +1,8 @@
 import {
   injectTallyWindowProvider,
-  setupConnection,
+  connectProviderBridge,
 } from "@tallyho/tally-provider-bridge"
 
 injectTallyWindowProvider().then(() => {
-  setupConnection()
+  connectProviderBridge()
 })

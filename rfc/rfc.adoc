@@ -1,0 +1,61 @@
+:toc: macro
+
+= RFC ##: RFC Title (number should be unique with respect to pending and existing RFCs)
+
+:icons: font
+:numbered:
+toc::[]
+
+== Background
+
+Why do we want to do the thing this RFC describes?
+
+=== Current Functionality
+
+ - If applicable, what is the existing functionality related to this feature?
+ - In particular if this is an enhancement to existing functionality, lay out
+   some context for how the existing functionality falls short.
+
+== Proposal
+
+Quick summary of the goal and outline of the proposal.
+
+=== Goal
+
+The goal of this proposal. What are we trying to achieve? Examples of desired
+outcomes would be handy.
+
+=== Implementation
+
+How will we achieve it? Examples of how the implementation will be used could be
+useful. Flow diagrams can also be useful here. If an RFC is meant to define
+requirements rather than implementation, this section can be left for a future
+RFC.
+
+=== Limitations
+
+What are the limitations of this approach?
+
+=== Proof of Concept
+
+If you have PoC code, refer to the relevant branch and give a brief summary.
+
+== Future Work (optional)
+
+If applicable, what future evolutions could you see this approach leading to?
+Particularly if these possibilities influenced your thinking about the main
+proposal, this is important.
+
+== Open Questions (optional)
+
+If any open questions are left that you haven't yet investigated, what are they?
+
+[bibliography]
+== Related Links
+
+- Flowdock Links
+- Other links
+- If you have publications, you can include them in bibliography style. If you
+  start your bullet with an id in _triple_ square brackets (e.g. `+[[[AAKE]]]+`),
+  you can reference it in the content body using regular cross-reference syntax
+  (e.g. `+<<AAKE>>+`).
