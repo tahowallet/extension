@@ -36,8 +36,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
-                logoURL={activity?.asset?.metadata?.logoURL}
-                symbol={activity.asset.symbol}
+                logoURL={activity?.token?.metadata?.logoURL}
+                symbol={activity.token?.symbol}
                 size="small"
               />
             </div>
@@ -45,7 +45,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               <span className="bold_amount_count">
                 {`${activity.tokenDecimalValue}`.substring(0, 6)}
               </span>
-              {activity.asset.symbol}
+              {activity.token.symbol}
             </div>
           </div>
           <div className="right">
