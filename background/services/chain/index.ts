@@ -1,4 +1,3 @@
-import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
@@ -6,7 +5,6 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
-
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
@@ -18,8 +16,8 @@ import {
   SignedEVMTransaction,
   BlockPrices,
 } from "../../networks"
-import { AssetTransfer, SmartContractFungibleAsset } from "../../assets"
-import { getAssetTransfers, getTokenMetadata } from "../../lib/alchemy"
+import { AssetTransfer } from "../../assets"
+import { getAssetTransfers } from "../../lib/alchemy"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -525,39 +523,6 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  private async determineAsset(result: EthersTransaction) {
-    const assetAddressInputPrefix =
-      "0000000000000000000000000000000000000000000002000000000000000000000000"
-    const { data } = result
-
-    // Heuristic for determining a swap
-    const isSwap = data?.includes("0x38") || data?.includes("0x18")
-
-    let asset = ETH
-    try {
-      let meta: SmartContractFungibleAsset | null = null
-      if (isSwap) {
-        const firstSwapAssetAddress = `0x${data
-          .substring(data.indexOf(assetAddressInputPrefix))
-          .slice(assetAddressInputPrefix.length)
-          .slice(0, 40)}`
-
-        meta = await getTokenMetadata(
-          this.pollingProviders.ethereum,
-          firstSwapAssetAddress
-        )
-      } else if (result?.to) {
-        meta = await getTokenMetadata(this.pollingProviders.ethereum, result.to)
-      }
-      if (meta) {
-        asset = meta
-      }
-    } catch (err) {
-      logger.error(`Error getting token metadata`, err)
-    }
-    return asset
-  }
-
   private async handleQueuedTransactionAlarm(): Promise<void> {
     // TODO make this multi network
     const toHandle = this.transactionsToRetrieve.ethereum.slice(
@@ -574,9 +539,7 @@ export default class ChainService extends BaseService<Events> {
         // TODO make this multi network
         const result = await this.pollingProviders.ethereum.getTransaction(hash)
 
-        const asset = await this.determineAsset(result)
-
-        const tx = txFromEthersTx(result, asset, getEthereumNetwork())
+        const tx = txFromEthersTx(result, ETH, getEthereumNetwork())
 
         // TODO make this provider specific
         await this.saveTransaction(tx, "alchemy")
