@@ -109,3 +109,39 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
   },
 }
 
+export async function determineToken(result: AnyEVMTransaction) {
+  const assetAddressInputPrefix =
+    "0000000000000000000000000000000000000000000002000000000000000000000000"
+  const { input } = result
+
+  // Heuristic for determining a swap
+  const isSwap = input?.includes("0x38") || input?.includes("0x18")
+
+  let asset = ETH
+  if (input) {
+    try {
+      let meta: SmartContractFungibleAsset | null = null
+      if (isSwap) {
+        const firstSwapAssetAddress = `0x${input
+          .substring(input.indexOf(assetAddressInputPrefix))
+          .slice(assetAddressInputPrefix.length)
+          .slice(0, 40)}`
+
+        meta = await getTokenMetadata(
+          pollingProviders.ethereum,
+          firstSwapAssetAddress
+        )
+      } else if (result?.to) {
+        meta = await getTokenMetadata(pollingProviders.ethereum, result.to)
+      }
+      if (meta) {
+        asset = meta
+      }
+    } catch (err) {
+      logger.error(`Error getting token metadata`, err)
+    }
+  }
+
+  return asset
+}
+
