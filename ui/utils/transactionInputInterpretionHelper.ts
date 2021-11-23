@@ -9,9 +9,9 @@ export function determineActivityDecimalValue(activityItem: ActivityItem) {
       activityItem.input.includes("0x38") || activityItem.input.includes("0x18")
 
     if (!isSwap) {
-      value = BigInt(parseInt(activityItem.input.slice(-64), 16))
+      value = BigInt(`0x${activityItem.input.slice(-64)}`)
     } else {
-      value = BigInt(parseInt(activityItem.input.slice(10).slice(0, 64), 16))
+      value = BigInt(`0x${activityItem.input.slice(10).slice(0, 64)}`)
     }
   }
   const decimalValue = Number(value) / 10 ** activityItem.asset.decimals
