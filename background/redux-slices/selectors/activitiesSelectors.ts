@@ -14,8 +14,7 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
       const activityItem = currentAccountActivities.entities[id] as ActivityItem
       const isSent =
-        activityItem.from.toLowerCase() ===
-        Object.keys(account.accountsData)[0].toLowerCase()
+        activityItem.from.toLowerCase() === ui.selectedAccount?.address
       return {
         ...activityItem,
         timestamp:
