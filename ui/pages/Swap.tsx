@@ -1,10 +1,11 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { useDispatch } from "react-redux"
 import { BigNumber, utils as ethersUtils } from "ethers"
-import { fetchJson } from "@ethersproject/web"
 import logger from "@tallyho/tally-background/lib/logger"
-import { Asset } from "@tallyho/tally-background/assets"
-import { fetchSwapPrices } from "@tallyho/tally-background/redux-slices/0x-swap"
+import {
+  fetchSwapPrices,
+  setSwapTrade,
+  setSwapAmount,
+} from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
@@ -15,38 +16,22 @@ import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
-interface SwapAmount {
-  from: string
-  to: string
-}
-
-interface TradingPair {
-  from?: Asset
-  to?: Asset
-  price: BigNumber
-}
-
-interface ZrxToken {
-  symbol: string
-  price: string
-}
-
 export default function Swap(): ReactElement {
-  const dispatch = useDispatch()
-  //  const dispatch = useBackgroundDispatch()
-
+  const dispatch = useBackgroundDispatch()
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
-  const [swapTokens, setSwapTokens] = useState<Asset[]>([])
-  const [swapAmount, setSwapAmount] = useState<SwapAmount>({
-    from: "0",
-    to: "0",
-  })
 
-  const [swap, setSwap] = useState<TradingPair>({
-    from: undefined,
-    to: undefined,
-    price: BigNumber.from("0"),
-  })
+  const { swapTrade, swapAmount, swapTokens } = useBackgroundSelector(
+    (state) => {
+      // The Redux serializer is clobbering our BigNumbers, so let's regenerate it
+      const price = BigNumber.from(state.swap.tradingPair.price)
+
+      return {
+        swapTrade: { ...state.swap.tradingPair, price },
+        swapAmount: state.swap.amount,
+        swapTokens: state.swap.tokens,
+      }
+    }
+  )
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -63,81 +48,69 @@ export default function Swap(): ReactElement {
       logger.log("Asset selected!", token)
 
       dispatch(fetchSwapPrices(token))
-
-      /*
-      const apiData = await fetchJson(
-        `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000` // TODO: Handle pagination instead of requesting so many records?
-      )
-
-      setSwapTokens(() => {
-        return apiData.records.map((zrxToken: ZrxToken) => {
-          return { ...zrxToken, name: "" } // TODO: Populate this by using the assets redux slice?
-        })
-      })
-
-      setSwap(() => {
-        // Reset the state whenever the from token is changed, because the price data we get from 0x is based on the from token
-        return {
+      dispatch(
+        setSwapTrade({
           from: token,
           to: undefined,
           price: BigNumber.from("0"),
-        }
-      })
-
-      logger.log(apiData)
-      */
+        })
+      )
     },
 
     [dispatch]
   )
 
-  const toAssetSelected = useCallback(async (token) => {
-    logger.log("Asset selected!", token)
+  const toAssetSelected = useCallback(
+    (token) => {
+      logger.log("Asset selected!", token)
 
-    setSwap((currentState) => {
-      return {
-        from: currentState.from,
-        to: token,
-        price: ethersUtils.parseUnits(token.price, 18), // TODO: We need to know the actual number of decimals the token is using
-      }
-    })
-  }, [])
+      dispatch(
+        setSwapTrade({
+          from: swapTrade.from,
+          to: token,
+          price: ethersUtils.parseUnits(token.price, 18), // TODO: We need to know the actual number of decimals the token is using
+        })
+      )
+    },
+
+    [dispatch, swapTrade]
+  )
 
   const fromAmountChanged = useCallback(
     (event) => {
       // Basic validation to ensure we don't break the Ethers.js BigNumber parser
       const inputValue = parseFloat(event.target.value)
 
-      if (Number.isNaN(inputValue) || swap.price.isZero()) {
-        setSwapAmount(() => {
-          return {
+      if (Number.isNaN(inputValue) || swapTrade.price.isZero()) {
+        dispatch(
+          setSwapAmount({
             from: event.target.value, // We have to preserve the original input value, otherwise users won't be able to type decimals
             to: "0",
-          }
-        })
+          })
+        )
       } else {
-        setSwapAmount(() => {
-          return {
+        dispatch(
+          setSwapAmount({
             from: event.target.value,
             to: ethersUtils
               .parseUnits(inputValue.toString(), 18) // TODO: Fetch decimals from 0x tokens API
-              .div(swap.price)
+              .div(swapTrade.price)
               .toString(),
-          }
-        })
+          })
+        )
       }
     },
 
-    [swap]
+    [dispatch, swapTrade]
   )
 
   const toAmountChanged = useCallback(
     (event) => {
       const inputValue = parseFloat(event.target.value)
 
-      if (!Number.isNaN(inputValue) && !swap.price.isZero()) {
-        setSwapAmount(() => {
-          return {
+      if (!Number.isNaN(inputValue) && !swapTrade.price.isZero()) {
+        dispatch(
+          setSwapAmount({
             /*
             The decimal math on this is messed up because of Ethers.js BigNumber library
 
@@ -148,12 +121,12 @@ export default function Swap(): ReactElement {
             */
             from: "0",
             to: event.target.value,
-          }
-        })
+          })
+        )
       }
     },
 
-    [swap]
+    [dispatch, swapTrade]
   )
 
   return (
@@ -192,7 +165,7 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {swap.from && swap.to ? (
+              {swapTrade.from && swapTrade.to ? (
                 <SharedButton type="primary" size="large" onClick={handleClick}>
                   Get final quote
                 </SharedButton>

@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit"
 import { BigNumber } from "ethers"
 import { fetchJson } from "@ethersproject/web"
 
@@ -29,7 +29,7 @@ interface ZrxSwap {
 
 export const fetchSwapPrices = createBackgroundAsyncThunk(
   "0x-swap/fetchSwapPrices",
-  async (token: Asset, thunkAPI) => {
+  async (token: Asset) => {
     const apiData = await fetchJson(
       `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000`
     )
@@ -53,7 +53,7 @@ export const initialState: ZrxSwap = {
   },
 }
 
-const transactionSlice = createSlice({
+const swapSlice = createSlice({
   name: "0x-swap",
   initialState,
   reducers: {
@@ -72,16 +72,6 @@ const transactionSlice = createSlice({
     },
   },
 
-  /*
-  extraReducers: {
-    [fetchSwapPrices.fulfilled]: (
-      immerState,
-      { payload: tokens }: { payload: Asset[] }
-    ) => {
-      return { ...immerState, tokens }
-    }
-  },
-  */
   extraReducers: (builder) => {
     builder.addCase(
       fetchSwapPrices.fulfilled,
@@ -92,5 +82,5 @@ const transactionSlice = createSlice({
   },
 })
 
-export const { setSwapAmount, setSwapTrade } = transactionSlice.actions
-export default transactionSlice.reducer
+export const { setSwapAmount, setSwapTrade } = swapSlice.actions
+export default swapSlice.reducer
