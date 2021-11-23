@@ -145,3 +145,15 @@ export async function determineToken(result: AnyEVMTransaction) {
   return asset
 }
 
+export function determineActivityDecimalValue(activityItem: ActivityItem) {
+  const { token } = activityItem
+  let { value } = activityItem
+
+  // Derive value from transaction transfer input if not ETH
+  if (token && !token.symbol.includes("ETH") && activityItem.input) {
+    value = BigInt(`0x${activityItem.input.slice(10).slice(0, 64)}`)
+  }
+
+  const decimalValue = Number(value) / 10 ** token.decimals
+  return decimalValue
+}

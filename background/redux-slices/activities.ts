@@ -1,5 +1,11 @@
 import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
-import { keysMap, adaptForUI, ActivityItem } from "./utils"
+import {
+  keysMap,
+  adaptForUI,
+  ActivityItem,
+  determineActivityDecimalValue,
+  determineToken,
+} from "./utils/activity-utils"
 
 export { ActivityItem }
 
@@ -48,6 +54,7 @@ const activitiesSlice = createSlice({
             infoRows,
             fromTruncated: truncateAddress(activityItem.from),
             toTruncated: truncateAddress(activityItem.to),
+            tokenDecimalValue: determineActivityDecimalValue(activityItem),
           })
         })
       }
