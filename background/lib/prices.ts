@@ -10,7 +10,7 @@ import {
 } from "../assets"
 import { jsonSchemaValidatorFor } from "./validation"
 
-import { multiplyByFloat, toFixedPoint } from "./fixed-point"
+import { toFixedPoint } from "./fixed-point"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
