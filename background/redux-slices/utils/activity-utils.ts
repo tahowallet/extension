@@ -7,6 +7,7 @@ import { SmartContractFungibleAsset, FungibleAsset } from "../../assets"
 import { getTokenMetadata } from "../../lib/alchemy"
 import { convertToEth, getEthereumNetwork } from "../../lib/utils"
 import { AnyEVMTransaction } from "../../networks"
+import { AssetDecimalAmount } from "./asset-utils"
 
 const pollingProviders = {
   ethereum: new AlchemyProvider(
@@ -42,7 +43,7 @@ export type ActivityItem = AnyEVMTransaction & {
     }
   }
   token: FungibleAsset
-  tokenDecimalValue: number
+  tokenDecimalValue: AssetDecimalAmount["decimalAmount"]
   fromTruncated: string
   toTruncated: string
 }
