@@ -15,7 +15,7 @@ const pollingProviders = {
   ),
 }
 
-function ethTransformer(value: string | number | bigint | null) {
+function ethTransformer(value: string | number | bigint | null): string {
   if (value === null) {
     return "(Unknown)"
   }
@@ -131,7 +131,9 @@ export async function determineToken(
   return asset
 }
 
-export function determineActivityDecimalValue(activityItem: ActivityItem) {
+export function determineActivityDecimalValue(
+  activityItem: ActivityItem
+): number {
   const { token } = activityItem
   let { value } = activityItem
 

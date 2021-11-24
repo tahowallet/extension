@@ -4,7 +4,6 @@ import {
   adaptForUI,
   ActivityItem,
   determineActivityDecimalValue,
-  determineToken,
 } from "./utils/activity-utils"
 
 export { ActivityItem }
