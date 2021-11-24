@@ -1,9 +1,9 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createDraftSafeSelector } from "@reduxjs/toolkit"
 import { BigNumber } from "ethers"
 import { fetchJson } from "@ethersproject/web"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { Asset } from "../assets"
+import { isSmartContractFungibleAsset, AnyAsset, Asset } from "../assets"
 
 interface SwapAmount {
   from: string
@@ -18,7 +18,10 @@ interface TradingPair {
 
 interface ZrxToken {
   symbol: string
-  price: string
+  name: string
+  decimals: number
+  address: string
+  price?: string
 }
 
 interface ZrxSwap {
@@ -26,6 +29,63 @@ interface ZrxSwap {
   tokens: Asset[]
   tradingPair: TradingPair
 }
+
+export const fetchTokens = createBackgroundAsyncThunk(
+  "0x-swap/fetchTokens",
+  async (assets: Asset[]) => {
+    const apiData = await fetchJson(`https://api.0x.org/swap/v1/tokens`)
+
+    const stats = {
+      symbolMatch: 0,
+      addressMatch: 0,
+      bothMatch: 0,
+      missing: 0,
+    }
+
+    const filteredAssets = apiData.records.filter((zrxToken: ZrxToken) => {
+      const matchingAssets = assets
+        .filter(isSmartContractFungibleAsset)
+        .filter((asset) => {
+          if (
+            asset.symbol.toLowerCase() === zrxToken.symbol.toLowerCase() &&
+            asset.contractAddress.toLowerCase() ===
+              zrxToken.address.toLowerCase()
+          ) {
+            stats.bothMatch += 1
+            return true
+          }
+
+          if (asset.symbol.toLowerCase() === zrxToken.symbol.toLowerCase()) {
+            stats.symbolMatch += 1
+            return true
+          }
+
+          if (
+            asset.contractAddress.toLowerCase() ===
+            zrxToken.address.toLowerCase()
+          ) {
+            stats.addressMatch += 1
+            return true
+          }
+
+          return false
+        })
+
+      if (!matchingAssets.length) {
+        stats.missing += 1
+      } else {
+        return true
+      }
+
+      // console.log("totally missing", zrxToken)
+      return false
+    })
+
+    // console.log("got some stats", stats)
+    // console.log("FilteredAssets!", filteredAssets, filteredAssets.length)
+    return filteredAssets
+  }
+)
 
 export const fetchSwapPrices = createBackgroundAsyncThunk(
   "0x-swap/fetchSwapPrices",

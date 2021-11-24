@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { BigNumber, utils as ethersUtils } from "ethers"
 import logger from "@tallyho/tally-background/lib/logger"
 import {
+  fetchTokens,
   fetchSwapPrices,
   setSwapTrade,
   setSwapAmount,
@@ -33,6 +34,10 @@ export default function Swap(): ReactElement {
     }
   )
 
+  const allAssets = useBackgroundSelector((state) => {
+    return state.assets
+  })
+
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
@@ -44,10 +49,9 @@ export default function Swap(): ReactElement {
   }, [])
 
   const fromAssetSelected = useCallback(
-    (token) => {
+    async (token) => {
       logger.log("Asset selected!", token)
 
-      dispatch(fetchSwapPrices(token))
       dispatch(
         setSwapTrade({
           from: token,
@@ -55,9 +59,12 @@ export default function Swap(): ReactElement {
           price: BigNumber.from("0"),
         })
       )
+
+      await dispatch(fetchTokens(allAssets))
+      await dispatch(fetchSwapPrices(token))
     },
 
-    [dispatch]
+    [dispatch, allAssets]
   )
 
   const toAssetSelected = useCallback(
@@ -78,22 +85,23 @@ export default function Swap(): ReactElement {
 
   const fromAmountChanged = useCallback(
     (event) => {
-      // Basic validation to ensure we don't break the Ethers.js BigNumber parser
-      const inputValue = parseFloat(event.target.value)
+      const inputValue = event.target.value.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
+      const floatValue = parseFloat(inputValue)
 
-      if (Number.isNaN(inputValue) || swapTrade.price.isZero()) {
+      // Basic validation to ensure we don't break the Ethers.js BigNumber parser
+      if (Number.isNaN(floatValue) || swapTrade.price.isZero()) {
         dispatch(
           setSwapAmount({
-            from: event.target.value, // We have to preserve the original input value, otherwise users won't be able to type decimals
+            from: inputValue,
             to: "0",
           })
         )
       } else {
         dispatch(
           setSwapAmount({
-            from: event.target.value,
+            from: inputValue,
             to: ethersUtils
-              .parseUnits(inputValue.toString(), 18) // TODO: Fetch decimals from 0x tokens API
+              .parseUnits(floatValue.toString(), 18) // TODO: Fetch decimals from 0x tokens API
               .div(swapTrade.price)
               .toString(),
           })
