@@ -4,17 +4,20 @@ interface Props {
   isOpen: boolean
   close: () => void
   children: React.ReactNode
-  size: "small" | "medium" | "large"
+  customSize?: string
+  size: "small" | "medium" | "large" | "custom"
 }
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {
-  const { isOpen, close, size, children } = props
+  const { isOpen, close, size, children, customSize } = props
 
   let menuHeight = "536px"
   if (size === "large") {
     menuHeight = "600px"
   } else if (size === "small") {
     menuHeight = "268px"
+  } else if (size === "custom") {
+    menuHeight = customSize || "600px"
   }
 
   return (

@@ -449,7 +449,10 @@ export const selectAccountAndTimestampedActivities = createSelector(
             decimalAmount:
               Number(
                 assetItem.amount /
-                  10n ** BigInt(assetItem.asset.decimals - desiredDecimals)
+                  10n **
+                    BigInt(
+                      Math.max(1, assetItem.asset.decimals - desiredDecimals)
+                    )
               ) / 100,
             localizedMainCurrencyAmount: formatCurrencyAmount(
               mainCurrency,

@@ -375,6 +375,12 @@ export default class ChainService extends BaseService<Events> {
       const blockPrices = await this.blocknative?.getBlockPrices()
       this.emitter.emit("blockPrices", blockPrices)
 
+      // TODO set new alarm with new periodInMinutes?
+      // const pollBlockPrices = () => {
+      //   this.pollBlockPrices()
+      // }
+      // browser.alarms.onAlarm.addListener(pollBlockPrices)
+
       // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
       setTimeout(() => {
         this.pollBlockPrices()

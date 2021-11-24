@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
 import { BlockPrices, EIP1559TransactionRequest } from "../networks"
@@ -55,4 +55,10 @@ export const updateTransactionOptions = createBackgroundAsyncThunk(
   async (options: Partial<EIP1559TransactionRequest>) => {
     await emitter.emit("updateOptions", options)
   }
+)
+
+export const selectGasEstimates = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.gasEstimates,
+  (gasData) => gasData
 )

@@ -48,7 +48,8 @@ export default function WalletAccountBalanceControl(
     (state) => state.keyrings.importing
   )
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
-  const hasSavedSeed = window.localStorage.getItem("hasSavedSeed")
+  // ! REMOVE ME - for testing
+  const hasSavedSeed = true
 
   /*
    * Check to see if a keyring has been imported.
