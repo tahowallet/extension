@@ -330,9 +330,6 @@ export default class Main extends BaseService<never> {
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    // Start polling for blockPrices
-    this.chainService.pollBlockPrices()
-
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
       this.store.dispatch(gasEstimates(blockPrices))
     })

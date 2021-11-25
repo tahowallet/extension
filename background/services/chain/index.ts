@@ -146,6 +146,14 @@ export default class ChainService extends BaseService<Events> {
           this.handleHistoricAssetTransferAlarm()
         },
       },
+      blockPrices: {
+        schedule: {
+          periodInMinutes: 2,
+        },
+        handler: () => {
+          this.handleBlockPricesAlarm()
+        },
+      },
     })
 
     // TODO set up for each relevant network
@@ -374,17 +382,6 @@ export default class ChainService extends BaseService<Events> {
     if (this.blocknative) {
       const blockPrices = await this.blocknative?.getBlockPrices()
       this.emitter.emit("blockPrices", blockPrices)
-
-      // TODO set new alarm with new periodInMinutes?
-      // const pollBlockPrices = () => {
-      //   this.pollBlockPrices()
-      // }
-      // browser.alarms.onAlarm.addListener(pollBlockPrices)
-
-      // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
-      setTimeout(() => {
-        this.pollBlockPrices()
-      }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
     }
   }
 
@@ -528,6 +525,10 @@ export default class ChainService extends BaseService<Events> {
     await Promise.allSettled(
       accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
     )
+  }
+
+  private async handleBlockPricesAlarm(): Promise<void> {
+    await this.pollBlockPrices()
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
