@@ -4,6 +4,7 @@ import { fetchJson } from "@ethersproject/web"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { isSmartContractFungibleAsset, AnyAsset, Asset } from "../assets"
+import { AssetsState } from "./assets"
 
 interface SwapAmount {
   from: string
@@ -32,7 +33,9 @@ interface ZrxSwap {
 
 export const fetchTokens = createBackgroundAsyncThunk(
   "0x-swap/fetchTokens",
-  async (assets: Asset[]) => {
+  async (_, { getState }) => {
+    const state = getState() as { assets: AssetsState }
+    const assets = state.assets as Asset[]
     const apiData = await fetchJson(`https://api.0x.org/swap/v1/tokens`)
 
     const stats = {

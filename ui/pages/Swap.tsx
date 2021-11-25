@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useEffect, useCallback, useState } from "react"
 import { BigNumber, utils as ethersUtils } from "ethers"
 import logger from "@tallyho/tally-background/lib/logger"
 import {
@@ -34,9 +34,10 @@ export default function Swap(): ReactElement {
     }
   )
 
-  const allAssets = useBackgroundSelector((state) => {
-    return state.assets
-  })
+  // Fetch tokens from the 0x API whenever the swap page is loaded
+  useEffect(() => {
+    dispatch(fetchTokens())
+  }, [dispatch])
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -60,11 +61,10 @@ export default function Swap(): ReactElement {
         })
       )
 
-      await dispatch(fetchTokens(allAssets))
       await dispatch(fetchSwapPrices(token))
     },
 
-    [dispatch, allAssets]
+    [dispatch]
   )
 
   const toAssetSelected = useCallback(
