@@ -1,12 +1,17 @@
-import { selectGasEstimates } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  selectGasEstimates,
+  transactionOptions,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedInput from "../components/Shared/SharedInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import { useBackgroundSelector } from "../hooks"
 
 interface SendLocationState {
   token: {
@@ -19,6 +24,9 @@ interface GasOption {
   gwei: number
   dollarValue: string
   active: boolean
+  maxFeePerGas: bigint | undefined
+  maxPriorityFeePerGas: bigint | undefined
+  price: number | bigint | undefined
 }
 
 export default function Send(): ReactElement {
@@ -34,8 +42,15 @@ export default function Send(): ReactElement {
   const [maxGas, setMaxGas] = useState(0)
   const [selectedGas, setSelectedGas] = useState(0)
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+  const [gasLimit, setGasLimit] = useState("25000")
 
   const gas = useSelector(selectGasEstimates)
+
+  const dispatch = useDispatch()
+
+  const { accountData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
 
   // TODO trigger update when redux state change
 
@@ -46,43 +61,66 @@ export default function Send(): ReactElement {
     setFeeModalOpen(false)
   }
 
+  const sendTransactionRequest = () => {
+    const transaction = {
+      from: Object.keys(accountData)[0],
+      to: destinationAddress,
+      value: BigInt(amount),
+      gasLimit: BigInt(gasLimit),
+      maxFeePerGas: gasOptions[selectedGas].maxFeePerGas,
+      maxPriorityFeePerGas: gasOptions[selectedGas].maxPriorityFeePerGas,
+      input: "",
+      type: 2 as const,
+      chainID: "1",
+      gasPrice: gasOptions[selectedGas].price,
+    }
+    dispatch(transactionOptions(transaction))
+  }
+
   // TODO show the gasTimout bar in network fees
   // I mean how do i know when its going to refresh when I enter this screen
 
   const updateGasOptions = useCallback(() => {
-    const defaultGasOptions = [
-      {
-        name: "Regular",
-        time: "~10 Min",
-        gwei: 170,
-        dollarValue: "$75",
-        active: true,
-      },
-      {
-        name: "Express",
-        time: "~1 Min",
-        gwei: 180,
-        dollarValue: "$85",
-        active: false,
-      },
-      {
-        name: "Instant",
-        time: "~15 Sec",
-        gwei: 220,
-        dollarValue: "$125",
-        active: false,
-      },
-    ]
     if (gas) {
-      const updatedGasOptions = defaultGasOptions.map((option, index) => {
-        const newOption = option
-        if (index === 0) {
-          newOption.gwei = Number(gas?.baseFeePerGas / 1000000000n)
-        }
-        newOption.gwei = Number(gas?.baseFeePerGas / 1000000000n) + index * 20
-        return newOption
-      })
-      setGasOptions(updatedGasOptions)
+      const instant = gas.estimatedPrices.find((el) => el.confidence === 99)
+      const express = gas.estimatedPrices.find((el) => el.confidence === 95)
+      const regular = gas.estimatedPrices.find((el) => el.confidence === 70)
+      if (!!instant && !!express && !!regular) {
+        const updatedGasOptions = [
+          {
+            name: "Regular",
+            time: "~5 Min",
+            gwei: Number(gas?.baseFeePerGas / 1000000000n),
+            dollarValue: "$??",
+            price: regular?.price,
+            maxFeePerGas: BigInt(regular.maxFeePerGas),
+            maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
+            active: true,
+          },
+          {
+            name: "Express",
+            time: "~5 Min",
+            gwei: Number(gas?.baseFeePerGas / 1000000000n) + 20,
+            dollarValue: "$??",
+            price: express?.price,
+            maxFeePerGas: BigInt(express.maxFeePerGas),
+            maxPriorityFeePerGas: BigInt(express.maxPriorityFeePerGas),
+            active: true,
+          },
+          {
+            name: "Instant",
+            time: "~5 Min",
+            gwei: Number(gas?.baseFeePerGas / 1000000000n) + 40,
+            dollarValue: "$??",
+            price: instant?.price,
+            maxFeePerGas: BigInt(instant.maxFeePerGas),
+            maxPriorityFeePerGas: BigInt(instant.maxPriorityFeePerGas),
+            active: true,
+          },
+        ]
+
+        setGasOptions(updatedGasOptions)
+      }
     }
   }, [gas])
 
@@ -135,7 +173,7 @@ export default function Send(): ReactElement {
         })}
         {/* inputs r hella broken */}
         <div className="fees__limit">
-          <SharedInput />
+          <SharedInput value={gasLimit} onChange={(val) => setGasLimit(val)} />
         </div>
       </div>
       <div className="confirm">
@@ -312,6 +350,7 @@ export default function Send(): ReactElement {
                     signType: "sign",
                   },
                 }}
+                onClick={sendTransactionRequest}
               >
                 Send
               </SharedButton>
