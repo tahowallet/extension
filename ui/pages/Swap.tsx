@@ -153,6 +153,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={displayAssets}
+                defaultToken={swapTrade.from}
                 onAssetSelected={fromAssetSelected}
                 onAmountChanged={fromAmountChanged}
                 amount={swapAmount.from}
@@ -163,6 +164,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={swapTokens}
+                defaultToken={swapTrade.to}
                 onAssetSelected={toAssetSelected}
                 onAmountChanged={toAmountChanged}
                 amount={swapAmount.to}
