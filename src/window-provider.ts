@@ -12,6 +12,10 @@ const unsafeAddEventListener = window.addEventListener
 const unsafeRemoveEventListener = window.removeEventListener
 const unsafeOrigin = window.location.origin
 
+const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
+
+const enabled = window.localStorage.getItem(WINDOW_PROVIDER_FLAG)
+
 class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
@@ -111,5 +115,7 @@ class TallyWindowProvider extends EventEmitter {
   }
 }
 
-// @ts-expect-error I don't really have any way to know the exact type of window.ethereum so it's better to expect error than lie
-window.ethereum = new TallyWindowProvider()
+if (enabled === "true") {
+  // @ts-expect-error I don't really have any way to know the exact type of window.ethereum so it's better to expect error than lie
+  window.ethereum = new TallyWindowProvider()
+}
