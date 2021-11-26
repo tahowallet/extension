@@ -316,7 +316,7 @@ export default class Main extends BaseService<never> {
           transaction
         )
 
-        await this.keyringService.signTransaction(options.from, transaction)
+        // await this.keyringService.signTransaction(options.from, transaction)
       }
     })
 

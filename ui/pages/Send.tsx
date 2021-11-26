@@ -1,7 +1,9 @@
+import { isAddress } from "@ethersproject/address"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import {
+  createTransaction,
   selectGasEstimates,
-  transactionOptions,
+  selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
@@ -23,7 +25,6 @@ interface GasOption {
   time: string
   gwei: number
   dollarValue: string
-  active: boolean
   maxFeePerGas: bigint | undefined
   maxPriorityFeePerGas: bigint | undefined
   price: number | bigint | undefined
@@ -45,6 +46,7 @@ export default function Send(): ReactElement {
   const [gasLimit, setGasLimit] = useState("25000")
 
   const gas = useSelector(selectGasEstimates)
+  const txDetails = useSelector(selectTransactionData)
 
   const dispatch = useDispatch()
 
@@ -52,16 +54,26 @@ export default function Send(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
+  const saveUserGasChoice = () => {
+    setSelectedGas(activeFeeIndex)
+    setFeeModalOpen(false)
+  }
+
+  const discardUserGasChoice = () => {
+    setActiveFeeIndex(selectedGas)
+  }
+
   // TODO trigger update when redux state change
 
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
   }
   const closeSelectFeeModal = () => {
+    discardUserGasChoice()
     setFeeModalOpen(false)
   }
 
-  const sendTransactionRequest = () => {
+  const sendTransactionRequest = async () => {
     const transaction = {
       from: Object.keys(accountData)[0],
       to: destinationAddress,
@@ -72,11 +84,10 @@ export default function Send(): ReactElement {
       input: "",
       type: 2 as const,
       chainID: "1",
-      gasPrice: gasOptions[selectedGas].price,
+      price: gasOptions[selectedGas].price,
     }
-    dispatch(transactionOptions(transaction))
+    dispatch(createTransaction(transaction))
   }
-
   // TODO show the gasTimout bar in network fees
   // I mean how do i know when its going to refresh when I enter this screen
 
@@ -89,33 +100,30 @@ export default function Send(): ReactElement {
         const updatedGasOptions = [
           {
             name: "Regular",
-            time: "~5 Min",
+            time: "~? Min",
             gwei: Number(gas?.baseFeePerGas / 1000000000n),
             dollarValue: "$??",
             price: regular?.price,
             maxFeePerGas: BigInt(regular.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
-            active: true,
           },
           {
             name: "Express",
-            time: "~5 Min",
+            time: "~? Min",
             gwei: Number(gas?.baseFeePerGas / 1000000000n) + 20,
             dollarValue: "$??",
             price: express?.price,
             maxFeePerGas: BigInt(express.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(express.maxPriorityFeePerGas),
-            active: true,
           },
           {
             name: "Instant",
-            time: "~5 Min",
+            time: "~? Sec",
             gwei: Number(gas?.baseFeePerGas / 1000000000n) + 40,
             dollarValue: "$??",
             price: instant?.price,
             maxFeePerGas: BigInt(instant.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(instant.maxPriorityFeePerGas),
-            active: true,
           },
         ]
 
@@ -141,9 +149,14 @@ export default function Send(): ReactElement {
     updateGasOptions()
   }, [gas, findMinMaxGas, updateGasOptions])
 
+  useEffect(() => {
+    if (token) {
+      setSelectedCount(1)
+    }
+  }, [token])
+
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
-    setSelectedGas(gasOptions[index].gwei)
   }
 
   const NetworkFeesChooser = (
@@ -171,13 +184,12 @@ export default function Send(): ReactElement {
             </button>
           )
         })}
-        {/* inputs r hella broken */}
         <div className="fees__limit">
           <SharedInput value={gasLimit} onChange={(val) => setGasLimit(val)} />
         </div>
       </div>
       <div className="confirm">
-        <SharedButton size="medium" type="primary">
+        <SharedButton size="medium" type="primary" onClick={saveUserGasChoice}>
           Save
         </SharedButton>
       </div>
@@ -338,12 +350,17 @@ export default function Send(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                isDisabled={selectedCount <= 0}
+                isDisabled={
+                  selectedCount <= 0 ||
+                  BigInt(amount) === BigInt(0) ||
+                  !isAddress(destinationAddress)
+                }
                 linkTo={{
                   pathname: "/signTransaction",
                   state: {
-                    token: "ETH",
+                    token,
                     amount,
+                    // ! what is speed
                     speed: 10,
                     network: "mainnet",
                     to: destinationAddress,
