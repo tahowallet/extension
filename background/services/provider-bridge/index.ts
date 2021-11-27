@@ -56,21 +56,23 @@ export default class ProviderBridgeService extends BaseService<Events> {
     super()
 
     browser.runtime.onConnect.addListener(async (port) => {
-      port.onMessage.addListener(async (event) => {
-        logger.log(
-          `background: request payload: ${JSON.stringify(event.request)}`
-        )
-        const response = {
-          id: event.id,
-          result: await this.routeContentScriptRPCRequest(
-            event.request.method,
-            event.request.params
-          ),
-        }
-        logger.log("background response:", response)
+      if (port.name === "tally-external") {
+        port.onMessage.addListener(async (event) => {
+          logger.log(
+            `background: request payload: ${JSON.stringify(event.request)}`
+          )
+          const response = {
+            id: event.id,
+            result: await this.routeContentScriptRPCRequest(
+              event.request.method,
+              event.request.params
+            ),
+          }
+          logger.log("background response:", response)
 
-        port.postMessage(response)
-      })
+          port.postMessage(response)
+        })
+      }
     })
 
     // TODO: on internal provider handlers connect, disconnect, account change, network change

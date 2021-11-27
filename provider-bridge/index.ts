@@ -6,7 +6,7 @@ const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 const windowOriginAtLoadTime = window.location.origin
 
 export function connectProviderBridge(): void {
-  const port = browser.runtime.connect()
+  const port = browser.runtime.connect({ name: "tally-external" })
   // TODO: internal provider state
 
   // TODO: grab initial provider state on load

@@ -1,8 +1,10 @@
+import browser from "webextension-polyfill"
 import {
   ChainService,
   ServiceCreatorFunction,
   ServiceLifecycleEvents,
 } from ".."
+import logger from "../../lib/logger"
 import BaseService from "../base"
 
 type Events = ServiceLifecycleEvents & {
@@ -23,6 +25,24 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   private constructor(private chainService: ChainService) {
     super()
+
+    browser.runtime.onConnect.addListener(async (port) => {
+      if (port.name === "tally-internal") {
+        port.onMessage.addListener(async (event) => {
+          logger.log(`internal: request payload: ${JSON.stringify(event)}`)
+          const response = {
+            id: event.id,
+            result: await this.routeSafetRPCRequest(
+              event.request.method,
+              event.request.params
+            ),
+          }
+          logger.log("internal response:", response)
+
+          port.postMessage(response)
+        })
+      }
+    })
   }
 
   async routeSafetRPCRequest(
