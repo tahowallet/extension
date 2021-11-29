@@ -19,8 +19,8 @@ type Events = ServiceLifecycleEvents & {
  *
  * The main purpose for this service/layer is to provide a transition
  * between the untrusted communication from the window-provider - which runs
- * in user space and can be modifed by many attacks - and our internal service
- * layer.
+ * in shared dapp space and can be modified by other extensions - and our
+ * internal service layer.
  *
  * The reponsibility of this service is 2 fold.
  * - Provide connection interface - handle port communication, connect, disconnect etc
