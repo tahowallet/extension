@@ -32,7 +32,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           logger.log(`internal: request payload: ${JSON.stringify(event)}`)
           const response = {
             id: event.id,
-            result: await this.routeSafetRPCRequest(
+            result: await this.routeSafeRPCRequest(
               event.request.method,
               event.request.params
             ),
@@ -45,7 +45,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  async routeSafetRPCRequest(
+  async routeSafeRPCRequest(
     method: string,
     params: unknown[]
   ): Promise<unknown> {

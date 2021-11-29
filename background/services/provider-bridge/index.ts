@@ -93,7 +93,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           .getAccountsToTrack()
           .then(([account]) => [account.address])
       default: {
-        return this.internalEthereumProviderService.routeSafetRPCRequest(
+        return this.internalEthereumProviderService.routeSafeRPCRequest(
           method,
           params
         )
