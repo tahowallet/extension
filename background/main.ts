@@ -43,6 +43,7 @@ import {
   emitter as transactionSliceEmitter,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
+import { determineToken } from "./redux-slices/utils/activity-utils"
 import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
@@ -282,8 +283,15 @@ export default class Main extends BaseService<never> {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    this.chainService.emitter.on("transaction", (payload) => {
+    this.chainService.emitter.on("transaction", async (payload) => {
       const { transaction } = payload
+      const enrichedPayload = {
+        ...payload,
+        transaction: {
+          ...transaction,
+          token: await determineToken(transaction),
+        },
+      }
 
       if (
         transaction.blockHash &&
@@ -294,7 +302,7 @@ export default class Main extends BaseService<never> {
       } else {
         this.store.dispatch(transactionSeen(transaction))
       }
-      this.store.dispatch(activityEncountered(payload))
+      this.store.dispatch(activityEncountered(enrichedPayload))
     })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
