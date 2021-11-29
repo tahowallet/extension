@@ -2,7 +2,7 @@ import Dexie from "dexie"
 
 /**
  * An object describing a set of permissions granted to a given provider.
- * Generally tracked by dApp as part of DAppPermissions.
+ * Generally tracked by dAppID as part of DAppPermissions.
  */
 export type ProviderPermissions = {
   allowedAccounts: string[]
