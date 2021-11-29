@@ -92,7 +92,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "net_version":
       case "web3_clientVersion":
       case "web3_sha3":
-        return this.chainService.pollingProviders.ethereum.send(method, params)
+        return this.chainService.send(method, params)
       case "eth_sign": // --- important wallet methods ---
       case "eth_sendTransaction":
       case "eth_signTransaction":
