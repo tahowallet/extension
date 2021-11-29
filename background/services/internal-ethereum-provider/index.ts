@@ -16,7 +16,7 @@ type Events = ServiceLifecycleEvents & {
 
 export default class InternalEthereumProviderService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
-    ServiceLifecycleEvents,
+    Events,
     InternalEthereumProviderService,
     [Promise<ChainService>]
   > = async (chainService) => {
