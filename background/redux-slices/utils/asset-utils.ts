@@ -25,8 +25,8 @@ export type AssetMainCurrencyAmount = {
  * a conversion to a localized form of that representation.
  */
 export type AssetDecimalAmount = {
-  decimalAmount?: number
-  localizedDecimalAmount?: string
+  decimalAmount: number
+  localizedDecimalAmount: string
 }
 
 /**
