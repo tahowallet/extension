@@ -44,6 +44,8 @@ import {
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
+import InternalEthereumProviderService from "./services/internal-ethereum-provider"
+import ProviderBridgeService from "./services/provider-bridge"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
@@ -142,6 +144,11 @@ export default class Main extends BaseService<never> {
     )
     const keyringService = KeyringService.create()
     const nameService = NameService.create(chainService)
+    const internalEthereumProviderService =
+      InternalEthereumProviderService.create(chainService)
+    const providerBridgeService = ProviderBridgeService.create(
+      internalEthereumProviderService
+    )
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -168,7 +175,9 @@ export default class Main extends BaseService<never> {
       await chainService,
       await indexingService,
       await keyringService,
-      await nameService
+      await nameService,
+      await internalEthereumProviderService,
+      await providerBridgeService
     )
   }
 
@@ -200,7 +209,18 @@ export default class Main extends BaseService<never> {
      * A promise to the name service, responsible for resolving names to
      * addresses and content.
      */
-    private nameService: NameService
+    private nameService: NameService,
+    /**
+     * A promise to the internal ethereum provider service, which acts as
+     * web3 / ethereum provider for the internal and external dApps to use.
+     */
+    private internalEthereumProviderService: InternalEthereumProviderService,
+    /**
+     * A promise to the provider bridge service, handling and validating
+     * the communication coming from dApps according to EIP-1193 and some tribal
+     * knowledge
+     */
+    private providerBridgeService: ProviderBridgeService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -230,6 +250,8 @@ export default class Main extends BaseService<never> {
       this.indexingService.startService(),
       this.keyringService.startService(),
       this.nameService.startService(),
+      this.internalEthereumProviderService.startService(),
+      this.providerBridgeService.startService(),
     ])
   }
 
@@ -240,6 +262,8 @@ export default class Main extends BaseService<never> {
       this.indexingService.stopService(),
       this.keyringService.stopService(),
       this.nameService.stopService(),
+      this.internalEthereumProviderService.stopService(),
+      this.providerBridgeService.stopService(),
     ])
 
     await super.internalStopService()
