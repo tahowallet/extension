@@ -138,8 +138,8 @@ export function determineActivityDecimalValue(
   const { token } = activityItem
   let { value } = activityItem
 
-  // Derive value from transaction transfer input if not ETH
-  if (token && !token.symbol.includes("ETH") && activityItem.input) {
+  // Derive value from transaction transfer if not sending ETH
+  if (value === BigInt(0) && activityItem.input) {
     value = BigInt(`0x${activityItem.input.slice(10).slice(0, 64)}`)
   }
 
