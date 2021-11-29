@@ -57,7 +57,7 @@ export default function Swap(): ReactElement {
         setSwapTrade({
           from: token,
           to: undefined,
-          price: BigNumber.from("0"),
+          price: "0",
         })
       )
 
@@ -75,7 +75,7 @@ export default function Swap(): ReactElement {
         setSwapTrade({
           from: swapTrade.from,
           to: token,
-          price: ethersUtils.parseUnits(token.price, 18), // TODO: We need to know the actual number of decimals the token is using
+          price: ethersUtils.parseUnits(token.price, 18).toString(), // TODO: We need to know the actual number of decimals the token is using
         })
       )
     },
