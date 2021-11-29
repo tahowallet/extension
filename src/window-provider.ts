@@ -1,7 +1,10 @@
 import EventEmitter from "events"
 
-const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
-const WINDOW_PROVIDER_TARGET = "tally-window-provider"
+import {
+  WINDOW_PROVIDER_TARGET,
+  PROVIDER_BRIDGE_TARGET,
+  WINDOW_PROVIDER_FLAG,
+} from "@tallyho/tally-provider-bridge-shared"
 
 // We want our own functions to minimize tampering.
 // We still consider them unsafe because there's no guarantee they weren't tampered with before we stored them.
@@ -11,8 +14,6 @@ const unsafePostMessage = window.postMessage
 const unsafeAddEventListener = window.addEventListener
 const unsafeRemoveEventListener = window.removeEventListener
 const unsafeOrigin = window.location.origin
-
-const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
 
 const enabled = window.localStorage.getItem(WINDOW_PROVIDER_FLAG)
 

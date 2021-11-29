@@ -1,12 +1,14 @@
 import browser from "webextension-polyfill"
-
-const WINDOW_PROVIDER_TARGET = "tally-window-provider"
-const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
+import {
+  EXTERNAL_PORT_NAME,
+  PROVIDER_BRIDGE_TARGET,
+  WINDOW_PROVIDER_TARGET,
+} from "@tallyho/tally-provider-bridge-shared"
 
 const windowOriginAtLoadTime = window.location.origin
 
 export function connectProviderBridge(): void {
-  const port = browser.runtime.connect({ name: "tally-external" })
+  const port = browser.runtime.connect({ name: EXTERNAL_PORT_NAME })
   // TODO: internal provider state
 
   // TODO: grab initial provider state on load
