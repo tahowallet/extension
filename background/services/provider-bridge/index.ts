@@ -1,9 +1,5 @@
 import browser from "webextension-polyfill"
-import {
-  ChainService,
-  ServiceCreatorFunction,
-  ServiceLifecycleEvents,
-} from ".."
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
@@ -39,18 +35,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     ProviderBridgeService,
-    [Promise<ChainService>, Promise<InternalEthereumProviderService>]
-  > = async (chainService, internalEthereumProviderService) => {
+    [Promise<InternalEthereumProviderService>]
+  > = async (internalEthereumProviderService) => {
     return new this(
       await getOrCreateDB(),
-      await chainService,
       await internalEthereumProviderService
     )
   }
 
   private constructor(
     private db: ProviderBridgeServiceDatabase,
-    private chainService: ChainService,
     private internalEthereumProviderService: InternalEthereumProviderService
   ) {
     super()
@@ -84,14 +78,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
   ): Promise<unknown> {
     switch (method) {
       case "eth_requestAccounts":
+        // TODO: permission checks
         // TODO: proper error handling
-        return this.chainService
-          .getAccountsToTrack()
-          .then(([account]) => [account.address])
-      case "eth_accounts":
-        return this.chainService
-          .getAccountsToTrack()
-          .then(([account]) => [account.address])
+        return this.internalEthereumProviderService.routeSafeRPCRequest(
+          "eth_accounts",
+          params
+        )
       default: {
         return this.internalEthereumProviderService.routeSafeRPCRequest(
           method,

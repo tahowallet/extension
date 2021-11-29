@@ -51,7 +51,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ): Promise<unknown> {
     switch (method) {
       // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
-      case "eth_accounts":
+
       case "eth_blockNumber":
       case "eth_call":
       case "eth_chainId":
@@ -93,6 +93,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "web3_clientVersion":
       case "web3_sha3":
         return this.chainService.send(method, params)
+      case "eth_accounts": // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
+        return this.chainService
+          .getAccountsToTrack()
+          .then(([account]) => [account.address])
       case "eth_sign": // --- important wallet methods ---
       case "eth_sendTransaction":
       case "eth_signTransaction":
