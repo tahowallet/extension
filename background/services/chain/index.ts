@@ -381,6 +381,10 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  async send(method: string, params: unknown[]) {
+    return this.pollingProviders.ethereum.send(method, params)
+  }
+
   /* *****************
    * PRIVATE METHODS *
    * **************** */

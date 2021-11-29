@@ -21,8 +21,8 @@ export default function Overview(): ReactElement {
 
   return (
     <CorePage hasTopBar={false}>
-      <header>
-        <div className="header_primary_content standard_width">
+      <header className="standard_width">
+        <div className="header_primary_content">
           <span className="total_balance_label">Total balance</span>
           <div className="primary_balance">
             {initializationLoadingTimeExpired ||
@@ -56,23 +56,26 @@ export default function Overview(): ReactElement {
       <style jsx>
         {`
           .header_primary_content {
-            height: 96px;
-            box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
-              0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
-            background-color: #33514e;
+            height: 87px;
             margin: 0 auto;
-            border-bottom-right-radius: 12px;
-            border-bottom-left-radius: 12px;
+            width: 320px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            border-bottom: 1px solid var(--green-95);
           }
           header {
-            width: 384px;
-            height: 158px;
-            box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
-              0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
-            background-color: var(--green-95);
+            height: 136px;
+            box-shadow: 0 2px 4px rgba(0, 20, 19, 0.34),
+              0 6px 8px rgba(0, 20, 19, 0.24), 0 16px 16px rgba(0, 20, 19, 0.14);
+            background-color: var(--green-80);
+            border-radius: 12px;
+            border-bottom-right-radius: 4px;
+            border-bottom-left-radius: 4px;
+            box-sizing: border-box;
+            padding-bottom: 15px;
+            margin-top: 16px;
+            margin-bottom: -6px;
           }
           .primary_balance {
             color: #fff;
@@ -90,6 +93,7 @@ export default function Overview(): ReactElement {
             font-size: 14px;
             line-height: 16px;
             text-align: center;
+            margin-bottom: 4px;
           }
           .top_money_sign {
             width: 12px;
@@ -109,7 +113,7 @@ export default function Overview(): ReactElement {
             width: 320px;
             justify-content: space-between;
             margin: 0 auto;
-            margin-top: 17px;
+            margin-top: 11px;
           }
           .info_left {
             color: var(--green-40);
