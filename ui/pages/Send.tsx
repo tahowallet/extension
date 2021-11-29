@@ -1,9 +1,8 @@
 import { isAddress } from "@ethersproject/address"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import {
-  createTransaction,
   selectGasEstimates,
-  selectTransactionData,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
@@ -27,7 +26,6 @@ interface GasOption {
   dollarValue: string
   maxFeePerGas: bigint | undefined
   maxPriorityFeePerGas: bigint | undefined
-  price: number | bigint | undefined
 }
 
 export default function Send(): ReactElement {
@@ -41,12 +39,11 @@ export default function Send(): ReactElement {
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [minGas, setMinGas] = useState(0)
   const [maxGas, setMaxGas] = useState(0)
-  const [selectedGas, setSelectedGas] = useState(0)
+  const [selectedGas, setSelectedGas] = useState<GasOption>()
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [gasLimit, setGasLimit] = useState("25000")
 
   const gas = useSelector(selectGasEstimates)
-  const txDetails = useSelector(selectTransactionData)
 
   const dispatch = useDispatch()
 
@@ -55,12 +52,8 @@ export default function Send(): ReactElement {
   )
 
   const saveUserGasChoice = () => {
-    setSelectedGas(activeFeeIndex)
+    setSelectedGas(gasOptions[activeFeeIndex])
     setFeeModalOpen(false)
-  }
-
-  const discardUserGasChoice = () => {
-    setActiveFeeIndex(selectedGas)
   }
 
   // TODO trigger update when redux state change
@@ -69,7 +62,7 @@ export default function Send(): ReactElement {
     setFeeModalOpen(true)
   }
   const closeSelectFeeModal = () => {
-    discardUserGasChoice()
+    setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
     setFeeModalOpen(false)
   }
 
@@ -78,15 +71,12 @@ export default function Send(): ReactElement {
       from: Object.keys(accountData)[0],
       to: destinationAddress,
       value: BigInt(amount),
+      maxFeePerGas: selectedGas?.maxFeePerGas,
+      maxPriorityFeePerGas: selectedGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
-      maxFeePerGas: gasOptions[selectedGas].maxFeePerGas,
-      maxPriorityFeePerGas: gasOptions[selectedGas].maxPriorityFeePerGas,
-      input: "",
-      type: 2 as const,
-      chainID: "1",
-      price: gasOptions[selectedGas].price,
     }
-    dispatch(createTransaction(transaction))
+    // console.log(transaction)
+    dispatch(updateTransactionOptions(transaction))
   }
   // TODO show the gasTimout bar in network fees
   // I mean how do i know when its going to refresh when I enter this screen
@@ -94,7 +84,7 @@ export default function Send(): ReactElement {
   const updateGasOptions = useCallback(() => {
     if (gas) {
       const instant = gas.estimatedPrices.find((el) => el.confidence === 99)
-      const express = gas.estimatedPrices.find((el) => el.confidence === 95)
+      const express = gas.estimatedPrices.find((el) => el.confidence === 90)
       const regular = gas.estimatedPrices.find((el) => el.confidence === 70)
       if (!!instant && !!express && !!regular) {
         const updatedGasOptions = [
@@ -103,31 +93,28 @@ export default function Send(): ReactElement {
             time: "~? Min",
             gwei: Number(gas?.baseFeePerGas / 1000000000n),
             dollarValue: "$??",
-            price: regular?.price,
             maxFeePerGas: BigInt(regular.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
           },
           {
             name: "Express",
             time: "~? Min",
-            gwei: Number(gas?.baseFeePerGas / 1000000000n) + 20,
+            gwei: Number(BigInt(express.maxFeePerGas) / 1000000000n),
             dollarValue: "$??",
-            price: express?.price,
             maxFeePerGas: BigInt(express.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(express.maxPriorityFeePerGas),
           },
           {
             name: "Instant",
             time: "~? Sec",
-            gwei: Number(gas?.baseFeePerGas / 1000000000n) + 40,
+            gwei: Number(BigInt(instant.maxFeePerGas) / 1000000000n),
             dollarValue: "$??",
-            price: instant?.price,
             maxFeePerGas: BigInt(instant.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(instant.maxPriorityFeePerGas),
           },
         ]
-
         setGasOptions(updatedGasOptions)
+        setSelectedGas(updatedGasOptions[0])
       }
     }
   }, [gas])
@@ -137,7 +124,7 @@ export default function Send(): ReactElement {
   const findMinMaxGas = useCallback(() => {
     if (gas) {
       const values = gas.estimatedPrices.map((el) =>
-        Number(BigInt(el.price) / 1000000000n)
+        Number(BigInt(el.maxFeePerGas) / 1000000000n)
       )
       setMinGas(Number(gas?.baseFeePerGas / 1000000000n))
       setMaxGas(Math.max(...values) + 40)
@@ -149,6 +136,11 @@ export default function Send(): ReactElement {
     updateGasOptions()
   }, [gas, findMinMaxGas, updateGasOptions])
 
+  // When gas updates, we select the regular gasOption as default
+  useEffect(() => {
+    setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
+  }, [gasOptions, selectedGas])
+
   useEffect(() => {
     if (token) {
       setSelectedCount(1)
@@ -158,6 +150,8 @@ export default function Send(): ReactElement {
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
   }
+
+  // ! gasLimit field should say AUTO since we are fetching gasLimit only on sign transaction
 
   const NetworkFeesChooser = (
     <div className="wrapper">
@@ -325,15 +319,15 @@ export default function Send(): ReactElement {
                 onClick={openSelectFeeModal}
                 style={{
                   background: `linear-gradient(90deg, var(--green-80) ${(
-                    ((selectedGas || minGas) / maxGas) *
+                    ((selectedGas?.gwei || minGas) / maxGas) *
                     100
                   ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    ((selectedGas || minGas) / maxGas) *
+                    ((selectedGas?.gwei || minGas) / maxGas) *
                     100
                   ).toFixed()}%)`,
                 }}
               >
-                <div>~{selectedGas || minGas}Gwei</div>
+                <div>~{selectedGas?.gwei || minGas}Gwei</div>
                 <img
                   className="network_fee__settings__image"
                   src="./images/cog@2x.png"

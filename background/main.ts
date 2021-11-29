@@ -18,7 +18,7 @@ import {
 } from "./services"
 
 import { KeyringTypes } from "./types"
-import { SignedEVMTransaction } from "./networks"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -41,6 +41,8 @@ import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
   gasEstimates,
   emitter as transactionSliceEmitter,
+  transactionOptions,
+  signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import BaseService from "./services/base"
@@ -315,9 +317,19 @@ export default class Main extends BaseService<never> {
           getEthereumNetwork(),
           transaction
         )
-
-        // await this.keyringService.signTransaction(options.from, transaction)
+        // console.log("executed in main")
+        // console.log(transaction)
+        this.store.dispatch(transactionOptions(transaction))
       }
+    })
+
+    transactionSliceEmitter.on("signRequest", async (transaction: any) => {
+      const signedTx = await this.keyringService.signTransaction(
+        transaction.from,
+        transaction
+      )
+      this.store.dispatch(signed())
+      await this.chainService.broadcastSignedTransaction(signedTx)
     })
 
     // Set up initial state.

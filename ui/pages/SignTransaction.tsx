@@ -1,5 +1,12 @@
 import React, { ReactElement, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
+import { useDispatch, useSelector } from "react-redux"
+import {
+  selectIsTransactionLoaded,
+  selectIsTransactionSigned,
+  selectTransactionData,
+  signTransaction,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -23,10 +30,19 @@ interface SignLocationState {
 
 export default function SignTransaction(): ReactElement {
   const history = useHistory()
+  const dispatch = useDispatch()
   const location = useLocation<SignLocationState>()
   const { token, amount, speed, network, signType } = location.state
+  const isTransactionDataReady = useSelector(selectIsTransactionLoaded)
+  const isTransactionSigned = useSelector(selectIsTransactionSigned)
+  const txDetails = useSelector(selectTransactionData)
 
   const [panelNumber, setPanelNumber] = useState(0)
+
+  if (isTransactionDataReady) {
+    // console.log("woooo data is here baby")
+    // console.log(txDetails)
+  }
 
   const signContent: {
     [signType in SignType]: {
@@ -52,6 +68,18 @@ export default function SignTransaction(): ReactElement {
       ),
       confirmButtonText: "Sign",
     },
+  }
+
+  const handleConfirm = async () => {
+    if (
+      signContent[signType].confirmButtonText === "Sign" &&
+      isTransactionDataReady
+    ) {
+      // await dispatch(signTransaction(txDetails))
+      if (isTransactionSigned) {
+        // redirect to activities
+      }
+    }
   }
 
   return (
@@ -83,7 +111,12 @@ export default function SignTransaction(): ReactElement {
         >
           Reject
         </SharedButton>
-        <SharedButton type="primary" iconSize="large" size="large">
+        <SharedButton
+          type="primary"
+          iconSize="large"
+          size="large"
+          onClick={handleConfirm}
+        >
           {signContent[signType].confirmButtonText}
         </SharedButton>
       </div>
