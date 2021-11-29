@@ -18,7 +18,7 @@ type Events = ServiceLifecycleEvents & {
  * provider-bridge (content-script).
  *
  * The main purpose for this service/layer is to provide a transition
- * between the untrusted communiction from the window-provider - which runs
+ * between the untrusted communication from the window-provider - which runs
  * in user space and can be modifed by many attacks - and our internal service
  * layer.
  *
