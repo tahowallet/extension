@@ -5,7 +5,6 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
-
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
