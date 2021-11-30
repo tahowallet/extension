@@ -32,7 +32,7 @@ export default function Wallet(): ReactElement {
         <div className="page_content">
           <div className="section">
             <WalletAccountBalanceControl
-              balance={combinedData.totalUserValue}
+              balance={combinedData.totalMainCurrencyValue}
               initializationLoadingTimeExpired={
                 initializationLoadingTimeExpired
               }

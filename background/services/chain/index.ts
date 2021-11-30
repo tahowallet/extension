@@ -5,7 +5,6 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
-
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
@@ -383,6 +382,10 @@ export default class ChainService extends BaseService<Events> {
       const blockPrices = await this.blocknative?.getBlockPrices()
       this.emitter.emit("blockPrices", blockPrices)
     }
+  }
+
+  async send(method: string, params: unknown[]) {
+    return this.pollingProviders.ethereum.send(method, params)
   }
 
   /* *****************

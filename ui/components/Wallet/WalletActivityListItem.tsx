@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
-import { convertToEth } from "@tallyho/tally-background/lib/utils"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
@@ -35,20 +35,31 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="bottom">
           <div className="left">
             <div className="token_icon_wrap">
-              <span className="icon_eth" />
+              <SharedAssetIcon
+                logoURL={activity?.token?.metadata?.logoURL}
+                symbol={activity.token?.symbol}
+                size="small"
+              />
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {`${convertToEth(activity.value)}`.substring(0, 6)}
+                {`${activity.tokenDecimalValue}`.substring(0, 6)}
               </span>
-              ETH
+              {activity.token.symbol}
             </div>
           </div>
           <div className="right">
-            <div className="outcome">
-              From:
-              {` ${activity.from.slice(0, 6)}...${activity.from.slice(37, 41)}`}
-            </div>
+            {activity.isSent ? (
+              <div className="outcome">
+                To:
+                {` ${activity.toTruncated}`}
+              </div>
+            ) : (
+              <div className="outcome">
+                From:
+                {` ${activity.fromTruncated}`}
+              </div>
+            )}
           </div>
         </div>
       </button>
@@ -60,7 +71,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-95);
             display: flex;
             flex-direction: column;
-            padding: 13px 19px 8px 8px;
+            padding: 11px 19px 8px 8px;
             box-sizing: border-box;
             margin-bottom: 16px;
             justify-content: space-between;
@@ -92,6 +103,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             justify-content: space-between;
             width: 100%;
             align-items: center;
+            margin-bottom: 4px;
           }
           .bottom {
             display: flex;

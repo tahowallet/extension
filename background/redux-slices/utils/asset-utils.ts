@@ -1,3 +1,11 @@
+import {
+  AnyAssetAmount,
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
+  isFungibleAssetAmount,
+  PricePoint,
+} from "../../assets"
+
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
  * a conversion to the user's preferred currency for viewing as a floating
@@ -17,8 +25,8 @@ export type AssetMainCurrencyAmount = {
  * a conversion to a localized form of that representation.
  */
 export type AssetDecimalAmount = {
-  decimalAmount?: number
-  localizedDecimalAmount?: string
+  decimalAmount: number
+  localizedDecimalAmount: string
 }
 
 /**
@@ -51,4 +59,85 @@ export function formatCurrencyAmount(
       // FIXME Instead, we should use formatToParts.
       .split("$")[1]
   )
+}
+
+/**
+ * Fill in amounts related to the user's preferred main currency for a priced
+ * asset. The asset price point should be a PricePoint
+ * with the assetAmount's asset as the first entry and the main currency as the
+ * second. The decimal and localized values will be JavaScript numbers with
+ * desiredDecimals numbers after the decimal point.
+ *
+ * @param assetAmount An amount with associated asset whose conversion to the
+ *        main currency will be given by the price point.
+ * @param assetPricePoint The price of the asset in `assetAmount` in terms of
+ *        the main currency. The main currency should be second in the price
+ *        point pair.
+ * @param desiredDecimals The number of floating point decimals to keep when
+ *        converting from fixed point to floating point. Also the number of
+ *        decimals rendered in the localized form.
+ *
+ * @return The existing `assetAmount` with two additional fields,
+ *         `mainCurrencyValue` and `localizedMainCurrencyValue`. The first is the
+ *         value of the asset in the main currency as a floating point JS
+ *         number suitable for simple mathematical operations and comparisons. The second is the same value converted to a localized string based on the user's preferred
+ */
+export function enrichAssetAmountWithMainCurrencyValues<
+  T extends AnyAssetAmount
+>(
+  assetAmount: T,
+  assetPricePoint: PricePoint,
+  desiredDecimals: number
+): T & AssetMainCurrencyAmount {
+  const convertedAssetAmount = convertAssetAmountViaPricePoint(
+    assetAmount,
+    assetPricePoint
+  )
+
+  if (typeof convertedAssetAmount !== "undefined") {
+    const convertedDecimalValue = assetAmountToDesiredDecimals(
+      convertedAssetAmount,
+      desiredDecimals
+    )
+
+    return {
+      ...assetAmount,
+      mainCurrencyAmount: convertedDecimalValue,
+      localizedMainCurrencyAmount: formatCurrencyAmount(
+        convertedAssetAmount.asset.symbol,
+        convertedDecimalValue,
+        desiredDecimals
+      ),
+    }
+  }
+
+  return {
+    ...assetAmount,
+  }
+}
+
+/**
+ * Fill in decimal amount equivalents for the given fixed point asset amount,
+ * including a localized version.
+ */
+export function enrichAssetAmountWithDecimalValues<T extends AnyAssetAmount>(
+  assetAmount: T,
+  desiredDecimals: number
+): T & AssetDecimalAmount {
+  const decimalAmount = isFungibleAssetAmount(assetAmount)
+    ? assetAmountToDesiredDecimals(assetAmount, desiredDecimals)
+    : // If the asset is not fungible, the amount should have 0 decimals of
+      // precision.
+      assetAmountToDesiredDecimals(
+        { ...assetAmount, asset: { ...assetAmount.asset, decimals: 0 } },
+        desiredDecimals
+      )
+
+  return {
+    ...assetAmount,
+    decimalAmount,
+    localizedDecimalAmount: decimalAmount.toLocaleString("default", {
+      maximumFractionDigits: desiredDecimals,
+    }),
+  }
 }
