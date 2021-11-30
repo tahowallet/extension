@@ -41,7 +41,7 @@ export default function Send(): ReactElement {
   const [maxGas, setMaxGas] = useState(0)
   const [selectedGas, setSelectedGas] = useState<GasOption>()
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
-  const [gasLimit, setGasLimit] = useState("25000")
+  const [gasLimit, setGasLimit] = useState("")
 
   const gas = useSelector(selectGasEstimates)
 
@@ -118,8 +118,6 @@ export default function Send(): ReactElement {
     }
   }, [gas])
 
-  // TODO should introduce daily highest fee for comparison?
-
   const findMinMaxGas = useCallback(() => {
     if (gas) {
       const values = gas.estimatedPrices.map((el) =>
@@ -150,8 +148,6 @@ export default function Send(): ReactElement {
     setActiveFeeIndex(index)
   }
 
-  // ! gasLimit field should say AUTO since we are fetching gasLimit only on sign transaction
-
   const NetworkFeesChooser = (
     <div className="wrapper">
       <div className="fees">
@@ -178,7 +174,15 @@ export default function Send(): ReactElement {
           )
         })}
         <div className="fees__limit">
-          <SharedInput value={gasLimit} onChange={(val) => setGasLimit(val)} />
+          <label className="fees__limit__label" htmlFor="gasLimit">
+            Gas limit
+          </label>
+          <SharedInput
+            id="gasLimit"
+            value={gasLimit}
+            onChange={(val) => setGasLimit(val)}
+            placeholder="Auto"
+          />
         </div>
       </div>
       <div className="confirm">
@@ -214,6 +218,16 @@ export default function Send(): ReactElement {
           .fees__limit {
             margin: 16px 0;
             width: 40%;
+            position: relative;
+          }
+          .fees__limit__label {
+            position: absolute;
+            top: -8px;
+            left: 10px;
+            font-size: 12px;
+            padding: 0 4px;
+            background-color: var(--green-95);
+            color: #99a8a7;
           }
           .fees__title {
             font-size: 22px;
@@ -338,7 +352,9 @@ export default function Send(): ReactElement {
             <div className="total_footer standard_width_padded">
               <div className="total_amount">
                 <div className="total_label">Total</div>
-                <div className="total_amount_number">{amount}</div>
+                <div className="total_amount_number">{`${
+                  amount || 0
+                } ${token}`}</div>
               </div>
               <SharedButton
                 type="primary"

@@ -22,9 +22,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
 
   return (
     <div
-      className={`slide_up_menu
-        ${size === "large" ? " large" : ""}
-        ${!isOpen ? " closed" : ""}`}
+      className={`slide_up_menu ${size === "large" ? " large" : ""}${
+        !isOpen ? " closed" : ""
+      }`}
     >
       <button
         type="button"

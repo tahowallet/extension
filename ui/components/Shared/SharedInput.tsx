@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 
 interface Props {
+  id?: string
   placeholder: string
   type: "password" | "text"
   value?: string | number | undefined
@@ -8,11 +9,12 @@ interface Props {
 }
 
 export default function SharedInput(props: Props): ReactElement {
-  const { placeholder, type, onChange, value } = props
+  const { id, placeholder, type, onChange, value } = props
 
   return (
     <>
       <input
+        id={id}
         type={type}
         placeholder={placeholder}
         value={value}
