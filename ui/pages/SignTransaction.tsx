@@ -39,11 +39,6 @@ export default function SignTransaction(): ReactElement {
 
   const [panelNumber, setPanelNumber] = useState(0)
 
-  if (isTransactionDataReady) {
-    // console.log("woooo data is here baby")
-    // console.log(txDetails)
-  }
-
   const signContent: {
     [signType in SignType]: {
       title: string
@@ -73,11 +68,13 @@ export default function SignTransaction(): ReactElement {
   const handleConfirm = async () => {
     if (
       signContent[signType].confirmButtonText === "Sign" &&
-      isTransactionDataReady
+      isTransactionDataReady &&
+      txDetails
     ) {
-      // await dispatch(signTransaction(txDetails))
+      dispatch(signTransaction(txDetails))
       if (isTransactionSigned) {
-        // redirect to activities
+        // redirect here
+        // console.log("Tx Signed!")
       }
     }
   }

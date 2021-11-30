@@ -11,25 +11,20 @@ import { createBackgroundAsyncThunk } from "./utils"
 type TransactionConstruction = {
   status: string
   signedTx: Partial<SignedEVMTransaction>
-  transactionRequest: Partial<EIP1559TransactionRequest>
+  transactionRequest?: EIP1559TransactionRequest
   gasEstimates: BlockPrices | null
 }
 
 export const initialState: TransactionConstruction = {
   status: "idle",
   signedTx: {},
-  transactionRequest: {
-    gasLimit: BigInt(21000), // 21,000 is the minimum amount of gas needed for sending a transaction
-    maxFeePerGas: BigInt(21000),
-    maxPriorityFeePerGas: BigInt(21000),
-  },
   gasEstimates: null,
 }
 
 export type Events = {
   updateOptions: Partial<EIP1559TransactionRequest>
   gasEstimates: BlockPrices
-  signRequest: Partial<EIP1559TransactionRequest>
+  signRequest: EIP1559TransactionRequest
 }
 
 export const emitter = new Emittery<Events>()
@@ -44,7 +39,7 @@ export const updateTransactionOptions = createBackgroundAsyncThunk(
 
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction/sign",
-  async (transaction: Partial<EIP1559TransactionRequest>) => {
+  async (transaction: EIP1559TransactionRequest) => {
     await emitter.emit("signRequest", transaction)
   }
 )
@@ -55,7 +50,7 @@ const transactionSlice = createSlice({
   reducers: {
     transactionOptions: (
       immerState,
-      { payload: options }: { payload: Partial<EIP1559TransactionRequest> }
+      { payload: options }: { payload: EIP1559TransactionRequest }
     ) => {
       return {
         ...immerState,

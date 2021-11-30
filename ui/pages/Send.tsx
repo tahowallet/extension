@@ -75,7 +75,6 @@ export default function Send(): ReactElement {
       maxPriorityFeePerGas: selectedGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
-    // console.log(transaction)
     dispatch(updateTransactionOptions(transaction))
   }
   // TODO show the gasTimout bar in network fees
@@ -90,7 +89,7 @@ export default function Send(): ReactElement {
         const updatedGasOptions = [
           {
             name: "Regular",
-            time: "~? Min",
+            time: "~10 Min",
             gwei: Number(gas?.baseFeePerGas / 1000000000n),
             dollarValue: "$??",
             maxFeePerGas: BigInt(regular.maxFeePerGas),
@@ -98,7 +97,7 @@ export default function Send(): ReactElement {
           },
           {
             name: "Express",
-            time: "~? Min",
+            time: "~2 Min",
             gwei: Number(BigInt(express.maxFeePerGas) / 1000000000n),
             dollarValue: "$??",
             maxFeePerGas: BigInt(express.maxFeePerGas),
@@ -106,7 +105,7 @@ export default function Send(): ReactElement {
           },
           {
             name: "Instant",
-            time: "~? Sec",
+            time: "~15 Sec",
             gwei: Number(BigInt(instant.maxFeePerGas) / 1000000000n),
             dollarValue: "$??",
             maxFeePerGas: BigInt(instant.maxFeePerGas),

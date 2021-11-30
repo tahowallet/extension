@@ -295,9 +295,8 @@ export default class Main extends BaseService<never> {
             options.from,
             "latest"
           )
-
         // Basic transaction construction based on the provided options, with extra data from the chain service
-        const transaction = {
+        const transaction: EIP1559TransactionRequest = {
           from: options.from,
           to: options.to,
           value: options.value,
@@ -308,8 +307,6 @@ export default class Main extends BaseService<never> {
           type: 2 as const,
           chainID: "1",
           nonce: resolvedNonce,
-          gasPrice:
-            await this.chainService.pollingProviders.ethereum.getGasPrice(),
         }
 
         // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
@@ -317,20 +314,21 @@ export default class Main extends BaseService<never> {
           getEthereumNetwork(),
           transaction
         )
-        // console.log("executed in main")
-        // console.log(transaction)
         this.store.dispatch(transactionOptions(transaction))
       }
     })
 
-    transactionSliceEmitter.on("signRequest", async (transaction: any) => {
-      const signedTx = await this.keyringService.signTransaction(
-        transaction.from,
-        transaction
-      )
-      this.store.dispatch(signed())
-      await this.chainService.broadcastSignedTransaction(signedTx)
-    })
+    transactionSliceEmitter.on(
+      "signRequest",
+      async (transaction: EIP1559TransactionRequest) => {
+        const signedTx = await this.keyringService.signTransaction(
+          transaction.from,
+          transaction
+        )
+        this.store.dispatch(signed())
+        await this.chainService.broadcastSignedTransaction(signedTx)
+      }
+    )
 
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
