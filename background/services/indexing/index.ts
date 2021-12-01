@@ -212,6 +212,9 @@ export default class IndexingService extends BaseService<Events> {
         // default list and add any non-zero tokens to the tracking list
         const balances = await this.retrieveTokenBalances(addressNetwork)
 
+        // FIXME Refactor this to only update prices for tokens with balances.
+        await this.handlePriceAlarm()
+
         // Every asset we have that hasn't already been balance checked and is
         // on the currently selected network should be checked once.
         //
