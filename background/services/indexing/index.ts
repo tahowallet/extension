@@ -75,6 +75,7 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 30,
         },
         handler: () => this.handleTokenAlarm(),
+        runAtStart: true,
       },
       prices: {
         schedule: {
@@ -82,6 +83,7 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 10,
         },
         handler: () => this.handlePriceAlarm(),
+        runAtStart: true,
       },
     })
   }
