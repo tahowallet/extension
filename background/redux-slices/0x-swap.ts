@@ -6,15 +6,26 @@ import { isSmartContractFungibleAsset, Asset } from "../assets"
 import { AssetsState } from "./assets"
 import logger from "../lib/logger"
 
-interface SwapAmount {
-  from: string
-  to: string
+interface SwapAsset extends Asset {
+  price?: string
 }
 
-interface TradingPair {
-  from?: Asset
-  to?: Asset
-  price: string
+export interface SwapState {
+  sellToken?: SwapAsset
+  buyToken?: SwapAsset
+  sellAmount: string
+  buyAmount: string
+  tokens: Asset[]
+}
+
+interface SwapToken {
+  sellToken?: Asset
+  buyToken?: Asset
+}
+
+interface SwapAmount {
+  sellAmount: string
+  buyAmount: string
 }
 
 interface ZrxToken {
@@ -22,18 +33,11 @@ interface ZrxToken {
   name: string
   decimals: number
   address: string
-  price?: string
 }
 
 interface ZrxPrice {
   symbol: string
   price: string
-}
-
-interface ZrxSwap {
-  amount: SwapAmount
-  tokens: Asset[]
-  tradingPair: TradingPair
 }
 
 export const fetchTokens = createBackgroundAsyncThunk(
@@ -106,17 +110,12 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
   }
 )
 
-export const initialState: ZrxSwap = {
-  amount: {
-    from: "0.0",
-    to: "0.0",
-  },
+export const initialState: SwapState = {
+  sellToken: undefined,
+  buyToken: undefined,
+  sellAmount: "",
+  buyAmount: "",
   tokens: [],
-  tradingPair: {
-    from: undefined,
-    to: undefined,
-    price: "0",
-  },
 }
 
 const swapSlice = createSlice({
@@ -127,14 +126,11 @@ const swapSlice = createSlice({
       immerState,
       { payload: amount }: { payload: SwapAmount }
     ) => {
-      return { ...immerState, amount }
+      return { ...immerState, ...amount }
     },
 
-    setSwapTrade: (
-      immerState,
-      { payload: tradingPair }: { payload: TradingPair }
-    ) => {
-      return { ...immerState, tradingPair }
+    setSwapTrade: (immerState, { payload: token }: { payload: SwapToken }) => {
+      return { ...immerState, ...token }
     },
   },
 
