@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import { useLocation } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"

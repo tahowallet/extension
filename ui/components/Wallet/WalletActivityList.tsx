@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
-import { selectCurrentAccountActivitiesWithTimestamps } from "@tallyho/tally-background/redux-slices/selectors/activitiesSelectors"
+import { selectCurrentAccountActivitiesWithTimestamps } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"

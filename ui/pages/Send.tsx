@@ -1,5 +1,5 @@
 import { isAddress } from "@ethersproject/address"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,

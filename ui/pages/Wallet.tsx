@@ -1,7 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
-import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -12,7 +12,7 @@ export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
   //  accountLoading, hasWalletErrorCode
-  const { combinedData, accountData, activity } = useBackgroundSelector(
+  const { combinedData, accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
 

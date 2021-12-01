@@ -5,11 +5,13 @@ import { AnyAction } from "@reduxjs/toolkit"
 
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
-import logger from "./lib/logger"
+
+import { RootState } from "./redux-slices"
 
 export { browser }
 
-export type RootState = ReturnType<Main["store"]["getState"]>
+export type { RootState }
+
 export type BackgroundDispatch = Main["store"]["dispatch"]
 
 /**

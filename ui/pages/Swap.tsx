@@ -6,7 +6,7 @@ import {
   setSwapTrade,
   setSwapAmount,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
