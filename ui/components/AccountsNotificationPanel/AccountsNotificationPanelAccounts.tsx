@@ -1,5 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { selectAccountTotals } from "@tallyho/tally-background/redux-slices/selectors"
 import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -9,9 +10,8 @@ function WalletName() {
     <>
       <div className="wallet_title">
         <div className="left">
-          <div className="icon_wallet" />
-          Trezor
-          <div className="icon_edit" />
+          <div className="icon_eye" />
+          Read-only mode
         </div>
         <div className="right">
           <SharedButton
@@ -37,6 +37,13 @@ function WalletName() {
           align-items: center;
           display: flex;
           justify-content: space-between;
+        }
+        .icon_eye {
+          background: url("./images/eye@2x.png");
+          background-size: cover;
+          width: 24px;
+          height: 24px;
+          margin: 0px 7px 0px 10px;
         }
         .icon_wallet {
           background: url("./images/wallet_kind_icon@2x.png") center no-repeat;
@@ -70,9 +77,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const accountAddresses = useBackgroundSelector((background) => {
-    return Object.keys(background.account.accountsData)
-  })
+  const accountTotals = useBackgroundSelector(selectAccountTotals)
 
   const selectedAccount = useBackgroundSelector((background) => {
     return background.ui.selectedAccount?.address
@@ -80,33 +85,33 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
 
   useEffect(() => {
     function selectFirstAccountIfNoneSelected() {
-      if (selectedAccount === "" && accountAddresses[0]) {
-        dispatch(setSelectedAccount(accountAddresses[0].toLowerCase()))
+      if (selectedAccount === "" && accountTotals[0]) {
+        dispatch(setSelectedAccount(accountTotals[0].address.toLowerCase()))
       }
     }
     selectFirstAccountIfNoneSelected()
-  }, [dispatch, accountAddresses, selectedAccount])
+  }, [dispatch, accountTotals, selectedAccount])
 
   return (
     <div>
       <WalletName />
       <ul>
-        {accountAddresses.map((item, index) => {
-          const lowerCaseItem = item.toLocaleLowerCase()
+        {accountTotals.map((accountTotal, index) => {
+          const lowerCaseAddress = accountTotal.address.toLocaleLowerCase()
           return (
-            <li key={item}>
+            <li key={lowerCaseAddress}>
               <button
                 type="button"
                 onClick={() => {
                   setSelectedWallet(0)
                   setSelectedAccount(index)
-                  dispatch(setSelectedAccount(lowerCaseItem))
+                  dispatch(setSelectedAccount(lowerCaseAddress))
                 }}
               >
                 <AccountsNotificationPanelAccountItem
-                  key={lowerCaseItem}
-                  address={lowerCaseItem.slice(0, 16)}
-                  isSelected={lowerCaseItem === selectedAccount}
+                  key={lowerCaseAddress}
+                  accountTotal={accountTotal}
+                  isSelected={lowerCaseAddress === selectedAccount}
                 />
               </button>
             </li>

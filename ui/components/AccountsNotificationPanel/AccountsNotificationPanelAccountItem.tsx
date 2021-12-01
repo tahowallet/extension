@@ -1,14 +1,24 @@
 import React, { ReactElement } from "react"
 
+import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+
+import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+
 interface Props {
   isSelected: boolean
-  address: string
+  accountTotal: AccountTotal
 }
 
 export default function AccountsNotificationPanelAccountItem(
   props: Props
 ): ReactElement {
-  const { isSelected, address } = props
+  const { isSelected, accountTotal: account } = props
+  const {
+    shortenedAddress,
+    name,
+    avatarURL,
+    localizedTotalMainCurrencyAmount,
+  } = account
 
   return (
     <li className="standard_width">
@@ -22,15 +32,24 @@ export default function AccountsNotificationPanelAccountItem(
         )}
 
         <div className="info">
-          <div className="address_name">Foxrunner</div>
-          <div className="address">{address}</div>
+          <div className="address_name">
+            {typeof name === "undefined" ? shortenedAddress : name}
+          </div>
+          <div className="address">
+            {typeof name !== "undefined" ? shortenedAddress : ""}
+          </div>
         </div>
       </div>
       <div className="right">
         <div className="balance_status">
-          <div className="balance">
-            <span className="lighter">$</span>4,124.23
-          </div>
+          {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
+            <SharedLoadingSpinner size="small" />
+          ) : (
+            <div className="balance">
+              <span className="lighter">$</span>{" "}
+              {localizedTotalMainCurrencyAmount}
+            </div>
+          )}
           {isSelected ? (
             <div className="connected_status">Connected</div>
           ) : null}
@@ -48,7 +67,8 @@ export default function AccountsNotificationPanelAccountItem(
           height: 52px;
         }
         .avatar {
-          background: url("./images/avatar@2x.png") center no-repeat;
+          background: url("${avatarURL ?? "./images/avatar@2x.png"}") center
+            no-repeat;
           background-size: cover;
           width: 48px;
           height: 48px;

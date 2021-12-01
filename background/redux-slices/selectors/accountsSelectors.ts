@@ -24,7 +24,6 @@ const userValueDustThreshold = 2
 const getAccountState = (state: RootState) => state.account
 const getAssetsState = (state: RootState) => state.assets
 
-// eslint-disable-next-line import/prefer-default-export
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
@@ -105,5 +104,69 @@ export const selectAccountAndTimestampedActivities = createSelector(
       accountData: account.accountsData,
       activity,
     }
+  }
+)
+
+export type AccountTotal = {
+  address: string
+  shortenedAddress: string
+  name?: string
+  avatarURL?: string
+  localizedTotalMainCurrencyAmount?: string
+}
+
+export const selectAccountTotals = createSelector(
+  getAccountState,
+  getAssetsState,
+  (accounts, assets) => {
+    return Object.entries(accounts.accountsData).map(
+      ([address, accountData]) => {
+        const shortenedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`
+
+        if (accountData === "loading") {
+          return { address, shortenedAddress }
+        }
+
+        const totalMainCurrencyAmount = Object.values(accountData.balances)
+          .map(({ assetAmount }) => {
+            const assetPricePoint = selectAssetPricePoint(
+              assets,
+              assetAmount.asset.symbol,
+              mainCurrencySymbol
+            )
+
+            if (typeof assetPricePoint === "undefined") {
+              return 0
+            }
+
+            const convertedAmount = convertAssetAmountViaPricePoint(
+              assetAmount,
+              assetPricePoint
+            )
+
+            if (typeof convertedAmount === "undefined") {
+              return 0
+            }
+
+            return assetAmountToDesiredDecimals(
+              convertedAmount,
+              desiredDecimals
+            )
+          })
+          .reduce((total, assetBalance) => total + assetBalance, 0)
+
+        return {
+          address,
+          shortenedAddress,
+          name: accountData.ens.name,
+          avatarURL: accountData.ens.avatarURL,
+          localizedTotalMainCurrencyAmount: formatCurrencyAmount(
+            mainCurrencySymbol,
+            totalMainCurrencyAmount,
+            desiredDecimals
+          ),
+        }
+      }
+    )
   }
 )
