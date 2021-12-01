@@ -121,3 +121,8 @@ label {
   display: flex;
   justify-content: space-between;
 }
+
+.hide {
+  opacity: 0;
+  pointer-events: none;
+}
