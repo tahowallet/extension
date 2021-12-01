@@ -390,7 +390,7 @@ export default class IndexingService extends BaseService<Events> {
       const measuredAt = Date.now()
       const activeAssetPrices = await getEthereumTokenPrices(
         Object.keys(activeAssetsByAddress),
-        "USD"
+        USD
       )
       Object.entries(activeAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
@@ -400,7 +400,7 @@ export default class IndexingService extends BaseService<Events> {
             const pricePoint = {
               pair: [asset, USD],
               amounts: [
-                BigInt(1),
+                1n * 10n ** BigInt(asset.decimals),
                 BigInt(
                   Math.trunc(
                     (Number(unitPricePoint.unitPrice.amount) /
