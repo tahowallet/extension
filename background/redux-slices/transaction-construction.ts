@@ -14,11 +14,13 @@ export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
   estimatedFeesPerGas: BlockPrices | null
+  lastGasEstimatesRefreshed: number
 }
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   estimatedFeesPerGas: null,
+  lastGasEstimatesRefreshed: new Date().getTime(),
 }
 
 export type Events = {
@@ -64,7 +66,11 @@ const transactionSlice = createSlice({
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
     ) => {
-      return { ...immerState, estimatedFeesPerGas }
+      return {
+        ...immerState,
+        estimatedFeesPerGas,
+        lastGasEstimatesRefreshed: new Date().getTime(),
+      }
     },
   },
   extraReducers: (builder) => {
@@ -83,6 +89,12 @@ export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.estimatedFeesPerGas,
   (gasData) => gasData
+)
+
+export const selectLastGasEstimatesRefreshTime = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.lastGasEstimatesRefreshed,
+  (updateTime) => updateTime
 )
 
 export const selectTransactionData = createSelector(
