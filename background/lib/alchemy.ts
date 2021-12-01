@@ -200,27 +200,33 @@ export async function getTokenBalances(
   }
 
   // TODO log balances with errors, consider returning an error type
-  return json.tokenBalances
-    .filter(
-      (
-        b
-      ): b is typeof json["tokenBalances"][0] & {
-        tokenBalance: Exclude<
-          typeof json["tokenBalances"][0]["tokenBalance"],
-          null
-        >
-      } => b.error === null && b.tokenBalance !== null
-    )
-    .map((tokenBalance) => {
-      let balance = tokenBalance.tokenBalance
-      if (balance.length > 66) {
-        balance = balance.substring(0, 66)
-      }
-      return {
-        contractAddress: tokenBalance.contractAddress,
-        amount: balance === "0x" ? BigInt(0) : BigInt(balance),
-      }
-    })
+  return (
+    json.tokenBalances
+      .filter(
+        (
+          b
+        ): b is typeof json["tokenBalances"][0] & {
+          tokenBalance: Exclude<
+            typeof json["tokenBalances"][0]["tokenBalance"],
+            null
+          >
+        } => b.error === null && b.tokenBalance !== null
+      )
+      // A hex value of 0x without any subsequent numbers generally means "no
+      // value" (as opposed to 0) in Ethereum implementations, so filter it out
+      // as effectively undefined.
+      .filter(({ tokenBalance }) => tokenBalance !== "0x")
+      .map((tokenBalance) => {
+        let balance = tokenBalance.tokenBalance
+        if (balance.length > 66) {
+          balance = balance.substring(0, 66)
+        }
+        return {
+          contractAddress: tokenBalance.contractAddress,
+          amount: BigInt(balance),
+        }
+      })
+  )
 }
 
 // JSON Type Definition for the Alchemy token metadata API.
