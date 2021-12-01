@@ -1,8 +1,7 @@
 import React, { ReactElement, useCallback, useState } from "react"
-
 import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
-
 import SharedButton from "../../components/Shared/SharedButton"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 function TextArea({
@@ -22,7 +21,7 @@ function TextArea({
       <style jsx>{`
         textarea {
           width: 332px;
-          height: 167px;
+          height: 96.73px;
           border-radius: 4px;
           border: 2px solid var(--green-60);
           padding: 12px 16px;
@@ -40,7 +39,7 @@ type Props = {
 export default function OnboardingImportMetamask(props: Props): ReactElement {
   const [recoveryPhrase, setRecoveryPhrase] = useState(
     // Don't store real money in this plz.
-    "brain surround have swap horror body response double fire dumb bring hazard"
+    ""
   )
 
   const dispatch = useBackgroundDispatch()
@@ -59,9 +58,10 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   return (
     <section className="center_horizontal">
+      <SharedBackButton />
       <div className="portion top">
         <div className="metamask_onboarding_image" />
-        <h1 className="serif_header">Metamask import</h1>
+        <h1 className="serif_header">Import account</h1>
         <div className="info">
           Enter or copy paste the recovery phrase from your Metamask account.
         </div>
@@ -69,7 +69,10 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       </div>
       <div className="portion bottom">
         <SharedButton size="medium" type="primary" onClick={importWallet}>
-          Import Wallet
+          Import account
+        </SharedButton>
+        <SharedButton size="small" type="tertiary" onClick={importWallet}>
+          How do I find the seed?
         </SharedButton>
       </div>
       <style jsx>{`
@@ -89,13 +92,16 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           align-items: center;
         }
         .bottom {
-          height: 80px;
+          height: 90px;
+          justify-content: space-between;
+          flex-direction: column;
+          margin-bottom: 24px;
         }
         .metamask_onboarding_image {
-          background: url("./images/onboarding_metamask@2x.png");
+          background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: 284px;
-          height: 112px;
+          width: 205.3px;
+          height: 193px;
           margin-top: 27px;
           margin-bottom: 13px;
         }
