@@ -1,11 +1,18 @@
 import React, { ReactElement, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
+import {
+  selectIsTransactionLoaded,
+  selectIsTransactionSigned,
+  selectTransactionData,
+  signTransaction,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 enum SignType {
   Sign = "sign",
@@ -14,17 +21,21 @@ enum SignType {
 }
 
 interface SignLocationState {
-  token: string
+  assetSymbol: string
   amount: number
-  speed: number
-  network: string
   signType: SignType
 }
 
 export default function SignTransaction(): ReactElement {
   const history = useHistory()
+  const dispatch = useBackgroundDispatch()
   const location = useLocation<SignLocationState>()
-  const { token, amount, speed, network, signType } = location.state
+  const { assetSymbol, amount, signType } = location.state
+  const isTransactionDataReady = useBackgroundSelector(
+    selectIsTransactionLoaded
+  )
+  const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
+  const txDetails = useBackgroundSelector(selectTransactionData)
 
   const [panelNumber, setPanelNumber] = useState(0)
 
@@ -48,10 +59,20 @@ export default function SignTransaction(): ReactElement {
     [SignType.Sign]: {
       title: "Sign Transaction",
       component: () => (
-        <SignTransactionSignBlock token={token} amount={amount} />
+        <SignTransactionSignBlock token={assetSymbol} amount={amount} />
       ),
       confirmButtonText: "Sign",
     },
+  }
+
+  const handleConfirm = async () => {
+    if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
+      dispatch(signTransaction(txDetails))
+      if (isTransactionSigned) {
+        // redirect here
+        // console.log("Tx Signed!")
+      }
+    }
   }
 
   return (
@@ -83,7 +104,12 @@ export default function SignTransaction(): ReactElement {
         >
           Reject
         </SharedButton>
-        <SharedButton type="primary" iconSize="large" size="large">
+        <SharedButton
+          type="primary"
+          iconSize="large"
+          size="large"
+          onClick={handleConfirm}
+        >
           {signContent[signType].confirmButtonText}
         </SharedButton>
       </div>

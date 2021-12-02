@@ -170,14 +170,6 @@ export default function SharedAssetInput(
     [onAssetSelect]
   )
 
-  const assetAmountChanged = useCallback(
-    (event) => {
-      onAmountChange?.(event)
-    },
-
-    [onAmountChange]
-  )
-
   return (
     <label className="label">
       {label}
@@ -231,10 +223,11 @@ export default function SharedAssetInput(
             )}
             <input
               className="input_amount"
-              type="text"
+              type="number"
+              step="any"
               placeholder="0.0"
               value={amount}
-              onChange={assetAmountChanged}
+              onChange={(e) => onAmountChange(e.target.value)}
             />
           </>
         )}
@@ -279,6 +272,10 @@ export default function SharedAssetInput(
             height: 24px;
             margin-left: 8px;
           }
+          .input_amount::placeholder {
+            color: var(--green-40);
+            opacity: 1;
+          }
           .input_amount {
             width: 98px;
             height: 32px;
@@ -288,8 +285,13 @@ export default function SharedAssetInput(
             line-height: 32px;
             text-align: right;
           }
-          .input_amount::placeholder {
-            color: #ffffff;
+          input::-webkit-outer-spin-button,
+          input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+          input[type="number"] {
+            -moz-appearance: textfield;
           }
         `}
       </style>
