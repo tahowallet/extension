@@ -39,10 +39,10 @@ import {
 } from "./redux-slices/keyrings"
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
-  setEstimatedFeesPerGas,
+  estimatedFeesPerGas,
   emitter as transactionSliceEmitter,
-  setTransactionRequest,
-  setSigned,
+  transactionRequest,
+  signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import { determineToken } from "./redux-slices/utils/activity-utils"
@@ -345,7 +345,7 @@ export default class Main extends BaseService<never> {
           getEthereumNetwork(),
           transaction
         )
-        this.store.dispatch(setTransactionRequest(transaction))
+        this.store.dispatch(transactionRequest(transaction))
       }
     })
 
@@ -356,7 +356,7 @@ export default class Main extends BaseService<never> {
           transaction.from,
           transaction
         )
-        this.store.dispatch(setSigned())
+        this.store.dispatch(signed())
         await this.chainService.broadcastSignedTransaction(signedTx)
       }
     )
@@ -372,7 +372,7 @@ export default class Main extends BaseService<never> {
     })
 
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(setEstimatedFeesPerGas(blockPrices))
+      this.store.dispatch(estimatedFeesPerGas(blockPrices))
     })
   }
 

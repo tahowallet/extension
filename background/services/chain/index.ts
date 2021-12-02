@@ -148,7 +148,7 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         schedule: {
           periodInMinutes:
-            Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY) / 60,
+            Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY) / 60 ?? 2,
         },
         handler: () => {
           this.pollBlockPrices()

@@ -47,7 +47,7 @@ const transactionSlice = createSlice({
   name: "transaction-construction",
   initialState,
   reducers: {
-    setTransactionRequest: (
+    transactionRequest: (
       immerState,
       { payload: transactionRequest }: { payload: EIP1559TransactionRequest }
     ) => {
@@ -57,10 +57,10 @@ const transactionSlice = createSlice({
         transactionRequest,
       }
     },
-    setSigned: (immerState) => {
+    signed: (immerState) => {
       immerState.status = TransactionConstructionStatus.Signed
     },
-    setEstimatedFeesPerGas: (
+    estimatedFeesPerGas: (
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
     ) => {
@@ -74,7 +74,7 @@ const transactionSlice = createSlice({
   },
 })
 
-export const { setTransactionRequest, setSigned, setEstimatedFeesPerGas } =
+export const { transactionRequest, signed, estimatedFeesPerGas } =
   transactionSlice.actions
 
 export default transactionSlice.reducer
@@ -88,7 +88,7 @@ export const selectEstimatedFeesPerGas = createSelector(
 export const selectTransactionData = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.transactionRequest,
-  (transactionRequest) => transactionRequest
+  (transactionRequestData) => transactionRequestData
 )
 
 export const selectIsTransactionLoaded = createSelector(

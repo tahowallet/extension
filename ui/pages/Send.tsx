@@ -342,7 +342,7 @@ export default function Send(): ReactElement {
               >
                 <div>~{selectedGas?.gwei || minGas}Gwei</div>
                 <img
-                  className="settings__image"
+                  className="settings_image"
                   src="./images/cog@2x.png"
                   alt=""
                 />
@@ -409,7 +409,7 @@ export default function Send(): ReactElement {
             padding-left: 8px;
             border: 1px solid #33514e;
           }
-          .settings__image {
+          .settings_image {
             width: 14px;
             height: 14px;
             padding: 0 8px;
