@@ -147,10 +147,11 @@ export default class ChainService extends BaseService<Events> {
       },
       blockPrices: {
         schedule: {
-          periodInMinutes: 2,
+          periodInMinutes:
+            Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY) / 60,
         },
         handler: () => {
-          this.handleBlockPricesAlarm()
+          this.pollBlockPrices()
         },
       },
     })
@@ -528,10 +529,6 @@ export default class ChainService extends BaseService<Events> {
     await Promise.allSettled(
       accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
     )
-  }
-
-  private async handleBlockPricesAlarm(): Promise<void> {
-    await this.pollBlockPrices()
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {

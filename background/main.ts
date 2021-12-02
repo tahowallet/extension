@@ -39,10 +39,10 @@ import {
 } from "./redux-slices/keyrings"
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
-  gasEstimates,
+  setEstimatedFeesPerGas,
   emitter as transactionSliceEmitter,
-  transactionOptions,
-  signed,
+  setTransactionRequest,
+  setSigned,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import { determineToken } from "./redux-slices/utils/activity-utils"
@@ -341,23 +341,22 @@ export default class Main extends BaseService<never> {
           nonce: resolvedNonce,
         }
 
-        // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
         transaction.gasLimit = await this.chainService.estimateGasLimit(
           getEthereumNetwork(),
           transaction
         )
-        this.store.dispatch(transactionOptions(transaction))
+        this.store.dispatch(setTransactionRequest(transaction))
       }
     })
 
     transactionSliceEmitter.on(
-      "signRequest",
+      "requestSignature",
       async (transaction: EIP1559TransactionRequest) => {
         const signedTx = await this.keyringService.signTransaction(
           transaction.from,
           transaction
         )
-        this.store.dispatch(signed())
+        this.store.dispatch(setSigned())
         await this.chainService.broadcastSignedTransaction(signedTx)
       }
     )
@@ -373,7 +372,7 @@ export default class Main extends BaseService<never> {
     })
 
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(gasEstimates(blockPrices))
+      this.store.dispatch(setEstimatedFeesPerGas(blockPrices))
     })
   }
 

@@ -1,46 +1,45 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import {
-  BlockPrices,
-  EIP1559TransactionRequest,
-  SignedEVMTransaction,
-} from "../networks"
+import { BlockPrices, EIP1559TransactionRequest } from "../networks"
 import { createBackgroundAsyncThunk } from "./utils"
 
-type TransactionConstruction = {
-  status: string
-  signedTx: Partial<SignedEVMTransaction>
+const enum TransactionConstructionStatus {
+  Idle = "idle",
+  Pending = "pending",
+  Loaded = "loaded",
+  Signed = "signed",
+}
+export type TransactionConstruction = {
+  status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
-  gasEstimates: BlockPrices | null
+  estimatedFeesPerGas: BlockPrices | null
 }
 
 export const initialState: TransactionConstruction = {
-  status: "idle",
-  signedTx: {},
-  gasEstimates: null,
+  status: TransactionConstructionStatus.Idle,
+  estimatedFeesPerGas: null,
 }
 
 export type Events = {
   updateOptions: Partial<EIP1559TransactionRequest>
-  gasEstimates: BlockPrices
-  signRequest: EIP1559TransactionRequest
+  requestSignature: EIP1559TransactionRequest
 }
 
 export const emitter = new Emittery<Events>()
 
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionOptions = createBackgroundAsyncThunk(
-  "transaction/options",
+  "transaction-construction/update-options",
   async (options: Partial<EIP1559TransactionRequest>) => {
     await emitter.emit("updateOptions", options)
   }
 )
 
 export const signTransaction = createBackgroundAsyncThunk(
-  "transaction/sign",
+  "transaction-construction/sign",
   async (transaction: EIP1559TransactionRequest) => {
-    await emitter.emit("signRequest", transaction)
+    await emitter.emit("requestSignature", transaction)
   }
 )
 
@@ -48,41 +47,41 @@ const transactionSlice = createSlice({
   name: "transaction-construction",
   initialState,
   reducers: {
-    transactionOptions: (
+    setTransactionRequest: (
       immerState,
-      { payload: options }: { payload: EIP1559TransactionRequest }
+      { payload: transactionRequest }: { payload: EIP1559TransactionRequest }
     ) => {
       return {
         ...immerState,
-        status: "loaded",
-        transactionRequest: { ...options },
+        status: TransactionConstructionStatus.Loaded,
+        transactionRequest,
       }
     },
-    signed: (immerState) => {
-      immerState.status = "signed"
+    setSigned: (immerState) => {
+      immerState.status = TransactionConstructionStatus.Signed
     },
-    gasEstimates: (
+    setEstimatedFeesPerGas: (
       immerState,
-      { payload: gasEstimates }: { payload: BlockPrices }
+      { payload: estimatedFeesPerGas }: { payload: BlockPrices }
     ) => {
-      return { ...immerState, gasEstimates }
+      return { ...immerState, estimatedFeesPerGas }
     },
   },
   extraReducers: (builder) => {
     builder.addCase(updateTransactionOptions.pending, (immerState) => {
-      immerState.status = "pending"
+      immerState.status = TransactionConstructionStatus.Pending
     })
   },
 })
 
-export const { transactionOptions, signed, gasEstimates } =
+export const { setTransactionRequest, setSigned, setEstimatedFeesPerGas } =
   transactionSlice.actions
 
 export default transactionSlice.reducer
 
-export const selectGasEstimates = createSelector(
+export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.gasEstimates,
+    state.transactionConstruction.estimatedFeesPerGas,
   (gasData) => gasData
 )
 

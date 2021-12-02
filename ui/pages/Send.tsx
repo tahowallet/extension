@@ -1,25 +1,19 @@
 import { isAddress } from "@ethersproject/address"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import {
-  selectGasEstimates,
+  selectEstimatedFeesPerGas,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedInput from "../components/Shared/SharedInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
-import { useBackgroundSelector } from "../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
-interface SendLocationState {
-  token: {
-    name: string
-  }
-}
-interface GasOption {
+type GasOption = {
   name: string
   time: string
   gwei: number
@@ -29,8 +23,8 @@ interface GasOption {
 }
 
 export default function Send(): ReactElement {
-  const location = useLocation<SendLocationState>()
-  const token = location?.state?.token?.name
+  const location = useLocation<{ symbol: string }>()
+  const assetSymbol = location?.state?.symbol
 
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
@@ -43,9 +37,9 @@ export default function Send(): ReactElement {
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [gasLimit, setGasLimit] = useState("")
 
-  const gas = useSelector(selectGasEstimates)
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
-  const dispatch = useDispatch()
+  const dispatch = useBackgroundDispatch()
 
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -81,16 +75,22 @@ export default function Send(): ReactElement {
   // I mean how do i know when its going to refresh when I enter this screen
 
   const updateGasOptions = useCallback(() => {
-    if (gas) {
-      const instant = gas.estimatedPrices.find((el) => el.confidence === 99)
-      const express = gas.estimatedPrices.find((el) => el.confidence === 90)
-      const regular = gas.estimatedPrices.find((el) => el.confidence === 70)
+    if (estimatedFeesPerGas) {
+      const instant = estimatedFeesPerGas.estimatedPrices.find(
+        (el) => el.confidence === 99
+      )
+      const express = estimatedFeesPerGas.estimatedPrices.find(
+        (el) => el.confidence === 90
+      )
+      const regular = estimatedFeesPerGas.estimatedPrices.find(
+        (el) => el.confidence === 70
+      )
       if (!!instant && !!express && !!regular) {
         const updatedGasOptions = [
           {
             name: "Regular",
             time: "~10 Min",
-            gwei: Number(gas?.baseFeePerGas / 1000000000n),
+            gwei: Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n),
             dollarValue: "$??",
             maxFeePerGas: BigInt(regular.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
@@ -116,33 +116,33 @@ export default function Send(): ReactElement {
         setSelectedGas(updatedGasOptions[0])
       }
     }
-  }, [gas])
+  }, [estimatedFeesPerGas])
 
   const findMinMaxGas = useCallback(() => {
-    if (gas) {
-      const values = gas.estimatedPrices.map((el) =>
+    if (estimatedFeesPerGas) {
+      const values = estimatedFeesPerGas.estimatedPrices.map((el) =>
         Number(BigInt(el.maxFeePerGas) / 1000000000n)
       )
-      setMinGas(Number(gas?.baseFeePerGas / 1000000000n))
+      setMinGas(Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n))
       setMaxGas(Math.max(...values) + 40)
     }
-  }, [gas])
+  }, [estimatedFeesPerGas])
 
   useEffect(() => {
     findMinMaxGas()
     updateGasOptions()
-  }, [gas, findMinMaxGas, updateGasOptions])
+  }, [estimatedFeesPerGas, findMinMaxGas, updateGasOptions])
 
-  // When gas updates, we select the regular gasOption as default
+  // When estimatedFeesPerGas updates, we select the regular gasOption as default
   useEffect(() => {
     setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
   }, [gasOptions, selectedGas])
 
   useEffect(() => {
-    if (token) {
+    if (assetSymbol) {
       setSelectedCount(1)
     }
-  }, [token])
+  }, [assetSymbol])
 
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
@@ -313,7 +313,7 @@ export default function Send(): ReactElement {
                   setSelectedCount(1)
                 }}
                 onAmountChanged={setAmount}
-                defaultToken={{ symbol: token, name: token }}
+                defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
               />
             </div>
@@ -327,7 +327,7 @@ export default function Send(): ReactElement {
             <div className="network_fee">
               <p>Estimated network fee</p>
               <button
-                className="network_fee__settings"
+                className="settings"
                 type="button"
                 onClick={openSelectFeeModal}
                 style={{
@@ -342,7 +342,7 @@ export default function Send(): ReactElement {
               >
                 <div>~{selectedGas?.gwei || minGas}Gwei</div>
                 <img
-                  className="network_fee__settings__image"
+                  className="settings__image"
                   src="./images/cog@2x.png"
                   alt=""
                 />
@@ -354,7 +354,7 @@ export default function Send(): ReactElement {
                 <div className="total_label">Total</div>
                 <div className="total_amount_number">{`${
                   amount || 0
-                } ${token}`}</div>
+                } ${assetSymbol}`}</div>
               </div>
               <SharedButton
                 type="primary"
@@ -367,11 +367,8 @@ export default function Send(): ReactElement {
                 linkTo={{
                   pathname: "/signTransaction",
                   state: {
-                    token,
+                    assetSymbol,
                     amount,
-                    // ! what is speed
-                    speed: 10,
-                    network: "mainnet",
                     to: destinationAddress,
                     signType: "sign",
                   },
@@ -401,7 +398,7 @@ export default function Send(): ReactElement {
             color: var(--green-40);
             margin-bottom: 12px;
           }
-          .network_fee__settings {
+          .settings {
             height: 38px;
             display: flex;
             align-items: center;
@@ -412,7 +409,7 @@ export default function Send(): ReactElement {
             padding-left: 8px;
             border: 1px solid #33514e;
           }
-          .network_fee__settings__image {
+          .settings__image {
             width: 14px;
             height: 14px;
             padding: 0 8px;

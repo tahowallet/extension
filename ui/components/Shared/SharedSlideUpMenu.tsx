@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 
 interface Props {
@@ -22,9 +23,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
 
   return (
     <div
-      className={`slide_up_menu ${size === "large" ? " large" : ""}${
-        !isOpen ? " closed" : ""
-      }`}
+      className={classNames("slide_up_menu", {
+        large: size === "large",
+        closed: !isOpen,
+      })}
     >
       <button
         type="button"
