@@ -2,13 +2,7 @@ import React, { ReactElement } from "react"
 import BackButton from "../../components/Shared/SharedBackButton"
 import SharedButton from "../../components/Shared/SharedButton"
 
-interface Props {
-  openMetamaskImportScreen: () => void
-}
-
-export default function OnboardingAddWallet(props: Props): ReactElement {
-  const { openMetamaskImportScreen } = props
-
+export default function OnboardingAddWallet(): ReactElement {
   return (
     <section>
       <div className="wordmark" />
@@ -36,7 +30,7 @@ export default function OnboardingAddWallet(props: Props): ReactElement {
           </div>
           <SharedButton
             type="primary"
-            onClick={openMetamaskImportScreen}
+            linkTo="/onboarding/importMetamask"
             size="medium"
           >
             Add account

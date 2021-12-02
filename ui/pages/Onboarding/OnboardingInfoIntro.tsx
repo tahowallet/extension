@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from "react"
+import { Redirect } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
 import CorePage from "../../components/Core/CorePage"
@@ -39,11 +40,13 @@ const steps = [
   },
 ]
 
-export default function OnboardingInfoIntro(props: {
-  triggerNextStep: () => void
-}): ReactElement {
-  const { triggerNextStep } = props
+export default function OnboardingInfoIntro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
+  const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
+
+  if (redirectToAddWallet) {
+    return <Redirect push to="/onboarding/addWallet" />
+  }
 
   return (
     <CorePage hasTabBar={false} hasTopBar={false}>
@@ -71,7 +74,7 @@ export default function OnboardingInfoIntro(props: {
               if (activeStep < steps.length) {
                 setActiveStep(activeStep + 1)
               } else {
-                triggerNextStep()
+                setRedirectToAddWallet(true)
               }
             }}
           >

@@ -13,7 +13,8 @@ import Wallet from "./Wallet"
 import SignTransaction from "./SignTransaction"
 import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
 import OnboardingViewOnlyWallet from "./Onboarding/OnboardingViewOnlyWallet"
-import Onboarding from "./Onboarding/Onboarding"
+import OnboardingInfoIntro from "./Onboarding/OnboardingInfoIntro"
+import OnboardingAddWallet from "./Onboarding/OnboardingAddWallet"
 import Overview from "./Overview"
 import SingleAsset from "./SingleAsset"
 import Earn from "./Earn"
@@ -32,14 +33,17 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           <Route path="/singleAsset">
             <SingleAsset />
           </Route>
-          <Route path="/onboardingImportMetamask">
+          <Route path="/onboarding/importMetamask">
             <OnboardingImportMetamask onImported={() => history.push("/")} />
           </Route>
           <Route path="/onboarding/viewOnlyWallet">
             <OnboardingViewOnlyWallet />
           </Route>
-          <Route path="/onboarding/:startPage">
-            <Onboarding />
+          <Route path="/onboarding/infoIntro">
+            <OnboardingInfoIntro />
+          </Route>
+          <Route path="/onboarding/addWallet">
+            <OnboardingAddWallet />
           </Route>
           <Route path="/signTransaction">
             <SignTransaction />
