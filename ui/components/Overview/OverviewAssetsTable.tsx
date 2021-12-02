@@ -35,10 +35,10 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
               </div>
             </td>
             <td>
-              {asset.localizedPricePerToken ? (
+              {asset.localizedUnitPrice ? (
                 <div>
                   <span className="lighter_color">$</span>
-                  {asset.localizedPricePerToken}
+                  {asset.localizedUnitPrice}
                 </div>
               ) : (
                 <div className="loading_wrap">

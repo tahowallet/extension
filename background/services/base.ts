@@ -29,10 +29,15 @@ type AlarmSchedule =
  * also provides a handler to handle the specified alarm. Designed for use with
  * {@link AlarmHandlerScheduleMap}, which allows for disambiguating between
  * different alarms.
+ *
+ * Also provides an optional `runAtStart` property that will immediately fire
+ * the handler at service start for the first time instead of waiting for the
+ * first scheduled run to execute.
  */
 export type AlarmHandlerSchedule = {
   schedule: AlarmSchedule
   handler: (alarm?: Alarms.Alarm) => void
+  runAtStart?: boolean
 }
 
 /**
@@ -114,8 +119,12 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
   protected async internalStartService(): Promise<void> {
     const scheduleEntries = Object.entries(this.alarmSchedules)
 
-    scheduleEntries.forEach(([name, { schedule }]) => {
+    scheduleEntries.forEach(([name, { schedule, runAtStart, handler }]) => {
       browser.alarms.create(name, schedule)
+
+      if (runAtStart) {
+        handler()
+      }
     })
 
     if (scheduleEntries.length > 0) {

@@ -230,44 +230,36 @@ export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
     isFungibleAsset(sourceAsset) &&
     isFungibleAsset(targetAsset)
   ) {
-    const [sourceDecimals, targetDecimals] = [
-      sourceAsset.decimals,
-      targetAsset.decimals,
-    ]
-
-    const combinedDecimals = sourceDecimals + targetDecimals
-
     // A price point gives us X of the source asset = Y of the target asset, as
     // a pair of fixed-point values. We have M of the source asset, and want to
     // find out how much of the target asset that is.
     //
-    // The simple version is that we want to do M * X / Y; however, we also
-    // need to deal with the different fixed-point decimal amounts, and want to
-    // end up reporting the converted amount in the decimals of the target
-    // asset.
+    // The simple version is that we want to do M * X / Y; however, we have the
+    // conversion _factor_ for X and Y, which are the mathematical inverse of
+    // what we refer to as X and Y above. As such, we can instead express this as
+    // M * T / S, where S is the source conversion factor and T is the target
+    // conversion factor.
     //
-    // Below, M is the source asset amount, X is the sourceConversionFactor,
-    // and Y is the targetConversionFactor. Extra parentheses are added around
-    // the multiplication to emphasize order matters! If we computed X / Y
+    // Below, M is the source asset amount, S is the sourceConversionFactor,
+    // and T is the targetConversionFactor. Extra parentheses are added around
+    // the multiplication to emphasize order matters! If we computed M / S
     // first we would risk losing precision in the integer division.
     const targetCurrencyAmount =
-      (sourceAssetAmount.amount * sourceConversionFactor) /
-      targetConversionFactor
+      (sourceAssetAmount.amount * targetConversionFactor) /
+      sourceConversionFactor
 
     // Reduce the fixed-point representation to the target asset's decimals.
     return {
       asset: targetAsset,
-      amount: convertFixedPoint(
-        targetCurrencyAmount,
-        combinedDecimals,
-        targetDecimals
-      ),
+      amount: targetCurrencyAmount,
     }
   }
 
   // For non-fungible assets, require that the target asset be fungible and
   // that the source conversion factor be 1, i.e. that the price point tells us
-  // what 1 of the source asset is in target asset terms.
+  // what 1 of the source asset is in target asset terms. Generally in these
+  // cases we expect the source asset amount to be 1, but we multiply out just
+  // in case.
   if (
     sourceAssetAmount.asset.symbol === sourceAsset.symbol &&
     isFungibleAsset(targetAsset) &&
@@ -275,7 +267,40 @@ export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
   ) {
     return {
       asset: targetAsset,
-      amount: targetConversionFactor,
+      amount: sourceAssetAmount.amount * targetConversionFactor,
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Looks at the provided price point and extracts a unit price for the first
+ * asset in the price point, i.e. returns the number of the second asset
+ * equivalent to one of the first asset. In addition to handling strange
+ * ratios, recognizes a unit in the appropriate fixed point decimal count of
+ * the target asset.
+ */
+export function unitPricePointForPricePoint(
+  assetPricePoint: PricePoint
+): (UnitPricePoint & { unitPrice: FungibleAssetAmount }) | undefined {
+  const sourceAsset = assetPricePoint.pair[0]
+
+  const unitPrice = convertAssetAmountViaPricePoint(
+    {
+      amount:
+        "decimals" in sourceAsset
+          ? 1n * 10n ** BigInt(sourceAsset.decimals)
+          : 1n,
+      asset: sourceAsset,
+    },
+    assetPricePoint
+  )
+
+  if (typeof unitPrice !== "undefined") {
+    return {
+      unitPrice,
+      time: assetPricePoint.time,
     }
   }
 

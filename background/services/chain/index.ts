@@ -144,6 +144,7 @@ export default class ChainService extends BaseService<Events> {
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
         },
+        runAtStart: true,
       },
     })
 
