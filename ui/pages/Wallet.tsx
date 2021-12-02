@@ -23,7 +23,7 @@ export default function Wallet(): ReactElement {
   // If an account doesn't exist, display view only
   // onboarding for the initial test release.
   if (Object.keys(accountData).length === 0) {
-    return <Redirect to="/onboarding/viewOnlyWallet" />
+    return <Redirect to="/onboarding/infoIntro" />
   }
 
   return (
