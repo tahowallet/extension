@@ -1,8 +1,14 @@
 import React, { ReactElement } from "react"
 
-export default function TopMenuProtocolSwitcher(): ReactElement {
+type Props = {
+  onClick?: () => void
+}
+
+export default function TopMenuProtocolSwitcher({
+  onClick,
+}: Props): ReactElement {
   return (
-    <button type="button">
+    <button type="button" onClick={onClick}>
       Ethereum
       <span className="icon_chevron_down" />
       <style jsx>

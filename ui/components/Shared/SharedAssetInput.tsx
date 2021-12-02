@@ -131,8 +131,8 @@ interface SharedAssetInputProps {
   defaultToken: Asset
   amount: string
   isTokenOptionsLocked: boolean
-  onAssetSelected: (token: Asset) => void
-  onAmountChanged: (value: string) => void
+  onAssetSelect: (token: Asset) => void
+  onAmountChange: (value: string) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -146,8 +146,8 @@ export default function SharedAssetInput(
     defaultToken,
     amount,
     isTokenOptionsLocked,
-    onAssetSelected,
-    onAmountChanged,
+    onAssetSelect,
+    onAmountChange,
     onSendToAddressChange,
   } = props
 
@@ -164,18 +164,10 @@ export default function SharedAssetInput(
     (token) => {
       setSelectedToken(token)
       setOpenAssetMenu(false)
-      onAssetSelected?.(token)
+      onAssetSelect?.(token)
     },
 
-    [onAssetSelected]
-  )
-
-  const assetAmountChanged = useCallback(
-    (event) => {
-      onAmountChanged?.(event)
-    },
-
-    [onAmountChanged]
+    [onAssetSelect]
   )
 
   return (
@@ -231,10 +223,11 @@ export default function SharedAssetInput(
             )}
             <input
               className="input_amount"
-              type="text"
+              type="number"
+              step="any"
               placeholder="0.0"
               value={amount}
-              onChange={assetAmountChanged}
+              onChange={(e) => onAmountChange(e.target.value)}
             />
           </>
         )}
@@ -279,6 +272,10 @@ export default function SharedAssetInput(
             height: 24px;
             margin-left: 8px;
           }
+          .input_amount::placeholder {
+            color: var(--green-40);
+            opacity: 1;
+          }
           .input_amount {
             width: 98px;
             height: 32px;
@@ -288,8 +285,13 @@ export default function SharedAssetInput(
             line-height: 32px;
             text-align: right;
           }
-          .input_amount::placeholder {
-            color: #ffffff;
+          input::-webkit-outer-spin-button,
+          input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+          input[type="number"] {
+            -moz-appearance: textfield;
           }
         `}
       </style>
@@ -304,10 +306,10 @@ SharedAssetInput.defaultProps = {
   defaultToken: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  onAssetSelected: () => {
+  onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },
-  onAmountChanged: () => {},
+  onAmountChange: () => {},
   onSendToAddressChange: () => {},
 }

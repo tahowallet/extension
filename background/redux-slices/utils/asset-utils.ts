@@ -2,6 +2,7 @@ import {
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
+  unitPricePointForPricePoint,
   isFungibleAssetAmount,
   PricePoint,
 } from "../../assets"
@@ -15,9 +16,9 @@ import {
  */
 export type AssetMainCurrencyAmount = {
   mainCurrencyAmount?: number
-  pricePerToken?: number
   localizedMainCurrencyAmount?: string
-  localizedPricePerToken?: string
+  unitPrice?: number
+  localizedUnitPrice?: string
 }
 
 /**
@@ -77,10 +78,15 @@ export function formatCurrencyAmount(
  *        converting from fixed point to floating point. Also the number of
  *        decimals rendered in the localized form.
  *
- * @return The existing `assetAmount` with two additional fields,
- *         `mainCurrencyValue` and `localizedMainCurrencyValue`. The first is the
- *         value of the asset in the main currency as a floating point JS
- *         number suitable for simple mathematical operations and comparisons. The second is the same value converted to a localized string based on the user's preferred
+ * @return The existing `assetAmount` with four additional fields,
+ *         `mainCurrencyValue`, `localizedMainCurrencyValue`, `unitPrice` and
+ *         `localizedUnitPrice`. The first is the value of the asset in the
+ *         main currency as a floating point JS number suitable for simple
+ *         mathematical operations and comparisons. The second is the same
+ *         value converted to a localized string based on the user's locale.
+ *         The third is the unit price for the asset in the user's preferred
+ *         currency. Finally, the last is the same value converted to a
+ *         localized string based on the user's locale.
  */
 export function enrichAssetAmountWithMainCurrencyValues<
   T extends AnyAssetAmount
@@ -93,12 +99,19 @@ export function enrichAssetAmountWithMainCurrencyValues<
     assetAmount,
     assetPricePoint
   )
+  const { unitPrice } = unitPricePointForPricePoint(assetPricePoint) ?? {
+    unitPrice: undefined,
+  }
 
   if (typeof convertedAssetAmount !== "undefined") {
     const convertedDecimalValue = assetAmountToDesiredDecimals(
       convertedAssetAmount,
       desiredDecimals
     )
+    const unitPriceDecimalValue =
+      typeof unitPrice === "undefined"
+        ? undefined
+        : assetAmountToDesiredDecimals(unitPrice, desiredDecimals)
 
     return {
       ...assetAmount,
@@ -108,6 +121,15 @@ export function enrichAssetAmountWithMainCurrencyValues<
         convertedDecimalValue,
         desiredDecimals
       ),
+      unitPrice: unitPriceDecimalValue,
+      localizedUnitPrice:
+        typeof unitPriceDecimalValue === "undefined"
+          ? undefined
+          : formatCurrencyAmount(
+              convertedAssetAmount.asset.symbol,
+              unitPriceDecimalValue,
+              desiredDecimals
+            ),
     }
   }
 

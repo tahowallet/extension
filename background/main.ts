@@ -18,7 +18,7 @@ import {
 } from "./services"
 
 import { KeyringTypes } from "./types"
-import { SignedEVMTransaction } from "./networks"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -39,8 +39,10 @@ import {
 } from "./redux-slices/keyrings"
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
-  gasEstimates,
+  estimatedFeesPerGas,
   emitter as transactionSliceEmitter,
+  transactionRequest,
+  signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import { determineToken } from "./redux-slices/utils/activity-utils"
@@ -325,9 +327,8 @@ export default class Main extends BaseService<never> {
             options.from,
             "latest"
           )
-
         // Basic transaction construction based on the provided options, with extra data from the chain service
-        const transaction = {
+        const transaction: EIP1559TransactionRequest = {
           from: options.from,
           to: options.to,
           value: options.value,
@@ -338,19 +339,27 @@ export default class Main extends BaseService<never> {
           type: 2 as const,
           chainID: "1",
           nonce: resolvedNonce,
-          gasPrice:
-            await this.chainService.pollingProviders.ethereum.getGasPrice(),
         }
 
-        // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
         transaction.gasLimit = await this.chainService.estimateGasLimit(
           getEthereumNetwork(),
           transaction
         )
-
-        await this.keyringService.signTransaction(options.from, transaction)
+        this.store.dispatch(transactionRequest(transaction))
       }
     })
+
+    transactionSliceEmitter.on(
+      "requestSignature",
+      async (transaction: EIP1559TransactionRequest) => {
+        const signedTx = await this.keyringService.signTransaction(
+          transaction.from,
+          transaction
+        )
+        this.store.dispatch(signed())
+        await this.chainService.broadcastSignedTransaction(signedTx)
+      }
+    )
 
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
@@ -362,11 +371,8 @@ export default class Main extends BaseService<never> {
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    // Start polling for blockPrices
-    this.chainService.pollBlockPrices()
-
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(gasEstimates(blockPrices))
+      this.store.dispatch(estimatedFeesPerGas(blockPrices))
     })
   }
 

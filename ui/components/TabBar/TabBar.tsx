@@ -16,7 +16,11 @@ export default function TabBar(): ReactElement {
   return (
     <nav>
       {tabs.map((tabName) => (
-        <TabBarIcon name={tabName} isActive={activeTabName === tabName} />
+        <TabBarIcon
+          key={tabName}
+          name={tabName}
+          isActive={activeTabName === tabName}
+        />
       ))}
       <style jsx>
         {`

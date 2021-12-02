@@ -54,7 +54,7 @@ export default function SingleAsset(): ReactElement {
                 linkTo={{
                   pathname: "/send",
                   state: {
-                    token: { name: symbol },
+                    symbol,
                   },
                 }}
               >

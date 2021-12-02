@@ -139,11 +139,13 @@ export async function getPrices(
  */
 export async function getEthereumTokenPrices(
   tokenAddresses: string[],
-  currencySymbol: string
+  fiatCurrency: FiatCurrency
 ): Promise<{ [contractAddress: string]: UnitPricePoint }> {
+  const fiatSymbol = fiatCurrency.symbol
+
   // TODO cover failed schema validation and http & network errors
   const addys = tokenAddresses.join(",")
-  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${currencySymbol}&include_last_updated_at=true&contract_addresses=${addys}`
+  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   const json = await fetchJson(url)
 
@@ -161,18 +163,12 @@ export async function getEthereumTokenPrices(
     // TODO parse this as a fixed decimal rather than a number. Will require
     // custom JSON deserialization
     const price: number = Number.parseFloat(
-      priceDetails[currencySymbol.toLowerCase()]
+      priceDetails[fiatSymbol.toLowerCase()]
     )
-    // TODO fiat currency data lookups
-    const fiatDecimals = 10 // SHIB only needs 8, we're going all out
     prices[address] = {
       unitPrice: {
-        asset: {
-          name: currencySymbol,
-          symbol: currencySymbol.toUpperCase(),
-          decimals: fiatDecimals,
-        },
-        amount: BigInt(Math.trunc(price * 10 ** fiatDecimals)),
+        asset: fiatCurrency,
+        amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
       },
       time: priceDetails.last_updated_at,
     }

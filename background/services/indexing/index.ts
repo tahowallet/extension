@@ -75,6 +75,7 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 30,
         },
         handler: () => this.handleTokenAlarm(),
+        runAtStart: true,
       },
       prices: {
         schedule: {
@@ -82,6 +83,7 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 10,
         },
         handler: () => this.handlePriceAlarm(),
+        runAtStart: true,
       },
     })
   }
@@ -209,6 +211,9 @@ export default class IndexingService extends BaseService<Events> {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
         const balances = await this.retrieveTokenBalances(addressNetwork)
+
+        // FIXME Refactor this to only update prices for tokens with balances.
+        await this.handlePriceAlarm()
 
         // Every asset we have that hasn't already been balance checked and is
         // on the currently selected network should be checked once.
@@ -388,7 +393,7 @@ export default class IndexingService extends BaseService<Events> {
       const measuredAt = Date.now()
       const activeAssetPrices = await getEthereumTokenPrices(
         Object.keys(activeAssetsByAddress),
-        "USD"
+        USD
       )
       Object.entries(activeAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
@@ -398,7 +403,7 @@ export default class IndexingService extends BaseService<Events> {
             const pricePoint = {
               pair: [asset, USD],
               amounts: [
-                BigInt(1),
+                1n * 10n ** BigInt(asset.decimals),
                 BigInt(
                   Math.trunc(
                     (Number(unitPricePoint.unitPrice.amount) /

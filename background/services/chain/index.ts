@@ -144,6 +144,16 @@ export default class ChainService extends BaseService<Events> {
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
         },
+        runAtStart: true,
+      },
+      blockPrices: {
+        schedule: {
+          periodInMinutes:
+            Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY) / 60 ?? 2,
+        },
+        handler: () => {
+          this.pollBlockPrices()
+        },
       },
     })
 
@@ -373,11 +383,6 @@ export default class ChainService extends BaseService<Events> {
     if (this.blocknative) {
       const blockPrices = await this.blocknative?.getBlockPrices()
       this.emitter.emit("blockPrices", blockPrices)
-
-      // Set a timeout to continue fetching block prices, defaulting to every 120 seconds
-      setTimeout(() => {
-        this.pollBlockPrices()
-      }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
     }
   }
 

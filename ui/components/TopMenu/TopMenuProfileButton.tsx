@@ -4,10 +4,11 @@ export default function TopMenuProfileButton(props: {
   address: string
   nickname?: string
   avatar?: string
+  onClick?: () => void
 }): ReactElement {
-  const { address, nickname, avatar } = props
+  const { address, nickname, avatar, onClick } = props
   return (
-    <button type="button">
+    <button type="button" onClick={onClick}>
       {nickname ?? address}
       <div className="avatar" />
       <style jsx>
