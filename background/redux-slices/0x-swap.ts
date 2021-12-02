@@ -130,6 +130,18 @@ const swapSlice = createSlice({
     },
 
     setSwapTrade: (immerState, { payload: token }: { payload: SwapToken }) => {
+      // Reset the buy token to be empty when the user changes their sell token
+      // This is necessary because we have to fetch price data from the 0x API whenver the sell token changes
+      if (token.sellToken) {
+        return {
+          ...immerState,
+          sellToken: token.sellToken,
+          buyToken: undefined,
+          sellAmount: "",
+          buyAmount: "",
+        }
+      }
+
       return { ...immerState, ...token }
     },
   },

@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
@@ -153,6 +153,11 @@ export default function SharedAssetInput(
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
   const [selectedToken, setSelectedToken] = useState(defaultToken)
+
+  // TODO: Refactor this to track state in a more reasonable way
+  useEffect(() => {
+    setSelectedToken(defaultToken)
+  }, [defaultToken])
 
   const toggleIsTokenMenuOpen = useCallback(() => {
     if (!isTokenOptionsLocked) {

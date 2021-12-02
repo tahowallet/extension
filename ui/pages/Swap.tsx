@@ -20,8 +20,12 @@ export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [openTokenMenu, setOpenTokenMenu] = useState(false)
 
-  const swap = useBackgroundSelector((state) => {
-    return state.swap
+  const { swap, sellAsset, buyAsset } = useBackgroundSelector((state) => {
+    return {
+      swap: state.swap,
+      sellAsset: state.swap.sellToken,
+      buyAsset: state.swap.buyToken,
+    }
   })
 
   // Fetch tokens from the 0x API whenever the swap page is loaded
@@ -70,14 +74,11 @@ export default function Swap(): ReactElement {
   )
 
   const fromAmountChanged = useCallback(
-    (event) => {
-      const inputValue = event.target.value.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
+    (amount) => {
+      const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
       const floatValue = parseFloat(inputValue)
 
-      if (
-        Number.isNaN(floatValue) ||
-        typeof swap.buyToken?.price === "undefined"
-      ) {
+      if (Number.isNaN(floatValue) || typeof buyAsset?.price === "undefined") {
         dispatch(
           setSwapAmount({
             sellAmount: inputValue,
@@ -89,26 +90,21 @@ export default function Swap(): ReactElement {
           setSwapAmount({
             sellAmount: inputValue,
             // TODO: Use a safe math library
-            buyAmount: (
-              floatValue / parseFloat(swap.buyToken.price)
-            ).toString(),
+            buyAmount: (floatValue / parseFloat(buyAsset.price)).toString(),
           })
         )
       }
     },
 
-    [dispatch, swap]
+    [dispatch, buyAsset]
   )
 
   const toAmountChanged = useCallback(
-    (event) => {
-      const inputValue = event.target.value.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
+    (amount) => {
+      const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
       const floatValue = parseFloat(inputValue)
 
-      if (
-        Number.isNaN(floatValue) ||
-        typeof swap.buyToken?.price === "undefined"
-      ) {
+      if (Number.isNaN(floatValue) || typeof buyAsset?.price === "undefined") {
         dispatch(
           setSwapAmount({
             sellAmount: "0",
@@ -119,16 +115,14 @@ export default function Swap(): ReactElement {
         dispatch(
           setSwapAmount({
             // TODO: Use a safe math library
-            sellAmount: (
-              floatValue * parseFloat(swap.buyToken.price)
-            ).toString(),
+            sellAmount: (floatValue * parseFloat(buyAsset.price)).toString(),
             buyAmount: inputValue,
           })
         )
       }
     },
 
-    [dispatch, swap]
+    [dispatch, buyAsset]
   )
 
   return (
@@ -147,7 +141,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={displayAssets}
-                defaultToken={swap.sellToken}
+                defaultToken={sellAsset}
                 onAssetSelect={fromAssetSelected}
                 onAmountChange={fromAmountChanged}
                 amount={swap.sellAmount}
@@ -158,7 +152,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={swap.tokens}
-                defaultToken={swap.buyToken}
+                defaultToken={buyAsset}
                 onAssetSelect={toAssetSelected}
                 onAmountChange={toAmountChanged}
                 amount={swap.buyAmount}
@@ -169,7 +163,7 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {swap.sellToken && swap.buyToken ? (
+              {sellAsset && buyAsset ? (
                 <SharedButton type="primary" size="large" onClick={handleClick}>
                   Get final quote
                 </SharedButton>
