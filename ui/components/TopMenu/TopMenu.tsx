@@ -29,16 +29,13 @@ export default function TopMenu(props: Props): ReactElement {
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
-        <button type="button" onClick={toggleOpenProtocolList}>
-          <TopMenuProtocolSwitcher />
-        </button>
-        <button type="button" onClick={toggleOpenNotifications}>
-          <TopMenuProfileButton
-            address={truncatedAddress}
-            nickname={name || undefined}
-            avatar={avatarURL || undefined}
-          />
-        </button>
+        <TopMenuProtocolSwitcher onClick={toggleOpenProtocolList} />
+        <TopMenuProfileButton
+          address={truncatedAddress}
+          nickname={name || undefined}
+          avatar={avatarURL || undefined}
+          onClick={toggleOpenNotifications}
+        />
       </nav>
       <style jsx>
         {`

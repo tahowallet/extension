@@ -2,12 +2,15 @@ import { fetchJson } from "@ethersproject/web"
 import { JSONSchemaType } from "ajv"
 import logger from "./logger"
 import {
+  AnyAsset,
   CoinGeckoAsset,
   FiatCurrency,
   PricePoint,
   UnitPricePoint,
 } from "../assets"
 import { jsonSchemaValidatorFor } from "./validation"
+
+import { toFixedPoint } from "./fixed-point"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
@@ -71,15 +74,8 @@ export async function getPrice(
   return json?.[coingeckoCoinId]?.[currencySymbol] || null
 }
 
-function multiplyByFloat(n: bigint, f: number, precision: number) {
-  return (
-    (n * BigInt(Math.floor(f * 10 ** precision))) /
-    BigInt(10) ** BigInt(precision)
-  )
-}
-
 export async function getPrices(
-  assets: CoinGeckoAsset[],
+  assets: (AnyAsset & CoinGeckoAsset)[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
   const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
@@ -110,16 +106,20 @@ export async function getPrices(
     const simpleCoinPrices = json[asset.metadata.coinGeckoID]
 
     return vsCurrencies
-      .map<PricePoint | undefined>((c) => {
-        const symbol = c.symbol.toLowerCase()
+      .map<PricePoint | undefined>((currency) => {
+        const symbol = currency.symbol.toLowerCase()
         const coinPrice = simpleCoinPrices?.[symbol]
 
         if (coinPrice) {
+          // Scale amounts to the asset's decimals; if the asset is not fungible,
+          // assume 0 decimals, i.e. that this is a unit price.
+          const assetPrecision = "decimals" in asset ? asset.decimals : 0
+
           return {
-            pair: [c, asset],
+            pair: [currency, asset],
             amounts: [
-              multiplyByFloat(BigInt(10) ** BigInt(c.decimals), coinPrice, 8),
-              BigInt(1),
+              toFixedPoint(coinPrice, currency.decimals),
+              10n ** BigInt(assetPrecision),
             ],
             time: resolutionTime,
           }
@@ -139,11 +139,13 @@ export async function getPrices(
  */
 export async function getEthereumTokenPrices(
   tokenAddresses: string[],
-  currencySymbol: string
+  fiatCurrency: FiatCurrency
 ): Promise<{ [contractAddress: string]: UnitPricePoint }> {
+  const fiatSymbol = fiatCurrency.symbol
+
   // TODO cover failed schema validation and http & network errors
   const addys = tokenAddresses.join(",")
-  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${currencySymbol}&include_last_updated_at=true&contract_addresses=${addys}`
+  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   const json = await fetchJson(url)
 
@@ -161,18 +163,12 @@ export async function getEthereumTokenPrices(
     // TODO parse this as a fixed decimal rather than a number. Will require
     // custom JSON deserialization
     const price: number = Number.parseFloat(
-      priceDetails[currencySymbol.toLowerCase()]
+      priceDetails[fiatSymbol.toLowerCase()]
     )
-    // TODO fiat currency data lookups
-    const fiatDecimals = 10 // SHIB only needs 8, we're going all out
     prices[address] = {
       unitPrice: {
-        asset: {
-          name: currencySymbol,
-          symbol: currencySymbol.toUpperCase(),
-          decimals: fiatDecimals,
-        },
-        amount: BigInt(Math.trunc(price * 10 ** fiatDecimals)),
+        asset: fiatCurrency,
+        amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
       },
       time: priceDetails.last_updated_at,
     }

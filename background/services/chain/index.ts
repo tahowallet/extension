@@ -5,7 +5,6 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
-
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
@@ -145,6 +144,7 @@ export default class ChainService extends BaseService<Events> {
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
         },
+        runAtStart: true,
       },
     })
 
@@ -380,6 +380,10 @@ export default class ChainService extends BaseService<Events> {
         this.pollBlockPrices()
       }, Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY || 120) * 1000)
     }
+  }
+
+  async send(method: string, params: unknown[]) {
+    return this.pollingProviders.ethereum.send(method, params)
   }
 
   /* *****************
