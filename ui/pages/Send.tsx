@@ -313,7 +313,7 @@ export default function Send(): ReactElement {
                   setSelectedCount(1)
                 }}
                 onAmountChange={setAmount}
-                defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
+                defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
               />
             </div>

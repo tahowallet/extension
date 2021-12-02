@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useCallback, useState } from "react"
 import logger from "@tallyho/tally-background/lib/logger"
 import {
-  fetchTokens,
+  fetchSwapAssets,
   fetchSwapPrices,
   setSwapTrade,
   setSwapAmount,
@@ -18,19 +18,19 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const [openTokenMenu, setOpenTokenMenu] = useState(false)
+  const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
   const { swap, sellAsset, buyAsset } = useBackgroundSelector((state) => {
     return {
       swap: state.swap,
-      sellAsset: state.swap.sellToken,
-      buyAsset: state.swap.buyToken,
+      sellAsset: state.swap.sellAsset,
+      buyAsset: state.swap.buyAsset,
     }
   })
 
-  // Fetch tokens from the 0x API whenever the swap page is loaded
+  // Fetch assets from the 0x API whenever the swap page is loaded
   useEffect(() => {
-    dispatch(fetchTokens())
+    dispatch(fetchSwapAssets())
   }, [dispatch])
 
   const { combinedData } = useBackgroundSelector(
@@ -40,32 +40,32 @@ export default function Swap(): ReactElement {
   const displayAssets = combinedData.assets.map(({ asset }) => asset)
 
   const handleClick = useCallback(() => {
-    setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
+    setOpenAssetMenu((isCurrentlyOpen) => !isCurrentlyOpen)
   }, [])
 
   const fromAssetSelected = useCallback(
-    async (token) => {
-      logger.log("Asset selected!", token)
+    async (asset) => {
+      logger.log("Asset selected!", asset)
 
       dispatch(
         setSwapTrade({
-          sellToken: token,
+          sellAsset: asset,
         })
       )
 
-      await dispatch(fetchSwapPrices(token))
+      await dispatch(fetchSwapPrices(asset))
     },
 
     [dispatch]
   )
 
   const toAssetSelected = useCallback(
-    (token) => {
-      logger.log("Asset selected!", token)
+    (asset) => {
+      logger.log("Asset selected!", asset)
 
       dispatch(
         setSwapTrade({
-          buyToken: token,
+          buyAsset: asset,
         })
       )
     },
@@ -129,7 +129,7 @@ export default function Swap(): ReactElement {
     <>
       <CorePage>
         <SharedSlideUpMenu
-          isOpen={openTokenMenu}
+          isOpen={openAssetMenu}
           close={handleClick}
           size="large"
         >
@@ -141,7 +141,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 assets={displayAssets}
-                defaultToken={sellAsset}
+                defaultAsset={sellAsset}
                 onAssetSelect={fromAssetSelected}
                 onAmountChange={fromAmountChanged}
                 amount={swap.sellAmount}
@@ -151,8 +151,8 @@ export default function Swap(): ReactElement {
             <div className="icon_change" />
             <div className="form_input">
               <SharedAssetInput
-                assets={swap.tokens}
-                defaultToken={buyAsset}
+                assets={swap.availableAssets}
+                defaultAsset={buyAsset}
                 onAssetSelect={toAssetSelected}
                 onAmountChange={toAmountChanged}
                 amount={swap.buyAmount}

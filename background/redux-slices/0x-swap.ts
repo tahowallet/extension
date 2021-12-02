@@ -11,16 +11,16 @@ interface SwapAsset extends Asset {
 }
 
 export interface SwapState {
-  sellToken?: SwapAsset
-  buyToken?: SwapAsset
+  sellAsset?: SwapAsset
+  buyAsset?: SwapAsset
   sellAmount: string
   buyAmount: string
-  tokens: Asset[]
+  availableAssets: Asset[]
 }
 
-interface SwapToken {
-  sellToken?: Asset
-  buyToken?: Asset
+interface SwapAssets {
+  sellAsset?: Asset
+  buyAsset?: Asset
 }
 
 interface SwapAmount {
@@ -40,8 +40,8 @@ interface ZrxPrice {
   price: string
 }
 
-export const fetchTokens = createBackgroundAsyncThunk(
-  "0x-swap/fetchTokens",
+export const fetchSwapAssets = createBackgroundAsyncThunk(
+  "0x-swap/fetchAssets",
   async (_, { getState }) => {
     const state = getState() as { assets: AssetsState }
     const assets = state.assets as Asset[]
@@ -50,7 +50,7 @@ export const fetchTokens = createBackgroundAsyncThunk(
     const filteredAssets = assets
       .filter(isSmartContractFungibleAsset)
       .filter((asset) => {
-        const matchingTokens = apiData.records.filter((zrxToken: ZrxToken) => {
+        const matchingAssets = apiData.records.filter((zrxToken: ZrxToken) => {
           // Only allow tokens to be swapped if the data from 0x matches our asset information
           if (
             asset.symbol.toLowerCase() === zrxToken.symbol.toLowerCase() &&
@@ -88,8 +88,8 @@ export const fetchTokens = createBackgroundAsyncThunk(
         })
 
         // TODO: What if multiple assets match?
-        if (matchingTokens.length) {
-          return matchingTokens[0]
+        if (matchingAssets.length) {
+          return matchingAssets[0]
         }
 
         return false
@@ -100,10 +100,10 @@ export const fetchTokens = createBackgroundAsyncThunk(
 )
 
 export const fetchSwapPrices = createBackgroundAsyncThunk(
-  "0x-swap/fetchSwapPrices",
-  async (token: Asset) => {
+  "0x-swap/fetchPrices",
+  async (asset: Asset) => {
     const apiData = await fetchJson(
-      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000`
+      `https://api.0x.org/swap/v1/prices?sellToken=${asset.symbol}&perPage=1000`
     )
 
     return apiData.records
@@ -111,11 +111,11 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
 )
 
 export const initialState: SwapState = {
-  sellToken: undefined,
-  buyToken: undefined,
+  sellAsset: undefined,
+  buyAsset: undefined,
   sellAmount: "",
   buyAmount: "",
-  tokens: [],
+  availableAssets: [],
 }
 
 const swapSlice = createSlice({
@@ -129,20 +129,20 @@ const swapSlice = createSlice({
       return { ...immerState, ...amount }
     },
 
-    setSwapTrade: (immerState, { payload: token }: { payload: SwapToken }) => {
+    setSwapTrade: (immerState, { payload: swap }: { payload: SwapAssets }) => {
       // Reset the buy token to be empty when the user changes their sell token
       // This is necessary because we have to fetch price data from the 0x API whenver the sell token changes
-      if (token.sellToken) {
+      if (swap.sellAsset) {
         return {
           ...immerState,
-          sellToken: token.sellToken,
-          buyToken: undefined,
+          sellAsset: swap.sellAsset,
+          buyAsset: undefined,
           sellAmount: "",
           buyAmount: "",
         }
       }
 
-      return { ...immerState, ...token }
+      return { ...immerState, ...swap }
     },
   },
 
@@ -151,7 +151,7 @@ const swapSlice = createSlice({
       .addCase(
         fetchSwapPrices.fulfilled,
         (immerState, { payload: assetPrices }: { payload: ZrxPrice[] }) => {
-          const tokensWithPrices = immerState.tokens.map((asset) => {
+          const assetsWithPrices = immerState.availableAssets.map((asset) => {
             const matchingAsset = assetPrices.filter((price) => {
               if (asset.symbol.toLowerCase() === price.symbol.toLowerCase()) {
                 return true
@@ -167,13 +167,13 @@ const swapSlice = createSlice({
             return { ...asset, price: 0 }
           })
 
-          return { ...immerState, tokens: tokensWithPrices }
+          return { ...immerState, availableAssets: assetsWithPrices }
         }
       )
       .addCase(
-        fetchTokens.fulfilled,
-        (immerState, { payload: tokens }: { payload: Asset[] }) => {
-          return { ...immerState, tokens }
+        fetchSwapAssets.fulfilled,
+        (immerState, { payload: availableAssets }: { payload: Asset[] }) => {
+          return { ...immerState, availableAssets }
         }
       )
   },
