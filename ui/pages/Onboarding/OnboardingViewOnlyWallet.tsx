@@ -43,8 +43,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       <BackButton />
       <h1 className="serif_header">Explore Tally</h1>
       <div className="subtitle">
-        Add an Ethereum address or ENS name to view an existing wallet in Tally.
-        You can upgrade to a full account anytime from Accounts
+        Add an Ethereum address to view an existing wallet in Tally.
       </div>
       <div className="input_wrap">
         <SharedInput placeholder="ETH address" onChange={setAddress} />

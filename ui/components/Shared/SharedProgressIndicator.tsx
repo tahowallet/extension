@@ -11,8 +11,8 @@ export default function SharedProgressIndicator(props: {
   return (
     <div className="indictor_wrap">
       {Array(numberOfSteps)
-        .fill("")
-        .map((item, index) => {
+        .fill(undefined)
+        .map((_, index) => {
           return (
             <button
               aria-label="step"

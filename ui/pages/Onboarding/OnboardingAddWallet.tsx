@@ -12,7 +12,7 @@ export default function OnboardingAddWallet(): ReactElement {
           <h1 className="serif_header">Explore Tally</h1>
           <div className="subtitle">
             Use one of your existing addresses to explore Tally. You will not be
-            able to sign transaction untill you upgrade it.
+            able to sign transactions until you import a seed.
           </div>
           <SharedButton
             type="primary"
@@ -26,7 +26,7 @@ export default function OnboardingAddWallet(): ReactElement {
         <div className="choice_wrap">
           <h1 className="serif_header">Import seed</h1>
           <div className="subtitle">
-            Use an existing Metamask seed or any web3 wallet seed.
+            Use an existing Metamask seed; other web3 wallets coming soon!
           </div>
           <SharedButton
             type="primary"

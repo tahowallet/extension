@@ -21,7 +21,7 @@ function TextArea({
       <style jsx>{`
         textarea {
           width: 332px;
-          height: 96.73px;
+          height: 97px;
           border-radius: 4px;
           border: 2px solid var(--green-60);
           padding: 12px 16px;
@@ -71,7 +71,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         <SharedButton size="medium" type="primary" onClick={importWallet}>
           Import account
         </SharedButton>
-        <SharedButton size="small" type="tertiary" onClick={importWallet}>
+        <SharedButton size="small" type="tertiary">
           How do I find the seed?
         </SharedButton>
       </div>
