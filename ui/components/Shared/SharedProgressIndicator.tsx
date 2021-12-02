@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import classNames from "classnames"
 
 export default function SharedProgressIndicator(props: {
   activeStep: number
@@ -16,7 +17,9 @@ export default function SharedProgressIndicator(props: {
             <button
               aria-label="step"
               type="button"
-              className={`step${index === activeStep - 1 ? " active" : ""}`}
+              className={classNames("step", {
+                active: index === activeStep - 1,
+              })}
               onClick={() => {
                 onProgressStepClicked(index + 1)
               }}
