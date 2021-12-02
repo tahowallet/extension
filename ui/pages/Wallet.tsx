@@ -20,8 +20,7 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  // If an account doesn't exist, display view only
-  // onboarding for the initial test release.
+  // If an account doesn't exist, display onboarding
   if (Object.keys(accountData).length === 0) {
     return <Redirect to="/onboarding/infoIntro" />
   }
