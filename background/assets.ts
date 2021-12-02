@@ -275,6 +275,39 @@ export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
 }
 
 /**
+ * Looks at the provided price point and extracts a unit price for the first
+ * asset in the price point, i.e. returns the number of the second asset
+ * equivalent to one of the first asset. In addition to handling strange
+ * ratios, recognizes a unit in the appropriate fixed point decimal count of
+ * the target asset.
+ */
+export function unitPricePointForPricePoint(
+  assetPricePoint: PricePoint
+): (UnitPricePoint & { unitPrice: FungibleAssetAmount }) | undefined {
+  const sourceAsset = assetPricePoint.pair[0]
+
+  const unitPrice = convertAssetAmountViaPricePoint(
+    {
+      amount:
+        "decimals" in sourceAsset
+          ? 1n * 10n ** BigInt(sourceAsset.decimals)
+          : 1n,
+      asset: sourceAsset,
+    },
+    assetPricePoint
+  )
+
+  if (typeof unitPrice !== "undefined") {
+    return {
+      unitPrice,
+      time: assetPricePoint.time,
+    }
+  }
+
+  return undefined
+}
+
+/**
  * Given a FungibleAssetAmount and a desired number of decimals, convert the
  * amount to a floating point JavaScript number with the specified number of
  * decimal points (modulo floating point precision oddities).
