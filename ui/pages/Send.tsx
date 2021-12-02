@@ -309,10 +309,10 @@ export default function Send(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 label="Asset / Amount"
-                onAssetSelected={() => {
+                onAssetSelect={() => {
                   setSelectedCount(1)
                 }}
-                onAmountChanged={setAmount}
+                onAmountChange={setAmount}
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
               />

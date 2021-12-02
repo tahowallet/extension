@@ -131,8 +131,8 @@ interface SharedAssetInputProps {
   defaultToken: Asset
   amount: string
   isTokenOptionsLocked: boolean
-  onAssetSelected: (token: Asset) => void
-  onAmountChanged: (value: string) => void
+  onAssetSelect: (token: Asset) => void
+  onAmountChange: (value: string) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -146,8 +146,8 @@ export default function SharedAssetInput(
     defaultToken,
     amount,
     isTokenOptionsLocked,
-    onAssetSelected,
-    onAmountChanged,
+    onAssetSelect,
+    onAmountChange,
     onSendToAddressChange,
   } = props
 
@@ -164,11 +164,12 @@ export default function SharedAssetInput(
     (token) => {
       setSelectedToken(token)
       setOpenAssetMenu(false)
-      onAssetSelected?.(token)
+      onAssetSelect?.(token)
     },
 
-    [onAssetSelected]
+    [onAssetSelect]
   )
+
   return (
     <label className="label">
       {label}
@@ -226,7 +227,7 @@ export default function SharedAssetInput(
               step="any"
               placeholder="0.0"
               value={amount}
-              onChange={(e) => onAmountChanged(e.target.value)}
+              onChange={(e) => onAmountChange(e.target.value)}
             />
           </>
         )}
@@ -305,10 +306,10 @@ SharedAssetInput.defaultProps = {
   defaultToken: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  onAssetSelected: () => {
+  onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },
-  onAmountChanged: () => {},
+  onAmountChange: () => {},
   onSendToAddressChange: () => {},
 }

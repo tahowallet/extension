@@ -55,11 +55,10 @@ export default function CorePage(props: Props): ReactElement {
       <div className="page">
         <div className="alpha_label">Alpha</div>
         {hasTopBar ? (
-          <button
-            type="button"
-            className="top_menu_wrap"
-            onClick={handleOpenHiddenDevMenu}
-          >
+          // Don't lint the extremely-custom-behavior completely-not-accessible
+          // hidden dev menu for now.
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
+          <div className="top_menu_wrap" onClick={handleOpenHiddenDevMenu}>
             <TopMenu
               toggleOpenProtocolList={() => {
                 setIsProtocolListOpen(!isProtocolListOpen)
@@ -68,7 +67,7 @@ export default function CorePage(props: Props): ReactElement {
                 setIsNotificationsOpen(!isNotificationsOpen)
               }}
             />
-          </button>
+          </div>
         ) : null}
         <div className="page_content">{children}</div>
         {hasTabBar ? <TabBar /> : null}
