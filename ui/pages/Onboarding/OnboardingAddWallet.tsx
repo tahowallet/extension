@@ -1,12 +1,14 @@
 import React, { ReactElement } from "react"
-import BackButton from "../../components/Shared/SharedBackButton"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedButton from "../../components/Shared/SharedButton"
 
 export default function OnboardingAddWallet(): ReactElement {
   return (
     <section>
       <div className="wordmark" />
-      <BackButton />
+      <div className="back_button_wrap">
+        <SharedBackButton />
+      </div>
       <div className="primary_wrap">
         <div className="choice_wrap">
           <h1 className="serif_header">Explore Tally</h1>
@@ -45,6 +47,10 @@ export default function OnboardingAddWallet(): ReactElement {
             background-size: cover;
             width: 52px;
             height: 25px;
+          }
+          .back_button_wrap {
+            position: fixed;
+            top: 25px;
           }
           .choice_wrap {
             display: flex;
