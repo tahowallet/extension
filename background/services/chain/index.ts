@@ -147,6 +147,7 @@ export default class ChainService extends BaseService<Events> {
         runAtStart: true,
       },
       blockPrices: {
+        runAtStart: true,
         schedule: {
           periodInMinutes:
             Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY) / 60 ?? 2,
@@ -387,7 +388,8 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async send(method: string, params: unknown[]) {
-    return this.pollingProviders.ethereum.send(method, params)
+    return this.websocketProviders.ethereum.send(method, params)
+    // return this.pollingProviders.ethereum.send(method, params)
   }
 
   /* *****************

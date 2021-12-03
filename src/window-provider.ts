@@ -116,6 +116,6 @@ class TallyWindowProvider extends EventEmitter {
 }
 
 if (enabled === "true") {
-  // @ts-expect-error I don't really have any way to know the exact type of window.ethereum so it's better to expect error than lie
-  window.ethereum = new TallyWindowProvider()
+  window.tally = new TallyWindowProvider()
+  window.ethereum = window.tally
 }
