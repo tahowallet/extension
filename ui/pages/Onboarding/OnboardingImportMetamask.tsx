@@ -58,7 +58,9 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   return (
     <section className="center_horizontal">
-      <SharedBackButton />
+      <div className="back_button_wrap">
+        <SharedBackButton />
+      </div>
       <div className="portion top">
         <div className="metamask_onboarding_image" />
         <h1 className="serif_header">Import account</h1>
@@ -82,6 +84,10 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           flex-direction: column;
           justify-content: space-between;
           height: 100%;
+        }
+        .back_button_wrap {
+          position: fixed;
+          top: 25px;
         }
         h1 {
           margin: unset;
