@@ -1,4 +1,4 @@
-import { createSlice, createSelector, current } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork } from "../accounts"
@@ -9,14 +9,9 @@ import {
   Network,
 } from "../networks"
 import { AnyAssetAmount } from "../assets"
-import { AssetsState, selectAssetPricePoint } from "./assets"
-import { selectHideDust, UIState } from "./ui"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
-  formatCurrencyAmount,
-  enrichAssetAmountWithDecimalValues,
-  enrichAssetAmountWithMainCurrencyValues,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 
@@ -49,7 +44,6 @@ export type AccountState = {
 export type CombinedAccountData = {
   totalMainCurrencyValue?: string
   assets: AnyAssetAmount[]
-  activity: AnyEVMTransaction[]
 }
 
 /**
@@ -60,38 +54,11 @@ export type CompleteAssetAmount = AnyAssetAmount &
   AssetMainCurrencyAmount &
   AssetDecimalAmount
 
-// Comparator for two transactions by block height. Can be used to sort in
-// descending order of block height, with unspecified block heights (i.e.,
-// unconfirmed transactions) at the front of the list in stable order.
-function transactionBlockComparator(
-  transactionA: AnyEVMTransaction,
-  transactionB: AnyEVMTransaction
-) {
-  // If both transactions are confirmed, go in descending order of block height.
-  if (transactionA.blockHeight !== null && transactionB.blockHeight !== null) {
-    return transactionB.blockHeight - transactionA.blockHeight
-  }
-
-  // If both are unconfirmed, they are equal.
-  if (transactionA.blockHeight === transactionB.blockHeight) {
-    return 0
-  }
-
-  // If transaction B is unconfirmed, it goes before transaction A.
-  if (transactionA.blockHeight !== null) {
-    return 1
-  }
-
-  // If transaction A is unconfirmed, it goes before transaction B.
-  return -1
-}
-
 export const initialState = {
   accountsData: {},
   combinedData: {
     totalMainCurrencyValue: "",
     assets: [],
-    activity: [],
   },
   blocks: {},
 } as AccountState
@@ -270,20 +237,6 @@ const accountSlice = createSlice({
           ),
         ]
       })
-
-      immerState.combinedData.activity = Array.from(
-        // Use a Map to drop any duplicate transaction entries, e.g. a send
-        // between two tracked accounts.
-        new Map(
-          Object.values(current(immerState.accountsData))
-            .flatMap((ad) =>
-              ad === "loading"
-                ? []
-                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
-            )
-            .map((t) => [t.hash, t])
-        ).values()
-      ).sort(transactionBlockComparator)
     },
     transactionConfirmed: (
       immerState,
@@ -308,20 +261,6 @@ const accountSlice = createSlice({
           ),
         ]
       })
-
-      immerState.combinedData.activity = Array.from(
-        // Use a Map to drop any duplicate transaction entries, e.g. a send
-        // between two tracked accounts.
-        new Map(
-          Object.values(current(immerState.accountsData))
-            .flatMap((ad) =>
-              ad === "loading"
-                ? []
-                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
-            )
-            .map((t) => [t.hash, t])
-        ).values()
-      ).sort(transactionBlockComparator)
     },
   },
 })

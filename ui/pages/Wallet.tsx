@@ -1,6 +1,9 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -18,6 +21,9 @@ export default function Wallet(): ReactElement {
     assetAmounts: [],
     totalMainCurrencyValue: undefined,
   }
+  const currentAccountActivities = useBackgroundSelector(
+    selectCurrentAccountActivitiesWithTimestamps
+  )
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
@@ -55,7 +61,7 @@ export default function Wallet(): ReactElement {
                   }
                 />
               ) : (
-                <WalletActivityList />
+                <WalletActivityList activities={currentAccountActivities} />
               )}
             </div>
           </div>

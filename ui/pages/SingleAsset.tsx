@@ -1,6 +1,9 @@
 import React, { ReactElement } from "react"
 import { useLocation } from "react-router-dom"
-import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -11,6 +14,12 @@ import BackButton from "../components/Shared/SharedBackButton"
 export default function SingleAsset(): ReactElement {
   const location = useLocation<{ symbol: string }>()
   const { symbol } = location.state
+
+  const filteredActivities = useBackgroundSelector((state) =>
+    selectCurrentAccountActivitiesWithTimestamps(state).filter(
+      ({ token }) => token.symbol === symbol
+    )
+  )
 
   const { asset, localizedMainCurrencyAmount, localizedDecimalAmount } =
     useBackgroundSelector((state) => {
@@ -75,7 +84,7 @@ export default function SingleAsset(): ReactElement {
           <div className="right">Move to Ethereum</div>
         </div>
         <div className="label_light standard_width_padded">Activity</div>
-        <WalletActivityList />
+        <WalletActivityList activities={filteredActivities} />
       </CorePage>
       <style jsx>
         {`

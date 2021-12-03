@@ -32,21 +32,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAssetsState,
   selectHideDust,
   (account, assets, hideDust) => {
-    // Derive activities with timestamps included
-    const activity = account.combinedData.activity.map((activityItem) => {
-      const isSent =
-        activityItem.from.toLowerCase() ===
-        Object.keys(account.accountsData)[0].toLowerCase()
-
-      return {
-        ...activityItem,
-        ...(activityItem.blockHeight && {
-          timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
-        }),
-        isSent,
-      }
-    })
-
     // Keep a tally of the total user value; undefined if no main currency data
     // is available.
     let totalMainCurrencyAmount: number | undefined
@@ -102,10 +87,8 @@ export const selectAccountAndTimestampedActivities = createSelector(
               desiredDecimals
             )
           : undefined,
-        activity: account.combinedData.activity,
       },
       accountData: account.accountsData,
-      activity,
     }
   }
 )
