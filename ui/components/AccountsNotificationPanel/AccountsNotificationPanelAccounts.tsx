@@ -120,7 +120,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-          linkTo="/onboarding/1"
+          linkTo="/onboarding/addWallet"
         >
           Add Wallet
         </SharedButton>

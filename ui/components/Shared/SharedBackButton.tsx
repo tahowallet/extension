@@ -1,17 +1,19 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
+import classNames from "classnames"
 
-export default function BackButton(): ReactElement {
+export default function SharedBackButton(): ReactElement {
   const history = useHistory()
 
   return (
     <button
       type="button"
-      className="standard_width_padded"
+      className={classNames("standard_width_padded", {
+        hide: history.length <= 1,
+      })}
       onClick={() => history.goBack()}
     >
       <div className="icon_chevron_left" />
-      Back
       <style jsx>{`
         button {
           color: var(--green-40);
@@ -21,6 +23,8 @@ export default function BackButton(): ReactElement {
           display: flex;
           margin-bottom: 10px;
           margin-top: 2px;
+          position: fixed;
+          top: 25px;
         }
         button:hover {
           color: #fff;
