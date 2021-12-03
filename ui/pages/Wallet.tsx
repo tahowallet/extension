@@ -14,6 +14,10 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
+  const hasAccounts = useBackgroundSelector(
+    (state) => Object.keys(state.account.accountsData).length > 0
+  )
+
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
 
@@ -30,7 +34,7 @@ export default function Wallet(): ReactElement {
   )
 
   // If an account doesn't exist, display onboarding
-  if (typeof accountData === "undefined") {
+  if (!hasAccounts) {
     return <Redirect to="/onboarding/infoIntro" />
   }
 

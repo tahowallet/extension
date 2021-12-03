@@ -98,7 +98,7 @@ export const selectCurrentAccountBalances = createSelector(
   getAssetsState,
   selectHideDust,
   (currentAccount, assets, hideDust) => {
-    if (currentAccount === "loading") {
+    if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
 
