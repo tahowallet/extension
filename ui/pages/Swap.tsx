@@ -5,6 +5,7 @@ import {
   fetchSwapPrices,
   setSwapTrade,
   setSwapAmount,
+  selectSwappableAssets,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
@@ -37,7 +38,8 @@ export default function Swap(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const displayAssets = combinedData.assets.map(({ asset }) => asset)
+  const sellAssets = combinedData.assets.map(({ asset }) => asset)
+  const buyAssets = useBackgroundSelector(selectSwappableAssets)
 
   const handleClick = useCallback(() => {
     setOpenAssetMenu((isCurrentlyOpen) => !isCurrentlyOpen)
@@ -140,7 +142,7 @@ export default function Swap(): ReactElement {
           <div className="form">
             <div className="form_input">
               <SharedAssetInput
-                assets={displayAssets}
+                assets={sellAssets}
                 defaultAsset={sellAsset}
                 onAssetSelect={fromAssetSelected}
                 onAmountChange={fromAmountChanged}
@@ -151,7 +153,7 @@ export default function Swap(): ReactElement {
             <div className="icon_change" />
             <div className="form_input">
               <SharedAssetInput
-                assets={swap.availableAssets}
+                assets={buyAssets}
                 defaultAsset={buyAsset}
                 onAssetSelect={toAssetSelected}
                 onAmountChange={toAmountChanged}
