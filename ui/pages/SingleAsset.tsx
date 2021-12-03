@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import { useLocation } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -11,17 +11,23 @@ import BackButton from "../components/Shared/SharedBackButton"
 export default function SingleAsset(): ReactElement {
   const location = useLocation<{ symbol: string }>()
   const { symbol } = location.state
-  const { combinedData, activity } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
 
-  const filteredActivity = activity.filter((item) => {
-    return item?.asset?.symbol === symbol
-  })
+  const { asset, localizedMainCurrencyAmount, localizedDecimalAmount } =
+    useBackgroundSelector((state) => {
+      const balances = selectCurrentAccountBalances(state)
 
-  const filteredAsset = combinedData.assets.filter((item) => {
-    return item?.asset?.symbol === symbol
-  })[0]
+      if (typeof balances === "undefined") {
+        return undefined
+      }
+
+      return balances.assetAmounts.find(
+        (assetAmount) => assetAmount.asset.symbol === symbol
+      )
+    }) ?? {
+      asset: undefined,
+      localizedMainCurrencyAmount: undefined,
+      localizedDecimalAmount: undefined,
+    }
 
   return (
     <>
@@ -31,18 +37,16 @@ export default function SingleAsset(): ReactElement {
           <div className="left">
             <div className="asset_wrap">
               <SharedAssetIcon
-                logoURL={filteredAsset?.asset?.metadata?.logoURL}
-                symbol={filteredAsset?.asset?.symbol}
+                logoURL={asset?.metadata?.logoURL}
+                symbol={asset?.symbol}
               />
               <span className="asset_name">{symbol}</span>
             </div>
-            <div className="balance">
-              {filteredAsset.localizedDecimalAmount}
-            </div>
-            {filteredAsset.localizedMainCurrencyAmount && (
-              <div className="usd_value">
-                ${filteredAsset.localizedMainCurrencyAmount}
-              </div>
+            <div className="balance">{localizedDecimalAmount}</div>
+            {typeof localizedMainCurrencyAmount !== "undefined" ? (
+              <div className="usd_value">${localizedMainCurrencyAmount}</div>
+            ) : (
+              <></>
             )}
           </div>
           <div className="right">

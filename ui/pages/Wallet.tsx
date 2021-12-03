@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -12,16 +12,19 @@ export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
   //  accountLoading, hasWalletErrorCode
-  const { combinedData, accountData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
+  const accountData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
+    assetAmounts: [],
+    totalMainCurrencyValue: undefined,
+  }
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
   // If an account doesn't exist, display onboarding
-  if (Object.keys(accountData).length === 0) {
+  if (typeof accountData === "undefined") {
     return <Redirect to="/onboarding/infoIntro" />
   }
 
@@ -31,7 +34,7 @@ export default function Wallet(): ReactElement {
         <div className="page_content">
           <div className="section">
             <WalletAccountBalanceControl
-              balance={combinedData.totalMainCurrencyValue}
+              balance={totalMainCurrencyValue}
               initializationLoadingTimeExpired={
                 initializationLoadingTimeExpired
               }
@@ -46,7 +49,7 @@ export default function Wallet(): ReactElement {
             <div className="panel">
               {panelNumber === 0 ? (
                 <WalletAssetList
-                  assetAmounts={combinedData.assets}
+                  assetAmounts={assetAmounts}
                   initializationLoadingTimeExpired={
                     initializationLoadingTimeExpired
                   }
