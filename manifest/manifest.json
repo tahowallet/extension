@@ -9,6 +9,15 @@
   "content_security_policy": "object-src 'self'; script-src 'self' blob: filesystem: 'unsafe-eval';",
   "web_accessible_resources": ["*.js", "*.json"],
 
+  "content_scripts": [
+    {
+      "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
+      "js": ["provider-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {
