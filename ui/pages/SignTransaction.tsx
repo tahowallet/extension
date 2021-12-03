@@ -69,8 +69,7 @@ export default function SignTransaction(): ReactElement {
     if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
       dispatch(signTransaction(txDetails))
       if (isTransactionSigned) {
-        // redirect here
-        // console.log("Tx Signed!")
+        history.push("/")
       }
     }
   }
