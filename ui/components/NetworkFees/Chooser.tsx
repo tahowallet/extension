@@ -33,17 +33,13 @@ export default function NetworkFeesChooser({
   const [timeRemaining, setTimeRemaining] = useState(0)
   const gasTime = useSelector(selectLastGasEstimatesRefreshTime)
 
-  const getSecondsTillGasUpdate = useCallback((): ReturnType<
-    typeof setTimeout
-  > => {
+  const getSecondsTillGasUpdate = useCallback(() => {
     const now = new Date().getTime()
     setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
-    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
-    return interval
   }, [gasTime])
 
   useEffect(() => {
-    const interval = getSecondsTillGasUpdate()
+    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
     return () => {
       clearTimeout(interval)
     }
@@ -52,36 +48,34 @@ export default function NetworkFeesChooser({
   return (
     <div className="wrapper">
       <div className="fees">
-        <div className="fees__title">Network Fees</div>
-        <div className="fees__divider">
-          <div className="fees__divider-background" />
+        <div className="title">Network Fees</div>
+        <div className="divider">
+          <div className="divider-background" />
           <div
-            className="fees__divider-cover"
+            className="divider-cover"
             style={{ left: (120 - timeRemaining) * (-384 / 120) }}
           />
         </div>
         {gasOptions.map((option, i) => {
           return (
             <button
-              className={`fees__option ${i === activeFeeIndex ? "active" : ""}`}
+              className={`option ${i === activeFeeIndex ? "active" : ""}`}
               onClick={() => handleSelectGasOption(i)}
               type="button"
             >
-              <div className="fees__option__left">
-                <div className="fees__option__name">{option.name}</div>
-                <div className="fees__option__subtext">{option.time}</div>
+              <div className="option_left">
+                <div className="name">{option.name}</div>
+                <div className="subtext">{option.time}</div>
               </div>
-              <div className="fees__option__right">
-                <div className="fees__option__price">{`~${option.gwei} Gwei`}</div>
-                <div className="fees__option__subtext">
-                  {option.dollarValue}
-                </div>
+              <div className="option_right">
+                <div className="price">{`~${option.gwei} Gwei`}</div>
+                <div className="subtext">{option.dollarValue}</div>
               </div>
             </button>
           )
         })}
-        <div className="fees__limit">
-          <label className="fees__limit__label" htmlFor="gasLimit">
+        <div className="limit">
+          <label className="limit_label" htmlFor="gasLimit">
             Gas limit
           </label>
           <SharedInput
@@ -112,7 +106,7 @@ export default function NetworkFeesChooser({
             display: flex;
             flex-flow: column;
           }
-          .fees__divider {
+          .divider {
             border-radius: 4px;
             height: 2px;
             width: 384px;
@@ -120,7 +114,7 @@ export default function NetworkFeesChooser({
             left: -16px;
             margin: 12px 0;
           }
-          .fees__divider-cover {
+          .divider-cover {
             background: #667c7a;
             border-radius: 4px;
             width: 100%;
@@ -128,7 +122,7 @@ export default function NetworkFeesChooser({
             position: absolute;
             transition: all 0.3s ease;
           }
-          .fees__divider-background {
+          .divider-background {
             background: #33514e;
             border-radius: 4px;
             width: 100%;
@@ -136,12 +130,12 @@ export default function NetworkFeesChooser({
             position: absolute;
             transition: all 0.3s ease;
           }
-          .fees__limit {
+          .limit {
             margin: 16px 0;
             width: 40%;
             position: relative;
           }
-          .fees__limit__label {
+          .limit_label {
             position: absolute;
             top: -8px;
             left: 10px;
@@ -150,11 +144,11 @@ export default function NetworkFeesChooser({
             background-color: var(--green-95);
             color: #99a8a7;
           }
-          .fees__title {
+          .title {
             font-size: 22px;
             font-weight: 600;
           }
-          .fees__option {
+          .option {
             width: 100%;
             display: flex;
             justify-content: space-between;
@@ -166,34 +160,34 @@ export default function NetworkFeesChooser({
             cursor: pointer;
             border-radius: 4px;
           }
-          .fees__option.active {
+          .option.active {
             border: 1px solid #22c480;
             box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);
           }
-          .fees__option.active .fees__option__name {
+          .option.active .name {
             color: #22c480;
           }
-          .fees__option__left,
-          .fees__option__right {
+          .option_left,
+          .option_right {
             display: flex;
             flex-flow: column;
             gap: 4px;
           }
-          .fees__option__left {
+          .option_left {
             text-align: left;
           }
-          .fees__option__right {
+          .option_right {
             text-align: right;
           }
-          .fees__option__name,
-          .fees__option__price {
+          .name,
+          .price {
             color: var(--green--5);
             font-size: 18px;
             font-weight: 600;
           }
-          .fees__option__subtext {
+          .subtext {
             color: var(--green-60);
             font-size: 14px;
           }

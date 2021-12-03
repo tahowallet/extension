@@ -50,8 +50,6 @@ export default function Send(): ReactElement {
     setFeeModalOpen(false)
   }
 
-  // TODO trigger update when redux state change
-
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
   }
@@ -155,7 +153,7 @@ export default function Send(): ReactElement {
           close={closeSelectFeeModal}
           customSize={`${gasOptions.length * 56 + 320}px`}
         >
-          {feeModalOpen && (
+          {feeModalOpen ? (
             <NetworkFeesChooser
               gasOptions={gasOptions}
               activeFeeIndex={activeFeeIndex}
@@ -164,6 +162,8 @@ export default function Send(): ReactElement {
               setGasLimit={setGasLimit}
               saveUserGasChoice={saveUserGasChoice}
             />
+          ) : (
+            <></>
           )}
         </SharedSlideUpMenu>
         <div className="standard_width">

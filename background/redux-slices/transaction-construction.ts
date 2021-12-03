@@ -20,7 +20,7 @@ export type TransactionConstruction = {
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   estimatedFeesPerGas: null,
-  lastGasEstimatesRefreshed: new Date().getTime(),
+  lastGasEstimatesRefreshed: Date.now(),
 }
 
 export type Events = {
@@ -69,7 +69,7 @@ const transactionSlice = createSlice({
       return {
         ...immerState,
         estimatedFeesPerGas,
-        lastGasEstimatesRefreshed: new Date().getTime(),
+        lastGasEstimatesRefreshed: Date.now(),
       }
     },
   },
