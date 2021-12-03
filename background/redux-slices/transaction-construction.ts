@@ -1,7 +1,11 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { BlockPrices, EIP1559TransactionRequest } from "../networks"
+import {
+  BlockEstimate,
+  BlockPrices,
+  EIP1559TransactionRequest,
+} from "../networks"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const enum TransactionConstructionStatus {
@@ -13,7 +17,12 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
-  estimatedFeesPerGas: BlockPrices | null
+  estimatedFeesPerGas: {
+    baseFeePerGas: bigint
+    instant: BlockEstimate | undefined
+    express: BlockEstimate | undefined
+    regular: BlockEstimate | undefined
+  } | null
   lastGasEstimatesRefreshed: number
 }
 
@@ -68,7 +77,18 @@ const transactionSlice = createSlice({
     ) => {
       return {
         ...immerState,
-        estimatedFeesPerGas,
+        estimatedFeesPerGas: {
+          baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
+          instant: estimatedFeesPerGas.estimatedPrices.find(
+            (el) => el.confidence === 99
+          ),
+          express: estimatedFeesPerGas.estimatedPrices.find(
+            (el) => el.confidence === 95
+          ),
+          regular: estimatedFeesPerGas.estimatedPrices.find(
+            (el) => el.confidence === 70
+          ),
+        },
         lastGasEstimatesRefreshed: Date.now(),
       }
     },

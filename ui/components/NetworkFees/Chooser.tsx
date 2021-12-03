@@ -6,7 +6,7 @@ import SharedInput from "../Shared/SharedInput"
 
 interface GasOption {
   name: string
-  time: string
+  confidence: string
   gwei: number
   dollarValue: string
   maxFeePerGas: bigint | undefined
@@ -39,6 +39,7 @@ export default function NetworkFeesChooser({
   }, [gasTime])
 
   useEffect(() => {
+    getSecondsTillGasUpdate()
     const interval = setTimeout(getSecondsTillGasUpdate, 1000)
     return () => {
       clearTimeout(interval)
@@ -65,7 +66,7 @@ export default function NetworkFeesChooser({
             >
               <div className="option_left">
                 <div className="name">{option.name}</div>
-                <div className="subtext">{option.time}</div>
+                <div className="subtext">Probability: {option.confidence}</div>
               </div>
               <div className="option_right">
                 <div className="price">{`~${option.gwei} Gwei`}</div>

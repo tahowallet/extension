@@ -15,7 +15,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 type GasOption = {
   name: string
-  time: string
+  confidence: string
   gwei: number
   dollarValue: string
   maxFeePerGas: bigint | undefined
@@ -72,37 +72,43 @@ export default function Send(): ReactElement {
 
   const updateGasOptions = useCallback(() => {
     if (estimatedFeesPerGas) {
-      const instant = estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === 99
-      )
-      const express = estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === 90
-      )
-      const regular = estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === 70
-      )
+      const instant = estimatedFeesPerGas?.instant
+      const express = estimatedFeesPerGas?.express
+      const regular = estimatedFeesPerGas?.regular
       if (!!instant && !!express && !!regular) {
         const updatedGasOptions = [
           {
             name: "Regular",
-            time: "~10 Min",
-            gwei: Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n),
+            confidence: `${regular.confidence}%`,
+            gwei: Number(
+              (BigInt(regular.maxFeePerGas) +
+                BigInt(regular.maxPriorityFeePerGas)) /
+                1000000000n
+            ),
             dollarValue: "$??",
             maxFeePerGas: BigInt(regular.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
           },
           {
             name: "Express",
-            time: "~2 Min",
-            gwei: Number(BigInt(express.maxFeePerGas) / 1000000000n),
+            confidence: `${express.confidence}%`,
+            gwei: Number(
+              (BigInt(express.maxFeePerGas) +
+                BigInt(express.maxPriorityFeePerGas)) /
+                1000000000n
+            ),
             dollarValue: "$??",
             maxFeePerGas: BigInt(express.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(express.maxPriorityFeePerGas),
           },
           {
             name: "Instant",
-            time: "~15 Sec",
-            gwei: Number(BigInt(instant.maxFeePerGas) / 1000000000n),
+            confidence: `${instant.confidence}%`,
+            gwei: Number(
+              (BigInt(instant.maxFeePerGas) +
+                BigInt(instant.maxPriorityFeePerGas)) /
+                1000000000n
+            ),
             dollarValue: "$??",
             maxFeePerGas: BigInt(instant.maxFeePerGas),
             maxPriorityFeePerGas: BigInt(instant.maxPriorityFeePerGas),
@@ -116,11 +122,10 @@ export default function Send(): ReactElement {
 
   const findMinMaxGas = useCallback(() => {
     if (estimatedFeesPerGas) {
-      const values = estimatedFeesPerGas.estimatedPrices.map((el) =>
-        Number(BigInt(el.maxFeePerGas) / 1000000000n)
-      )
       setMinGas(Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n))
-      setMaxGas(Math.max(...values) + 40)
+      setMaxGas(
+        Number(estimatedFeesPerGas.instant?.maxFeePerGas) / Number(1000000000n)
+      )
     }
   }, [estimatedFeesPerGas])
 
