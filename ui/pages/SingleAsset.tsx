@@ -79,7 +79,7 @@ export default function SingleAsset(): ReactElement {
             </SharedButton>
           </div>
         </div>
-        <div className="sub_info_seperator_wrap standard_width_padded">
+        <div className="sub_info_separator_wrap standard_width_padded">
           <div className="left">Asset is on: Arbitrum</div>
           <div className="right">Move to Ethereum</div>
         </div>
@@ -88,8 +88,8 @@ export default function SingleAsset(): ReactElement {
       </CorePage>
       <style jsx>
         {`
-          .sub_info_seperator_wrap {
-            display: flex;
+          .sub_info_separator_wrap {
+            display: none; // TODO asset network location and transfer for later
             border: 1px solid var(--green-120);
             border-left: 0px;
             border-right: 0px;
