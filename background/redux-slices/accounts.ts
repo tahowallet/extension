@@ -294,7 +294,12 @@ export const emitter = new Emittery<Events>()
 export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
   async (addressNetwork: AddressNetwork, { dispatch }) => {
-    dispatch(loadAccount(addressNetwork.address))
-    await emitter.emit("addAccount", addressNetwork)
+    const normalizedAddressNetwork = {
+      address: addressNetwork.address.toLowerCase(),
+      network: addressNetwork.network,
+    }
+
+    dispatch(loadAccount(normalizedAddressNetwork.address))
+    await emitter.emit("addAccount", normalizedAddressNetwork)
   }
 )
