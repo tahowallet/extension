@@ -73,8 +73,6 @@ function WalletName() {
 }
 
 export default function AccountsNotificationPanelAccounts(): ReactElement {
-  const [selectedWallet, setSelectedWallet] = useState(0)
-
   const dispatch = useBackgroundDispatch()
 
   const accountTotals = useBackgroundSelector(selectAccountTotals)
@@ -103,8 +101,6 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedWallet(0)
-                  setSelectedAccount(index)
                   dispatch(setSelectedAccount(lowerCaseAddress))
                 }}
               >
