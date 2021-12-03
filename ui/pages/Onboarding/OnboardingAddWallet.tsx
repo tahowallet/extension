@@ -30,8 +30,18 @@ export default function OnboardingAddWallet(): ReactElement {
           </div>
           <SharedButton
             type="primary"
-            linkTo="/onboarding/importMetamask"
+            isDisabled
+            linkTo={
+              process.env.HIDE_ADD_SEED === "true"
+                ? undefined
+                : "/onboarding/importMetamask"
+            }
             size="medium"
+            onClick={() => {
+              if (process.env.HIDE_ADD_SEED === "true") {
+                alert("This feature is temporarily disabled.")
+              }
+            }}
           >
             Add account
           </SharedButton>
