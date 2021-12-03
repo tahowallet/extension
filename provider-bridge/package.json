@@ -1,5 +1,5 @@
 {
-  "name": "@tallyho/tally-provider-bridge",
+  "name": "@tallyho/provider-bridge",
   "version": "0.0.1",
   "description": "Tally, the community owned and operated Web3 wallet: provider bridge to connect the in-page provider with the background script.",
   "main": "index.ts",
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "webextension-polyfill": "^0.8.0",
-    "@tallyho/tally-provider-bridge-shared": "0.0.1"
+    "@tallyho/provider-bridge-shared": "0.0.1"
   },
   "devDependencies": {
     "@types/webextension-polyfill": "^0.8.0"

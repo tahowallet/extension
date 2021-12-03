@@ -3,7 +3,7 @@ import {
   EXTERNAL_PORT_NAME,
   PROVIDER_BRIDGE_TARGET,
   WINDOW_PROVIDER_TARGET,
-} from "@tallyho/tally-provider-bridge-shared"
+} from "@tallyho/provider-bridge-shared"
 
 const windowOriginAtLoadTime = window.location.origin
 

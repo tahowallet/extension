@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill"
-import { INTERNAL_PORT_NAME } from "@tallyho/tally-provider-bridge-shared"
+import { INTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
 import {
   ChainService,
   ServiceCreatorFunction,

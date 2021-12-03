@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill"
-import { EXTERNAL_PORT_NAME } from "@tallyho/tally-provider-bridge-shared"
+import { EXTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
 import BaseService from "../base"
