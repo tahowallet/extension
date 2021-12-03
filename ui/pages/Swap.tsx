@@ -6,6 +6,7 @@ import {
   setSwapTrade,
   setSwapAmount,
   selectSwappableAssets,
+  selectSwapPrice,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
@@ -40,6 +41,7 @@ export default function Swap(): ReactElement {
 
   const sellAssets = combinedData.assets.map(({ asset }) => asset)
   const buyAssets = useBackgroundSelector(selectSwappableAssets)
+  const buyPrice = useBackgroundSelector(selectSwapPrice)
 
   const handleClick = useCallback(() => {
     setOpenAssetMenu((isCurrentlyOpen) => !isCurrentlyOpen)
@@ -80,7 +82,7 @@ export default function Swap(): ReactElement {
       const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
       const floatValue = parseFloat(inputValue)
 
-      if (Number.isNaN(floatValue) || typeof buyAsset?.price === "undefined") {
+      if (Number.isNaN(floatValue)) {
         dispatch(
           setSwapAmount({
             sellAmount: inputValue,
@@ -92,13 +94,13 @@ export default function Swap(): ReactElement {
           setSwapAmount({
             sellAmount: inputValue,
             // TODO: Use a safe math library
-            buyAmount: (floatValue / parseFloat(buyAsset.price)).toString(),
+            buyAmount: (floatValue / parseFloat(buyPrice)).toString(),
           })
         )
       }
     },
 
-    [dispatch, buyAsset]
+    [dispatch, buyPrice]
   )
 
   const toAmountChanged = useCallback(
@@ -106,7 +108,7 @@ export default function Swap(): ReactElement {
       const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
       const floatValue = parseFloat(inputValue)
 
-      if (Number.isNaN(floatValue) || typeof buyAsset?.price === "undefined") {
+      if (Number.isNaN(floatValue)) {
         dispatch(
           setSwapAmount({
             sellAmount: "0",
@@ -117,14 +119,14 @@ export default function Swap(): ReactElement {
         dispatch(
           setSwapAmount({
             // TODO: Use a safe math library
-            sellAmount: (floatValue * parseFloat(buyAsset.price)).toString(),
+            sellAmount: (floatValue * parseFloat(buyPrice)).toString(),
             buyAmount: inputValue,
           })
         )
       }
     },
 
-    [dispatch, buyAsset]
+    [dispatch, buyPrice]
   )
 
   return (

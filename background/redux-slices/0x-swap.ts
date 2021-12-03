@@ -5,13 +5,9 @@ import { createBackgroundAsyncThunk } from "./utils"
 import { Asset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
 
-type SwapAsset = Asset & {
-  price?: string
-}
-
 export interface SwapState {
-  sellAsset?: SwapAsset
-  buyAsset?: SwapAsset
+  sellAsset?: Asset
+  buyAsset?: Asset
   sellAmount: string
   buyAmount: string
   zrxAssets: ZrxAsset[]
@@ -98,15 +94,15 @@ const swapSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
+      .addCase(fetchSwapAssets.fulfilled, (state, { payload: zrxAssets }) => {
+        return { ...state, zrxAssets }
+      })
       .addCase(
         fetchSwapPrices.fulfilled,
         (state, { payload: zrxPrices }: { payload: ZrxPrice[] }) => {
           return { ...state, zrxPrices }
         }
       )
-      .addCase(fetchSwapAssets.fulfilled, (state, { payload: zrxAssets }) => {
-        return { ...state, zrxAssets }
-      })
   },
 })
 
@@ -114,8 +110,9 @@ export const selectSwappableAssets = createSelector(
   (state: { assets: Asset[]; swap: SwapState }) => ({
     walletAssets: state.assets,
     zrxAssets: state.swap.zrxAssets,
+    zrxPrices: state.swap.zrxPrices,
   }),
-  ({ walletAssets, zrxAssets }) => {
+  ({ walletAssets, zrxAssets, zrxPrices }) => {
     const filteredAssets = walletAssets
       .filter(isSmartContractFungibleAsset)
       .filter((walletAsset) => {
@@ -158,10 +155,42 @@ export const selectSwappableAssets = createSelector(
           return false
         })
 
-        return !!matchingAsset
+        // Make sure the matched asset has price data
+        if (matchingAsset) {
+          const priceData = zrxPrices.find(
+            (zrxPrice: ZrxPrice) =>
+              matchingAsset.symbol.toLowerCase() ===
+              zrxPrice.symbol.toLowerCase()
+          )
+
+          return !!priceData
+        }
+
+        return false
       })
 
     return filteredAssets
+  }
+)
+
+export const selectSwapPrice = createSelector(
+  (state: { swap: SwapState }) => ({
+    buyAsset: state.swap.buyAsset,
+    zrxPrices: state.swap.zrxPrices,
+  }),
+  ({ buyAsset, zrxPrices }) => {
+    if (buyAsset) {
+      const priceData = zrxPrices.find(
+        (zrxPrice: ZrxPrice) =>
+          buyAsset.symbol.toLowerCase() === zrxPrice.symbol.toLowerCase()
+      )
+
+      if (priceData) {
+        return priceData.price
+      }
+    }
+
+    return "0"
   }
 )
 
