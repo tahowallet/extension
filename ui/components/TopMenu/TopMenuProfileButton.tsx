@@ -27,6 +27,7 @@ export default function TopMenuProfileButton(props: {
             background-color: white;
             margin-left: 8px;
             background: url("${avatar ?? "./images/portrait.png"}");
+            background-size: cover;
           }
         `}
       </style>
