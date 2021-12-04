@@ -9,7 +9,7 @@ export default function SharedProgressIndicator(props: {
   const { activeStep, numberOfSteps, onProgressStepClicked } = props
 
   return (
-    <div className="indictor_wrap">
+    <div className="indicator_wrap">
       {Array(numberOfSteps)
         .fill(undefined)
         .map((_, index) => {
@@ -17,6 +17,9 @@ export default function SharedProgressIndicator(props: {
             <button
               aria-label="step"
               type="button"
+              // The nature of this is that the key and index are the same.
+              // eslint-disable-next-line react/no-array-index-key
+              key={index}
               className={classNames("step", {
                 active: index === activeStep - 1,
               })}
@@ -42,7 +45,7 @@ export default function SharedProgressIndicator(props: {
             width: 16px;
             background: var(--trophy-gold);
           }
-          .indictor_wrap {
+          .indicator_wrap {
             display: flex;
           }
         `}
