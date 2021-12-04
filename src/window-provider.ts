@@ -11,8 +11,8 @@ if (enabled === "true") {
     postMessage: (data: unknown) => {
       return window.postMessage(data, window.location.origin)
     },
-    addEventListener: window.addEventListener.bind(this),
-    removeEventListener: window.removeEventListener.bind(this),
+    addEventListener: window.addEventListener.bind(window),
+    removeEventListener: window.removeEventListener.bind(window),
     origin: window.location.origin,
   })
   window.ethereum = window.tally
