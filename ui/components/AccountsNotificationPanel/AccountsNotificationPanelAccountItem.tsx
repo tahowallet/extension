@@ -72,6 +72,7 @@ export default function AccountsNotificationPanelAccountItem(
           background-size: cover;
           width: 48px;
           height: 48px;
+          border-radius: 12px;
         }
         .avatar_selected_outline {
           width: 52px;
