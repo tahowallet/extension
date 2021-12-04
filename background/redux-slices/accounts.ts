@@ -1,4 +1,4 @@
-import { createSlice, createSelector, current } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork } from "../accounts"
@@ -9,14 +9,9 @@ import {
   Network,
 } from "../networks"
 import { AnyAssetAmount } from "../assets"
-import { AssetsState, selectAssetPricePoint } from "./assets"
-import { selectHideDust, UIState } from "./ui"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
-  formatCurrencyAmount,
-  enrichAssetAmountWithDecimalValues,
-  enrichAssetAmountWithMainCurrencyValues,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 
@@ -49,7 +44,6 @@ export type AccountState = {
 export type CombinedAccountData = {
   totalMainCurrencyValue?: string
   assets: AnyAssetAmount[]
-  activity: AnyEVMTransaction[]
 }
 
 /**
@@ -60,40 +54,11 @@ export type CompleteAssetAmount = AnyAssetAmount &
   AssetMainCurrencyAmount &
   AssetDecimalAmount
 
-const USER_VALUE_DUST_THRESHOLD = 2
-
-// Comparator for two transactions by block height. Can be used to sort in
-// descending order of block height, with unspecified block heights (i.e.,
-// unconfirmed transactions) at the front of the list in stable order.
-function transactionBlockComparator(
-  transactionA: AnyEVMTransaction,
-  transactionB: AnyEVMTransaction
-) {
-  // If both transactions are confirmed, go in descending order of block height.
-  if (transactionA.blockHeight !== null && transactionB.blockHeight !== null) {
-    return transactionB.blockHeight - transactionA.blockHeight
-  }
-
-  // If both are unconfirmed, they are equal.
-  if (transactionA.blockHeight === transactionB.blockHeight) {
-    return 0
-  }
-
-  // If transaction B is unconfirmed, it goes before transaction A.
-  if (transactionA.blockHeight !== null) {
-    return 1
-  }
-
-  // If transaction A is unconfirmed, it goes before transaction B.
-  return -1
-}
-
 export const initialState = {
   accountsData: {},
   combinedData: {
     totalMainCurrencyValue: "",
     assets: [],
-    activity: [],
   },
   blocks: {},
 } as AccountState
@@ -272,20 +237,6 @@ const accountSlice = createSlice({
           ),
         ]
       })
-
-      immerState.combinedData.activity = Array.from(
-        // Use a Map to drop any duplicate transaction entries, e.g. a send
-        // between two tracked accounts.
-        new Map(
-          Object.values(current(immerState.accountsData))
-            .flatMap((ad) =>
-              ad === "loading"
-                ? []
-                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
-            )
-            .map((t) => [t.hash, t])
-        ).values()
-      ).sort(transactionBlockComparator)
     },
     transactionConfirmed: (
       immerState,
@@ -310,20 +261,6 @@ const accountSlice = createSlice({
           ),
         ]
       })
-
-      immerState.combinedData.activity = Array.from(
-        // Use a Map to drop any duplicate transaction entries, e.g. a send
-        // between two tracked accounts.
-        new Map(
-          Object.values(current(immerState.accountsData))
-            .flatMap((ad) =>
-              ad === "loading"
-                ? []
-                : ad.unconfirmedTransactions.concat(ad.confirmedTransactions)
-            )
-            .map((t) => [t.hash, t])
-        ).values()
-      ).sort(transactionBlockComparator)
     },
   },
 })
@@ -357,115 +294,12 @@ export const emitter = new Emittery<Events>()
 export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
   async (addressNetwork: AddressNetwork, { dispatch }) => {
-    dispatch(loadAccount(addressNetwork.address))
-    await emitter.emit("addAccount", addressNetwork)
-  }
-)
-
-export const getAccountState = (state: {
-  account: AccountState
-}): AccountState => state.account
-
-export const getAssetsState = (state: { assets: AssetsState }): AssetsState =>
-  state.assets
-
-// FIXME This should probably live somewhere else.
-type FullState = {
-  account: AccountState
-  assets: AssetsState
-  ui: UIState
-}
-
-// FIXME This should probably live somewhere else.
-export const getFullState = (
-  state: FullState
-): { account: AccountState; assets: AssetsState; ui: UIState } => state
-
-export const selectAccountAndTimestampedActivities = createSelector(
-  getAccountState,
-  getAssetsState,
-  selectHideDust,
-  (account, assets, hideDust) => {
-    // TODO What actual precision do we want here? Probably more than 2
-    // TODO decimals? Maybe it's configurable?
-    const desiredDecimals = 2
-    // TODO Make this a setting.
-    const mainCurrencySymbol = "USD"
-
-    // Derive activities with timestamps included
-    const activity = account.combinedData.activity.map((activityItem) => {
-      const isSent =
-        activityItem.from.toLowerCase() ===
-        Object.keys(account.accountsData)[0].toLowerCase()
-
-      return {
-        ...activityItem,
-        ...(activityItem.blockHeight && {
-          timestamp: account?.blocks[activityItem.blockHeight]?.timestamp,
-        }),
-        isSent,
-      }
-    })
-
-    // Keep a tally of the total user value; undefined if no main currency data
-    // is available.
-    let totalMainCurrencyAmount: number | undefined
-
-    // Derive account "assets"/assetAmount which include USD values using
-    // data from the assets slice
-    const accountAssets = account.combinedData.assets
-      .map<CompleteAssetAmount>((assetItem) => {
-        const assetPricePoint = selectAssetPricePoint(
-          assets,
-          assetItem.asset.symbol,
-          mainCurrencySymbol
-        )
-
-        if (assetPricePoint) {
-          const enrichedAssetAmount = enrichAssetAmountWithDecimalValues(
-            enrichAssetAmountWithMainCurrencyValues(
-              assetItem,
-              assetPricePoint,
-              desiredDecimals
-            ),
-            desiredDecimals
-          )
-
-          if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
-            totalMainCurrencyAmount ??= 0 // initialize if needed
-            totalMainCurrencyAmount += enrichedAssetAmount.mainCurrencyAmount
-          }
-
-          return enrichedAssetAmount
-        }
-
-        return enrichAssetAmountWithDecimalValues(assetItem, desiredDecimals)
-      })
-      .filter((assetItem) => {
-        const isNotDust =
-          typeof assetItem.mainCurrencyAmount === "undefined"
-            ? true
-            : assetItem.mainCurrencyAmount > USER_VALUE_DUST_THRESHOLD
-        const isPresent = assetItem.decimalAmount > 0
-
-        // Hide dust and missing amounts.
-        return hideDust ? isNotDust && isPresent : isPresent
-      })
-
-    return {
-      combinedData: {
-        assets: accountAssets,
-        totalMainCurrencyValue: totalMainCurrencyAmount
-          ? formatCurrencyAmount(
-              mainCurrencySymbol,
-              totalMainCurrencyAmount,
-              desiredDecimals
-            )
-          : undefined,
-        activity: account.combinedData.activity,
-      },
-      accountData: account.accountsData,
-      activity,
+    const normalizedAddressNetwork = {
+      address: addressNetwork.address.toLowerCase(),
+      network: addressNetwork.network,
     }
+
+    dispatch(loadAccount(normalizedAddressNetwork.address))
+    await emitter.emit("addAccount", normalizedAddressNetwork)
   }
 )

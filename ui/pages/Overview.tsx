@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"

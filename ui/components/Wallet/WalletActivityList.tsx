@@ -1,20 +1,22 @@
 import React, { ReactElement, useCallback } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
-import { selectCurrentAccountActivitiesWithTimestamps } from "@tallyho/tally-background/redux-slices/selectors/activitiesSelectors"
+import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
 
-export default function WalletActivityList(): ReactElement {
+type Props = {
+  activities: ActivityItem[]
+}
+
+export default function WalletActivityList({
+  activities,
+}: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
   const { showingActivityDetail } = useBackgroundSelector(
     (background) => background.ui
-  )
-
-  const activities = useBackgroundSelector(
-    selectCurrentAccountActivitiesWithTimestamps
   )
 
   const handleOpen = useCallback(

@@ -11,7 +11,7 @@ export default function TopMenuNotifications(): ReactElement {
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
         panelNumber={panelNumber}
-        panelNames={["Accounts", "Notifications"]}
+        panelNames={["Accounts"]}
       />
       {panelNumber === 1 ? (
         <AccountsNotificationPanelNotifications />

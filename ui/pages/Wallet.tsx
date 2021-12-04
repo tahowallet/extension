@@ -1,7 +1,10 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
-import { useBackgroundSelector, useBackgroundDispatch } from "../hooks"
+import {
+  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -11,9 +14,19 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
+  const hasAccounts = useBackgroundSelector(
+    (state) => Object.keys(state.account.accountsData).length > 0
+  )
+
   //  accountLoading, hasWalletErrorCode
-  const { combinedData, accountData, activity } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
+  const accountData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
+    assetAmounts: [],
+    totalMainCurrencyValue: undefined,
+  }
+  const currentAccountActivities = useBackgroundSelector(
+    selectCurrentAccountActivitiesWithTimestamps
   )
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
@@ -21,7 +34,7 @@ export default function Wallet(): ReactElement {
   )
 
   // If an account doesn't exist, display onboarding
-  if (Object.keys(accountData).length === 0) {
+  if (!hasAccounts) {
     return <Redirect to="/onboarding/infoIntro" />
   }
 
@@ -31,7 +44,7 @@ export default function Wallet(): ReactElement {
         <div className="page_content">
           <div className="section">
             <WalletAccountBalanceControl
-              balance={combinedData.totalMainCurrencyValue}
+              balance={totalMainCurrencyValue}
               initializationLoadingTimeExpired={
                 initializationLoadingTimeExpired
               }
@@ -46,13 +59,13 @@ export default function Wallet(): ReactElement {
             <div className="panel">
               {panelNumber === 0 ? (
                 <WalletAssetList
-                  assetAmounts={combinedData.assets}
+                  assetAmounts={assetAmounts}
                   initializationLoadingTimeExpired={
                     initializationLoadingTimeExpired
                   }
                 />
               ) : (
-                <WalletActivityList />
+                <WalletActivityList activities={currentAccountActivities} />
               )}
             </div>
           </div>
