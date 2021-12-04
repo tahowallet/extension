@@ -15,7 +15,10 @@ export type WindowResponseEvent = {
 export type WindowRequestEvent = {
   id: string
   target: unknown
-  request: { method: string; params: Array<unknown> }
+  request: {
+    method: string
+    params: Array<unknown> | undefined | Record<string, unknown>
+  }
 }
 
 export type PortResponseEvent = {

@@ -8,6 +8,14 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
+// https://eips.ethereum.org/EIPS/eip-1193#request
+type RequestArgument = {
+  readonly method: string
+  readonly params?: Array<unknown> | Record<string, unknown>
+}
+
+type EthersSendCallback = (error: unknown, response: unknown) => void
+
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
@@ -25,14 +33,64 @@ export default class TallyWindowProvider extends EventEmitter {
     super()
   }
 
-  request(request: {
-    method: string
-    params?: Array<unknown>
-  }): Promise<unknown> {
-    return this.send(request.method, request.params)
+  /**
+   * f*cked up situation:
+   *   - onboard uses request() as it should according to the eip-1193 spec
+   *   - web3-react injected provider uses send and deprecated/undefined apis almost exclusively
+   *     - export type Send = (method: string, params?: any[]) => Promise<SendReturnResult | SendReturn>
+   *     - export type SendOld = ({ method }: { method: string }) => Promise<SendReturnResult | SendReturn>
+   *   - ethers.js supports send in ExternalProvider which is used in the Web3Provider
+   *       ```
+   *       export type ExternalProvider = {
+   *           isMetaMask?: boolean;
+   *           isStatus?: boolean;
+   *           host?: string;
+   *           path?: string;
+   *           sendAsync?: (request: { method: string, params?: Array<any> }, callback: (error: any, response: any) => void) => void
+   *           send?: (request: { method: string, params?: Array<any> }, callback: (error: any, response: any) => void) => void
+   *           request?: (request: { method: string, params?: Array<any> }) => Promise<any>
+   *       }
+   *       ```
+   * Had to come up with a way to support both send methods
+   */
+  send(method: string, params: Array<unknown>): Promise<unknown>
+  send(
+    request: RequestArgument,
+    callback: (error: unknown, response: unknown) => void
+  ): void
+  send(
+    methodOrRequest: string | RequestArgument,
+    paramsOrCallback: Array<unknown> | EthersSendCallback
+  ): Promise<unknown> | void {
+    if (
+      typeof methodOrRequest === "string" &&
+      typeof paramsOrCallback !== "function"
+    ) {
+      return this.request({ method: methodOrRequest, params: paramsOrCallback })
+    }
+
+    if (
+      Object.prototype.toString.call(methodOrRequest) === "[object Object]" &&
+      typeof paramsOrCallback === "function"
+    ) {
+      return this.request(methodOrRequest as RequestArgument).then(
+        (response) => paramsOrCallback(null, response),
+        (error) => paramsOrCallback(error, null)
+      )
+    }
+
+    return Promise.reject(new Error("Unsupported function parameters"))
   }
 
-  send(method: string, params: Array<unknown> = []): Promise<unknown> {
+  request(arg: RequestArgument): Promise<unknown> {
+    if (typeof arg.method !== "string")
+      return Promise.reject(
+        new Error(
+          ".request argument expected: { method: string, params?: Array<unknown> }"
+        )
+      )
+
+    const { method, params } = arg
     if (typeof method !== "string") {
       return Promise.reject(new Error(`unsupported method type: ${method}`)) // TODO: check why web3-react falls through all the calls in the getChain() method
     }
