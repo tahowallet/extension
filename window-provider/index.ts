@@ -64,25 +64,18 @@ export default class TallyWindowProvider extends EventEmitter {
           ) {
             return
           }
+
           ;({ id, result } = event.data)
-
-          if (sendData.id !== id) return
-
-          this.transport.removeEventListener(
-            "message",
-            this.bridgeListeners.get(sendData.id),
-            false
-          )
-          this.bridgeListeners.delete(sendData.id)
         } else {
           ;({ id, result } = event)
-          if (sendData.id !== id) return
-
-          this.transport.removeEventListener(
-            this.bridgeListeners.get(sendData.id)
-          )
-          this.bridgeListeners.delete(sendData.id)
         }
+
+        if (sendData.id !== id) return
+
+        this.transport.removeEventListener(
+          this.bridgeListeners.get(sendData.id)
+        )
+        this.bridgeListeners.delete(sendData.id)
 
         const { method: sentMethod } = sendData.request
 
@@ -120,14 +113,7 @@ export default class TallyWindowProvider extends EventEmitter {
       // TODO: refactor this to have a single `unsafeAddEventListener` call in the constructor
       // https://github.com/tallycash/tally-extension/pull/440#discussion_r753509947
 
-      if (isWindowTransport(this.transport)) {
-        this.transport.addEventListener(
-          "message",
-          this.bridgeListeners.get(sendData.id)
-        )
-      } else {
-        this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
-      }
+      this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
     })
   }
 }

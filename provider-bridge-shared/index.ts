@@ -12,18 +12,30 @@ export type WindowResponseEvent = {
   data: { id: string; target: string; result: unknown }
 }
 
+export type WindowRequestEvent = {
+  id: string
+  target: unknown
+  request: { method: string; params: Array<unknown> }
+}
+
 export type PortResponseEvent = {
   id: string
   result: unknown
 }
 
+export type PortRequestEvent = {
+  id: string
+  request: { method: string; params: Array<unknown> }
+}
+
 export type ProviderTransport = WindowTransport | PortTransport
 
-export type WindowListener = Window["addEventListener"]
+export type WindowListener = (event: WindowResponseEvent) => void
+
 export type WindowTransport = {
-  postMessage: (data: unknown) => void
-  addEventListener: WindowListener
-  removeEventListener: WindowListener
+  postMessage: (data: WindowRequestEvent) => void
+  addEventListener: (listener: WindowListener) => void
+  removeEventListener: (listener: WindowListener) => void
   origin: string
 }
 
