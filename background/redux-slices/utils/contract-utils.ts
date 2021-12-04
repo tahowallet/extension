@@ -23,14 +23,6 @@ export function getProvider(this: unknown): Provider {
   return new Web3Provider(provider)
 }
 
-export function getAlchemyProvider(): Provider {
-  const provider = new AlchemyProvider(
-    getNetwork(Number(getEthereumNetwork().chainID)),
-    process.env.ALCHEMY_KEY
-  )
-  return provider
-}
-
 export const getContract = async (
   address: string,
   abi: ContractInterface
