@@ -14,6 +14,7 @@ export default function SharedBackButton(): ReactElement {
       onClick={() => history.goBack()}
     >
       <div className="icon_chevron_left" />
+      Back
       <style jsx>{`
         button {
           color: var(--green-40);
@@ -23,8 +24,6 @@ export default function SharedBackButton(): ReactElement {
           display: flex;
           margin-bottom: 10px;
           margin-top: 2px;
-          position: fixed;
-          top: 25px;
         }
         button:hover {
           color: #fff;

@@ -2,7 +2,7 @@ import browser from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-import ethers from "ethers"
+import { ethers } from "ethers"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"

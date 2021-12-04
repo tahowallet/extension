@@ -8,7 +8,7 @@ import swapReducer from "./0x-swap"
 import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
 
-export default combineReducers({
+const mainReducer = combineReducers({
   account: accountsReducer,
   assets: assetsReducer,
   activities: activitiesReducer,
@@ -17,3 +17,7 @@ export default combineReducers({
   transactionConstruction: transactionConstructionReducer,
   ui: uiReducer,
 })
+
+export default mainReducer
+
+export type RootState = ReturnType<typeof mainReducer>
