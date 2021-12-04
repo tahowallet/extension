@@ -65,7 +65,7 @@ function WalletName() {
         }
         .right {
           align-items: center;
-          display: flex;
+          display: none; // TODO Display when Add address is hooked up.
         }
       `}</style>
     </>
