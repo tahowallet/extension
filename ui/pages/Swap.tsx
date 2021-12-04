@@ -1,5 +1,4 @@
 import React, { ReactElement, useEffect, useCallback, useState } from "react"
-import logger from "@tallyho/tally-background/lib/logger"
 import {
   fetchSwapAssets,
   fetchSwapPrices,
@@ -49,8 +48,6 @@ export default function Swap(): ReactElement {
 
   const fromAssetSelected = useCallback(
     async (asset) => {
-      logger.log("Asset selected!", asset)
-
       dispatch(
         setSwapTrade({
           sellAsset: asset,
@@ -65,8 +62,6 @@ export default function Swap(): ReactElement {
 
   const toAssetSelected = useCallback(
     (asset) => {
-      logger.log("Asset selected!", asset)
-
       dispatch(
         setSwapTrade({
           buyAsset: asset,

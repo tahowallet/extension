@@ -4,6 +4,7 @@ import { fetchJson } from "@ethersproject/web"
 import { createBackgroundAsyncThunk } from "./utils"
 import { Asset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
+import { jtdValidatorFor } from "../lib/validation"
 
 export interface SwapState {
   sellAsset?: Asset
@@ -45,15 +46,43 @@ export const initialState: SwapState = {
   zrxPrices: [],
 }
 
+const swapAssetsJTD = {
+  properties: {
+    records: {
+      elements: {
+        properties: {
+          address: { type: "string" },
+          decimals: { type: "int8" },
+          name: { type: "string" },
+          symbol: { type: "string" },
+        },
+      },
+    },
+  },
+}
+
+const isValidSwapAssetsResponse = jtdValidatorFor(swapAssetsJTD)
+
 export const fetchSwapAssets = createBackgroundAsyncThunk(
   "0x-swap/fetchAssets",
   async () => {
     const apiData = await fetchJson(`https://api.0x.org/swap/v1/tokens`)
 
-    // TODO: Add API validation
-    return apiData.records
+    if (isValidSwapAssetsResponse(apiData)) {
+      return apiData.records as ZrxAsset[]
+    }
+
+    logger.warn(
+      "Swap asset API call didn't validate, did the 0x API change?",
+      apiData,
+      isValidSwapAssetsResponse.errors
+    )
+
+    return []
   }
 )
+
+const swapPriceJTD = {}
 
 export const fetchSwapPrices = createBackgroundAsyncThunk(
   "0x-swap/fetchPrices",
@@ -94,9 +123,12 @@ const swapSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSwapAssets.fulfilled, (state, { payload: zrxAssets }) => {
-        return { ...state, zrxAssets }
-      })
+      .addCase(
+        fetchSwapAssets.fulfilled,
+        (state, { payload: zrxAssets }: { payload: ZrxAsset[] }) => {
+          return { ...state, zrxAssets }
+        }
+      )
       .addCase(
         fetchSwapPrices.fulfilled,
         (state, { payload: zrxPrices }: { payload: ZrxPrice[] }) => {
