@@ -64,8 +64,10 @@ export default class TallyWindowProvider extends EventEmitter {
           ) {
             return
           }
-
           ;({ id, result } = event.data)
+
+          if (sendData.id !== id) return
+
           this.transport.removeEventListener(
             "message",
             this.bridgeListeners.get(sendData.id),
@@ -74,9 +76,13 @@ export default class TallyWindowProvider extends EventEmitter {
           this.bridgeListeners.delete(sendData.id)
         } else {
           ;({ id, result } = event)
-        }
+          if (sendData.id !== id) return
 
-        if (sendData.id !== id) return
+          this.transport.removeEventListener(
+            this.bridgeListeners.get(sendData.id)
+          )
+          this.bridgeListeners.delete(sendData.id)
+        }
 
         const { method: sentMethod } = sendData.request
 
