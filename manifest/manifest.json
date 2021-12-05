@@ -1,6 +1,6 @@
 {
   "name": "Tally",
-  "version": "0.0.7",
+  "version": "0.8.0",
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
@@ -8,7 +8,6 @@
   "default_locale": "en",
   "content_security_policy": "object-src 'self'; script-src 'self' blob: filesystem: 'unsafe-eval';",
   "web_accessible_resources": ["*.js", "*.json"],
-
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
@@ -17,7 +16,6 @@
       "all_frames": true
     }
   ],
-
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {

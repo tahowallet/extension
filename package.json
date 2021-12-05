@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.0.7",
+  "version": "0.8.0",
   "description": "Tally, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -41,8 +41,8 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@tallyho/tally-background": "0.0.1",
-    "@tallyho/tally-ui": "0.0.1",
     "@tallyho/tally-provider-bridge": "0.0.1",
+    "@tallyho/tally-ui": "0.0.1",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
     "webext-options-sync": "^2.0.1",
