@@ -42,7 +42,9 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   return (
     <section>
       <div className="wordmark" />
-      <BackButton />
+      <div className="back_button_wrap">
+        <BackButton />
+      </div>
       <h1 className="serif_header">Explore Tally</h1>
       <div className="subtitle">
         Add an Ethereum address to view an existing wallet in Tally.
@@ -65,6 +67,10 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             background-size: cover;
             width: 52px;
             height: 25px;
+          }
+          .back_button_wrap {
+            position: fixed;
+            top: 25px;
           }
           h1 {
             margin-top: 55px;
