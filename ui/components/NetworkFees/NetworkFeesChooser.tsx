@@ -1,10 +1,11 @@
+import { formatUnits } from "@ethersproject/units"
 import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
-interface GasOption {
+type GasOption = {
   name: string
   confidence: string
   gwei: number
@@ -14,23 +15,54 @@ interface GasOption {
 }
 
 interface NetworkFeesChooserProps {
-  gasOptions: GasOption[]
-  activeFeeIndex: number
-  handleSelectGasOption: (number: number) => void
+  setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setSelectedGas: React.Dispatch<React.SetStateAction<GasOption | undefined>>
+  selectedGas?: GasOption
   gasLimit: string | number
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
-  saveUserGasChoice: () => void
+  estimatedFeesPerGas: {
+    baseFeePerGas?: bigint
+    instant?: {
+      maxFeePerGas: bigint
+      maxPriorityFeePerGas: bigint
+      confidence: number
+      price: number | bigint
+    }
+    express?: {
+      maxFeePerGas: bigint
+      maxPriorityFeePerGas: bigint
+      confidence: number
+      price: number | bigint
+    }
+    regular?: {
+      maxFeePerGas: bigint
+      maxPriorityFeePerGas: bigint
+      confidence: number
+      price: number | bigint
+    }
+  }
 }
 
 export default function NetworkFeesChooser({
-  gasOptions,
-  activeFeeIndex,
-  handleSelectGasOption,
+  setFeeModalOpen,
+  setSelectedGas,
+  selectedGas,
   gasLimit,
   setGasLimit,
-  saveUserGasChoice,
+  estimatedFeesPerGas,
 }: NetworkFeesChooserProps): ReactElement {
   const [timeRemaining, setTimeRemaining] = useState(0)
+  const [activeFeeIndex, setActiveFeeIndex] = useState(0)
+  const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+
+  const handleSelectGasOption = (index: number) => {
+    setActiveFeeIndex(index)
+  }
+
+  const saveUserGasChoice = () => {
+    setSelectedGas(gasOptions[activeFeeIndex])
+    setFeeModalOpen(false)
+  }
   const gasTime = useSelector(selectLastGasEstimatesRefreshTime)
 
   const getSecondsTillGasUpdate = useCallback(() => {
@@ -45,6 +77,72 @@ export default function NetworkFeesChooser({
       clearTimeout(interval)
     }
   })
+
+  const updateGasOptions = useCallback(() => {
+    if (estimatedFeesPerGas) {
+      const instant = estimatedFeesPerGas?.instant
+      const express = estimatedFeesPerGas?.express
+      const regular = estimatedFeesPerGas?.regular
+      if (!!instant && !!express && !!regular) {
+        const updatedGasOptions = [
+          {
+            name: "Regular",
+            confidence: `${regular.confidence}%`,
+            gwei: parseInt(
+              formatUnits(
+                regular.maxFeePerGas + regular.maxPriorityFeePerGas,
+                "gwei"
+              ),
+              10
+            ),
+            dollarValue: "$??",
+            maxFeePerGas: regular.maxFeePerGas,
+            maxPriorityFeePerGas: regular.maxPriorityFeePerGas,
+          },
+          {
+            name: "Express",
+            confidence: `${express.confidence}%`,
+            gwei: parseInt(
+              formatUnits(
+                express.maxFeePerGas + express.maxPriorityFeePerGas,
+                "gwei"
+              ),
+              10
+            ),
+            dollarValue: "$??",
+            maxFeePerGas: express.maxFeePerGas,
+            maxPriorityFeePerGas: express.maxPriorityFeePerGas,
+          },
+          {
+            name: "Instant",
+            confidence: `${instant.confidence}%`,
+            gwei: parseInt(
+              formatUnits(
+                instant.maxFeePerGas + instant.maxPriorityFeePerGas,
+                "gwei"
+              ),
+              10
+            ),
+            dollarValue: "$??",
+            maxFeePerGas: instant.maxFeePerGas,
+            maxPriorityFeePerGas: instant.maxPriorityFeePerGas,
+          },
+        ]
+        setGasOptions(updatedGasOptions)
+        setSelectedGas(updatedGasOptions[0])
+      }
+    }
+  }, [estimatedFeesPerGas, setSelectedGas])
+
+  useEffect(() => {
+    updateGasOptions()
+  }, [updateGasOptions])
+
+  useEffect(() => {
+    setActiveFeeIndex(
+      gasOptions.findIndex((el) => el.name === selectedGas?.name)
+    )
+  }, [gasOptions, selectedGas])
 
   return (
     <div className="wrapper">

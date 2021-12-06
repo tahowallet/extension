@@ -17,18 +17,20 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
-  estimatedFeesPerGas: {
-    baseFeePerGas: bigint
-    instant: BlockEstimate | undefined
-    express: BlockEstimate | undefined
-    regular: BlockEstimate | undefined
-  } | null
+  estimatedFeesPerGas:
+    | {
+        baseFeePerGas: bigint
+        instant: BlockEstimate | undefined
+        express: BlockEstimate | undefined
+        regular: BlockEstimate | undefined
+      }
+    | undefined
   lastGasEstimatesRefreshed: number
 }
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
-  estimatedFeesPerGas: null,
+  estimatedFeesPerGas: undefined,
   lastGasEstimatesRefreshed: Date.now(),
 }
 
@@ -108,7 +110,34 @@ export default transactionSlice.reducer
 export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.estimatedFeesPerGas,
-  (gasData) => gasData
+  (gasData) => {
+    if (
+      gasData?.instant &&
+      gasData.express &&
+      gasData.regular &&
+      gasData.baseFeePerGas
+    ) {
+      return {
+        baseFeePerGas: gasData.baseFeePerGas,
+        instant: {
+          ...gasData?.instant,
+          maxFeePerGas: BigInt(gasData?.instant?.maxFeePerGas),
+          maxPriorityFeePerGas: BigInt(gasData?.instant?.maxPriorityFeePerGas),
+        },
+        express: {
+          ...gasData?.express,
+          maxFeePerGas: BigInt(gasData?.express?.maxFeePerGas),
+          maxPriorityFeePerGas: BigInt(gasData?.express?.maxPriorityFeePerGas),
+        },
+        regular: {
+          ...gasData?.regular,
+          maxFeePerGas: BigInt(gasData?.regular?.maxFeePerGas),
+          maxPriorityFeePerGas: BigInt(gasData?.regular?.maxPriorityFeePerGas),
+        },
+      }
+    }
+    return {}
+  }
 )
 
 export const selectLastGasEstimatesRefreshTime = createSelector(
