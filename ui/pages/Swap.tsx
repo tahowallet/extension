@@ -49,7 +49,7 @@ export default function Swap(): ReactElement {
       await dispatch(fetchSwapQuote())
 
       // Now open the asset menu
-      setOpenAssetMenu((isCurrentlyOpen) => !isCurrentlyOpen)
+      setOpenAssetMenu(true)
     }
   }, [dispatch, buyAsset, sellAsset])
 

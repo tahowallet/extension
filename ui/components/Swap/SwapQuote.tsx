@@ -31,7 +31,7 @@ export default function SwapQoute(): ReactElement {
       </div>
       <span className="label label_right">1 ETH = 9,843 KEEP</span>
       <div className="settings_wrap">
-        <SwapTransactionSettings />
+        <SwapTransactionSettings isSettingsLocked />
       </div>
       {stepComplete > -1 ? (
         <>

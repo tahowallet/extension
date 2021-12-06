@@ -3,43 +3,59 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
 
-export default function SwapTransactionSettings(): ReactElement {
+interface SwapTransactionSettingsProps {
+  isSettingsLocked?: boolean
+}
+
+export default function SwapTransactionSettings(
+  props: SwapTransactionSettingsProps
+): ReactElement {
+  const { isSettingsLocked } = props
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
 
-  function handleClick() {
-    setIsSlideUpMenuOpen(!isSlideUpMenuOpen)
+  function openSettings() {
+    if (!isSettingsLocked) {
+      setIsSlideUpMenuOpen(true)
+    }
   }
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={isSlideUpMenuOpen}
-        size="small"
-        close={() => {
-          setIsSlideUpMenuOpen(false)
-        }}
-      >
-        <div className="settings_wrap">
-          <div className="row row_slippage">
-            <span className="settings_label">Slippage tolerance</span>
-            <SharedButton type="secondary" size="medium" icon="chevron">
-              1%
-            </SharedButton>
+      {isSettingsLocked ? (
+        <div className="top_label label">Transaction settings</div>
+      ) : (
+        <>
+          <SharedSlideUpMenu
+            isOpen={isSlideUpMenuOpen}
+            size="small"
+            close={() => {
+              setIsSlideUpMenuOpen(false)
+            }}
+          >
+            <div className="settings_wrap">
+              <div className="row row_slippage">
+                <span className="settings_label">Slippage tolerance</span>
+                <SharedButton type="secondary" size="medium" icon="chevron">
+                  1%
+                </SharedButton>
+              </div>
+              <div className="row row_fee">
+                <span className="settings_label settings_label_fee">
+                  Transaction Fee/Speed
+                </span>
+                <SharedNetworkFeeGroup />
+              </div>
+            </div>
+          </SharedSlideUpMenu>
+
+          <div className="top_label label">
+            Transaction settings
+            <button type="button" onClick={openSettings}>
+              <span className="icon_cog" />
+            </button>
           </div>
-          <div className="row row_fee">
-            <span className="settings_label settings_label_fee">
-              Transaction Fee/Speed
-            </span>
-            <SharedNetworkFeeGroup />
-          </div>
-        </div>
-      </SharedSlideUpMenu>
-      <div className="top_label label">
-        Transaction settings
-        <button type="button" onClick={handleClick}>
-          <span className="icon_cog" />
-        </button>
-      </div>
+        </>
+      )}
       <div className="labels_wrap standard_width">
         <span className="label">
           Slippage tolerance
