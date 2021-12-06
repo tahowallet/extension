@@ -82,7 +82,23 @@ export const fetchSwapAssets = createBackgroundAsyncThunk(
   }
 )
 
-const swapPriceJTD = {}
+const swapPriceJTD = {
+  properties: {
+    records: {
+      elements: {
+        properties: {
+          price: { type: "string" },
+          symbol: { type: "string" },
+        },
+      },
+    },
+    page: { type: "uint32" },
+    perPage: { type: "uint32" },
+    total: { type: "uint32" },
+  },
+}
+
+const isValidSwapPriceResponse = jtdValidatorFor(swapPriceJTD)
 
 export const fetchSwapPrices = createBackgroundAsyncThunk(
   "0x-swap/fetchPrices",
@@ -91,8 +107,17 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
       `https://api.0x.org/swap/v1/prices?sellToken=${asset.symbol}&perPage=1000`
     )
 
-    // TODO: Add API validation
-    return apiData.records
+    if (isValidSwapPriceResponse(apiData)) {
+      return apiData.records as ZrxPrice[]
+    }
+
+    logger.warn(
+      "Swap price API call didn't validate, did the 0x API change?",
+      apiData,
+      isValidSwapPriceResponse.errors
+    )
+
+    return []
   }
 )
 
