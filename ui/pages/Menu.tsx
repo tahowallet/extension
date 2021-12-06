@@ -66,7 +66,11 @@ export default function Menu(): ReactElement {
           <h1>Settings</h1>
           <ul>
             {settings.general.map((setting) => (
-              <SettingRow title={setting.title} component={setting.component} />
+              <SettingRow
+                key={setting.title}
+                title={setting.title}
+                component={setting.component}
+              />
             ))}
           </ul>
           <span>More settings are coming</span>
