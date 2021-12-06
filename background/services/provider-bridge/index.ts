@@ -33,6 +33,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
   //   [dAppID: string]: (grantedAccounts: string[]) => void
   // } = {}
 
+  permissionWindow: Promise<browser.Windows.Window> | undefined
+
   static create: ServiceCreatorFunction<
     Events,
     ProviderBridgeService,
@@ -73,12 +75,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 
-  routeContentScriptRPCRequest(
+  async routeContentScriptRPCRequest(
     method: string,
     params: unknown[]
   ): Promise<unknown> {
     switch (method) {
       case "eth_requestAccounts":
+        await this.showDappConnectWindow()
         // TODO: permission checks
         // TODO: proper error handling
         return this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -92,6 +95,21 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )
       }
     }
+  }
+
+  async showDappConnectWindow(): Promise<void> {
+    const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
+    const popupWidth = 400
+    const popupHeight = 600
+    this.permissionWindow = browser.windows.create({
+      url: `${browser.runtime.getURL("popup.html")}?page=permission`,
+      type: "popup",
+      left: left + width - popupWidth,
+      top,
+      width: popupWidth,
+      height: popupHeight,
+      focused: true,
+    })
   }
 
   // async requestAccountAccess(dAppID: string): Promise<string[]> {
