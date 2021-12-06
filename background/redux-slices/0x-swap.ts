@@ -121,6 +121,13 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
   }
 )
 
+export const fetchSwapQuote = createBackgroundAsyncThunk(
+  "0x-swap/fetchQuote",
+  async () => {
+    logger.log("Testing...")
+  }
+)
+
 const swapSlice = createSlice({
   name: "0x-swap",
   initialState,
@@ -188,7 +195,8 @@ export const selectSwappableAssets = createSelector(
             walletAsset.symbol.toLowerCase() ===
               zrxAsset.symbol.toLowerCase() &&
             walletAsset.contractAddress.toLowerCase() !==
-              zrxAsset.address.toLowerCase()
+              zrxAsset.address.toLowerCase() &&
+            process.env.DEBUG === "true"
           ) {
             logger.warn(
               "Swap Asset Discrepancy: Symbol matches but contract address doesn't",
@@ -200,7 +208,9 @@ export const selectSwappableAssets = createSelector(
           if (
             walletAsset.contractAddress.toLowerCase() ===
               zrxAsset.address.toLowerCase() &&
-            walletAsset.symbol.toLowerCase() !== zrxAsset.symbol.toLowerCase()
+            walletAsset.symbol.toLowerCase() !==
+              zrxAsset.symbol.toLowerCase() &&
+            process.env.DEBUG === "true"
           ) {
             logger.warn(
               "Swap Asset Discrepancy: Contract address matches but symbol doesn't",

@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useCallback, useState } from "react"
 import {
   fetchSwapAssets,
   fetchSwapPrices,
+  fetchSwapQuote,
   setSwapTrade,
   setSwapAmount,
   selectSwappableAssets,
@@ -42,9 +43,15 @@ export default function Swap(): ReactElement {
   const buyAssets = useBackgroundSelector(selectSwappableAssets)
   const buyPrice = useBackgroundSelector(selectSwapPrice)
 
-  const handleClick = useCallback(() => {
-    setOpenAssetMenu((isCurrentlyOpen) => !isCurrentlyOpen)
-  }, [])
+  const getQuote = useCallback(async () => {
+    if (buyAsset && sellAsset) {
+      // Wait until we get the quote
+      await dispatch(fetchSwapQuote())
+
+      // Now open the asset menu
+      setOpenAssetMenu((isCurrentlyOpen) => !isCurrentlyOpen)
+    }
+  }, [dispatch, buyAsset, sellAsset])
 
   const fromAssetSelected = useCallback(
     async (asset) => {
@@ -129,7 +136,7 @@ export default function Swap(): ReactElement {
       <CorePage>
         <SharedSlideUpMenu
           isOpen={openAssetMenu}
-          close={handleClick}
+          close={() => setOpenAssetMenu(false)}
           size="large"
         >
           <SwapQoute />
@@ -162,20 +169,14 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {sellAsset && buyAsset ? (
-                <SharedButton type="primary" size="large" onClick={handleClick}>
-                  Get final quote
-                </SharedButton>
-              ) : (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  isDisabled
-                  onClick={handleClick}
-                >
-                  Review swap
-                </SharedButton>
-              )}
+              <SharedButton
+                type="primary"
+                size="large"
+                isDisabled={!sellAsset || !buyAsset}
+                onClick={getQuote}
+              >
+                Get final quote
+              </SharedButton>
             </div>
           </div>
         </div>
