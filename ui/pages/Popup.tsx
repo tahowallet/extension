@@ -28,10 +28,10 @@ import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Permission from "./Permission"
 
 function transformLocation(inputLocation: Location): Location {
-  // Poor man's query string parse in a somewhat controlled environment
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
-  const maybePage = window.location.href.split("page=")[1]
+  const params = new URLSearchParams(window.location.search)
+  const maybePage = params.get("page")
 
   if (!maybePage) {
     return inputLocation
