@@ -87,8 +87,6 @@ describe("KeyringService when uninitialized", () => {
     mockAlarms(mockBrowser)
 
     service = await startKeyringService()
-
-    jest.spyOn(Date, "now").mockReturnValue(dateNowValue)
   })
 
   describe("and locked", () => {
@@ -293,7 +291,7 @@ describe("KeyringService when saving keyrings", () => {
     })
   })
 
-  it("loads encrypted data at instantiation time", async () => {
+  it.only("loads encrypted data at instantiation time", async () => {
     localStorage = {
       tallyVaults: {
         version: 1,
@@ -302,9 +300,9 @@ describe("KeyringService when saving keyrings", () => {
             timeSaved: 1635201991098,
             vault: {
               salt: "XeQ9825jVp7rCq6f2vRySunT/G7Q4rbCcrWxKc/o6KiRCx27eyrQYHciGz4YB3wYCh6Po1liuffN7GIYqkxWJw==",
-              initializationVector: "K5/+ECJ2ei6Fy+x10TutgQ==",
+              initializationVector: "7MJ1ur79CzKwgVAXXcJmQA==",
               cipherText:
-                "9tmTazKJT4tai1HdhT4pVD/o97QJG4KspsCqIp2Gpk0CsWxEIQ4FFJ4ecOOmW6+Gpojgh77N0sQsCU8LL4S43zK/XS5LzTtLNlPq9CQ9IRDt0SZQN4tD7/0/rO5H4wDRCaHxj0g49O5/n87ezlHvijYB+gr0d64OE96TyDkTuZZgrZg4jB4DL3aEebhZp+zKidofi0GCHqqKClzw2nwq7teasRYV6h69KcYibpITB0+FN1QSqP4c9Oblio3VTjfIubC8uINXhnKO5b1Pj6md4N6wj3RyFQVober45vRfl/WAGQF4pHM2KyvWFytZ+tQJ+QgBhTPwrJjMMmabnCok6MWLUApLOdddDHYyUfrUZuxp2xvw/A==",
+                "0bi2msjv2+3zVt2Tjd40i7BNfAuMgbomzCOuce2/l5oiyxsTcqOb871xdDYIvh2g7uHnRXC+BSbopA4xoXpRn/uh4Tjcu8R0dZxsCxCBRAiXVu1RLFojAdhsUwuUZuHn7nhGmu9mrLNKrVh8lFmshYfjtFMgiUFjAIkzEwWvVDvVT0PWVZghg+KXrUd+i3ymVRHYnvz2nZ91fYa3TBIP27ohTxSrNGyccz63Njqk7fCVNACSEXMC7Uqment1h/YpIYG8IGDTfo7/7kz8dSvBQlPlTSgOnC4O9Bey0UEj0LAZXur/i6EyJUxQWlWIXN6is5tEDfWFunrjRmbeqpQBMrPhlhUbGNfbvid5bTGHsgO2Kz9d3w==",
             },
           },
         ],
