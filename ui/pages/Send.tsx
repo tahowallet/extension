@@ -48,7 +48,6 @@ export default function Send(): ReactElement {
     setFeeModalOpen(true)
   }
   const closeSelectFeeModal = () => {
-    // setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
     setFeeModalOpen(false)
   }
   const sendTransactionRequest = async () => {
@@ -68,9 +67,14 @@ export default function Send(): ReactElement {
       estimatedFeesPerGas?.baseFeePerGas &&
       estimatedFeesPerGas?.instant?.maxFeePerGas
     ) {
-      setMinGas(Number(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei")))
+      setMinGas(
+        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+      )
       setMaxGas(
-        Number(formatUnits(estimatedFeesPerGas?.instant?.maxFeePerGas, "gwei"))
+        parseInt(
+          formatUnits(estimatedFeesPerGas?.instant?.maxFeePerGas, "gwei"),
+          10
+        )
       )
     }
   }, [estimatedFeesPerGas])
