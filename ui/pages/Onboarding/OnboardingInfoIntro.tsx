@@ -24,7 +24,7 @@ const steps = [
       extraStyles: ``,
     },
     title: "Tally is a DAO",
-    body: `That means Tally is owned by our users.  And all profits go straight to the community.`,
+    body: `That means Tally is owned by our users. And all profits go straight to the community.`,
     buttonCopy: "Continue",
   },
   {
