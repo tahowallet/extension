@@ -33,13 +33,9 @@ function transformLocation(inputLocation: Location): Location {
   const params = new URLSearchParams(window.location.search)
   const maybePage = params.get("page")
 
-  if (!maybePage) {
-    return inputLocation
-  }
-
   return {
     ...inputLocation,
-    pathname: `/${maybePage}`,
+    pathname: maybePage ? `/${maybePage}` : inputLocation.pathname,
   }
 }
 
