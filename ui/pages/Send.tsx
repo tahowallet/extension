@@ -5,6 +5,7 @@ import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { utils } from "ethers"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
@@ -50,11 +51,13 @@ export default function Send(): ReactElement {
   const closeSelectFeeModal = () => {
     setFeeModalOpen(false)
   }
+
   const sendTransactionRequest = async () => {
     const transaction = {
       from: Object.keys(accountData)[0],
       to: destinationAddress,
-      value: BigInt(amount),
+      // eslint-disable-next-line no-underscore-dangle
+      value: BigInt(utils.parseEther(amount)._hex),
       maxFeePerGas: selectedGas?.maxFeePerGas,
       maxPriorityFeePerGas: selectedGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
@@ -168,7 +171,7 @@ export default function Send(): ReactElement {
                 size="large"
                 isDisabled={
                   selectedCount <= 0 ||
-                  BigInt(amount) === BigInt(0) ||
+                  Number(amount) === 0 ||
                   !isAddress(destinationAddress)
                 }
                 linkTo={{
