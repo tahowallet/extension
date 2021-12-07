@@ -31,10 +31,6 @@
   --info-20: #d4e9f0;
 }
 
-html {
-  overflow: scroll;
-}
-
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;

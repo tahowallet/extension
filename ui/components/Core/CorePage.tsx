@@ -80,12 +80,12 @@ export default function CorePage(props: Props): ReactElement {
             justify-content: space-between;
             align-items: center;
             height: 100vh;
-            width: 100vw;
+            width: 100%;
           }
           .page_content {
             height: 480px;
             width: 100%;
-            overflow-y: scroll;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             flex-grow: 1;
