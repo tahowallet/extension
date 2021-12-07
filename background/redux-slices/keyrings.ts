@@ -61,10 +61,20 @@ const keyringsSlice = createSlice({
   reducers: {
     keyringLocked: (state) => ({ ...state, status: "locked" }),
     keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
-    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => ({
-      ...state,
-      keyrings,
-    }),
+    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
+      // When the keyrings are locked, we receive updateKeyrings with an empty
+      // list as the keyring service clears the in-memory keyrings. For UI
+      // purposes, however, we want to continue tracking the keyring metadata,
+      // so we ignore an empty list if the keyrings are locked.
+      if (keyrings.length === 0 && state.status !== "locked") {
+        return state
+      }
+
+      return {
+        ...state,
+        keyrings,
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
