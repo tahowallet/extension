@@ -7,3 +7,8 @@ export const selectIsCurrentAccountSigner = createSelector(
   (state: RootState) => state.ui.selectedAccount,
   (addresses, selectedAccount) => addresses.includes(selectedAccount.address)
 )
+
+export const selectKeyringStatus = createSelector(
+  (state: RootState) => state.keyrings.status,
+  (status) => status
+)
