@@ -35,10 +35,15 @@ export default function KeyringSetPassword(): ReactElement {
       <h1 className="serif_header">Good hunting.</h1>
       <div className="subtitle">The decentralized web awaits.</div>
       <div className="input_wrap">
-        <SharedInput placeholder="Password" onChange={setPassword} />
+        <SharedInput
+          type="password"
+          placeholder="Password"
+          onChange={setPassword}
+        />
       </div>
       <div className="input_wrap repeat_password_wrap">
         <SharedInput
+          type="password"
           placeholder="Repeat Password"
           onChange={setPasswordConfirmation}
         />

@@ -30,7 +30,11 @@ export default function KeyringUnlock(): ReactElement {
       <h1 className="serif_header">Unlock Your Wallet</h1>
       <div className="subtitle">The decentralized web awaits.</div>
       <div className="input_wrap">
-        <SharedInput placeholder="Password" onChange={setPassword} />
+        <SharedInput
+          type="password"
+          placeholder="Password"
+          onChange={setPassword}
+        />
       </div>
       <SharedButton type="primary" size="large" onClick={dispatchUnlockWallet}>
         Unlock and Continue
