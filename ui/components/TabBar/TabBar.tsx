@@ -25,7 +25,7 @@ export default function TabBar(): ReactElement {
       <style jsx>
         {`
           nav {
-            width: 100vw;
+            width: 100%;
             height: 56px;
             background-color: var(--hunter-green);
             display: flex;
