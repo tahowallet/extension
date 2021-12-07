@@ -35,6 +35,8 @@ import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
+  keyringLocked,
+  keyringUnlocked,
   updateKeyrings,
 } from "./redux-slices/keyrings"
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
@@ -440,6 +442,13 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.keyringService.emitter.on("locked", async (isLocked) => {
+      if (isLocked) {
+        this.store.dispatch(keyringLocked())
+      } else {
+        this.store.dispatch(keyringUnlocked())
+      }
+    })
     keyringSliceEmitter.on("unlockKeyring", async (password) => {
       await this.keyringService.unlock(password)
     })
