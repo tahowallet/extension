@@ -27,7 +27,8 @@ export const initialState: KeyringsState = {
 }
 
 export type Events = {
-  unlockKeyring: string
+  createPassword: string
+  unlockKeyrings: string
   generateNewKeyring: never
   importLegacyKeyring: { mnemonic: string }
 }
@@ -92,5 +93,19 @@ export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
   async () => {
     await emitter.emit("generateNewKeyring")
+  }
+)
+
+export const unlockKeyrings = createBackgroundAsyncThunk(
+  "keyrings/unlockKeyrings",
+  async (password: string) => {
+    await emitter.emit("unlockKeyrings", password)
+  }
+)
+
+export const createPassword = createBackgroundAsyncThunk(
+  "keyrings/createPassword",
+  async (password: string) => {
+    await emitter.emit("createPassword", password)
   }
 )

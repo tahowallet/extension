@@ -452,7 +452,12 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(keyringUnlocked())
       }
     })
-    keyringSliceEmitter.on("unlockKeyring", async (password) => {
+
+    keyringSliceEmitter.on("createPassword", async (password) => {
+      await this.keyringService.unlock(password, true)
+    })
+
+    keyringSliceEmitter.on("unlockKeyrings", async (password) => {
       await this.keyringService.unlock(password)
     })
 
