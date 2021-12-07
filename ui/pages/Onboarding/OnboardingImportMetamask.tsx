@@ -47,6 +47,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
+  const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
   const keyringImport = useBackgroundSelector(
@@ -56,12 +57,14 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const history = useHistory()
 
   useEffect(() => {
-    if (areKeyringsUnlocked && keyringImport === "done") {
+    if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
+      setIsImporting(false)
       history.push(nextPage)
     }
-  }, [history, areKeyringsUnlocked, keyringImport, nextPage])
+  }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
+    setIsImporting(true)
     dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase }))
   }, [dispatch, recoveryPhrase])
 
@@ -79,7 +82,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
       </div>
       <div className="portion bottom">
-        <SharedButton size="medium" type="primary" onClick={importWallet}>
+        <SharedButton
+          size="medium"
+          type="primary"
+          isDisabled={isImporting}
+          onClick={importWallet}
+        >
           Import account
         </SharedButton>
         <SharedButton size="small" type="tertiary">
