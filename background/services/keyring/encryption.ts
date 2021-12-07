@@ -86,7 +86,7 @@ export async function deriveSymmetricKeyFromPassword(
     {
       name: "PBKDF2",
       salt: encoder.encode(salt),
-      iterations: 10000,
+      iterations: 1000000,
       hash: "SHA-256",
     },
     derivationKey,
