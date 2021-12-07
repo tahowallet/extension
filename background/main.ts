@@ -415,6 +415,9 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
+      // Mark as loading and wire things up.
+      this.store.dispatch(loadAccount(address))
+
       this.chainService.addAccountToTrack({
         address,
         // TODO support other networks
@@ -449,7 +452,12 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(keyringUnlocked())
       }
     })
-    keyringSliceEmitter.on("unlockKeyring", async (password) => {
+
+    keyringSliceEmitter.on("createPassword", async (password) => {
+      await this.keyringService.unlock(password, true)
+    })
+
+    keyringSliceEmitter.on("unlockKeyrings", async (password) => {
       await this.keyringService.unlock(password)
     })
 
