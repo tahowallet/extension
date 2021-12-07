@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
+  selectIsCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
@@ -14,6 +15,10 @@ import BackButton from "../components/Shared/SharedBackButton"
 export default function SingleAsset(): ReactElement {
   const location = useLocation<{ symbol: string }>()
   const { symbol } = location.state
+
+  const isCurrentAccountSigner = useBackgroundSelector(
+    selectIsCurrentAccountSigner
+  )
 
   const filteredActivities = useBackgroundSelector((state) =>
     selectCurrentAccountActivitiesWithTimestamps(state).filter(
@@ -58,8 +63,9 @@ export default function SingleAsset(): ReactElement {
               <></>
             )}
           </div>
-          <div className="right">
-            {process.env.HIDE_SEND_BUTTON === "true" ? null : (
+          {process.env.HIDE_SEND_BUTTON === "false" &&
+          isCurrentAccountSigner ? (
+            <div className="right">
               <SharedButton
                 type="primary"
                 size="medium"
@@ -73,11 +79,13 @@ export default function SingleAsset(): ReactElement {
               >
                 Send
               </SharedButton>
-            )}
-            <SharedButton type="primary" size="medium" icon="swap">
-              Swap
-            </SharedButton>
-          </div>
+              <SharedButton type="primary" size="medium" icon="swap">
+                Swap
+              </SharedButton>
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
         <div className="sub_info_separator_wrap standard_width_padded">
           <div className="left">Asset is on: Arbitrum</div>

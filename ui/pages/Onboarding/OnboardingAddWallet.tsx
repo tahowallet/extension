@@ -32,12 +32,12 @@ export default function OnboardingAddWallet(): ReactElement {
           </div>
           <SharedButton
             type="primary"
-            isDisabled
             linkTo={
               process.env.HIDE_ADD_SEED === "true"
                 ? undefined
                 : "/onboarding/importMetamask"
             }
+            isDisabled={process.env.HIDE_ADD_SEED === "true"}
             size="medium"
             onClick={() => {
               if (process.env.HIDE_ADD_SEED === "true") {
