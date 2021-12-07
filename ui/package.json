@@ -25,6 +25,7 @@
   "dependencies": {
     "@ethersproject/web": "^5.5.0",
     "@ethersproject/address": "^5.5.0",
+    "@ethersproject/units": "5.4.0",
     "@reduxjs/toolkit": "^1.6.0",
     "@tallyho/tally-background": "0.0.1",
     "classnames": "^2.3.1",

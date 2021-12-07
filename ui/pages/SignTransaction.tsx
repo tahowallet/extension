@@ -78,9 +78,7 @@ export default function SignTransaction(): ReactElement {
   const handleConfirm = async () => {
     if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
       dispatch(signTransaction(txDetails))
-      if (isTransactionSigned) {
-        history.push("/")
-      }
+      history.push("/")
     }
   }
 
