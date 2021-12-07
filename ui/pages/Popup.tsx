@@ -42,7 +42,7 @@ export default function Popup({ store }: { store: Store }): ReactElement {
             <SingleAsset />
           </Route>
           <Route path="/onboarding/importMetamask">
-            <OnboardingImportMetamask onImported={() => history.push("/")} />
+            <OnboardingImportMetamask nextPage="/" />
           </Route>
           <Route path="/onboarding/viewOnlyWallet">
             <OnboardingViewOnlyWallet />

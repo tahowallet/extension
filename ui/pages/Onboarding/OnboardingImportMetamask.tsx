@@ -1,8 +1,13 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useAreKeyringsUnlocked,
+} from "../../hooks"
 
 function TextArea({
   value,
@@ -33,30 +38,34 @@ function TextArea({
 }
 
 type Props = {
-  onImported: () => void
+  nextPage: string
 }
 
 export default function OnboardingImportMetamask(props: Props): ReactElement {
-  const [recoveryPhrase, setRecoveryPhrase] = useState(
-    // Don't store real money in this plz.
-    ""
-  )
+  const { nextPage } = props
+
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+
+  const [recoveryPhrase, setRecoveryPhrase] = useState("")
 
   const dispatch = useBackgroundDispatch()
   const keyringImport = useBackgroundSelector(
     (state) => state.keyrings.importing
   )
 
-  if (keyringImport === "done") {
-    const { onImported } = props
-    onImported()
-  }
+  const history = useHistory()
+
+  useEffect(() => {
+    if (areKeyringsUnlocked && keyringImport === "done") {
+      history.push(nextPage)
+    }
+  }, [history, areKeyringsUnlocked, keyringImport, nextPage])
 
   const importWallet = useCallback(async () => {
     dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase }))
   }, [dispatch, recoveryPhrase])
 
-  return (
+  return areKeyringsUnlocked ? (
     <section className="center_horizontal">
       <div className="back_button_wrap">
         <SharedBackButton />
@@ -123,5 +132,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         }
       `}</style>
     </section>
+  ) : (
+    <></>
   )
 }
