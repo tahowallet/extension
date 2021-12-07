@@ -1,5 +1,9 @@
 import { formatUnits } from "@ethersproject/units"
-import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
+import {
+  EstimatedFeesPerGas,
+  selectLastGasEstimatesRefreshTime,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
@@ -8,44 +12,25 @@ import SharedInput from "../Shared/SharedInput"
 type GasOption = {
   name: string
   confidence: string
-  gwei: number
+  gwei: string
   dollarValue: string
-  maxFeePerGas: bigint | undefined
-  maxPriorityFeePerGas: bigint | undefined
+  price: bigint
+  maxFeePerGas: bigint
+  maxPriorityFeePerGas: bigint
 }
 
 interface NetworkFeesChooserProps {
   setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-  setSelectedGas: React.Dispatch<React.SetStateAction<GasOption | undefined>>
-  selectedGas?: GasOption
+  onSaveGasChoice: React.Dispatch<React.SetStateAction<BlockEstimate>>
+  selectedGas?: BlockEstimate
   gasLimit: string | number
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
-  estimatedFeesPerGas: {
-    baseFeePerGas?: bigint
-    instant?: {
-      maxFeePerGas: bigint
-      maxPriorityFeePerGas: bigint
-      confidence: number
-      price: number | bigint
-    }
-    express?: {
-      maxFeePerGas: bigint
-      maxPriorityFeePerGas: bigint
-      confidence: number
-      price: number | bigint
-    }
-    regular?: {
-      maxFeePerGas: bigint
-      maxPriorityFeePerGas: bigint
-      confidence: number
-      price: number | bigint
-    }
-  }
+  estimatedFeesPerGas: EstimatedFeesPerGas | undefined
 }
 
 export default function NetworkFeesChooser({
   setFeeModalOpen,
-  setSelectedGas,
+  onSaveGasChoice,
   selectedGas,
   gasLimit,
   setGasLimit,
@@ -60,7 +45,12 @@ export default function NetworkFeesChooser({
   }
 
   const saveUserGasChoice = () => {
-    setSelectedGas(gasOptions[activeFeeIndex])
+    onSaveGasChoice({
+      confidence: Number(gasOptions[activeFeeIndex].confidence),
+      price: gasOptions[activeFeeIndex].price,
+      maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
+      maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
+    })
     setFeeModalOpen(false)
   }
   const gasTime = useSelector(selectLastGasEstimatesRefreshTime)
@@ -78,61 +68,40 @@ export default function NetworkFeesChooser({
     }
   })
 
+  const getGasOptionFormatted = (option: BlockEstimate) => {
+    const { confidence } = option
+    const names: { [key: number]: string } = {
+      70: "Regular",
+      95: "Express",
+      99: "Instant",
+    }
+    return {
+      name: names[confidence],
+      confidence: `${confidence}`,
+      gwei: Number(
+        formatUnits(option.maxFeePerGas + option.maxPriorityFeePerGas, "gwei")
+      ).toFixed(),
+      dollarValue: "$??",
+      price: option.price,
+      maxFeePerGas: option.maxFeePerGas,
+      maxPriorityFeePerGas: option.maxPriorityFeePerGas,
+    }
+  }
+
   const updateGasOptions = useCallback(() => {
     if (estimatedFeesPerGas) {
       const instant = estimatedFeesPerGas?.instant
       const express = estimatedFeesPerGas?.express
       const regular = estimatedFeesPerGas?.regular
       if (!!instant && !!express && !!regular) {
-        const updatedGasOptions = [
-          {
-            name: "Regular",
-            confidence: `${regular.confidence}%`,
-            gwei: parseInt(
-              formatUnits(
-                regular.maxFeePerGas + regular.maxPriorityFeePerGas,
-                "gwei"
-              ),
-              10
-            ),
-            dollarValue: "$??",
-            maxFeePerGas: regular.maxFeePerGas,
-            maxPriorityFeePerGas: regular.maxPriorityFeePerGas,
-          },
-          {
-            name: "Express",
-            confidence: `${express.confidence}%`,
-            gwei: parseInt(
-              formatUnits(
-                express.maxFeePerGas + express.maxPriorityFeePerGas,
-                "gwei"
-              ),
-              10
-            ),
-            dollarValue: "$??",
-            maxFeePerGas: express.maxFeePerGas,
-            maxPriorityFeePerGas: express.maxPriorityFeePerGas,
-          },
-          {
-            name: "Instant",
-            confidence: `${instant.confidence}%`,
-            gwei: parseInt(
-              formatUnits(
-                instant.maxFeePerGas + instant.maxPriorityFeePerGas,
-                "gwei"
-              ),
-              10
-            ),
-            dollarValue: "$??",
-            maxFeePerGas: instant.maxFeePerGas,
-            maxPriorityFeePerGas: instant.maxPriorityFeePerGas,
-          },
-        ]
+        const updatedGasOptions = [regular, express, instant].map((option) =>
+          getGasOptionFormatted(option)
+        )
         setGasOptions(updatedGasOptions)
-        setSelectedGas(updatedGasOptions[0])
+        onSaveGasChoice(regular)
       }
     }
-  }, [estimatedFeesPerGas, setSelectedGas])
+  }, [estimatedFeesPerGas, onSaveGasChoice])
 
   useEffect(() => {
     updateGasOptions()
@@ -140,7 +109,9 @@ export default function NetworkFeesChooser({
 
   useEffect(() => {
     setActiveFeeIndex(
-      gasOptions.findIndex((el) => el.name === selectedGas?.name)
+      gasOptions.findIndex(
+        (el) => el.confidence === `${selectedGas?.confidence}`
+      )
     )
   }, [gasOptions, selectedGas])
 
@@ -164,7 +135,7 @@ export default function NetworkFeesChooser({
             >
               <div className="option_left">
                 <div className="name">{option.name}</div>
-                <div className="subtext">Probability: {option.confidence}</div>
+                <div className="subtext">Probability: {option.confidence}%</div>
               </div>
               <div className="option_right">
                 <div className="price">{`~${option.gwei} Gwei`}</div>

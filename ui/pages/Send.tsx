@@ -1,5 +1,6 @@
 import { isAddress } from "@ethersproject/address"
 import { formatUnits } from "@ethersproject/units"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
@@ -15,15 +16,6 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
-type GasOption = {
-  name: string
-  confidence: string
-  gwei: number
-  dollarValue: string
-  maxFeePerGas: bigint | undefined
-  maxPriorityFeePerGas: bigint | undefined
-}
-
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
   const assetSymbol = location?.state?.symbol
@@ -34,7 +26,13 @@ export default function Send(): ReactElement {
   const [feeModalOpen, setFeeModalOpen] = useState(false)
   const [minGas, setMinGas] = useState(0)
   const [maxGas, setMaxGas] = useState(0)
-  const [selectedGas, setSelectedGas] = useState<GasOption>()
+  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
+    useState<BlockEstimate>({
+      confidence: 0,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    })
   const [gasLimit, setGasLimit] = useState("")
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
@@ -58,13 +56,14 @@ export default function Send(): ReactElement {
       to: destinationAddress,
       // eslint-disable-next-line no-underscore-dangle
       value: BigInt(utils.parseEther(amount)._hex),
-      maxFeePerGas: selectedGas?.maxFeePerGas,
-      maxPriorityFeePerGas: selectedGas?.maxPriorityFeePerGas,
+      maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
+      maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
     dispatch(updateTransactionOptions(transaction))
   }
 
+  // TODO Once we know what do we consider min and max gas this should be updated
   const findMinMaxGas = useCallback(() => {
     if (
       estimatedFeesPerGas?.baseFeePerGas &&
@@ -74,10 +73,7 @@ export default function Send(): ReactElement {
         parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
       )
       setMaxGas(
-        parseInt(
-          formatUnits(estimatedFeesPerGas?.instant?.maxFeePerGas, "gwei"),
-          10
-        )
+        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
       )
     }
   }, [estimatedFeesPerGas])
@@ -103,8 +99,8 @@ export default function Send(): ReactElement {
         >
           <NetworkFeesChooser
             setFeeModalOpen={setFeeModalOpen}
-            setSelectedGas={setSelectedGas}
-            selectedGas={selectedGas}
+            onSaveGasChoice={setSelectedEstimatedFeePerGas}
+            selectedGas={selectedEstimatedFeePerGas}
             gasLimit={gasLimit}
             setGasLimit={setGasLimit}
             estimatedFeesPerGas={estimatedFeesPerGas}
@@ -142,15 +138,25 @@ export default function Send(): ReactElement {
                 onClick={openSelectFeeModal}
                 style={{
                   background: `linear-gradient(90deg, var(--green-80) ${(
-                    ((selectedGas?.gwei || minGas) / maxGas) *
+                    (minGas / maxGas) *
                     100
                   ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    ((selectedGas?.gwei || minGas) / maxGas) *
+                    (minGas / maxGas) *
                     100
                   ).toFixed()}%)`,
                 }}
               >
-                <div>~{selectedGas?.gwei || minGas}Gwei</div>
+                <div>
+                  ~
+                  {Number(
+                    formatUnits(
+                      selectedEstimatedFeePerGas.maxFeePerGas +
+                        selectedEstimatedFeePerGas.maxPriorityFeePerGas,
+                      "gwei"
+                    )
+                  ).toFixed() || minGas}
+                  Gwei
+                </div>
                 <img
                   className="settings_image"
                   src="./images/cog@2x.png"
