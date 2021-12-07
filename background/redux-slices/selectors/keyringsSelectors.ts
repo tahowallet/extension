@@ -12,3 +12,9 @@ export const selectKeyringStatus = createSelector(
   (state: RootState) => state.keyrings.status,
   (status) => status
 )
+
+export const selectSigningAddresses = createSelector(
+  (state: RootState) =>
+    state.keyrings.keyrings.flatMap((keyring) => keyring.addresses),
+  (addresses) => addresses
+)
