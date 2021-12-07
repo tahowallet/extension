@@ -123,8 +123,18 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
 
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
-  async () => {
-    logger.log("Testing...")
+  async (quote: { assets: SwapAssets; amount: SwapAmount }) => {
+    const apiData = await fetchJson(
+      `https://api.0x.org/swap/v1/quote?` +
+        `sellToken=${quote.assets.sellAsset?.symbol}&` +
+        `buyToken=${quote.assets.buyAsset?.symbol}&` +
+        `sellAmount=${quote.amount.sellAmount}`
+    )
+
+    logger.log("0x Quote Response", apiData)
+
+    // TODO
+    return {}
   }
 )
 

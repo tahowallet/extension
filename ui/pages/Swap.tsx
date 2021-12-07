@@ -22,13 +22,9 @@ export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
-  const { swap, sellAsset, buyAsset } = useBackgroundSelector((state) => {
-    return {
-      swap: state.swap,
-      sellAsset: state.swap.sellAsset,
-      buyAsset: state.swap.buyAsset,
-    }
-  })
+  const { sellAsset, buyAsset, sellAmount, buyAmount } = useBackgroundSelector(
+    (state) => state.swap
+  )
 
   // Fetch assets from the 0x API whenever the swap page is loaded
   useEffect(() => {
@@ -45,13 +41,18 @@ export default function Swap(): ReactElement {
 
   const getQuote = useCallback(async () => {
     if (buyAsset && sellAsset) {
+      const quoteOptions = {
+        assets: { sellAsset, buyAsset },
+        amount: { sellAmount, buyAmount },
+      }
+
       // Wait until we get the quote
-      await dispatch(fetchSwapQuote())
+      await dispatch(fetchSwapQuote(quoteOptions))
 
       // Now open the asset menu
       setOpenAssetMenu(true)
     }
-  }, [dispatch, buyAsset, sellAsset])
+  }, [dispatch, sellAsset, buyAsset, sellAmount, buyAmount])
 
   const fromAssetSelected = useCallback(
     async (asset) => {
@@ -150,7 +151,7 @@ export default function Swap(): ReactElement {
                 defaultAsset={sellAsset}
                 onAssetSelect={fromAssetSelected}
                 onAmountChange={fromAmountChanged}
-                amount={swap.sellAmount}
+                amount={sellAmount}
                 label="Swap from:"
               />
             </div>
@@ -161,7 +162,7 @@ export default function Swap(): ReactElement {
                 defaultAsset={buyAsset}
                 onAssetSelect={toAssetSelected}
                 onAmountChange={toAmountChanged}
-                amount={swap.buyAmount}
+                amount={buyAmount}
                 label="Swap to:"
               />
             </div>

@@ -24,7 +24,7 @@ export default function SwapQoute(): ReactElement {
   return (
     <section className="center_horizontal standard_width">
       <SharedActivityHeader label="Swap Assets" activity="swap" />
-      <div className="qoute_cards">
+      <div className="quote_cards">
         <SwapQuoteAssetCard />
         <span className="icon_switch" />
         <SwapQuoteAssetCard />
@@ -53,7 +53,7 @@ export default function SwapQoute(): ReactElement {
       ) : (
         <>
           <div className="exchange_section_wrap">
-            <span className="label">Exchange route</span>
+            <span className="top_label label">Exchange route</span>
             <div className="exchange_content standard_width">
               <div className="left">
                 <span className="icon_uniswap" />
@@ -106,10 +106,13 @@ export default function SwapQoute(): ReactElement {
             flex-grow: 1;
             flex-shrink: 0;
           }
-          .qoute_cards {
+          .quote_cards {
             display: flex;
             justify-content: space-between;
             align-items: center;
+          }
+          .top_label {
+            margin-bottom: 7px;
           }
           .label_right {
             float: right;
