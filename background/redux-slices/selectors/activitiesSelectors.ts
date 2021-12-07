@@ -10,7 +10,9 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     account: AccountState
   }) => state,
   ({ activities, ui, account }) => {
-    const currentAccountActivities = activities[ui.selectedAccount?.address]
+    const currentAccountActivities = ui.selectedAccount
+      ? activities[ui.selectedAccount.address]
+      : undefined
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
       const activityItem = currentAccountActivities.entities[id] as ActivityItem
       const isSent =
