@@ -318,6 +318,8 @@ export default class KeyringService extends BaseService<Events> {
       maxPriorityFeePerGas: txRequest.maxPriorityFeePerGas,
       maxFeePerGas: txRequest.maxFeePerGas,
       type: txRequest.type,
+      value: txRequest.value,
+      gasLimit: txRequest.gasLimit,
       chainId: Number.parseInt(txRequest.chainID, 10),
     }
     // unfortunately, ethers gives us a serialized signed tx here

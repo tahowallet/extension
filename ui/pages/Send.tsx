@@ -1,26 +1,20 @@
 import { isAddress } from "@ethersproject/address"
+import { formatUnits } from "@ethersproject/units"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { utils } from "ethers"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
-import NetworkFeesChooser from "../components/NetworkFees/Chooser"
+import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-
-type GasOption = {
-  name: string
-  confidence: string
-  gwei: number
-  dollarValue: string
-  maxFeePerGas: bigint | undefined
-  maxPriorityFeePerGas: bigint | undefined
-}
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
@@ -30,11 +24,15 @@ export default function Send(): ReactElement {
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [minGas, setMinGas] = useState(0)
   const [maxGas, setMaxGas] = useState(0)
-  const [selectedGas, setSelectedGas] = useState<GasOption>()
-  const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
+    useState<BlockEstimate>({
+      confidence: 0,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    })
   const [gasLimit, setGasLimit] = useState("")
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
@@ -45,16 +43,10 @@ export default function Send(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const saveUserGasChoice = () => {
-    setSelectedGas(gasOptions[activeFeeIndex])
-    setFeeModalOpen(false)
-  }
-
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
   }
   const closeSelectFeeModal = () => {
-    setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
     setFeeModalOpen(false)
   }
 
@@ -62,92 +54,39 @@ export default function Send(): ReactElement {
     const transaction = {
       from: Object.keys(accountData)[0],
       to: destinationAddress,
-      value: BigInt(amount),
-      maxFeePerGas: selectedGas?.maxFeePerGas,
-      maxPriorityFeePerGas: selectedGas?.maxPriorityFeePerGas,
+      // eslint-disable-next-line no-underscore-dangle
+      value: BigInt(utils.parseEther(amount)._hex),
+      maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
+      maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
     dispatch(updateTransactionOptions(transaction))
   }
 
-  const updateGasOptions = useCallback(() => {
-    if (estimatedFeesPerGas) {
-      const instant = estimatedFeesPerGas?.instant
-      const express = estimatedFeesPerGas?.express
-      const regular = estimatedFeesPerGas?.regular
-      if (!!instant && !!express && !!regular) {
-        const updatedGasOptions = [
-          {
-            name: "Regular",
-            confidence: `${regular.confidence}%`,
-            gwei: Number(
-              (BigInt(regular.maxFeePerGas) +
-                BigInt(regular.maxPriorityFeePerGas)) /
-                1000000000n
-            ),
-            dollarValue: "$??",
-            maxFeePerGas: BigInt(regular.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
-          },
-          {
-            name: "Express",
-            confidence: `${express.confidence}%`,
-            gwei: Number(
-              (BigInt(express.maxFeePerGas) +
-                BigInt(express.maxPriorityFeePerGas)) /
-                1000000000n
-            ),
-            dollarValue: "$??",
-            maxFeePerGas: BigInt(express.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(express.maxPriorityFeePerGas),
-          },
-          {
-            name: "Instant",
-            confidence: `${instant.confidence}%`,
-            gwei: Number(
-              (BigInt(instant.maxFeePerGas) +
-                BigInt(instant.maxPriorityFeePerGas)) /
-                1000000000n
-            ),
-            dollarValue: "$??",
-            maxFeePerGas: BigInt(instant.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(instant.maxPriorityFeePerGas),
-          },
-        ]
-        setGasOptions(updatedGasOptions)
-        setSelectedGas(updatedGasOptions[0])
-      }
-    }
-  }, [estimatedFeesPerGas])
-
+  // TODO Once we know what do we consider min and max gas this should be updated
   const findMinMaxGas = useCallback(() => {
-    if (estimatedFeesPerGas) {
-      setMinGas(Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n))
+    if (
+      estimatedFeesPerGas?.baseFeePerGas &&
+      estimatedFeesPerGas?.instant?.maxFeePerGas
+    ) {
+      setMinGas(
+        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+      )
       setMaxGas(
-        Number(estimatedFeesPerGas.instant?.maxFeePerGas) / Number(1000000000n)
+        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
       )
     }
   }, [estimatedFeesPerGas])
 
   useEffect(() => {
     findMinMaxGas()
-    updateGasOptions()
-  }, [estimatedFeesPerGas, findMinMaxGas, updateGasOptions])
-
-  // When estimatedFeesPerGas updates, we select the regular gasOption as default
-  useEffect(() => {
-    setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
-  }, [gasOptions, selectedGas])
+  }, [findMinMaxGas])
 
   useEffect(() => {
     if (assetSymbol) {
       setSelectedCount(1)
     }
   }, [assetSymbol])
-
-  const handleSelectGasOption = (index: number) => {
-    setActiveFeeIndex(index)
-  }
 
   return (
     <>
@@ -156,20 +95,16 @@ export default function Send(): ReactElement {
           size="custom"
           isOpen={feeModalOpen}
           close={closeSelectFeeModal}
-          customSize={`${gasOptions.length * 56 + 320}px`}
+          customSize={`${3 * 56 + 320}px`}
         >
-          {feeModalOpen ? (
-            <NetworkFeesChooser
-              gasOptions={gasOptions}
-              activeFeeIndex={activeFeeIndex}
-              handleSelectGasOption={handleSelectGasOption}
-              gasLimit={gasLimit}
-              setGasLimit={setGasLimit}
-              saveUserGasChoice={saveUserGasChoice}
-            />
-          ) : (
-            <></>
-          )}
+          <NetworkFeesChooser
+            setFeeModalOpen={setFeeModalOpen}
+            onSaveGasChoice={setSelectedEstimatedFeePerGas}
+            selectedGas={selectedEstimatedFeePerGas}
+            gasLimit={gasLimit}
+            setGasLimit={setGasLimit}
+            estimatedFeesPerGas={estimatedFeesPerGas}
+          />
         </SharedSlideUpMenu>
         <div className="standard_width">
           <h1 className="header">
@@ -203,15 +138,25 @@ export default function Send(): ReactElement {
                 onClick={openSelectFeeModal}
                 style={{
                   background: `linear-gradient(90deg, var(--green-80) ${(
-                    ((selectedGas?.gwei || minGas) / maxGas) *
+                    (minGas / maxGas) *
                     100
                   ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    ((selectedGas?.gwei || minGas) / maxGas) *
+                    (minGas / maxGas) *
                     100
                   ).toFixed()}%)`,
                 }}
               >
-                <div>~{selectedGas?.gwei || minGas}Gwei</div>
+                <div>
+                  ~
+                  {Number(
+                    formatUnits(
+                      selectedEstimatedFeePerGas.maxFeePerGas +
+                        selectedEstimatedFeePerGas.maxPriorityFeePerGas,
+                      "gwei"
+                    )
+                  ).toFixed() || minGas}
+                  Gwei
+                </div>
                 <img
                   className="settings_image"
                   src="./images/cog@2x.png"
@@ -232,7 +177,7 @@ export default function Send(): ReactElement {
                 size="large"
                 isDisabled={
                   selectedCount <= 0 ||
-                  BigInt(amount) === BigInt(0) ||
+                  Number(amount) === 0 ||
                   !isAddress(destinationAddress)
                 }
                 linkTo={{

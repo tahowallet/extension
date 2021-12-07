@@ -17,18 +17,20 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
-  estimatedFeesPerGas: {
-    baseFeePerGas: bigint
-    instant: BlockEstimate | undefined
-    express: BlockEstimate | undefined
-    regular: BlockEstimate | undefined
-  } | null
+  estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   lastGasEstimatesRefreshed: number
+}
+
+export type EstimatedFeesPerGas = {
+  baseFeePerGas: bigint
+  instant: BlockEstimate | undefined
+  express: BlockEstimate | undefined
+  regular: BlockEstimate | undefined
 }
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
-  estimatedFeesPerGas: null,
+  estimatedFeesPerGas: undefined,
   lastGasEstimatesRefreshed: Date.now(),
 }
 
