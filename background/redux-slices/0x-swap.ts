@@ -7,15 +7,6 @@ import { Asset, FungibleAsset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
 import { jtdValidatorFor } from "../lib/validation"
 
-export interface SwapState {
-  sellAsset?: FungibleAsset
-  buyAsset?: FungibleAsset
-  sellAmount: string
-  buyAmount: string
-  zrxAssets: ZrxAsset[]
-  zrxPrices: ZrxPrice[]
-}
-
 interface PartialSwapAssets {
   sellAsset?: FungibleAsset
   buyAsset?: FungibleAsset
@@ -41,6 +32,54 @@ interface ZrxAsset {
 interface ZrxPrice {
   symbol: string
   price: string
+}
+
+interface ZrxOrder {
+  makerAmount: string
+  makerToken: string
+  source: string
+  sourcePathId: string
+  takerAmount: string
+  takerToken: string
+  type: number
+}
+
+interface ZrxSources {
+  name: string
+  proportion: string
+}
+
+interface ZrxQuote {
+  allowanceTarget: string
+  buyAmount: string
+  buyTokenAddress: string
+  buyTokenToEthRate: string
+  chainId: number
+  data: string
+  estimatedGas: string
+  gas: string
+  gasPrice: string
+  guaranteedPrice: string
+  minimumProtocolFee: string
+  orders: ZrxOrder[]
+  price: string
+  protocolFee: string
+  sellAmount: string
+  sellTokenAddress: string
+  sellTokenToEthRate: string
+  sources: ZrxSources[]
+  to: string
+  value: string
+}
+
+export interface SwapState {
+  sellAsset?: FungibleAsset
+  buyAsset?: FungibleAsset
+  sellAmount: string
+  buyAmount: string
+  zrxAssets: ZrxAsset[]
+  zrxPrices: ZrxPrice[]
+  quote?: ZrxQuote
 }
 
 export const initialState: SwapState = {
@@ -142,10 +181,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
         `sellAmount=${sellAmount}`
     )
 
-    logger.log("0x Quote Response", apiData)
-
-    // TODO
-    return {}
+    return apiData
   }
 )
 
@@ -189,6 +225,12 @@ const swapSlice = createSlice({
         fetchSwapPrices.fulfilled,
         (state, { payload: zrxPrices }: { payload: ZrxPrice[] }) => {
           return { ...state, zrxPrices }
+        }
+      )
+      .addCase(
+        fetchSwapQuote.fulfilled,
+        (state, { payload: quote }: { payload: ZrxQuote }) => {
+          return { ...state, quote }
         }
       )
   },
