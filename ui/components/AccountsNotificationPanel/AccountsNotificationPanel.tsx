@@ -3,7 +3,13 @@ import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import AccountsNotificationPanelNotifications from "./AccountsNotificationPanelNotifications"
 import AccountsNotificationPanelAccounts from "./AccountsNotificationPanelAccounts"
 
-export default function TopMenuNotifications(): ReactElement {
+type Props = {
+  onCurrentAddressChange: (address: string) => void
+}
+
+export default function TopMenuNotifications({
+  onCurrentAddressChange,
+}: Props): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
@@ -16,7 +22,9 @@ export default function TopMenuNotifications(): ReactElement {
       {panelNumber === 1 ? (
         <AccountsNotificationPanelNotifications />
       ) : (
-        <AccountsNotificationPanelAccounts />
+        <AccountsNotificationPanelAccounts
+          onCurrentAddressChange={onCurrentAddressChange}
+        />
       )}
     </div>
   )

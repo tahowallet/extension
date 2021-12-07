@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
@@ -102,14 +102,37 @@ function WalletTypeHeader({
   )
 }
 
-export default function AccountsNotificationPanelAccounts(): ReactElement {
+type Props = {
+  onCurrentAddressChange: (newAddress: string) => void
+}
+
+export default function AccountsNotificationPanelAccounts({
+  onCurrentAddressChange,
+}: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const accountTotals = useBackgroundSelector(selectAccountTotalsByCategory)
 
+  const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
+
   const selectedAccount = useBackgroundSelector((background) => {
     return background.ui.currentAccount?.address
   })
+
+  const updateCurrentAccount = (address: string) => {
+    setPendingSelectedAddress(address)
+    dispatch(setCurrentAccount(address))
+  }
+
+  useEffect(() => {
+    if (
+      pendingSelectedAddress !== "" &&
+      pendingSelectedAddress === selectedAccount
+    ) {
+      onCurrentAddressChange(pendingSelectedAddress)
+      setPendingSelectedAddress("")
+    }
+  }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccount])
 
   return (
     <div>
@@ -135,7 +158,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
                       <button
                         type="button"
                         onClick={() => {
-                          dispatch(setCurrentAccount(lowerCaseAddress))
+                          updateCurrentAccount(lowerCaseAddress)
                         }}
                       >
                         <AccountsNotificationPanelAccountItem
