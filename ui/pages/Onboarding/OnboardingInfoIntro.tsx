@@ -24,14 +24,14 @@ const steps = [
       extraStyles: ``,
     },
     title: "Tally is a DAO",
-    body: `That means Tally is owned by our users.  And all profits go straight to the community.`,
+    body: `That means Tally is owned by our users. And all profits go straight to the community.`,
     buttonCopy: "Continue",
   },
   {
     image: {
-      width: 273,
-      height: 245.06,
-      fileName: "illustration_onboarding_welcome",
+      width: 246.07,
+      height: 251,
+      fileName: "illustration_onboarding_community_edition",
       extraStyles: `margin-top: 25px;`,
     },
     title: "Community Edition",
