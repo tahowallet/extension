@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
 import { KeyringTypes } from "../types"
+import { setSelectedAccount } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 // TODO this is very simple. We'll want to expand to include "capabilities" per
@@ -36,12 +37,20 @@ export const emitter = new Emittery<Events>()
 // Async thunk to bubble the importLegacyKeyring action from  store to emitter.
 export const importLegacyKeyring = createBackgroundAsyncThunk(
   "keyrings/importLegacyKeyring",
-  async ({ mnemonic }: { mnemonic: string }) => {
-    // If no keyring exists, a new one is generated and sets password to password.
-    // TODO: Make password set by the UI
-    await emitter.emit("unlockKeyring", "password")
-
+  async ({ mnemonic }: { mnemonic: string }, { getState, dispatch }) => {
     await emitter.emit("importLegacyKeyring", { mnemonic })
+
+    // Set the selected account as the first address of the last added keyring,
+    // which will correspond to the last imported keyring, AKA this one. Note that
+    // this does rely on the KeyringService's behavior of pushing new keyrings to
+    // the end of the keyring list.
+    dispatch(
+      setSelectedAccount(
+        (getState() as { keyrings: KeyringsState }).keyrings.keyrings.slice(
+          -1
+        )[0].addresses[0]
+      )
+    )
   }
 )
 
