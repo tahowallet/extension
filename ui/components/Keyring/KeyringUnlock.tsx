@@ -27,13 +27,13 @@ export default function KeyringUnlock(): ReactElement {
   return (
     <section>
       <div className="full_logo" />
-      <h1 className="serif_header">Unlock Your Keyrings</h1>
+      <h1 className="serif_header">Unlock Your Wallet</h1>
       <div className="subtitle">The decentralized web awaits.</div>
       <div className="input_wrap">
         <SharedInput placeholder="Password" onChange={setPassword} />
       </div>
       <SharedButton type="primary" size="large" onClick={dispatchUnlockWallet}>
-        Continuing signing
+        Unlock and Continue
       </SharedButton>
       <style jsx>
         {`
