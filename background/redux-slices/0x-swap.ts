@@ -1,23 +1,29 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
+import { utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { Asset, isSmartContractFungibleAsset } from "../assets"
+import { Asset, FungibleAsset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
 import { jtdValidatorFor } from "../lib/validation"
 
 export interface SwapState {
-  sellAsset?: Asset
-  buyAsset?: Asset
+  sellAsset?: FungibleAsset
+  buyAsset?: FungibleAsset
   sellAmount: string
   buyAmount: string
   zrxAssets: ZrxAsset[]
   zrxPrices: ZrxPrice[]
 }
 
+interface PartialSwapAssets {
+  sellAsset?: FungibleAsset
+  buyAsset?: FungibleAsset
+}
+
 interface SwapAssets {
-  sellAsset?: Asset
-  buyAsset?: Asset
+  sellAsset: FungibleAsset
+  buyAsset: FungibleAsset
 }
 
 interface SwapAmount {
@@ -124,11 +130,16 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
   async (quote: { assets: SwapAssets; amount: SwapAmount }) => {
+    const sellAmount = utils.parseUnits(
+      quote.amount.sellAmount,
+      quote.assets.sellAsset.decimals
+    )
+
     const apiData = await fetchJson(
       `https://api.0x.org/swap/v1/quote?` +
-        `sellToken=${quote.assets.sellAsset?.symbol}&` +
-        `buyToken=${quote.assets.buyAsset?.symbol}&` +
-        `sellAmount=${quote.amount.sellAmount}`
+        `sellToken=${quote.assets.sellAsset.symbol}&` +
+        `buyToken=${quote.assets.buyAsset.symbol}&` +
+        `sellAmount=${sellAmount}`
     )
 
     logger.log("0x Quote Response", apiData)
@@ -146,7 +157,10 @@ const swapSlice = createSlice({
       return { ...state, ...amount }
     },
 
-    setSwapTrade: (state, { payload: swap }: { payload: SwapAssets }) => {
+    setSwapTrade: (
+      state,
+      { payload: swap }: { payload: PartialSwapAssets }
+    ) => {
       // Reset the buy token to be empty when the user changes their sell token
       // This is necessary because we have to fetch price data from the 0x API whenver the sell token changes
       if (swap.sellAsset) {
