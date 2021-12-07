@@ -22,6 +22,7 @@ import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
+import DAppConnectRequest from "./DAppConnectRequest"
 
 export default function Popup({ store }: { store: Store }): ReactElement {
   const history = useHistory()
@@ -67,7 +68,11 @@ export default function Popup({ store }: { store: Store }): ReactElement {
             <Swap />
           </Route>
           <Route path="/">
-            <Wallet />
+            {document.location.href.includes("dapp-connect") ? (
+              <DAppConnectRequest />
+            ) : (
+              <Wallet />
+            )}
           </Route>
         </Switch>
       </Router>
