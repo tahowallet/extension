@@ -415,6 +415,9 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
+      // Mark as loading and wire things up.
+      this.store.dispatch(loadAccount(address))
+
       this.chainService.addAccountToTrack({
         address,
         // TODO support other networks
