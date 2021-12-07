@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { CompleteAssetAmount } from "../accounts"
+import { AccountType, CompleteAssetAmount } from "../accounts"
 import { selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -12,6 +12,7 @@ import {
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
 } from "../../assets"
+import { selectSigningAddresses } from "./keyringsSelectors"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -163,21 +164,29 @@ export const selectCurrentAccountBalances = createSelector(
 export type AccountTotal = {
   address: string
   shortenedAddress: string
+  accountType: AccountType
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
 }
 
-export const selectAccountTotals = createSelector(
+export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
+
+export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
-  (accounts, assets) => {
-    return Object.entries(accounts.accountsData).map(
-      ([address, accountData]) => {
+  selectSigningAddresses,
+  (accounts, assets, signingAddresses): CategorizedAccountTotals => {
+    return Object.entries(accounts.accountsData)
+      .map(([address, accountData]) => {
         const shortenedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`
 
         if (accountData === "loading") {
-          return { address, shortenedAddress }
+          return {
+            address,
+            shortenedAddress,
+            accountType: AccountType.ReadOnly,
+          }
         }
 
         const totalMainCurrencyAmount = Object.values(accountData.balances)
@@ -208,9 +217,16 @@ export const selectAccountTotals = createSelector(
           })
           .reduce((total, assetBalance) => total + assetBalance, 0)
 
+        const resolvedAccountType =
+          accountData.accountType ?? // prefer cached info
+          signingAddresses.includes(accountData.address)
+            ? AccountType.Imported // all signing addresses are imported for now
+            : AccountType.ReadOnly
+
         return {
           address,
           shortenedAddress,
+          accountType: resolvedAccountType,
           name: accountData.ens.name,
           avatarURL: accountData.ens.avatarURL,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(
@@ -219,7 +235,13 @@ export const selectAccountTotals = createSelector(
             desiredDecimals
           ),
         }
-      }
-    )
+      })
+      .reduce<CategorizedAccountTotals>((acc, accountTotal) => {
+        acc[accountTotal.accountType] ??= []
+        // Non-nullness guaranteed by the above ??=.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        acc[accountTotal.accountType]!.push(accountTotal)
+        return acc
+      }, {})
   }
 )
