@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
 import { KeyringTypes } from "../types"
-import { setSelectedAccount } from "./ui"
+import { setCurrentAccount } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 // TODO this is very simple. We'll want to expand to include "capabilities" per
@@ -46,7 +46,7 @@ export const importLegacyKeyring = createBackgroundAsyncThunk(
     // this does rely on the KeyringService's behavior of pushing new keyrings to
     // the end of the keyring list.
     dispatch(
-      setSelectedAccount(
+      setCurrentAccount(
         (getState() as { keyrings: KeyringsState }).keyrings.keyrings.slice(
           -1
         )[0].addresses[0]

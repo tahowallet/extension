@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
@@ -108,7 +108,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
   const accountTotals = useBackgroundSelector(selectAccountTotalsByCategory)
 
   const selectedAccount = useBackgroundSelector((background) => {
-    return background.ui.selectedAccount?.address
+    return background.ui.currentAccount?.address
   })
 
   return (
@@ -135,7 +135,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
                       <button
                         type="button"
                         onClick={() => {
-                          dispatch(setSelectedAccount(lowerCaseAddress))
+                          dispatch(setCurrentAccount(lowerCaseAddress))
                         }}
                       >
                         <AccountsNotificationPanelAccountItem
