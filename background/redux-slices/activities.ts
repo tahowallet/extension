@@ -5,6 +5,7 @@ import {
   ActivityItem,
   determineActivityDecimalValue,
 } from "./utils/activity-utils"
+import { AnyEVMTransaction } from "../networks"
 
 export { ActivityItem }
 
@@ -35,28 +36,34 @@ const activitiesSlice = createSlice({
   name: "activities",
   initialState,
   reducers: {
-    activityEncountered: (immerState, { payload }) => {
-      const activityItem = payload.transaction
-
-      if (activityItem.blockHeight) {
-        const infoRows = adaptForUI(keysMap, activityItem)
-
-        payload.forAccounts.forEach((account: string) => {
-          const address = account.toLowerCase()
-
-          if (!immerState[address]) {
-            immerState[address] = activitiesAdapter.getInitialState()
-          }
-
-          activitiesAdapter.upsertOne(immerState[address], {
-            ...activityItem,
-            infoRows,
-            fromTruncated: truncateAddress(activityItem.from),
-            toTruncated: truncateAddress(activityItem.to),
-            tokenDecimalValue: determineActivityDecimalValue(activityItem),
-          })
-        })
+    activityEncountered: (
+      immerState,
+      {
+        payload: { transaction, forAccounts },
+      }: {
+        payload: {
+          transaction: AnyEVMTransaction
+          forAccounts: string[]
+        }
       }
+    ) => {
+      const infoRows = adaptForUI(keysMap, transaction)
+
+      forAccounts.forEach((account) => {
+        const address = account.toLowerCase()
+
+        if (!immerState[address]) {
+          immerState[address] = activitiesAdapter.getInitialState()
+        }
+
+        activitiesAdapter.upsertOne(immerState[address], {
+          ...transaction,
+          infoRows,
+          fromTruncated: truncateAddress(transaction.from),
+          toTruncated: truncateAddress(transaction.to ?? ""),
+          tokenDecimalValue: determineActivityDecimalValue(transaction),
+        })
+      })
     },
   },
 })

@@ -16,19 +16,23 @@ const pollingProviders = {
   ),
 }
 
-function ethTransformer(value: string | number | bigint | null): string {
-  if (value === null) {
+function ethTransformer(
+  value: string | number | bigint | null | undefined
+): string {
+  if (value === null || typeof value === "undefined") {
     return "(Unknown)"
   }
   return `${convertToEth(value)} ETH`
 }
 
+type FieldAdapter<T> = {
+  readableName: string
+  transformer: (value: T) => string
+  detailTransformer: (value: T) => string
+}
+
 export type UIAdaptationMap<T> = {
-  [P in keyof T]?: {
-    readableName: string
-    transformer: (value: T[P]) => string
-    detailTransformer: (value: T[P]) => string
-  }
+  [P in keyof T]?: FieldAdapter<T[P]>
 }
 
 export type ActivityItem = AnyEVMTransaction & {
@@ -48,24 +52,52 @@ export type ActivityItem = AnyEVMTransaction & {
   toTruncated: string
 }
 
-export function adaptForUI<T>(keysMap: UIAdaptationMap<T>, item: T) {
+/**
+ * Given a map of adaptations from fields in type T, return all keys that need
+ * adaptation with three fields, a label, a value, and a valueDetail, derived
+ * based on the adaptation map.
+ */
+export function adaptForUI<T>(
+  fieldAdapters: UIAdaptationMap<T>,
+  item: T
+): {
+  [key in keyof UIAdaptationMap<T>]: {
+    label: string
+    value: string
+    valueDetail: string
+  }
+} {
   // The as below is dicey but reasonable in our usage.
-  return Object.keys(item).reduce((previousValue, key) => {
-    if (key in keysMap) {
-      const knownKey = key as keyof UIAdaptationMap<T> // guaranteed to be true by the `in` test
-      const keyAdjustment = keysMap[knownKey]
+  return Object.keys(fieldAdapters).reduce(
+    (adaptedFields, key) => {
+      const knownKey = key as keyof UIAdaptationMap<T> // statically guaranteed
+      const adapter = fieldAdapters[knownKey] as
+        | FieldAdapter<unknown>
+        | undefined
 
-      return keyAdjustment === undefined
-        ? previousValue
-        : {
-            ...previousValue,
-            [keyAdjustment.readableName]: keyAdjustment.transformer(
-              item[knownKey]
-            ),
-          }
+      if (typeof adapter === "undefined") {
+        return adaptedFields
+      }
+
+      const { readableName, transformer, detailTransformer } = adapter
+
+      return {
+        ...adaptedFields,
+        [key]: {
+          label: readableName,
+          value: transformer(item[knownKey]),
+          valueDetail: detailTransformer(item[knownKey]),
+        },
+      }
+    },
+    {} as {
+      [key in keyof UIAdaptationMap<T>]: {
+        label: string
+        value: string
+        valueDetail: string
+      }
     }
-    return previousValue
-  }, {})
+  )
 }
 
 export const keysMap: UIAdaptationMap<ActivityItem> = {

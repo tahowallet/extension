@@ -145,17 +145,18 @@ export default function WalletActivityDetails(
         />
       </div>
       <ul>
-        {activityItem &&
-          Object.entries(activityItem.infoRows).map(([key, value]) => {
+        {Object.entries(activityItem.infoRows).map(
+          ([key, { label, value }]) => {
             return (
               <DetailRowItem
                 key={key}
-                label={key}
+                label={label}
                 value={value}
                 valueDetail=""
               />
             )
-          })}
+          }
+        )}
       </ul>
       <div className="activity_log_wrap">
         <div className="activity_log_title">Activity Log</div>
