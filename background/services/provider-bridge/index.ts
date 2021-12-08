@@ -3,6 +3,7 @@ import {
   EXTERNAL_PORT_NAME,
   PortRequestEvent,
   PortResponseEvent,
+  RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
@@ -147,7 +148,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async routeContentScriptRPCRequest(
     method: string,
-    params: unknown[]
+    params: RPCRequest["params"]
   ): Promise<unknown> {
     switch (method) {
       case "eth_requestAccounts":

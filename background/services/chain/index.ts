@@ -4,6 +4,7 @@ import {
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
+import { RPCRequest } from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
@@ -387,7 +388,7 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async send(method: string, params: unknown[]): Promise<unknown> {
+  async send(method: string, params: RPCRequest["params"]): Promise<unknown> {
     return this.websocketProviders.ethereum.send(method, params)
   }
 
