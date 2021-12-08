@@ -7,6 +7,7 @@ import {
   setSwapAmount,
   selectSwappableAssets,
   selectSwapPrice,
+  clearSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
@@ -22,13 +23,17 @@ export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
-  const { sellAsset, buyAsset, sellAmount, buyAmount } = useBackgroundSelector(
-    (state) => state.swap
-  )
+  const { sellAsset, buyAsset, sellAmount, buyAmount, quote } =
+    useBackgroundSelector((state) => state.swap)
 
   // Fetch assets from the 0x API whenever the swap page is loaded
   useEffect(() => {
     dispatch(fetchSwapAssets())
+
+    // Clear any saved quote data when the swap page is closed
+    return () => {
+      dispatch(clearSwapQuote())
+    }
   }, [dispatch])
 
   const { combinedData } = useBackgroundSelector(
@@ -46,13 +51,18 @@ export default function Swap(): ReactElement {
         amount: { sellAmount, buyAmount },
       }
 
-      // Wait until we get the quote
-      await dispatch(fetchSwapQuote(quoteOptions))
+      // TODO: Display a loading indicator while fetching the quote
+      dispatch(fetchSwapQuote(quoteOptions))
+    }
+  }, [dispatch, sellAsset, buyAsset, sellAmount, buyAmount])
 
+  // We have to watch the state to determine when the quote is fetched
+  useEffect(() => {
+    if (quote) {
       // Now open the asset menu
       setOpenAssetMenu(true)
     }
-  }, [dispatch, sellAsset, buyAsset, sellAmount, buyAmount])
+  }, [quote])
 
   const fromAssetSelected = useCallback(
     async (asset) => {

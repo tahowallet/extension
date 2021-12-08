@@ -211,6 +211,10 @@ const swapSlice = createSlice({
 
       return { ...state, ...swap }
     },
+
+    clearSwapQuote: (state) => {
+      return { ...state, quote: undefined }
+    },
   },
 
   extraReducers: (builder) => {
@@ -327,5 +331,5 @@ export const selectSwapPrice = createSelector(
   }
 )
 
-export const { setSwapAmount, setSwapTrade } = swapSlice.actions
+export const { setSwapAmount, setSwapTrade, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
