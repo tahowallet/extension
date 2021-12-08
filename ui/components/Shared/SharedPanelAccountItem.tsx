@@ -2,17 +2,16 @@ import React, { ReactElement } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 
-import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 interface Props {
   isSelected: boolean
   accountTotal: AccountTotal
+  hideMenu: boolean
 }
 
-export default function AccountsNotificationPanelAccountItem(
-  props: Props
-): ReactElement {
-  const { isSelected, accountTotal: account } = props
+export default function SharedPanelAccountItem(props: Props): ReactElement {
+  const { isSelected, hideMenu, accountTotal: account } = props
   const {
     shortenedAddress,
     name,
@@ -46,7 +45,7 @@ export default function AccountsNotificationPanelAccountItem(
             <SharedLoadingSpinner size="small" />
           ) : (
             <div className="balance">
-              <span className="lighter">$</span>{" "}
+              <span className="lighter">$</span>
               {localizedTotalMainCurrencyAmount}
             </div>
           )}
@@ -54,7 +53,7 @@ export default function AccountsNotificationPanelAccountItem(
             <div className="connected_status">Connected</div>
           ) : null}
         </div>
-        <div className="icon_settings" />
+        {!hideMenu && <div className="icon_settings" />}
       </div>
       <style jsx>{`
         li {
@@ -63,7 +62,6 @@ export default function AccountsNotificationPanelAccountItem(
           align-items: center;
           margin: 0 auto;
           width: 336px;
-          margin-bottom: 16px;
           height: 52px;
         }
         .avatar {
@@ -118,7 +116,7 @@ export default function AccountsNotificationPanelAccountItem(
           margin-left: 16px;
         }
         .lighter {
-          color: #99a8a7;
+          color: var(--green-40);
         }
         .icon_settings {
           background: url("./images/more_dots@2x.png") center no-repeat;
@@ -134,4 +132,9 @@ export default function AccountsNotificationPanelAccountItem(
       `}</style>
     </li>
   )
+}
+
+SharedPanelAccountItem.defaultProps = {
+  isSelected: false,
+  hideMenu: false,
 }

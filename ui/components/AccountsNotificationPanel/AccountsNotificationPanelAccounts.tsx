@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
+import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -161,7 +161,7 @@ export default function AccountsNotificationPanelAccounts({
                           updateCurrentAccount(lowerCaseAddress)
                         }}
                       >
-                        <AccountsNotificationPanelAccountItem
+                        <SharedPanelAccountItem
                           key={lowerCaseAddress}
                           accountTotal={accountTotal}
                           isSelected={lowerCaseAddress === selectedAccount}
@@ -194,6 +194,9 @@ export default function AccountsNotificationPanelAccounts({
             justify-content: center;
             align-items: center;
             align-content: center;
+          }
+          li {
+            margin-bottom: 16px;
           }
           footer {
             width: 100%;
