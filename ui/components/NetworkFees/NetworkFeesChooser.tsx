@@ -1,36 +1,58 @@
-import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { formatUnits } from "@ethersproject/units"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
+import {
+  EstimatedFeesPerGas,
+  selectLastGasEstimatesRefreshTime,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
-interface GasOption {
+type GasOption = {
   name: string
   confidence: string
-  gwei: number
+  gwei: string
   dollarValue: string
-  maxFeePerGas: bigint | undefined
-  maxPriorityFeePerGas: bigint | undefined
+  price: bigint
+  maxFeePerGas: bigint
+  maxPriorityFeePerGas: bigint
 }
 
 interface NetworkFeesChooserProps {
-  gasOptions: GasOption[]
-  activeFeeIndex: number
-  handleSelectGasOption: (number: number) => void
+  setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  onSaveGasChoice: React.Dispatch<React.SetStateAction<BlockEstimate>>
+  selectedGas?: BlockEstimate
   gasLimit: string | number
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
-  saveUserGasChoice: () => void
+  estimatedFeesPerGas: EstimatedFeesPerGas | undefined
 }
 
 export default function NetworkFeesChooser({
-  gasOptions,
-  activeFeeIndex,
-  handleSelectGasOption,
+  setFeeModalOpen,
+  onSaveGasChoice,
+  selectedGas,
   gasLimit,
   setGasLimit,
-  saveUserGasChoice,
+  estimatedFeesPerGas,
 }: NetworkFeesChooserProps): ReactElement {
   const [timeRemaining, setTimeRemaining] = useState(0)
+  const [activeFeeIndex, setActiveFeeIndex] = useState(0)
+  const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+
+  const handleSelectGasOption = (index: number) => {
+    setActiveFeeIndex(index)
+  }
+
+  const saveUserGasChoice = () => {
+    onSaveGasChoice({
+      confidence: Number(gasOptions[activeFeeIndex].confidence),
+      price: gasOptions[activeFeeIndex].price,
+      maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
+      maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
+    })
+    setFeeModalOpen(false)
+  }
   const gasTime = useSelector(selectLastGasEstimatesRefreshTime)
 
   const getSecondsTillGasUpdate = useCallback(() => {
@@ -45,6 +67,53 @@ export default function NetworkFeesChooser({
       clearTimeout(interval)
     }
   })
+
+  const getGasOptionFormatted = (option: BlockEstimate) => {
+    const { confidence } = option
+    const names: { [key: number]: string } = {
+      70: "Regular",
+      95: "Express",
+      99: "Instant",
+    }
+    return {
+      name: names[confidence],
+      confidence: `${confidence}`,
+      gwei: Number(
+        formatUnits(option.maxFeePerGas + option.maxPriorityFeePerGas, "gwei")
+      ).toFixed(),
+      dollarValue: "$??",
+      price: option.price,
+      maxFeePerGas: option.maxFeePerGas,
+      maxPriorityFeePerGas: option.maxPriorityFeePerGas,
+    }
+  }
+
+  const updateGasOptions = useCallback(() => {
+    if (estimatedFeesPerGas) {
+      const instant = estimatedFeesPerGas?.instant
+      const express = estimatedFeesPerGas?.express
+      const regular = estimatedFeesPerGas?.regular
+      if (!!instant && !!express && !!regular) {
+        const updatedGasOptions = [regular, express, instant].map((option) =>
+          getGasOptionFormatted(option)
+        )
+        setGasOptions(updatedGasOptions)
+        onSaveGasChoice(regular)
+      }
+    }
+  }, [estimatedFeesPerGas, onSaveGasChoice])
+
+  useEffect(() => {
+    updateGasOptions()
+  }, [updateGasOptions])
+
+  useEffect(() => {
+    setActiveFeeIndex(
+      gasOptions.findIndex(
+        (el) => el.confidence === `${selectedGas?.confidence}`
+      )
+    )
+  }, [gasOptions, selectedGas])
 
   return (
     <div className="wrapper">
@@ -66,7 +135,7 @@ export default function NetworkFeesChooser({
             >
               <div className="option_left">
                 <div className="name">{option.name}</div>
-                <div className="subtext">Probability: {option.confidence}</div>
+                <div className="subtext">Probability: {option.confidence}%</div>
               </div>
               <div className="option_right">
                 <div className="price">{`~${option.gwei} Gwei`}</div>

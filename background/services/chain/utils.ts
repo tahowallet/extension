@@ -73,6 +73,7 @@ export function ethersTxFromSignedTx(
     to: tx.to,
     from: tx.from,
     data: tx.input || "",
+    type: tx.type,
     chainId: parseInt(tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),

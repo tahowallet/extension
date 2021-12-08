@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { selectAccountTotals } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelAccountItem from "../components/Shared/SharedPanelAccountItem"
@@ -44,16 +44,24 @@ function RequestingDAppBlock(props: { title: string; url: string }) {
   )
 }
 export default function DAppConnectRequest(): ReactElement {
-  const accountTotals = useBackgroundSelector(selectAccountTotals)
-  const selectedAccount = useBackgroundSelector((background) => {
-    return background.ui.selectedAccount?.address
+  const accountTotalsByCategory = useBackgroundSelector(
+    selectAccountTotalsByCategory
+  )
+  const currentAccount = useBackgroundSelector((background) => {
+    return background.ui.currentAccount?.address
   })
 
-  const selectedAccountTotal = accountTotals.filter(
-    (accountTotal) => accountTotal.address === selectedAccount
-  )[0]
+  const accountTotals = accountTotalsByCategory["read-only"]
+  if (typeof accountTotalsByCategory?.imported !== "undefined") {
+    accountTotals?.concat(accountTotalsByCategory?.imported)
+  }
 
-  const lowerCaseAddress = selectedAccountTotal.address.toLocaleLowerCase()
+  const currentAccountTotal = accountTotals?.filter(
+    (accountTotal) => accountTotal?.address === currentAccount
+  )[0]
+  if (!currentAccountTotal) return <></>
+
+  const lowerCaseAddress = currentAccountTotal.address.toLocaleLowerCase()
 
   return (
     <div className="page">
@@ -70,7 +78,7 @@ export default function DAppConnectRequest(): ReactElement {
           <div className="connection_destination">
             <SharedPanelAccountItem
               key={lowerCaseAddress}
-              accountTotal={selectedAccountTotal}
+              accountTotal={currentAccountTotal}
               hideMenu
             />
           </div>
@@ -174,7 +182,6 @@ export default function DAppConnectRequest(): ReactElement {
           justify-content: space-between;
           box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
           background-color: var(--green-95);
-          margin-bottom: -15px;
         }
       `}</style>
       <style jsx global>{`

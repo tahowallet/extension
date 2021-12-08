@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import classNames from "classnames"
+import { selectIsCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -44,20 +45,14 @@ export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
   const { balance, initializationLoadingTimeExpired } = props
-  const keyringImport = useBackgroundSelector(
-    (state) => state.keyrings.importing
-  )
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
-  const hasSavedSeed = window.localStorage.getItem("hasSavedSeed")
 
-  /*
-   * Check to see if a keyring has been imported.
-   * If not, we can assume they're using a read-only wallet.
-   * Currently the wallet tab incorrectly merges all accounts
-   * together. So we'll need to,
-   * TODO: Give this multi-account support.
-   */
-  const isViewOnlyWallet = keyringImport !== "done"
+  // TODO When non-imported accounts are supported, generalize this.
+  const hasSavedSeed = true
+
+  const isCurrentAccountSigner = useBackgroundSelector(
+    selectIsCurrentAccountSigner
+  )
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -89,9 +84,7 @@ export default function WalletAccountBalanceControl(
             {balance}
           </span>
         </span>
-        {isViewOnlyWallet ? (
-          <ReadOnlyNotice />
-        ) : (
+        {isCurrentAccountSigner && process.env.HIDE_SEND_BUTTON === "false" ? (
           <>
             {hasSavedSeed ? (
               <div className="send_receive_button_wrap">
@@ -126,6 +119,8 @@ export default function WalletAccountBalanceControl(
               </div>
             )}
           </>
+        ) : (
+          <ReadOnlyNotice />
         )}
       </div>
       <style jsx>

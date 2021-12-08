@@ -238,15 +238,15 @@ export type BlockEstimate = {
    * For legacy (pre-EIP1559) transactions, the gas price that results in the
    * above likelihood of inclusion.
    */
-  price: bigint | number
+  price: bigint
   /**
    * For EIP1559 transactions, the max priority fee per gas that results in the
    * above likelihood of inclusion.
    */
-  maxPriorityFeePerGas: bigint | number
+  maxPriorityFeePerGas: bigint
   /**
    * For EIP1559 transactions, the max fee per gas that results in the above
    * likelihood of inclusion.
    */
-  maxFeePerGas: bigint | number
+  maxFeePerGas: bigint
 }
