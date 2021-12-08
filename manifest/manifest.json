@@ -1,6 +1,6 @@
 {
   "name": "Tally",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
@@ -33,7 +33,7 @@
     "default_title": "Tally",
     "default_popup": "popup.html"
   },
-  "permissions": ["alarms", "storage", "unlimitedStorage", "notifications"],
+  "permissions": ["alarms", "storage", "unlimitedStorage"],
   "background": {
     "persistent": true,
     "scripts": ["background.js", "background-ui.js"]
