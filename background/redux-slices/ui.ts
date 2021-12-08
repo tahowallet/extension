@@ -7,7 +7,7 @@ type SelectedAccount = {
 }
 
 export type UIState = {
-  selectedAccount: SelectedAccount
+  currentAccount: SelectedAccount
   showingActivityDetail: ActivityItem | null
   initializationLoadingTimeExpired: boolean
   settings: undefined | { hideDust: boolean | undefined }
@@ -15,7 +15,7 @@ export type UIState = {
 
 export const initialState: UIState = {
   showingActivityDetail: null,
-  selectedAccount: { address: "", truncatedAddress: "" },
+  currentAccount: { address: "", truncatedAddress: "" },
   initializationLoadingTimeExpired: false,
   settings: {
     hideDust: false,
@@ -41,10 +41,10 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetail: activityItem,
     }),
-    setSelectedAccount: (immerState, { payload: address }) => {
+    setCurrentAccount: (immerState, { payload: address }) => {
       const lowercaseAddress = address.toLowerCase()
 
-      immerState.selectedAccount = {
+      immerState.currentAccount = {
         address: lowercaseAddress,
         truncatedAddress: lowercaseAddress.slice(0, 7),
       }
@@ -60,7 +60,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
-  setSelectedAccount,
+  setCurrentAccount,
 } = uiSlice.actions
 
 export default uiSlice.reducer

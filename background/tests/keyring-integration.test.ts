@@ -1,7 +1,13 @@
 import "mockzilla-webextension"
 
 import { webcrypto } from "crypto"
-import KeyringService, { Keyring } from "../services/keyring"
+import { Browser } from "webextension-polyfill"
+import { MockzillaDeep } from "mockzilla"
+import KeyringService, {
+  Keyring,
+  MAX_KEYRING_IDLE_TIME,
+  MAX_OUTSIDE_IDLE_TIME,
+} from "../services/keyring"
 import { KeyringTypes } from "../types"
 import { EIP1559TransactionRequest } from "../networks"
 
@@ -46,6 +52,9 @@ const validTransactionRequests: { [key: string]: EIP1559TransactionRequest } = {
 
 const testPassword = "my password"
 
+// Default value that is clearly not correct for testing inspection.
+const dateNowValue = 1000000000000
+
 const startKeyringService = async () => {
   const service = await KeyringService.create()
   await service.startService()
@@ -64,12 +73,18 @@ function expectBase64String(
   )
 }
 
+const mockAlarms = (mock: MockzillaDeep<Browser>) => {
+  mock.alarms.create.mock(() => ({}))
+  mock.alarms.onAlarm.addListener.mock((_, __) => ({}))
+}
+
 describe("KeyringService when uninitialized", () => {
   let service: KeyringService
 
   beforeEach(async () => {
     mockBrowser.storage.local.get.mock(() => Promise.resolve({}))
     mockBrowser.storage.local.set.mock(() => Promise.resolve())
+    mockAlarms(mockBrowser)
 
     service = await startKeyringService()
   })
@@ -139,6 +154,8 @@ describe("KeyringService when initialized", () => {
   let address: string
 
   beforeEach(async () => {
+    mockAlarms(mockBrowser)
+
     let localStorage: Record<string, Record<string, unknown>> = {}
 
     mockBrowser.storage.local.get.mock((key) => {
@@ -204,9 +221,9 @@ describe("KeyringService when saving keyrings", () => {
   let localStorage: Record<string, Record<string, unknown>> = {}
   let localStorageCalls: Record<string, unknown>[] = []
 
-  const dateNowValue = Date.now()
-
   beforeEach(() => {
+    mockAlarms(mockBrowser)
+
     localStorage = {}
     localStorageCalls = []
 
@@ -274,7 +291,7 @@ describe("KeyringService when saving keyrings", () => {
     })
   })
 
-  it("loads encrypted data at instantiation time", async () => {
+  it.only("loads encrypted data at instantiation time", async () => {
     localStorage = {
       tallyVaults: {
         version: 1,
@@ -283,9 +300,9 @@ describe("KeyringService when saving keyrings", () => {
             timeSaved: 1635201991098,
             vault: {
               salt: "XeQ9825jVp7rCq6f2vRySunT/G7Q4rbCcrWxKc/o6KiRCx27eyrQYHciGz4YB3wYCh6Po1liuffN7GIYqkxWJw==",
-              initializationVector: "K5/+ECJ2ei6Fy+x10TutgQ==",
+              initializationVector: "7MJ1ur79CzKwgVAXXcJmQA==",
               cipherText:
-                "9tmTazKJT4tai1HdhT4pVD/o97QJG4KspsCqIp2Gpk0CsWxEIQ4FFJ4ecOOmW6+Gpojgh77N0sQsCU8LL4S43zK/XS5LzTtLNlPq9CQ9IRDt0SZQN4tD7/0/rO5H4wDRCaHxj0g49O5/n87ezlHvijYB+gr0d64OE96TyDkTuZZgrZg4jB4DL3aEebhZp+zKidofi0GCHqqKClzw2nwq7teasRYV6h69KcYibpITB0+FN1QSqP4c9Oblio3VTjfIubC8uINXhnKO5b1Pj6md4N6wj3RyFQVober45vRfl/WAGQF4pHM2KyvWFytZ+tQJ+QgBhTPwrJjMMmabnCok6MWLUApLOdddDHYyUfrUZuxp2xvw/A==",
+                "0bi2msjv2+3zVt2Tjd40i7BNfAuMgbomzCOuce2/l5oiyxsTcqOb871xdDYIvh2g7uHnRXC+BSbopA4xoXpRn/uh4Tjcu8R0dZxsCxCBRAiXVu1RLFojAdhsUwuUZuHn7nhGmu9mrLNKrVh8lFmshYfjtFMgiUFjAIkzEwWvVDvVT0PWVZghg+KXrUd+i3ymVRHYnvz2nZ91fYa3TBIP27ohTxSrNGyccz63Njqk7fCVNACSEXMC7Uqment1h/YpIYG8IGDTfo7/7kz8dSvBQlPlTSgOnC4O9Bey0UEj0LAZXur/i6EyJUxQWlWIXN6is5tEDfWFunrjRmbeqpQBMrPhlhUbGNfbvid5bTGHsgO2Kz9d3w==",
             },
           },
         ],
@@ -313,5 +330,131 @@ describe("KeyringService when saving keyrings", () => {
       id: "0x0f38729e",
       addresses: ["0xf34d8078c80d4be6ff928ff794ab65aa535ead4c"],
     })
+  })
+})
+
+describe("Keyring service when autolocking", () => {
+  let service: KeyringService
+  let address: string
+  let callAutolockHandler: (timeSinceInitialMock: number) => void
+
+  beforeEach(async () => {
+    mockBrowser.storage.local.get.mock(() => Promise.resolve({}))
+    mockBrowser.storage.local.set.mock(() => Promise.resolve())
+    mockBrowser.alarms.create.mock(() => ({}))
+
+    mockBrowser.alarms.onAlarm.addListener.mock((handler) => {
+      callAutolockHandler = (timeSinceInitialMock) => {
+        jest
+          .spyOn(Date, "now")
+          .mockReturnValue(dateNowValue + timeSinceInitialMock)
+
+        handler({
+          name: "autolock",
+          scheduledTime: dateNowValue + timeSinceInitialMock,
+        })
+      }
+    })
+
+    jest.spyOn(Date, "now").mockReturnValue(dateNowValue)
+
+    service = await startKeyringService()
+    await service.unlock(testPassword)
+    service.emitter.on("address", (emittedAddress) => {
+      address = emittedAddress
+    })
+    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+  })
+
+  it("will autolock after the keyring idle time but not sooner", async () => {
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(MAX_KEYRING_IDLE_TIME - 10)
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(MAX_KEYRING_IDLE_TIME)
+    expect(service.locked()).toEqual(true)
+  })
+
+  it("will autolock after the outside activity idle time but not sooner", async () => {
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(MAX_OUTSIDE_IDLE_TIME - 10)
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(MAX_OUTSIDE_IDLE_TIME)
+    expect(service.locked()).toEqual(true)
+  })
+
+  it.each([
+    {
+      action: "signing a transaction",
+      call: async () => {
+        const transactionWithFrom = {
+          ...validTransactionRequests.simple,
+          from: address,
+        }
+
+        await service.signTransaction(address, transactionWithFrom)
+      },
+    },
+    {
+      action: "importing a keyring",
+      call: async () => {
+        await service.importLegacyKeyring(validMnemonics.metamask[0])
+      },
+    },
+    {
+      action: "generating a keyring",
+      call: async () => {
+        await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+      },
+    },
+  ])("will bump keyring activity idle time when $action", async ({ call }) => {
+    jest
+      .spyOn(Date, "now")
+      .mockReturnValue(dateNowValue + MAX_KEYRING_IDLE_TIME - 1)
+
+    await call()
+
+    // Bump the outside activity timer to make sure the service doesn't
+    // autolock due to outside idleness.
+    jest
+      .spyOn(Date, "now")
+      .mockReturnValue(dateNowValue + MAX_OUTSIDE_IDLE_TIME - 1)
+    service.markOutsideActivity()
+
+    callAutolockHandler(MAX_KEYRING_IDLE_TIME)
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(2 * MAX_KEYRING_IDLE_TIME - 10)
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(2 * MAX_KEYRING_IDLE_TIME)
+    expect(service.locked()).toEqual(true)
+  })
+
+  it("will bump the outside activity idle time when outside activity is marked", async () => {
+    jest
+      .spyOn(Date, "now")
+      .mockReturnValue(dateNowValue + MAX_OUTSIDE_IDLE_TIME - 1)
+
+    service.markOutsideActivity()
+
+    // Bump the keyring activity timer to make sure the service doesn't
+    // autolock due to keyring idleness.
+    jest
+      .spyOn(Date, "now")
+      .mockReturnValue(dateNowValue + MAX_KEYRING_IDLE_TIME - 1)
+    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+
+    callAutolockHandler(MAX_OUTSIDE_IDLE_TIME)
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(2 * MAX_OUTSIDE_IDLE_TIME - 10)
+    expect(service.locked()).toEqual(false)
+
+    callAutolockHandler(2 * MAX_OUTSIDE_IDLE_TIME)
+    expect(service.locked()).toEqual(true)
   })
 })

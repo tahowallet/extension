@@ -26,7 +26,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           },
         }}
       >
-        <div className="list_item standard_width">
+        <div className="list_item">
           <div className="left">
             <SharedAssetIcon
               logoURL={assetAmount?.asset?.metadata?.logoURL}
@@ -63,6 +63,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
         {`
           .list_item {
             height: 72px;
+            width: 100%;
             border-radius: 16px;
             background-color: var(--green-95);
             display: flex;
