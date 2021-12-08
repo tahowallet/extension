@@ -40,6 +40,8 @@ export default function SignTransaction(): ReactElement {
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
+
+  // TODO the below should return a promise that resolves once tx is signed
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
   const txDetails = useBackgroundSelector(selectTransactionData)
 
@@ -78,6 +80,7 @@ export default function SignTransaction(): ReactElement {
   const handleConfirm = async () => {
     if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
       dispatch(signTransaction(txDetails))
+      await isTransactionSigned
       history.push("/")
     }
   }
@@ -116,6 +119,7 @@ export default function SignTransaction(): ReactElement {
           iconSize="large"
           size="large"
           onClick={handleConfirm}
+          showLoadingOnClick
         >
           {signContent[signType].confirmButtonText}
         </SharedButton>

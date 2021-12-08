@@ -128,7 +128,7 @@ export default function Send(): ReactElement {
         >
           <NetworkFeesChooser
             setFeeModalOpen={setFeeModalOpen}
-            onSaveGasChoice={setSelectedEstimatedFeePerGas}
+            onSelectFeeOption={setSelectedEstimatedFeePerGas}
             selectedGas={selectedEstimatedFeePerGas}
             gasLimit={gasLimit}
             setGasLimit={setGasLimit}

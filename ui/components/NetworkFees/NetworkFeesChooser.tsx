@@ -21,7 +21,7 @@ type GasOption = {
 
 interface NetworkFeesChooserProps {
   setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-  onSaveGasChoice: React.Dispatch<React.SetStateAction<BlockEstimate>>
+  onSelectFeeOption: (arg0: BlockEstimate) => void
   selectedGas?: BlockEstimate
   gasLimit: string | number
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
@@ -30,7 +30,7 @@ interface NetworkFeesChooserProps {
 
 export default function NetworkFeesChooser({
   setFeeModalOpen,
-  onSaveGasChoice,
+  onSelectFeeOption,
   selectedGas,
   gasLimit,
   setGasLimit,
@@ -45,7 +45,7 @@ export default function NetworkFeesChooser({
   }
 
   const saveUserGasChoice = () => {
-    onSaveGasChoice({
+    onSelectFeeOption({
       confidence: Number(gasOptions[activeFeeIndex].confidence),
       price: gasOptions[activeFeeIndex].price,
       maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
@@ -68,7 +68,7 @@ export default function NetworkFeesChooser({
     }
   })
 
-  const getGasOptionFormatted = (option: BlockEstimate) => {
+  const formatBlockEstimate = (option: BlockEstimate) => {
     const { confidence } = option
     const names: { [key: number]: string } = {
       70: "Regular",
@@ -78,9 +78,10 @@ export default function NetworkFeesChooser({
     return {
       name: names[confidence],
       confidence: `${confidence}`,
-      gwei: Number(
-        formatUnits(option.maxFeePerGas + option.maxPriorityFeePerGas, "gwei")
-      ).toFixed(),
+      gwei: formatUnits(
+        option.maxFeePerGas + option.maxPriorityFeePerGas,
+        "gwei"
+      ).split(".")[0],
       dollarValue: "$??",
       price: option.price,
       maxFeePerGas: option.maxFeePerGas,
@@ -93,15 +94,19 @@ export default function NetworkFeesChooser({
       const instant = estimatedFeesPerGas?.instant
       const express = estimatedFeesPerGas?.express
       const regular = estimatedFeesPerGas?.regular
-      if (!!instant && !!express && !!regular) {
+      if (
+        instant !== undefined &&
+        express !== undefined &&
+        regular !== undefined
+      ) {
         const updatedGasOptions = [regular, express, instant].map((option) =>
-          getGasOptionFormatted(option)
+          formatBlockEstimate(option)
         )
         setGasOptions(updatedGasOptions)
-        onSaveGasChoice(regular)
+        onSelectFeeOption(regular)
       }
     }
-  }, [estimatedFeesPerGas, onSaveGasChoice])
+  }, [estimatedFeesPerGas, onSelectFeeOption])
 
   useEffect(() => {
     updateGasOptions()
