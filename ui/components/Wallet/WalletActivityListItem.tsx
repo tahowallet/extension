@@ -14,6 +14,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   if (typeof activity.value === "undefined" || activity.value === BigInt(0))
     return <></>
 
+  const isContractInteraction = activity.input !== "0x"
+
   return (
     <li>
       <button type="button" className="standard_width" onClick={onClick}>
@@ -22,10 +24,15 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             <div
               className={classNames(
                 { activity_icon: true },
-                { send_icon: activity.isSent }
+                { send_icon: activity.isSent },
+                { contract_interaction_icon: isContractInteraction }
               )}
             />
-            {`${activity.isSent ? "Sent" : "Received"}`}
+            {isContractInteraction ? (
+              "Contract interaction"
+            ) : (
+              <>{`${activity.isSent ? "Sent" : "Received"}`}</>
+            )}
           </div>
           <div className="right">
             {activity.timestamp &&
@@ -90,6 +97,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .send_icon {
             background: url("./images/activity_send@2x.png");
+            background-size: cover;
+          }
+          .contract_interaction_icon {
+            background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
           }
           .top {
