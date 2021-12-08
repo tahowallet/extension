@@ -143,7 +143,7 @@ export default function NetworkFeesChooser({
             font-size: 12px;
             padding: 0 4px;
             background-color: var(--green-95);
-            color: #99a8a7;
+            color: var(--green-40);
           }
           .title {
             font-size: 22px;

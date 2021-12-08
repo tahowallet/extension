@@ -126,6 +126,9 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
             align-items: center;
             align-content: center;
           }
+          li {
+            margin-bottom: 16px;
+          }
           footer {
             width: 100%;
             height: 48px;
