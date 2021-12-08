@@ -66,8 +66,7 @@ export default function SharedButton(props: Props): ReactElement {
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
         { special_disabled_white: type === "specialDisabledWhite" },
-        { warning: type === "warning" },
-        { icon_left: iconPosition === "left" }
+        { warning: type === "warning" }
       )}
       onClick={handleClick}
     >
@@ -76,7 +75,12 @@ export default function SharedButton(props: Props): ReactElement {
           <SharedLoadingSpinner />
         </div>
       )}
-      <div className={classNames({ hide_me: isShowingLoadingSpinner })}>
+      <div
+        className={classNames("button_content", {
+          hide_me: isShowingLoadingSpinner,
+          icon_left: iconPosition === "left",
+        })}
+      >
         {children}
         {icon ? (
           <span
@@ -120,6 +124,10 @@ export default function SharedButton(props: Props): ReactElement {
           button:active .icon_button {
             background-color: var(--green-120);
           }
+          .button_content {
+            display: flex;
+            align-items: center;
+          }
           .icon_button {
             mask-image: url("./images/${icon}@2x.png");
             mask-size: cover;
@@ -127,6 +135,8 @@ export default function SharedButton(props: Props): ReactElement {
             height: 12px;
             margin-left: 9px;
             background-color: #ffffff;
+            display: inline-block;
+            margin-top: -1px;
           }
           .large {
             height: 48px;
