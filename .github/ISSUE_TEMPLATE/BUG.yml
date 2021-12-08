@@ -3,7 +3,6 @@ description: File a bug report
 title: "[Bug]: "
 labels: ["🐛 bug", "👩‍⚕️ triage"]
 assignees: ["mr-michael"]
-project: ["Version 1"]
 body:
   - type: markdown
     attributes:
