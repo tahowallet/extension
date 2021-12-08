@@ -23,8 +23,6 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
-  transactionConfirmed,
-  transactionSeen,
   blockSeen,
   updateAccountBalance,
   updateENSName,
@@ -297,15 +295,6 @@ export default class Main extends BaseService<never> {
         },
       }
 
-      if (
-        transaction.blockHash &&
-        "gasUsed" in transaction &&
-        transaction.gasUsed !== undefined
-      ) {
-        this.store.dispatch(transactionConfirmed(transaction))
-      } else {
-        this.store.dispatch(transactionSeen(transaction))
-      }
       this.store.dispatch(activityEncountered(enrichedPayload))
     })
     this.chainService.emitter.on("block", (block) => {
