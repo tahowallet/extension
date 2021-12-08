@@ -25,18 +25,18 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
-// Async thunk to bubble the permissionGranted action from  store to emitter.
-export const permissionGranted = createBackgroundAsyncThunk(
-  "provider-bridge/grantPermission",
+// Async thunk to bubble the permissionGrant action from  store to emitter.
+export const permissionGrant = createBackgroundAsyncThunk(
+  "provider-bridge/permissionGrant",
   async (permission: PermissionRequest) => {
     await emitter.emit("permissionGranted", permission)
     return permission
   }
 )
 
-// Async thunk to bubble the permissionDenied action from  store to emitter.
-export const permissionDenied = createBackgroundAsyncThunk(
-  "provider-bridge/denyPermission",
+// Async thunk to bubble the permissionDenyOrRevoke action from  store to emitter.
+export const permissionDenyOrRevoke = createBackgroundAsyncThunk(
+  "provider-bridge/permissionDenyOrRevoke",
   async (permission: PermissionRequest) => {
     await emitter.emit("permissionDenied", permission)
     return permission
@@ -67,7 +67,7 @@ const providerBridgeSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(
-        permissionGranted.fulfilled,
+        permissionGrant.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
           delete updatedPermissionRequests[permission.url]
@@ -80,7 +80,7 @@ const providerBridgeSlice = createSlice({
         }
       )
       .addCase(
-        permissionDenied.fulfilled,
+        permissionDenyOrRevoke.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
           delete updatedPermissionRequests[permission.url]

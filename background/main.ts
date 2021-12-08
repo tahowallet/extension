@@ -488,11 +488,11 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("permissionGranted", async (permission) => {
-      await this.providerBridgeService.permissionGranted(permission)
+      await this.providerBridgeService.permissionGrant(permission)
     })
 
     providerBridgeSliceEmitter.on("permissionDenied", async (permission) => {
-      await this.providerBridgeService.permissionDenied(permission)
+      await this.providerBridgeService.permissionDenyOrRevoke(permission)
     })
   }
 }

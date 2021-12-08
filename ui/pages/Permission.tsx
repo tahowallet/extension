@@ -1,8 +1,8 @@
 import { selectPendingPermissionRequests } from "@tallyho/tally-background/redux-slices/selectors/providerBridgeSelectors"
 import React, { ReactElement, useCallback } from "react"
 import {
-  permissionDenied,
-  permissionGranted,
+  permissionDenyOrRevoke,
+  permissionGrant,
   PermissionRequest,
 } from "@tallyho/tally-background/redux-slices/provider-bridge"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
@@ -11,12 +11,12 @@ function PermissionRow({ permission }: { permission: PermissionRequest }) {
   const dispatch = useBackgroundDispatch()
 
   const grant = useCallback(async () => {
-    await dispatch(permissionGranted({ ...permission, state: "allow" }))
+    await dispatch(permissionGrant({ ...permission, state: "allow" }))
     window.close()
   }, [dispatch, permission])
 
   const deny = useCallback(async () => {
-    await dispatch(permissionDenied({ ...permission, state: "deny" }))
+    await dispatch(permissionDenyOrRevoke({ ...permission, state: "deny" }))
     window.close()
   }, [dispatch, permission])
 

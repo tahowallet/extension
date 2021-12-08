@@ -91,49 +91,49 @@ export default class ProviderBridgeService extends BaseService<Events> {
         `background: request payload: ${JSON.stringify(event.request)}`
       )
 
-      const hasPermission = await this.checkPermission(url)
-
-      if (event.request.method === "eth_requestAccounts" && !hasPermission) {
+      if (event.request.method === "eth_requestAccounts") {
         const permissionRequest: PermissionRequest = {
           url,
           favIconUrl,
           state: "request",
         }
-        let unblockResolve: (value: unknown) => void
-        const blockingPromise = new Promise((resolve) => {
-          unblockResolve = resolve
+        let blockResolve: (value: unknown) => void
+        const blockUntilUserAction = new Promise((resolve) => {
+          blockResolve = resolve
         })
 
         this.emitter.emit("permissionRequest", permissionRequest)
-        await this.showDappConnectWindow()
+        await ProviderBridgeService.showDappConnectWindow()
 
-        // @ts-expect-error unblockresolved should be defined
-        this.pendingPermissions[permissionRequest.url] = unblockResolve
-        await blockingPromise
+        // @ts-expect-error unblockResolve is assigned value in the Promise but don't know how to convince ts about this (assigning default value did not feel right)
+        this.pendingPermissions[permissionRequest.url] = blockResolve
+        await blockUntilUserAction
       }
 
       const response: PortResponseEvent = { id: event.id, result: [] }
-      // if (hasPermission) {
-      response.result = await this.routeContentScriptRPCRequest(
-        event.request.method,
-        event.request.params
-      )
-      // }
+      if (await this.checkPermission(url)) {
+        response.result = await this.routeContentScriptRPCRequest(
+          event.request.method,
+          event.request.params
+        )
+      }
       logger.log("background response:", response)
 
       port.postMessage(response)
     }
   }
 
-  async permissionGranted(permission: PermissionRequest): Promise<void> {
+  async permissionGrant(permission: PermissionRequest): Promise<void> {
     if (this.pendingPermissions[permission.url]) {
+      this.pagePermissions[permission.url] = permission
       this.pendingPermissions[permission.url]("Time to move on")
       delete this.pendingPermissions[permission.url]
     }
   }
 
-  async permissionDenied(permission: PermissionRequest): Promise<void> {
+  async permissionDenyOrRevoke(permission: PermissionRequest): Promise<void> {
     if (this.pendingPermissions[permission.url]) {
+      delete this.pagePermissions[permission.url]
       this.pendingPermissions[permission.url]("Time to move on")
       delete this.pendingPermissions[permission.url]
     }
@@ -164,8 +164,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  /* eslint-disable class-methods-use-this */
-  async showDappConnectWindow(): Promise<browser.Windows.Window> {
+  static async showDappConnectWindow(): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
     const popupWidth = 400
     const popupHeight = 600
