@@ -15,14 +15,23 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
       : undefined
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
       const activityItem = currentAccountActivities.entities[id] as ActivityItem
-      const isSent =
-        activityItem.from.toLowerCase() === ui.currentAccount?.address
+
+      let category: ActivityItem["category"]
+      if (activityItem.from.toLowerCase() === ui.currentAccount?.address) {
+        category = "Sent"
+      } else {
+        category = "Received"
+      }
+      if (activityItem.input !== "0x") {
+        category = "Contract interaction"
+      }
+
       return {
         ...activityItem,
         timestamp:
           activityItem?.blockHeight &&
           account.blocks[activityItem?.blockHeight]?.timestamp,
-        isSent,
+        category,
       }
     })
   }

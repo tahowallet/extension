@@ -14,8 +14,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   if (typeof activity.value === "undefined" || activity.value === BigInt(0))
     return <></>
 
-  const isContractInteraction = activity.input !== "0x"
-
   return (
     <li>
       <button type="button" className="standard_width" onClick={onClick}>
@@ -24,15 +22,14 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             <div
               className={classNames(
                 { activity_icon: true },
-                { send_icon: activity.isSent },
-                { contract_interaction_icon: isContractInteraction }
+                { send_icon: activity.category === "Sent" },
+                {
+                  contract_interaction_icon:
+                    activity.category === "Contract interaction",
+                }
               )}
             />
-            {isContractInteraction ? (
-              "Contract interaction"
-            ) : (
-              <>{`${activity.isSent ? "Sent" : "Received"}`}</>
-            )}
+            {activity.category}
           </div>
           <div className="right">
             {activity.timestamp &&
@@ -56,7 +53,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            {activity.isSent ? (
+            {activity.category === "Sent" ? (
               <div className="outcome">
                 To:
                 {` ${activity.toTruncated}`}
