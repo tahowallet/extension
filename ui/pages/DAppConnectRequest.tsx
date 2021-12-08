@@ -1,6 +1,9 @@
 import React, { ReactElement } from "react"
+import { selectAccountTotals } from "@tallyho/tally-background/redux-slices/selectors"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
+import SharedPanelAccountItem from "../components/Shared/SharedPanelAccountItem"
+import { useBackgroundSelector } from "../hooks"
 
 function RequestingDAppBlock(props: { title: string; url: string }) {
   const { title, url } = props
@@ -41,6 +44,16 @@ function RequestingDAppBlock(props: { title: string; url: string }) {
   )
 }
 export default function DAppConnectRequest(): ReactElement {
+  const accountTotals = useBackgroundSelector(selectAccountTotals)
+  const selectedAccount = useBackgroundSelector((background) => {
+    return background.ui.selectedAccount?.address
+  })
+
+  const selectedAccountTotal = accountTotals.filter(
+    (accountTotal) => accountTotal.address === selectedAccount
+  )[0]
+
+  const lowerCaseAddress = selectedAccountTotal.address.toLocaleLowerCase()
   return (
     <div className="page">
       <CorePage hasTopBar={false} hasTabBar={false}>
@@ -50,6 +63,13 @@ export default function DAppConnectRequest(): ReactElement {
           <ConnectionDestination />
           <ul>
             <li>dApp would permission to:</li>
+          <div className="connection_destination">
+            <SharedPanelAccountItem
+              key={lowerCaseAddress}
+              accountTotal={selectedAccountTotal}
+              hideMenu
+            />
+          </div>
             <li>
               <ul>
                 <li>View address of connected account</li>
