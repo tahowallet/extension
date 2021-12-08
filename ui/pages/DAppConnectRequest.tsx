@@ -2,15 +2,39 @@ import React, { ReactElement } from "react"
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 
-function ConnectionDestination() {
+function RequestingDAppBlock(props: { title: string; url: string }) {
+  const { title, url } = props
   return (
-    <div>
+    <div className="request_wrap">
+      <div className="dapp_favicon" />
+      <div className="info">
+        <div className="dapp_title">{title}</div>
+        <div className="dapp_url">{url}</div>
+      </div>
       <style jsx>{`
-        div {
+        .request_wrap {
+          display: flex;
+          align-items: center;
           width: 100%;
-          height: 88px;
-          background-color: var(--hunter-green);
-          border-radius: 8px;
+        }
+        .dapp_favicon {
+          background: url("${url}/favicon.ico");
+          background-size: cover;
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+        }
+        .dapp_title {
+          color: #fff;
+          font-size: 16px;
+          font-weight: 500;
+        }
+        .dapp_url {
+          color: var(--green-40);
+          font-size: 16px;
+        }
+        .info {
+          margin-left: 16px;
         }
       `}</style>
     </div>
