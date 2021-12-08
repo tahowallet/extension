@@ -1,7 +1,10 @@
 import { isAddress } from "@ethersproject/address"
 import { formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectAccountAndTimestampedActivities,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
@@ -41,6 +44,34 @@ export default function Send(): ReactElement {
 
   const currentAccount = useBackgroundSelector(({ ui }) => ui.currentAccount)
 
+  const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const { assetAmounts } = balanceData ?? {
+    assetAmounts: [],
+  }
+  const getTotalLocalizedValue = () => {
+    const pricePerUnit = assetAmounts.find(
+      (el) => el.asset.symbol === assetSymbol
+    )?.unitPrice
+    if (pricePerUnit) {
+      return (Number(amount) * pricePerUnit).toFixed(2)
+    }
+    return 0
+  }
+
+  const findBalance = () => {
+    return assetAmounts.find((el) => el.asset.symbol === assetSymbol)
+      ?.localizedDecimalAmount
+  }
+
+  // TODO sets the value of the balance using comma and it should display decimal point for consistency
+  const setMaxBalance = () => {
+    const balance = findBalance()
+    if (balance) {
+      setAmount(balance)
+    }
+  }
+
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
   }
@@ -53,7 +84,7 @@ export default function Send(): ReactElement {
       from: currentAccount.address,
       to: destinationAddress,
       // eslint-disable-next-line no-underscore-dangle
-      value: BigInt(utils.parseEther(amount)._hex),
+      value: BigInt(utils.parseEther(amount?.toString())._hex),
       maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
       maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
@@ -111,6 +142,18 @@ export default function Send(): ReactElement {
           </h1>
           <div className="form">
             <div className="form_input">
+              <div className="balance">
+                Balance: {findBalance()}{" "}
+                <span
+                  className="max"
+                  onClick={setMaxBalance}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={() => {}}
+                >
+                  Max
+                </span>
+              </div>
               <SharedAssetInput
                 label="Asset / Amount"
                 onAssetSelect={() => {
@@ -166,9 +209,13 @@ export default function Send(): ReactElement {
             <div className="total_footer standard_width_padded">
               <div className="total_amount">
                 <div className="total_label">Total</div>
-                <div className="total_amount_number">{`${
-                  amount || 0
-                } ${assetSymbol}`}</div>
+                <div className="total_amount_number">
+                  {`${amount || 0} ${assetSymbol ?? ""}`}
+                  <div className="total_localized">
+                    {/* TODO after the OR we should just show the fee cost or only add it after */}
+                    {amount ? `$${getTotalLocalizedValue()}` : "$0"}
+                  </div>
+                </div>
               </div>
               <SharedButton
                 type="primary"
@@ -280,6 +327,23 @@ export default function Send(): ReactElement {
           }
           .label {
             margin-bottom: 6px;
+          }
+          .balance {
+            color: var(--green-40);
+            text-align: right;
+            position: relative;
+            font-size: 14px;
+            top: 16px;
+            right: 0;
+          }
+          .max {
+            color: #d08e39;
+            cursor: pointer;
+          }
+          .total_localized {
+            color: var(--green-60);
+            font-size: 12px;
+            line-height: 16px;
           }
         `}
       </style>

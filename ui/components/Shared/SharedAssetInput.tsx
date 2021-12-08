@@ -225,6 +225,7 @@ export default function SharedAssetInput(
               className="input_amount"
               type="number"
               step="any"
+              lang="en-US"
               placeholder="0.0"
               value={amount}
               onChange={(e) => onAmountChange(e.target.value)}
