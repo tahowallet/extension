@@ -181,11 +181,19 @@ export const selectAccountTotalsByCategory = createSelector(
       .map(([address, accountData]) => {
         const shortenedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`
 
+        const existingAccountType =
+          accountData === "loading" ? undefined : accountData.accountType
+        const resolvedAccountType =
+          existingAccountType ?? // prefer cached info
+          signingAddresses.includes(address)
+            ? AccountType.Imported // all signing addresses are imported for now
+            : AccountType.ReadOnly
+
         if (accountData === "loading") {
           return {
             address,
             shortenedAddress,
-            accountType: AccountType.ReadOnly,
+            accountType: resolvedAccountType,
           }
         }
 
@@ -216,12 +224,6 @@ export const selectAccountTotalsByCategory = createSelector(
             )
           })
           .reduce((total, assetBalance) => total + assetBalance, 0)
-
-        const resolvedAccountType =
-          accountData.accountType ?? // prefer cached info
-          signingAddresses.includes(accountData.address)
-            ? AccountType.Imported // all signing addresses are imported for now
-            : AccountType.ReadOnly
 
         return {
           address,
