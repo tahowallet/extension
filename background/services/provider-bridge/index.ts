@@ -38,9 +38,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   //   [dAppID: string]: (grantedAccounts: string[]) => void
   // } = {}
 
-  permissionWindow: Promise<browser.Windows.Window> | undefined
-
-  pagePermissions: {
+  allowedPages: {
     [url: string]: PermissionRequest
   } = {}
 
@@ -110,6 +108,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
         await blockUntilUserAction
       }
 
+      // TBD @Antonio:
+      // I copied the way MM works here — I return `result: []` when the url does not have permission
+      // According to EIP-1193 it should return a `4100` ProviderRPCError but felt that dApps probably does not expect this.
       const response: PortResponseEvent = { id: event.id, result: [] }
       if (await this.checkPermission(url)) {
         response.result = await this.routeContentScriptRPCRequest(
@@ -125,7 +126,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async permissionGrant(permission: PermissionRequest): Promise<void> {
     if (this.pendingPermissions[permission.url]) {
-      this.pagePermissions[permission.url] = permission
+      this.allowedPages[permission.url] = permission
       this.pendingPermissions[permission.url]("Time to move on")
       delete this.pendingPermissions[permission.url]
     }
@@ -133,15 +134,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async permissionDenyOrRevoke(permission: PermissionRequest): Promise<void> {
     if (this.pendingPermissions[permission.url]) {
-      delete this.pagePermissions[permission.url]
+      delete this.allowedPages[permission.url]
       this.pendingPermissions[permission.url]("Time to move on")
       delete this.pendingPermissions[permission.url]
     }
   }
 
   async checkPermission(url: string): Promise<boolean> {
-    if (this.pagePermissions[url]?.state === "allow")
-      return Promise.resolve(true)
+    if (this.allowedPages[url]?.state === "allow") return Promise.resolve(true)
     return Promise.resolve(false)
   }
 
