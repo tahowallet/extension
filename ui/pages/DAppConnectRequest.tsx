@@ -54,15 +54,19 @@ export default function DAppConnectRequest(): ReactElement {
   )[0]
 
   const lowerCaseAddress = selectedAccountTotal.address.toLocaleLowerCase()
+
   return (
     <div className="page">
-      <CorePage hasTopBar={false} hasTabBar={false}>
-        <section className="standard_width_padded">
-          <h2 className="serif_header">Connect to dApp</h2>
-          <ConnectionDestination />
-          <ConnectionDestination />
-          <ul>
-            <li>dApp would permission to:</li>
+      <CorePage hasTabBar={false} hasTopBar={false}>
+        <section className="standard_width">
+          <h1 className="serif_header">Connect to dApp</h1>
+          <div className="connection_destination">
+            <RequestingDAppBlock
+              title="SushiSwap | Sushi"
+              url="https://app.sushi.com"
+            />
+          </div>
+          <div className="icon_connection" />
           <div className="connection_destination">
             <SharedPanelAccountItem
               key={lowerCaseAddress}
@@ -70,6 +74,10 @@ export default function DAppConnectRequest(): ReactElement {
               hideMenu
             />
           </div>
+          <ul className="permissions_list">
+            <li className="permissions_list_title">
+              dApp would get permission to:
+            </li>
             <li>
               <ul>
                 <li>View address of connected account</li>
@@ -77,31 +85,82 @@ export default function DAppConnectRequest(): ReactElement {
               </ul>
             </li>
           </ul>
-          <div className="footer_actions">
-            <SharedButton
-              iconSize="large"
-              size="large"
-              type="secondary"
-              onClick={() => window.close()}
-            >
-              Reject
-            </SharedButton>
-            <SharedButton type="primary" iconSize="large" size="large">
-              Connect
-            </SharedButton>
-          </div>
         </section>
+        <div className="footer_actions">
+          <SharedButton
+            iconSize="large"
+            size="large"
+            type="secondary"
+            onClick={() => window.close()}
+          >
+            Reject
+          </SharedButton>
+          <SharedButton type="primary" iconSize="large" size="large">
+            Connect
+          </SharedButton>
+        </div>
       </CorePage>
       <style jsx>{`
         section {
           display: flex;
           flex-direction: column;
-          align-items: center;
           height: 100vh;
         }
         .page {
           background-color: var(--green-95);
           height: 100vh;
+          width: 100vw;
+        }
+        h1 {
+          color: var(--trophy-gold);
+          margin-top: 45px;
+          margin-bottom: 25px;
+          text-align: center;
+        }
+        .permissions_list {
+          margin-left: 16px;
+        }
+        ul {
+          display: flex;
+          flex-direction: column;
+        }
+        li {
+          font-size: 14px;
+          line-height: 20px;
+          color: var(--green-40);
+          margin-bottom: 4px;
+          margin-left: 5px;
+        }
+        .permissions_list_title {
+          color: #fff;
+          margin-bottom: 8px;
+          margin-top: 15px;
+          margin-left: 0px;
+        }
+        .connection_destination {
+          width: 100%;
+          height: 88px;
+          background-color: var(--hunter-green);
+          border-radius: 8px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 16px;
+          box-sizing: border-box;
+          margin-bottom: 8px;
+        }
+        .icon_connection {
+          background: url("./images/bolt@2x.png") center no-repeat;
+          background-color: var(--green-95);
+          border-radius: 4px;
+          background-size: 10px 17px;
+          border: solid 3px var(--hunter-green);
+          width: 24px;
+          height: 24px;
+          margin-left: 28px;
+          margin-top: -19px;
+          margin-bottom: -10px;
+          z-index: 3;
         }
         .footer_actions {
           position: fixed;
@@ -114,6 +173,12 @@ export default function DAppConnectRequest(): ReactElement {
           height: 80px;
           justify-content: space-between;
           box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
+          background-color: var(--green-95);
+          margin-bottom: -15px;
+        }
+      `}</style>
+      <style jsx global>{`
+        body {
           background-color: var(--green-95);
         }
       `}</style>
