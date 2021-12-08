@@ -14,54 +14,39 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   if (typeof activity.value === "undefined" || activity.value === BigInt(0))
     return <></>
 
-  let activityContent = (
-    <div className="left">
-      <div className="token_icon_wrap">
-        <SharedAssetIcon symbol={activity.asset.symbol} size="small" />
-      </div>
-      <div className="amount">
-        <span className="bold_amount_count">{activity.value ?? ""}</span>
-        {activity.asset.symbol}
-      </div>
-    </div>
-  )
-
+  // TODO Replace this with better conditional rendering.
+  let renderDetails: {
+    isContractInteraction: boolean
+    label: string
+    assetLogoURL: string | undefined
+    assetSymbol: string
+    assetValue: string
+  } = {
+    isContractInteraction: false,
+    label: activity.isSent ? "Sent" : "Received",
+    assetLogoURL: undefined,
+    assetSymbol: activity.asset.symbol,
+    assetValue: activity.localizedDecimalValue,
+  }
   switch (activity.contractInfo?.type) {
     case "asset-transfer":
-      activityContent = (
-        <div className="left">
-          <div className="token_icon_wrap">
-            <SharedAssetIcon
-              logoURL={activity.contractInfo.contractLogoURL}
-              symbol={activity.contractInfo.assetAmount.asset.symbol}
-              size="small"
-            />
-          </div>
-          <div className="amount">
-            <span className="bold_amount_count">
-              {activity.contractInfo.assetAmount.localizedDecimalAmount}
-            </span>
-            {activity.contractInfo.assetAmount.asset.symbol}
-          </div>
-        </div>
-      )
+      renderDetails = {
+        isContractInteraction: true,
+        label: "Contract interaction",
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
+        assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+      }
       break
     case "contract-deployment":
     case "contract-interaction":
-      activityContent = (
-        <div className="left">
-          <div className="token_icon_wrap">
-            <SharedAssetIcon
-              logoURL={activity.contractInfo.contractLogoURL}
-              symbol={activity.asset.symbol}
-              size="small"
-            />
-          </div>
-          <div className="amount">
-            <span className="bold_amount_count">Contract Interaction</span>
-          </div>
-        </div>
-      )
+      renderDetails = {
+        isContractInteraction: true,
+        label: "Contract interaction",
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.asset.symbol,
+        assetValue: activity.localizedDecimalValue,
+      }
       break
     default:
   }
@@ -72,12 +57,12 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="top">
           <div className="left">
             <div
-              className={classNames(
-                { activity_icon: true },
-                { send_icon: activity.isSent }
-              )}
+              className={classNames("activity_icon", {
+                send_icon: activity.isSent,
+                contract_interaction_icon: renderDetails.isContractInteraction,
+              })}
             />
-            {`${activity.isSent ? "Sent" : "Received"}`}
+            {renderDetails.label}
           </div>
           <div className="right">
             {activity.timestamp &&
@@ -85,7 +70,21 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           </div>
         </div>
         <div className="bottom">
-          {activityContent}
+          <div className="left">
+            <div className="token_icon_wrap">
+              <SharedAssetIcon
+                logoURL={renderDetails.assetLogoURL}
+                symbol={renderDetails.assetSymbol}
+                size="small"
+              />
+            </div>
+            <div className="amount">
+              <span className="bold_amount_count">
+                {renderDetails.assetValue}
+              </span>
+              {renderDetails.assetSymbol}
+            </div>
+          </div>
           <div className="right">
             {activity.isSent ? (
               <div className="outcome">
@@ -128,6 +127,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .send_icon {
             background: url("./images/activity_send@2x.png");
+            background-size: cover;
+          }
+          .contract_interaction_icon {
+            background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
           }
           .top {

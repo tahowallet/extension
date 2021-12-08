@@ -7,7 +7,11 @@ import {
 } from "./utils/activity-utils"
 import { AnyEVMTransaction } from "../networks"
 
+import { assetAmountToDesiredDecimals } from "../assets"
+
 export { ActivityItem }
+
+const desiredDecimals = 2 /* TODO Make desired decimals configurable? */
 
 const activitiesAdapter = createEntityAdapter<ActivityItem>({
   selectId: (activityItem) => activityItem.hash,
@@ -65,6 +69,15 @@ const activitiesSlice = createSlice({
         activitiesAdapter.upsertOne(immerState[address], {
           ...transaction,
           infoRows,
+          localizedDecimalValue: assetAmountToDesiredDecimals(
+            {
+              asset: transaction.asset,
+              amount: transaction.value,
+            },
+            desiredDecimals
+          ).toLocaleString("default", {
+            maximumFractionDigits: desiredDecimals,
+          }),
           fromTruncated: truncateAddress(transaction.from),
           toTruncated: truncateAddress(transaction.to ?? ""),
         })

@@ -23,7 +23,6 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
       const activityItem = currentAccountActivities.entities[id]!
 
       const isSent = activityItem.from.toLowerCase() === currentAccountAddress
-
       return {
         ...activityItem,
         timestamp:
