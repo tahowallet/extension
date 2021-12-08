@@ -21,7 +21,7 @@ export default function SingleAsset(): ReactElement {
   )
 
   const filteredActivities = useBackgroundSelector((state) =>
-    selectCurrentAccountActivitiesWithTimestamps(state).filter(
+    (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
       ({ token }) => token.symbol === symbol
     )
   )

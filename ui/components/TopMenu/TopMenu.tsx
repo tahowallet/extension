@@ -13,8 +13,8 @@ export default function TopMenu(props: Props): ReactElement {
 
   const [address, truncatedAddress] = useBackgroundSelector((background) => {
     return [
-      background.ui.selectedAccount?.address,
-      background.ui.selectedAccount?.truncatedAddress,
+      background.ui.currentAccount?.address,
+      background.ui.currentAccount?.truncatedAddress,
     ]
   })
 

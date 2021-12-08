@@ -65,7 +65,9 @@ export default function Wallet(): ReactElement {
                   }
                 />
               ) : (
-                <WalletActivityList activities={currentAccountActivities} />
+                <WalletActivityList
+                  activities={currentAccountActivities ?? []}
+                />
               )}
             </div>
           </div>

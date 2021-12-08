@@ -41,7 +41,9 @@ export default function CorePage(props: Props): ReactElement {
           setIsNotificationsOpen(false)
         }}
       >
-        <AccountsNotificationPanel />
+        <AccountsNotificationPanel
+          onCurrentAddressChange={() => setIsNotificationsOpen(false)}
+        />
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isDevToolsOpen}

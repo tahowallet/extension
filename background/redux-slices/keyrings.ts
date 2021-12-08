@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
 import { KeyringTypes } from "../types"
-import { setSelectedAccount } from "./ui"
+import { setCurrentAccount } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 // TODO this is very simple. We'll want to expand to include "capabilities" per
@@ -46,7 +46,7 @@ export const importLegacyKeyring = createBackgroundAsyncThunk(
     // this does rely on the KeyringService's behavior of pushing new keyrings to
     // the end of the keyring list.
     dispatch(
-      setSelectedAccount(
+      setCurrentAccount(
         (getState() as { keyrings: KeyringsState }).keyrings.keyrings.slice(
           -1
         )[0].addresses[0]
@@ -61,10 +61,20 @@ const keyringsSlice = createSlice({
   reducers: {
     keyringLocked: (state) => ({ ...state, status: "locked" }),
     keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
-    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => ({
-      ...state,
-      keyrings,
-    }),
+    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
+      // When the keyrings are locked, we receive updateKeyrings with an empty
+      // list as the keyring service clears the in-memory keyrings. For UI
+      // purposes, however, we want to continue tracking the keyring metadata,
+      // so we ignore an empty list if the keyrings are locked.
+      if (keyrings.length === 0 && state.status !== "locked") {
+        return state
+      }
+
+      return {
+        ...state,
+        keyrings,
+      }
+    },
   },
   extraReducers: (builder) => {
     builder

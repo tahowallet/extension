@@ -15,9 +15,19 @@ import {
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 
+/**
+ * The set of available UI account types. These may or may not map 1-to-1 to
+ * internal account types, depending on how the UI chooses to display data.
+ */
+export const enum AccountType {
+  ReadOnly = "read-only",
+  Imported = "imported",
+}
+
 type AccountData = {
   address: HexString
   network: Network
+  accountType: AccountType | undefined
   balances: {
     [assetSymbol: string]: AccountBalance
   }
@@ -85,6 +95,7 @@ function newAccountData(address: HexString, network: Network): AccountData {
   return {
     address,
     network,
+    accountType: undefined,
     balances: {},
     unconfirmedTransactions: [],
     confirmedTransactions: [],
