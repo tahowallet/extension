@@ -1,6 +1,5 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
@@ -115,15 +114,9 @@ export default function WalletActivityDetails(
 
   if (!activityItem) return <></>
 
-  const headerTitle = `${activityItem.isSent ? "Sent Asset" : "Received"}`
-
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        <SharedActivityHeader
-          label={headerTitle}
-          activity={activityItem.isSent ? "send" : "receive"}
-        />
         <div className="header_button">
           <SharedButton
             type="tertiary"
@@ -189,9 +182,10 @@ export default function WalletActivityDetails(
             align-items: top;
             justify-content: space-between;
             width: 304px;
+            margin-bottom: 10px;
           }
           .header_button {
-            margin-top: 14px;
+            margin-top: 10px;
           }
           .icon_transfer {
             background: url("./images/transfer@2x.png") center no-repeat;
