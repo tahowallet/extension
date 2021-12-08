@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { selectAccountTotals } from "@tallyho/tally-background/redux-slices/selectors"
-import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
+import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -95,7 +95,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
                   dispatch(setSelectedAccount(lowerCaseAddress))
                 }}
               >
-                <AccountsNotificationPanelAccountItem
+                <SharedPanelAccountItem
                   key={lowerCaseAddress}
                   accountTotal={accountTotal}
                   isSelected={lowerCaseAddress === selectedAccount}
