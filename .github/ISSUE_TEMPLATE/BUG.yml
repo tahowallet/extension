@@ -59,7 +59,7 @@ body:
         - OG Edition v0.0.6
         - OG Edition v0.0.5
     validations:
-      required: true
+      required: false
   - type: textarea
     id: logs
     attributes:
