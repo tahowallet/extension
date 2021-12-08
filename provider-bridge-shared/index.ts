@@ -11,14 +11,15 @@ export type WindowResponseEvent = {
   source: unknown
   data: { id: string; target: string; result: unknown }
 }
+export type RPCRequest = {
+  method: string
+  params: Array<unknown> | undefined | Record<string, unknown>
+}
 
 export type WindowRequestEvent = {
   id: string
   target: unknown
-  request: {
-    method: string
-    params: Array<unknown> | undefined | Record<string, unknown>
-  }
+  request: RPCRequest
 }
 
 export type PortResponseEvent = {
@@ -28,7 +29,7 @@ export type PortResponseEvent = {
 
 export type PortRequestEvent = {
   id: string
-  request: { method: string; params: Array<unknown> }
+  request: RPCRequest
 }
 
 export type ProviderTransport = WindowTransport | PortTransport

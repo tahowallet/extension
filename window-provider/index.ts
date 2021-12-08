@@ -4,9 +4,14 @@ import {
   WINDOW_PROVIDER_TARGET,
   PortResponseEvent,
   ProviderTransport,
-  WindowTransport,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
+import {
+  isObject,
+  isPortResponseEvent,
+  isRPCRequestParamsType,
+  isWindowResponseEvent,
+} from "./utils"
 
 // https://eips.ethereum.org/EIPS/eip-1193#request
 type RequestArgument = {
@@ -33,27 +38,11 @@ export default class TallyWindowProvider extends EventEmitter {
     super()
   }
 
-  /**
-   * f*cked up situation:
-   *   - onboard uses request() as it should according to the eip-1193 spec
-   *   - web3-react injected provider uses send and deprecated/undefined apis almost exclusively
-   *     - export type Send = (method: string, params?: any[]) => Promise<SendReturnResult | SendReturn>
-   *     - export type SendOld = ({ method }: { method: string }) => Promise<SendReturnResult | SendReturn>
-   *   - ethers.js supports send in ExternalProvider which is used in the Web3Provider
-   *       ```
-   *       export type ExternalProvider = {
-   *           isMetaMask?: boolean;
-   *           isStatus?: boolean;
-   *           host?: string;
-   *           path?: string;
-   *           sendAsync?: (request: { method: string, params?: Array<any> }, callback: (error: any, response: any) => void) => void
-   *           send?: (request: { method: string, params?: Array<any> }, callback: (error: any, response: any) => void) => void
-   *           request?: (request: { method: string, params?: Array<any> }) => Promise<any>
-   *       }
-   *       ```
-   * Had to come up with a way to support both send methods
-   */
+  // deprecated EIP1193 send for web3-react injected provider Send type:
+  // https://github.com/NoahZinsmeister/web3-react/blob/d0b038c748a42ec85641a307e6c588546d86afc2/packages/injected-connector/src/types.ts#L4
   send(method: string, params: Array<unknown>): Promise<unknown>
+  // deprecated EIP1193 send for ethers.js Web3Provider > ExternalProvider:
+  // https://github.com/ethers-io/ethers.js/blob/73a46efea32c3f9a4833ed77896a216e3d3752a0/packages/providers/src.ts/web3-provider.ts#L19
   send(
     request: RequestArgument,
     callback: (error: unknown, response: unknown) => void
@@ -69,11 +58,8 @@ export default class TallyWindowProvider extends EventEmitter {
       return this.request({ method: methodOrRequest, params: paramsOrCallback })
     }
 
-    if (
-      Object.prototype.toString.call(methodOrRequest) === "[object Object]" &&
-      typeof paramsOrCallback === "function"
-    ) {
-      return this.request(methodOrRequest as RequestArgument).then(
+    if (isObject(methodOrRequest) && typeof paramsOrCallback === "function") {
+      return this.request(methodOrRequest).then(
         (response) => paramsOrCallback(null, response),
         (error) => paramsOrCallback(error, null)
       )
@@ -83,16 +69,9 @@ export default class TallyWindowProvider extends EventEmitter {
   }
 
   request(arg: RequestArgument): Promise<unknown> {
-    if (typeof arg.method !== "string")
-      return Promise.reject(
-        new Error(
-          ".request argument expected: { method: string, params?: Array<unknown> }"
-        )
-      )
-
     const { method, params } = arg
-    if (typeof method !== "string") {
-      return Promise.reject(new Error(`unsupported method type: ${method}`)) // TODO: check why web3-react falls through all the calls in the getChain() method
+    if (typeof method !== "string" || !isRPCRequestParamsType(params)) {
+      return Promise.reject(new Error(`unsupported method type: ${method}`))
     }
     const sendData = {
       id: Date.now().toString(),
@@ -105,16 +84,12 @@ export default class TallyWindowProvider extends EventEmitter {
 
     this.transport.postMessage(sendData)
 
-    const isWindowTransport = (t: ProviderTransport): t is WindowTransport => {
-      return !t.origin.startsWith("chrome-extension://")
-    }
-
     return new Promise((resolve) => {
       // TODO: refactor the listener function out of the Promise
-      const listener = (event: WindowResponseEvent & PortResponseEvent) => {
+      const listener = (event: WindowResponseEvent | PortResponseEvent) => {
         let id
         let result
-        if (isWindowTransport(this.transport)) {
+        if (isWindowResponseEvent(event)) {
           if (
             event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
             event.source !== window || // we want to recieve messages only from the provider-bridge script
@@ -124,8 +99,10 @@ export default class TallyWindowProvider extends EventEmitter {
           }
 
           ;({ id, result } = event.data)
-        } else {
+        } else if (isPortResponseEvent(event)) {
           ;({ id, result } = event)
+        } else {
+          return
         }
 
         if (sendData.id !== id) return
