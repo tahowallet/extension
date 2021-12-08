@@ -20,8 +20,9 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
       return {
         ...activityItem,
         timestamp:
-          activityItem?.blockHeight &&
-          account.blocks[activityItem?.blockHeight]?.timestamp,
+          activityItem.blockHeight === null
+            ? undefined
+            : blocks[activityItem.blockHeight]?.timestamp,
         isSent,
       }
     })

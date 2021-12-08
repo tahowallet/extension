@@ -12,13 +12,17 @@ export { ActivityItem }
 const activitiesAdapter = createEntityAdapter<ActivityItem>({
   selectId: (activityItem) => activityItem.hash,
   sortComparer: (a, b) => {
-    if (a.blockHeight === b.blockHeight) {
+    // null means pending, pending is always sorted above everything.
+    if (a.blockHeight === null && b.blockHeight === null) {
       return 0
     }
-    if (a.blockHeight < b.blockHeight) {
+    if (a.blockHeight === null) {
+      return -1
+    }
+    if (b.blockHeight === null) {
       return 1
     }
-    return -1
+    return b.blockHeight - a.blockHeight
   },
 })
 
