@@ -21,7 +21,12 @@ export default function CorePage(props: Props): ReactElement {
 
   function handleOpenHiddenDevMenu(e: React.MouseEvent) {
     if (process.env.NODE_ENV === "development" && e.detail === 3) {
-      setIsDevToolsOpen(true)
+      // setIsDevToolsOpen(true)
+      window.open(
+        `${window.location.origin}/dapp-connect-popup.html`,
+        "",
+        "popup,width=384,height=558,scrollbars=no"
+      )
     }
   }
 
