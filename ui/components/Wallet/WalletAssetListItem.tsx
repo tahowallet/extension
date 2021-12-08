@@ -23,6 +23,10 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           pathname: "/singleAsset",
           state: {
             symbol: assetAmount.asset.symbol,
+            contractAddress:
+              "contractAddress" in assetAmount.asset
+                ? assetAmount.asset.contractAddress
+                : undefined,
           },
         }}
       >

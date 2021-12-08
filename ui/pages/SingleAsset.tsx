@@ -13,16 +13,20 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import BackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation<{ symbol: string }>()
+  const location = useLocation<{ symbol: string; contractAddress?: string }>()
   const { symbol } = location.state
 
   const isCurrentAccountSigner = useBackgroundSelector(
     selectIsCurrentAccountSigner
   )
 
+  // Asset filtered by contract address.
   const filteredActivities = useBackgroundSelector((state) =>
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
-      ({ token }) => token.symbol === symbol
+      (activity) =>
+        activity.asset.symbol === symbol ||
+        (typeof location.state.contractAddress !== "undefined" &&
+          location.state.contractAddress === activity.to)
     )
   )
 

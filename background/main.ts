@@ -45,7 +45,7 @@ import {
   signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
-import { determineToken } from "./redux-slices/utils/activity-utils"
+import { enrichTransactionWithContractInfo } from "./redux-slices/utils/activity-utils"
 import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
@@ -287,15 +287,19 @@ export default class Main extends BaseService<never> {
     })
     this.chainService.emitter.on("transaction", async (payload) => {
       const { transaction } = payload
-      const enrichedPayload = {
-        ...payload,
-        transaction: {
-          ...transaction,
-          token: await determineToken(transaction),
-        },
-      }
 
-      this.store.dispatch(activityEncountered(enrichedPayload))
+      const enrichedTransaction = enrichTransactionWithContractInfo(
+        this.store.getState().assets,
+        transaction,
+        2 /* TODO desiredDecimals should be configurable */
+      )
+
+      this.store.dispatch(
+        activityEncountered({
+          ...payload,
+          transaction: enrichedTransaction,
+        })
+      )
     })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))

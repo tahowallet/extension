@@ -1,20 +1,17 @@
 import dayjs from "dayjs"
-import { getNetwork } from "@ethersproject/networks"
-import { AlchemyProvider } from "@ethersproject/providers"
-import logger from "../../lib/logger"
-import { ETH } from "../../constants/currencies"
-import { SmartContractFungibleAsset, FungibleAsset } from "../../assets"
-import { getTokenMetadata } from "../../lib/alchemy"
-import { convertToEth, getEthereumNetwork } from "../../lib/utils"
+import {
+  SmartContractFungibleAsset,
+  AnyAsset,
+  isSmartContractFungibleAsset,
+  AnyAssetAmount,
+} from "../../assets"
+import { convertToEth } from "../../lib/utils"
 import { AnyEVMTransaction } from "../../networks"
-import { AssetDecimalAmount } from "./asset-utils"
-
-const pollingProviders = {
-  ethereum: new AlchemyProvider(
-    getNetwork(Number(getEthereumNetwork().chainID)),
-    process.env.ALCHEMY_KEY
-  ),
-}
+import {
+  AssetDecimalAmount,
+  enrichAssetAmountWithDecimalValues,
+} from "./asset-utils"
+import { HexString } from "../../types"
 
 function ethTransformer(
   value: string | number | bigint | null | undefined
@@ -35,21 +32,43 @@ export type UIAdaptationMap<T> = {
   [P in keyof T]?: FieldAdapter<T[P]>
 }
 
+export type BaseContractInfo = {
+  contractLogoURL?: string | undefined
+}
+
+export type ContractDeployment = BaseContractInfo & {
+  type: "contract-deployment"
+}
+
+export type ContractInteraction = BaseContractInfo & {
+  type: "contract-interaction"
+}
+
+export type AssetTransfer = BaseContractInfo & {
+  type: "asset-transfer"
+  assetAmount: AnyAssetAmount & AssetDecimalAmount
+}
+
+export type ContractInfo =
+  | ContractDeployment
+  | ContractInteraction
+  | AssetTransfer
+  | undefined
+
 export type ActivityItem = AnyEVMTransaction & {
+  contractInfo?: ContractInfo | undefined
   timestamp?: number
   isSent?: boolean
   blockHeight: number | null
+  fromTruncated: string
+  toTruncated: string
   infoRows: {
     [name: string]: {
       label: string
-      value: unknown
+      value: string
       valueDetail: string
     }
   }
-  token: FungibleAsset
-  tokenDecimalValue: AssetDecimalAmount["decimalAmount"]
-  fromTruncated: string
-  toTruncated: string
 }
 
 /**
@@ -103,7 +122,8 @@ export function adaptForUI<T>(
 export const keysMap: UIAdaptationMap<ActivityItem> = {
   blockHeight: {
     readableName: "Block Height",
-    transformer: (item: number) => item.toString(),
+    transformer: (height: number | null) =>
+      height === null ? "(pending)" : height.toString(),
     detailTransformer: () => {
       return ""
     },
@@ -142,39 +162,76 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
   },
 }
 
-export async function determineToken(
-  result: AnyEVMTransaction
-): Promise<FungibleAsset | SmartContractFungibleAsset | null> {
-  const { input } = result
-  let asset = ETH
-  if (input) {
-    try {
-      let meta: SmartContractFungibleAsset | null = null
-      if (result?.to) {
-        meta = await getTokenMetadata(pollingProviders.ethereum, result.to)
-      }
-      if (meta) {
-        asset = meta
-      }
-    } catch (err) {
-      logger.error(`Error getting token metadata`, err)
+function resolveContractInfo(
+  assets: AnyAsset[],
+  contractAddress: HexString | undefined,
+  contractInput: HexString,
+  desiredDecimals: number
+): ContractInfo | undefined {
+  // A missing recipient means a contract deployment.
+  if (typeof contractAddress === "undefined") {
+    return {
+      type: "contract-deployment",
     }
   }
 
-  return asset
-}
+  // See if the address matches a fungible asset.
+  const matchingFungibleAsset = assets.find(
+    (asset): asset is SmartContractFungibleAsset =>
+      isSmartContractFungibleAsset(asset) &&
+      asset.contractAddress.toLowerCase() === contractAddress.toLowerCase()
+  )
 
-export function determineActivityDecimalValue(
-  activityItem: ActivityItem
-): number {
-  const { token } = activityItem
-  let { value } = activityItem
+  const contractLogoURL = matchingFungibleAsset?.metadata?.logoURL
 
   // Derive value from transaction transfer if not sending ETH
-  if (value === BigInt(0) && activityItem.input) {
-    value = BigInt(`0x${activityItem.input.slice(10).slice(0, 64)}`)
+  // FIXME Move to ERC20 parsing using ethers.
+  if (
+    typeof matchingFungibleAsset !== "undefined" &&
+    contractInput.length >= 74 &&
+    contractInput.startsWith("0xa9059cbb") // transfer selector
+  ) {
+    return {
+      type: "asset-transfer",
+      contractLogoURL,
+      assetAmount: enrichAssetAmountWithDecimalValues(
+        {
+          asset: matchingFungibleAsset,
+          amount: BigInt(`0x${contractInput.slice(10, 10 + 64)}`),
+        },
+        desiredDecimals
+      ),
+    }
   }
 
-  const decimalValue = Number(value) / 10 ** token.decimals
-  return decimalValue
+  // Fall back on a standard contract interaction.
+  return {
+    type: "contract-interaction",
+    contractLogoURL,
+  }
+}
+
+export function enrichTransactionWithContractInfo(
+  assets: AnyAsset[],
+  transaction: AnyEVMTransaction,
+  desiredDecimals: number
+): AnyEVMTransaction & { contractInfo?: ContractInfo | undefined } {
+  if (transaction.input === null || transaction.input === "0x") {
+    // This is _almost certainly_ not a contract interaction, move on. Note that
+    // a simple ETH send to a contract address can still effectively be a
+    // contract interaction (because it calls the fallback function on the
+    // contract), but for now we deliberately ignore that scenario when
+    // categorizing activities.
+    return transaction
+  }
+
+  return {
+    ...transaction,
+    contractInfo: resolveContractInfo(
+      assets,
+      transaction.to,
+      transaction.input,
+      desiredDecimals
+    ),
+  }
 }

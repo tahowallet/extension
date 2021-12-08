@@ -14,6 +14,58 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   if (typeof activity.value === "undefined" || activity.value === BigInt(0))
     return <></>
 
+  let activityContent = (
+    <div className="left">
+      <div className="token_icon_wrap">
+        <SharedAssetIcon symbol={activity.asset.symbol} size="small" />
+      </div>
+      <div className="amount">
+        <span className="bold_amount_count">{activity.value ?? ""}</span>
+        {activity.asset.symbol}
+      </div>
+    </div>
+  )
+
+  switch (activity.contractInfo?.type) {
+    case "asset-transfer":
+      activityContent = (
+        <div className="left">
+          <div className="token_icon_wrap">
+            <SharedAssetIcon
+              logoURL={activity.contractInfo.contractLogoURL}
+              symbol={activity.contractInfo.assetAmount.asset.symbol}
+              size="small"
+            />
+          </div>
+          <div className="amount">
+            <span className="bold_amount_count">
+              {activity.contractInfo.assetAmount.localizedDecimalAmount}
+            </span>
+            {activity.contractInfo.assetAmount.asset.symbol}
+          </div>
+        </div>
+      )
+      break
+    case "contract-deployment":
+    case "contract-interaction":
+      activityContent = (
+        <div className="left">
+          <div className="token_icon_wrap">
+            <SharedAssetIcon
+              logoURL={activity.contractInfo.contractLogoURL}
+              symbol={activity.asset.symbol}
+              size="small"
+            />
+          </div>
+          <div className="amount">
+            <span className="bold_amount_count">Contract Interaction</span>
+          </div>
+        </div>
+      )
+      break
+    default:
+  }
+
   return (
     <li>
       <button type="button" className="standard_width" onClick={onClick}>
@@ -33,21 +85,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           </div>
         </div>
         <div className="bottom">
-          <div className="left">
-            <div className="token_icon_wrap">
-              <SharedAssetIcon
-                logoURL={activity?.token?.metadata?.logoURL}
-                symbol={activity.token?.symbol}
-                size="small"
-              />
-            </div>
-            <div className="amount">
-              <span className="bold_amount_count">
-                {`${activity.tokenDecimalValue}`.substring(0, 6)}
-              </span>
-              {activity.token.symbol}
-            </div>
-          </div>
+          {activityContent}
           <div className="right">
             {activity.isSent ? (
               <div className="outcome">

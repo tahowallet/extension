@@ -3,7 +3,7 @@ import {
   keysMap,
   adaptForUI,
   ActivityItem,
-  determineActivityDecimalValue,
+  ContractInfo,
 } from "./utils/activity-utils"
 import { AnyEVMTransaction } from "../networks"
 
@@ -46,7 +46,9 @@ const activitiesSlice = createSlice({
         payload: { transaction, forAccounts },
       }: {
         payload: {
-          transaction: AnyEVMTransaction
+          transaction: AnyEVMTransaction & {
+            contractInfo?: ContractInfo | undefined
+          }
           forAccounts: string[]
         }
       }
@@ -65,7 +67,6 @@ const activitiesSlice = createSlice({
           infoRows,
           fromTruncated: truncateAddress(transaction.from),
           toTruncated: truncateAddress(transaction.to ?? ""),
-          tokenDecimalValue: determineActivityDecimalValue(transaction),
         })
       })
     },

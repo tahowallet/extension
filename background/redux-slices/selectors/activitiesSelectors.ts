@@ -8,15 +8,22 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     ui: UIState
     activities: ActivitiesState
     account: AccountState
-  }) => state,
-  ({ activities, ui, account }) => {
-    const currentAccountActivities = ui.currentAccount
-      ? activities[ui.currentAccount.address]
-      : undefined
+  }) => ({
+    currentAccountAddress: state.ui.currentAccount?.address,
+    currentAccountActivities:
+      typeof state.ui.currentAccount !== "undefined"
+        ? state.activities[state.ui.currentAccount?.address]
+        : undefined,
+    blocks: state.account.blocks,
+  }),
+  ({ currentAccountAddress, currentAccountActivities, blocks }) => {
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
-      const activityItem = currentAccountActivities.entities[id] as ActivityItem
-      const isSent =
-        activityItem.from.toLowerCase() === ui.currentAccount?.address
+      // Guaranteed by the fact that we got the id from the ids collection.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const activityItem = currentAccountActivities.entities[id]!
+
+      const isSent = activityItem.from.toLowerCase() === currentAccountAddress
+
       return {
         ...activityItem,
         timestamp:
