@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill"
+import { EXTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
 import BaseService from "../base"
@@ -50,7 +51,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     super()
 
     browser.runtime.onConnect.addListener(async (port) => {
-      if (port.name === "tally-external") {
+      if (port.name === EXTERNAL_PORT_NAME) {
         port.onMessage.addListener(async (event) => {
           logger.log(
             `background: request payload: ${JSON.stringify(event.request)}`
