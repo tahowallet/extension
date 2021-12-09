@@ -1,4 +1,3 @@
-// @ts-nocheck
 export const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
 
 export const WINDOW_PROVIDER_TARGET = "tally-window-provider"
@@ -92,7 +91,7 @@ export function isObject(
 }
 
 export function isArray(arg: unknown): arg is Array<unknown> {
-  return getType(arg) === "Array"
+  return Array.isArray(arg)
 }
 
 export function isUndefined(arg: unknown): arg is undefined {
@@ -104,7 +103,7 @@ export function isString(arg: unknown): arg is string {
 }
 
 export function isMessageEvent(arg: unknown): arg is MessageEvent {
-  return getType(arg) === "MessageEvent"
+  return arg instanceof MessageEvent
 }
 
 export function isRPCRequestParamsType(

@@ -77,7 +77,7 @@ export default class TallyWindowProvider extends EventEmitter {
 
     return new Promise((resolve) => {
       // TODO: refactor the listener function out of the Promise
-      const listener = (event: WindowResponseEvent | PortResponseEvent) => {
+      const listener = (event: unknown) => {
         let id
         let result
         if (isWindowResponseEvent(event)) {
