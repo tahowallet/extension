@@ -9,8 +9,8 @@ import SwapApprovalStep from "./SwapApprovalStep"
 import { useBackgroundSelector } from "../../hooks"
 
 export default function SwapQoute(): ReactElement {
-  const { sellAsset, buyAsset, sellAmount, buyAmount } = useBackgroundSelector(
-    (state) => {
+  const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
+    useBackgroundSelector((state) => {
       if (state.swap.quote) {
         return {
           ...state.swap,
@@ -22,13 +22,22 @@ export default function SwapQoute(): ReactElement {
             state.swap.quote.buyAmount,
             state.swap.buyAsset?.decimals
           ),
+          sources: state.swap.quote.sources.filter((source) => {
+            if (parseFloat(source.proportion) > 0) {
+              return true
+            }
+
+            return false
+          }),
         }
       }
 
       // We should always have a quote by the time we get to this page, but just in case!
-      return state.swap
-    }
-  )
+      return {
+        ...state.swap,
+        sources: [],
+      }
+    })
 
   const [stepComplete, setStepComplete] = useState(-1)
 
@@ -61,7 +70,9 @@ export default function SwapQoute(): ReactElement {
           amount={buyAmount}
         />
       </div>
-      <span className="label label_right">1 ETH = 9,843 KEEP</span>
+      <span className="label label_right">
+        1 {sellAsset?.symbol} = {quote?.price} {buyAsset?.symbol}
+      </span>
       <div className="settings_wrap">
         <SwapTransactionSettings isSettingsLocked />
       </div>
@@ -86,13 +97,16 @@ export default function SwapQoute(): ReactElement {
         <>
           <div className="exchange_section_wrap">
             <span className="top_label label">Exchange route</span>
-            <div className="exchange_content standard_width">
-              <div className="left">
-                <span className="icon_uniswap" />
-                Uniswap v3
+
+            {sources.map((source) => (
+              <div className="exchange_content standard_width">
+                <div className="left">
+                  <span className="icon_uniswap" />
+                  {source.name}
+                </div>
+                <div>{parseFloat(source.proportion) * 100}%</div>
               </div>
-              <div>100%</div>
-            </div>
+            ))}
           </div>
           <div className="approve_button center_horizontal">
             <SharedButton
