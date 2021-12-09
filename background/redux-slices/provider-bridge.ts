@@ -1,12 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
-
-export type PermissionRequest = {
-  url: string
-  favIconUrl: string
-  state: "request" | "allow" | "deny"
-}
 
 export type ProviderBridgeState = {
   permissionRequests: { [url: string]: PermissionRequest }

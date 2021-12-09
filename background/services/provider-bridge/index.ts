@@ -3,15 +3,16 @@ import {
   EXTERNAL_PORT_NAME,
   PortRequestEvent,
   PortResponseEvent,
-  ProviderRPCError,
   RPCRequest,
+  UnauthorizedError,
+  UserRejectedRequestError,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
-import { PermissionRequest } from "../../redux-slices/provider-bridge"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 type Events = ServiceLifecycleEvents & {
   permissionRequest: PermissionRequest
@@ -82,9 +83,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
         `background: request payload: ${JSON.stringify(event.request)}`
       )
 
+      const response: PortResponseEvent = { id: event.id, result: [] }
+
       if (
         event.request.method === "eth_requestAccounts" &&
-        !(await this.permissionCheck(url))
+        !(await this.checkPermission(url))
       ) {
         const permissionRequest: PermissionRequest = {
           url,
@@ -92,21 +95,23 @@ export default class ProviderBridgeService extends BaseService<Events> {
           state: "request",
         }
 
-        const blockUntilUserAction = await this.permissionRequest(
+        const blockUntilUserAction = await this.requestPermission(
           permissionRequest
         )
         await blockUntilUserAction
+
+        if (await this.checkPermission(url)) {
+          response.result = new UserRejectedRequestError()
+        }
       }
 
-      // TBD @Antonio:
-      // I copied the way MM works here — I return `result: []` when the url does not have permission
-      // According to EIP-1193 it should return a `4100` ProviderRPCError but felt that dApps probably does not expect this.
-      const response: PortResponseEvent = { id: event.id, result: [] }
-      if (await this.permissionCheck(url)) {
+      if (await this.checkPermission(url)) {
         response.result = await this.routeContentScriptRPCRequest(
           event.request.method,
           event.request.params
         )
+      } else {
+        response.result = new UnauthorizedError()
       }
       logger.log("background response:", response)
 
@@ -114,7 +119,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  async permissionRequest(permissionRequest: PermissionRequest) {
+  async requestPermission(permissionRequest: PermissionRequest) {
     let blockResolve: (value: unknown) => void | undefined
     const blockUntilUserAction = new Promise((resolve) => {
       blockResolve = resolve
@@ -128,7 +133,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     return blockUntilUserAction
   }
 
-  async permissionGrant(permission: PermissionRequest): Promise<void> {
+  async grandPermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
       this.allowedPages[permission.url] = permission
       this.#pendingPermissionsRequests[permission.url]("Time to move on")
@@ -136,7 +141,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  async permissionDenyOrRevoke(permission: PermissionRequest): Promise<void> {
+  async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
       delete this.allowedPages[permission.url]
       this.#pendingPermissionsRequests[permission.url]("Time to move on")
@@ -144,7 +149,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  async permissionCheck(url: string): Promise<boolean> {
+  async checkPermission(url: string): Promise<boolean> {
     if (this.allowedPages[url]?.state === "allow") return Promise.resolve(true)
     return Promise.resolve(false)
   }

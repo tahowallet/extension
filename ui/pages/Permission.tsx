@@ -3,8 +3,8 @@ import React, { ReactElement, useCallback } from "react"
 import {
   permissionDenyOrRevoke,
   permissionGrant,
-  PermissionRequest,
 } from "@tallyho/tally-background/redux-slices/provider-bridge"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 function PermissionRow({ permission }: { permission: PermissionRequest }) {

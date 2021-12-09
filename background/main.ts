@@ -54,8 +54,8 @@ import ProviderBridgeService from "./services/provider-bridge"
 import {
   newPermissionRequest,
   emitter as providerBridgeSliceEmitter,
-  PermissionRequest,
 } from "./redux-slices/provider-bridge"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
@@ -488,11 +488,11 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("permissionGranted", async (permission) => {
-      await this.providerBridgeService.permissionGrant(permission)
+      await this.providerBridgeService.grandPermission(permission)
     })
 
     providerBridgeSliceEmitter.on("permissionDenied", async (permission) => {
-      await this.providerBridgeService.permissionDenyOrRevoke(permission)
+      await this.providerBridgeService.denyOrRevokePermission(permission)
     })
   }
 }
