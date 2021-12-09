@@ -3,7 +3,7 @@ import React, { ReactElement } from "react"
 interface Props {
   id?: string
   placeholder: string
-  type: "password" | "text"
+  type: "password" | "text" | "number"
   value?: string | number | undefined
   onChange?: (value: string) => void
 }
@@ -35,6 +35,9 @@ export default function SharedInput(props: Props): ReactElement {
           }
           input:focus {
             border: 2px solid var(--green-40);
+          }
+          input[type="number"] {
+            -moz-appearance: textfield;
           }
         `}
       </style>

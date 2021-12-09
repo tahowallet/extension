@@ -11,6 +11,9 @@ import {
 import {
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
+  FungibleAssetAmount,
+  UnitPricePoint,
+  unitPricePointForPricePoint,
 } from "../../assets"
 import { selectSigningAddresses } from "./keyringsSelectors"
 
@@ -91,6 +94,29 @@ export const selectAccountAndTimestampedActivities = createSelector(
       },
       accountData: account.accountsData,
     }
+  }
+)
+
+export const selectMainCurrencyUnitPrice = createSelector(
+  getAssetsState,
+  (assets) => {
+    const pricePoint = selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
+    if (pricePoint) {
+      const {
+        unitPrice,
+      }:
+        | (UnitPricePoint & { unitPrice: FungibleAssetAmount })
+        | { unitPrice: undefined } = unitPricePointForPricePoint(
+        pricePoint
+      ) ?? {
+        unitPrice: undefined,
+      }
+      if (unitPrice) {
+        const decimalValue = assetAmountToDesiredDecimals(unitPrice, 2)
+        return decimalValue
+      }
+    }
+    return undefined
   }
 )
 

@@ -29,6 +29,10 @@ export default function Send(): ReactElement {
   const [feeModalOpen, setFeeModalOpen] = useState(false)
   const [minGas, setMinGas] = useState(0)
   const [maxGas, setMaxGas] = useState(0)
+  const [currentFeeValues, setCurrentFeeValues] = useState({
+    gwei: "",
+    fiat: "",
+  })
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
     useState<BlockEstimate>({
       confidence: 0,
@@ -58,7 +62,6 @@ export default function Send(): ReactElement {
     }
     return 0
   }
-
   const findBalance = () => {
     return assetAmounts.find((el) => el.asset.symbol === assetSymbol)
       ?.localizedDecimalAmount
@@ -96,13 +99,26 @@ export default function Send(): ReactElement {
   const findMinMaxGas = useCallback(() => {
     if (
       estimatedFeesPerGas?.baseFeePerGas &&
-      estimatedFeesPerGas?.instant?.maxFeePerGas
+      estimatedFeesPerGas?.regular?.maxPriorityFeePerGas &&
+      estimatedFeesPerGas?.instant?.maxPriorityFeePerGas
     ) {
       setMinGas(
-        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+        Number(
+          formatUnits(
+            (estimatedFeesPerGas.baseFeePerGas * BigInt(13)) / 10n +
+              estimatedFeesPerGas.regular?.maxPriorityFeePerGas,
+            "gwei"
+          ).split(".")[0]
+        )
       )
       setMaxGas(
-        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+        Number(
+          formatUnits(
+            (estimatedFeesPerGas.baseFeePerGas * BigInt(18)) / 10n +
+              estimatedFeesPerGas.instant?.maxPriorityFeePerGas,
+            "gwei"
+          ).split(".")[0]
+        )
       )
     }
   }, [estimatedFeesPerGas])
@@ -129,6 +145,7 @@ export default function Send(): ReactElement {
           <NetworkFeesChooser
             setFeeModalOpen={setFeeModalOpen}
             onSelectFeeOption={setSelectedEstimatedFeePerGas}
+            currentFeeSelectionPrice={setCurrentFeeValues}
             selectedGas={selectedEstimatedFeePerGas}
             gasLimit={gasLimit}
             setGasLimit={setGasLimit}
@@ -179,23 +196,16 @@ export default function Send(): ReactElement {
                 onClick={openSelectFeeModal}
                 style={{
                   background: `linear-gradient(90deg, var(--green-80) ${(
-                    (minGas / maxGas) *
+                    ((Number(currentFeeValues.gwei) || minGas) / maxGas) *
                     100
                   ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    (minGas / maxGas) *
+                    ((Number(currentFeeValues.gwei) || minGas) / maxGas) *
                     100
                   ).toFixed()}%)`,
                 }}
               >
                 <div>
-                  ~
-                  {Number(
-                    formatUnits(
-                      selectedEstimatedFeePerGas.maxFeePerGas +
-                        selectedEstimatedFeePerGas.maxPriorityFeePerGas,
-                      "gwei"
-                    )
-                  ).toFixed() || minGas}
+                  ~{currentFeeValues.gwei || minGas}
                   Gwei
                 </div>
                 <img
@@ -212,8 +222,7 @@ export default function Send(): ReactElement {
                 <div className="total_amount_number">
                   {`${amount || 0} ${assetSymbol ?? ""}`}
                   <div className="total_localized">
-                    {/* TODO after the OR we should just show the fee cost or only add it after */}
-                    {amount ? `$${getTotalLocalizedValue()}` : "$0"}
+                    {amount ? `$${getTotalLocalizedValue()}` : ""}
                   </div>
                 </div>
               </div>
