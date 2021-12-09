@@ -223,7 +223,7 @@ export default class Main extends BaseService<never> {
     /**
      * A promise to the provider bridge service, handling and validating
      * the communication coming from dApps according to EIP-1193 and some tribal
-     * knowledge
+     * knowledge.
      */
     private providerBridgeService: ProviderBridgeService
   ) {

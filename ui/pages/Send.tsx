@@ -39,9 +39,7 @@ export default function Send(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const { accountData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
+  const currentAccount = useBackgroundSelector(({ ui }) => ui.currentAccount)
 
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
@@ -52,7 +50,7 @@ export default function Send(): ReactElement {
 
   const sendTransactionRequest = async () => {
     const transaction = {
-      from: Object.keys(accountData)[0],
+      from: currentAccount.address,
       to: destinationAddress,
       // eslint-disable-next-line no-underscore-dangle
       value: BigInt(utils.parseEther(amount)._hex),
