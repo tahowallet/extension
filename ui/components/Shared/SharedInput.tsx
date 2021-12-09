@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 
 interface Props {
@@ -6,10 +7,11 @@ interface Props {
   type: "password" | "text"
   value?: string | number | undefined
   onChange?: (value: string) => void
+  errorMessage?: string
 }
 
 export default function SharedInput(props: Props): ReactElement {
-  const { id, placeholder, type, onChange, value } = props
+  const { id, placeholder, type, onChange, value, errorMessage } = props
 
   return (
     <>
@@ -19,7 +21,11 @@ export default function SharedInput(props: Props): ReactElement {
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
+        className={classNames({
+          error: errorMessage,
+        })}
       />
+      {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>
         {`
           input {
@@ -35,6 +41,17 @@ export default function SharedInput(props: Props): ReactElement {
           }
           input:focus {
             border: 2px solid var(--green-40);
+          }
+          .error {
+            border-color: var(--error);
+          }
+          .error_message {
+            color: var(--error);
+            position: absolute;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 3px;
           }
         `}
       </style>
