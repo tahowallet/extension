@@ -1,0 +1,20 @@
+{
+  "name": "@tallyho/window-provider",
+  "version": "0.0.1",
+  "description": "Tally, the community owned and operated Web3 wallet: window provider is responsible for creating the in-page object for communication.",
+  "main": "index.ts",
+  "repository": "git@github.com:thesis/tally-extension.git",
+  "author": "Greg Nagy <gergo.nagy@tally.cash>",
+  "license": "GPL-3.0",
+  "keywords": [
+    "ethereum",
+    "bitcoin",
+    "cryptocurrency",
+    "wallet",
+    "web3",
+    "dapp"
+  ],
+  "dependencies": {
+    "@tallyho/provider-bridge-shared": "0.0.1"
+  }
+}
