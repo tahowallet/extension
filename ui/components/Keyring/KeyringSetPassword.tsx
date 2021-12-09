@@ -73,6 +73,7 @@ export default function KeyringSetPassword(): ReactElement {
         type="primary"
         size="large"
         onClick={dispatchCreatePassword}
+        showLoadingOnClick={!passwordErrorMessage}
       >
         Begin the hunt
       </SharedButton>

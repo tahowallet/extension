@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
@@ -40,6 +40,12 @@ export default function SharedButton(props: Props): ReactElement {
   const [navigateTo, setNavigateTo] =
     React.useState<History.LocationDescriptor<unknown> | null>(null)
   const [isClicked, setIsClicked] = useState(false)
+
+  // If the prop deciding if the loader should be displayed or not
+  // changes, assume resetting the loading state condition.
+  useEffect(() => {
+    setIsClicked(false)
+  }, [showLoadingOnClick])
 
   if (navigateTo && navigateTo === linkTo) {
     return <Redirect push to={linkTo} />
