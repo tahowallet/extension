@@ -4,22 +4,13 @@ import {
   WINDOW_PROVIDER_TARGET,
   PortResponseEvent,
   ProviderTransport,
+  isObject,
+  isWindowResponseEvent,
+  isPortResponseEvent,
+  RequestArgument,
+  EthersSendCallback,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
-import {
-  isObject,
-  isPortResponseEvent,
-  isRPCRequestParamsType,
-  isWindowResponseEvent,
-} from "./utils"
-
-// https://eips.ethereum.org/EIPS/eip-1193#request
-type RequestArgument = {
-  readonly method: string
-  readonly params?: Array<unknown> | Record<string, unknown>
-}
-
-type EthersSendCallback = (error: unknown, response: unknown) => void
 
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
@@ -69,8 +60,8 @@ export default class TallyWindowProvider extends EventEmitter {
   }
 
   request(arg: RequestArgument): Promise<unknown> {
-    const { method, params } = arg
-    if (typeof method !== "string" || !isRPCRequestParamsType(params)) {
+    const { method, params = [] } = arg
+    if (typeof method !== "string") {
       return Promise.reject(new Error(`unsupported method type: ${method}`))
     }
     const sendData = {
