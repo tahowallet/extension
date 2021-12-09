@@ -3,6 +3,7 @@ import {
   EXTERNAL_PORT_NAME,
   PortRequestEvent,
   PortResponseEvent,
+  ProviderRPCError,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
@@ -30,20 +31,11 @@ type Events = ServiceLifecycleEvents & {
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
 export default class ProviderBridgeService extends BaseService<Events> {
-  // /**
-  //  * Tracks pending account requests by id and the function that can be used to
-  //  * respond to them when a response is provided via
-  //  * `respondToPendingAccountRequest`.
-  //  */
-  // #pendingAccountRequests: {
-  //   [dAppID: string]: (grantedAccounts: string[]) => void
-  // } = {}
-
   allowedPages: {
     [url: string]: PermissionRequest
   } = {}
 
-  pendingPermissions: {
+  #pendingPermissionsRequests: {
     [url: string]: (value: unknown) => void
   } = {}
 
@@ -90,22 +82,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
         `background: request payload: ${JSON.stringify(event.request)}`
       )
 
-      if (event.request.method === "eth_requestAccounts") {
+      if (
+        event.request.method === "eth_requestAccounts" &&
+        !(await this.permissionCheck(url))
+      ) {
         const permissionRequest: PermissionRequest = {
           url,
           favIconUrl,
           state: "request",
         }
-        let blockResolve: (value: unknown) => void
-        const blockUntilUserAction = new Promise((resolve) => {
-          blockResolve = resolve
-        })
 
-        this.emitter.emit("permissionRequest", permissionRequest)
-        await ProviderBridgeService.showDappConnectWindow()
-
-        // @ts-expect-error unblockResolve is assigned value in the Promise but don't know how to convince ts about this (assigning default value did not feel right)
-        this.pendingPermissions[permissionRequest.url] = blockResolve
+        const blockUntilUserAction = await this.permissionRequest(
+          permissionRequest
+        )
         await blockUntilUserAction
       }
 
@@ -113,7 +102,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // I copied the way MM works here — I return `result: []` when the url does not have permission
       // According to EIP-1193 it should return a `4100` ProviderRPCError but felt that dApps probably does not expect this.
       const response: PortResponseEvent = { id: event.id, result: [] }
-      if (await this.checkPermission(url)) {
+      if (await this.permissionCheck(url)) {
         response.result = await this.routeContentScriptRPCRequest(
           event.request.method,
           event.request.params
@@ -125,23 +114,37 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
+  async permissionRequest(permissionRequest: PermissionRequest) {
+    let blockResolve: (value: unknown) => void | undefined
+    const blockUntilUserAction = new Promise((resolve) => {
+      blockResolve = resolve
+    })
+
+    this.emitter.emit("permissionRequest", permissionRequest)
+    await ProviderBridgeService.showDappConnectWindow()
+
+    // ts compiler does not know that we assign value to blockResolve so we need to tell him
+    this.#pendingPermissionsRequests[permissionRequest.url] = blockResolve!
+    return blockUntilUserAction
+  }
+
   async permissionGrant(permission: PermissionRequest): Promise<void> {
-    if (this.pendingPermissions[permission.url]) {
+    if (this.#pendingPermissionsRequests[permission.url]) {
       this.allowedPages[permission.url] = permission
-      this.pendingPermissions[permission.url]("Time to move on")
-      delete this.pendingPermissions[permission.url]
+      this.#pendingPermissionsRequests[permission.url]("Time to move on")
+      delete this.#pendingPermissionsRequests[permission.url]
     }
   }
 
   async permissionDenyOrRevoke(permission: PermissionRequest): Promise<void> {
-    if (this.pendingPermissions[permission.url]) {
+    if (this.#pendingPermissionsRequests[permission.url]) {
       delete this.allowedPages[permission.url]
-      this.pendingPermissions[permission.url]("Time to move on")
-      delete this.pendingPermissions[permission.url]
+      this.#pendingPermissionsRequests[permission.url]("Time to move on")
+      delete this.#pendingPermissionsRequests[permission.url]
     }
   }
 
-  async checkPermission(url: string): Promise<boolean> {
+  async permissionCheck(url: string): Promise<boolean> {
     if (this.allowedPages[url]?.state === "allow") return Promise.resolve(true)
     return Promise.resolve(false)
   }
@@ -180,26 +183,4 @@ export default class ProviderBridgeService extends BaseService<Events> {
       focused: true,
     })
   }
-
-  // async requestAccountAccess(dAppID: string): Promise<string[]> {
-  //   const existingPermissions = await this.db.getDAppPermissions(dAppID)
-
-  //   if (typeof existingPermissions !== "undefined") {
-  //     return Promise.resolve(existingPermissions.allowedAccounts)
-  //   }
-
-  //   const requestPromise = new Promise<string[]>((resolve, reject) => {
-  //     this.#pendingAccountRequests[dAppID] = (result) => {
-  //       this.db
-  //         .setDAppPermissions(dAppID, {
-  //           allowedAccounts: result,
-  //         })
-  //         .then(() => resolve(result))
-  //         .catch(reject)
-  //     }
-  //   })
-
-  //   this.emitter.emit("accountAccessRequestedByDAppID", dAppID)
-  //   return requestPromise
-  // }
 }
