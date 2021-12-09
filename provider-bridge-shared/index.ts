@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
 
 export const WINDOW_PROVIDER_TARGET = "tally-window-provider"
