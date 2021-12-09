@@ -6,12 +6,12 @@
 declare module "styled-jsx/style"
 interface Window {
   tally?: {
-    isTally?: boolean
-    on?: (
+    isTally: boolean
+    on: (
       eventName: string | symbol,
       listener: (...args: any[]) => void
     ) => unknown
-    removeListener?: (
+    removeListener: (
       eventName: string | symbol,
       listener: (...args: any[]) => void
     ) => unknown

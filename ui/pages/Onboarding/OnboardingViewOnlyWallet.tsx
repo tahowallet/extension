@@ -21,7 +21,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
     if (checkIfPlausibleETHAddress(address)) {
-      dispatch(
+      await dispatch(
         addAddressNetwork({
           address,
           network: getEthereumNetwork(),

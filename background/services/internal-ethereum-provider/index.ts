@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill"
+import { INTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
 import {
   ChainService,
   ServiceCreatorFunction,
@@ -27,7 +28,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     super()
 
     browser.runtime.onConnect.addListener(async (port) => {
-      if (port.name === "tally-internal") {
+      if (port.name === INTERNAL_PORT_NAME) {
         port.onMessage.addListener(async (event) => {
           logger.log(`internal: request payload: ${JSON.stringify(event)}`)
           const response = {
