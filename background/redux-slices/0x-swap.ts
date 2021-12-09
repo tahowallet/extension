@@ -166,6 +166,52 @@ export const fetchSwapPrices = createBackgroundAsyncThunk(
   }
 )
 
+const swapQuoteJTD = {
+  properties: {
+    allowanceTarget: { type: "string" },
+    buyAmount: { type: "string" },
+    buyTokenAddress: { type: "string" },
+    buyTokenToEthRate: { type: "string" },
+    chainId: { type: "uint32" },
+    data: { type: "string" },
+    estimatedGas: { type: "string" },
+    gas: { type: "string" },
+    gasPrice: { type: "string" },
+    guaranteedPrice: { type: "string" },
+    minimumProtocolFee: { type: "string" },
+    orders: {
+      elements: {
+        properties: {
+          makerAmount: { type: "string" },
+          makerToken: { type: "string" },
+          source: { type: "string" },
+          sourcePathId: { type: "string" },
+          takerAmount: { type: "string" },
+          takerToken: { type: "string" },
+          type: { type: "uint32" },
+        },
+      },
+    },
+    price: { type: "string" },
+    protocolFee: { type: "string" },
+    sellAmount: { type: "string" },
+    sellTokenAddress: { type: "string" },
+    sellTokenToEthRate: { type: "string" },
+    sources: {
+      elements: {
+        properties: {
+          name: { type: "string" },
+          proportion: { type: "string" },
+        },
+      },
+    },
+    to: { type: "string" },
+    value: { type: "string" },
+  },
+}
+
+const isValidSwapQuoteResponse = jtdValidatorFor(swapQuoteJTD)
+
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
   async (quote: { assets: SwapAssets; amount: SwapAmount }) => {
@@ -181,7 +227,17 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
         `sellAmount=${sellAmount}`
     )
 
-    return apiData
+    if (isValidSwapQuoteResponse(apiData)) {
+      return apiData as ZrxQuote
+    }
+
+    logger.warn(
+      "Swap quote API call didn't validate, did the 0x API change?",
+      apiData,
+      isValidSwapPriceResponse.errors
+    )
+
+    return undefined
   }
 )
 
@@ -233,7 +289,7 @@ const swapSlice = createSlice({
       )
       .addCase(
         fetchSwapQuote.fulfilled,
-        (state, { payload: quote }: { payload: ZrxQuote }) => {
+        (state, { payload: quote }: { payload: ZrxQuote | undefined }) => {
           return { ...state, quote }
         }
       )
