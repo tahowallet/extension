@@ -16,32 +16,67 @@ export default function WalletActivityListItem(props: Props): ReactElement {
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
-    isContractInteraction: boolean
+    iconClass: string | undefined
     label: string
     assetLogoURL: string | undefined
     assetSymbol: string
     assetValue: string
   } = {
-    isContractInteraction: false,
+    iconClass: undefined,
     label: activity.isSent ? "Sent" : "Received",
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
   }
+  if (
+    activity.to?.toLowerCase() === "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ) {
+    activity.contractInfo = {
+      type: "asset-swap",
+      fromAssetAmount: {
+        asset: activity.asset,
+        amount: activity.value,
+        decimalAmount: Number(activity.value / 10n ** 16n) / 100,
+        localizedDecimalAmount: (
+          Number(activity.value / 10n ** 16n) / 100
+        ).toLocaleString("default", { maximumFractionDigits: 2 }),
+      },
+      toAssetAmount: {
+        asset: {
+          name: "WETH",
+          symbol: "WETH",
+        },
+        amount: activity.value,
+        decimalAmount: Number(activity.value / 10n ** 16n) / 100,
+        localizedDecimalAmount: (
+          Number(activity.value / 10n ** 16n) / 100
+        ).toLocaleString("default", { maximumFractionDigits: 2 }),
+      },
+    }
+  }
   switch (activity.contractInfo?.type) {
     case "asset-transfer":
       renderDetails = {
-        isContractInteraction: true,
+        iconClass: "contract_interaction_icon",
         label: "Contract interaction",
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
         assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
       }
       break
+    case "asset-swap":
+      renderDetails = {
+        iconClass: "swap_icon",
+        label: "Swap",
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.asset.symbol,
+        assetValue: activity.localizedDecimalValue,
+      }
+      break
     case "contract-deployment":
     case "contract-interaction":
       renderDetails = {
-        isContractInteraction: true,
+        iconClass: "contract_interaction_icon",
         label: "Contract interaction",
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.asset.symbol,
@@ -57,9 +92,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="top">
           <div className="left">
             <div
-              className={classNames("activity_icon", {
+              className={classNames("activity_icon", renderDetails.iconClass, {
                 send_icon: activity.isSent,
-                contract_interaction_icon: renderDetails.isContractInteraction,
               })}
             />
             {renderDetails.label}
@@ -127,6 +161,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .send_icon {
             background: url("./images/activity_send@2x.png");
+            background-size: cover;
+          }
+          .swap_icon {
+            background: url("./images/activity_swap@2x.png");
             background-size: cover;
           }
           .contract_interaction_icon {

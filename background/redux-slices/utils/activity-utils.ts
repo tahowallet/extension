@@ -49,10 +49,17 @@ export type AssetTransfer = BaseContractInfo & {
   assetAmount: AnyAssetAmount & AssetDecimalAmount
 }
 
+export type AssetSwap = BaseContractInfo & {
+  type: "asset-swap"
+  fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
+  toAssetAmount: AnyAssetAmount & AssetDecimalAmount
+}
+
 export type ContractInfo =
   | ContractDeployment
   | ContractInteraction
   | AssetTransfer
+  | AssetSwap
   | undefined
 
 export type ActivityItem = AnyEVMTransaction & {
