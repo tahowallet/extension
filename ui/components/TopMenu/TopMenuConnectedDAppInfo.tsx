@@ -67,6 +67,10 @@ export default function TopMenuConnectedDAppInfo(props: {
         .void_space {
           height: 100%;
           width: 100%;
+          position: fixed;
+          top: 0;
+          left: 0;
+          z-index: -1;
         }
         h1 {
           color: #22c480;
