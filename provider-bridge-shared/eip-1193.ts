@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 // https://eips.ethereum.org/EIPS/eip-1193#request
 
 export type RequestArgument = {

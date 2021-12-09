@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
+  PermissionRequest,
   PortRequestEvent,
   PortResponseEvent,
   RPCRequest,
@@ -12,7 +13,6 @@ import logger from "../../lib/logger"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 type Events = ServiceLifecycleEvents & {
   permissionRequest: PermissionRequest

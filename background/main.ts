@@ -3,6 +3,7 @@ import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { ethers } from "ethers"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
@@ -55,7 +56,6 @@ import {
   newPermissionRequest,
   emitter as providerBridgeSliceEmitter,
 } from "./redux-slices/provider-bridge"
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
