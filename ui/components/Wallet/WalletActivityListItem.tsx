@@ -28,32 +28,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
   }
-  if (
-    activity.to?.toLowerCase() === "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-  ) {
-    activity.contractInfo = {
-      type: "asset-swap",
-      fromAssetAmount: {
-        asset: activity.asset,
-        amount: activity.value,
-        decimalAmount: Number(activity.value / 10n ** 16n) / 100,
-        localizedDecimalAmount: (
-          Number(activity.value / 10n ** 16n) / 100
-        ).toLocaleString("default", { maximumFractionDigits: 2 }),
-      },
-      toAssetAmount: {
-        asset: {
-          name: "WETH",
-          symbol: "WETH",
-        },
-        amount: activity.value,
-        decimalAmount: Number(activity.value / 10n ** 16n) / 100,
-        localizedDecimalAmount: (
-          Number(activity.value / 10n ** 16n) / 100
-        ).toLocaleString("default", { maximumFractionDigits: 2 }),
-      },
-    }
-  }
   switch (activity.contractInfo?.type) {
     case "asset-transfer":
       renderDetails = {
