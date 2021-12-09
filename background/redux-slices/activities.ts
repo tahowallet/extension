@@ -1,13 +1,9 @@
 import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
-import {
-  keysMap,
-  adaptForUI,
-  ActivityItem,
-  ContractInfo,
-} from "./utils/activity-utils"
 import { AnyEVMTransaction } from "../networks"
+import { keysMap, adaptForUI, ActivityItem } from "./utils/activity-utils"
 
 import { assetAmountToDesiredDecimals } from "../assets"
+import { ContractInfo } from "../services/enrichment"
 
 export { ActivityItem }
 

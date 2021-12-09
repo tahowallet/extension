@@ -45,7 +45,7 @@ import {
   signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
-import { enrichTransactionWithContractInfo } from "./redux-slices/utils/activity-utils"
+import { enrichTransactionWithContractInfo } from "./services/enrichment"
 import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
