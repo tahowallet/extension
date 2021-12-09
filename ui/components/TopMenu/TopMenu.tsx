@@ -6,10 +6,15 @@ import { useBackgroundSelector } from "../../hooks"
 interface Props {
   toggleOpenProtocolList: () => void
   toggleOpenNotifications: () => void
+  toggleOpenDAppConnectionInfo: () => void
 }
 
 export default function TopMenu(props: Props): ReactElement {
-  const { toggleOpenProtocolList, toggleOpenNotifications } = props
+  const {
+    toggleOpenProtocolList,
+    toggleOpenNotifications,
+    toggleOpenDAppConnectionInfo,
+  } = props
 
   const [address, truncatedAddress] = useBackgroundSelector((background) => {
     return [
@@ -30,6 +35,12 @@ export default function TopMenu(props: Props): ReactElement {
     <div className="nav_wrap">
       <nav className="standard_width_padded">
         <TopMenuProtocolSwitcher onClick={toggleOpenProtocolList} />
+        <button
+          type="button"
+          aria-label="Show current dApp connection"
+          className="connection_button"
+          onClick={toggleOpenDAppConnectionInfo}
+        />
         <TopMenuProfileButton
           address={truncatedAddress}
           nickname={name || undefined}
@@ -51,6 +62,18 @@ export default function TopMenu(props: Props): ReactElement {
             width: 100%;
             box-shadow: 0px 6px 11px var(--hunter-green);
             margin-bottom: 6px;
+          }
+          .connection_button {
+            background: url("./images/bolt@2x.png") center no-repeat;
+            border-radius: 5px;
+            background-size: 14px 25px;
+            border: solid 3px var(--hunter-green);
+            width: 32px;
+            height: 32px;
+            margin-top: -5px;
+          }
+          .connection_button:hover {
+            background-color: var(--green-80);
           }
         `}
       </style>
