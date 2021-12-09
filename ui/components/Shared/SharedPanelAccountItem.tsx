@@ -1,14 +1,23 @@
 import React, { ReactElement } from "react"
 
+import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+
+import SharedLoadingSpinner from "./SharedLoadingSpinner"
+
 interface Props {
   isSelected: boolean
-  address: string
+  accountTotal: AccountTotal
+  hideMenu: boolean
 }
 
-export default function AccountsNotificationPanelAccountItem(
-  props: Props
-): ReactElement {
-  const { isSelected, address } = props
+export default function SharedPanelAccountItem(props: Props): ReactElement {
+  const { isSelected, hideMenu, accountTotal: account } = props
+  const {
+    shortenedAddress,
+    name,
+    avatarURL,
+    localizedTotalMainCurrencyAmount,
+  } = account
 
   return (
     <li className="standard_width">
@@ -22,20 +31,29 @@ export default function AccountsNotificationPanelAccountItem(
         )}
 
         <div className="info">
-          <div className="address_name">Foxrunner</div>
-          <div className="address">{address}</div>
+          <div className="address_name">
+            {typeof name === "undefined" ? shortenedAddress : name}
+          </div>
+          <div className="address">
+            {typeof name !== "undefined" ? shortenedAddress : ""}
+          </div>
         </div>
       </div>
       <div className="right">
         <div className="balance_status">
-          <div className="balance">
-            <span className="lighter">$</span>4,124.23
-          </div>
+          {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
+            <SharedLoadingSpinner size="small" />
+          ) : (
+            <div className="balance">
+              <span className="lighter">$</span>
+              {localizedTotalMainCurrencyAmount}
+            </div>
+          )}
           {isSelected ? (
             <div className="connected_status">Connected</div>
           ) : null}
         </div>
-        <div className="icon_settings" />
+        {!hideMenu && <div className="icon_settings" />}
       </div>
       <style jsx>{`
         li {
@@ -44,14 +62,15 @@ export default function AccountsNotificationPanelAccountItem(
           align-items: center;
           margin: 0 auto;
           width: 336px;
-          margin-bottom: 16px;
           height: 52px;
         }
         .avatar {
-          background: url("./images/avatar@2x.png") center no-repeat;
+          background: url("${avatarURL ?? "./images/avatar@2x.png"}") center
+            no-repeat;
           background-size: cover;
           width: 48px;
           height: 48px;
+          border-radius: 12px;
         }
         .avatar_selected_outline {
           width: 52px;
@@ -97,7 +116,7 @@ export default function AccountsNotificationPanelAccountItem(
           margin-left: 16px;
         }
         .lighter {
-          color: #99a8a7;
+          color: var(--green-40);
         }
         .icon_settings {
           background: url("./images/more_dots@2x.png") center no-repeat;
@@ -113,4 +132,9 @@ export default function AccountsNotificationPanelAccountItem(
       `}</style>
     </li>
   )
+}
+
+SharedPanelAccountItem.defaultProps = {
+  isSelected: false,
+  hideMenu: false,
 }

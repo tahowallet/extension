@@ -1,26 +1,20 @@
 import { isAddress } from "@ethersproject/address"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import { formatUnits } from "@ethersproject/units"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { utils } from "ethers"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
+import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
-import SharedInput from "../components/Shared/SharedInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-
-type GasOption = {
-  name: string
-  time: string
-  gwei: number
-  dollarValue: string
-  maxFeePerGas: bigint | undefined
-  maxPriorityFeePerGas: bigint | undefined
-}
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
@@ -30,11 +24,15 @@ export default function Send(): ReactElement {
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [minGas, setMinGas] = useState(0)
   const [maxGas, setMaxGas] = useState(0)
-  const [selectedGas, setSelectedGas] = useState<GasOption>()
-  const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
+    useState<BlockEstimate>({
+      confidence: 0,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    })
   const [gasLimit, setGasLimit] = useState("")
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
@@ -45,18 +43,10 @@ export default function Send(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const saveUserGasChoice = () => {
-    setSelectedGas(gasOptions[activeFeeIndex])
-    setFeeModalOpen(false)
-  }
-
-  // TODO trigger update when redux state change
-
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
   }
   const closeSelectFeeModal = () => {
-    setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
     setFeeModalOpen(false)
   }
 
@@ -64,230 +54,39 @@ export default function Send(): ReactElement {
     const transaction = {
       from: Object.keys(accountData)[0],
       to: destinationAddress,
-      value: BigInt(amount),
-      maxFeePerGas: selectedGas?.maxFeePerGas,
-      maxPriorityFeePerGas: selectedGas?.maxPriorityFeePerGas,
+      // eslint-disable-next-line no-underscore-dangle
+      value: BigInt(utils.parseEther(amount)._hex),
+      maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
+      maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
     dispatch(updateTransactionOptions(transaction))
   }
-  // TODO show the gasTimout bar in network fees
-  // I mean how do i know when its going to refresh when I enter this screen
 
-  const updateGasOptions = useCallback(() => {
-    if (estimatedFeesPerGas) {
-      const instant = estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === 99
-      )
-      const express = estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === 90
-      )
-      const regular = estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === 70
-      )
-      if (!!instant && !!express && !!regular) {
-        const updatedGasOptions = [
-          {
-            name: "Regular",
-            time: "~10 Min",
-            gwei: Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n),
-            dollarValue: "$??",
-            maxFeePerGas: BigInt(regular.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(regular.maxPriorityFeePerGas),
-          },
-          {
-            name: "Express",
-            time: "~2 Min",
-            gwei: Number(BigInt(express.maxFeePerGas) / 1000000000n),
-            dollarValue: "$??",
-            maxFeePerGas: BigInt(express.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(express.maxPriorityFeePerGas),
-          },
-          {
-            name: "Instant",
-            time: "~15 Sec",
-            gwei: Number(BigInt(instant.maxFeePerGas) / 1000000000n),
-            dollarValue: "$??",
-            maxFeePerGas: BigInt(instant.maxFeePerGas),
-            maxPriorityFeePerGas: BigInt(instant.maxPriorityFeePerGas),
-          },
-        ]
-        setGasOptions(updatedGasOptions)
-        setSelectedGas(updatedGasOptions[0])
-      }
-    }
-  }, [estimatedFeesPerGas])
-
+  // TODO Once we know what do we consider min and max gas this should be updated
   const findMinMaxGas = useCallback(() => {
-    if (estimatedFeesPerGas) {
-      const values = estimatedFeesPerGas.estimatedPrices.map((el) =>
-        Number(BigInt(el.maxFeePerGas) / 1000000000n)
+    if (
+      estimatedFeesPerGas?.baseFeePerGas &&
+      estimatedFeesPerGas?.instant?.maxFeePerGas
+    ) {
+      setMinGas(
+        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
       )
-      setMinGas(Number(estimatedFeesPerGas?.baseFeePerGas / 1000000000n))
-      setMaxGas(Math.max(...values) + 40)
+      setMaxGas(
+        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+      )
     }
   }, [estimatedFeesPerGas])
 
   useEffect(() => {
     findMinMaxGas()
-    updateGasOptions()
-  }, [estimatedFeesPerGas, findMinMaxGas, updateGasOptions])
-
-  // When estimatedFeesPerGas updates, we select the regular gasOption as default
-  useEffect(() => {
-    setActiveFeeIndex(gasOptions.findIndex((el) => el === selectedGas) || 0)
-  }, [gasOptions, selectedGas])
+  }, [findMinMaxGas])
 
   useEffect(() => {
     if (assetSymbol) {
       setSelectedCount(1)
     }
   }, [assetSymbol])
-
-  const handleSelectGasOption = (index: number) => {
-    setActiveFeeIndex(index)
-  }
-
-  const NetworkFeesChooser = (
-    <div className="wrapper">
-      <div className="fees">
-        <div className="fees__title">Network Fees</div>
-        <div className="fees__divider" />
-        {gasOptions.map((option, i) => {
-          return (
-            <button
-              className={`fees__option ${i === activeFeeIndex ? "active" : ""}`}
-              onClick={() => handleSelectGasOption(i)}
-              type="button"
-            >
-              <div className="fees__option__left">
-                <div className="fees__option__name">{option.name}</div>
-                <div className="fees__option__subtext">{option.time}</div>
-              </div>
-              <div className="fees__option__right">
-                <div className="fees__option__price">{`~${option.gwei} Gwei`}</div>
-                <div className="fees__option__subtext">
-                  {option.dollarValue}
-                </div>
-              </div>
-            </button>
-          )
-        })}
-        <div className="fees__limit">
-          <label className="fees__limit__label" htmlFor="gasLimit">
-            Gas limit
-          </label>
-          <SharedInput
-            id="gasLimit"
-            value={gasLimit}
-            onChange={(val) => setGasLimit(val)}
-            placeholder="Auto"
-          />
-        </div>
-      </div>
-      <div className="confirm">
-        <SharedButton size="medium" type="primary" onClick={saveUserGasChoice}>
-          Save
-        </SharedButton>
-      </div>
-      <style jsx>
-        {`
-          .wrapper {
-            height: 100%;
-            display: flex;
-            flex-flow: column;
-            justify-content: space-between;
-          }
-          .fees {
-            background-color: var(--green-95);
-            width: 352px;
-            margin: 0 auto;
-            display: flex;
-            flex-flow: column;
-          }
-          .fees__divider {
-            background: #33514e;
-            opacity: 0.6;
-            border-radius: 4px;
-            height: 2px;
-            width: 384px;
-            position: relative;
-            left: -16px;
-            margin: 12px 0;
-          }
-          .fees__limit {
-            margin: 16px 0;
-            width: 40%;
-            position: relative;
-          }
-          .fees__limit__label {
-            position: absolute;
-            top: -8px;
-            left: 10px;
-            font-size: 12px;
-            padding: 0 4px;
-            background-color: var(--green-95);
-            color: #99a8a7;
-          }
-          .fees__title {
-            font-size: 22px;
-            font-weight: 600;
-          }
-          .fees__option {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #002522;
-            box-sizing: border-box;
-            padding: 12px;
-            margin: 8px 0;
-            cursor: pointer;
-            border-radius: 4px;
-          }
-          .fees__option.active {
-            border: 1px solid #22c480;
-            box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
-              0px 6px 8px rgba(0, 20, 19, 0.24),
-              0px 2px 4px rgba(0, 20, 19, 0.34);
-          }
-          .fees__option.active .fees__option__name {
-            color: #22c480;
-          }
-          .fees__option__left,
-          .fees__option__right {
-            display: flex;
-            flex-flow: column;
-            gap: 4px;
-          }
-          .fees__option__left {
-            text-align: left;
-          }
-          .fees__option__right {
-            text-align: right;
-          }
-          .fees__option__name,
-          .fees__option__price {
-            color: var(--green--5);
-            font-size: 18px;
-            font-weight: 600;
-          }
-          .fees__option__subtext {
-            color: var(--green-60);
-            font-size: 14px;
-          }
-          .confirm {
-            width: 100%;
-            background: #002522;
-            display: flex;
-            box-sizing: border-box;
-            justify-content: flex-end;
-            padding: 20px 16px;
-          }
-        `}
-      </style>
-    </div>
-  )
 
   return (
     <>
@@ -296,9 +95,16 @@ export default function Send(): ReactElement {
           size="custom"
           isOpen={feeModalOpen}
           close={closeSelectFeeModal}
-          customSize={`${gasOptions.length * 56 + 320}px`}
+          customSize={`${3 * 56 + 320}px`}
         >
-          {NetworkFeesChooser}
+          <NetworkFeesChooser
+            setFeeModalOpen={setFeeModalOpen}
+            onSaveGasChoice={setSelectedEstimatedFeePerGas}
+            selectedGas={selectedEstimatedFeePerGas}
+            gasLimit={gasLimit}
+            setGasLimit={setGasLimit}
+            estimatedFeesPerGas={estimatedFeesPerGas}
+          />
         </SharedSlideUpMenu>
         <div className="standard_width">
           <h1 className="header">
@@ -332,15 +138,25 @@ export default function Send(): ReactElement {
                 onClick={openSelectFeeModal}
                 style={{
                   background: `linear-gradient(90deg, var(--green-80) ${(
-                    ((selectedGas?.gwei || minGas) / maxGas) *
+                    (minGas / maxGas) *
                     100
                   ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    ((selectedGas?.gwei || minGas) / maxGas) *
+                    (minGas / maxGas) *
                     100
                   ).toFixed()}%)`,
                 }}
               >
-                <div>~{selectedGas?.gwei || minGas}Gwei</div>
+                <div>
+                  ~
+                  {Number(
+                    formatUnits(
+                      selectedEstimatedFeePerGas.maxFeePerGas +
+                        selectedEstimatedFeePerGas.maxPriorityFeePerGas,
+                      "gwei"
+                    )
+                  ).toFixed() || minGas}
+                  Gwei
+                </div>
                 <img
                   className="settings_image"
                   src="./images/cog@2x.png"
@@ -361,7 +177,7 @@ export default function Send(): ReactElement {
                 size="large"
                 isDisabled={
                   selectedCount <= 0 ||
-                  BigInt(amount) === BigInt(0) ||
+                  Number(amount) === 0 ||
                   !isAddress(destinationAddress)
                 }
                 linkTo={{

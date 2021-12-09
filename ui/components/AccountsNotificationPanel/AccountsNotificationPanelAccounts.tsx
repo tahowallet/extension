@@ -1,42 +1,79 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
-import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
+import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
-function WalletName() {
+type WalletTypeInfo = {
+  title: string
+  icon: string
+}
+
+const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
+  [AccountType.ReadOnly]: {
+    title: "Read-only mode",
+    icon: "./images/eye@2x.png",
+  },
+  [AccountType.Imported]: {
+    title: "Imported",
+    icon: "./images/imported@2x.png",
+  },
+}
+
+function WalletTypeHeader({
+  accountType,
+  canAddAddress,
+}: {
+  accountType: AccountType
+  canAddAddress: boolean
+}) {
+  const { title, icon } = walletTypeDetails[accountType]
+
   return (
     <>
-      <div className="wallet_title">
-        <div className="left">
-          <div className="icon_wallet" />
-          Trezor
-          <div className="icon_edit" />
-        </div>
-        <div className="right">
-          <SharedButton
-            type="tertiary"
-            size="small"
-            icon="plus"
-            iconSize="medium"
-            isDisabled
-          >
-            Add address
-          </SharedButton>
-        </div>
-      </div>
+      <header className="wallet_title">
+        <h2 className="left">
+          <div className="icon" />
+          {title}
+        </h2>
+        {canAddAddress ? (
+          <div className="right">
+            <SharedButton
+              type="tertiary"
+              size="small"
+              icon="plus"
+              iconSize="medium"
+              isDisabled
+            >
+              Add address
+            </SharedButton>
+          </div>
+        ) : (
+          <></>
+        )}
+      </header>
       <style jsx>{`
         .wallet_title {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .wallet_title > h2 {
           color: #fff;
           font-size: 18px;
           font-weight: 600;
           line-height: 24px;
           padding: 0px 12px 0px 16px;
-          margin-bottom: 16px;
-          margin-top: 8px;
-          align-items: center;
-          display: flex;
-          justify-content: space-between;
+          margin: 8px 0 16px;
+        }
+        .icon {
+          background: url("${icon}");
+          background-size: cover;
+          width: 24px;
+          height: 24px;
+          margin: 0 7px 0 0;
         }
         .icon_wallet {
           background: url("./images/wallet_kind_icon@2x.png") center no-repeat;
@@ -58,61 +95,85 @@ function WalletName() {
         }
         .right {
           align-items: center;
-          display: flex;
+          display: none; // TODO Display when Add address is hooked up.
         }
       `}</style>
     </>
   )
 }
 
-export default function AccountsNotificationPanelAccounts(): ReactElement {
-  const [selectedWallet, setSelectedWallet] = useState(0)
+type Props = {
+  onCurrentAddressChange: (newAddress: string) => void
+}
 
+export default function AccountsNotificationPanelAccounts({
+  onCurrentAddressChange,
+}: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
-  const accountAddresses = useBackgroundSelector((background) => {
-    return Object.keys(background.account.accountsData)
-  })
+  const accountTotals = useBackgroundSelector(selectAccountTotalsByCategory)
+
+  const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
 
   const selectedAccount = useBackgroundSelector((background) => {
-    return background.ui.selectedAccount?.address
+    return background.ui.currentAccount?.address
   })
 
+  const updateCurrentAccount = (address: string) => {
+    setPendingSelectedAddress(address)
+    dispatch(setCurrentAccount(address))
+  }
+
   useEffect(() => {
-    function selectFirstAccountIfNoneSelected() {
-      if (selectedAccount === "" && accountAddresses[0]) {
-        dispatch(setSelectedAccount(accountAddresses[0].toLowerCase()))
-      }
+    if (
+      pendingSelectedAddress !== "" &&
+      pendingSelectedAddress === selectedAccount
+    ) {
+      onCurrentAddressChange(pendingSelectedAddress)
+      setPendingSelectedAddress("")
     }
-    selectFirstAccountIfNoneSelected()
-  }, [dispatch, accountAddresses, selectedAccount])
+  }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccount])
 
   return (
     <div>
-      <WalletName />
-      <ul>
-        {accountAddresses.map((item, index) => {
-          const lowerCaseItem = item.toLocaleLowerCase()
+      {[AccountType.Imported, AccountType.ReadOnly]
+        .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
+        .map((accountType) => {
+          // Known-non-null due to above filter.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const accountTypeTotals = accountTotals[accountType]!
+
           return (
-            <li key={item}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedWallet(0)
-                  setSelectedAccount(index)
-                  dispatch(setSelectedAccount(lowerCaseItem))
-                }}
-              >
-                <AccountsNotificationPanelAccountItem
-                  key={lowerCaseItem}
-                  address={lowerCaseItem.slice(0, 16)}
-                  isSelected={lowerCaseItem === selectedAccount}
-                />
-              </button>
-            </li>
+            <section>
+              <WalletTypeHeader
+                accountType={accountType}
+                canAddAddress={false}
+              />
+              <ul>
+                {accountTypeTotals.map((accountTotal) => {
+                  const lowerCaseAddress =
+                    accountTotal.address.toLocaleLowerCase()
+                  return (
+                    <li key={lowerCaseAddress}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateCurrentAccount(lowerCaseAddress)
+                        }}
+                      >
+                        <SharedPanelAccountItem
+                          key={lowerCaseAddress}
+                          accountTotal={accountTotal}
+                          isSelected={lowerCaseAddress === selectedAccount}
+                        />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
           )
         })}
-      </ul>
       <footer>
         <SharedButton
           type="tertiary"
@@ -134,6 +195,9 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
             align-items: center;
             align-content: center;
           }
+          li {
+            margin-bottom: 16px;
+          }
           footer {
             width: 100%;
             height: 48px;
@@ -148,11 +212,6 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
           }
         `}
       </style>
-      <style jsx global>{`
-        .wallet_title:first-of-type {
-          margin-top: 24px;
-        }
-      `}</style>
     </div>
   )
 }

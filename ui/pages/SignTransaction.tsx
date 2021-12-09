@@ -12,7 +12,11 @@ import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTra
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useAreKeyringsUnlocked,
+} from "../hooks"
 
 enum SignType {
   Sign = "sign",
@@ -27,6 +31,8 @@ interface SignLocationState {
 }
 
 export default function SignTransaction(): ReactElement {
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const location = useLocation<SignLocationState>()
@@ -38,6 +44,10 @@ export default function SignTransaction(): ReactElement {
   const txDetails = useBackgroundSelector(selectTransactionData)
 
   const [panelNumber, setPanelNumber] = useState(0)
+
+  if (!areKeyringsUnlocked) {
+    return <></>
+  }
 
   const signContent: {
     [signType in SignType]: {
@@ -68,10 +78,7 @@ export default function SignTransaction(): ReactElement {
   const handleConfirm = async () => {
     if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
       dispatch(signTransaction(txDetails))
-      if (isTransactionSigned) {
-        // redirect here
-        // console.log("Tx Signed!")
-      }
+      history.push("/")
     }
   }
 

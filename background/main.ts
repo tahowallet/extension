@@ -2,7 +2,7 @@ import browser from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-import ethers from "ethers"
+import { ethers } from "ethers"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
@@ -35,6 +35,8 @@ import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
+  keyringLocked,
+  keyringUnlocked,
   updateKeyrings,
 } from "./redux-slices/keyrings"
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
@@ -413,6 +415,9 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
+      // Mark as loading and wire things up.
+      this.store.dispatch(loadAccount(address))
+
       this.chainService.addAccountToTrack({
         address,
         // TODO support other networks
@@ -440,7 +445,19 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    keyringSliceEmitter.on("unlockKeyring", async (password) => {
+    this.keyringService.emitter.on("locked", async (isLocked) => {
+      if (isLocked) {
+        this.store.dispatch(keyringLocked())
+      } else {
+        this.store.dispatch(keyringUnlocked())
+      }
+    })
+
+    keyringSliceEmitter.on("createPassword", async (password) => {
+      await this.keyringService.unlock(password, true)
+    })
+
+    keyringSliceEmitter.on("unlockKeyrings", async (password) => {
       await this.keyringService.unlock(password)
     })
 

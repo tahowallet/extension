@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
+import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -26,6 +27,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
           network: getEthereumNetwork(),
         })
       )
+      dispatch(setCurrentAccount(address))
       setRedirect(true)
     } else {
       alert("Please enter a valid address")
@@ -40,7 +42,9 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   return (
     <section>
       <div className="wordmark" />
-      <BackButton />
+      <div className="back_button_wrap">
+        <BackButton />
+      </div>
       <h1 className="serif_header">Explore Tally</h1>
       <div className="subtitle">
         Add an Ethereum address to view an existing wallet in Tally.
@@ -63,6 +67,10 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             background-size: cover;
             width: 52px;
             height: 25px;
+          }
+          .back_button_wrap {
+            position: fixed;
+            top: 25px;
           }
           h1 {
             margin-top: 55px;

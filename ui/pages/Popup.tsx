@@ -22,6 +22,9 @@ import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
+import DAppConnectRequest from "./DAppConnectRequest"
+import KeyringUnlock from "../components/Keyring/KeyringUnlock"
+import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 
 export default function Popup({ store }: { store: Store }): ReactElement {
   const history = useHistory()
@@ -30,11 +33,17 @@ export default function Popup({ store }: { store: Store }): ReactElement {
     <Provider store={store}>
       <Router>
         <Switch>
+          <Route path="/keyring/set-password">
+            <KeyringSetPassword />
+          </Route>
+          <Route path="/keyring/unlock">
+            <KeyringUnlock />
+          </Route>
           <Route path="/singleAsset">
             <SingleAsset />
           </Route>
           <Route path="/onboarding/importMetamask">
-            <OnboardingImportMetamask onImported={() => history.push("/")} />
+            <OnboardingImportMetamask nextPage="/" />
           </Route>
           <Route path="/onboarding/viewOnlyWallet">
             <OnboardingViewOnlyWallet />
@@ -67,7 +76,11 @@ export default function Popup({ store }: { store: Store }): ReactElement {
             <Swap />
           </Route>
           <Route path="/">
-            <Wallet />
+            {document.location.href.includes("dapp-connect") ? (
+              <DAppConnectRequest />
+            ) : (
+              <Wallet />
+            )}
           </Route>
         </Switch>
       </Router>

@@ -1,8 +1,13 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useAreKeyringsUnlocked,
+} from "../../hooks"
 
 function TextArea({
   value,
@@ -33,32 +38,41 @@ function TextArea({
 }
 
 type Props = {
-  onImported: () => void
+  nextPage: string
 }
 
 export default function OnboardingImportMetamask(props: Props): ReactElement {
-  const [recoveryPhrase, setRecoveryPhrase] = useState(
-    // Don't store real money in this plz.
-    ""
-  )
+  const { nextPage } = props
+
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+
+  const [recoveryPhrase, setRecoveryPhrase] = useState("")
+  const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
   const keyringImport = useBackgroundSelector(
     (state) => state.keyrings.importing
   )
 
-  if (keyringImport === "done") {
-    const { onImported } = props
-    onImported()
-  }
+  const history = useHistory()
+
+  useEffect(() => {
+    if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
+      setIsImporting(false)
+      history.push(nextPage)
+    }
+  }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
+    setIsImporting(true)
     dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase }))
   }, [dispatch, recoveryPhrase])
 
-  return (
+  return areKeyringsUnlocked ? (
     <section className="center_horizontal">
-      <SharedBackButton />
+      <div className="back_button_wrap">
+        <SharedBackButton />
+      </div>
       <div className="portion top">
         <div className="metamask_onboarding_image" />
         <h1 className="serif_header">Import account</h1>
@@ -68,7 +82,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
       </div>
       <div className="portion bottom">
-        <SharedButton size="medium" type="primary" onClick={importWallet}>
+        <SharedButton
+          size="medium"
+          type="primary"
+          isDisabled={isImporting}
+          onClick={importWallet}
+        >
           Import account
         </SharedButton>
         <SharedButton size="small" type="tertiary">
@@ -82,6 +101,10 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           flex-direction: column;
           justify-content: space-between;
           height: 100%;
+        }
+        .back_button_wrap {
+          position: fixed;
+          top: 25px;
         }
         h1 {
           margin: unset;
@@ -117,5 +140,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         }
       `}</style>
     </section>
+  ) : (
+    <></>
   )
 }

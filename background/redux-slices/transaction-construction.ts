@@ -1,7 +1,11 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { BlockPrices, EIP1559TransactionRequest } from "../networks"
+import {
+  BlockEstimate,
+  BlockPrices,
+  EIP1559TransactionRequest,
+} from "../networks"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const enum TransactionConstructionStatus {
@@ -13,12 +17,21 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
-  estimatedFeesPerGas: BlockPrices | null
+  estimatedFeesPerGas: EstimatedFeesPerGas | undefined
+  lastGasEstimatesRefreshed: number
+}
+
+export type EstimatedFeesPerGas = {
+  baseFeePerGas: bigint
+  instant: BlockEstimate | undefined
+  express: BlockEstimate | undefined
+  regular: BlockEstimate | undefined
 }
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
-  estimatedFeesPerGas: null,
+  estimatedFeesPerGas: undefined,
+  lastGasEstimatesRefreshed: Date.now(),
 }
 
 export type Events = {
@@ -64,7 +77,22 @@ const transactionSlice = createSlice({
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
     ) => {
-      return { ...immerState, estimatedFeesPerGas }
+      return {
+        ...immerState,
+        estimatedFeesPerGas: {
+          baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
+          instant: estimatedFeesPerGas.estimatedPrices.find(
+            (el) => el.confidence === 99
+          ),
+          express: estimatedFeesPerGas.estimatedPrices.find(
+            (el) => el.confidence === 95
+          ),
+          regular: estimatedFeesPerGas.estimatedPrices.find(
+            (el) => el.confidence === 70
+          ),
+        },
+        lastGasEstimatesRefreshed: Date.now(),
+      }
     },
   },
   extraReducers: (builder) => {
@@ -83,6 +111,12 @@ export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.estimatedFeesPerGas,
   (gasData) => gasData
+)
+
+export const selectLastGasEstimatesRefreshTime = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.lastGasEstimatesRefreshed,
+  (updateTime) => updateTime
 )
 
 export const selectTransactionData = createSelector(
