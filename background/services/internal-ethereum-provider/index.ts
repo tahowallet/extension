@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill"
-import { INTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
+import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
 import {
   ChainService,
   ServiceCreatorFunction,
@@ -48,7 +48,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   async routeSafeRPCRequest(
     method: string,
-    params: unknown[]
+    params: RPCRequest["params"]
   ): Promise<unknown> {
     switch (method) {
       // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
