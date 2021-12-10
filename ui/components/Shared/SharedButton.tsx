@@ -177,7 +177,7 @@ export default function SharedButton(props: Props): ReactElement {
           .disabled {
             background-color: var(--green-60);
             color: var(--green-80);
-            cursor: not-allowed;
+            pointer-events: none;
           }
           .disabled .icon_button {
             background-color: var(--green-80);

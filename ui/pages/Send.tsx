@@ -1,7 +1,7 @@
 import { isAddress } from "@ethersproject/address"
 import { formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
@@ -20,12 +20,18 @@ export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
   const assetSymbol = location?.state?.symbol
 
+  const combinedData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const displayAssets = combinedData?.assetAmounts.map(({ asset }) => asset)
+
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [feeModalOpen, setFeeModalOpen] = useState(false)
   const [minGas, setMinGas] = useState(0)
   const [maxGas, setMaxGas] = useState(0)
+  const [hasError, setHasError] = useState(false)
+
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
     useState<BlockEstimate>({
       confidence: 0,
@@ -113,10 +119,18 @@ export default function Send(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 label="Asset / Amount"
+                assetAmounts={combinedData?.assetAmounts}
                 onAssetSelect={() => {
                   setSelectedCount(1)
                 }}
-                onAmountChange={setAmount}
+                onAmountChange={(value, errorMessage) => {
+                  setAmount(value)
+                  if (errorMessage) {
+                    setHasError(true)
+                  } else {
+                    setHasError(false)
+                  }
+                }}
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
               />
@@ -176,7 +190,8 @@ export default function Send(): ReactElement {
                 isDisabled={
                   selectedCount <= 0 ||
                   Number(amount) === 0 ||
-                  !isAddress(destinationAddress)
+                  !isAddress(destinationAddress) ||
+                  hasError
                 }
                 linkTo={{
                   pathname: "/signTransaction",
