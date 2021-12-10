@@ -5,9 +5,9 @@ import {
   PopupWindowEntryPage,
   PortRequestEvent,
   PortResponseEvent,
+  EIP1193Error,
   RPCRequest,
-  UnauthorizedError,
-  UserRejectedRequestError,
+  EIP1193_ERROR,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
@@ -102,17 +102,17 @@ export default class ProviderBridgeService extends BaseService<Events> {
         await blockUntilUserAction
 
         if (await this.checkPermission(url)) {
-          response.result = new UserRejectedRequestError()
+          response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
         }
-      }
-
-      if (await this.checkPermission(url)) {
-        response.result = await this.routeContentScriptRPCRequest(
-          event.request.method,
-          event.request.params
-        )
       } else {
-        response.result = new UnauthorizedError()
+        if (await this.checkPermission(url)) {
+          response.result = await this.routeContentScriptRPCRequest(
+            event.request.method,
+            event.request.params
+          )
+        } else {
+          response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
+        }
       }
       logger.log("background response:", response)
 

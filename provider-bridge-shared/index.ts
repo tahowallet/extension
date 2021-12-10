@@ -79,6 +79,10 @@ export function isString(arg: unknown): arg is string {
   return getType(arg) === "String"
 }
 
+export function isNumber(arg: unknown): arg is number {
+  return getType(arg) === "Number"
+}
+
 export function isMessageEvent(arg: unknown): arg is MessageEvent {
   return arg instanceof MessageEvent
 }
