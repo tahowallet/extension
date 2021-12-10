@@ -37,7 +37,7 @@ export default function TopMenu(props: Props): ReactElement {
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
-        <TopMenuProtocolSwitcher onClick={toggleOpenProtocolList} />
+        <TopMenuProtocolSwitcher />
         <div className="profile_group">
           {isConnectedToDApp && (
             <button
