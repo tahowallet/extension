@@ -34,11 +34,13 @@ export default function KeyringSetPassword(): ReactElement {
     return true
   }
 
-  const handleInputChange = (f: (value: string) => void): (() => void) => {
-    return () => {
+  const handleInputChange = (
+    f: (value: string) => void
+  ): ((value: string) => void) => {
+    return (value: string) => {
       // If the input field changes, remove the error.
       setPasswordErrorMessage("")
-      return f
+      return f(value)
     }
   }
 
