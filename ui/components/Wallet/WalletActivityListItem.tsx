@@ -11,8 +11,6 @@ interface Props {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity } = props
-  if (typeof activity.value === "undefined" || activity.value === BigInt(0))
-    return <></>
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
