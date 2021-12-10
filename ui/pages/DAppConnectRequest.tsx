@@ -59,7 +59,9 @@ export default function DAppConnectRequest(): ReactElement {
   const currentAccountTotal = accountTotals?.filter(
     (accountTotal) => accountTotal?.address === currentAccount
   )[0]
-  if (!currentAccountTotal) return <></>
+  if (!currentAccountTotal) {
+    return <></>
+  }
 
   const lowerCaseAddress = currentAccountTotal.address.toLocaleLowerCase()
 
