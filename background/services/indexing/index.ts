@@ -227,10 +227,11 @@ export default class IndexingService extends BaseService<Events> {
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
           .filter(
-            (a: SmartContractFungibleAsset) =>
+            (a) =>
               a.homeNetwork.chainID === getEthereumNetwork().chainID &&
               !checkedContractAddresses.has(a.contractAddress)
           )
+
         await this.retrieveTokenBalances(
           addressNetwork,
           otherActiveAssets.map((a) => a.contractAddress)

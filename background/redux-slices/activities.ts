@@ -1,23 +1,28 @@
 import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
-import {
-  keysMap,
-  adaptForUI,
-  ActivityItem,
-  determineActivityDecimalValue,
-} from "./utils/activity-utils"
+import { AnyEVMTransaction } from "../networks"
+import { keysMap, adaptForUI, ActivityItem } from "./utils/activity-utils"
+
+import { assetAmountToDesiredDecimals } from "../assets"
+import { ContractInfo } from "../services/enrichment"
 
 export { ActivityItem }
+
+const desiredDecimals = 2 /* TODO Make desired decimals configurable? */
 
 const activitiesAdapter = createEntityAdapter<ActivityItem>({
   selectId: (activityItem) => activityItem.hash,
   sortComparer: (a, b) => {
-    if (a.blockHeight === b.blockHeight) {
+    // null means pending, pending is always sorted above everything.
+    if (a.blockHeight === null && b.blockHeight === null) {
       return 0
     }
-    if (a.blockHeight < b.blockHeight) {
+    if (a.blockHeight === null) {
+      return -1
+    }
+    if (b.blockHeight === null) {
       return 1
     }
-    return -1
+    return b.blockHeight - a.blockHeight
   },
 })
 
@@ -35,28 +40,49 @@ const activitiesSlice = createSlice({
   name: "activities",
   initialState,
   reducers: {
-    activityEncountered: (immerState, { payload }) => {
-      const activityItem = payload.transaction
-
-      if (activityItem.blockHeight) {
-        const infoRows = adaptForUI(keysMap, activityItem)
-
-        payload.forAccounts.forEach((account: string) => {
-          const address = account.toLowerCase()
-
-          if (!immerState[address]) {
-            immerState[address] = activitiesAdapter.getInitialState()
+    activityEncountered: (
+      immerState,
+      {
+        payload: { transaction, forAccounts },
+      }: {
+        payload: {
+          transaction: AnyEVMTransaction & {
+            contractInfo?: ContractInfo | undefined
           }
-
-          activitiesAdapter.upsertOne(immerState[address], {
-            ...activityItem,
-            infoRows,
-            fromTruncated: truncateAddress(activityItem.from),
-            toTruncated: truncateAddress(activityItem.to),
-            tokenDecimalValue: determineActivityDecimalValue(activityItem),
-          })
-        })
+          forAccounts: string[]
+        }
       }
+    ) => {
+      const infoRows = adaptForUI(keysMap, transaction)
+
+      forAccounts.forEach((account) => {
+        const address = account.toLowerCase()
+
+        const activityItem = {
+          ...transaction,
+          infoRows,
+          localizedDecimalValue: assetAmountToDesiredDecimals(
+            {
+              asset: transaction.asset,
+              amount: transaction.value,
+            },
+            desiredDecimals
+          ).toLocaleString("default", {
+            maximumFractionDigits: desiredDecimals,
+          }),
+          fromTruncated: truncateAddress(transaction.from),
+          toTruncated: truncateAddress(transaction.to ?? ""),
+        }
+
+        if (typeof immerState[address] === "undefined") {
+          immerState[address] = activitiesAdapter.setOne(
+            activitiesAdapter.getInitialState(),
+            activityItem
+          )
+        } else {
+          activitiesAdapter.upsertOne(immerState[address], activityItem)
+        }
+      })
     },
   },
 })
