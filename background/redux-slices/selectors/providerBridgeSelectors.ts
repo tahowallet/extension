@@ -15,3 +15,10 @@ export const selectPendingPermissionRequests = createSelector(
     return permissionRequests.filter((p) => p.state === "request")
   }
 )
+
+export const perndingPermission = createSelector(
+  selectPendingPermissionRequests,
+  (permissionRequests) => {
+    return permissionRequests[0]
+  }
+)

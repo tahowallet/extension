@@ -76,6 +76,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   ): (event: PortRequestEvent) => Promise<void> {
     const url = port.sender.url as string
     const favIconUrl = port.sender.tab?.favIconUrl ?? ""
+    const title = port.sender.tab?.title ?? ""
 
     return async (event: PortRequestEvent) => {
       // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
@@ -95,6 +96,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         const permissionRequest: PermissionRequest = {
           url,
           favIconUrl,
+          title,
           state: "request",
         }
 
@@ -123,7 +125,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
 
     this.emitter.emit("permissionRequest", permissionRequest)
-    await ProviderBridgeService.showDappConnectWindow("/permission")
+    await ProviderBridgeService.showDappConnectWindow("/dapp-connect")
 
     // ts compiler does not know that we assign value to blockResolve so we need to tell him
     this.#pendingPermissionsRequests[permissionRequest.url] = blockResolve!

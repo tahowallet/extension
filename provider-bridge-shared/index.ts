@@ -1,11 +1,15 @@
 export * from "./constants"
 export * from "./eip-1193"
 
-export type PopupWindowEntryPage = "/permission" | "/signTransaction"
+export type PopupWindowEntryPage =
+  | "/permission"
+  | "/signTransaction"
+  | "/dapp-connect"
 
 export type PermissionRequest = {
   url: string
   favIconUrl: string
+  title: string
   state: "request" | "allow" | "deny"
 }
 
