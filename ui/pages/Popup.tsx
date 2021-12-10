@@ -35,7 +35,7 @@ function transformLocation(inputLocation: Location): Location {
 
   return {
     ...inputLocation,
-    pathname: maybePage ? `/${maybePage}` : inputLocation.pathname,
+    pathname: maybePage ?? inputLocation.pathname,
   }
 }
 

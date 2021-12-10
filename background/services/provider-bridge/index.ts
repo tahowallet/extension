@@ -2,6 +2,7 @@ import browser from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
+  PopupWindowEntryPage,
   PortRequestEvent,
   PortResponseEvent,
   RPCRequest,
@@ -126,7 +127,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
 
     this.emitter.emit("permissionRequest", permissionRequest)
-    await ProviderBridgeService.showDappConnectWindow()
+    await ProviderBridgeService.showDappConnectWindow("/permission")
 
     // ts compiler does not know that we assign value to blockResolve so we need to tell him
     this.#pendingPermissionsRequests[permissionRequest.url] = blockResolve!
@@ -173,13 +174,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  static async showDappConnectWindow(): Promise<browser.Windows.Window> {
+  static async showDappConnectWindow(
+    url: PopupWindowEntryPage
+  ): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
-    const popupWidth = 400
-    const popupHeight = 600
-    const internalPageName = "permission"
+    const popupWidth = 384
+    const popupHeight = 558
     return browser.windows.create({
-      url: `${browser.runtime.getURL("popup.html")}?page=${internalPageName}`,
+      url: `${browser.runtime.getURL("popup.html")}?page=${url}`,
       type: "popup",
       left: left + width - popupWidth,
       top,
