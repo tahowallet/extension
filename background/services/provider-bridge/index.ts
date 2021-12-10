@@ -17,7 +17,7 @@ import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 
 type Events = ServiceLifecycleEvents & {
-  permissionRequest: PermissionRequest
+  requestPermission: PermissionRequest
 }
 
 /**
@@ -117,7 +117,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async requestPermission(permissionRequest: PermissionRequest) {
-    this.emitter.emit("permissionRequest", permissionRequest)
+    this.emitter.emit("requestPermission", permissionRequest)
     await ProviderBridgeService.showDappConnectWindow(
       ALLOWED_QUERY_PARAM_PAGE.dappConnect
     )

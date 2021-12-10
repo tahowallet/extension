@@ -23,10 +23,9 @@ import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
-import DAppConnectRequest from "./DAppConnectRequest"
+import DAppPermissionRequest from "./DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
-import Permission from "./Permission"
 
 function transformLocation(inputLocation: Location): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -97,11 +96,8 @@ export default function Popup({ store }: { store: Store }): ReactElement {
               <Route path="/swap">
                 <Swap />
               </Route>
-              <Route path="/permission">
-                <Permission />
-              </Route>
-              <Route path="/dapp-connect">
-                <DAppConnectRequest />
+              <Route path="/dapp-permission">
+                <DAppPermissionRequest />
               </Route>
               <Route path="/">
                 <Wallet />

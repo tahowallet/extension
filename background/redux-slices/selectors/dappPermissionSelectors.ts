@@ -1,12 +1,12 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { ProviderBridgeState } from "../provider-bridge"
+import { DAppPermissionState } from "../dapp-permission"
 
-export const getProviderBridgeState = (state: RootState) => state.providerBridge
+export const getProviderBridgeState = (state: RootState) => state.dappPermission
 
 export const selectPermissionRequests = createSelector(
   getProviderBridgeState,
-  (slice: ProviderBridgeState) => Object.values(slice.permissionRequests)
+  (slice: DAppPermissionState) => Object.values(slice.permissionRequests)
 )
 
 export const selectPendingPermissionRequests = createSelector(
@@ -16,7 +16,7 @@ export const selectPendingPermissionRequests = createSelector(
   }
 )
 
-export const perndingPermission = createSelector(
+export const selectCurrentPendingPermission = createSelector(
   selectPendingPermissionRequests,
   (permissionRequests) => {
     return permissionRequests[0]

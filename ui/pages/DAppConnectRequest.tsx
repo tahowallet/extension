@@ -1,12 +1,13 @@
 import React, { ReactElement, useCallback } from "react"
 import {
-  perndingPermission,
+  selectCurrentPendingPermission,
   selectAccountTotalsByCategory,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  permissionDenyOrRevoke,
-  permissionGrant,
-} from "@tallyho/tally-background/redux-slices/provider-bridge"
+  denyOrRevokePermission,
+  grantPermission,
+} from "@tallyho/tally-background/redux-slices/dapp-permission"
+
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelAccountItem from "../components/Shared/SharedPanelAccountItem"
@@ -71,17 +72,17 @@ export default function DAppConnectRequest(): ReactElement {
     (accountTotal) => accountTotal?.address === currentAccount
   )[0]
 
-  const permission = useBackgroundSelector(perndingPermission)
+  const permission = useBackgroundSelector(selectCurrentPendingPermission)
 
   const dispatch = useBackgroundDispatch()
 
   const grant = useCallback(async () => {
-    await dispatch(permissionGrant({ ...permission, state: "allow" }))
+    await dispatch(grantPermission({ ...permission, state: "allow" }))
     window.close()
   }, [dispatch, permission])
 
   const deny = useCallback(async () => {
-    await dispatch(permissionDenyOrRevoke({ ...permission, state: "deny" }))
+    await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
     window.close()
   }, [dispatch, permission])
 

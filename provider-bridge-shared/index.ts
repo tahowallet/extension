@@ -113,7 +113,7 @@ export function isPortResponseEvent(arg: unknown): arg is PortResponseEvent {
 export const ALLOWED_QUERY_PARAM_PAGE = {
   permissions: "/permission",
   signTransaction: "/signTransaction",
-  dappConnect: "/dapp-connect",
+  dappConnect: "/dapp-permission",
 } as const
 
 export type AllowedQueryParamPage =

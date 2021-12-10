@@ -3,46 +3,46 @@ import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 
-export type ProviderBridgeState = {
+export type DAppPermissionState = {
   permissionRequests: { [url: string]: PermissionRequest }
 }
 
-export const initialState: ProviderBridgeState = {
+export const initialState: DAppPermissionState = {
   permissionRequests: {},
   // TODO: initialize allowed sites
 }
 
 export type Events = {
-  permissionRequest: PermissionRequest
-  permissionGranted: PermissionRequest
-  permissionDenied: PermissionRequest
+  requestPermission: PermissionRequest
+  grantPermission: PermissionRequest
+  denyOrRevokePermission: PermissionRequest
 }
 
 export const emitter = new Emittery<Events>()
 
 // Async thunk to bubble the permissionGrant action from  store to emitter.
-export const permissionGrant = createBackgroundAsyncThunk(
-  "provider-bridge/permissionGrant",
+export const grantPermission = createBackgroundAsyncThunk(
+  "dapp-permission/permissionGrant",
   async (permission: PermissionRequest) => {
-    await emitter.emit("permissionGranted", permission)
+    await emitter.emit("grantPermission", permission)
     return permission
   }
 )
 
 // Async thunk to bubble the permissionDenyOrRevoke action from  store to emitter.
-export const permissionDenyOrRevoke = createBackgroundAsyncThunk(
-  "provider-bridge/permissionDenyOrRevoke",
+export const denyOrRevokePermission = createBackgroundAsyncThunk(
+  "dapp-permissionpermissionDenyOrRevoke",
   async (permission: PermissionRequest) => {
-    await emitter.emit("permissionDenied", permission)
+    await emitter.emit("denyOrRevokePermission", permission)
     return permission
   }
 )
 
-const providerBridgeSlice = createSlice({
-  name: "provider-bridge",
+const dappPermissionSlice = createSlice({
+  name: "dapp-permission",
   initialState,
   reducers: {
-    newPermissionRequest: (
+    requestPermission: (
       state,
       { payload: request }: { payload: PermissionRequest }
     ) => {
@@ -62,7 +62,7 @@ const providerBridgeSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(
-        permissionGrant.fulfilled,
+        grantPermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
           delete updatedPermissionRequests[permission.url]
@@ -75,7 +75,7 @@ const providerBridgeSlice = createSlice({
         }
       )
       .addCase(
-        permissionDenyOrRevoke.fulfilled,
+        denyOrRevokePermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
           delete updatedPermissionRequests[permission.url]
@@ -91,6 +91,6 @@ const providerBridgeSlice = createSlice({
   },
 })
 
-export const { newPermissionRequest } = providerBridgeSlice.actions
+export const { requestPermission } = dappPermissionSlice.actions
 
-export default providerBridgeSlice.reducer
+export default dappPermissionSlice.reducer
