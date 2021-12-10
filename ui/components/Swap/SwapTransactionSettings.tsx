@@ -67,8 +67,6 @@ export default function SwapTransactionSettings(
                   setGasLimit={setGasLimit}
                   estimatedFeesPerGas={estimatedFeesPerGas}
                 />
-
-                <SharedNetworkFeeGroup />
               </div>
             </div>
           </SharedSlideUpMenu>
@@ -141,11 +139,10 @@ export default function SwapTransactionSettings(
           }
           .settings_wrap {
             width: 384px;
-            height: 208px;
-            background-color: var(--hunter-green);
             margin-top: 36px;
             padding: 0px 17px;
             box-sizing: border-box;
+            background-color: var(--green-95);
           }
           .label:first-of-type {
             margin-bottom: 7px;

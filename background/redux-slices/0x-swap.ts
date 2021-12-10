@@ -227,6 +227,8 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
         `sellAmount=${sellAmount}`
     )
 
+    return apiData as ZrxQuote
+
     if (isValidSwapQuoteResponse(apiData)) {
       return apiData as ZrxQuote
     }
