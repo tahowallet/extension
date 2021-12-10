@@ -66,7 +66,7 @@ const keyringsSlice = createSlice({
       // list as the keyring service clears the in-memory keyrings. For UI
       // purposes, however, we want to continue tracking the keyring metadata,
       // so we ignore an empty list if the keyrings are locked.
-      if (keyrings.length === 0 && state.status !== "locked") {
+      if (keyrings.length === 0 && state.status === "locked") {
         return state
       }
 

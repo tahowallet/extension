@@ -1,3 +1,4 @@
+import { HIDE_ADD_SEED } from "@tallyho/tally-background/features/features"
 import React, { ReactElement } from "react"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -32,15 +33,11 @@ export default function OnboardingAddWallet(): ReactElement {
           </div>
           <SharedButton
             type="primary"
-            linkTo={
-              process.env.HIDE_ADD_SEED === "true"
-                ? undefined
-                : "/onboarding/importMetamask"
-            }
-            isDisabled={process.env.HIDE_ADD_SEED === "true"}
+            linkTo={HIDE_ADD_SEED ? undefined : "/onboarding/importMetamask"}
+            isDisabled={HIDE_ADD_SEED}
             size="medium"
             onClick={() => {
-              if (process.env.HIDE_ADD_SEED === "true") {
+              if (HIDE_ADD_SEED) {
                 alert("This feature is temporarily disabled.")
               }
             }}
