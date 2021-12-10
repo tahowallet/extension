@@ -32,7 +32,7 @@ export default function TopMenu(props: Props): ReactElement {
   })
 
   // TODO: set this with real data of the dApp connection
-  const isConnectedToDApp = true
+  const isConnectedToDApp = false
 
   return (
     <div className="nav_wrap">
