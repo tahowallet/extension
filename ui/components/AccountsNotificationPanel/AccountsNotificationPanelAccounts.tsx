@@ -1,6 +1,9 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
-import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectAccountTotalsByCategory,
+  selectCurrentAccount,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
@@ -115,9 +118,8 @@ export default function AccountsNotificationPanelAccounts({
 
   const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
 
-  const selectedAccount = useBackgroundSelector((background) => {
-    return background.ui.currentAccount?.address
-  })
+  const selectedAccountAddress =
+    useBackgroundSelector(selectCurrentAccount).address
 
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
@@ -127,12 +129,12 @@ export default function AccountsNotificationPanelAccounts({
   useEffect(() => {
     if (
       pendingSelectedAddress !== "" &&
-      pendingSelectedAddress === selectedAccount
+      pendingSelectedAddress === selectedAccountAddress
     ) {
       onCurrentAddressChange(pendingSelectedAddress)
       setPendingSelectedAddress("")
     }
-  }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccount])
+  }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
   return (
     <div>
@@ -164,7 +166,9 @@ export default function AccountsNotificationPanelAccounts({
                         <SharedPanelAccountItem
                           key={lowerCaseAddress}
                           accountTotal={accountTotal}
-                          isSelected={lowerCaseAddress === selectedAccount}
+                          isSelected={
+                            lowerCaseAddress === selectedAccountAddress
+                          }
                           hideMenu
                         />
                       </button>

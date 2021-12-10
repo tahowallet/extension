@@ -24,7 +24,9 @@ const userValueDustThreshold = 2
 
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
-  return state.account.accountsData[state.ui.currentAccount.address]
+  return state.account.accountsData[
+    state.ui.currentAccount.addressNetwork.address
+  ]
 }
 const getAssetsState = (state: RootState) => state.assets
 

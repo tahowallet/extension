@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback } from "react"
 import {
   selectCurrentPendingPermission,
   selectAccountTotalsByCategory,
+  selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   denyOrRevokePermission,
@@ -59,9 +60,7 @@ export default function DAppConnectRequest(): ReactElement {
   const accountTotalsByCategory = useBackgroundSelector(
     selectAccountTotalsByCategory
   )
-  const currentAccount = useBackgroundSelector((background) => {
-    return background.ui.currentAccount?.address
-  })
+  const currentAccount = useBackgroundSelector(selectCurrentAccount).address
 
   const accountTotals = accountTotalsByCategory["read-only"]
   if (typeof accountTotalsByCategory?.imported !== "undefined") {

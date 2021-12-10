@@ -1,21 +1,21 @@
 import { createSelector, EntityId } from "@reduxjs/toolkit"
-import { AccountState } from "../accounts"
-import { UIState } from "../ui"
-import { ActivitiesState, ActivityItem } from "../activities"
+import { ActivityItem } from "../activities"
+import { selectCurrentAccount } from "./uiSelectors"
+import { RootState } from ".."
 
 export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
-  (state: {
-    ui: UIState
-    activities: ActivitiesState
-    account: AccountState
-  }) => ({
-    currentAccountAddress: state.ui.currentAccount?.address,
-    currentAccountActivities:
-      typeof state.ui.currentAccount !== "undefined"
-        ? state.activities[state.ui.currentAccount?.address]
-        : undefined,
-    blocks: state.account.blocks,
-  }),
+  (state: RootState) => {
+    const currentAccountAddress = selectCurrentAccount(state).address
+
+    return {
+      currentAccountAddress,
+      currentAccountActivities:
+        typeof currentAccountAddress !== "undefined"
+          ? state.activities[currentAccountAddress]
+          : undefined,
+      blocks: state.account.blocks,
+    }
+  },
   ({ currentAccountAddress, currentAccountActivities, blocks }) => {
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
       // Guaranteed by the fact that we got the id from the ids collection.
