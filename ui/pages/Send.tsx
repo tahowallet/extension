@@ -1,5 +1,5 @@
 import { isAddress } from "@ethersproject/address"
-import { formatUnits } from "@ethersproject/units"
+import { formatEther, formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -62,8 +62,9 @@ export default function Send(): ReactElement {
     return 0
   }
   const findBalance = () => {
-    return assetAmounts.find((el) => el.asset.symbol === assetSymbol)
-      ?.localizedDecimalAmount
+    return formatEther(
+      assetAmounts.find((el) => el.asset.symbol === assetSymbol)?.amount || "0"
+    )
   }
 
   // TODO sets the value of the balance using comma and it should display decimal point for consistency
@@ -184,6 +185,7 @@ export default function Send(): ReactElement {
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
               />
+              <div className="value">${getTotalLocalizedValue()}</div>
             </div>
             <div className="form_input">
               <SharedAssetInput
@@ -203,19 +205,6 @@ export default function Send(): ReactElement {
             </div>
             <div className="divider" />
             <div className="total_footer standard_width_padded">
-              <div className="total_amount">
-                <div className="total_label">Total</div>
-                <div className="total_amount_number">
-                  {`${amount || 0} ${assetSymbol ?? ""} `}
-                  <div className="total_localized">
-                    {amount
-                      ? `$${getTotalLocalizedValue()} + ${
-                          currentFeeValues.fiat
-                        } network fee`
-                      : ""}
-                  </div>
-                </div>
-              </div>
               <SharedButton
                 type="primary"
                 size="large"
@@ -279,30 +268,6 @@ export default function Send(): ReactElement {
           .label_right {
             margin-right: 6px;
           }
-          .total_amount_number {
-            width: 150px;
-            height: 32px;
-            color: #ffffff;
-            font-size: 22px;
-            font-weight: 500;
-            line-height: 32px;
-          }
-          .total_footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 21px;
-            padding-bottom: 20px;
-          }
-          .total_label {
-            width: 33px;
-            height: 17px;
-            color: var(--green-60);
-            font-family: Segment;
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-          }
           .divider {
             width: 384px;
             border-bottom: 1px solid #000000;
@@ -323,7 +288,12 @@ export default function Send(): ReactElement {
             color: #d08e39;
             cursor: pointer;
           }
-          .total_localized {
+          .value {
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+            top: -24px;
+            right: 16px;
             color: var(--green-60);
             font-size: 12px;
             line-height: 16px;

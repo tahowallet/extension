@@ -113,7 +113,7 @@ export default function NetworkFeesChooser({
 
       const feeFiatPrice =
         ethUnitPrice !== undefined
-          ? `$${(+ethAmount * ethUnitPrice).toFixed(2)}`
+          ? `${(+ethAmount * ethUnitPrice).toFixed(2)}`
           : "N/A"
 
       return {
@@ -201,7 +201,7 @@ export default function NetworkFeesChooser({
               </div>
               <div className="option_right">
                 <div className="price">{`~${option.gwei} Gwei`}</div>
-                <div className="subtext">{option.dollarValue}</div>
+                <div className="subtext">${option.dollarValue}</div>
               </div>
             </button>
           )
