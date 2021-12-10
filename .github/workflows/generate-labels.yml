@@ -1,0 +1,14 @@
+name: 'Generate Labels'
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  label:
+    name: 'Label PR based on title'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: srvaroa/labeler@v0.8
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

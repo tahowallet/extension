@@ -1,0 +1,14 @@
+'type: bug(fix) 🐞':
+  title: '^fix(\(.+\))?:.*'
+'type: chore 🧹':
+  title: '^chore(\(.+\))?:.*'
+'type: docs 📋':
+  title: '^docs(\(.+\))?:.*'
+'type: feature ✨':
+  title: '^feat(\(.+\))?:.*'
+'type: refactor 🔧':
+  title: '^refactor(\(.+\))?:.*'
+'type: style 🎨':
+  title: '^style(\(.+\))?:.*'
+'type: test 🧪':
+  title: '^test(\(.+\))?:.*'

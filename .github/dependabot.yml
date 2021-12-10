@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      day: monday
+      interval: monthly
+      time: '02:00'
+    pull-request-branch-name:
+      separator: '-'
+    open-pull-requests-limit: 99
+    target-branch: main
+    ignore:
+      - dependency-name: husky
+        versions:
+          - '>= 5'
+    commit-message:
+      prefix: chore
+      include: scope
