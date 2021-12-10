@@ -67,7 +67,7 @@ export default function CorePage(props: Props): ReactElement {
         <HiddenDevPanel />
       </SharedSlideUpMenu>
       <div className="page">
-        <div className="alpha_label">Alpha</div>
+        <div className="community_edition_label">Community Edition</div>
         {hasTopBar ? (
           // Don't lint the extremely-custom-behavior completely-not-accessible
           // hidden dev menu for now.
@@ -115,16 +115,17 @@ export default function CorePage(props: Props): ReactElement {
             z-index: 10;
             cursor: default;
           }
-          .alpha_label {
-            width: 57px;
+          .community_edition_label {
+            width: 140px;
             height: 20px;
             left: 24px;
             position: fixed;
-            background-color: var(--error);
+            background-color: var(--gold-60);
+            color: var(--hunter-green);
+            font-weight: 500;
+            text-align: center;
             border-bottom-left-radius: 4px;
             border-bottom-right-radius: 4px;
-            box-sizing: border-box;
-            padding-left: 8px;
             font-size: 14px;
             z-index: 1000;
           }
