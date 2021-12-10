@@ -104,15 +104,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
         if (await this.checkPermission(url)) {
           response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
         }
+      } else if (await this.checkPermission(url)) {
+        response.result = await this.routeContentScriptRPCRequest(
+          event.request.method,
+          event.request.params
+        )
       } else {
-        if (await this.checkPermission(url)) {
-          response.result = await this.routeContentScriptRPCRequest(
-            event.request.method,
-            event.request.params
-          )
-        } else {
-          response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
-        }
+        response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
       }
       logger.log("background response:", response)
 
