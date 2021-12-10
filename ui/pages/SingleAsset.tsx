@@ -5,6 +5,7 @@ import {
   selectCurrentAccountBalances,
   selectIsCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -67,8 +68,7 @@ export default function SingleAsset(): ReactElement {
               <></>
             )}
           </div>
-          {process.env.HIDE_SEND_BUTTON === "false" &&
-          isCurrentAccountSigner ? (
+          {!HIDE_SEND_BUTTON && isCurrentAccountSigner ? (
             <div className="right">
               <SharedButton
                 type="primary"

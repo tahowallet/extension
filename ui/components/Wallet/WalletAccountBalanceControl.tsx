@@ -1,6 +1,7 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import classNames from "classnames"
 import { selectIsCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
+import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -84,7 +85,7 @@ export default function WalletAccountBalanceControl(
             {balance}
           </span>
         </span>
-        {isCurrentAccountSigner && process.env.HIDE_SEND_BUTTON === "false" ? (
+        {isCurrentAccountSigner && !HIDE_SEND_BUTTON ? (
           <>
             {hasSavedSeed ? (
               <div className="send_receive_button_wrap">
