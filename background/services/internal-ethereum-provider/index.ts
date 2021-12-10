@@ -1,12 +1,11 @@
 import browser from "webextension-polyfill"
 import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
-import {
-  ChainService,
-  ServiceCreatorFunction,
-  ServiceLifecycleEvents,
-} from ".."
+
 import logger from "../../lib/logger"
+
 import BaseService from "../base"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import ChainService from "../chain"
 
 type Events = ServiceLifecycleEvents & {
   // connect

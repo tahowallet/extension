@@ -10,11 +10,15 @@ import logger from "./lib/logger"
 import { ethersTxFromSignedTx } from "./services/chain/utils"
 
 import {
-  PreferenceService,
+  BaseService,
   ChainService,
+  EnrichmentService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
   NameService,
+  PreferenceService,
+  ProviderBridgeService,
   ServiceCreatorFunction,
 } from "./services"
 
@@ -46,10 +50,6 @@ import {
   signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
-import { enrichTransactionWithContractInfo } from "./services/enrichment"
-import BaseService from "./services/base"
-import InternalEthereumProviderService from "./services/internal-ethereum-provider"
-import ProviderBridgeService from "./services/provider-bridge"
 import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
@@ -151,6 +151,10 @@ export default class Main extends BaseService<never> {
       preferenceService,
       chainService
     )
+    const enrichmentService = EnrichmentService.create(
+      chainService,
+      indexingService
+    )
     const keyringService = KeyringService.create()
     const nameService = NameService.create(chainService)
     const internalEthereumProviderService =
@@ -182,6 +186,7 @@ export default class Main extends BaseService<never> {
       savedReduxState,
       await preferenceService,
       await chainService,
+      await enrichmentService,
       await indexingService,
       await keyringService,
       await nameService,
@@ -203,6 +208,10 @@ export default class Main extends BaseService<never> {
      * service is initialized.
      */
     private chainService: ChainService,
+    /**
+     *
+     */
+    private enrichmentService: EnrichmentService,
     /**
      * A promise to the indexing service, keeping track of token balances and
      * prices. The promise will be resolved when the service is initialized.
@@ -283,6 +292,7 @@ export default class Main extends BaseService<never> {
     this.connectKeyringService()
     this.connectNameService()
     this.connectProviderBridgeService()
+    this.connectEnrichmentService()
     await this.connectChainService()
   }
 
@@ -292,22 +302,7 @@ export default class Main extends BaseService<never> {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    this.chainService.emitter.on("transaction", async (payload) => {
-      const { transaction } = payload
 
-      const enrichedTransaction = enrichTransactionWithContractInfo(
-        this.store.getState().assets,
-        transaction,
-        2 /* TODO desiredDecimals should be configurable */
-      )
-
-      this.store.dispatch(
-        activityEncountered({
-          ...payload,
-          transaction: enrichedTransaction,
-        })
-      )
-    })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
@@ -421,6 +416,20 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
+    })
+  }
+
+  async connectEnrichmentService(): Promise<void> {
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      const forAccounts: string[] = [transaction.to, transaction.from].filter(
+        Boolean
+      ) as string[]
+      this.store.dispatch(
+        activityEncountered({
+          forAccounts,
+          transaction,
+        })
+      )
     })
   }
 
