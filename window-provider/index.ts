@@ -1,8 +1,6 @@
 import {
-  WindowResponseEvent,
   PROVIDER_BRIDGE_TARGET,
   WINDOW_PROVIDER_TARGET,
-  PortResponseEvent,
   ProviderTransport,
   isObject,
   isWindowResponseEvent,
@@ -27,6 +25,11 @@ export default class TallyWindowProvider extends EventEmitter {
 
   constructor(public transport: ProviderTransport) {
     super()
+  }
+
+  // deprecated EIP-1193 method
+  async enable() {
+    return this.request({ method: "eth_requestAccounts" })
   }
 
   // deprecated EIP1193 send for web3-react injected provider Send type:
@@ -77,7 +80,7 @@ export default class TallyWindowProvider extends EventEmitter {
 
     return new Promise((resolve) => {
       // TODO: refactor the listener function out of the Promise
-      const listener = (event: WindowResponseEvent | PortResponseEvent) => {
+      const listener = (event: unknown) => {
         let id
         let result
         if (isWindowResponseEvent(event)) {

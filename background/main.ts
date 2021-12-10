@@ -3,6 +3,7 @@ import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { ethers } from "ethers"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
@@ -49,6 +50,10 @@ import { enrichTransactionWithContractInfo } from "./services/enrichment"
 import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
+import {
+  newPermissionRequest,
+  emitter as providerBridgeSliceEmitter,
+} from "./redux-slices/provider-bridge"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
@@ -276,6 +281,7 @@ export default class Main extends BaseService<never> {
     this.connectIndexingService()
     this.connectKeyringService()
     this.connectNameService()
+    this.connectProviderBridgeService()
     await this.connectChainService()
   }
 
@@ -463,6 +469,23 @@ export default class Main extends BaseService<never> {
 
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
       await this.keyringService.importLegacyKeyring(mnemonic)
+    })
+  }
+
+  async connectProviderBridgeService(): Promise<void> {
+    this.providerBridgeService.emitter.on(
+      "permissionRequest",
+      (permissionRequest: PermissionRequest) => {
+        this.store.dispatch(newPermissionRequest(permissionRequest))
+      }
+    )
+
+    providerBridgeSliceEmitter.on("permissionGranted", async (permission) => {
+      await this.providerBridgeService.grandPermission(permission)
+    })
+
+    providerBridgeSliceEmitter.on("permissionDenied", async (permission) => {
+      await this.providerBridgeService.denyOrRevokePermission(permission)
     })
   }
 }

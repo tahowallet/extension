@@ -7,6 +7,7 @@ import keyringsReducer from "./keyrings"
 import swapReducer from "./0x-swap"
 import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
+import providerBridgeReducer from "./provider-bridge"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
@@ -16,6 +17,7 @@ const mainReducer = combineReducers({
   swap: swapReducer,
   transactionConstruction: transactionConstructionReducer,
   ui: uiReducer,
+  providerBridge: providerBridgeReducer,
 })
 
 export default mainReducer
