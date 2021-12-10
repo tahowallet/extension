@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import TopMenu from "../TopMenu/TopMenu"
 import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
+import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import TabBar from "../TabBar/TabBar"
 import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
@@ -18,6 +19,8 @@ export default function CorePage(props: Props): ReactElement {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
+  const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
+    useState(false)
 
   function handleOpenHiddenDevMenu(e: React.MouseEvent) {
     if (process.env.NODE_ENV === "development" && e.detail === 3) {
@@ -32,6 +35,15 @@ export default function CorePage(props: Props): ReactElement {
 
   return (
     <main>
+      {isActiveDAppConnectionInfoOpen ? (
+        <TopMenuConnectedDAppInfo
+          title="SushiSwap | Sushi"
+          url="https://app.sushi.com"
+          close={() => {
+            setIsActiveDAppConnectionInfoOpen(false)
+          }}
+        />
+      ) : null}
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         close={() => {
@@ -72,6 +84,11 @@ export default function CorePage(props: Props): ReactElement {
               }}
               toggleOpenNotifications={() => {
                 setIsNotificationsOpen(!isNotificationsOpen)
+              }}
+              toggleOpenDAppConnectionInfo={() => {
+                setIsActiveDAppConnectionInfoOpen(
+                  !isActiveDAppConnectionInfoOpen
+                )
               }}
             />
           </div>
