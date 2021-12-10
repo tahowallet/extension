@@ -9,6 +9,10 @@ interface Props {
   activity: ActivityItem
 }
 
+function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
+}
+
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity } = props
 
@@ -16,12 +20,14 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   let renderDetails: {
     iconClass: string | undefined
     label: string
+    recipient: string
     assetLogoURL: string | undefined
     assetSymbol: string
     assetValue: string
   } = {
     iconClass: undefined,
     label: activity.isSent ? "Sent" : "Received",
+    recipient: activity.toTruncated,
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
@@ -31,6 +37,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       renderDetails = {
         iconClass: "contract_interaction_icon",
         label: "Contract interaction",
+        recipient: truncateAddress(activity.contractInfo.recipientAddress),
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
         assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
@@ -40,6 +47,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       renderDetails = {
         iconClass: "swap_icon",
         label: "Swap",
+        recipient: activity.toTruncated,
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
@@ -50,6 +58,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       renderDetails = {
         iconClass: "contract_interaction_icon",
         label: "Contract interaction",
+        recipient: activity.toTruncated,
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
@@ -95,7 +104,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             {activity.isSent ? (
               <div className="outcome">
                 To:
-                {` ${activity.toTruncated}`}
+                {` ${renderDetails.recipient}`}
               </div>
             ) : (
               <div className="outcome">
