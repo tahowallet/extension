@@ -1,10 +1,7 @@
 import { isAddress } from "@ethersproject/address"
 import { formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import {
-  selectAccountAndTimestampedActivities,
-  selectCurrentAccountBalances,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
@@ -13,6 +10,7 @@ import { utils } from "ethers"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -21,14 +19,14 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
-  const assetSymbol = location?.state?.symbol
 
+  const [assetSymbol, setAssetSymbol] = useState(location?.state?.symbol)
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const [minGas, setMinGas] = useState(0)
-  const [maxGas, setMaxGas] = useState(0)
+  const [minFee, setMinFee] = useState(0)
+  const [maxFee, setMaxFee] = useState(0)
   const [currentFeeValues, setCurrentFeeValues] = useState({
     gwei: "",
     fiat: "",
@@ -53,6 +51,7 @@ export default function Send(): ReactElement {
   const { assetAmounts } = balanceData ?? {
     assetAmounts: [],
   }
+
   const getTotalLocalizedValue = () => {
     const pricePerUnit = assetAmounts.find(
       (el) => el.asset.symbol === assetSymbol
@@ -95,14 +94,13 @@ export default function Send(): ReactElement {
     dispatch(updateTransactionOptions(transaction))
   }
 
-  // TODO Once we know what do we consider min and max gas this should be updated
   const findMinMaxGas = useCallback(() => {
     if (
       estimatedFeesPerGas?.baseFeePerGas &&
       estimatedFeesPerGas?.regular?.maxPriorityFeePerGas &&
       estimatedFeesPerGas?.instant?.maxPriorityFeePerGas
     ) {
-      setMinGas(
+      setMinFee(
         Number(
           formatUnits(
             (estimatedFeesPerGas.baseFeePerGas * BigInt(13)) / 10n +
@@ -111,7 +109,7 @@ export default function Send(): ReactElement {
           ).split(".")[0]
         )
       )
-      setMaxGas(
+      setMaxFee(
         Number(
           formatUnits(
             (estimatedFeesPerGas.baseFeePerGas * BigInt(18)) / 10n +
@@ -173,9 +171,15 @@ export default function Send(): ReactElement {
               </div>
               <SharedAssetInput
                 label="Asset / Amount"
-                onAssetSelect={() => {
-                  setSelectedCount(1)
+                onAssetSelect={(token) => {
+                  setAssetSymbol(token.symbol)
                 }}
+                assets={assetAmounts.map((asset) => {
+                  return {
+                    symbol: asset.asset.symbol,
+                    name: asset.asset.name,
+                  }
+                })}
                 onAmountChange={setAmount}
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
@@ -190,39 +194,25 @@ export default function Send(): ReactElement {
             </div>
             <div className="network_fee">
               <p>Estimated network fee</p>
-              <button
-                className="settings"
-                type="button"
-                onClick={openSelectFeeModal}
-                style={{
-                  background: `linear-gradient(90deg, var(--green-80) ${(
-                    ((Number(currentFeeValues.gwei) || minGas) / maxGas) *
-                    100
-                  ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    ((Number(currentFeeValues.gwei) || minGas) / maxGas) *
-                    100
-                  ).toFixed()}%)`,
-                }}
-              >
-                <div>
-                  ~{currentFeeValues.gwei || minGas}
-                  Gwei
-                </div>
-                <img
-                  className="settings_image"
-                  src="./images/cog@2x.png"
-                  alt=""
-                />
-              </button>
+              <FeeSettingsButton
+                openModal={openSelectFeeModal}
+                minFee={minFee}
+                maxFee={maxFee}
+                currentFeeSelected={currentFeeValues.gwei}
+              />
             </div>
             <div className="divider" />
             <div className="total_footer standard_width_padded">
               <div className="total_amount">
                 <div className="total_label">Total</div>
                 <div className="total_amount_number">
-                  {`${amount || 0} ${assetSymbol ?? ""}`}
+                  {`${amount || 0} ${assetSymbol ?? ""} `}
                   <div className="total_localized">
-                    {amount ? `$${getTotalLocalizedValue()}` : ""}
+                    {amount
+                      ? `$${getTotalLocalizedValue()} + ${
+                          currentFeeValues.fiat
+                        } network fee`
+                      : ""}
                   </div>
                 </div>
               </div>
@@ -267,22 +257,6 @@ export default function Send(): ReactElement {
             line-height: 16px;
             color: var(--green-40);
             margin-bottom: 12px;
-          }
-          .settings {
-            height: 38px;
-            display: flex;
-            align-items: center;
-            color: var(--gold-5);
-            font-size: 16px;
-            line-height: 24px;
-            border-radius: 4px;
-            padding-left: 8px;
-            border: 1px solid #33514e;
-          }
-          .settings_image {
-            width: 14px;
-            height: 14px;
-            padding: 0 8px;
           }
           .title {
             width: 113px;

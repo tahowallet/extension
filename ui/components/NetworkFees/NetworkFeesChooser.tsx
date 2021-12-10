@@ -81,7 +81,6 @@ export default function NetworkFeesChooser({
     const formatBlockEstimate = (option: BlockEstimate) => {
       const { confidence } = option
       const baseFee = estimatedFeesPerGas?.baseFeePerGas || 0n
-
       const feeOptionData: {
         name: { [key: number]: string }
         multiplier: { [key: number]: bigint }
@@ -140,10 +139,31 @@ export default function NetworkFeesChooser({
           formatBlockEstimate(option)
         )
         setGasOptions(updatedGasOptions)
-        onSelectFeeOption(regular)
+        const currentlySelectedFee = updatedGasOptions.find(
+          (el, index) => index === activeFeeIndex
+        )
+        if (currentlySelectedFee) {
+          onSelectFeeOption({
+            confidence: Number(currentlySelectedFee?.confidence),
+            maxFeePerGas: currentlySelectedFee?.maxFeePerGas,
+            maxPriorityFeePerGas: currentlySelectedFee?.maxPriorityFeePerGas,
+            price: currentlySelectedFee.price,
+          })
+          currentFeeSelectionPrice({
+            gwei: currentlySelectedFee.gwei,
+            fiat: currentlySelectedFee.dollarValue,
+          })
+        }
       }
     }
-  }, [estimatedFeesPerGas, onSelectFeeOption, gasLimit, ethUnitPrice])
+  }, [
+    estimatedFeesPerGas,
+    gasLimit,
+    ethUnitPrice,
+    onSelectFeeOption,
+    activeFeeIndex,
+    currentFeeSelectionPrice,
+  ])
 
   useEffect(() => {
     updateGasOptions()
