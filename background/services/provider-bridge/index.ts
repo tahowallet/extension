@@ -86,10 +86,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       const response: PortResponseEvent = { id: event.id, result: [] }
 
-      if (
-        event.request.method === "eth_requestAccounts" &&
-        !(await this.checkPermission(url))
-      ) {
+      if (await this.checkPermission(url)) {
+        response.result = await this.routeContentScriptRPCRequest(
+          event.request.method,
+          event.request.params
+        )
+      } else if (event.request.method === "eth_requestAccounts") {
         const permissionRequest: PermissionRequest = {
           url,
           favIconUrl,
@@ -101,17 +103,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )
         await blockUntilUserAction
 
-        if (await this.checkPermission(url)) {
+        if (!(await this.checkPermission(url))) {
           response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
         }
-      } else if (await this.checkPermission(url)) {
-        response.result = await this.routeContentScriptRPCRequest(
-          event.request.method,
-          event.request.params
-        )
       } else {
         response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
       }
+
       logger.log("background response:", response)
 
       port.postMessage(response)
