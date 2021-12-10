@@ -210,6 +210,9 @@ export default function AccountsNotificationPanelAccounts({
             padding: 0px 12px;
             box-sizing: border-box;
           }
+          section:first-of-type {
+            margin-top: 16px;
+          }
         `}
       </style>
     </div>
