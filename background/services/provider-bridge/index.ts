@@ -34,7 +34,7 @@ type Events = ServiceLifecycleEvents & {
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
 export default class ProviderBridgeService extends BaseService<Events> {
-  allowedPages: {
+  #allowedPages: {
     [url: string]: PermissionRequest
   } = {}
 
@@ -61,10 +61,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     browser.runtime.onConnect.addListener(async (port) => {
       if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
-        const listener = this.onMessageListener(
-          port as Required<browser.Runtime.Port>
-        )
-        port.onMessage.addListener(listener)
+        port.onMessage.addListener((event) => {
+          this.onMessageListener(port as Required<browser.Runtime.Port>, event)
+        })
         // TODO: store port with listener to handle cleanup
       }
     })
@@ -72,52 +71,49 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 
-  onMessageListener(
-    port: Required<browser.Runtime.Port>
-  ): (event: PortRequestEvent) => Promise<void> {
+  async onMessageListener(
+    port: Required<browser.Runtime.Port>,
+    event: PortRequestEvent
+  ): Promise<void> {
     const url = port.sender.url as string
     const favIconUrl = port.sender.tab?.favIconUrl ?? ""
     const title = port.sender.tab?.title ?? ""
 
-    return async (event: PortRequestEvent) => {
-      // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
-      // This contradicts the MDN documentation so better not to rely on it.
-      logger.log(
-        `background: request payload: ${JSON.stringify(event.request)}`
+    // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
+    // This contradicts the MDN documentation so better not to rely on it.
+    logger.log(`background: request payload: ${JSON.stringify(event.request)}`)
+
+    const response: PortResponseEvent = { id: event.id, result: [] }
+
+    if (await this.checkPermission(url)) {
+      response.result = await this.routeContentScriptRPCRequest(
+        event.request.method,
+        event.request.params
       )
-
-      const response: PortResponseEvent = { id: event.id, result: [] }
-
-      if (await this.checkPermission(url)) {
-        response.result = await this.routeContentScriptRPCRequest(
-          event.request.method,
-          event.request.params
-        )
-      } else if (event.request.method === "eth_requestAccounts") {
-        const permissionRequest: PermissionRequest = {
-          url,
-          favIconUrl,
-          title,
-          state: "request",
-        }
-
-        const blockUntilUserAction = await this.requestPermission(
-          permissionRequest
-        )
-
-        await blockUntilUserAction
-
-        if (!(await this.checkPermission(url))) {
-          response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
-        }
-      } else {
-        response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
+    } else if (event.request.method === "eth_requestAccounts") {
+      const permissionRequest: PermissionRequest = {
+        url,
+        favIconUrl,
+        title,
+        state: "request",
       }
 
-      logger.log("background response:", response)
+      const blockUntilUserAction = await this.requestPermission(
+        permissionRequest
+      )
 
-      port.postMessage(response)
+      await blockUntilUserAction
+
+      if (!(await this.checkPermission(url))) {
+        response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
+      }
+    } else {
+      response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
     }
+
+    logger.log("background response:", response)
+
+    port.postMessage(response)
   }
 
   async requestPermission(permissionRequest: PermissionRequest) {
@@ -133,7 +129,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async grantPermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
-      this.allowedPages[permission.url] = permission
+      this.#allowedPages[permission.url] = permission
       this.#pendingPermissionsRequests[permission.url](permission)
       delete this.#pendingPermissionsRequests[permission.url]
     }
@@ -141,14 +137,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
-      delete this.allowedPages[permission.url]
+      delete this.#allowedPages[permission.url]
       this.#pendingPermissionsRequests[permission.url]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.url]
     }
   }
 
   async checkPermission(url: string): Promise<boolean> {
-    if (this.allowedPages[url]?.state === "allow") return Promise.resolve(true)
+    if (this.#allowedPages[url]?.state === "allow") return Promise.resolve(true)
     return Promise.resolve(false)
   }
 
