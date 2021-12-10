@@ -37,6 +37,7 @@ export type ContractInteraction = BaseContractInfo & {
 export type AssetTransfer = BaseContractInfo & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
+  recipientAddress: HexString
 }
 
 export type AssetSwap = BaseContractInfo & {
@@ -77,16 +78,17 @@ function resolveContractInfo(
   // FIXME Move to ERC20 parsing using ethers.
   if (
     typeof matchingFungibleAsset !== "undefined" &&
-    contractInput.length >= 74 &&
+    contractInput.length === 138 &&
     contractInput.startsWith("0xa9059cbb") // transfer selector
   ) {
     return {
       type: "asset-transfer",
       contractLogoURL,
+      recipientAddress: `0x${contractInput.substr(34, 64)}`,
       assetAmount: enrichAssetAmountWithDecimalValues(
         {
           asset: matchingFungibleAsset,
-          amount: BigInt(`0x${contractInput.slice(10, 10 + 64)}`),
+          amount: BigInt(`0x${contractInput.substr(10 + 64, 64)}`),
         },
         desiredDecimals
       ),
