@@ -2,12 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork } from "../accounts"
-import {
-  AnyEVMTransaction,
-  ConfirmedEVMTransaction,
-  AnyEVMBlock,
-  Network,
-} from "../networks"
+import { AnyEVMBlock, Network } from "../networks"
 import { AnyAssetAmount } from "../assets"
 import {
   AssetMainCurrencyAmount,
@@ -31,8 +26,6 @@ type AccountData = {
   balances: {
     [assetSymbol: string]: AccountBalance
   }
-  confirmedTransactions: ConfirmedEVMTransaction[]
-  unconfirmedTransactions: AnyEVMTransaction[]
   ens: {
     name?: DomainName
     avatarURL?: URI
@@ -73,32 +66,12 @@ export const initialState = {
   blocks: {},
 } as AccountState
 
-// Looks up existing account data in the given AccountState, dealing with
-// undefined addresses and filtering out data that is still loading.
-function lookUpExistingAccountData(
-  state: AccountState,
-  ...addresses: (string | undefined)[]
-): AccountData[] {
-  return addresses
-    .map((a) => {
-      if (typeof a !== "undefined") {
-        return state.accountsData[a]
-      }
-      return undefined
-    })
-    .filter(
-      (a): a is AccountData => typeof a !== "undefined" && a !== "loading"
-    )
-}
-
 function newAccountData(address: HexString, network: Network): AccountData {
   return {
     address,
     network,
     accountType: undefined,
     balances: {},
-    unconfirmedTransactions: [],
-    confirmedTransactions: [],
     ens: {},
   }
 }
@@ -215,64 +188,6 @@ const accountSlice = createSlice({
         ens: { ...baseAccountData.ens, avatarURL: addressNetworkAvatar.avatar },
       }
     },
-    transactionSeen: (
-      immerState,
-      { payload: transaction }: { payload: AnyEVMTransaction }
-    ) => {
-      const existingAccounts = lookUpExistingAccountData(
-        immerState,
-        transaction.from.toLowerCase(),
-        transaction.to?.toLowerCase()
-      )
-
-      existingAccounts.forEach((immerExistingAccount) => {
-        if (
-          immerExistingAccount.confirmedTransactions.find(
-            (t) => t.hash === transaction.hash
-          )
-        ) {
-          // TODO Probably this will only happen during a reorg? May make sense
-          // TODO for a transaction to move from confirmed to unconfirmed in
-          // TODO that scenario, but what if we get info on a transaction
-          // TODO that's already been confirmed due to backend sync issues?
-
-          // If there is a confirmed transaction, do not update the unconfirmed
-          // transaction list.
-          return
-        }
-
-        immerExistingAccount.unconfirmedTransactions = [
-          transaction,
-          ...immerExistingAccount.unconfirmedTransactions.filter(
-            (t) => t.hash !== transaction.hash
-          ),
-        ]
-      })
-    },
-    transactionConfirmed: (
-      immerState,
-      { payload: transaction }: { payload: ConfirmedEVMTransaction }
-    ) => {
-      const existingAccounts = lookUpExistingAccountData(
-        immerState,
-        transaction.from.toLowerCase(),
-        transaction.to?.toLowerCase()
-      )
-
-      existingAccounts.forEach((immerAccount) => {
-        immerAccount.unconfirmedTransactions = [
-          ...immerAccount.unconfirmedTransactions.filter(
-            (t) => t.hash !== transaction.hash
-          ),
-        ]
-        immerAccount.confirmedTransactions = [
-          transaction,
-          ...immerAccount.confirmedTransactions.filter(
-            (t) => t.hash !== transaction.hash
-          ),
-        ]
-      })
-    },
   },
 })
 
@@ -281,8 +196,6 @@ export const {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
-  transactionSeen,
-  transactionConfirmed,
   blockSeen,
 } = accountSlice.actions
 

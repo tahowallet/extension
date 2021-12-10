@@ -24,8 +24,6 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
-  transactionConfirmed,
-  transactionSeen,
   blockSeen,
   updateAccountBalance,
   updateENSName,
@@ -48,7 +46,7 @@ import {
   signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
-import { determineToken } from "./redux-slices/utils/activity-utils"
+import { enrichTransactionWithContractInfo } from "./services/enrichment"
 import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
@@ -295,24 +293,19 @@ export default class Main extends BaseService<never> {
     })
     this.chainService.emitter.on("transaction", async (payload) => {
       const { transaction } = payload
-      const enrichedPayload = {
-        ...payload,
-        transaction: {
-          ...transaction,
-          token: await determineToken(transaction),
-        },
-      }
 
-      if (
-        transaction.blockHash &&
-        "gasUsed" in transaction &&
-        transaction.gasUsed !== undefined
-      ) {
-        this.store.dispatch(transactionConfirmed(transaction))
-      } else {
-        this.store.dispatch(transactionSeen(transaction))
-      }
-      this.store.dispatch(activityEncountered(enrichedPayload))
+      const enrichedTransaction = enrichTransactionWithContractInfo(
+        this.store.getState().assets,
+        transaction,
+        2 /* TODO desiredDecimals should be configurable */
+      )
+
+      this.store.dispatch(
+        activityEncountered({
+          ...payload,
+          transaction: enrichedTransaction,
+        })
+      )
     })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
