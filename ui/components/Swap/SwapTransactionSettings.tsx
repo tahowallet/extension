@@ -1,7 +1,12 @@
+import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
+
 import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
+import NetworkFeesChooser from "../NetworkFees/NetworkFeesChooser"
+import { useBackgroundSelector } from "../../hooks"
 
 interface SwapTransactionSettingsProps {
   isSettingsLocked?: boolean
@@ -11,7 +16,17 @@ export default function SwapTransactionSettings(
   props: SwapTransactionSettingsProps
 ): ReactElement {
   const { isSettingsLocked } = props
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
+  const [gasLimit, setGasLimit] = useState("")
+  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
+    useState<BlockEstimate>({
+      confidence: 0,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    })
 
   function openSettings() {
     if (!isSettingsLocked) {
@@ -27,7 +42,7 @@ export default function SwapTransactionSettings(
         <>
           <SharedSlideUpMenu
             isOpen={isSlideUpMenuOpen}
-            size="small"
+            size="large"
             close={() => {
               setIsSlideUpMenuOpen(false)
             }}
@@ -43,6 +58,16 @@ export default function SwapTransactionSettings(
                 <span className="settings_label settings_label_fee">
                   Transaction Fee/Speed
                 </span>
+
+                <NetworkFeesChooser
+                  setFeeModalOpen={() => {}}
+                  onSaveGasChoice={setSelectedEstimatedFeePerGas}
+                  selectedGas={selectedEstimatedFeePerGas}
+                  gasLimit={gasLimit}
+                  setGasLimit={setGasLimit}
+                  estimatedFeesPerGas={estimatedFeesPerGas}
+                />
+
                 <SharedNetworkFeeGroup />
               </div>
             </div>
