@@ -58,11 +58,7 @@ const activitiesSlice = createSlice({
       forAccounts.forEach((account) => {
         const address = account.toLowerCase()
 
-        if (!immerState[address]) {
-          immerState[address] = activitiesAdapter.getInitialState()
-        }
-
-        activitiesAdapter.upsertOne(immerState[address], {
+        const activityItem = {
           ...transaction,
           infoRows,
           localizedDecimalValue: assetAmountToDesiredDecimals(
@@ -76,7 +72,16 @@ const activitiesSlice = createSlice({
           }),
           fromTruncated: truncateAddress(transaction.from),
           toTruncated: truncateAddress(transaction.to ?? ""),
-        })
+        }
+
+        if (typeof immerState[address] === "undefined") {
+          immerState[address] = activitiesAdapter.setOne(
+            activitiesAdapter.getInitialState(),
+            activityItem
+          )
+        } else {
+          activitiesAdapter.upsertOne(immerState[address], activityItem)
+        }
       })
     },
   },
