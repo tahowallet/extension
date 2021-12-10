@@ -2,11 +2,13 @@ import browser from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
+  AllowedQueryParamPage,
   PortRequestEvent,
   PortResponseEvent,
+  EIP1193Error,
   RPCRequest,
-  UnauthorizedError,
-  UserRejectedRequestError,
+  EIP1193_ERROR,
+  ALLOWED_QUERY_PARAM_PAGE,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
@@ -15,7 +17,7 @@ import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 
 type Events = ServiceLifecycleEvents & {
-  permissionRequest: PermissionRequest
+  requestPermission: PermissionRequest
 }
 
 /**
@@ -32,7 +34,7 @@ type Events = ServiceLifecycleEvents & {
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
 export default class ProviderBridgeService extends BaseService<Events> {
-  allowedPages: {
+  #allowedPages: {
     [url: string]: PermissionRequest
   } = {}
 
@@ -59,10 +61,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     browser.runtime.onConnect.addListener(async (port) => {
       if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
-        const listener = this.onMessageListener(
-          port as Required<browser.Runtime.Port>
-        )
-        port.onMessage.addListener(listener)
+        port.onMessage.addListener((event) => {
+          this.onMessageListener(port as Required<browser.Runtime.Port>, event)
+        })
         // TODO: store port with listener to handle cleanup
       }
     })
@@ -70,87 +71,80 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 
-  onMessageListener(
-    port: Required<browser.Runtime.Port>
-  ): (event: PortRequestEvent) => Promise<void> {
+  async onMessageListener(
+    port: Required<browser.Runtime.Port>,
+    event: PortRequestEvent
+  ): Promise<void> {
     const url = port.sender.url as string
     const favIconUrl = port.sender.tab?.favIconUrl ?? ""
+    const title = port.sender.tab?.title ?? ""
 
-    return async (event: PortRequestEvent) => {
-      // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
-      // This contradicts the MDN documentation so better not to rely on it.
-      logger.log(
-        `background: request payload: ${JSON.stringify(event.request)}`
+    // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
+    // This contradicts the MDN documentation so better not to rely on it.
+    logger.log(`background: request payload: ${JSON.stringify(event.request)}`)
+
+    const response: PortResponseEvent = { id: event.id, result: [] }
+
+    if (await this.checkPermission(url)) {
+      response.result = await this.routeContentScriptRPCRequest(
+        event.request.method,
+        event.request.params
+      )
+    } else if (event.request.method === "eth_requestAccounts") {
+      const permissionRequest: PermissionRequest = {
+        url,
+        favIconUrl,
+        title,
+        state: "request",
+      }
+
+      const blockUntilUserAction = await this.requestPermission(
+        permissionRequest
       )
 
-      const response: PortResponseEvent = { id: event.id, result: [] }
+      await blockUntilUserAction
 
-      if (
-        event.request.method === "eth_requestAccounts" &&
-        !(await this.checkPermission(url))
-      ) {
-        const permissionRequest: PermissionRequest = {
-          url,
-          favIconUrl,
-          state: "request",
-        }
-
-        const blockUntilUserAction = await this.requestPermission(
-          permissionRequest
-        )
-        await blockUntilUserAction
-
-        if (await this.checkPermission(url)) {
-          response.result = new UserRejectedRequestError()
-        }
+      if (!(await this.checkPermission(url))) {
+        response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
       }
-
-      if (await this.checkPermission(url)) {
-        response.result = await this.routeContentScriptRPCRequest(
-          event.request.method,
-          event.request.params
-        )
-      } else {
-        response.result = new UnauthorizedError()
-      }
-      logger.log("background response:", response)
-
-      port.postMessage(response)
+    } else {
+      response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
     }
+
+    logger.log("background response:", response)
+
+    port.postMessage(response)
   }
 
   async requestPermission(permissionRequest: PermissionRequest) {
-    let blockResolve: (value: unknown) => void | undefined
-    const blockUntilUserAction = new Promise((resolve) => {
-      blockResolve = resolve
+    this.emitter.emit("requestPermission", permissionRequest)
+    await ProviderBridgeService.showDappConnectWindow(
+      ALLOWED_QUERY_PARAM_PAGE.dappConnect
+    )
+
+    return new Promise((resolve) => {
+      this.#pendingPermissionsRequests[permissionRequest.url] = resolve
     })
-
-    this.emitter.emit("permissionRequest", permissionRequest)
-    await ProviderBridgeService.showDappConnectWindow()
-
-    // ts compiler does not know that we assign value to blockResolve so we need to tell him
-    this.#pendingPermissionsRequests[permissionRequest.url] = blockResolve!
-    return blockUntilUserAction
   }
 
-  async grandPermission(permission: PermissionRequest): Promise<void> {
+  async grantPermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
-      this.allowedPages[permission.url] = permission
-      this.#pendingPermissionsRequests[permission.url]("Time to move on")
+      this.#allowedPages[permission.url] = permission
+      this.#pendingPermissionsRequests[permission.url](permission)
       delete this.#pendingPermissionsRequests[permission.url]
     }
   }
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
-      delete this.allowedPages[permission.url]
+      delete this.#allowedPages[permission.url]
       this.#pendingPermissionsRequests[permission.url]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.url]
     }
   }
 
   async checkPermission(url: string): Promise<boolean> {
-    if (this.allowedPages[url]?.state === "allow") return Promise.resolve(true)
+    if (this.#allowedPages[url]?.state === "allow") return Promise.resolve(true)
     return Promise.resolve(false)
   }
 
@@ -173,13 +167,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  static async showDappConnectWindow(): Promise<browser.Windows.Window> {
+  static async showDappConnectWindow(
+    url: AllowedQueryParamPage
+  ): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
-    const popupWidth = 400
-    const popupHeight = 600
-    const internalPageName = "permission"
+    const popupWidth = 384
+    const popupHeight = 558
     return browser.windows.create({
-      url: `${browser.runtime.getURL("popup.html")}?page=${internalPageName}`,
+      url: `${browser.runtime.getURL("popup.html")}?page=${url}`,
       type: "popup",
       left: left + width - popupWidth,
       top,

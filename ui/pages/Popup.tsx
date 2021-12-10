@@ -8,6 +8,7 @@ import {
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
+import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 
 import Wallet from "./Wallet"
 import SignTransaction from "./SignTransaction"
@@ -22,10 +23,9 @@ import EarnDeposit from "./EarnDeposit"
 import Menu from "./Menu"
 import Send from "./Send"
 import Swap from "./Swap"
-import DAppConnectRequest from "./DAppConnectRequest"
+import DAppPermissionRequest from "./DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
-import Permission from "./Permission"
 
 function transformLocation(inputLocation: Location): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -33,9 +33,14 @@ function transformLocation(inputLocation: Location): Location {
   const params = new URLSearchParams(window.location.search)
   const maybePage = params.get("page")
 
+  let { pathname } = inputLocation
+  if (isAllowedQueryParamPage(maybePage)) {
+    pathname = maybePage
+  }
+
   return {
     ...inputLocation,
-    pathname: maybePage ? `/${maybePage}` : inputLocation.pathname,
+    pathname,
   }
 }
 
@@ -91,11 +96,8 @@ export default function Popup({ store }: { store: Store }): ReactElement {
               <Route path="/swap">
                 <Swap />
               </Route>
-              <Route path="/permission">
-                <Permission />
-              </Route>
-              <Route path="/dapp-connect">
-                <DAppConnectRequest />
+              <Route path="/dapp-permission">
+                <DAppPermissionRequest />
               </Route>
               <Route path="/">
                 <Wallet />

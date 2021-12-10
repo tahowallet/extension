@@ -51,9 +51,9 @@ import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
 import {
-  newPermissionRequest,
+  requestPermission,
   emitter as providerBridgeSliceEmitter,
-} from "./redux-slices/provider-bridge"
+} from "./redux-slices/dapp-permission"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
@@ -474,18 +474,21 @@ export default class Main extends BaseService<never> {
 
   async connectProviderBridgeService(): Promise<void> {
     this.providerBridgeService.emitter.on(
-      "permissionRequest",
+      "requestPermission",
       (permissionRequest: PermissionRequest) => {
-        this.store.dispatch(newPermissionRequest(permissionRequest))
+        this.store.dispatch(requestPermission(permissionRequest))
       }
     )
 
-    providerBridgeSliceEmitter.on("permissionGranted", async (permission) => {
-      await this.providerBridgeService.grandPermission(permission)
+    providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      await this.providerBridgeService.grantPermission(permission)
     })
 
-    providerBridgeSliceEmitter.on("permissionDenied", async (permission) => {
-      await this.providerBridgeService.denyOrRevokePermission(permission)
-    })
+    providerBridgeSliceEmitter.on(
+      "denyOrRevokePermission",
+      async (permission) => {
+        await this.providerBridgeService.denyOrRevokePermission(permission)
+      }
+    )
   }
 }

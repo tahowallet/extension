@@ -7,6 +7,9 @@ import {
   isPortResponseEvent,
   RequestArgument,
   EthersSendCallback,
+  EIP1193_ERROR,
+  isEIP1193ErrorCode,
+  isNumber,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
@@ -82,7 +85,7 @@ export default class TallyWindowProvider extends EventEmitter {
       // TODO: refactor the listener function out of the Promise
       const listener = (event: unknown) => {
         let id
-        let result
+        let result: unknown
         if (isWindowResponseEvent(event)) {
           if (
             event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
@@ -110,6 +113,9 @@ export default class TallyWindowProvider extends EventEmitter {
 
         // TODOO: refactor these into their own function handler
         // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
+
+        // TODO: throw error if EIP1193 error
+
         if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
           if (!this.isConnected) {
             this.isConnected = true
