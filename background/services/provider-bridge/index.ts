@@ -2,12 +2,13 @@ import browser from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
-  PopupWindowEntryPage,
+  AllowedQueryParamPage,
   PortRequestEvent,
   PortResponseEvent,
   EIP1193Error,
   RPCRequest,
   EIP1193_ERROR,
+  ALLOWED_QUERY_PARAM_PAGE,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
@@ -103,6 +104,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         const blockUntilUserAction = await this.requestPermission(
           permissionRequest
         )
+
         await blockUntilUserAction
 
         if (!(await this.checkPermission(url))) {
@@ -119,23 +121,20 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async requestPermission(permissionRequest: PermissionRequest) {
-    let blockResolve: (value: unknown) => void | undefined
-    const blockUntilUserAction = new Promise((resolve) => {
-      blockResolve = resolve
-    })
-
     this.emitter.emit("permissionRequest", permissionRequest)
-    await ProviderBridgeService.showDappConnectWindow("/dapp-connect")
+    await ProviderBridgeService.showDappConnectWindow(
+      ALLOWED_QUERY_PARAM_PAGE.dappConnect
+    )
 
-    // ts compiler does not know that we assign value to blockResolve so we need to tell him
-    this.#pendingPermissionsRequests[permissionRequest.url] = blockResolve!
-    return blockUntilUserAction
+    return new Promise((resolve) => {
+      this.#pendingPermissionsRequests[permissionRequest.url] = resolve
+    })
   }
 
-  async grandPermission(permission: PermissionRequest): Promise<void> {
+  async grantPermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.url]) {
       this.allowedPages[permission.url] = permission
-      this.#pendingPermissionsRequests[permission.url]("Time to move on")
+      this.#pendingPermissionsRequests[permission.url](permission)
       delete this.#pendingPermissionsRequests[permission.url]
     }
   }
@@ -173,7 +172,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   static async showDappConnectWindow(
-    url: PopupWindowEntryPage
+    url: AllowedQueryParamPage
   ): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
     const popupWidth = 384

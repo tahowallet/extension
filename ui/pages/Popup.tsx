@@ -8,6 +8,7 @@ import {
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
+import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 
 import Wallet from "./Wallet"
 import SignTransaction from "./SignTransaction"
@@ -33,9 +34,14 @@ function transformLocation(inputLocation: Location): Location {
   const params = new URLSearchParams(window.location.search)
   const maybePage = params.get("page")
 
+  let { pathname } = inputLocation
+  if (isAllowedQueryParamPage(maybePage)) {
+    pathname = maybePage
+  }
+
   return {
     ...inputLocation,
-    pathname: maybePage ?? inputLocation.pathname,
+    pathname,
   }
 }
 
