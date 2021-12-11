@@ -18,6 +18,7 @@ import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
+  initializeAllowedPages: Record<string, PermissionRequest>
 }
 
 /**
@@ -34,10 +35,6 @@ type Events = ServiceLifecycleEvents & {
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
 export default class ProviderBridgeService extends BaseService<Events> {
-  #allowedPages: {
-    [origin: string]: PermissionRequest
-  } = {}
-
   #pendingPermissionsRequests: {
     [origin: string]: (value: unknown) => void
   } = {}
@@ -58,6 +55,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     private internalEthereumProviderService: InternalEthereumProviderService
   ) {
     super()
+    this.init()
 
     browser.runtime.onConnect.addListener(async (port) => {
       if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
@@ -69,6 +67,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
 
     // TODO: on internal provider handlers connect, disconnect, account change, network change
+  }
+
+  async init() {
+    this.emitter.emit(
+      "initializeAllowedPages",
+      await this.db.getAllPermission()
+    )
   }
 
   async onMessageListener(
@@ -134,7 +139,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async grantPermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.origin]) {
-      this.#allowedPages[permission.origin] = permission
+      await this.db.setPermission(permission)
       this.#pendingPermissionsRequests[permission.origin](permission)
       delete this.#pendingPermissionsRequests[permission.origin]
     }
@@ -142,15 +147,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     if (this.#pendingPermissionsRequests[permission.origin]) {
-      delete this.#allowedPages[permission.origin]
+      await this.db.deletePermission(permission.origin)
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.origin]
     }
   }
 
-  async checkPermission(url: string): Promise<boolean> {
-    if (this.#allowedPages[url]?.state === "allow") return Promise.resolve(true)
-    return Promise.resolve(false)
+  async checkPermission(origin: string): Promise<boolean> {
+    return this.db.checkPermission(origin).then((r) => !!r)
   }
 
   async routeContentScriptRPCRequest(
