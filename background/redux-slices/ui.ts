@@ -1,8 +1,10 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
+import { AddressNetwork } from "../accounts"
+import { getEthereumNetwork } from "../lib/utils"
 import { ActivityItem } from "./activities"
 
 type SelectedAccount = {
-  address: string
+  addressNetwork: AddressNetwork
   truncatedAddress: string
 }
 
@@ -15,7 +17,10 @@ export type UIState = {
 
 export const initialState: UIState = {
   showingActivityDetail: null,
-  currentAccount: { address: "", truncatedAddress: "" },
+  currentAccount: {
+    addressNetwork: { address: "", network: getEthereumNetwork() },
+    truncatedAddress: "",
+  },
   initializationLoadingTimeExpired: false,
   settings: {
     hideDust: false,
@@ -45,7 +50,10 @@ const uiSlice = createSlice({
       const lowercaseAddress = address.toLowerCase()
 
       immerState.currentAccount = {
-        address: lowercaseAddress,
+        addressNetwork: {
+          address: lowercaseAddress,
+          network: getEthereumNetwork(),
+        },
         truncatedAddress: lowercaseAddress.slice(0, 7),
       }
     },

@@ -46,12 +46,12 @@ const dappPermissionSlice = createSlice({
       state,
       { payload: request }: { payload: PermissionRequest }
     ) => {
-      if (state.permissionRequests[request.url]?.state !== "allow") {
+      if (state.permissionRequests[request.origin]?.state !== "allow") {
         return {
           ...state,
           permissionRequests: {
             ...state.permissionRequests,
-            [request.url]: { ...request },
+            [request.origin]: { ...request },
           },
         }
       }
@@ -65,7 +65,7 @@ const dappPermissionSlice = createSlice({
         grantPermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
-          delete updatedPermissionRequests[permission.url]
+          delete updatedPermissionRequests[permission.origin]
 
           // TODO: add the site to allowedsites later
 
@@ -78,7 +78,7 @@ const dappPermissionSlice = createSlice({
         denyOrRevokePermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
-          delete updatedPermissionRequests[permission.url]
+          delete updatedPermissionRequests[permission.origin]
 
           // TODO: remove the site from allowedsites later
 

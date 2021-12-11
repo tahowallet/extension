@@ -1,7 +1,7 @@
 import { isAddress } from "@ethersproject/address"
 import { formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
@@ -39,7 +39,7 @@ export default function Send(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const currentAccount = useBackgroundSelector(({ ui }) => ui.currentAccount)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
 
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)

@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 import { useBackgroundSelector } from "../../hooks"
@@ -16,12 +17,8 @@ export default function TopMenu(props: Props): ReactElement {
     toggleOpenDAppConnectionInfo,
   } = props
 
-  const [address, truncatedAddress] = useBackgroundSelector((background) => {
-    return [
-      background.ui.currentAccount?.address,
-      background.ui.currentAccount?.truncatedAddress,
-    ]
-  })
+  const { address, truncatedAddress } =
+    useBackgroundSelector(selectCurrentAccount)
 
   const { name, avatarURL } = useBackgroundSelector((background) => {
     const data = background.account.accountsData[address.toLowerCase()]

@@ -1,7 +1,8 @@
 import React, { ReactElement, useCallback } from "react"
 import {
   selectCurrentPendingPermission,
-  selectAccountTotalsByCategory,
+  selectCurrentAccount,
+  selectCurrentAccountTotal,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   denyOrRevokePermission,
@@ -56,41 +57,36 @@ function RequestingDAppBlock(props: {
   )
 }
 export default function DAppConnectRequest(): ReactElement {
-  const accountTotalsByCategory = useBackgroundSelector(
-    selectAccountTotalsByCategory
-  )
-  const currentAccount = useBackgroundSelector((background) => {
-    return background.ui.currentAccount?.address
-  })
-
-  const accountTotals = accountTotalsByCategory["read-only"]
-  if (typeof accountTotalsByCategory?.imported !== "undefined") {
-    accountTotals?.concat(accountTotalsByCategory?.imported)
-  }
-
-  const currentAccountTotal = accountTotals?.filter(
-    (accountTotal) => accountTotal?.address === currentAccount
-  )[0]
+  const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
 
   const permission = useBackgroundSelector(selectCurrentPendingPermission)
 
   const dispatch = useBackgroundDispatch()
 
   const grant = useCallback(async () => {
-    await dispatch(grantPermission({ ...permission, state: "allow" }))
+    if (typeof permission !== "undefined") {
+      await dispatch(grantPermission({ ...permission, state: "allow" }))
+    }
     window.close()
   }, [dispatch, permission])
 
   const deny = useCallback(async () => {
-    await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+    if (typeof permission !== "undefined") {
+      await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+    }
     window.close()
   }, [dispatch, permission])
 
-  if (!currentAccountTotal) {
+  if (
+    typeof currentAccountTotal === "undefined" ||
+    typeof permission === "undefined"
+  ) {
+    // FIXME What do we do if we end up in a weird state here? Dismiss the
+    // FIXME popover? Show an error?
     return <></>
   }
 
-  const lowerCaseAddress = currentAccountTotal.address.toLocaleLowerCase()
+  const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
 
   return (
     <div className="page">
@@ -100,7 +96,7 @@ export default function DAppConnectRequest(): ReactElement {
           <div className="connection_destination">
             <RequestingDAppBlock
               title={permission.title}
-              url={permission.url}
+              url={permission.origin}
               favIconUrl={permission.favIconUrl}
             />
           </div>
