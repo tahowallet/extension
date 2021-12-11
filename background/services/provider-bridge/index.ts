@@ -138,16 +138,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async grantPermission(permission: PermissionRequest): Promise<void> {
+    await this.db.setPermission(permission)
+
     if (this.#pendingPermissionsRequests[permission.origin]) {
-      await this.db.setPermission(permission)
       this.#pendingPermissionsRequests[permission.origin](permission)
       delete this.#pendingPermissionsRequests[permission.origin]
     }
   }
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
+    await this.db.deletePermission(permission.origin)
+
     if (this.#pendingPermissionsRequests[permission.origin]) {
-      await this.db.deletePermission(permission.origin)
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.origin]
     }

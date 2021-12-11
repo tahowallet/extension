@@ -1,10 +1,11 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 
+import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
-import { browser } from "@tallyho/tally-background"
+import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -21,6 +22,8 @@ interface Props {
 
 export default function CorePage(props: Props): ReactElement {
   const { children, hasTabBar, hasTopBar } = props
+
+  const dispatch = useBackgroundDispatch()
 
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
@@ -65,6 +68,15 @@ export default function CorePage(props: Props): ReactElement {
     initPermissionAndOrigin()
   }, [initPermissionAndOrigin])
 
+  const deny = useCallback(async () => {
+    if (typeof currentPermission !== "undefined") {
+      await dispatch(
+        denyOrRevokePermission({ ...currentPermission, state: "deny" })
+      )
+    }
+    window.close()
+  }, [dispatch, currentPermission])
+
   function handleOpenHiddenDevMenu(e: React.MouseEvent) {
     if (process.env.NODE_ENV === "development" && e.detail === 3) {
       setIsDevToolsOpen(true)
@@ -81,6 +93,7 @@ export default function CorePage(props: Props): ReactElement {
           close={() => {
             setIsActiveDAppConnectionInfoOpen(false)
           }}
+          disconnect={deny}
         />
       ) : null}
       <SharedSlideUpMenu

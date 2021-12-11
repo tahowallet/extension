@@ -5,8 +5,9 @@ export default function TopMenuConnectedDAppInfo(props: {
   url: string
   faviconUrl: string
   close: () => void
+  disconnect: () => void
 }): ReactElement {
-  const { title, url, close, faviconUrl } = props
+  const { title, url, close, faviconUrl, disconnect } = props
   return (
     <div className="bg">
       <div className="window">
@@ -24,6 +25,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           aria-label="disconnect"
           type="button"
           className="disconnect_icon"
+          onClick={disconnect}
         />
       </div>
       <button
