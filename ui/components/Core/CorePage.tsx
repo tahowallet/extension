@@ -1,11 +1,17 @@
-import React, { ReactElement, useState } from "react"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import TopMenu from "../TopMenu/TopMenu"
-import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
-import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
+
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
+import { browser } from "@tallyho/tally-background"
+
+import { useBackgroundSelector } from "../../hooks"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
-import TabBar from "../TabBar/TabBar"
 import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import TabBar from "../TabBar/TabBar"
+import TopMenu from "../TopMenu/TopMenu"
+import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
+import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
 
 interface Props {
   children: React.ReactNode
@@ -21,6 +27,43 @@ export default function CorePage(props: Props): ReactElement {
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
+  const [currentPermission, setCurrentPermission] = useState<PermissionRequest>(
+    {} as PermissionRequest
+  )
+  const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
+
+  const allowedPages = useBackgroundSelector(selectAllowedPages)
+
+  const initPermissionAndOrigin = useCallback(async () => {
+    const { url, favIconUrl, title } = await browser.tabs
+      .query({
+        active: true,
+        lastFocusedWindow: true,
+      })
+      .then((tabs) =>
+        tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
+      )
+
+    if (!url) return
+
+    const { origin } = new URL(url)
+
+    if (allowedPages[origin]) {
+      setCurrentPermission(allowedPages[origin])
+      setIsConnectedToDApp(true)
+    } else {
+      setCurrentPermission({
+        origin,
+        faviconUrl: favIconUrl ?? "",
+        title: title ?? "",
+        state: "deny",
+      })
+    }
+  }, [allowedPages, setCurrentPermission])
+
+  useEffect(() => {
+    initPermissionAndOrigin()
+  }, [initPermissionAndOrigin])
 
   function handleOpenHiddenDevMenu(e: React.MouseEvent) {
     if (process.env.NODE_ENV === "development" && e.detail === 3) {
@@ -30,10 +73,11 @@ export default function CorePage(props: Props): ReactElement {
 
   return (
     <main>
-      {isActiveDAppConnectionInfoOpen ? (
+      {isConnectedToDApp && isActiveDAppConnectionInfoOpen ? (
         <TopMenuConnectedDAppInfo
-          title="SushiSwap | Sushi"
-          url="https://app.sushi.com"
+          title={currentPermission.title}
+          url={currentPermission.origin}
+          faviconUrl={currentPermission.faviconUrl}
           close={() => {
             setIsActiveDAppConnectionInfoOpen(false)
           }}
@@ -85,6 +129,7 @@ export default function CorePage(props: Props): ReactElement {
                   !isActiveDAppConnectionInfoOpen
                 )
               }}
+              isConnectedToDApp={isConnectedToDApp}
             />
           </div>
         ) : null}
