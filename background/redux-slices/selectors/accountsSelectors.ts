@@ -13,6 +13,7 @@ import {
   convertAssetAmountViaPricePoint,
 } from "../../assets"
 import { selectSigningAddresses } from "./keyringsSelectors"
+import { selectCurrentAccount } from "./uiSelectors"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -24,7 +25,9 @@ const userValueDustThreshold = 2
 
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
-  return state.account.accountsData[state.ui.currentAccount.address]
+  return state.account.accountsData[
+    state.ui.currentAccount.addressNetwork.address
+  ]
 }
 const getAssetsState = (state: RootState) => state.assets
 
@@ -246,4 +249,16 @@ export const selectAccountTotalsByCategory = createSelector(
         return acc
       }, {})
   }
+)
+
+export const selectCurrentAccountTotal = createSelector(
+  selectCurrentAccount,
+  selectAccountTotalsByCategory,
+  (currentAccount, categorizedAccountTotals): AccountTotal | undefined =>
+    Object.values(categorizedAccountTotals)
+      .flat()
+      .find(
+        ({ address }) =>
+          address.toLowerCase() === currentAccount?.address?.toLowerCase()
+      )
 )

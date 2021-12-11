@@ -1,12 +1,25 @@
-import React, { ReactElement } from "react"
-import { selectAccountTotalsByCategory } from "@tallyho/tally-background/redux-slices/selectors"
+import React, { ReactElement, useCallback } from "react"
+import {
+  selectCurrentPendingPermission,
+  selectCurrentAccount,
+  selectCurrentAccountTotal,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  denyOrRevokePermission,
+  grantPermission,
+} from "@tallyho/tally-background/redux-slices/dapp-permission"
+
 import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelAccountItem from "../components/Shared/SharedPanelAccountItem"
-import { useBackgroundSelector } from "../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
-function RequestingDAppBlock(props: { title: string; url: string }) {
-  const { title, url } = props
+function RequestingDAppBlock(props: {
+  title: string
+  url: string
+  favIconUrl: string
+}) {
+  const { title, url, favIconUrl } = props
   return (
     <div className="request_wrap">
       <div className="dapp_favicon" />
@@ -21,7 +34,7 @@ function RequestingDAppBlock(props: { title: string; url: string }) {
           width: 100%;
         }
         .dapp_favicon {
-          background: url("${url}/favicon.ico");
+          background: url("${favIconUrl}");
           background-size: cover;
           width: 48px;
           height: 48px;
@@ -44,24 +57,36 @@ function RequestingDAppBlock(props: { title: string; url: string }) {
   )
 }
 export default function DAppConnectRequest(): ReactElement {
-  const accountTotalsByCategory = useBackgroundSelector(
-    selectAccountTotalsByCategory
-  )
-  const currentAccount = useBackgroundSelector((background) => {
-    return background.ui.currentAccount?.address
-  })
+  const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
 
-  const accountTotals = accountTotalsByCategory["read-only"]
-  if (typeof accountTotalsByCategory?.imported !== "undefined") {
-    accountTotals?.concat(accountTotalsByCategory?.imported)
+  const permission = useBackgroundSelector(selectCurrentPendingPermission)
+
+  const dispatch = useBackgroundDispatch()
+
+  const grant = useCallback(async () => {
+    if (typeof permission !== "undefined") {
+      await dispatch(grantPermission({ ...permission, state: "allow" }))
+    }
+    window.close()
+  }, [dispatch, permission])
+
+  const deny = useCallback(async () => {
+    if (typeof permission !== "undefined") {
+      await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+    }
+    window.close()
+  }, [dispatch, permission])
+
+  if (
+    typeof currentAccountTotal === "undefined" ||
+    typeof permission === "undefined"
+  ) {
+    // FIXME What do we do if we end up in a weird state here? Dismiss the
+    // FIXME popover? Show an error?
+    return <></>
   }
 
-  const currentAccountTotal = accountTotals?.filter(
-    (accountTotal) => accountTotal?.address === currentAccount
-  )[0]
-  if (!currentAccountTotal) return <></>
-
-  const lowerCaseAddress = currentAccountTotal.address.toLocaleLowerCase()
+  const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
 
   return (
     <div className="page">
@@ -70,8 +95,9 @@ export default function DAppConnectRequest(): ReactElement {
           <h1 className="serif_header">Connect to dApp</h1>
           <div className="connection_destination">
             <RequestingDAppBlock
-              title="SushiSwap | Sushi"
-              url="https://app.sushi.com"
+              title={permission.title}
+              url={permission.origin}
+              favIconUrl={permission.favIconUrl}
             />
           </div>
           <div className="icon_connection" />
@@ -99,11 +125,16 @@ export default function DAppConnectRequest(): ReactElement {
             iconSize="large"
             size="large"
             type="secondary"
-            onClick={() => window.close()}
+            onClick={deny}
           >
             Reject
           </SharedButton>
-          <SharedButton type="primary" iconSize="large" size="large">
+          <SharedButton
+            type="primary"
+            iconSize="large"
+            size="large"
+            onClick={grant}
+          >
             Connect
           </SharedButton>
         </div>

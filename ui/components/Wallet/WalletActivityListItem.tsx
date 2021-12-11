@@ -9,10 +9,63 @@ interface Props {
   activity: ActivityItem
 }
 
+function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
+}
+
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity } = props
-  if (typeof activity.value === "undefined" || activity.value === BigInt(0))
-    return <></>
+
+  // TODO Replace this with better conditional rendering.
+  let renderDetails: {
+    iconClass: string | undefined
+    label: string
+    recipient: string
+    assetLogoURL: string | undefined
+    assetSymbol: string
+    assetValue: string
+  } = {
+    iconClass: undefined,
+    label: activity.isSent ? "Sent" : "Received",
+    recipient: activity.toTruncated,
+    assetLogoURL: undefined,
+    assetSymbol: activity.asset.symbol,
+    assetValue: activity.localizedDecimalValue,
+  }
+  switch (activity.contractInfo?.type) {
+    case "asset-transfer":
+      renderDetails = {
+        iconClass: "contract_interaction_icon",
+        label: "Contract interaction",
+        recipient: truncateAddress(activity.contractInfo.recipientAddress),
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
+        assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+      }
+      break
+    case "asset-swap":
+      renderDetails = {
+        iconClass: "swap_icon",
+        label: "Swap",
+        recipient: activity.toTruncated,
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.asset.symbol,
+        assetValue: activity.localizedDecimalValue,
+      }
+      break
+    case "contract-deployment":
+    case "contract-interaction":
+      renderDetails = {
+        iconClass: "contract_interaction_icon",
+        label: "Contract interaction",
+        recipient: activity.toTruncated,
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.asset.symbol,
+        assetValue: activity.localizedDecimalValue,
+      }
+      break
+    default:
+  }
 
   return (
     <li>
@@ -20,12 +73,11 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="top">
           <div className="left">
             <div
-              className={classNames(
-                { activity_icon: true },
-                { send_icon: activity.isSent }
-              )}
+              className={classNames("activity_icon", renderDetails.iconClass, {
+                send_icon: activity.isSent,
+              })}
             />
-            {`${activity.isSent ? "Sent" : "Received"}`}
+            {renderDetails.label}
           </div>
           <div className="right">
             {activity.timestamp &&
@@ -36,23 +88,23 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
-                logoURL={activity?.token?.metadata?.logoURL}
-                symbol={activity.token?.symbol}
+                logoURL={renderDetails.assetLogoURL}
+                symbol={renderDetails.assetSymbol}
                 size="small"
               />
             </div>
             <div className="amount">
               <span className="bold_amount_count">
-                {`${activity.tokenDecimalValue}`.substring(0, 6)}
+                {renderDetails.assetValue}
               </span>
-              {activity.token.symbol}
+              {renderDetails.assetSymbol}
             </div>
           </div>
           <div className="right">
             {activity.isSent ? (
               <div className="outcome">
                 To:
-                {` ${activity.toTruncated}`}
+                {` ${renderDetails.recipient}`}
               </div>
             ) : (
               <div className="outcome">
@@ -90,6 +142,14 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .send_icon {
             background: url("./images/activity_send@2x.png");
+            background-size: cover;
+          }
+          .swap_icon {
+            background: url("./images/activity_swap@2x.png");
+            background-size: cover;
+          }
+          .contract_interaction_icon {
+            background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
           }
           .top {

@@ -1,5 +1,15 @@
 import browser from "webextension-polyfill"
-import { EXTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
+import {
+  EXTERNAL_PORT_NAME,
+  PermissionRequest,
+  AllowedQueryParamPage,
+  PortRequestEvent,
+  PortResponseEvent,
+  EIP1193Error,
+  RPCRequest,
+  EIP1193_ERROR,
+  ALLOWED_QUERY_PARAM_PAGE,
+} from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
 import BaseService from "../base"
@@ -7,7 +17,7 @@ import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 
 type Events = ServiceLifecycleEvents & {
-  accountAccessRequestedByDAppID: string
+  requestPermission: PermissionRequest
 }
 
 /**
@@ -24,14 +34,13 @@ type Events = ServiceLifecycleEvents & {
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
 export default class ProviderBridgeService extends BaseService<Events> {
-  // /**
-  //  * Tracks pending account requests by id and the function that can be used to
-  //  * respond to them when a response is provided via
-  //  * `respondToPendingAccountRequest`.
-  //  */
-  // #pendingAccountRequests: {
-  //   [dAppID: string]: (grantedAccounts: string[]) => void
-  // } = {}
+  #allowedPages: {
+    [origin: string]: PermissionRequest
+  } = {}
+
+  #pendingPermissionsRequests: {
+    [origin: string]: (value: unknown) => void
+  } = {}
 
   static create: ServiceCreatorFunction<
     Events,
@@ -51,36 +60,105 @@ export default class ProviderBridgeService extends BaseService<Events> {
     super()
 
     browser.runtime.onConnect.addListener(async (port) => {
-      if (port.name === EXTERNAL_PORT_NAME) {
-        port.onMessage.addListener(async (event) => {
-          logger.log(
-            `background: request payload: ${JSON.stringify(event.request)}`
-          )
-          const response = {
-            id: event.id,
-            result: await this.routeContentScriptRPCRequest(
-              event.request.method,
-              event.request.params
-            ),
-          }
-          logger.log("background response:", response)
-
-          port.postMessage(response)
+      if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
+        port.onMessage.addListener((event) => {
+          this.onMessageListener(port as Required<browser.Runtime.Port>, event)
         })
+        // TODO: store port with listener to handle cleanup
       }
     })
 
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 
-  routeContentScriptRPCRequest(
+  async onMessageListener(
+    port: Required<browser.Runtime.Port>,
+    event: PortRequestEvent
+  ): Promise<void> {
+    const { url, tab } = port.sender
+    if (typeof url === "undefined") {
+      return
+    }
+
+    const { origin } = new URL(url)
+    const favIconUrl = tab?.favIconUrl ?? ""
+    const title = tab?.title ?? ""
+
+    // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
+    // This contradicts the MDN documentation so better not to rely on it.
+    logger.log(`background: request payload: ${JSON.stringify(event.request)}`)
+
+    const response: PortResponseEvent = { id: event.id, result: [] }
+
+    if (await this.checkPermission(origin)) {
+      response.result = await this.routeContentScriptRPCRequest(
+        event.request.method,
+        event.request.params
+      )
+    } else if (event.request.method === "eth_requestAccounts") {
+      const permissionRequest: PermissionRequest = {
+        origin,
+        favIconUrl,
+        title,
+        state: "request",
+      }
+
+      const blockUntilUserAction = await this.requestPermission(
+        permissionRequest
+      )
+
+      await blockUntilUserAction
+
+      if (!(await this.checkPermission(origin))) {
+        response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
+      }
+    } else {
+      response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
+    }
+
+    logger.log("background response:", response)
+
+    port.postMessage(response)
+  }
+
+  async requestPermission(permissionRequest: PermissionRequest) {
+    this.emitter.emit("requestPermission", permissionRequest)
+    await ProviderBridgeService.showDappConnectWindow(
+      ALLOWED_QUERY_PARAM_PAGE.dappConnect
+    )
+
+    return new Promise((resolve) => {
+      this.#pendingPermissionsRequests[permissionRequest.origin] = resolve
+    })
+  }
+
+  async grantPermission(permission: PermissionRequest): Promise<void> {
+    if (this.#pendingPermissionsRequests[permission.origin]) {
+      this.#allowedPages[permission.origin] = permission
+      this.#pendingPermissionsRequests[permission.origin](permission)
+      delete this.#pendingPermissionsRequests[permission.origin]
+    }
+  }
+
+  async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
+    if (this.#pendingPermissionsRequests[permission.origin]) {
+      delete this.#allowedPages[permission.origin]
+      this.#pendingPermissionsRequests[permission.origin]("Time to move on")
+      delete this.#pendingPermissionsRequests[permission.origin]
+    }
+  }
+
+  async checkPermission(url: string): Promise<boolean> {
+    if (this.#allowedPages[url]?.state === "allow") return Promise.resolve(true)
+    return Promise.resolve(false)
+  }
+
+  async routeContentScriptRPCRequest(
     method: string,
-    params: unknown[]
+    params: RPCRequest["params"]
   ): Promise<unknown> {
     switch (method) {
       case "eth_requestAccounts":
-        // TODO: permission checks
-        // TODO: proper error handling
         return this.internalEthereumProviderService.routeSafeRPCRequest(
           "eth_accounts",
           params
@@ -94,25 +172,20 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  // async requestAccountAccess(dAppID: string): Promise<string[]> {
-  //   const existingPermissions = await this.db.getDAppPermissions(dAppID)
-
-  //   if (typeof existingPermissions !== "undefined") {
-  //     return Promise.resolve(existingPermissions.allowedAccounts)
-  //   }
-
-  //   const requestPromise = new Promise<string[]>((resolve, reject) => {
-  //     this.#pendingAccountRequests[dAppID] = (result) => {
-  //       this.db
-  //         .setDAppPermissions(dAppID, {
-  //           allowedAccounts: result,
-  //         })
-  //         .then(() => resolve(result))
-  //         .catch(reject)
-  //     }
-  //   })
-
-  //   this.emitter.emit("accountAccessRequestedByDAppID", dAppID)
-  //   return requestPromise
-  // }
+  static async showDappConnectWindow(
+    url: AllowedQueryParamPage
+  ): Promise<browser.Windows.Window> {
+    const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
+    const popupWidth = 384
+    const popupHeight = 558
+    return browser.windows.create({
+      url: `${browser.runtime.getURL("popup.html")}?page=${url}`,
+      type: "popup",
+      left: left + width - popupWidth,
+      top,
+      width: popupWidth,
+      height: popupHeight,
+      focused: true,
+    })
+  }
 }
