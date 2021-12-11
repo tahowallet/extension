@@ -2,7 +2,7 @@ export * from "./constants"
 export * from "./eip-1193"
 
 export type PermissionRequest = {
-  url: string
+  origin: string
   favIconUrl: string
   title: string
   state: "request" | "allow" | "deny"

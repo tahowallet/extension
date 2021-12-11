@@ -99,7 +99,7 @@ export default function DAppConnectRequest(): ReactElement {
           <div className="connection_destination">
             <RequestingDAppBlock
               title={permission.title}
-              url={permission.url}
+              url={permission.origin}
               favIconUrl={permission.favIconUrl}
             />
           </div>
