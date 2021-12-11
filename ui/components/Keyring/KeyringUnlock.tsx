@@ -8,6 +8,7 @@ import titleStyle from "../Onboarding/titleStyle"
 
 export default function KeyringUnlock(): ReactElement {
   const [password, setPassword] = useState("")
+  const [errorMessage, setErrorMessage] = useState("")
   const history = useHistory()
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
@@ -20,8 +21,10 @@ export default function KeyringUnlock(): ReactElement {
     }
   }, [history, areKeyringsUnlocked])
 
-  const dispatchUnlockWallet = (): void => {
-    dispatch(unlockKeyrings(password))
+  const dispatchUnlockWallet = async (): Promise<void> => {
+    await dispatch(unlockKeyrings(password))
+    // If keyring was unable to unlock, display error message
+    setErrorMessage("Incorrect password")
   }
 
   return (
@@ -33,7 +36,12 @@ export default function KeyringUnlock(): ReactElement {
         <SharedInput
           type="password"
           placeholder="Password"
-          onChange={setPassword}
+          onChange={(value) => {
+            setPassword(value)
+            // Clear error message on input change
+            setErrorMessage("")
+          }}
+          errorMessage={errorMessage}
         />
       </div>
       <SharedButton type="primary" size="large" onClick={dispatchUnlockWallet}>
@@ -51,6 +59,7 @@ export default function KeyringUnlock(): ReactElement {
           }
           .input_wrap {
             width: 211px;
+            margin-bottom: 30px;
           }
         `}
       </style>

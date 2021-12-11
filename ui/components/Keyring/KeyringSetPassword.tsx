@@ -8,6 +8,7 @@ import titleStyle from "../Onboarding/titleStyle"
 
 export default function KeyringSetPassword(): ReactElement {
   const [password, setPassword] = useState("")
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
 
@@ -21,11 +22,31 @@ export default function KeyringSetPassword(): ReactElement {
     }
   }, [history, areKeyringsUnlocked])
 
+  const validatePassword = (): boolean => {
+    if (password.length < 8) {
+      setPasswordErrorMessage("Must be at least 8 characters")
+      return false
+    }
+    if (password !== passwordConfirmation) {
+      setPasswordErrorMessage("Passwords don’t match")
+      return false
+    }
+    return true
+  }
+
+  const handleInputChange = (
+    f: (value: string) => void
+  ): ((value: string) => void) => {
+    return (value: string) => {
+      // If the input field changes, remove the error.
+      setPasswordErrorMessage("")
+      return f(value)
+    }
+  }
+
   const dispatchCreatePassword = (): void => {
-    if (password === passwordConfirmation) {
+    if (validatePassword()) {
       dispatch(createPassword(password))
-    } else {
-      alert("Whoops, passwords didn't match!")
     }
   }
 
@@ -38,20 +59,23 @@ export default function KeyringSetPassword(): ReactElement {
         <SharedInput
           type="password"
           placeholder="Password"
-          onChange={setPassword}
+          onChange={handleInputChange(setPassword)}
+          errorMessage={passwordErrorMessage}
         />
       </div>
       <div className="input_wrap repeat_password_wrap">
         <SharedInput
           type="password"
           placeholder="Repeat Password"
-          onChange={setPasswordConfirmation}
+          onChange={handleInputChange(setPasswordConfirmation)}
+          errorMessage={passwordErrorMessage}
         />
       </div>
       <SharedButton
         type="primary"
         size="large"
         onClick={dispatchCreatePassword}
+        showLoadingOnClick={!passwordErrorMessage}
       >
         Begin the hunt
       </SharedButton>
@@ -74,8 +98,8 @@ export default function KeyringSetPassword(): ReactElement {
             width: 211px;
           }
           .repeat_password_wrap {
-            margin-top: 19px;
-            margin-bottom: 24px;
+            margin-top: 30px;
+            margin-bottom: 40px;
           }
           .restore {
             display: none; // TODO Implement account restoration.
