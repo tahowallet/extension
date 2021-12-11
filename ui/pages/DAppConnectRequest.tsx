@@ -64,12 +64,16 @@ export default function DAppConnectRequest(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const grant = useCallback(async () => {
-    await dispatch(grantPermission({ ...permission, state: "allow" }))
+    if (typeof permission !== "undefined") {
+      await dispatch(grantPermission({ ...permission, state: "allow" }))
+    }
     window.close()
   }, [dispatch, permission])
 
   const deny = useCallback(async () => {
-    await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+    if (typeof permission !== "undefined") {
+      await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+    }
     window.close()
   }, [dispatch, permission])
 
