@@ -165,6 +165,7 @@ export default function AccountsNotificationPanelAccounts({
                           key={lowerCaseAddress}
                           accountTotal={accountTotal}
                           isSelected={lowerCaseAddress === selectedAccount}
+                          hideMenu
                         />
                       </button>
                     </li>

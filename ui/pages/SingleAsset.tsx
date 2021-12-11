@@ -5,7 +5,10 @@ import {
   selectCurrentAccountBalances,
   selectIsCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
+import {
+  HIDE_SEND_BUTTON,
+  HIDE_SWAP,
+} from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -68,28 +71,34 @@ export default function SingleAsset(): ReactElement {
               <></>
             )}
           </div>
-          {!HIDE_SEND_BUTTON && isCurrentAccountSigner ? (
-            <div className="right">
-              <SharedButton
-                type="primary"
-                size="medium"
-                icon="send"
-                linkTo={{
-                  pathname: "/send",
-                  state: {
-                    symbol,
-                  },
-                }}
-              >
-                Send
-              </SharedButton>
-              <SharedButton type="primary" size="medium" icon="swap">
-                Swap
-              </SharedButton>
-            </div>
-          ) : (
-            <></>
-          )}
+          <div className="right">
+            {isCurrentAccountSigner ? (
+              <>
+                {!HIDE_SEND_BUTTON && (
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    icon="send"
+                    linkTo={{
+                      pathname: "/send",
+                      state: {
+                        symbol,
+                      },
+                    }}
+                  >
+                    Send
+                  </SharedButton>
+                )}
+                {!HIDE_SWAP && (
+                  <SharedButton type="primary" size="medium" icon="swap">
+                    Swap
+                  </SharedButton>
+                )}
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
         <div className="sub_info_separator_wrap standard_width_padded">
           <div className="left">Asset is on: Arbitrum</div>

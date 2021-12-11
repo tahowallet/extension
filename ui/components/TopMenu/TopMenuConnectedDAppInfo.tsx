@@ -51,6 +51,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           display: flex;
           flex-direction: column;
           align-items: center;
+          margin: 0 auto;
         }
         .icon_close {
           mask-image: url("./images/close.svg");
