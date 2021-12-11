@@ -81,7 +81,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
-    const favIconUrl = tab?.favIconUrl ?? ""
+    const faviconUrl = tab?.favIconUrl ?? ""
     const title = tab?.title ?? ""
 
     // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
@@ -98,7 +98,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } else if (event.request.method === "eth_requestAccounts") {
       const permissionRequest: PermissionRequest = {
         origin,
-        favIconUrl,
+        faviconUrl,
         title,
         state: "request",
       }

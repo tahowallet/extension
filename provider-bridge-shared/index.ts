@@ -3,7 +3,7 @@ export * from "./eip-1193"
 
 export type PermissionRequest = {
   origin: string
-  favIconUrl: string
+  faviconUrl: string
   title: string
   state: "request" | "allow" | "deny"
 }
