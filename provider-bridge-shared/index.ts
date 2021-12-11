@@ -115,12 +115,12 @@ export const AllowedQueryParamPage = {
   dappPermission: "/dapp-permission",
 } as const
 
-export type AllowedQueryParamPage =
+export type AllowedQueryParamPageType =
   typeof AllowedQueryParamPage[keyof typeof AllowedQueryParamPage]
 
 export function isAllowedQueryParamPage(
   url: unknown
-): url is AllowedQueryParamPage {
+): url is AllowedQueryParamPageType {
   // The typing for Array.includes in `lib.es.2016.array.include.ts` does not make any sense here -> Object.values<string>
   // interface Array<T> { ... includes(searchElement: T, fromIndex?: number): boolean; ...
   return Object.values<unknown>(AllowedQueryParamPage).includes(url)

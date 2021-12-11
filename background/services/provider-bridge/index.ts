@@ -3,6 +3,7 @@ import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
   AllowedQueryParamPage,
+  AllowedQueryParamPageType,
   PortRequestEvent,
   PortResponseEvent,
   EIP1193Error,
@@ -172,7 +173,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   static async showDappConnectWindow(
-    url: AllowedQueryParamPage
+    url: AllowedQueryParamPageType
   ): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
     const popupWidth = 384
