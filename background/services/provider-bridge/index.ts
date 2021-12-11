@@ -8,7 +8,6 @@ import {
   EIP1193Error,
   RPCRequest,
   EIP1193_ERROR,
-  ALLOWED_QUERY_PARAM_PAGE,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
@@ -124,7 +123,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async requestPermission(permissionRequest: PermissionRequest) {
     this.emitter.emit("requestPermission", permissionRequest)
     await ProviderBridgeService.showDappConnectWindow(
-      ALLOWED_QUERY_PARAM_PAGE.dappConnect
+      AllowedQueryParamPage.dappPermission
     )
 
     return new Promise((resolve) => {
