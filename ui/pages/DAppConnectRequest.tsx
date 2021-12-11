@@ -1,8 +1,8 @@
 import React, { ReactElement, useCallback } from "react"
 import {
   selectCurrentPendingPermission,
-  selectAccountTotalsByCategory,
   selectCurrentAccount,
+  selectCurrentAccountTotal,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   denyOrRevokePermission,
@@ -57,19 +57,7 @@ function RequestingDAppBlock(props: {
   )
 }
 export default function DAppConnectRequest(): ReactElement {
-  const accountTotalsByCategory = useBackgroundSelector(
-    selectAccountTotalsByCategory
-  )
-  const currentAccount = useBackgroundSelector(selectCurrentAccount).address
-
-  const accountTotals = accountTotalsByCategory["read-only"]
-  if (typeof accountTotalsByCategory?.imported !== "undefined") {
-    accountTotals?.concat(accountTotalsByCategory?.imported)
-  }
-
-  const currentAccountTotal = accountTotals?.filter(
-    (accountTotal) => accountTotal?.address === currentAccount
-  )[0]
+  const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
 
   const permission = useBackgroundSelector(selectCurrentPendingPermission)
 
@@ -85,11 +73,16 @@ export default function DAppConnectRequest(): ReactElement {
     window.close()
   }, [dispatch, permission])
 
-  if (!currentAccountTotal) {
+  if (
+    typeof currentAccountTotal === "undefined" ||
+    typeof permission === "undefined"
+  ) {
+    // FIXME What do we do if we end up in a weird state here? Dismiss the
+    // FIXME popover? Show an error?
     return <></>
   }
 
-  const lowerCaseAddress = currentAccountTotal.address.toLocaleLowerCase()
+  const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
 
   return (
     <div className="page">

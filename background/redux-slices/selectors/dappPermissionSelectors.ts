@@ -20,6 +20,6 @@ export const selectPendingPermissionRequests = createSelector(
 export const selectCurrentPendingPermission = createSelector(
   selectPendingPermissionRequests,
   (permissionRequests) => {
-    return permissionRequests[0]
+    return permissionRequests.length > 0 ? permissionRequests[0] : undefined
   }
 )
