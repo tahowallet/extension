@@ -6,6 +6,7 @@ export type PermissionRequest = {
   faviconUrl: string
   title: string
   state: "request" | "allow" | "deny"
+  accountAddress: string
 }
 
 export type WindowResponseEvent = {

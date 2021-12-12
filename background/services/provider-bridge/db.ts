@@ -26,7 +26,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
 
     this.version(1).stores({
       migrations: "++id,appliedAt",
-      dAppPermissions: "&origin,faviconUrl,title,state",
+      dAppPermissions: "&origin,faviconUrl,title,state,accountAddress",
     })
   }
 
@@ -39,7 +39,6 @@ export class ProviderBridgeServiceDatabase extends Dexie {
   async setPermission(
     permission: PermissionRequest
   ): Promise<string | undefined> {
-    if (permission.state !== "allow") return Promise.resolve(undefined)
     return this.dAppPermissions.put(permission)
   }
 

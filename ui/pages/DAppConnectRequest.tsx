@@ -63,19 +63,33 @@ export default function DAppConnectRequest(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
+  const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
+
   const grant = useCallback(async () => {
-    if (typeof permission !== "undefined") {
-      await dispatch(grantPermission({ ...permission, state: "allow" }))
+    if (typeof permission !== "undefined" && lowerCaseAddress) {
+      await dispatch(
+        grantPermission({
+          ...permission,
+          state: "allow",
+          accountAddress: lowerCaseAddress,
+        })
+      )
     }
     window.close()
-  }, [dispatch, permission])
+  }, [dispatch, permission, lowerCaseAddress])
 
   const deny = useCallback(async () => {
-    if (typeof permission !== "undefined") {
-      await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+    if (typeof permission !== "undefined" && lowerCaseAddress) {
+      await dispatch(
+        denyOrRevokePermission({
+          ...permission,
+          state: "deny",
+          accountAddress: lowerCaseAddress,
+        })
+      )
     }
     window.close()
-  }, [dispatch, permission])
+  }, [dispatch, permission, lowerCaseAddress])
 
   if (
     typeof currentAccountTotal === "undefined" ||
@@ -83,10 +97,12 @@ export default function DAppConnectRequest(): ReactElement {
   ) {
     // FIXME What do we do if we end up in a weird state here? Dismiss the
     // FIXME popover? Show an error?
-    return <></>
+    return (
+      <div>
+        You do not seem to have an account, which is sad for a wallet :(
+      </div>
+    )
   }
-
-  const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
 
   return (
     <div className="page">

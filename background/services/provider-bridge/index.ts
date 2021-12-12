@@ -69,6 +69,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   protected async internalStartService(): Promise<void> {
+    await super.internalStartService() // Not needed, but better to stick to the patterns
+
     this.emitter.emit(
       "initializeAllowedPages",
       await this.db.getAllPermission()
@@ -105,6 +107,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         faviconUrl,
         title,
         state: "request",
+        accountAddress: "",
       }
 
       const blockUntilUserAction = await this.requestPermission(
@@ -137,6 +140,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async grantPermission(permission: PermissionRequest): Promise<void> {
+    // FIXME proper error handling if this happens - should not tho
+    if (permission.state !== "allow" || !permission.accountAddress) return
+
     await this.db.setPermission(permission)
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
@@ -146,6 +152,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
+    // FIXME proper error handling if this happens - should not tho
+    if (permission.state !== "deny" || !permission.accountAddress) return
+
     await this.db.deletePermission(permission.origin)
 
     if (this.#pendingPermissionsRequests[permission.origin]) {

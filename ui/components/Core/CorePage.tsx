@@ -60,6 +60,7 @@ export default function CorePage(props: Props): ReactElement {
         faviconUrl: favIconUrl ?? "",
         title: title ?? "",
         state: "deny",
+        accountAddress: "",
       })
     }
   }, [allowedPages, setCurrentPermission])
