@@ -55,7 +55,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     private internalEthereumProviderService: InternalEthereumProviderService
   ) {
     super()
-    this.init()
 
     browser.runtime.onConnect.addListener(async (port) => {
       if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
@@ -69,7 +68,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 
-  async init() {
+  protected async internalStartService(): Promise<void> {
     this.emitter.emit(
       "initializeAllowedPages",
       await this.db.getAllPermission()
