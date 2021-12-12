@@ -5,6 +5,30 @@ import { getEthereumNetwork } from "./utils"
 import { AccountBalance } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 
+export const ERC20_ABI = [
+  "function allowance(address owner, address spender) view returns (uint256)",
+  "function approve(address spender, uint256 value) returns (bool)",
+  "function balanceOf(address owner) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function totalSupply() view returns (uint256)",
+  "function transfer(address to, uint amount) returns (bool)",
+  "function transferFrom(address from, address to, uint amount) returns (bool)",
+  "event Transfer(address indexed from, address indexed to, uint amount)",
+  "event Approval(address indexed owner, address indexed spender, uint amount)",
+]
+
+export const ERC20_INTERFACE = new ethers.utils.Interface(ERC20_ABI)
+
+export const ERC2612_ABI = ERC20_ABI.concat([
+  "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
+  "function nonces(address owner) view returns (uint256)",
+  "function DOMAIN_SEPARATOR() view returns (bytes32)",
+])
+
+export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
+
 /*
  * Get an account's balance from an ERC20-compliant contract.
  */
@@ -13,8 +37,7 @@ export async function getBalance(
   tokenAddress: string,
   account: string
 ): Promise<BigInt> {
-  const abi = ["function balanceOf(address owner) view returns (uint256)"]
-  const token = new ethers.Contract(tokenAddress, abi, provider)
+  const token = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
 
   return BigInt((await token.balanceOf(account)).toString())
 }
