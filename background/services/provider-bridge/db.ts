@@ -10,11 +10,9 @@ function keyBy(
   permissionsArray: Array<PermissionRequest>,
   key: keyof PermissionRequest
 ): Record<string, PermissionRequest> {
-  return permissionsArray.reduce((previous, current) => {
-    // Reduce is meant to be used like this.
-    /* eslint-disable no-param-reassign */
-    previous[current[key]] = current
-    return previous
+  return permissionsArray.reduce((acc, current) => {
+    acc[current[key]] = current
+    return acc
   }, {} as Record<string, PermissionRequest>)
 }
 
