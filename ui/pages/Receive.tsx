@@ -27,6 +27,9 @@ export default function Receive(): ReactElement {
           size="medium"
           iconSize="large"
           type="primary"
+          onClick={() => {
+            navigator.clipboard.writeText(currentAccount.address)
+          }}
         >
           {`${currentAccount.address.slice(
             0,
