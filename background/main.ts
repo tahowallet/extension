@@ -342,11 +342,13 @@ export default class Main extends BaseService<never> {
           chainID: "1",
           nonce: resolvedNonce,
         }
-
-        transaction.gasLimit = await this.chainService.estimateGasLimit(
-          getEthereumNetwork(),
-          transaction
-        )
+        // We use estimateGasLimit only if user did not specify the gas explicitly
+        if (options.gasLimit === 0n) {
+          transaction.gasLimit = await this.chainService.estimateGasLimit(
+            getEthereumNetwork(),
+            transaction
+          )
+        }
         this.store.dispatch(transactionRequest(transaction))
       }
     })
