@@ -196,6 +196,7 @@ export default function Send(): ReactElement {
                 }}
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
+                maxBalance={Number(currentBalance)}
               />
               <div className="value">${getTotalLocalizedValue()}</div>
             </div>
