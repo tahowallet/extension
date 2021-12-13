@@ -15,6 +15,7 @@ import { HexString, KeyringTypes, UNIXTime } from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
+import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
@@ -312,16 +313,8 @@ export default class KeyringService extends BaseService<Events> {
     }
 
     // ethers has a looser / slightly different request type
-    const ethersTxRequest = {
-      to: txRequest.to,
-      nonce: txRequest.nonce,
-      maxPriorityFeePerGas: txRequest.maxPriorityFeePerGas,
-      maxFeePerGas: txRequest.maxFeePerGas,
-      type: txRequest.type,
-      value: txRequest.value,
-      gasLimit: txRequest.gasLimit,
-      chainId: Number.parseInt(txRequest.chainID, 10),
-    }
+    const ethersTxRequest =
+      ethersTransactionRequestFromEIP1559TransactionRequest(txRequest)
     // unfortunately, ethers gives us a serialized signed tx here
     const signed = await keyring.signTransaction(account, ethersTxRequest)
 
