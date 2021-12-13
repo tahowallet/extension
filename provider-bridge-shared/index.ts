@@ -3,9 +3,10 @@ export * from "./eip-1193"
 
 export type PermissionRequest = {
   origin: string
-  favIconUrl: string
+  faviconUrl: string
   title: string
   state: "request" | "allow" | "deny"
+  accountAddress: string
 }
 
 export type WindowResponseEvent = {
@@ -110,19 +111,18 @@ export function isPortResponseEvent(arg: unknown): arg is PortResponseEvent {
   return isObject(arg) && isString(arg.id) && !isUndefined(arg.result)
 }
 
-export const ALLOWED_QUERY_PARAM_PAGE = {
-  permissions: "/permission",
+export const AllowedQueryParamPage = {
   signTransaction: "/signTransaction",
-  dappConnect: "/dapp-permission",
+  dappPermission: "/dapp-permission",
 } as const
 
-export type AllowedQueryParamPage =
-  typeof ALLOWED_QUERY_PARAM_PAGE[keyof typeof ALLOWED_QUERY_PARAM_PAGE]
+export type AllowedQueryParamPageType =
+  typeof AllowedQueryParamPage[keyof typeof AllowedQueryParamPage]
 
 export function isAllowedQueryParamPage(
   url: unknown
-): url is AllowedQueryParamPage {
-  // The typing for Array.includes in `lib.es.2016.array.include.ts` does not make any sense -> Object.values<string>
+): url is AllowedQueryParamPageType {
+  // The typing for Array.includes in `lib.es.2016.array.include.ts` does not make any sense here -> Object.values<string>
   // interface Array<T> { ... includes(searchElement: T, fromIndex?: number): boolean; ...
-  return Object.values<unknown>(ALLOWED_QUERY_PARAM_PAGE).includes(url)
+  return Object.values<unknown>(AllowedQueryParamPage).includes(url)
 }

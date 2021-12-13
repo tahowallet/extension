@@ -1,5 +1,3 @@
-export const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
-
 export const WINDOW_PROVIDER_TARGET = "tally-window-provider"
 export const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
 
