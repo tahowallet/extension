@@ -19,6 +19,8 @@ export type TransactionConstruction = {
   transactionRequest?: EIP1559TransactionRequest
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   lastGasEstimatesRefreshed: number
+  gasLimitSelected: bigint
+  selectedNetworkFee?: BlockEstimate
 }
 
 export type EstimatedFeesPerGas = {
@@ -32,6 +34,7 @@ export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   estimatedFeesPerGas: undefined,
   lastGasEstimatesRefreshed: Date.now(),
+  gasLimitSelected: 0n,
 }
 
 export type Events = {
@@ -73,6 +76,18 @@ const transactionSlice = createSlice({
     signed: (immerState) => {
       immerState.status = TransactionConstructionStatus.Signed
     },
+    gasLimitSelected: (
+      immerState,
+      { payload: gasLimitSelected }: { payload: bigint }
+    ) => {
+      immerState.gasLimitSelected = gasLimitSelected
+    },
+    selectedNetworkFee: (
+      immerState,
+      { payload: selectedNetworkFee }: { payload: BlockEstimate }
+    ) => {
+      immerState.selectedNetworkFee = selectedNetworkFee
+    },
     estimatedFeesPerGas: (
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
@@ -102,8 +117,13 @@ const transactionSlice = createSlice({
   },
 })
 
-export const { transactionRequest, signed, estimatedFeesPerGas } =
-  transactionSlice.actions
+export const {
+  transactionRequest,
+  signed,
+  estimatedFeesPerGas,
+  gasLimitSelected,
+  selectedNetworkFee,
+} = transactionSlice.actions
 
 export default transactionSlice.reducer
 
@@ -117,6 +137,12 @@ export const selectLastGasEstimatesRefreshTime = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.lastGasEstimatesRefreshed,
   (updateTime) => updateTime
+)
+
+export const selectSelectedNetworkFee = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.selectedNetworkFee,
+  (selectedFee) => selectedFee
 )
 
 export const selectTransactionData = createSelector(

@@ -1,20 +1,15 @@
 import { isAddress } from "@ethersproject/address"
-import { formatEther, formatUnits } from "@ethersproject/units"
+import { formatEther } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
-import {
-  selectEstimatedFeesPerGas,
-  updateTransactionOptions,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
-import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
-import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Send(): ReactElement {
@@ -25,14 +20,8 @@ export default function Send(): ReactElement {
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const [minFee, setMinFee] = useState(0)
-  const [maxFee, setMaxFee] = useState(0)
   const [currentBalance, setCurrentBalance] = useState("")
-  const [gasLimit, setGasLimit] = useState("")
-  const [currentFeeValues, setCurrentFeeValues] = useState({
-    gwei: "",
-    fiat: "",
-  })
+
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
     useState<BlockEstimate>({
       confidence: 0,
@@ -40,8 +29,6 @@ export default function Send(): ReactElement {
       maxPriorityFeePerGas: 0n,
       price: 0n,
     })
-
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const dispatch = useBackgroundDispatch()
 
@@ -90,42 +77,13 @@ export default function Send(): ReactElement {
       value: BigInt(utils.parseEther(amount?.toString())._hex),
       maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
       maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
-      gasLimit: BigInt(gasLimit),
     }
     dispatch(updateTransactionOptions(transaction))
   }
 
-  const findMinMaxGas = useCallback(() => {
-    if (
-      estimatedFeesPerGas?.baseFeePerGas &&
-      estimatedFeesPerGas?.regular?.maxPriorityFeePerGas &&
-      estimatedFeesPerGas?.instant?.maxPriorityFeePerGas
-    ) {
-      setMinFee(
-        Number(
-          formatUnits(
-            (estimatedFeesPerGas.baseFeePerGas * BigInt(13)) / 10n +
-              estimatedFeesPerGas.regular?.maxPriorityFeePerGas,
-            "gwei"
-          ).split(".")[0]
-        )
-      )
-      setMaxFee(
-        Number(
-          formatUnits(
-            (estimatedFeesPerGas.baseFeePerGas * BigInt(18)) / 10n +
-              estimatedFeesPerGas.instant?.maxPriorityFeePerGas,
-            "gwei"
-          ).split(".")[0]
-        )
-      )
-    }
-  }, [estimatedFeesPerGas])
-
   useEffect(() => {
-    findMinMaxGas()
     findBalance()
-  }, [findMinMaxGas, findBalance])
+  }, [findBalance])
 
   useEffect(() => {
     if (assetSymbol) {
@@ -136,22 +94,6 @@ export default function Send(): ReactElement {
   return (
     <>
       <CorePage>
-        <SharedSlideUpMenu
-          size="custom"
-          isOpen={feeModalOpen}
-          close={closeSelectFeeModal}
-          customSize={`${3 * 56 + 320}px`}
-        >
-          <NetworkFeesChooser
-            setFeeModalOpen={setFeeModalOpen}
-            onSelectFeeOption={setSelectedEstimatedFeePerGas}
-            currentFeeSelectionPrice={setCurrentFeeValues}
-            selectedGas={selectedEstimatedFeePerGas}
-            gasLimit={gasLimit}
-            setGasLimit={setGasLimit}
-            estimatedFeesPerGas={estimatedFeesPerGas}
-          />
-        </SharedSlideUpMenu>
         <div className="standard_width">
           <h1 className="header">
             <span className="icon_activity_send_medium" />
@@ -199,9 +141,8 @@ export default function Send(): ReactElement {
               <p>Estimated network fee</p>
               <FeeSettingsButton
                 openModal={openSelectFeeModal}
-                minFee={minFee}
-                maxFee={maxFee}
-                currentFeeSelected={currentFeeValues.gwei}
+                closeModal={closeSelectFeeModal}
+                open={feeModalOpen}
               />
             </div>
             <div className="divider" />

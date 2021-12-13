@@ -17,6 +17,7 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../hooks"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 enum SignType {
   Sign = "sign",
@@ -32,6 +33,7 @@ interface SignLocationState {
 
 export default function SignTransaction(): ReactElement {
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+  const [feeSelectModalOpen, setFeeSelectModalOpen] = useState(false)
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
@@ -46,6 +48,13 @@ export default function SignTransaction(): ReactElement {
   const txDetails = useBackgroundSelector(selectTransactionData)
 
   const [panelNumber, setPanelNumber] = useState(0)
+
+  const openSelectFeeModal = () => {
+    setFeeSelectModalOpen(true)
+  }
+  const closeSelectFeeModal = () => {
+    setFeeSelectModalOpen(false)
+  }
 
   if (!areKeyringsUnlocked) {
     return <></>
@@ -100,8 +109,12 @@ export default function SignTransaction(): ReactElement {
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
           <span className="detail_item">
-            Network Fee/Speed
-            <span className="detail_item_right">{"$24 / <1min"}</span>
+            Estimated network fee
+            <FeeSettingsButton
+              openModal={openSelectFeeModal}
+              closeModal={closeSelectFeeModal}
+              open={feeSelectModalOpen}
+            />
           </span>
         </div>
       ) : null}

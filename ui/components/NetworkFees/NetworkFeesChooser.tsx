@@ -3,10 +3,12 @@ import { BlockEstimate } from "@tallyho/tally-background/networks"
 import { selectMainCurrencyUnitPrice } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   EstimatedFeesPerGas,
+  selectedNetworkFee,
   selectLastGasEstimatesRefreshTime,
+  gasLimitSelected,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
@@ -21,47 +23,45 @@ type GasOption = {
 }
 
 interface NetworkFeesChooserProps {
-  setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-  onSelectFeeOption: (arg0: BlockEstimate) => void
-  currentFeeSelectionPrice: (arg0: { gwei: string; fiat: string }) => void
-  selectedGas?: BlockEstimate
-  gasLimit: string | number
-  setGasLimit: React.Dispatch<React.SetStateAction<string>>
+  closeModal: () => void
+  currentFeeSelectionPrice: (arg0: string) => void
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
+  currentlyChosenFeeOption: BlockEstimate | undefined
 }
 
 export default function NetworkFeesChooser({
-  setFeeModalOpen,
-  onSelectFeeOption,
+  closeModal,
   currentFeeSelectionPrice,
-  selectedGas,
-  gasLimit,
-  setGasLimit,
   estimatedFeesPerGas,
+  currentlyChosenFeeOption,
 }: NetworkFeesChooserProps): ReactElement {
   const [timeRemaining, setTimeRemaining] = useState(0)
+  const [gasLimit, setGasLimit] = useState("")
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+
+  const dispatch = useBackgroundDispatch()
 
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
   }
 
   const saveUserGasChoice = () => {
-    onSelectFeeOption({
-      confidence: Number(gasOptions[activeFeeIndex].confidence),
-      price: gasOptions[activeFeeIndex].price,
-      maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
-      maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
-    })
-    setFeeModalOpen(false)
-    currentFeeSelectionPrice({
-      gwei: gasOptions[activeFeeIndex].gwei,
-      fiat: gasOptions[activeFeeIndex].dollarValue,
-    })
+    dispatch(
+      selectedNetworkFee({
+        confidence: Number(gasOptions[activeFeeIndex].confidence),
+        price: gasOptions[activeFeeIndex].price,
+        maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
+        maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
+      })
+    )
+    if (gasLimit !== "") {
+      dispatch(gasLimitSelected(BigInt(parseInt(gasLimit, 10))))
+    }
+    closeModal()
+    currentFeeSelectionPrice(gasOptions[activeFeeIndex].gwei)
   }
   const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-
   const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
 
   const getSecondsTillGasUpdate = useCallback(() => {
@@ -143,16 +143,15 @@ export default function NetworkFeesChooser({
           (el, index) => index === activeFeeIndex
         )
         if (currentlySelectedFee) {
-          onSelectFeeOption({
-            confidence: Number(currentlySelectedFee?.confidence),
-            maxFeePerGas: currentlySelectedFee?.maxFeePerGas,
-            maxPriorityFeePerGas: currentlySelectedFee?.maxPriorityFeePerGas,
-            price: currentlySelectedFee.price,
-          })
-          currentFeeSelectionPrice({
-            gwei: currentlySelectedFee.gwei,
-            fiat: currentlySelectedFee.dollarValue,
-          })
+          dispatch(
+            selectedNetworkFee({
+              confidence: Number(currentlySelectedFee?.confidence),
+              maxFeePerGas: currentlySelectedFee?.maxFeePerGas,
+              maxPriorityFeePerGas: currentlySelectedFee?.maxPriorityFeePerGas,
+              price: currentlySelectedFee.price,
+            })
+          )
+          currentFeeSelectionPrice(currentlySelectedFee.gwei)
         }
       }
     }
@@ -160,22 +159,14 @@ export default function NetworkFeesChooser({
     estimatedFeesPerGas,
     gasLimit,
     ethUnitPrice,
-    onSelectFeeOption,
     activeFeeIndex,
+    dispatch,
     currentFeeSelectionPrice,
   ])
 
   useEffect(() => {
     updateGasOptions()
   }, [updateGasOptions])
-
-  useEffect(() => {
-    setActiveFeeIndex(
-      gasOptions.findIndex(
-        (el) => el.confidence === `${selectedGas?.confidence}`
-      )
-    )
-  }, [gasOptions, selectedGas])
 
   return (
     <div className="wrapper">
@@ -280,6 +271,8 @@ export default function NetworkFeesChooser({
           .title {
             font-size: 22px;
             font-weight: 600;
+            color: white;
+            margin: 12px 0;
           }
           .option {
             width: 100%;
@@ -316,7 +309,7 @@ export default function NetworkFeesChooser({
           }
           .name,
           .price {
-            color: var(--green--5);
+            color: white;
             font-size: 18px;
             font-weight: 600;
           }
