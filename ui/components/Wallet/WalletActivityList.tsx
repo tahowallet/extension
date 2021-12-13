@@ -19,12 +19,18 @@ export default function WalletActivityList({
     (background) => background.ui
   )
 
-  const handleOpen = useCallback(
-    (activityItem) => {
-      dispatch(setShowingActivityDetail(activityItem))
-    },
-    [dispatch]
-  )
+  // const handleOpen = useCallback(
+  //   (activityItem) => {
+  //     dispatch(setShowingActivityDetail(activityItem))
+  //   },
+  //   [dispatch]
+  // )
+
+  const handleOpen = useCallback((activityItem) => {
+    window
+      .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
+      ?.focus()
+  }, [])
 
   const handleClose = useCallback(() => {
     dispatch(setShowingActivityDetail(null))
