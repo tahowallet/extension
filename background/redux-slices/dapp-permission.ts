@@ -5,11 +5,12 @@ import { createBackgroundAsyncThunk } from "./utils"
 
 export type DAppPermissionState = {
   permissionRequests: { [url: string]: PermissionRequest }
+  allowedPages: { [origin: string]: PermissionRequest }
 }
 
 export const initialState: DAppPermissionState = {
   permissionRequests: {},
-  // TODO: initialize allowed sites
+  allowedPages: {},
 }
 
 export type Events = {
@@ -42,6 +43,15 @@ const dappPermissionSlice = createSlice({
   name: "dapp-permission",
   initialState,
   reducers: {
+    initializeAllowedPages: (
+      state,
+      { payload: allowedPages }: { payload: Record<string, PermissionRequest> }
+    ) => {
+      return {
+        ...state,
+        allowedPages: { ...allowedPages },
+      }
+    },
     requestPermission: (
       state,
       { payload: request }: { payload: PermissionRequest }
@@ -67,10 +77,12 @@ const dappPermissionSlice = createSlice({
           const updatedPermissionRequests = { ...state.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 
-          // TODO: add the site to allowedsites later
-
           return {
-            permissionRequests: { ...updatedPermissionRequests },
+            permissionRequests: updatedPermissionRequests,
+            allowedPages: {
+              ...state.allowedPages,
+              [permission.origin]: permission,
+            },
           }
         }
       )
@@ -80,17 +92,20 @@ const dappPermissionSlice = createSlice({
           const updatedPermissionRequests = { ...state.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 
-          // TODO: remove the site from allowedsites later
+          // remove page from the allowedPages list
+          const updatedAllowedPages = { ...state.allowedPages }
+          delete updatedAllowedPages[permission.origin]
 
           return {
-            ...state,
             permissionRequests: { ...updatedPermissionRequests },
+            allowedPages: updatedAllowedPages,
           }
         }
       )
   },
 })
 
-export const { requestPermission } = dappPermissionSlice.actions
+export const { requestPermission, initializeAllowedPages } =
+  dappPermissionSlice.actions
 
 export default dappPermissionSlice.reducer

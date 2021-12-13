@@ -8,6 +8,7 @@ interface Props {
   toggleOpenProtocolList: () => void
   toggleOpenNotifications: () => void
   toggleOpenDAppConnectionInfo: () => void
+  isConnectedToDApp: boolean
 }
 
 export default function TopMenu(props: Props): ReactElement {
@@ -15,6 +16,7 @@ export default function TopMenu(props: Props): ReactElement {
     toggleOpenProtocolList,
     toggleOpenNotifications,
     toggleOpenDAppConnectionInfo,
+    isConnectedToDApp,
   } = props
 
   const { address, truncatedAddress } =
@@ -27,9 +29,6 @@ export default function TopMenu(props: Props): ReactElement {
     }
     return {}
   })
-
-  // TODO: set this with real data of the dApp connection
-  const isConnectedToDApp = false
 
   return (
     <div className="nav_wrap">
