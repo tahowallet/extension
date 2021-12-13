@@ -337,11 +337,26 @@ export default class Main extends BaseService<never> {
         nonce: resolvedNonce,
       }
 
-      transaction.gasLimit = await this.chainService.estimateGasLimit(
-        getEthereumNetwork(),
-        transaction
-      )
-      this.store.dispatch(transactionRequest(transaction))
+      try {
+        transaction.gasLimit = await this.chainService.estimateGasLimit(
+          getEthereumNetwork(),
+          transaction
+        )
+
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: false,
+          })
+        )
+      } catch (error) {
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: true,
+          })
+        )
+      }
     })
 
     transactionConstructionSliceEmitter.on(

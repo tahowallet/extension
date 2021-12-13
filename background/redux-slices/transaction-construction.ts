@@ -17,6 +17,7 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
+  transactionLikelyFails?: boolean
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   lastGasEstimatesRefreshed: number
 }
@@ -64,17 +65,27 @@ const transactionSlice = createSlice({
   reducers: {
     transactionRequest: (
       immerState,
-      { payload: transactionRequest }: { payload: EIP1559TransactionRequest }
-    ) => {
-      return {
-        ...immerState,
-        status: TransactionConstructionStatus.Loaded,
-        transactionRequest,
+      {
+        payload: { transactionRequest, transactionLikelyFails },
+      }: {
+        payload: {
+          transactionRequest: EIP1559TransactionRequest
+          transactionLikelyFails: boolean
+        }
       }
-    },
+    ) => ({
+      ...immerState,
+      status: TransactionConstructionStatus.Loaded,
+      transactionRequest,
+      transactionLikelyFails,
+    }),
     signed: (immerState) => {
       immerState.status = TransactionConstructionStatus.Signed
     },
+    transactionLikelyFails: (state) => ({
+      ...state,
+      transactionLikelyFails: true,
+    }),
     estimatedFeesPerGas: (
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
@@ -104,8 +115,12 @@ const transactionSlice = createSlice({
   },
 })
 
-export const { transactionRequest, signed, estimatedFeesPerGas } =
-  transactionSlice.actions
+export const {
+  transactionRequest,
+  transactionLikelyFails,
+  signed,
+  estimatedFeesPerGas,
+} = transactionSlice.actions
 
 export default transactionSlice.reducer
 
