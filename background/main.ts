@@ -338,10 +338,14 @@ export default class Main extends BaseService<never> {
       }
 
       try {
-        transaction.gasLimit = await this.chainService.estimateGasLimit(
-          getEthereumNetwork(),
-          transaction
-        )
+        // We use estimateGasLimit only if user did not specify the gas explicitly
+        if (options.gasLimit === 0n) {
+          transaction.gasLimit = await this.chainService.estimateGasLimit(
+            getEthereumNetwork(),
+            transaction
+          )
+        }
+        // TODO If the user does specify gas explicitly, test for success.
 
         this.store.dispatch(
           transactionRequest({
