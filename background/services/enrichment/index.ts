@@ -67,12 +67,13 @@ interface Events extends ServiceLifecycleEvents {
 
 /**
  * EnrichmentService is a coordinator service responsible for deciding when to
- * look up more details about an application-level transaction, event, or
- * address, and making sure returned details are available in the UI to enrich
- * transactions and addresses.
+ * look up metadata about an application-level transaction, event, or address,
+ * and annotating those entities for display UI.
  *
- * As a coordinator, EnrichmentService won't be fetching details itself.
- * Instead, it delegates work to the lower-level IndexingService and ChainService.
+ * EnrichmentService acts primarily as a coordinator of ChainService,
+ * IndexingService, and NameService to build annotations. It will need to
+ * retrieve function selector and contract source code itself, but should
+ * always prefer to delegate to a lower-lever service when possible.
  */
 export default class EnrichmentService extends BaseService<Events> {
   /**
