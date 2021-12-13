@@ -1,10 +1,13 @@
-export const WINDOW_PROVIDER_FLAG = "isTallyWindowProviderEnabled"
+export * from "./constants"
+export * from "./eip-1193"
 
-export const WINDOW_PROVIDER_TARGET = "tally-window-provider"
-export const PROVIDER_BRIDGE_TARGET = "tally-provider-bridge"
-
-export const EXTERNAL_PORT_NAME = "tally-external"
-export const INTERNAL_PORT_NAME = "tally-internal"
+export type PermissionRequest = {
+  origin: string
+  faviconUrl: string
+  title: string
+  state: "request" | "allow" | "deny"
+  accountAddress: string
+}
 
 export type WindowResponseEvent = {
   origin: string
@@ -52,33 +55,7 @@ export type PortTransport = {
   origin: string
 }
 
-// https://eips.ethereum.org/EIPS/eip-1193#request
-export type RequestArgument = {
-  readonly method: string
-  readonly params?: Array<unknown>
-}
-
 export type EthersSendCallback = (error: unknown, response: unknown) => void
-
-export const PROVIDER_ERROR_CODES = {
-  unknown: 4000, // This is not included in EIP-1193
-  userRejectedRequest: 4001,
-  unauthorized: 4100,
-  unsupportedMethod: 4200,
-  disconnected: 4900,
-  chainDisconnected: 4901,
-}
-
-// linter wants Error instance when throwing so a custom Error class is required
-export class ProviderRPCError extends Error {
-  constructor(
-    public message: string,
-    public code: number = PROVIDER_ERROR_CODES.unknown,
-    public data?: unknown
-  ) {
-    super(message)
-  }
-}
 
 export function getType(arg: unknown) {
   return Object.prototype.toString.call(arg).slice("[object ".length, -1)
@@ -91,7 +68,7 @@ export function isObject(
 }
 
 export function isArray(arg: unknown): arg is Array<unknown> {
-  return getType(arg) === "Array"
+  return Array.isArray(arg)
 }
 
 export function isUndefined(arg: unknown): arg is undefined {
@@ -102,8 +79,12 @@ export function isString(arg: unknown): arg is string {
   return getType(arg) === "String"
 }
 
+export function isNumber(arg: unknown): arg is number {
+  return getType(arg) === "Number"
+}
+
 export function isMessageEvent(arg: unknown): arg is MessageEvent {
-  return getType(arg) === "MessageEvent"
+  return arg instanceof MessageEvent
 }
 
 export function isRPCRequestParamsType(
@@ -128,4 +109,20 @@ export function isWindowResponseEvent(
 
 export function isPortResponseEvent(arg: unknown): arg is PortResponseEvent {
   return isObject(arg) && isString(arg.id) && !isUndefined(arg.result)
+}
+
+export const AllowedQueryParamPage = {
+  signTransaction: "/signTransaction",
+  dappPermission: "/dapp-permission",
+} as const
+
+export type AllowedQueryParamPageType =
+  typeof AllowedQueryParamPage[keyof typeof AllowedQueryParamPage]
+
+export function isAllowedQueryParamPage(
+  url: unknown
+): url is AllowedQueryParamPageType {
+  // The typing for Array.includes in `lib.es.2016.array.include.ts` does not make any sense here -> Object.values<string>
+  // interface Array<T> { ... includes(searchElement: T, fromIndex?: number): boolean; ...
+  return Object.values<unknown>(AllowedQueryParamPage).includes(url)
 }

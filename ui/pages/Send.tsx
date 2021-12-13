@@ -1,7 +1,10 @@
 import { isAddress } from "@ethersproject/address"
 import { formatEther, formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccount,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
@@ -33,6 +36,8 @@ export default function Send(): ReactElement {
     gwei: "",
     fiat: "",
   })
+  const [hasError, setHasError] = useState(false)
+
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
     useState<BlockEstimate>({
       confidence: 0,
@@ -45,7 +50,7 @@ export default function Send(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const currentAccount = useBackgroundSelector(({ ui }) => ui.currentAccount)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
 
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
 
@@ -182,7 +187,14 @@ export default function Send(): ReactElement {
                     name: asset.asset.name,
                   }
                 })}
-                onAmountChange={setAmount}
+                onAmountChange={(value, errorMessage) => {
+                  setAmount(value)
+                  if (errorMessage) {
+                    setHasError(true)
+                  } else {
+                    setHasError(false)
+                  }
+                }}
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
               />
@@ -212,7 +224,8 @@ export default function Send(): ReactElement {
                 isDisabled={
                   selectedCount <= 0 ||
                   Number(amount) === 0 ||
-                  !isAddress(destinationAddress)
+                  !isAddress(destinationAddress) ||
+                  hasError
                 }
                 linkTo={{
                   pathname: "/signTransaction",

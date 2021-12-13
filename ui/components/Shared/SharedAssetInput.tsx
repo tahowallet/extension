@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -126,13 +127,14 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
+  assetAmounts?: CompleteAssetAmount[]
   assets: Asset[]
   label: string
   defaultToken: Asset
   amount: string
   isTokenOptionsLocked: boolean
   onAssetSelect: (token: Asset) => void
-  onAmountChange: (value: string) => void
+  onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -141,6 +143,7 @@ export default function SharedAssetInput(
 ): ReactElement {
   const {
     isTypeDestination,
+    assetAmounts,
     assets,
     label,
     defaultToken,
@@ -170,6 +173,19 @@ export default function SharedAssetInput(
     [onAssetSelect]
   )
 
+  const selectedTokenAssetAmount = assetAmounts?.filter((token) => {
+    return token.asset.symbol === selectedToken.symbol
+  })[0]
+
+  const getErrorMessage = (givenAmount: string): string | undefined => {
+    return (!isTypeDestination &&
+      selectedTokenAssetAmount &&
+      selectedTokenAssetAmount?.decimalAmount > Number(givenAmount)) ||
+      Number(givenAmount) === 0
+      ? undefined
+      : "Insufficient balance"
+  }
+
   return (
     <label className="label">
       {label}
@@ -179,10 +195,12 @@ export default function SharedAssetInput(
           setOpenAssetMenu(false)
         }}
       >
-        <SelectTokenMenuContent
-          assets={assets}
-          setSelectedTokenAndClose={setSelectedTokenAndClose}
-        />
+        {assets && (
+          <SelectTokenMenuContent
+            assets={assets}
+            setSelectedTokenAndClose={setSelectedTokenAndClose}
+          />
+        )}
       </SharedSlideUpMenu>
       <div className="asset_input standard_width">
         {isTypeDestination ? (
@@ -226,10 +244,13 @@ export default function SharedAssetInput(
               type="text"
               placeholder="0.0"
               value={amount}
-              onChange={(e) => onAmountChange(e.target.value)}
+              onChange={(e) =>
+                onAmountChange(e.target.value, getErrorMessage(e.target.value))
+              }
             />
           </>
         )}
+        <div className="error_message">{getErrorMessage(amount)}</div>
       </div>
       <style jsx>
         {`
@@ -291,6 +312,18 @@ export default function SharedAssetInput(
           }
           input[type="number"] {
             -moz-appearance: textfield;
+          }
+          .error_message {
+            color: var(--error);
+            position: absolute;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 20px;
+            transform: translateY(-3px);
+            align-self: flex-end;
+            text-align: end;
+            margin-right: 10px;
+            width: 320px;
           }
         `}
       </style>

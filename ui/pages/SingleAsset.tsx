@@ -5,7 +5,10 @@ import {
   selectCurrentAccountBalances,
   selectIsCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
+import {
+  HIDE_SEND_BUTTON,
+  HIDE_SWAP,
+} from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../hooks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -14,16 +17,20 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import BackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation<{ symbol: string }>()
+  const location = useLocation<{ symbol: string; contractAddress?: string }>()
   const { symbol } = location.state
 
   const isCurrentAccountSigner = useBackgroundSelector(
     selectIsCurrentAccountSigner
   )
 
+  // Asset filtered by contract address.
   const filteredActivities = useBackgroundSelector((state) =>
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
-      ({ token }) => token.symbol === symbol
+      (activity) =>
+        activity.asset.symbol === symbol ||
+        (typeof location.state.contractAddress !== "undefined" &&
+          location.state.contractAddress === activity.to)
     )
   )
 
@@ -64,33 +71,34 @@ export default function SingleAsset(): ReactElement {
               <></>
             )}
           </div>
-          {!HIDE_SEND_BUTTON && isCurrentAccountSigner ? (
-            <div className="right">
-              {/* TEMP HIDE SEND FOR NON-ETH ASSETS */}
-              {symbol === "ETH" ? (
-                <SharedButton
-                  type="primary"
-                  size="medium"
-                  icon="send"
-                  linkTo={{
-                    pathname: "/send",
-                    state: {
-                      symbol,
-                    },
-                  }}
-                >
-                  Send
-                </SharedButton>
-              ) : (
-                <></>
-              )}
-              <SharedButton type="primary" size="medium" icon="swap">
-                Swap
-              </SharedButton>
-            </div>
-          ) : (
-            <></>
-          )}
+          <div className="right">
+            {isCurrentAccountSigner ? (
+              <>
+                {!HIDE_SEND_BUTTON && symbol === "ETH" && (
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    icon="send"
+                    linkTo={{
+                      pathname: "/send",
+                      state: {
+                        symbol,
+                      },
+                    }}
+                  >
+                    Send
+                  </SharedButton>
+                )}
+                {!HIDE_SWAP && (
+                  <SharedButton type="primary" size="medium" icon="swap">
+                    Swap
+                  </SharedButton>
+                )}
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
         <div className="sub_info_separator_wrap standard_width_padded">
           <div className="left">Asset is on: Arbitrum</div>
