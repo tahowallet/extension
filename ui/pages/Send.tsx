@@ -166,15 +166,14 @@ export default function Send(): ReactElement {
             <div className="form_input">
               <div className="balance">
                 Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
-                <span
+                <button
+                  type="button"
                   className="max"
                   onClick={setMaxBalance}
-                  role="button"
                   tabIndex={0}
-                  onKeyDown={() => {}}
                 >
                   Max
-                </span>
+                </button>
               </div>
               <SharedAssetInput
                 label="Asset / Amount"
