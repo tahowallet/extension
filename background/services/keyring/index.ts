@@ -16,8 +16,8 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
 
-export const MAX_KEYRING_IDLE_TIME = 0.2 * MINUTE
-export const MAX_OUTSIDE_IDLE_TIME = 0.2 * MINUTE
+export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
+export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
 export type Keyring = {
   type: KeyringTypes
