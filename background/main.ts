@@ -342,8 +342,8 @@ export default class Main extends BaseService<never> {
           chainID: "1",
           nonce: resolvedNonce,
         }
-        // We use estimateGasLimit only if user did not specify the gas explicitly
-        if (options.gasLimit === 0n) {
+        // We use estimateGasLimit only if user did not specify the gas explicitly or it was set below minimum
+        if (options.gasLimit === 0n || options.gasLimit < 21000n) {
           transaction.gasLimit = await this.chainService.estimateGasLimit(
             getEthereumNetwork(),
             transaction
