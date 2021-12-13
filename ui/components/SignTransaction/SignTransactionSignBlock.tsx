@@ -1,45 +1,85 @@
+import { AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import {
+  selectCurrentAddressNetwork,
+  selectMainCurrency,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  AssetDecimalAmount,
+  enrichAssetAmountWithDecimalValues,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 
 interface Props {
-  token: string
-  amount: number
-  destination: string
-  localizedValue: string | number
+  transactionDetails: EIP1559TransactionRequest
 }
 
-export default function SignTransactionSignBlock(props: Props): ReactElement {
-  const { token, amount, destination, localizedValue } = props
+export default function SignTransactionSignBlock({
+  transactionDetails,
+}: Props): ReactElement {
+  const {
+    addressNetwork: { network },
+  } = useBackgroundSelector(selectCurrentAddressNetwork)
+  const mainCurrency = useBackgroundSelector(selectMainCurrency)
+  const baseAssetPricePoint = useBackgroundSelector((state) =>
+    selectAssetPricePoint(
+      state.assets,
+      network.baseAsset.symbol,
+      mainCurrency?.symbol
+    )
+  )
 
-  function truncateAddress(address: string): string {
-    return `${address.slice(0, 6)}...${address.slice(37, 42)}`
-  }
+  const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
+    {
+      asset: network.baseAsset,
+      amount: transactionDetails.value,
+    },
+    2
+  )
 
-  function truncateAmount(value: number): string {
-    const valueString = value.toString()
-    if (valueString.length > 8) {
-      if (valueString.startsWith("0.")) {
-        return `${valueString.slice(0, 8)}`
-      }
-      return value.toFixed()
-    }
-    return valueString
-  }
+  const completeTransactionAssetAmount:
+    | (AnyAssetAmount & AssetDecimalAmount)
+    | CompleteAssetAmount =
+    typeof baseAssetPricePoint !== "undefined"
+      ? enrichAssetAmountWithMainCurrencyValues(
+          transactionAssetAmount,
+          baseAssetPricePoint,
+          2
+        )
+      : transactionAssetAmount
 
   return (
     <div className="sign_block">
-      <div className="container">
-        <div className="label">Send to</div>
-        <div className="send_to">{truncateAddress(destination)}</div>
-      </div>
-      <div className="divider" />
-      <div className="container">
-        <span className="label">Spend Amount</span>
-        <span className="spend_amount">
-          {truncateAmount(amount)} {token}
-        </span>
-        <span className="label">{`$${localizedValue}`}</span>
-      </div>
-
+      <dl>
+        {typeof transactionDetails.to === "undefined" ? (
+          <>
+            <dt>Send to:</dt>
+            <dd className="contract_creation">Contract creation</dd>
+          </>
+        ) : (
+          <>
+            <dt>Send to:</dt>
+            <dd className="contract_recipient">{transactionDetails.to}</dd>
+          </>
+        )}
+        <dt className="spend_amount_label">Spend Amount</dt>
+        <dd className="spend_amount">
+          <div className="eth_value">
+            {completeTransactionAssetAmount.localizedDecimalAmount}
+          </div>
+          <div className="main_currency_value">
+            {"localizedMainCurrencyAmount" in completeTransactionAssetAmount ? (
+              completeTransactionAssetAmount.localizedMainCurrencyAmount
+            ) : (
+              <></>
+            )}
+          </div>
+        </dd>
+      </dl>
       <style jsx>
         {`
           .sign_block {
