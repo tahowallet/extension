@@ -66,19 +66,24 @@ export default function SingleAsset(): ReactElement {
           </div>
           {!HIDE_SEND_BUTTON && isCurrentAccountSigner ? (
             <div className="right">
-              <SharedButton
-                type="primary"
-                size="medium"
-                icon="send"
-                linkTo={{
-                  pathname: "/send",
-                  state: {
-                    symbol,
-                  },
-                }}
-              >
-                Send
-              </SharedButton>
+              {/* TEMP HIDE SEND FOR NON-ETH ASSETS */}
+              {symbol === "ETH" ? (
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  icon="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: {
+                      symbol,
+                    },
+                  }}
+                >
+                  Send
+                </SharedButton>
+              ) : (
+                <></>
+              )}
               <SharedButton type="primary" size="medium" icon="swap">
                 Swap
               </SharedButton>
