@@ -2,12 +2,9 @@ import browser from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-import { ethers } from "ethers"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
-import logger from "./lib/logger"
-import { ethersTxFromSignedTx } from "./services/chain/utils"
 
 import {
   PreferenceService,
@@ -19,7 +16,7 @@ import {
 } from "./services"
 
 import { KeyringTypes } from "./types"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
+import { EIP1559TransactionRequest } from "./networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -44,6 +41,7 @@ import {
   emitter as transactionConstructionSliceEmitter,
   transactionRequest,
   signed,
+  updateTransactionOptions,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import { enrichTransactionWithContractInfo } from "./services/enrichment"
@@ -282,6 +280,7 @@ export default class Main extends BaseService<never> {
     this.connectIndexingService()
     this.connectKeyringService()
     this.connectNameService()
+    this.connectInternalEthereumProviderService()
     this.connectProviderBridgeService()
     await this.connectChainService()
   }
@@ -440,26 +439,6 @@ export default class Main extends BaseService<never> {
       })
     })
 
-    this.keyringService.emitter.on(
-      "signedTx",
-      async (transaction: SignedEVMTransaction) => {
-        const ethersTx = ethersTxFromSignedTx(transaction)
-        const serializedTx = ethers.utils.serializeTransaction(ethersTx, {
-          r: transaction.r,
-          s: transaction.s,
-          v: transaction.v,
-        })
-
-        const response =
-          await this.chainService.pollingProviders.ethereum.sendTransaction(
-            serializedTx
-          )
-
-        logger.log("Transaction broadcast:")
-        logger.log(response)
-      }
-    )
-
     this.keyringService.emitter.on("locked", async (isLocked) => {
       if (isLocked) {
         this.store.dispatch(keyringLocked())
@@ -486,6 +465,22 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
       await this.keyringService.importLegacyKeyring(mnemonic)
     })
+  }
+
+  async connectInternalEthereumProviderService(): Promise<void> {
+    this.internalEthereumProviderService.emitter.on(
+      "transactionSignatureRequest",
+      async ({ payload, resolver }) => {
+        this.store.dispatch(updateTransactionOptions(payload))
+        // TODO force route?
+
+        const signedTransaction = await this.keyringService.emitter.once(
+          "signedTx"
+        )
+
+        resolver(signedTransaction)
+      }
+    )
   }
 
   async connectProviderBridgeService(): Promise<void> {
