@@ -27,6 +27,8 @@ export default function Send(): ReactElement {
   const [feeModalOpen, setFeeModalOpen] = useState(false)
   const [minFee, setMinFee] = useState(0)
   const [maxFee, setMaxFee] = useState(0)
+  const [currentBalance, setCurrentBalance] = useState("")
+  const [gasLimit, setGasLimit] = useState("")
   const [currentFeeValues, setCurrentFeeValues] = useState({
     gwei: "",
     fiat: "",
@@ -38,7 +40,6 @@ export default function Send(): ReactElement {
       maxPriorityFeePerGas: 0n,
       price: 0n,
     })
-  const [gasLimit, setGasLimit] = useState("")
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
@@ -61,17 +62,16 @@ export default function Send(): ReactElement {
     }
     return 0
   }
-  const findBalance = () => {
-    return formatEther(
+  const findBalance = useCallback(() => {
+    const balance = formatEther(
       assetAmounts.find((el) => el.asset.symbol === assetSymbol)?.amount || "0"
     )
-  }
+    setCurrentBalance(balance)
+  }, [assetAmounts, assetSymbol])
 
-  // TODO sets the value of the balance using comma and it should display decimal point for consistency
   const setMaxBalance = () => {
-    const balance = findBalance()
-    if (balance) {
-      setAmount(balance)
+    if (currentBalance) {
+      setAmount(currentBalance)
     }
   }
 
@@ -124,7 +124,8 @@ export default function Send(): ReactElement {
 
   useEffect(() => {
     findMinMaxGas()
-  }, [findMinMaxGas])
+    findBalance()
+  }, [findMinMaxGas, findBalance])
 
   useEffect(() => {
     if (assetSymbol) {
@@ -159,7 +160,7 @@ export default function Send(): ReactElement {
           <div className="form">
             <div className="form_input">
               <div className="balance">
-                Balance: {findBalance()}{" "}
+                Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
                 <span
                   className="max"
                   onClick={setMaxBalance}
@@ -204,7 +205,7 @@ export default function Send(): ReactElement {
               />
             </div>
             <div className="divider" />
-            <div className="total_footer standard_width_padded">
+            <div className="send_footer standard_width_padded">
               <SharedButton
                 type="primary"
                 size="large"
@@ -297,6 +298,12 @@ export default function Send(): ReactElement {
             color: var(--green-60);
             font-size: 12px;
             line-height: 16px;
+          }
+          .send_footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 21px;
+            padding-bottom: 20px;
           }
         `}
       </style>
