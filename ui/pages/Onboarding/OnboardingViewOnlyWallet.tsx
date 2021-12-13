@@ -16,14 +16,16 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   const [errorMessage, setErrorMessage] = useState("")
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
-    if (isAddress(address)) {
+    const trimmedAddress = address.trim()
+
+    if (isAddress(trimmedAddress)) {
       await dispatch(
         addAddressNetwork({
-          address,
+          address: trimmedAddress,
           network: getEthereumNetwork(),
         })
       )
-      dispatch(setCurrentAccount(address))
+      dispatch(setCurrentAccount(trimmedAddress))
       setRedirect(true)
     } else {
       setErrorMessage("Please enter a valid address")
