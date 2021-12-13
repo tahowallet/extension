@@ -3,12 +3,12 @@ import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
   AllowedQueryParamPage,
+  AllowedQueryParamPageType,
   PortRequestEvent,
   PortResponseEvent,
   EIP1193Error,
   RPCRequest,
   EIP1193_ERROR,
-  ALLOWED_QUERY_PARAM_PAGE,
 } from "@tallyho/provider-bridge-shared"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
 import logger from "../../lib/logger"
@@ -18,6 +18,7 @@ import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
+  initializeAllowedPages: Record<string, PermissionRequest>
 }
 
 /**
@@ -34,10 +35,6 @@ type Events = ServiceLifecycleEvents & {
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
 export default class ProviderBridgeService extends BaseService<Events> {
-  #allowedPages: {
-    [origin: string]: PermissionRequest
-  } = {}
-
   #pendingPermissionsRequests: {
     [origin: string]: (value: unknown) => void
   } = {}
@@ -71,6 +68,15 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 
+  protected async internalStartService(): Promise<void> {
+    await super.internalStartService() // Not needed, but better to stick to the patterns
+
+    this.emitter.emit(
+      "initializeAllowedPages",
+      await this.db.getAllPermission()
+    )
+  }
+
   async onMessageListener(
     port: Required<browser.Runtime.Port>,
     event: PortRequestEvent
@@ -81,7 +87,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
-    const favIconUrl = tab?.favIconUrl ?? ""
+    const faviconUrl = tab?.favIconUrl ?? ""
     const title = tab?.title ?? ""
 
     // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
@@ -98,9 +104,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } else if (event.request.method === "eth_requestAccounts") {
       const permissionRequest: PermissionRequest = {
         origin,
-        favIconUrl,
+        faviconUrl,
         title,
         state: "request",
+        accountAddress: "",
       }
 
       const blockUntilUserAction = await this.requestPermission(
@@ -124,7 +131,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async requestPermission(permissionRequest: PermissionRequest) {
     this.emitter.emit("requestPermission", permissionRequest)
     await ProviderBridgeService.showDappConnectWindow(
-      ALLOWED_QUERY_PARAM_PAGE.dappConnect
+      AllowedQueryParamPage.dappPermission
     )
 
     return new Promise((resolve) => {
@@ -133,24 +140,31 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async grantPermission(permission: PermissionRequest): Promise<void> {
+    // FIXME proper error handling if this happens - should not tho
+    if (permission.state !== "allow" || !permission.accountAddress) return
+
+    await this.db.setPermission(permission)
+
     if (this.#pendingPermissionsRequests[permission.origin]) {
-      this.#allowedPages[permission.origin] = permission
       this.#pendingPermissionsRequests[permission.origin](permission)
       delete this.#pendingPermissionsRequests[permission.origin]
     }
   }
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
+    // FIXME proper error handling if this happens - should not tho
+    if (permission.state !== "deny" || !permission.accountAddress) return
+
+    await this.db.deletePermission(permission.origin)
+
     if (this.#pendingPermissionsRequests[permission.origin]) {
-      delete this.#allowedPages[permission.origin]
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.origin]
     }
   }
 
-  async checkPermission(url: string): Promise<boolean> {
-    if (this.#allowedPages[url]?.state === "allow") return Promise.resolve(true)
-    return Promise.resolve(false)
+  async checkPermission(origin: string): Promise<boolean> {
+    return this.db.checkPermission(origin).then((r) => !!r)
   }
 
   async routeContentScriptRPCRequest(
@@ -173,7 +187,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   static async showDappConnectWindow(
-    url: AllowedQueryParamPage
+    url: AllowedQueryParamPageType
   ): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
     const popupWidth = 384

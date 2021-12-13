@@ -23,3 +23,8 @@ export const selectCurrentPendingPermission = createSelector(
     return permissionRequests.length > 0 ? permissionRequests[0] : undefined
   }
 )
+
+export const selectAllowedPages = createSelector(
+  getProviderBridgeState,
+  (slice: DAppPermissionState) => slice.allowedPages
+)
