@@ -12,6 +12,7 @@ import {
 } from "../../redux-slices/utils/asset-utils"
 
 import { HexString, UNIXTime } from "../../types"
+import { ERC20_INTERFACE } from "../../lib/erc20"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
@@ -30,6 +31,12 @@ export type ContractInteraction = BaseContractInfo & {
   type: "contract-interaction"
 }
 
+export type AssetApproval = BaseContractInfo & {
+  type: "asset-approval"
+  assetAmount: AnyAssetAmount & AssetDecimalAmount
+  spenderAddress: HexString
+}
+
 export type AssetTransfer = BaseContractInfo & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
@@ -45,6 +52,7 @@ export type AssetSwap = BaseContractInfo & {
 export type ContractInfo =
   | ContractDeployment
   | ContractInteraction
+  | AssetApproval
   | AssetTransfer
   | AssetSwap
   | undefined
@@ -107,9 +115,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.on("transaction", async ({ transaction }) => {
-      const assets = await this.indexingService.getCachedAssets()
-      this.enrichTransactionWithContractInfo(
-        assets,
+      this.enrichTransaction(
         transaction,
         2 /* TODO desiredDecimals should be configurable */
       )
@@ -117,7 +123,6 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   async resolveContractInfo(
-    assets: AnyAsset[],
     contractAddress: HexString | undefined,
     contractInput: HexString,
     desiredDecimals: number
@@ -129,6 +134,8 @@ export default class EnrichmentService extends BaseService<Events> {
         type: "contract-deployment",
       }
     } else {
+      const assets = await this.indexingService.getCachedAssets()
+
       // See if the address matches a fungible asset.
       const matchingFungibleAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset =>
@@ -138,21 +145,40 @@ export default class EnrichmentService extends BaseService<Events> {
 
       const contractLogoURL = matchingFungibleAsset?.metadata?.logoURL
 
-      // FIXME Move to ERC20 parsing using ethers.
-      // Derive value from transaction transfer if not sending ETH
+      const erc20Tx = ERC20_INTERFACE.parseTransaction({ data: contractInput })
+
+      // TODO handle the case where we don't have asset metadata already
       if (
-        typeof matchingFungibleAsset !== "undefined" &&
-        contractInput.length === 138 &&
-        contractInput.startsWith("0xa9059cbb") // transfer selector
+        matchingFungibleAsset &&
+        erc20Tx &&
+        (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
       ) {
+        // We have an ERC-20 transfer
         contractInfo = {
           type: "asset-transfer",
           contractLogoURL,
-          recipientAddress: `0x${contractInput.substr(34, 64)}`,
+          recipientAddress: erc20Tx.args.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
               asset: matchingFungibleAsset,
-              amount: BigInt(`0x${contractInput.substr(10 + 64, 64)}`),
+              amount: BigInt(erc20Tx.args.amount),
+            },
+            desiredDecimals
+          ),
+        }
+      } else if (
+        matchingFungibleAsset &&
+        erc20Tx &&
+        erc20Tx.name === "approve"
+      ) {
+        contractInfo = {
+          type: "asset-approval",
+          contractLogoURL,
+          spenderAddress: erc20Tx.args.spender, // TODO ingest address
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: matchingFungibleAsset,
+              amount: BigInt(erc20Tx.args.amount),
             },
             desiredDecimals
           ),
@@ -179,8 +205,7 @@ export default class EnrichmentService extends BaseService<Events> {
     return contractInfo
   }
 
-  async enrichTransactionWithContractInfo(
-    assets: AnyAsset[],
+  async enrichTransaction(
     transaction: AnyEVMTransaction,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransaction> {
@@ -192,11 +217,9 @@ export default class EnrichmentService extends BaseService<Events> {
       // categorizing activities.
       return transaction
     }
-
     const enrichedTx = {
       ...transaction,
       contractInfo: await this.resolveContractInfo(
-        assets,
         transaction.to,
         transaction.input,
         desiredDecimals

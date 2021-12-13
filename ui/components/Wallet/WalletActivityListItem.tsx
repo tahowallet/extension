@@ -1,7 +1,10 @@
 import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
+
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
@@ -25,7 +28,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetSymbol: string
     assetValue: string
   } = {
-    iconClass: undefined,
+    iconClass: (activity.isSent && "send_icon") || undefined,
     label: activity.isSent ? "Sent" : "Received",
     recipient: activity.toTruncated,
     assetLogoURL: undefined,
@@ -35,9 +38,24 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   switch (activity.contractInfo?.type) {
     case "asset-transfer":
       renderDetails = {
+        ...renderDetails,
         iconClass: "contract_interaction_icon",
-        label: "Contract interaction",
+        label:
+          sameEVMAddress(activity.contractInfo.recipientAddress, activity.from)
+            ? "Send"
+            : "Received",
         recipient: truncateAddress(activity.contractInfo.recipientAddress),
+        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
+        assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+      }
+      break
+    case "asset-approval":
+      renderDetails = {
+        // TODO approvals should get their own icon
+        iconClass: "contract_interaction_icon",
+        label: "Token approval",
+        recipient: truncateAddress(activity.contractInfo.spenderAddress),
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
         assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
@@ -73,9 +91,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="top">
           <div className="left">
             <div
-              className={classNames("activity_icon", renderDetails.iconClass, {
-                send_icon: activity.isSent,
-              })}
+              className={classNames("activity_icon", renderDetails.iconClass)}
             />
             {renderDetails.label}
             {activity.blockHash === null ? (
