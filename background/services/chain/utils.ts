@@ -1,6 +1,8 @@
 import { BigNumber } from "ethers"
-import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { Network as EthersNetwork } from "@ethersproject/networks"
+import {
+  Block as EthersBlock,
+  TransactionRequest as EthersTransactionRequest,
+} from "@ethersproject/abstract-provider"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
@@ -8,6 +10,7 @@ import {
   EVMNetwork,
   SignedEVMTransaction,
   AnyEVMBlock,
+  EIP1559TransactionRequest,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { getEthereumNetwork } from "../../lib/utils"
@@ -58,6 +61,56 @@ export function blockFromWebsocketBlock(
       ? BigInt(gethResult.baseFeePerGas)
       : undefined,
     network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
+  }
+}
+
+export function ethersTransactionRequestFromEIP1559TransactionRequest(
+  transaction: EIP1559TransactionRequest
+): EthersTransactionRequest {
+  return {
+    to: transaction.to,
+    data: transaction.input ?? undefined,
+    from: transaction.from,
+    type: transaction.type,
+    nonce: transaction.nonce,
+    value: transaction.value,
+    chainId: parseInt(transaction.chainID, 10),
+    gasLimit: transaction.gasLimit,
+    maxFeePerGas: transaction.maxFeePerGas,
+    maxPriorityFeePerGas: transaction.maxPriorityFeePerGas,
+  }
+}
+
+export function eip1559TransactionRequestFromEthersTransactionRequest(
+  transaction: EthersTransactionRequest
+): Partial<EIP1559TransactionRequest> {
+  // TODO What to do if transaction is not EIP1559?
+  return {
+    to: transaction.to,
+    input: transaction.data?.toString() ?? null,
+    from: transaction.from,
+    type: transaction.type as 1 | 2,
+    nonce:
+      typeof transaction.nonce !== "undefined"
+        ? parseInt(transaction.nonce.toString(), 16)
+        : undefined,
+    value:
+      typeof transaction.value !== "undefined"
+        ? BigInt(transaction.value.toString())
+        : undefined,
+    chainID: transaction.chainId?.toString(16),
+    gasLimit:
+      typeof transaction.gasLimit !== "undefined"
+        ? BigInt(transaction.gasLimit.toString())
+        : undefined,
+    maxFeePerGas:
+      typeof transaction.maxFeePerGas !== "undefined"
+        ? BigInt(transaction.maxFeePerGas.toString())
+        : undefined,
+    maxPriorityFeePerGas:
+      typeof transaction.maxPriorityFeePerGas !== "undefined"
+        ? BigInt(transaction.maxPriorityFeePerGas.toString())
+        : undefined,
   }
 }
 

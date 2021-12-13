@@ -41,7 +41,7 @@ import {
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
-  emitter as transactionSliceEmitter,
+  emitter as transactionConstructionSliceEmitter,
   transactionRequest,
   signed,
 } from "./redux-slices/transaction-construction"
@@ -315,43 +315,51 @@ export default class Main extends BaseService<never> {
       await this.chainService.addAccountToTrack(addressNetwork)
     })
 
-    transactionSliceEmitter.on("updateOptions", async (options) => {
-      if (
-        typeof options.from !== "undefined" &&
-        typeof options.gasLimit !== "undefined" &&
-        typeof options.maxFeePerGas !== "undefined" &&
-        typeof options.maxPriorityFeePerGas !== "undefined" &&
-        typeof options.value !== "undefined"
-      ) {
-        // TODO Deal with pending transactions.
-        const resolvedNonce =
-          await this.chainService.pollingProviders.ethereum.getTransactionCount(
-            options.from,
-            "latest"
-          )
-        // Basic transaction construction based on the provided options, with extra data from the chain service
-        const transaction: EIP1559TransactionRequest = {
-          from: options.from,
-          to: options.to,
-          value: options.value,
-          gasLimit: options.gasLimit,
-          maxFeePerGas: options.maxFeePerGas,
-          maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-          input: "",
-          type: 2 as const,
-          chainID: "1",
-          nonce: resolvedNonce,
-        }
+    transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      // TODO Deal with pending transactions.
+      const resolvedNonce =
+        await this.chainService.pollingProviders.ethereum.getTransactionCount(
+          options.from,
+          "latest"
+        )
 
+      // Basic transaction construction based on the provided options, with extra data from the chain service
+      const transaction: EIP1559TransactionRequest = {
+        from: options.from,
+        to: options.to,
+        value: options.value ?? 0n,
+        gasLimit: options.gasLimit ?? 0n,
+        maxFeePerGas: options.maxFeePerGas ?? 0n,
+        maxPriorityFeePerGas: options.maxPriorityFeePerGas ?? 0n,
+        input: "",
+        type: 2 as const,
+        chainID: "1",
+        nonce: resolvedNonce,
+      }
+
+      try {
         transaction.gasLimit = await this.chainService.estimateGasLimit(
           getEthereumNetwork(),
           transaction
         )
-        this.store.dispatch(transactionRequest(transaction))
+
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: false,
+          })
+        )
+      } catch (error) {
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: true,
+          })
+        )
       }
     })
 
-    transactionSliceEmitter.on(
+    transactionConstructionSliceEmitter.on(
       "requestSignature",
       async (transaction: EIP1559TransactionRequest) => {
         const signedTx = await this.keyringService.signTransaction(
