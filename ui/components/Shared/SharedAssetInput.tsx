@@ -322,8 +322,10 @@ export default function SharedAssetInput(
             transform: translateY(-3px);
             align-self: flex-end;
             text-align: end;
-            margin-right: 10px;
-            width: 320px;
+            width: 150px;
+            background-color: var(--green-95);
+            margin-left: 172px;
+            z-index: 1;
           }
         `}
       </style>
