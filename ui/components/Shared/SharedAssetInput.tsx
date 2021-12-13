@@ -1,6 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
-import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -127,11 +126,11 @@ SelectedTokenButton.defaultProps = {
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
-  assetAmounts?: CompleteAssetAmount[]
   assets: Asset[]
   label: string
   defaultToken: Asset
   amount: string
+  maxBalance: number
   isTokenOptionsLocked: boolean
   onAssetSelect: (token: Asset) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
@@ -143,11 +142,11 @@ export default function SharedAssetInput(
 ): ReactElement {
   const {
     isTypeDestination,
-    assetAmounts,
     assets,
     label,
     defaultToken,
     amount,
+    maxBalance,
     isTokenOptionsLocked,
     onAssetSelect,
     onAmountChange,
@@ -173,14 +172,8 @@ export default function SharedAssetInput(
     [onAssetSelect]
   )
 
-  const selectedTokenAssetAmount = assetAmounts?.filter((token) => {
-    return token.asset.symbol === selectedToken.symbol
-  })[0]
-
   const getErrorMessage = (givenAmount: string): string | undefined => {
-    return (!isTypeDestination &&
-      selectedTokenAssetAmount &&
-      selectedTokenAssetAmount?.decimalAmount > Number(givenAmount)) ||
+    return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
       Number(givenAmount) === 0
       ? undefined
       : "Insufficient balance"
@@ -242,7 +235,6 @@ export default function SharedAssetInput(
             <input
               className="input_amount"
               type="number"
-              step="any"
               placeholder="0.0"
               value={amount}
               onChange={(e) =>
@@ -323,8 +315,10 @@ export default function SharedAssetInput(
             transform: translateY(-3px);
             align-self: flex-end;
             text-align: end;
-            margin-right: 10px;
-            width: 320px;
+            width: 150px;
+            background-color: var(--green-95);
+            margin-left: 172px;
+            z-index: 1;
           }
         `}
       </style>
@@ -339,6 +333,7 @@ SharedAssetInput.defaultProps = {
   defaultToken: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
+  maxBalance: 0,
   onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick

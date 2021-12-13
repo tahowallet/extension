@@ -74,7 +74,7 @@ export default function SingleAsset(): ReactElement {
           <div className="right">
             {isCurrentAccountSigner ? (
               <>
-                {!HIDE_SEND_BUTTON && (
+                {!HIDE_SEND_BUTTON && symbol === "ETH" && (
                   <SharedButton
                     type="primary"
                     size="medium"
