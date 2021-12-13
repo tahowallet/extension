@@ -53,6 +53,7 @@ import ProviderBridgeService from "./services/provider-bridge"
 import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
+  initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -477,6 +478,13 @@ export default class Main extends BaseService<never> {
       "requestPermission",
       (permissionRequest: PermissionRequest) => {
         this.store.dispatch(requestPermission(permissionRequest))
+      }
+    )
+
+    this.providerBridgeService.emitter.on(
+      "initializeAllowedPages",
+      async (allowedPages: Record<string, PermissionRequest>) => {
+        this.store.dispatch(initializeAllowedPages(allowedPages))
       }
     )
 

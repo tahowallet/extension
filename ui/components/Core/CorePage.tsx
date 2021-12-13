@@ -1,11 +1,18 @@
-import React, { ReactElement, useState } from "react"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import TopMenu from "../TopMenu/TopMenu"
-import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
-import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
+
+import { browser } from "@tallyho/tally-background"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
+import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
+
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
-import TabBar from "../TabBar/TabBar"
 import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import TabBar from "../TabBar/TabBar"
+import TopMenu from "../TopMenu/TopMenu"
+import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
+import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
 
 interface Props {
   children: React.ReactNode
@@ -16,11 +23,60 @@ interface Props {
 export default function CorePage(props: Props): ReactElement {
   const { children, hasTabBar, hasTopBar } = props
 
+  const dispatch = useBackgroundDispatch()
+
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
+  const [currentPermission, setCurrentPermission] = useState<PermissionRequest>(
+    {} as PermissionRequest
+  )
+  const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
+
+  const allowedPages = useBackgroundSelector(selectAllowedPages)
+
+  const initPermissionAndOrigin = useCallback(async () => {
+    const { url, favIconUrl, title } = await browser.tabs
+      .query({
+        active: true,
+        lastFocusedWindow: true,
+      })
+      .then((tabs) =>
+        tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
+      )
+
+    if (!url) return
+
+    const { origin } = new URL(url)
+
+    if (allowedPages[origin]) {
+      setCurrentPermission(allowedPages[origin])
+      setIsConnectedToDApp(true)
+    } else {
+      setCurrentPermission({
+        origin,
+        faviconUrl: favIconUrl ?? "",
+        title: title ?? "",
+        state: "deny",
+        accountAddress: "",
+      })
+    }
+  }, [allowedPages, setCurrentPermission])
+
+  useEffect(() => {
+    initPermissionAndOrigin()
+  }, [initPermissionAndOrigin])
+
+  const deny = useCallback(async () => {
+    if (typeof currentPermission !== "undefined") {
+      await dispatch(
+        denyOrRevokePermission({ ...currentPermission, state: "deny" })
+      )
+    }
+    window.close()
+  }, [dispatch, currentPermission])
 
   function handleOpenHiddenDevMenu(e: React.MouseEvent) {
     if (process.env.NODE_ENV === "development" && e.detail === 3) {
@@ -30,13 +86,15 @@ export default function CorePage(props: Props): ReactElement {
 
   return (
     <main>
-      {isActiveDAppConnectionInfoOpen ? (
+      {isConnectedToDApp && isActiveDAppConnectionInfoOpen ? (
         <TopMenuConnectedDAppInfo
-          title="SushiSwap | Sushi"
-          url="https://app.sushi.com"
+          title={currentPermission.title}
+          url={currentPermission.origin}
+          faviconUrl={currentPermission.faviconUrl}
           close={() => {
             setIsActiveDAppConnectionInfoOpen(false)
           }}
+          disconnect={deny}
         />
       ) : null}
       <SharedSlideUpMenu
@@ -85,6 +143,7 @@ export default function CorePage(props: Props): ReactElement {
                   !isActiveDAppConnectionInfoOpen
                 )
               }}
+              isConnectedToDApp={isConnectedToDApp}
             />
           </div>
         ) : null}

@@ -1,25 +1,23 @@
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import Dexie from "dexie"
-
-/**
- * An object describing a set of permissions granted to a given provider.
- * Generally tracked by dAppID as part of DAppPermissions.
- */
-export type ProviderPermissions = {
-  allowedAccounts: string[]
-}
-
-type DAppPermissions = {
-  dAppID: string
-  permissions: ProviderPermissions
-}
 
 type Migration = {
   id: number
   appliedAt: number
 }
 
+function keyBy(
+  permissionsArray: Array<PermissionRequest>,
+  key: keyof PermissionRequest
+): Record<string, PermissionRequest> {
+  return permissionsArray.reduce((acc, current) => {
+    acc[current[key]] = current
+    return acc
+  }, {} as Record<string, PermissionRequest>)
+}
+
 export class ProviderBridgeServiceDatabase extends Dexie {
-  private dAppPermissions!: Dexie.Table<DAppPermissions, string>
+  private dAppPermissions!: Dexie.Table<PermissionRequest, string>
 
   private migrations!: Dexie.Table<Migration, number>
 
@@ -28,32 +26,28 @@ export class ProviderBridgeServiceDatabase extends Dexie {
 
     this.version(1).stores({
       migrations: "++id,appliedAt",
-      dAppPermissions: "&dAppID,permissions.allowedAccounts",
+      dAppPermissions: "&origin,faviconUrl,title,state,accountAddress",
     })
   }
 
-  /**
-   * Look up existing permissions for a given dAppID.
-   */
-  async getDAppPermissions(
-    dAppID: string
-  ): Promise<ProviderPermissions | undefined> {
+  async getAllPermission() {
     return this.dAppPermissions
-      .get(dAppID)
-      .then((result) => result?.permissions)
+      .toArray()
+      .then((permissionsArray) => keyBy(permissionsArray, "origin"))
   }
 
-  /**
-   * Set or replace permissions for a given dAppID.
-   */
-  async setDAppPermissions(
-    dAppID: string,
-    permissions: ProviderPermissions
-  ): Promise<string> {
-    return this.dAppPermissions.put({
-      dAppID,
-      permissions,
-    })
+  async setPermission(
+    permission: PermissionRequest
+  ): Promise<string | undefined> {
+    return this.dAppPermissions.put(permission)
+  }
+
+  async deletePermission(origin: string) {
+    return this.dAppPermissions.delete(origin)
+  }
+
+  async checkPermission(origin: string) {
+    return this.dAppPermissions.get(origin)
   }
 
   private async migrate() {
