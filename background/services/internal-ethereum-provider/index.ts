@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill"
 import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
+import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
 import {
   ChainService,
   ServiceCreatorFunction,
@@ -9,7 +10,10 @@ import {
 import logger from "../../lib/logger"
 import BaseService from "../base"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
-import { eip1559TransactionRequestFromEthersTransactionRequest } from "../chain/utils"
+import {
+  eip1559TransactionRequestFromEthersTransactionRequest,
+  ethersTxFromSignedTx,
+} from "../chain/utils"
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -115,8 +119,17 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           (signed) => this.chainService.broadcastSignedTransaction(signed)
         )
       case "eth_signTransaction":
-        // FIXME Convert to standard Ethereum signed tx string.
-        return this.signTransaction(params[0] as EthersTransactionRequest)
+        return this.signTransaction(params[0] as EthersTransactionRequest).then(
+          (signedTransaction) =>
+            serializeEthersTransaction(
+              ethersTxFromSignedTx(signedTransaction),
+              {
+                r: signedTransaction.r,
+                s: signedTransaction.s,
+                v: signedTransaction.v,
+              }
+            )
+        )
       case "eth_sign": // --- important wallet methods ---
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
