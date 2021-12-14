@@ -23,7 +23,8 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
             {panelNames[0]}
           </button>
         </li>
-        <li>
+        {/* CURRENTlY UNUSED BUT STC */}
+        {/* <li>
           <button
             type="button"
             onClick={() => {
@@ -33,7 +34,7 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
           >
             {panelNames[1]}
           </button>
-        </li>
+        </li> */}
       </ul>
       <style jsx>
         {`
