@@ -44,7 +44,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     [origin: string]: (value: unknown) => void
   } = {}
 
-  #openPorts: Array<Runtime.Port> = []
+  openPorts: Array<Runtime.Port> = []
 
   static create: ServiceCreatorFunction<
     Events,
@@ -70,7 +70,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         port.onMessage.addListener((event) => {
           this.onMessageListener(port as Required<browser.Runtime.Port>, event)
         })
-        this.#openPorts.push(port)
+        this.openPorts.push(port)
         // TODO: store port with listener to handle cleanup
       }
     })
@@ -155,7 +155,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   notifyContentScriptAboutConfigChange(newDefaultWalletValue: boolean) {
-    this.#openPorts.forEach((p) => {
+    this.openPorts.forEach((p) => {
       p.postMessage({
         id: "tallyHo",
         result: {
