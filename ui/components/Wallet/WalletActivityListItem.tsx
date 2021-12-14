@@ -10,6 +10,7 @@ import SharedAssetIcon from "../Shared/SharedAssetIcon"
 interface Props {
   onClick: () => void
   activity: ActivityItem
+  asAccount: string
 }
 
 function truncateAddress(address: string): string {
@@ -17,7 +18,7 @@ function truncateAddress(address: string): string {
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
-  const { onClick, activity } = props
+  const { onClick, activity, asAccount } = props
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
@@ -27,23 +28,43 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetLogoURL: string | undefined
     assetSymbol: string
     assetValue: string
+    isSend: boolean
   } = {
-    iconClass: (activity.isSent && "send_icon") || undefined,
-    label: activity.isSent ? "Sent" : "Received",
+    iconClass: undefined,
+    label: "Contract interaction",
     recipient: activity.toTruncated,
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
+    isSend: false,
   }
-  switch (activity.contractInfo?.type) {
-    case "asset-transfer":
+
+  if (activity.value && !activity.input) {
+    if (activity.to && sameEVMAddress(asAccount, activity.to)) {
       renderDetails = {
         ...renderDetails,
-        iconClass: "contract_interaction_icon",
-        label:
-          sameEVMAddress(activity.contractInfo.recipientAddress, activity.from)
-            ? "Send"
-            : "Received",
+        label: "Received",
+      }
+    } else if (sameEVMAddress(asAccount, activity.from)) {
+      renderDetails = {
+        ...renderDetails,
+        label: "Sent",
+        iconClass: "send_icon",
+        isSend: true,
+      }
+    }
+  }
+
+  switch (activity.contractInfo?.type) {
+    case "asset-transfer":
+      const isSend = sameEVMAddress(
+        activity.contractInfo.recipientAddress,
+        activity.from
+      )
+      renderDetails = {
+        ...renderDetails,
+        label: isSend ? "Sent" : "Received",
+        iconClass: isSend ? "send_icon" : undefined,
         recipient: truncateAddress(activity.contractInfo.recipientAddress),
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
@@ -59,6 +80,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
         assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+        isSend: false,
       }
       break
     case "asset-swap":
@@ -69,6 +91,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
+        isSend: false,
       }
       break
     case "contract-deployment":
@@ -80,6 +103,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
+        isSend: false,
       }
       break
     default:
@@ -122,7 +146,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            {activity.isSent ? (
+            {renderDetails.isSend ? (
               <div className="outcome">
                 To:
                 {` ${renderDetails.recipient}`}

@@ -22,14 +22,12 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const activityItem = currentAccountActivities.entities[id]!
 
-      const isSent = activityItem.from.toLowerCase() === currentAccountAddress
       return {
         ...activityItem,
         timestamp:
           activityItem.blockHeight === null
             ? undefined
             : blocks[activityItem.blockHeight]?.timestamp,
-        isSent,
       }
     })
   }

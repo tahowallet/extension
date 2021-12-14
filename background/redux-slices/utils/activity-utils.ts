@@ -26,7 +26,6 @@ export type ActivityItem = AnyEVMTransaction & {
   contractInfo?: ContractInfo | undefined
   localizedDecimalValue: string
   timestamp?: number
-  isSent?: boolean
   blockHeight: number | null
   fromTruncated: string
   toTruncated: string
