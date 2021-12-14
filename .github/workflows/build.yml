@@ -21,6 +21,9 @@ jobs:
         cache: "yarn"
     - run: yarn install --frozen-lockfile
     - run: yarn build
+      env:
+        ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+        BLOCKNATIVE_API_KEY,: ${{ secrets.BLOCKNATIVE_API_KEY }}
     - name: Upload build on main
       # A push event is a main merge; build and upload artifacts.
       if: github.event_name == 'push'
