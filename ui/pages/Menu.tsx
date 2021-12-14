@@ -1,6 +1,8 @@
 import React, { ReactElement } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import {
+  setNewDefaultWalletValue,
+  selectDefaultWallet,
   selectHideDust,
   toggleHideDust,
 } from "@tallyho/tally-background/redux-slices/ui"
@@ -41,9 +43,14 @@ function SettingRow(props: {
 export default function Menu(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
+  const defaultWallet = useSelector(selectDefaultWallet)
 
   const toggleHideDustAssets = (toggleValue: boolean | undefined) => {
     dispatch(toggleHideDust(toggleValue))
+  }
+  const toggleDefaultWallet = (defaultWalletValue: boolean | undefined) => {
+    if (typeof defaultWalletValue === "undefined") return
+    dispatch(setNewDefaultWalletValue(defaultWalletValue))
   }
   const settings = {
     general: [
@@ -53,6 +60,15 @@ export default function Menu(): ReactElement {
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
             value={hideDust}
+          />
+        ),
+      },
+      {
+        title: "Should Tally be THE default wallet?",
+        component: () => (
+          <SharedToggleButton
+            onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
+            value={defaultWallet}
           />
         ),
       },
@@ -73,7 +89,6 @@ export default function Menu(): ReactElement {
               />
             ))}
           </ul>
-          <span>More settings are coming</span>
           <div className="community_cta_wrap">
             <div className="illustration_discord" />
             <h2 className="serif_header">Community release!</h2>

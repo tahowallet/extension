@@ -1,6 +1,8 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
+import Emittery from "emittery"
 import { AddressNetwork } from "../accounts"
 import { getEthereumNetwork } from "../lib/utils"
+import { createBackgroundAsyncThunk } from "./utils"
 
 type SelectedAccount = {
   addressNetwork: AddressNetwork
@@ -11,8 +13,16 @@ export type UIState = {
   currentAccount: SelectedAccount
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
-  settings: undefined | { hideDust: boolean | undefined }
+  settings:
+    | undefined
+    | { hideDust: boolean | undefined; defaultWallet: boolean | undefined }
 }
+
+export type Events = {
+  newDefaultWalletValue: boolean
+}
+
+export const emitter = new Emittery<Events>()
 
 export const initialState: UIState = {
   showingActivityDetailID: null,
@@ -23,8 +33,19 @@ export const initialState: UIState = {
   initializationLoadingTimeExpired: false,
   settings: {
     hideDust: false,
+    defaultWallet: false,
   },
 }
+
+// Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
+export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
+  "ui/setNewDefaultWalletValue",
+  // @ts-expect-error have no idea what the heck is wrong here hAlp
+  async (defaultWallet: boolean) => {
+    await emitter.emit("newDefaultWalletValue", defaultWallet)
+    return defaultWallet
+  }
+)
 
 const uiSlice = createSlice({
   name: "ui",
@@ -36,6 +57,7 @@ const uiSlice = createSlice({
     ): void => {
       immerState.settings = {
         hideDust: shouldHideDust,
+        defaultWallet: immerState.settings?.defaultWallet,
       }
     },
     setShowingActivityDetail: (
@@ -60,6 +82,26 @@ const uiSlice = createSlice({
       ...state,
       initializationLoadingTimeExpired: true,
     }),
+    setDefaultWallet: (
+      immerState,
+      { payload: defaultWallet }: { payload: boolean | undefined }
+    ): void => {
+      immerState.settings = {
+        hideDust: immerState.settings?.hideDust,
+        defaultWallet,
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(
+      setNewDefaultWalletValue.fulfilled,
+      (immerState, { payload: defaultWallet }: { payload: boolean }) => {
+        immerState.settings = {
+          hideDust: immerState.settings?.hideDust,
+          defaultWallet,
+        }
+      }
+    )
   },
 })
 
@@ -68,6 +110,7 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   setCurrentAccount,
+  setDefaultWallet,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -82,4 +125,9 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust
+)
+
+export const selectDefaultWallet = createSelector(
+  selectSettings,
+  (settings) => settings?.defaultWallet
 )

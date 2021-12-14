@@ -35,7 +35,11 @@ import {
   keyringUnlocked,
   updateKeyrings,
 } from "./redux-slices/keyrings"
-import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
+import {
+  initializationLoadingTimeHitLimit,
+  emitter as uiSliceEmitter,
+  setDefaultWallet,
+} from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
   emitter as transactionConstructionSliceEmitter,
@@ -282,6 +286,7 @@ export default class Main extends BaseService<never> {
     this.connectNameService()
     this.connectInternalEthereumProviderService()
     this.connectProviderBridgeService()
+    this.connectPreferenceService()
     await this.connectChainService()
   }
 
@@ -506,6 +511,24 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await this.providerBridgeService.denyOrRevokePermission(permission)
+      }
+    )
+  }
+
+  async connectPreferenceService() {
+    this.preferenceService.emitter.on(
+      "initializeDefaultWallet",
+      async (isDefaultWallet: boolean) => {
+        await this.store.dispatch(setDefaultWallet(isDefaultWallet))
+      }
+    )
+
+    uiSliceEmitter.on(
+      "newDefaultWalletValue",
+      async (newDefaultWalletValue) => {
+        await this.preferenceService.setDefaultWalletValue(
+          newDefaultWalletValue
+        )
       }
     )
   }

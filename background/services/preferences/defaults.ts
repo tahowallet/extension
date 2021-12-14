@@ -14,4 +14,5 @@ export default {
     ],
   },
   currency: USD,
+  defaultWallet: false,
 } as Preferences
