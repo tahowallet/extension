@@ -53,8 +53,10 @@ export default function KeyringSetPassword(): ReactElement {
   return (
     <section>
       <div className="full_logo" />
-      <h1 className="serif_header">Good hunting.</h1>
-      <div className="subtitle">The decentralized web awaits.</div>
+      <h1 className="serif_header">Create a password</h1>
+      <div className="subtitle">
+        You will NOT be able to change this password for now.
+      </div>
       <div className="input_wrap">
         <SharedInput
           type="password"
@@ -77,7 +79,7 @@ export default function KeyringSetPassword(): ReactElement {
         onClick={dispatchCreatePassword}
         showLoadingOnClick={!passwordErrorMessage}
       >
-        Begin the hunt
+        Continue
       </SharedButton>
       <div className="restore">
         <SharedButton type="tertiary" size="medium">
@@ -105,6 +107,13 @@ export default function KeyringSetPassword(): ReactElement {
             display: none; // TODO Implement account restoration.
             position: fixed;
             bottom: 26px;
+          }
+          .subtitle {
+            color: var(--green-40);
+            width: 307px;
+            text-align: center;
+            line-height: 24px;
+            margin-top: 4px;
           }
         `}
       </style>

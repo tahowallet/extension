@@ -14,7 +14,7 @@ export const ALARMS = {
   minute: "minute",
   times: {
     block: 0.13,
-    minute: 1,
+    minute: 0.1,
   },
 }
 

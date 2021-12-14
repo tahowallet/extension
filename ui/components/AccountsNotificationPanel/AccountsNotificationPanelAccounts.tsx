@@ -146,7 +146,7 @@ export default function AccountsNotificationPanelAccounts({
           const accountTypeTotals = accountTotals[accountType]!
 
           return (
-            <section>
+            <section key={accountType}>
               <WalletTypeHeader
                 accountType={accountType}
                 canAddAddress={false}

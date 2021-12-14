@@ -1,11 +1,13 @@
 import React, { ReactElement } from "react"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 
 export default function Receive(): ReactElement {
-  const { account } = useBackgroundSelector((background) => background.account)
-  if (!account?.address) return <></>
+  const currentAccount: { address: string } =
+    useBackgroundSelector(selectCurrentAccount)
+  if (!currentAccount) return <></>
 
   return (
     <section>
@@ -17,14 +19,22 @@ export default function Receive(): ReactElement {
         Only send Ethereum Mainnet compatible assets to this address.
       </div>
       <div className="qr_code">
-        <QRCode value={account?.address} size={128} />
+        <QRCode value={currentAccount.address} size={128} />
       </div>
       <div className="copy_wrap">
-        <SharedButton icon="copy" size="medium" iconSize="large" type="primary">
-          {`${account?.address.slice(0, 7)}...${account?.address.slice(
-            35,
-            41
-          )}`}
+        <SharedButton
+          icon="copy"
+          size="medium"
+          iconSize="large"
+          type="primary"
+          onClick={() => {
+            navigator.clipboard.writeText(currentAccount.address)
+          }}
+        >
+          {`${currentAccount.address.slice(
+            0,
+            7
+          )}...${currentAccount.address.slice(35, 41)}`}
         </SharedButton>
       </div>
       <style jsx>

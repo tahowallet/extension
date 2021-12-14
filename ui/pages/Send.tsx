@@ -1,5 +1,5 @@
 import { isAddress } from "@ethersproject/address"
-import { formatUnits } from "@ethersproject/units"
+import { formatEther, formatUnits } from "@ethersproject/units"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import {
   selectCurrentAccount,
@@ -13,6 +13,7 @@ import { utils } from "ethers"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -21,18 +22,20 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
-  const assetSymbol = location?.state?.symbol
 
-  const combinedData = useBackgroundSelector(selectCurrentAccountBalances)
-
-  const displayAssets = combinedData?.assetAmounts.map(({ asset }) => asset)
-
+  const [assetSymbol, setAssetSymbol] = useState(location?.state?.symbol)
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const [minGas, setMinGas] = useState(0)
-  const [maxGas, setMaxGas] = useState(0)
+  const [minFee, setMinFee] = useState(0)
+  const [maxFee, setMaxFee] = useState(0)
+  const [currentBalance, setCurrentBalance] = useState("")
+  const [gasLimit, setGasLimit] = useState("")
+  const [currentFeeValues, setCurrentFeeValues] = useState({
+    gwei: "",
+    fiat: "",
+  })
   const [hasError, setHasError] = useState(false)
 
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
@@ -42,13 +45,40 @@ export default function Send(): ReactElement {
       maxPriorityFeePerGas: 0n,
       price: 0n,
     })
-  const [gasLimit, setGasLimit] = useState("")
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const dispatch = useBackgroundDispatch()
 
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const { assetAmounts } = balanceData ?? {
+    assetAmounts: [],
+  }
+
+  const getTotalLocalizedValue = () => {
+    const pricePerUnit = assetAmounts.find(
+      (el) => el.asset.symbol === assetSymbol
+    )?.unitPrice
+    if (pricePerUnit) {
+      return (Number(amount) * pricePerUnit).toFixed(2)
+    }
+    return 0
+  }
+  const findBalance = useCallback(() => {
+    const balance = formatEther(
+      assetAmounts.find((el) => el.asset.symbol === assetSymbol)?.amount || "0"
+    )
+    setCurrentBalance(balance)
+  }, [assetAmounts, assetSymbol])
+
+  const setMaxBalance = () => {
+    if (currentBalance) {
+      setAmount(currentBalance)
+    }
+  }
 
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
@@ -62,7 +92,7 @@ export default function Send(): ReactElement {
       from: currentAccount.address,
       to: destinationAddress,
       // eslint-disable-next-line no-underscore-dangle
-      value: BigInt(utils.parseEther(amount)._hex),
+      value: BigInt(utils.parseEther(amount?.toString())._hex),
       maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
       maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
@@ -70,24 +100,37 @@ export default function Send(): ReactElement {
     dispatch(updateTransactionOptions(transaction))
   }
 
-  // TODO Once we know what do we consider min and max gas this should be updated
   const findMinMaxGas = useCallback(() => {
     if (
       estimatedFeesPerGas?.baseFeePerGas &&
-      estimatedFeesPerGas?.instant?.maxFeePerGas
+      estimatedFeesPerGas?.regular?.maxPriorityFeePerGas &&
+      estimatedFeesPerGas?.instant?.maxPriorityFeePerGas
     ) {
-      setMinGas(
-        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+      setMinFee(
+        Number(
+          formatUnits(
+            (estimatedFeesPerGas.baseFeePerGas * BigInt(13)) / 10n +
+              estimatedFeesPerGas.regular?.maxPriorityFeePerGas,
+            "gwei"
+          ).split(".")[0]
+        )
       )
-      setMaxGas(
-        parseInt(formatUnits(estimatedFeesPerGas?.baseFeePerGas, "gwei"), 10)
+      setMaxFee(
+        Number(
+          formatUnits(
+            (estimatedFeesPerGas.baseFeePerGas * BigInt(18)) / 10n +
+              estimatedFeesPerGas.instant?.maxPriorityFeePerGas,
+            "gwei"
+          ).split(".")[0]
+        )
       )
     }
   }, [estimatedFeesPerGas])
 
   useEffect(() => {
     findMinMaxGas()
-  }, [findMinMaxGas])
+    findBalance()
+  }, [findMinMaxGas, findBalance])
 
   useEffect(() => {
     if (assetSymbol) {
@@ -106,7 +149,8 @@ export default function Send(): ReactElement {
         >
           <NetworkFeesChooser
             setFeeModalOpen={setFeeModalOpen}
-            onSaveGasChoice={setSelectedEstimatedFeePerGas}
+            onSelectFeeOption={setSelectedEstimatedFeePerGas}
+            currentFeeSelectionPrice={setCurrentFeeValues}
             selectedGas={selectedEstimatedFeePerGas}
             gasLimit={gasLimit}
             setGasLimit={setGasLimit}
@@ -120,12 +164,28 @@ export default function Send(): ReactElement {
           </h1>
           <div className="form">
             <div className="form_input">
+              <div className="balance">
+                Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
+                <button
+                  type="button"
+                  className="max"
+                  onClick={setMaxBalance}
+                  tabIndex={0}
+                >
+                  Max
+                </button>
+              </div>
               <SharedAssetInput
                 label="Asset / Amount"
-                assetAmounts={combinedData?.assetAmounts}
-                onAssetSelect={() => {
-                  setSelectedCount(1)
+                onAssetSelect={(token) => {
+                  setAssetSymbol(token.symbol)
                 }}
+                assets={assetAmounts.map((asset) => {
+                  return {
+                    symbol: asset.asset.symbol,
+                    name: asset.asset.name,
+                  }
+                })}
                 onAmountChange={(value, errorMessage) => {
                   setAmount(value)
                   if (errorMessage) {
@@ -136,7 +196,9 @@ export default function Send(): ReactElement {
                 }}
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
+                maxBalance={Number(currentBalance)}
               />
+              <div className="value">${getTotalLocalizedValue()}</div>
             </div>
             <div className="form_input">
               <SharedAssetInput
@@ -147,46 +209,15 @@ export default function Send(): ReactElement {
             </div>
             <div className="network_fee">
               <p>Estimated network fee</p>
-              <button
-                className="settings"
-                type="button"
-                onClick={openSelectFeeModal}
-                style={{
-                  background: `linear-gradient(90deg, var(--green-80) ${(
-                    (minGas / maxGas) *
-                    100
-                  ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-                    (minGas / maxGas) *
-                    100
-                  ).toFixed()}%)`,
-                }}
-              >
-                <div>
-                  ~
-                  {Number(
-                    formatUnits(
-                      selectedEstimatedFeePerGas.maxFeePerGas +
-                        selectedEstimatedFeePerGas.maxPriorityFeePerGas,
-                      "gwei"
-                    )
-                  ).toFixed() || minGas}
-                  Gwei
-                </div>
-                <img
-                  className="settings_image"
-                  src="./images/cog@2x.png"
-                  alt=""
-                />
-              </button>
+              <FeeSettingsButton
+                openModal={openSelectFeeModal}
+                minFee={minFee}
+                maxFee={maxFee}
+                currentFeeSelected={currentFeeValues.gwei}
+              />
             </div>
             <div className="divider" />
-            <div className="total_footer standard_width_padded">
-              <div className="total_amount">
-                <div className="total_label">Total</div>
-                <div className="total_amount_number">{`${
-                  amount || 0
-                } ${assetSymbol}`}</div>
-              </div>
+            <div className="send_footer standard_width_padded">
               <SharedButton
                 type="primary"
                 size="large"
@@ -203,6 +234,7 @@ export default function Send(): ReactElement {
                     amount,
                     to: destinationAddress,
                     signType: "sign",
+                    value: getTotalLocalizedValue(),
                   },
                 }}
                 onClick={sendTransactionRequest}
@@ -230,22 +262,6 @@ export default function Send(): ReactElement {
             color: var(--green-40);
             margin-bottom: 12px;
           }
-          .settings {
-            height: 38px;
-            display: flex;
-            align-items: center;
-            color: var(--gold-5);
-            font-size: 16px;
-            line-height: 24px;
-            border-radius: 4px;
-            padding-left: 8px;
-            border: 1px solid #33514e;
-          }
-          .settings_image {
-            width: 14px;
-            height: 14px;
-            padding: 0 8px;
-          }
           .title {
             width: 113px;
             height: 32px;
@@ -267,30 +283,6 @@ export default function Send(): ReactElement {
           .label_right {
             margin-right: 6px;
           }
-          .total_amount_number {
-            width: 150px;
-            height: 32px;
-            color: #ffffff;
-            font-size: 22px;
-            font-weight: 500;
-            line-height: 32px;
-          }
-          .total_footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 21px;
-            padding-bottom: 20px;
-          }
-          .total_label {
-            width: 33px;
-            height: 17px;
-            color: var(--green-60);
-            font-family: Segment;
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-          }
           .divider {
             width: 384px;
             border-bottom: 1px solid #000000;
@@ -298,6 +290,34 @@ export default function Send(): ReactElement {
           }
           .label {
             margin-bottom: 6px;
+          }
+          .balance {
+            color: var(--green-40);
+            text-align: right;
+            position: relative;
+            font-size: 14px;
+            top: 16px;
+            right: 0;
+          }
+          .max {
+            color: #d08e39;
+            cursor: pointer;
+          }
+          .value {
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+            top: -24px;
+            right: 16px;
+            color: var(--green-60);
+            font-size: 12px;
+            line-height: 16px;
+          }
+          .send_footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 21px;
+            padding-bottom: 20px;
           }
         `}
       </style>

@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
+import { isAddress } from "@ethersproject/address"
 import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
 import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
@@ -12,31 +13,34 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [address, setAddress] = useState("")
   const [redirect, setRedirect] = useState(false)
-
-  // Quick temp solution grabbed from
-  // https://ethereum.stackexchange.com/a/40670
-  function checkIfPlausibleETHAddress(checkAddress: string) {
-    return /^(0x){1}[0-9a-fA-F]{40}$/i.test(checkAddress)
-  }
+  const [errorMessage, setErrorMessage] = useState("")
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
-    if (checkIfPlausibleETHAddress(address)) {
+    const trimmedAddress = address.trim()
+
+    if (isAddress(trimmedAddress)) {
       await dispatch(
         addAddressNetwork({
-          address,
+          address: trimmedAddress,
           network: getEthereumNetwork(),
         })
       )
-      dispatch(setCurrentAccount(address))
+      dispatch(setCurrentAccount(trimmedAddress))
       setRedirect(true)
     } else {
-      alert("Please enter a valid address")
+      setErrorMessage("Please enter a valid address")
     }
   }, [dispatch, address])
 
   // Redirect to the home tab once an account is set
   if (redirect) {
     return <Redirect to="/" />
+  }
+
+  const handleInputChange = (value: string): void => {
+    setAddress(value)
+    // Clear error message on input change
+    setErrorMessage("")
   }
 
   return (
@@ -50,13 +54,17 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
         Add an Ethereum address to view an existing wallet in Tally.
       </div>
       <div className="input_wrap">
-        <SharedInput placeholder="ETH address" onChange={setAddress} />
+        <SharedInput
+          placeholder="ETH address"
+          onChange={handleInputChange}
+          errorMessage={errorMessage}
+        />
       </div>
       <SharedButton
         type="primary"
         size="large"
         onClick={handleSubmitViewOnlyAddress}
-        showLoadingOnClick
+        showLoadingOnClick={!!errorMessage}
       >
         Explore Tally
       </SharedButton>
