@@ -78,6 +78,11 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               })}
             />
             {renderDetails.label}
+            {activity.blockHash === null ? (
+              <div className="pending">Pending...</div>
+            ) : (
+              <></>
+            )}
           </div>
           <div className="right">
             {activity.timestamp &&
@@ -151,6 +156,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           .contract_interaction_icon {
             background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
+          }
+          .pending:before {
+            content: "•";
+            margin: 0 3px;
+          }
+          .pending {
+            color: var(--attention);
           }
           .top {
             height: 16px;

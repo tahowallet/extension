@@ -234,6 +234,7 @@ export default function Send(): ReactElement {
                     amount,
                     to: destinationAddress,
                     signType: "sign",
+                    value: getTotalLocalizedValue(),
                   },
                 }}
                 onClick={sendTransactionRequest}

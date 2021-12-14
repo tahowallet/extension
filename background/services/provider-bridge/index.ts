@@ -90,10 +90,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const faviconUrl = tab?.favIconUrl ?? ""
     const title = tab?.title ?? ""
 
-    // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
-    // This contradicts the MDN documentation so better not to rely on it.
-    logger.log(`background: request payload: ${JSON.stringify(event.request)}`)
-
     const response: PortResponseEvent = { id: event.id, result: [] }
 
     if (await this.checkPermission(origin)) {
@@ -122,8 +118,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } else {
       response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
     }
-
-    logger.log("background response:", response)
 
     port.postMessage(response)
   }

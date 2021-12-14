@@ -1,6 +1,6 @@
 name: Feature Request
 description: File a feature request
-title: "[Feature]: "
+title: ""
 labels: ["✏️ enhancement", "👩‍⚕️ triage"]
 body:
   - type: markdown

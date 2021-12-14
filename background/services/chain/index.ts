@@ -1,6 +1,7 @@
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
+  TransactionReceipt,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
@@ -17,7 +18,10 @@ import {
   BlockPrices,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import { getAssetTransfers } from "../../lib/alchemy"
+import {
+  getAssetTransfers,
+  transactionFromAlchemyWebsocketTransaction,
+} from "../../lib/alchemy"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -26,10 +30,10 @@ import BaseService from "../base"
 import {
   blockFromEthersBlock,
   blockFromWebsocketBlock,
+  enrichTransactionWithReceipt,
   ethersTransactionRequestFromEIP1559TransactionRequest,
   ethersTxFromSignedTx,
-  txFromEthersTx,
-  txFromWebsocketTx,
+  transactionFromEthersTransaction,
 } from "./utils"
 import { getEthereumNetwork } from "../../lib/utils"
 import Blocknative, {
@@ -311,15 +315,19 @@ export default class ChainService extends BaseService<Events> {
     const gethResult = await this.pollingProviders.ethereum.getTransaction(
       txHash
     )
-    const newTx = txFromEthersTx(gethResult, ETH, getEthereumNetwork())
+    const newTransaction = transactionFromEthersTransaction(
+      gethResult,
+      ETH,
+      getEthereumNetwork()
+    )
 
-    if (!newTx.blockHash && !newTx.blockHeight) {
-      this.subscribeToTransactionConfirmation(network, txHash)
+    if (!newTransaction.blockHash && !newTransaction.blockHeight) {
+      this.subscribeToTransactionConfirmation(network, newTransaction)
     }
 
     // TODO proper provider string
-    this.saveTransaction(newTx, "alchemy")
-    return newTx
+    this.saveTransaction(newTransaction, "alchemy")
+    return newTransaction
   }
 
   /**
@@ -360,20 +368,27 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Broadcast a signed EVM transaction.
    *
-   * @param tx A signed EVM transaction to broadcast. Since the tx is signed,
+   * @param transaction A signed EVM transaction to broadcast. Since the tx is signed,
    *        it needs to include all gas limit and price params.
    */
-  async broadcastSignedTransaction(tx: SignedEVMTransaction): Promise<void> {
+  async broadcastSignedTransaction(
+    transaction: SignedEVMTransaction
+  ): Promise<void> {
     // TODO make proper use of tx.network to choose provider
-    const serialized = utils.serializeTransaction(ethersTxFromSignedTx(tx))
+    const serialized = utils.serializeTransaction(
+      ethersTxFromSignedTx(transaction)
+    )
     try {
       await Promise.all([
         this.pollingProviders.ethereum.sendTransaction(serialized),
-        this.subscribeToTransactionConfirmation(tx.network, tx.hash),
-        this.saveTransaction(tx, "local"),
+        this.subscribeToTransactionConfirmation(
+          transaction.network,
+          transaction
+        ),
+        this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
-      logger.error(`Error broadcasting transaction ${tx}`, error)
+      logger.error(`Error broadcasting transaction ${transaction}`, error)
       throw error
     }
   }
@@ -552,16 +567,23 @@ export default class ChainService extends BaseService<Events> {
         // TODO make this multi network
         const result = await this.pollingProviders.ethereum.getTransaction(hash)
 
-        const tx = txFromEthersTx(result, ETH, getEthereumNetwork())
+        const transaction = transactionFromEthersTransaction(
+          result,
+          ETH,
+          getEthereumNetwork()
+        )
 
         // TODO make this provider specific
-        await this.saveTransaction(tx, "alchemy")
+        await this.saveTransaction(transaction, "alchemy")
 
-        if (!tx.blockHash && !tx.blockHeight) {
-          this.subscribeToTransactionConfirmation(tx.network, tx.hash)
-        } else if (tx.blockHash) {
+        if (!transaction.blockHash && !transaction.blockHeight) {
+          this.subscribeToTransactionConfirmation(
+            transaction.network,
+            transaction
+          )
+        } else if (transaction.blockHash) {
           // Get relevant block data.
-          await this.getBlockData(tx.network, tx.blockHash)
+          await this.getBlockData(transaction.network, transaction.blockHash)
         }
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
@@ -573,20 +595,40 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Save a transaction to the database and emit an event.
    *
-   * @param tx The transaction to save and emit. Uniqueness and ordering will be
-   *        handled by the database.
-   * @param datasource Where the transaction was seen.
+   * @param transaction The transaction to save and emit. Uniqueness and
+   *        ordering will be handled by the database.
+   * @param dataSource Where the transaction was seen.
    */
   private async saveTransaction(
-    tx: AnyEVMTransaction,
+    transaction: AnyEVMTransaction,
     dataSource: "local" | "alchemy"
   ): Promise<void> {
+    // Merge existing data into the updated transaction data. This handles
+    // cases where an existing transaction has been enriched by e.g. a receipt,
+    // and new data comes in.
+    const existing = await this.db.getTransaction(
+      transaction.network,
+      transaction.hash
+    )
+    const finalTransaction = {
+      ...existing,
+      ...transaction,
+    }
+
     let error: unknown = null
     try {
-      await this.db.addOrUpdateTransaction(tx, dataSource)
+      await this.db.addOrUpdateTransaction(
+        {
+          // Don't lose fields the existing transaction has pulled, e.g. from a
+          // transaction receipt.
+          ...existing,
+          ...finalTransaction,
+        },
+        dataSource
+      )
     } catch (err) {
       error = err
-      logger.error(`Error saving tx ${tx}`, error)
+      logger.error(`Error saving tx ${finalTransaction}`, error)
     }
     try {
       const accounts = await this.getAccountsToTrack()
@@ -594,18 +636,23 @@ export default class ChainService extends BaseService<Events> {
       const forAccounts = accounts
         .filter(
           (addressNetwork) =>
-            tx.from.toLowerCase() === addressNetwork.address.toLowerCase() ||
-            tx.to?.toLowerCase() === addressNetwork.address.toLowerCase()
+            finalTransaction.from.toLowerCase() ===
+              addressNetwork.address.toLowerCase() ||
+            finalTransaction.to?.toLowerCase() ===
+              addressNetwork.address.toLowerCase()
         )
         .map((addressNetwork) => {
           return addressNetwork.address.toLowerCase()
         })
 
       // emit in a separate try so outside services still get the tx
-      this.emitter.emit("transaction", { transaction: tx, forAccounts })
+      this.emitter.emit("transaction", {
+        transaction: finalTransaction,
+        forAccounts,
+      })
     } catch (err) {
       error = err
-      logger.error(`Error emitting tx ${tx}`, error)
+      logger.error(`Error emitting tx ${finalTransaction}`, error)
     }
     if (error) {
       throw error
@@ -663,7 +710,11 @@ export default class ChainService extends BaseService<Events> {
         // handle incoming transactions for an account
         try {
           await this.saveTransaction(
-            txFromWebsocketTx(result, ETH, getEthereumNetwork()),
+            transactionFromAlchemyWebsocketTransaction(
+              result,
+              ETH,
+              getEthereumNetwork()
+            ),
             "alchemy"
           )
         } catch (error) {
@@ -686,15 +737,18 @@ export default class ChainService extends BaseService<Events> {
    */
   private async subscribeToTransactionConfirmation(
     network: EVMNetwork,
-    txHash: HexString
+    transaction: AnyEVMTransaction
   ): Promise<void> {
     // TODO make proper use of the network
-    this.websocketProviders.ethereum.once(txHash, (confirmedTx) => {
-      this.saveTransaction(
-        txFromWebsocketTx(confirmedTx, ETH, getEthereumNetwork()),
-        "alchemy"
-      )
-    })
+    this.websocketProviders.ethereum.once(
+      transaction.hash,
+      (confirmedReceipt: TransactionReceipt) => {
+        this.saveTransaction(
+          enrichTransactionWithReceipt(transaction, confirmedReceipt),
+          "alchemy"
+        )
+      }
+    )
   }
 
   // TODO removing an account to track
