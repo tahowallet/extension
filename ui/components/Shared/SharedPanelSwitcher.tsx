@@ -9,31 +9,26 @@ interface Props {
 export default function SharedPanelSwitcher(props: Props): ReactElement {
   const { setPanelNumber, panelNumber, panelNames } = props
 
+  // TODO: make these styles work for more than two panels
+  // .selected::after is the hardcoded culprit.
   return (
     <nav>
       <ul>
-        <li>
-          <button
-            type="button"
-            onClick={() => {
-              setPanelNumber(0)
-            }}
-            className={`option${panelNumber === 0 ? " selected" : ""}`}
-          >
-            {panelNames[0]}
-          </button>
-        </li>
-        <li>
-          <button
-            type="button"
-            onClick={() => {
-              setPanelNumber(1)
-            }}
-            className={`option${panelNumber === 1 ? " selected" : ""}`}
-          >
-            {panelNames[1]}
-          </button>
-        </li>
+        {panelNames.slice(0, 2).map((name, index) => {
+          return (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setPanelNumber(index)
+                }}
+                className={`option${panelNumber === index ? " selected" : ""}`}
+              >
+                {name}
+              </button>
+            </li>
+          )
+        })}
       </ul>
       <style jsx>
         {`

@@ -1,17 +1,20 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
+import { formatUnits } from "@ethersproject/units"
 import {
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { ENABLE_EDIT_NETWORK_FEE } from "@tallyho/tally-background/features/features"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -28,15 +31,19 @@ interface SignLocationState {
   assetSymbol: string
   amount: number
   signType: SignType
+  to: string
+  value: string | number
 }
 
 export default function SignTransaction(): ReactElement {
+  const [signing, setSigning] = useState(false)
+
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const location = useLocation<SignLocationState>()
-  const { assetSymbol, amount, signType } = location.state
+  const { assetSymbol, amount, signType, to, value } = location.state
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
@@ -46,6 +53,13 @@ export default function SignTransaction(): ReactElement {
   const txDetails = useBackgroundSelector(selectTransactionData)
 
   const [panelNumber, setPanelNumber] = useState(0)
+
+  useEffect(() => {
+    if (areKeyringsUnlocked && isTransactionSigned && signing) {
+      setSigning(false)
+      history.push("/singleAsset", { symbol: assetSymbol })
+    }
+  }, [areKeyringsUnlocked, isTransactionSigned, signing, history, assetSymbol])
 
   if (!areKeyringsUnlocked) {
     return <></>
@@ -71,7 +85,12 @@ export default function SignTransaction(): ReactElement {
     [SignType.Sign]: {
       title: "Sign Transaction",
       component: () => (
-        <SignTransactionSignBlock token={assetSymbol} amount={amount} />
+        <SignTransactionSignBlock
+          token={assetSymbol}
+          amount={amount}
+          destination={to}
+          localizedValue={value}
+        />
       ),
       confirmButtonText: "Sign",
     },
@@ -80,8 +99,7 @@ export default function SignTransaction(): ReactElement {
   const handleConfirm = async () => {
     if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
       dispatch(signTransaction(txDetails))
-      await isTransactionSigned
-      history.push("/")
+      setSigning(true)
     }
   }
 
@@ -100,8 +118,22 @@ export default function SignTransaction(): ReactElement {
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
           <span className="detail_item">
-            Network Fee/Speed
-            <span className="detail_item_right">{"$24 / <1min"}</span>
+            Estimated network fee
+            <span className="detail_item_right">
+              {ENABLE_EDIT_NETWORK_FEE ? (
+                <FeeSettingsButton
+                  openModal={() => {}}
+                  minFee={20}
+                  maxFee={60}
+                  currentFeeSelected="30"
+                />
+              ) : (
+                `~${
+                  txDetails &&
+                  formatUnits(txDetails?.maxFeePerGas, "gwei").split(".")[0]
+                } Gwei`
+              )}
+            </span>
           </span>
         </div>
       ) : null}
