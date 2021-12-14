@@ -29,13 +29,13 @@ const steps = [
   },
   {
     image: {
-      width: 246.07,
-      height: 251,
+      width: 244.22,
+      height: 247.24,
       fileName: "illustration_onboarding_community_edition",
-      extraStyles: `margin-top: 25px;`,
+      extraStyles: `margin-top: 21px;`,
     },
-    title: "Community Edition",
-    body: `You're about to enjoy an early, pre-release version of Tally. Only test with small amounts and join our Discord!`,
+    title: "Test Responsibly",
+    body: `Tally is a work in progress! This Community Edition includes limited features and may still have bugs.`,
     buttonCopy: "Get started",
   },
 ]
