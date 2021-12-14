@@ -27,6 +27,10 @@ export default function SwapTransactionSettings(
       maxPriorityFeePerGas: 0n,
       price: 0n,
     })
+  const [currentFeeValues, setCurrentFeeValues] = useState({
+    gwei: "",
+    fiat: "",
+  })
 
   function openSettings() {
     if (!isSettingsLocked) {
@@ -61,7 +65,8 @@ export default function SwapTransactionSettings(
 
                 <NetworkFeesChooser
                   setFeeModalOpen={() => {}}
-                  onSaveGasChoice={setSelectedEstimatedFeePerGas}
+                  onSelectFeeOption={setSelectedEstimatedFeePerGas}
+                  currentFeeSelectionPrice={setCurrentFeeValues}
                   selectedGas={selectedEstimatedFeePerGas}
                   gasLimit={gasLimit}
                   setGasLimit={setGasLimit}
