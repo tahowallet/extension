@@ -17,7 +17,7 @@ type WalletTypeInfo = {
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: "Read-only mode",
-    icon: "./images/eye@2x.png",
+    icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {
     title: "Imported",
@@ -74,8 +74,10 @@ function WalletTypeHeader({
         .icon {
           background: url("${icon}");
           background-size: cover;
+          background-color: #faf9f4;
           width: 24px;
           height: 24px;
+          border-radius: 4px;
           margin: 0 7px 0 0;
         }
         .icon_wallet {
