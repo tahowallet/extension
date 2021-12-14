@@ -54,20 +54,26 @@ export default function SignTransactionSignBlock({
 
   return (
     <div className="sign_block">
-      <dl>
+      <div className="container">
         {typeof transactionDetails.to === "undefined" ? (
           <>
-            <dt>Send to:</dt>
-            <dd className="contract_creation">Contract creation</dd>
+            <div className="label">Send to:</div>
+            <div className="send_to">Contract creation</div>
           </>
         ) : (
           <>
-            <dt>Send to:</dt>
-            <dd className="contract_recipient">{transactionDetails.to}</dd>
+            <div className="label">Send to:</div>
+            <div className="send_to">
+              {transactionDetails.to.slice(0, 6)}...
+              {transactionDetails.to.slice(-4)}
+            </div>
           </>
         )}
-        <dt className="spend_amount_label">Spend Amount</dt>
-        <dd className="spend_amount">
+      </div>
+      <div className="divider" />
+      <div className="container">
+        <div className="spend_amount_label">Spend Amount</div>
+        <div className="spend_amount">
           <div className="eth_value">
             {completeTransactionAssetAmount.localizedDecimalAmount}
           </div>
@@ -78,8 +84,9 @@ export default function SignTransactionSignBlock({
               <></>
             )}
           </div>
-        </dd>
-      </dl>
+        </div>
+      </div>
+
       <style jsx>
         {`
           .sign_block {

@@ -155,26 +155,27 @@ export default function SignTransaction(): ReactElement {
       />
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
-          <span className="detail_item">
-            Estimated network fee
+          {signType === SignType.Sign ? (
+            <NetworkFeesChooser
+              estimatedFeesPerGas={estimatedFeesPerGas}
+              onSelectFeeOption={setSelectedEstimatedFeePerGas}
+              selectedGas={selectedEstimatedFeePerGas}
+              gasLimit={gasLimit}
+              setGasLimit={setGasLimit}
+            />
+          ) : (
             <span className="detail_item_right">
-              {signType === SignType.Sign ? (
-                <NetworkFeesChooser
-                  estimatedFeesPerGas={estimatedFeesPerGas}
-                  onSelectFeeOption={setSelectedEstimatedFeePerGas}
-                  selectedGas={selectedEstimatedFeePerGas}
-                  gasLimit={gasLimit}
-                  setGasLimit={setGasLimit}
-                />
-              ) : (
-                `~${
+              <span className="detail_item">
+                Estimated network fee ~$
+                {
                   formatUnits(transactionDetails.maxFeePerGas, "gwei").split(
                     "."
                   )[0]
-                } Gwei`
-              )}
+                }{" "}
+                Gwei
+              </span>
             </span>
-          </span>
+          )}
         </div>
       ) : null}
       <div className="footer_actions">
@@ -248,6 +249,7 @@ export default function SignTransaction(): ReactElement {
           .detail_items_wrap {
             display: flex;
             margin-top: 21px;
+            flex-direction: column;
           }
           .detail_item_right {
             color: var(--green-20);
