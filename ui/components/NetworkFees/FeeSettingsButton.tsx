@@ -36,14 +36,14 @@ export default function FeeSettingsButton({
       <style jsx>
         {`
           .settings {
-            height: 38px;
+            height: 32px;
             display: flex;
             align-items: center;
             color: var(--gold-5);
             font-size: 16px;
-            line-height: 24px;
+            line-height: 20px;
             border-radius: 4px;
-            padding-left: 8px;
+            padding-left: 4px;
             border: 1px solid #33514e;
           }
           .settings_image {
