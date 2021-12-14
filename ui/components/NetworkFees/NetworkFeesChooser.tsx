@@ -194,6 +194,7 @@ export default function NetworkFeesChooser({
               className={`option ${i === activeFeeIndex ? "active" : ""}`}
               onClick={() => handleSelectGasOption(i)}
               type="button"
+              key={option.name}
             >
               <div className="option_left">
                 <div className="name">{option.name}</div>
