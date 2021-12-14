@@ -60,7 +60,9 @@ const dappPermissionSlice = createSlice({
         return {
           ...state,
           permissionRequests: {
-            ...state.permissionRequests,
+            // Quick fix: store only the latest permission request.
+            // TODO: put this back when we fixed the performance issues and/or updated our UI to handle multiple requests
+            // ...state.permissionRequests,
             [request.origin]: { ...request },
           },
         }
@@ -97,7 +99,7 @@ const dappPermissionSlice = createSlice({
           delete updatedAllowedPages[permission.origin]
 
           return {
-            permissionRequests: { ...updatedPermissionRequests },
+            permissionRequests: updatedPermissionRequests,
             allowedPages: updatedAllowedPages,
           }
         }
