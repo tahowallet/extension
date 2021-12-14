@@ -39,7 +39,7 @@ export default function Wallet(): ReactElement {
   }
 
   return (
-    <div className="wrap">
+    <>
       <CorePage>
         <div className="page_content">
           <div className="section">
@@ -56,7 +56,7 @@ export default function Wallet(): ReactElement {
               panelNumber={panelNumber}
               panelNames={["Assets", "Activity"]}
             />
-            <div className="panel">
+            <div className="panel standard_width">
               {panelNumber === 0 ? (
                 <WalletAssetList
                   assetAmounts={assetAmounts}
@@ -97,7 +97,6 @@ export default function Wallet(): ReactElement {
             width: 100%;
           }
           .panel {
-            width: 100%;
             height: 284px;
             overflow-y: auto;
             padding-top: 16px;
@@ -108,6 +107,6 @@ export default function Wallet(): ReactElement {
           }
         `}
       </style>
-    </div>
+    </>
   )
 }

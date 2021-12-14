@@ -11,8 +11,12 @@ import {
 import {
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
+  FungibleAssetAmount,
+  UnitPricePoint,
+  unitPricePointForPricePoint,
 } from "../../assets"
 import { selectSigningAddresses } from "./keyringsSelectors"
+import { selectCurrentAccount } from "./uiSelectors"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -24,7 +28,9 @@ const userValueDustThreshold = 2
 
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
-  return state.account.accountsData[state.ui.currentAccount.address]
+  return state.account.accountsData[
+    state.ui.currentAccount.addressNetwork.address
+  ]
 }
 const getAssetsState = (state: RootState) => state.assets
 
@@ -91,6 +97,29 @@ export const selectAccountAndTimestampedActivities = createSelector(
       },
       accountData: account.accountsData,
     }
+  }
+)
+
+export const selectMainCurrencyUnitPrice = createSelector(
+  getAssetsState,
+  (assets) => {
+    const pricePoint = selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
+    if (pricePoint) {
+      const {
+        unitPrice,
+      }:
+        | (UnitPricePoint & { unitPrice: FungibleAssetAmount })
+        | { unitPrice: undefined } = unitPricePointForPricePoint(
+        pricePoint
+      ) ?? {
+        unitPrice: undefined,
+      }
+      if (unitPrice) {
+        const decimalValue = assetAmountToDesiredDecimals(unitPrice, 2)
+        return decimalValue
+      }
+    }
+    return undefined
   }
 )
 
@@ -246,4 +275,16 @@ export const selectAccountTotalsByCategory = createSelector(
         return acc
       }, {})
   }
+)
+
+export const selectCurrentAccountTotal = createSelector(
+  selectCurrentAccount,
+  selectAccountTotalsByCategory,
+  (currentAccount, categorizedAccountTotals): AccountTotal | undefined =>
+    Object.values(categorizedAccountTotals)
+      .flat()
+      .find(
+        ({ address }) =>
+          address.toLowerCase() === currentAccount?.address?.toLowerCase()
+      )
 )

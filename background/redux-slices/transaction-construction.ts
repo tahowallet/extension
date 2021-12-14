@@ -17,6 +17,7 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
+  transactionLikelyFails?: boolean
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   lastGasEstimatesRefreshed: number
 }
@@ -35,7 +36,9 @@ export const initialState: TransactionConstruction = {
 }
 
 export type Events = {
-  updateOptions: Partial<EIP1559TransactionRequest>
+  updateOptions: Partial<EIP1559TransactionRequest> & {
+    from: string
+  }
   requestSignature: EIP1559TransactionRequest
 }
 
@@ -44,7 +47,7 @@ export const emitter = new Emittery<Events>()
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionOptions = createBackgroundAsyncThunk(
   "transaction-construction/update-options",
-  async (options: Partial<EIP1559TransactionRequest>) => {
+  async (options: Partial<EIP1559TransactionRequest> & { from: string }) => {
     await emitter.emit("updateOptions", options)
   }
 )
@@ -62,17 +65,27 @@ const transactionSlice = createSlice({
   reducers: {
     transactionRequest: (
       immerState,
-      { payload: transactionRequest }: { payload: EIP1559TransactionRequest }
-    ) => {
-      return {
-        ...immerState,
-        status: TransactionConstructionStatus.Loaded,
-        transactionRequest,
+      {
+        payload: { transactionRequest, transactionLikelyFails },
+      }: {
+        payload: {
+          transactionRequest: EIP1559TransactionRequest
+          transactionLikelyFails: boolean
+        }
       }
-    },
+    ) => ({
+      ...immerState,
+      status: TransactionConstructionStatus.Loaded,
+      transactionRequest,
+      transactionLikelyFails,
+    }),
     signed: (immerState) => {
       immerState.status = TransactionConstructionStatus.Signed
     },
+    transactionLikelyFails: (state) => ({
+      ...state,
+      transactionLikelyFails: true,
+    }),
     estimatedFeesPerGas: (
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
@@ -102,8 +115,12 @@ const transactionSlice = createSlice({
   },
 })
 
-export const { transactionRequest, signed, estimatedFeesPerGas } =
-  transactionSlice.actions
+export const {
+  transactionRequest,
+  transactionLikelyFails,
+  signed,
+  estimatedFeesPerGas,
+} = transactionSlice.actions
 
 export default transactionSlice.reducer
 

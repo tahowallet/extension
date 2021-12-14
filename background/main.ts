@@ -3,6 +3,7 @@ import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { ethers } from "ethers"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
 import logger from "./lib/logger"
@@ -23,8 +24,6 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
-  transactionConfirmed,
-  transactionSeen,
   blockSeen,
   updateAccountBalance,
   updateENSName,
@@ -42,15 +41,20 @@ import {
 import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
-  emitter as transactionSliceEmitter,
+  emitter as transactionConstructionSliceEmitter,
   transactionRequest,
   signed,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
-import { determineToken } from "./redux-slices/utils/activity-utils"
+import { enrichTransactionWithContractInfo } from "./services/enrichment"
 import BaseService from "./services/base"
 import InternalEthereumProviderService from "./services/internal-ethereum-provider"
 import ProviderBridgeService from "./services/provider-bridge"
+import {
+  requestPermission,
+  emitter as providerBridgeSliceEmitter,
+  initializeAllowedPages,
+} from "./redux-slices/dapp-permission"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is direcetly
@@ -278,6 +282,7 @@ export default class Main extends BaseService<never> {
     this.connectIndexingService()
     this.connectKeyringService()
     this.connectNameService()
+    this.connectProviderBridgeService()
     await this.connectChainService()
   }
 
@@ -289,24 +294,19 @@ export default class Main extends BaseService<never> {
     })
     this.chainService.emitter.on("transaction", async (payload) => {
       const { transaction } = payload
-      const enrichedPayload = {
-        ...payload,
-        transaction: {
-          ...transaction,
-          token: await determineToken(transaction),
-        },
-      }
 
-      if (
-        transaction.blockHash &&
-        "gasUsed" in transaction &&
-        transaction.gasUsed !== undefined
-      ) {
-        this.store.dispatch(transactionConfirmed(transaction))
-      } else {
-        this.store.dispatch(transactionSeen(transaction))
-      }
-      this.store.dispatch(activityEncountered(enrichedPayload))
+      const enrichedTransaction = enrichTransactionWithContractInfo(
+        this.store.getState().assets,
+        transaction,
+        2 /* TODO desiredDecimals should be configurable */
+      )
+
+      this.store.dispatch(
+        activityEncountered({
+          ...payload,
+          transaction: enrichedTransaction,
+        })
+      )
     })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
@@ -315,43 +315,58 @@ export default class Main extends BaseService<never> {
       await this.chainService.addAccountToTrack(addressNetwork)
     })
 
-    transactionSliceEmitter.on("updateOptions", async (options) => {
-      if (
-        typeof options.from !== "undefined" &&
-        typeof options.gasLimit !== "undefined" &&
-        typeof options.maxFeePerGas !== "undefined" &&
-        typeof options.maxPriorityFeePerGas !== "undefined" &&
-        typeof options.value !== "undefined"
-      ) {
-        // TODO Deal with pending transactions.
-        const resolvedNonce =
-          await this.chainService.pollingProviders.ethereum.getTransactionCount(
-            options.from,
-            "latest"
-          )
-        // Basic transaction construction based on the provided options, with extra data from the chain service
-        const transaction: EIP1559TransactionRequest = {
-          from: options.from,
-          to: options.to,
-          value: options.value,
-          gasLimit: options.gasLimit,
-          maxFeePerGas: options.maxFeePerGas,
-          maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-          input: "",
-          type: 2 as const,
-          chainID: "1",
-          nonce: resolvedNonce,
-        }
-
-        transaction.gasLimit = await this.chainService.estimateGasLimit(
-          getEthereumNetwork(),
-          transaction
+    transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      // TODO Deal with pending transactions.
+      const resolvedNonce =
+        await this.chainService.pollingProviders.ethereum.getTransactionCount(
+          options.from,
+          "latest"
         )
-        this.store.dispatch(transactionRequest(transaction))
+
+      // Basic transaction construction based on the provided options, with extra data from the chain service
+      const transaction: EIP1559TransactionRequest = {
+        from: options.from,
+        to: options.to,
+        value: options.value ?? 0n,
+        gasLimit: options.gasLimit ?? 0n,
+        maxFeePerGas: options.maxFeePerGas ?? 0n,
+        maxPriorityFeePerGas: options.maxPriorityFeePerGas ?? 0n,
+        input: "",
+        type: 2 as const,
+        chainID: "1",
+        nonce: resolvedNonce,
+      }
+
+      try {
+        // We use estimateGasLimit only if user did not specify the gas explicitly or it was set below minimum
+        if (
+          typeof options.gasLimit === "undefined" ||
+          options.gasLimit < 21000n
+        ) {
+          transaction.gasLimit = await this.chainService.estimateGasLimit(
+            getEthereumNetwork(),
+            transaction
+          )
+        }
+        // TODO If the user does specify gas explicitly, test for success.
+
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: false,
+          })
+        )
+      } catch (error) {
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: true,
+          })
+        )
       }
     })
 
-    transactionSliceEmitter.on(
+    transactionConstructionSliceEmitter.on(
       "requestSignature",
       async (transaction: EIP1559TransactionRequest) => {
         const signedTx = await this.keyringService.signTransaction(
@@ -471,5 +486,32 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
       await this.keyringService.importLegacyKeyring(mnemonic)
     })
+  }
+
+  async connectProviderBridgeService(): Promise<void> {
+    this.providerBridgeService.emitter.on(
+      "requestPermission",
+      (permissionRequest: PermissionRequest) => {
+        this.store.dispatch(requestPermission(permissionRequest))
+      }
+    )
+
+    this.providerBridgeService.emitter.on(
+      "initializeAllowedPages",
+      async (allowedPages: Record<string, PermissionRequest>) => {
+        this.store.dispatch(initializeAllowedPages(allowedPages))
+      }
+    )
+
+    providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      await this.providerBridgeService.grantPermission(permission)
+    })
+
+    providerBridgeSliceEmitter.on(
+      "denyOrRevokePermission",
+      async (permission) => {
+        await this.providerBridgeService.denyOrRevokePermission(permission)
+      }
+    )
   }
 }

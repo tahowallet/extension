@@ -110,7 +110,7 @@ label {
 }
 
 .label {
-  color: var(--green-60);
+  color: var(--green-40);
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.42px;

@@ -1,77 +1,97 @@
 import dayjs from "dayjs"
-import { getNetwork } from "@ethersproject/networks"
-import { AlchemyProvider } from "@ethersproject/providers"
-import logger from "../../lib/logger"
-import { ETH } from "../../constants/currencies"
-import { SmartContractFungibleAsset, FungibleAsset } from "../../assets"
-import { getTokenMetadata } from "../../lib/alchemy"
-import { convertToEth, getEthereumNetwork } from "../../lib/utils"
+import { convertToEth } from "../../lib/utils"
 import { AnyEVMTransaction } from "../../networks"
-import { AssetDecimalAmount } from "./asset-utils"
+import { ContractInfo } from "../../services/enrichment"
 
-const pollingProviders = {
-  ethereum: new AlchemyProvider(
-    getNetwork(Number(getEthereumNetwork().chainID)),
-    process.env.ALCHEMY_KEY
-  ),
-}
-
-function ethTransformer(value: string | number | bigint | null): string {
-  if (value === null) {
+function ethTransformer(
+  value: string | number | bigint | null | undefined
+): string {
+  if (value === null || typeof value === "undefined") {
     return "(Unknown)"
   }
   return `${convertToEth(value)} ETH`
 }
 
+type FieldAdapter<T> = {
+  readableName: string
+  transformer: (value: T) => string
+  detailTransformer: (value: T) => string
+}
+
 export type UIAdaptationMap<T> = {
-  [P in keyof T]?: {
-    readableName: string
-    transformer: (value: T[P]) => string
-    detailTransformer: (value: T[P]) => string
-  }
+  [P in keyof T]?: FieldAdapter<T[P]>
 }
 
 export type ActivityItem = AnyEVMTransaction & {
+  contractInfo?: ContractInfo | undefined
+  localizedDecimalValue: string
   timestamp?: number
-  isSent: boolean
-  blockHeight: number
+  isSent?: boolean
+  blockHeight: number | null
+  fromTruncated: string
+  toTruncated: string
   infoRows: {
     [name: string]: {
       label: string
-      value: unknown
+      value: string
       valueDetail: string
     }
   }
-  token: FungibleAsset
-  tokenDecimalValue: AssetDecimalAmount["decimalAmount"]
-  fromTruncated: string
-  toTruncated: string
 }
 
-export function adaptForUI<T>(keysMap: UIAdaptationMap<T>, item: T) {
+/**
+ * Given a map of adaptations from fields in type T, return all keys that need
+ * adaptation with three fields, a label, a value, and a valueDetail, derived
+ * based on the adaptation map.
+ */
+export function adaptForUI<T>(
+  fieldAdapters: UIAdaptationMap<T>,
+  item: T
+): {
+  [key in keyof UIAdaptationMap<T>]: {
+    label: string
+    value: string
+    valueDetail: string
+  }
+} {
   // The as below is dicey but reasonable in our usage.
-  return Object.keys(item).reduce((previousValue, key) => {
-    if (key in keysMap) {
-      const knownKey = key as keyof UIAdaptationMap<T> // guaranteed to be true by the `in` test
-      const keyAdjustment = keysMap[knownKey]
+  return Object.keys(fieldAdapters).reduce(
+    (adaptedFields, key) => {
+      const knownKey = key as keyof UIAdaptationMap<T> // statically guaranteed
+      const adapter = fieldAdapters[knownKey] as
+        | FieldAdapter<unknown>
+        | undefined
 
-      return keyAdjustment === undefined
-        ? previousValue
-        : {
-            ...previousValue,
-            [keyAdjustment.readableName]: keyAdjustment.transformer(
-              item[knownKey]
-            ),
-          }
+      if (typeof adapter === "undefined") {
+        return adaptedFields
+      }
+
+      const { readableName, transformer, detailTransformer } = adapter
+
+      return {
+        ...adaptedFields,
+        [key]: {
+          label: readableName,
+          value: transformer(item[knownKey]),
+          valueDetail: detailTransformer(item[knownKey]),
+        },
+      }
+    },
+    {} as {
+      [key in keyof UIAdaptationMap<T>]: {
+        label: string
+        value: string
+        valueDetail: string
+      }
     }
-    return previousValue
-  }, {})
+  )
 }
 
 export const keysMap: UIAdaptationMap<ActivityItem> = {
   blockHeight: {
     readableName: "Block Height",
-    transformer: (item: number) => item.toString(),
+    transformer: (height: number | null) =>
+      height === null ? "(pending)" : height.toString(),
     detailTransformer: () => {
       return ""
     },
@@ -108,41 +128,4 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
       return ""
     },
   },
-}
-
-export async function determineToken(
-  result: AnyEVMTransaction
-): Promise<FungibleAsset | SmartContractFungibleAsset | null> {
-  const { input } = result
-  let asset = ETH
-  if (input) {
-    try {
-      let meta: SmartContractFungibleAsset | null = null
-      if (result?.to) {
-        meta = await getTokenMetadata(pollingProviders.ethereum, result.to)
-      }
-      if (meta) {
-        asset = meta
-      }
-    } catch (err) {
-      logger.error(`Error getting token metadata`, err)
-    }
-  }
-
-  return asset
-}
-
-export function determineActivityDecimalValue(
-  activityItem: ActivityItem
-): number {
-  const { token } = activityItem
-  let { value } = activityItem
-
-  // Derive value from transaction transfer if not sending ETH
-  if (value === BigInt(0) && activityItem.input) {
-    value = BigInt(`0x${activityItem.input.slice(10).slice(0, 64)}`)
-  }
-
-  const decimalValue = Number(value) / 10 ** token.decimals
-  return decimalValue
 }

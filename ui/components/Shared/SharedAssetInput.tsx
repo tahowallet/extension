@@ -130,9 +130,10 @@ interface SharedAssetInputProps {
   label: string
   defaultAsset: Asset
   amount: string
+  maxBalance: number
   isAssetOptionsLocked: boolean
   onAssetSelect: (asset: Asset) => void
-  onAmountChange: (value: string) => void
+  onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -145,6 +146,7 @@ export default function SharedAssetInput(
     label,
     defaultAsset,
     amount,
+    maxBalance,
     isAssetOptionsLocked,
     onAssetSelect,
     onAmountChange,
@@ -175,6 +177,13 @@ export default function SharedAssetInput(
     [onAssetSelect]
   )
 
+  const getErrorMessage = (givenAmount: string): string | undefined => {
+    return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
+      Number(givenAmount) === 0
+      ? undefined
+      : "Insufficient balance"
+  }
+
   return (
     <label className="label">
       {label}
@@ -184,10 +193,12 @@ export default function SharedAssetInput(
           setOpenAssetMenu(false)
         }}
       >
-        <SelectAssetMenuContent
-          assets={assets}
-          setSelectedAssetAndClose={setSelectedAssetAndClose}
-        />
+        {assets && (
+          <SelectAssetMenuContent
+            assets={assets}
+            setSelectedAssetAndClose={setSelectedAssetAndClose}
+          />
+        )}
       </SharedSlideUpMenu>
       <div className="asset_wrap standard_width">
         {isTypeDestination ? (
@@ -229,13 +240,15 @@ export default function SharedAssetInput(
             <input
               className="input_amount"
               type="number"
-              step="any"
               placeholder="0.0"
               value={amount}
-              onChange={(e) => onAmountChange(e.target.value)}
+              onChange={(e) =>
+                onAmountChange(e.target.value, getErrorMessage(e.target.value))
+              }
             />
           </>
         )}
+        <div className="error_message">{getErrorMessage(amount)}</div>
       </div>
       <style jsx>
         {`
@@ -298,6 +311,20 @@ export default function SharedAssetInput(
           input[type="number"] {
             -moz-appearance: textfield;
           }
+          .error_message {
+            color: var(--error);
+            position: absolute;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 20px;
+            transform: translateY(-3px);
+            align-self: flex-end;
+            text-align: end;
+            width: 150px;
+            background-color: var(--green-95);
+            margin-left: 172px;
+            z-index: 1;
+          }
         `}
       </style>
     </label>
@@ -311,6 +338,7 @@ SharedAssetInput.defaultProps = {
   defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
+  maxBalance: 0,
   onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
