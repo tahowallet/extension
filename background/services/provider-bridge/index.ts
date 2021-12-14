@@ -92,7 +92,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     // a port: browser.Runtime.Port is passed into this function as a 2nd argument by the port.onMessage.addEventListener.
     // This contradicts the MDN documentation so better not to rely on it.
-    logger.log(`background: request payload: ${JSON.stringify(event.request)}`)
+    // logger.log(`background: request payload: ${JSON.stringify(event.request)}`)
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
@@ -123,7 +123,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
     }
 
-    logger.log("background response:", response)
+    // logger.log("background response:", response)
 
     port.postMessage(response)
   }
