@@ -2,14 +2,19 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { utils } from "ethers"
+import { BigNumber, utils } from "ethers"
 
 import logger from "./logger"
 import { HexString } from "../types"
-import { AssetTransfer, SmartContractFungibleAsset } from "../assets"
+import {
+  AssetTransfer,
+  FungibleAsset,
+  SmartContractFungibleAsset,
+} from "../assets"
 import { ETH } from "../constants"
 import { jtdValidatorFor } from "./validation"
 import { getEthereumNetwork } from "./utils"
+import { AnyEVMTransaction, EVMNetwork } from "../networks"
 
 // JSON Type Definition for the Alchemy assetTransfers API.
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
@@ -281,5 +286,61 @@ export async function getTokenMetadata(
     },
     homeNetwork: getEthereumNetwork(), // TODO make multi-network friendly
     contractAddress,
+  }
+}
+
+/**
+ * Parse a transaction as returned by an Alchemy provider subscription.
+ */
+export function transactionFromAlchemyWebsocketTransaction(
+  websocketTx: unknown,
+  asset: FungibleAsset,
+  network: EVMNetwork
+): AnyEVMTransaction {
+  // These are the props we expect here.
+  const tx = websocketTx as {
+    hash: string
+    to: string
+    from: string
+    gas: string
+    gasPrice: string
+    maxFeePerGas: string | undefined | null
+    maxPriorityFeePerGas: string | undefined | null
+    input: string
+    r: string
+    s: string
+    v: string
+    nonce: string
+    value: string
+    blockHash: string | undefined | null
+    blockHeight: string | undefined | null
+    blockNumber: number | undefined | null
+    type: string | undefined | null
+  }
+
+  return {
+    hash: tx.hash,
+    to: tx.to,
+    from: tx.from,
+    gasLimit: BigInt(tx.gas),
+    gasPrice: BigInt(tx.gasPrice),
+    maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,
+    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+      ? BigInt(tx.maxPriorityFeePerGas)
+      : null,
+    input: tx.input,
+    r: tx.r || undefined,
+    s: tx.s || undefined,
+    v: BigNumber.from(tx.v).toNumber(),
+    nonce: Number(tx.nonce),
+    value: BigInt(tx.value),
+    blockHash: tx.blockHash ?? null,
+    blockHeight: tx.blockNumber ?? null,
+    type:
+      tx.type !== undefined
+        ? (BigNumber.from(tx.type).toNumber() as AnyEVMTransaction["type"])
+        : 0,
+    asset,
+    network,
   }
 }
