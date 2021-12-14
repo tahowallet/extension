@@ -1,6 +1,7 @@
 import React, { ReactElement, useCallback } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { selectShowingActivityDetail } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -15,13 +16,13 @@ export default function WalletActivityList({
   activities,
 }: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const { showingActivityDetail } = useBackgroundSelector(
-    (background) => background.ui
+  const showingActivityDetail = useBackgroundSelector(
+    selectShowingActivityDetail
   )
 
   const handleOpen = useCallback(
-    (activityItem) => {
-      dispatch(setShowingActivityDetail(activityItem))
+    (activityItem: ActivityItem) => {
+      dispatch(setShowingActivityDetail(activityItem.hash))
     },
     [dispatch]
   )

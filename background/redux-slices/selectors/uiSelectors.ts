@@ -1,7 +1,23 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
+import { ActivityItem } from "../activities"
 
 const mainCurrencySymbol = "USD"
+
+export const selectShowingActivityDetail = createSelector(
+  (state: RootState) => state.activities,
+  (state: RootState) => state.ui.showingActivityDetailID,
+  (activities, showingActivityDetailID) => {
+    return showingActivityDetailID === null
+      ? null
+      : Object.values(activities)
+          .map<ActivityItem | undefined>(
+            (accountActivities) =>
+              accountActivities.entities[showingActivityDetailID]
+          )
+          .find((activity) => typeof activity !== "undefined")
+  }
+)
 
 export const selectCurrentAccount = createSelector(
   (state: RootState) => state.ui.currentAccount,
