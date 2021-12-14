@@ -45,6 +45,9 @@ export function connectProviderBridge(): void {
       windowOriginAtLoadTime
     )
   })
+
+  // let's grab the internal config
+  port.postMessage({ request: { method: "tally_getConfig" } })
 }
 
 export async function injectTallyWindowProvider(): Promise<void> {

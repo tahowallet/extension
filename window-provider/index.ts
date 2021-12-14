@@ -7,9 +7,8 @@ import {
   isPortResponseEvent,
   RequestArgument,
   EthersSendCallback,
-  EIP1193_ERROR,
-  isEIP1193ErrorCode,
-  isNumber,
+  isTallyInternalCommunication,
+  TallyInternalCommunication,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
@@ -28,6 +27,51 @@ export default class TallyWindowProvider extends EventEmitter {
 
   constructor(public transport: ProviderTransport) {
     super()
+
+    const internalListener = (event: unknown) => {
+      let result: TallyInternalCommunication
+      if (
+        isWindowResponseEvent(event) &&
+        isTallyInternalCommunication(event.data.result)
+      ) {
+        if (
+          event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
+          event.source !== window || // we want to recieve messages only from the provider-bridge script
+          event.data.target !== WINDOW_PROVIDER_TARGET
+        ) {
+          return
+        }
+
+        ;({ result } = event.data)
+      } else if (
+        isPortResponseEvent(event) &&
+        isTallyInternalCommunication(event.result)
+      ) {
+        ;({ result } = event)
+      } else {
+        return
+      }
+
+      if (result.defaultWallet) {
+        // let's set Tally as a default wallet
+        // and bkp any object that maybe using window.ethereum
+        if (window.ethereum) {
+          window.oldEthereum = window.ethereum
+        }
+
+        window.ethereum = window.tally
+      } else {
+        // let's remove tally as a default wallet
+        // and put back whatever it was there before us
+        if (window.oldEthereum) {
+          window.ethereum = window.oldEthereum
+        } else {
+          window.ethereum = undefined
+        }
+      }
+    }
+
+    this.transport.addEventListener(internalListener)
   }
 
   // deprecated EIP-1193 method
@@ -86,6 +130,7 @@ export default class TallyWindowProvider extends EventEmitter {
       const listener = (event: unknown) => {
         let id
         let result: unknown
+
         if (isWindowResponseEvent(event)) {
           if (
             event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script

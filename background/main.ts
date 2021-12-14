@@ -158,7 +158,8 @@ export default class Main extends BaseService<never> {
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService)
     const providerBridgeService = ProviderBridgeService.create(
-      internalEthereumProviderService
+      internalEthereumProviderService,
+      preferenceService
     )
 
     let savedReduxState = {}
@@ -527,6 +528,10 @@ export default class Main extends BaseService<never> {
       "newDefaultWalletValue",
       async (newDefaultWalletValue) => {
         await this.preferenceService.setDefaultWalletValue(
+          newDefaultWalletValue
+        )
+
+        this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
       }

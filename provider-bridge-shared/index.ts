@@ -57,6 +57,12 @@ export type PortTransport = {
 
 export type EthersSendCallback = (error: unknown, response: unknown) => void
 
+export type TallyInternalCommunication = {
+  method: "tally_getConfig"
+  defaultWallet: boolean
+  [prop: string]: unknown
+}
+
 export function getType(arg: unknown) {
   return Object.prototype.toString.call(arg).slice("[object ".length, -1)
 }
@@ -125,4 +131,10 @@ export function isAllowedQueryParamPage(
   // The typing for Array.includes in `lib.es.2016.array.include.ts` does not make any sense here -> Object.values<string>
   // interface Array<T> { ... includes(searchElement: T, fromIndex?: number): boolean; ...
   return Object.values<unknown>(AllowedQueryParamPage).includes(url)
+}
+
+export function isTallyInternalCommunication(
+  arg: unknown
+): arg is TallyInternalCommunication {
+  return isObject(arg) && arg.method === "tally_getConfig"
 }
