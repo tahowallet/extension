@@ -34,7 +34,10 @@ function transformLocation(inputLocation: Location): Location {
   const maybePage = params.get("page")
 
   let { pathname } = inputLocation
-  if (isAllowedQueryParamPage(maybePage)) {
+  if (
+    isAllowedQueryParamPage(maybePage) &&
+    !inputLocation.pathname.includes("/keyring/")
+  ) {
     pathname = maybePage
   }
 
@@ -45,8 +48,6 @@ function transformLocation(inputLocation: Location): Location {
 }
 
 export default function Popup({ store }: { store: Store }): ReactElement {
-  const history = useHistory()
-
   return (
     <Provider store={store}>
       <Router>

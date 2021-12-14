@@ -26,6 +26,7 @@ import BaseService from "../base"
 import {
   blockFromEthersBlock,
   blockFromWebsocketBlock,
+  ethersTransactionRequestFromEIP1559TransactionRequest,
   ethersTxFromSignedTx,
   txFromEthersTx,
   txFromWebsocketTx,
@@ -348,9 +349,11 @@ export default class ChainService extends BaseService<Events> {
    */
   async estimateGasLimit(
     network: EVMNetwork,
-    tx: EIP1559TransactionRequest
+    transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
-    const estimate = await this.pollingProviders.ethereum.estimateGas(tx)
+    const estimate = await this.pollingProviders.ethereum.estimateGas(
+      ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
+    )
     return BigInt(estimate.toString())
   }
 

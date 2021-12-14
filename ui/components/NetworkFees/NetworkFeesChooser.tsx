@@ -13,9 +13,11 @@ import SharedInput from "../Shared/SharedInput"
 type GasOption = {
   name: string
   confidence: string
-  gwei: string
+  estimatedGwei: string
+  maxGwei: string
   dollarValue: string
   price: bigint
+  estimatedFeePerGas: bigint
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
 }
@@ -25,7 +27,7 @@ interface NetworkFeesChooserProps {
   onSelectFeeOption: (arg0: BlockEstimate) => void
   currentFeeSelectionPrice: (arg0: { gwei: string; fiat: string }) => void
   selectedGas?: BlockEstimate
-  gasLimit: string | number
+  gasLimit: string
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
 }
@@ -56,7 +58,7 @@ export default function NetworkFeesChooser({
     })
     setFeeModalOpen(false)
     currentFeeSelectionPrice({
-      gwei: gasOptions[activeFeeIndex].gwei,
+      gwei: gasOptions[activeFeeIndex].estimatedGwei,
       fiat: gasOptions[activeFeeIndex].dollarValue,
     })
   }
@@ -83,32 +85,37 @@ export default function NetworkFeesChooser({
       const baseFee = estimatedFeesPerGas?.baseFeePerGas || 0n
       const feeOptionData: {
         name: { [key: number]: string }
-        multiplier: { [key: number]: bigint }
+        estimatedMultiplier: { [key: number]: bigint }
+        maxMultiplier: { [key: number]: bigint }
       } = {
         name: {
           70: "Regular",
           95: "Express",
           99: "Instant",
         },
-        multiplier: {
-          70: 13n,
-          95: 15n,
+        estimatedMultiplier: {
+          70: 11n,
+          95: 13n,
           99: 18n,
         },
+        maxMultiplier: {
+          70: 13n,
+          95: 15n,
+          99: 20n,
+        },
       }
-      const gweiAmount = formatUnits(
-        BigInt(
-          Number(
-            (baseFee * feeOptionData.multiplier[confidence]) / 10n
-          ).toFixed()
-        ) + option.maxPriorityFeePerGas,
-        "gwei"
-      ).split(".")[0]
+      const formatToGwei = (multiplier: bigint) => {
+        return formatUnits(
+          BigInt(Number((baseFee * multiplier) / 10n).toFixed()) +
+            option.maxPriorityFeePerGas,
+          "gwei"
+        ).split(".")[0]
+      }
 
       const ethAmount = formatEther(
-        (baseFee * feeOptionData.multiplier[confidence] +
+        (baseFee * feeOptionData.estimatedMultiplier[confidence] +
           option.maxPriorityFeePerGas) *
-          (BigInt(gasLimit) > 0 ? BigInt(gasLimit) : 21000n)
+          (gasLimit ? BigInt(parseInt(gasLimit, 10)) : 21000n)
       )
 
       const feeFiatPrice =
@@ -119,10 +126,15 @@ export default function NetworkFeesChooser({
       return {
         name: feeOptionData.name[confidence],
         confidence: `${confidence}`,
-        gwei: gweiAmount,
+        estimatedGwei: formatToGwei(
+          feeOptionData.estimatedMultiplier[confidence]
+        ),
+        maxGwei: formatToGwei(feeOptionData.maxMultiplier[confidence]),
         dollarValue: feeFiatPrice,
         price: option.price,
-        maxFeePerGas: (baseFee * feeOptionData.multiplier[confidence]) / 10n,
+        estimatedFeePerGas:
+          (baseFee * feeOptionData.estimatedMultiplier[confidence]) / 10n,
+        maxFeePerGas: (baseFee * feeOptionData.maxMultiplier[confidence]) / 10n,
         maxPriorityFeePerGas: option.maxPriorityFeePerGas,
       }
     }
@@ -150,7 +162,7 @@ export default function NetworkFeesChooser({
             price: currentlySelectedFee.price,
           })
           currentFeeSelectionPrice({
-            gwei: currentlySelectedFee.gwei,
+            gwei: currentlySelectedFee.estimatedGwei,
             fiat: currentlySelectedFee.dollarValue,
           })
         }
@@ -185,7 +197,7 @@ export default function NetworkFeesChooser({
           <div className="divider-background" />
           <div
             className="divider-cover"
-            style={{ left: (120 - timeRemaining) * (-384 / 120) }}
+            style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
           />
         </div>
         {gasOptions.map((option, i) => {
@@ -201,23 +213,31 @@ export default function NetworkFeesChooser({
                 <div className="subtext">Probability: {option.confidence}%</div>
               </div>
               <div className="option_right">
-                <div className="price">{`~${option.gwei} Gwei`}</div>
+                <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
                 <div className="subtext">${option.dollarValue}</div>
               </div>
             </button>
           )
         })}
-        <div className="limit">
-          <label className="limit_label" htmlFor="gasLimit">
-            Gas limit
-          </label>
-          <SharedInput
-            id="gasLimit"
-            value={gasLimit}
-            onChange={(val) => setGasLimit(val)}
-            placeholder="Auto"
-            type="number"
-          />
+        <div className="info">
+          <div className="limit">
+            <label className="limit_label" htmlFor="gasLimit">
+              Gas limit
+            </label>
+            <SharedInput
+              id="gasLimit"
+              value={gasLimit}
+              onChange={(val) => setGasLimit(val)}
+              placeholder="21000"
+              type="number"
+            />
+          </div>
+          <div className="max_fee">
+            <span className="max_label">Max Fee</span>
+            <div className="price">
+              {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+            </div>
+          </div>
         </div>
       </div>
       <div className="confirm">
@@ -332,6 +352,21 @@ export default function NetworkFeesChooser({
             box-sizing: border-box;
             justify-content: flex-end;
             padding: 20px 16px;
+          }
+          .info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .max_fee {
+            display: flex;
+            flex-flow: column;
+            margin-right: 16px;
+            align-items: flex-end;
+          }
+          .max_label {
+            font-size: 14px;
+            color: var(--green-40);
           }
         `}
       </style>
