@@ -206,14 +206,6 @@ export default function SharedAssetInput(
                 onSendToAddressChange(event.target.value)
               }}
             />
-            <SharedButton
-              type="tertiary"
-              size="medium"
-              icon="paste"
-              iconSize="large"
-            >
-              Paste
-            </SharedButton>
           </>
         ) : (
           <>
