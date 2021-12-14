@@ -48,8 +48,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     } else if (sameEVMAddress(asAccount, activity.from)) {
       renderDetails = {
         ...renderDetails,
-        label: "Sent",
-        iconClass: "send_icon",
         isSend: true,
       }
     }
@@ -57,14 +55,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
 
   switch (activity.contractInfo?.type) {
     case "asset-transfer":
-      const isSend = sameEVMAddress(
+      renderDetails.isSend = sameEVMAddress(
         activity.contractInfo.recipientAddress,
         activity.from
       )
       renderDetails = {
         ...renderDetails,
-        label: isSend ? "Sent" : "Received",
-        iconClass: isSend ? "send_icon" : undefined,
+        label: renderDetails.isSend ? "Sent" : "Received",
         recipient: truncateAddress(activity.contractInfo.recipientAddress),
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
@@ -107,6 +104,11 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       }
       break
     default:
+  }
+
+  if (renderDetails.isSend) {
+    renderDetails.label = "Sent"
+    renderDetails.iconClass = "send_icon"
   }
 
   return (
