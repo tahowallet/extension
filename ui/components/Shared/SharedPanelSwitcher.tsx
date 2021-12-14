@@ -16,7 +16,7 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
       <ul>
         {panelNames.slice(0, 2).map((name, index) => {
           return (
-            <li>
+            <li key={name}>
               <button
                 type="button"
                 onClick={() => {
