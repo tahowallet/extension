@@ -8,7 +8,6 @@ import {
   selectTransactionData,
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ENABLE_EDIT_NETWORK_FEE } from "@tallyho/tally-background/features/features"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -159,7 +158,7 @@ export default function SignTransaction(): ReactElement {
           <span className="detail_item">
             Estimated network fee
             <span className="detail_item_right">
-              {ENABLE_EDIT_NETWORK_FEE ? (
+              {signType === SignType.Sign ? (
                 <NetworkFeesChooser
                   estimatedFeesPerGas={estimatedFeesPerGas}
                   onSelectFeeOption={setSelectedEstimatedFeePerGas}
