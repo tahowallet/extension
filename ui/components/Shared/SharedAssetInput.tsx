@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
+import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -136,6 +137,7 @@ interface SharedAssetInputProps {
   amount: string
   maxBalance: number
   isTokenOptionsLocked: boolean
+  disableDropdown: boolean
   onAssetSelect: (token: Asset) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
@@ -152,6 +154,7 @@ export default function SharedAssetInput(
     amount,
     maxBalance,
     isTokenOptionsLocked,
+    disableDropdown,
     onAssetSelect,
     onAmountChange,
     onSendToAddressChange,
@@ -213,21 +216,23 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            {selectedToken?.symbol ? (
-              <SelectedTokenButton
-                asset={selectedToken}
-                toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
-              />
-            ) : (
-              <SharedButton
-                type="secondary"
-                size="medium"
-                onClick={toggleIsTokenMenuOpen}
-                icon="chevron"
-              >
-                Select token
-              </SharedButton>
-            )}
+            <div className={classNames({ disable_click: disableDropdown })}>
+              {selectedToken?.symbol ? (
+                <SelectedTokenButton
+                  asset={selectedToken}
+                  toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
+                />
+              ) : (
+                <SharedButton
+                  type="secondary"
+                  size="medium"
+                  onClick={toggleIsTokenMenuOpen}
+                  icon="chevron"
+                >
+                  Select token
+                </SharedButton>
+              )}
+            </div>
             <input
               className="input_amount"
               type="number"
@@ -316,6 +321,9 @@ export default function SharedAssetInput(
             margin-left: 172px;
             z-index: 1;
           }
+          .disable_click {
+            pointer-events: none;
+          }
         `}
       </style>
     </label>
@@ -325,6 +333,7 @@ export default function SharedAssetInput(
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isTokenOptionsLocked: false,
+  disableDropdown: false,
   assets: [{ symbol: "ETH", name: "Example Asset" }],
   defaultToken: { symbol: "", name: "" },
   label: "",
