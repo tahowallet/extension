@@ -1,6 +1,7 @@
 import { BigNumber } from "ethers"
 import {
   Block as EthersBlock,
+  TransactionReceipt as EthersTransactionReceipt,
   TransactionRequest as EthersTransactionRequest,
 } from "@ethersproject/abstract-provider"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
@@ -143,63 +144,22 @@ export function ethersTxFromSignedTx(
 /**
  * Parse a transaction as returned by a websocket provider subscription.
  */
-export function txFromWebsocketTx(
-  websocketTx: unknown,
-  asset: FungibleAsset,
-  network: EVMNetwork
+export function enrichTransactionWithReceipt(
+  transaction: AnyEVMTransaction,
+  receipt: EthersTransactionReceipt
 ): AnyEVMTransaction {
-  // These are the props we expect here.
-  const tx = websocketTx as {
-    hash: string
-    to: string
-    from: string
-    gas: string
-    gasPrice: string
-    maxFeePerGas: string | undefined | null
-    maxPriorityFeePerGas: string | undefined | null
-    input: string
-    r: string
-    s: string
-    v: string
-    nonce: string
-    value: string
-    blockHash: string | undefined | null
-    blockHeight: string | undefined | null
-    blockNumber: number | undefined | null
-    type: string | undefined | null
-  }
-
   return {
-    hash: tx.hash,
-    to: tx.to,
-    from: tx.from,
-    gasLimit: BigInt(tx.gas),
-    gasPrice: BigInt(tx.gasPrice),
-    maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,
-    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-      ? BigInt(tx.maxPriorityFeePerGas)
-      : null,
-    input: tx.input,
-    r: tx.r || undefined,
-    s: tx.s || undefined,
-    v: BigNumber.from(tx.v).toNumber(),
-    nonce: Number(tx.nonce),
-    value: BigInt(tx.value),
-    blockHash: tx.blockHash ?? null,
-    blockHeight: tx.blockNumber ?? null,
-    type:
-      tx.type !== undefined
-        ? (BigNumber.from(tx.type).toNumber() as AnyEVMTransaction["type"])
-        : 0,
-    asset,
-    network,
+    ...transaction,
+    gasUsed: receipt.gasUsed.toBigInt(),
+    blockHash: receipt.blockHash,
+    blockHeight: receipt.blockNumber,
   }
 }
 
 /**
  * Parse a transaction as returned by a polling provider.
  */
-export function txFromEthersTx(
+export function transactionFromEthersTransaction(
   tx: EthersTransaction & {
     from: string
     blockHash?: string
