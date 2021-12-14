@@ -90,9 +90,6 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         >
           Import account
         </SharedButton>
-        <SharedButton size="small" type="tertiary">
-          How do I find the seed?
-        </SharedButton>
       </div>
       <style jsx>{`
         section {
