@@ -21,7 +21,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const [openAssetMenu, setOpenAssetMenu] = useState(false)
+  const [confirmationMenu, setConfirmationMenu] = useState(false)
 
   const { sellAsset, buyAsset, sellAmount, buyAmount, quote } =
     useBackgroundSelector((state) => state.swap)
@@ -60,7 +60,7 @@ export default function Swap(): ReactElement {
   useEffect(() => {
     if (quote) {
       // Now open the asset menu
-      setOpenAssetMenu(true)
+      setConfirmationMenu(true)
     }
   }, [quote])
 
@@ -146,8 +146,11 @@ export default function Swap(): ReactElement {
     <>
       <CorePage>
         <SharedSlideUpMenu
-          isOpen={openAssetMenu}
-          close={() => setOpenAssetMenu(false)}
+          isOpen={confirmationMenu}
+          close={() => {
+            setConfirmationMenu(false)
+            dispatch(clearSwapQuote())
+          }}
           size="large"
         >
           <SwapQoute />
