@@ -64,7 +64,7 @@ export default function Menu(): ReactElement {
         ),
       },
       {
-        title: "Should Tally be THE default wallet?",
+        title: "Use Tally as default wallet",
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
