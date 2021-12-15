@@ -23,7 +23,7 @@ import {
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 
-enum SignType {
+export enum SignType {
   Sign = "sign",
   SignSwap = "sign-swap",
   SignSpend = "sign-spend",
@@ -131,11 +131,7 @@ export default function SignTransaction(): ReactElement {
   }
 
   const handleConfirm = async () => {
-    if (
-      SignType.Sign === signType &&
-      isTransactionDataReady &&
-      transactionDetails
-    ) {
+    if (isTransactionDataReady && transactionDetails) {
       dispatch(signTransaction(transactionDetails))
       setIsTransactionSigning(true)
     }
