@@ -12,6 +12,7 @@ export type UIState = {
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   settings: undefined | { hideDust: boolean | undefined }
+  snackbarMessage: string
 }
 
 export const initialState: UIState = {
@@ -24,6 +25,7 @@ export const initialState: UIState = {
   settings: {
     hideDust: false,
   },
+  snackbarMessage: "",
 }
 
 const uiSlice = createSlice({
@@ -60,6 +62,19 @@ const uiSlice = createSlice({
       ...state,
       initializationLoadingTimeExpired: true,
     }),
+    setSnackbarMessage: (
+      state,
+      { payload: snackbarMessage }: { payload: string }
+    ): UIState => {
+      return {
+        ...state,
+        snackbarMessage,
+      }
+    },
+    clearSnackbarMessage: (state): UIState => ({
+      ...state,
+      snackbarMessage: "",
+    }),
   },
 })
 
@@ -68,6 +83,8 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   setCurrentAccount,
+  setSnackbarMessage,
+  clearSnackbarMessage,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -82,4 +99,9 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust
+)
+
+export const selectSnackbarMessage = createSelector(
+  selectUI,
+  (ui) => ui.snackbarMessage
 )
