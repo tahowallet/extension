@@ -23,7 +23,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
       </thead>
       <tbody>
         {assets.map((asset) => (
-          <tr key={asset.asset.symbol}>
+          <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
             <td>
               <div className="asset_descriptor">
                 <SharedAssetIcon
