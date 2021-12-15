@@ -1,6 +1,7 @@
 import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
 import { AnyEVMTransaction } from "../networks"
 import { keysMap, adaptForUI, ActivityItem } from "./utils/activity-utils"
+import { truncateAddress } from "../lib/utils"
 
 import { assetAmountToDesiredDecimals } from "../assets"
 import { ContractInfo } from "../services/enrichment"
@@ -25,10 +26,6 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
     return b.blockHeight - a.blockHeight
   },
 })
-
-function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
-}
 
 export type ActivitiesState = {
   [address: string]: EntityState<ActivityItem>

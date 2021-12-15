@@ -80,3 +80,19 @@ export function getEthereumNetwork(): EVMNetwork {
   // Default to mainnet
   return ETHEREUM
 }
+
+export function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-5)}`
+}
+
+export function truncateDecimalAmount(
+  value: number | string,
+  decimalLength: number
+): string {
+  const valueString = value.toString()
+  if (valueString.includes(".")) {
+    const [integers, decimals] = valueString.split(".")
+    return `${integers}.${decimals.substr(0, decimalLength)}`
+  }
+  return valueString
+}
