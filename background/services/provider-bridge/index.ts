@@ -10,7 +10,7 @@ import {
   RPCRequest,
   EIP1193_ERROR,
 } from "@tallyho/provider-bridge-shared"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
