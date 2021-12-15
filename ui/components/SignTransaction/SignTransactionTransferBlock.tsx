@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { truncateAddress, truncateDecimalAmount } from "../../utils/truncate"
 
 interface Props {
   token: string
@@ -12,21 +13,6 @@ export default function SignTransactionTransferBlock(
 ): ReactElement {
   const { token, amount, destination, localizedValue } = props
 
-  function truncateAddress(address: string): string {
-    return `${address.slice(0, 6)}...${address.slice(37, 42)}`
-  }
-
-  function truncateAmount(value: number): string {
-    const valueString = value.toString()
-    if (valueString.length > 8) {
-      if (valueString.startsWith("0.")) {
-        return `${valueString.slice(0, 8)}`
-      }
-      return value.toFixed()
-    }
-    return valueString
-  }
-
   return (
     <div className="sign_block">
       <div className="container">
@@ -37,7 +23,7 @@ export default function SignTransactionTransferBlock(
       <div className="container">
         <span className="label">Spend Amount</span>
         <span className="spend_amount">
-          {truncateAmount(amount)} {token}
+          {truncateDecimalAmount(amount, 4)} {token}
         </span>
         <span className="label">{`$${localizedValue}`}</span>
       </div>

@@ -3,14 +3,11 @@ import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import { truncateAddress } from "../../utils/truncate"
 
 interface Props {
   onClick: () => void
   activity: ActivityItem
-}
-
-function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
