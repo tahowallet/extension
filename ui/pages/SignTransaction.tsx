@@ -7,6 +7,7 @@ import {
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import SharedButton from "../components/Shared/SharedButton"
@@ -130,6 +131,21 @@ export default function SignTransaction(): ReactElement {
     },
   }
 
+  const updateGasSettings = async (estimate: BlockEstimate) => {
+    if (typeof transactionDetails === "undefined") {
+      return
+    }
+
+    setSelectedEstimatedFeePerGas(estimate)
+    const transaction = {
+      ...transactionDetails,
+      maxFeePerGas: estimate.maxFeePerGas,
+      maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
+      gasLimit: BigInt(gasLimit),
+    }
+    dispatch(updateTransactionOptions(transaction))
+  }
+
   const handleConfirm = async () => {
     if (isTransactionDataReady && transactionDetails) {
       dispatch(signTransaction(transactionDetails))
@@ -154,7 +170,7 @@ export default function SignTransaction(): ReactElement {
           {signType === SignType.Sign ? (
             <NetworkFeesChooser
               estimatedFeesPerGas={estimatedFeesPerGas}
-              onSelectFeeOption={setSelectedEstimatedFeePerGas}
+              onSelectFeeOption={updateGasSettings}
               selectedGas={selectedEstimatedFeePerGas}
               gasLimit={gasLimit}
               setGasLimit={setGasLimit}
