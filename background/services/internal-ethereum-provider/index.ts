@@ -12,7 +12,7 @@ import BaseService from "../base"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
-  ethersTxFromSignedTx,
+  ethersTransactionFromSignedTransaction,
 } from "../chain/utils"
 
 type DAppRequestEvent<T, E> = {
@@ -122,7 +122,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTransaction(params[0] as EthersTransactionRequest).then(
           (signedTransaction) =>
             serializeEthersTransaction(
-              ethersTxFromSignedTx(signedTransaction),
+              ethersTransactionFromSignedTransaction(signedTransaction),
               {
                 r: signedTransaction.r,
                 s: signedTransaction.s,
