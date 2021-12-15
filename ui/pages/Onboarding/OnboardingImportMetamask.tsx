@@ -93,12 +93,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             type="primary"
             isDisabled={isImporting}
             onClick={importWallet}
-            isFormSubmit
           >
             Import account
-          </SharedButton>
-          <SharedButton size="small" type="tertiary">
-            How do I find the seed?
           </SharedButton>
         </div>
       </form>
