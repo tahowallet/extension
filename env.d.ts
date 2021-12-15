@@ -29,4 +29,17 @@ interface Window {
     ) => unknown
     autoRefreshOnNetworkChange?: boolean
   }
+  oldEthereum?: {
+    isMetaMask?: boolean
+    isTally?: boolean
+    on?: (
+      eventName: string | symbol,
+      listener: (...args: any[]) => void
+    ) => unknown
+    removeListener?: (
+      eventName: string | symbol,
+      listener: (...args: any[]) => void
+    ) => unknown
+    autoRefreshOnNetworkChange?: boolean
+  }
 }

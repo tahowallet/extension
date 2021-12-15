@@ -17,6 +17,7 @@ import {
 } from "../../assets"
 import { selectSigningAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
+import { truncateAddress } from "../../lib/utils"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -208,7 +209,7 @@ export const selectAccountTotalsByCategory = createSelector(
   (accounts, assets, signingAddresses): CategorizedAccountTotals => {
     return Object.entries(accounts.accountsData)
       .map(([address, accountData]) => {
-        const shortenedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`
+        const shortenedAddress = truncateAddress(address)
 
         const existingAccountType =
           accountData === "loading" ? undefined : accountData.accountType

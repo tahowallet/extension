@@ -36,6 +36,17 @@ const steps = [
     },
     title: "Test Responsibly",
     body: `Tally is a work in progress! This Community Edition includes limited features and may still have bugs.`,
+    buttonCopy: "Continue",
+  },
+  {
+    image: {
+      width: 267,
+      height: 236.6,
+      fileName: "illustration_onboarding_default",
+      extraStyles: `margin-top: 21px;`,
+    },
+    title: "Tally set as default",
+    body: `Tally will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
     buttonCopy: "Get started",
   },
 ]
@@ -58,7 +69,7 @@ export default function OnboardingInfoIntro(): ReactElement {
         <div className="bottom_part">
           <div className="bottom_content">
             <SharedProgressIndicator
-              numberOfSteps={3}
+              numberOfSteps={4}
               activeStep={activeStep}
               onProgressStepClicked={(step) => {
                 setActiveStep(step)

@@ -1,5 +1,6 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
@@ -59,7 +60,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   return (
     <div className="card_wrap">
       <div className="sub_info from">{label}:</div>
-      {address.slice(0, 6)}...{address.slice(37, 41)}
+      {truncateAddress(address)}
       <div className="sub_info name" />
       <style jsx>
         {`

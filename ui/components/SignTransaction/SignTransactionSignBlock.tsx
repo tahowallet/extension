@@ -57,12 +57,12 @@ export default function SignTransactionSignBlock({
       <div className="container">
         {typeof transactionDetails.to === "undefined" ? (
           <>
-            <div className="label">Send to:</div>
+            <div className="label">Send to</div>
             <div className="send_to">Contract creation</div>
           </>
         ) : (
           <>
-            <div className="label">Send to:</div>
+            <div className="label">Send to</div>
             <div className="send_to">
               {transactionDetails.to.slice(0, 6)}...
               {transactionDetails.to.slice(-4)}
