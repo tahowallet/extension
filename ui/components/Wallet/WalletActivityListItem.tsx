@@ -67,8 +67,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       break
     case "asset-approval":
       renderDetails = {
-        iconClass: "contract_interaction_icon",
         label: "Token approval",
+        iconClass: "approve_icon",
         recipient: truncateAddress(activity.annotation.spenderAddress),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
@@ -183,6 +183,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .send_icon {
             background: url("./images/activity_send@2x.png");
+            background-size: cover;
+          }
+          .approve_icon {
+            background: url("./images/activity_approve@2x.png");
             background-size: cover;
           }
           .swap_icon {
