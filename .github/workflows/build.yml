@@ -20,16 +20,20 @@ jobs:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
     - run: yarn install --frozen-lockfile
-    - if: github.ref != 'refs/heads/main'
+    - name: Build artifacts for verification
+      if: github.ref != 'refs/heads/main'
       run: yarn build
-    - if: github.ref == 'refs/heads/main'
+      env:
+        ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY }}
+        BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY }}
+    - name: Build artifacts for upload
+      if: github.ref == 'refs/heads/main'
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-        BLOCKNATIVE_API_KEY,: ${{ secrets.BLOCKNATIVE_API_KEY }}
+        BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
     - name: Upload build on main
-      # A push event is a main merge; build and upload artifacts.
-      if: github.event_name == 'push'
+      if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v2
       with:
         name: extension-builds
