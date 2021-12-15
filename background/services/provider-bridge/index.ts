@@ -70,8 +70,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
         port.onMessage.addListener((event) => {
           this.onMessageListener(port as Required<browser.Runtime.Port>, event)
         })
+        port.onDisconnect.addListener((port) => {
+          this.openPorts.filter((openPort) => openPort !== port)
+        })
         this.openPorts.push(port)
-        // TODO: store port with listener to handle cleanup
       }
     })
 
