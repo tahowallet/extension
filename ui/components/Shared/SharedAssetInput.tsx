@@ -237,8 +237,11 @@ export default function SharedAssetInput(
               type="number"
               placeholder="0.0"
               value={amount}
-              onChange={(e) =>
-                onAmountChange(e.target.value, getErrorMessage(e.target.value))
+              onChange={(event) =>
+                onAmountChange(
+                  event.target.value,
+                  getErrorMessage(event.target.value)
+                )
               }
             />
           </>
