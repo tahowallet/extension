@@ -34,7 +34,7 @@ export default function Receive(): ReactElement {
           {`${currentAccount.address.slice(
             0,
             7
-          )}...${currentAccount.address.slice(35, 41)}`}
+          )}...${currentAccount.address.slice(-6)}`}
         </SharedButton>
       </div>
       <style jsx>
