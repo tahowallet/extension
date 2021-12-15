@@ -64,7 +64,9 @@ export default class TallyWindowProvider extends EventEmitter {
         // let's remove tally as a default wallet
         // and put back whatever it was there before us
         window.ethereum = window.oldEthereum
-      } else {
+      } else if (window.ethereum?.isTally) {
+        // we were told not to be a default wallet anymore
+        // so in case if we have `window.ethereum` just remove ourselves
         window.ethereum = undefined
       }
     }
