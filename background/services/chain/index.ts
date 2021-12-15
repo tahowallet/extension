@@ -61,7 +61,7 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // The number of blocks before the current block height to start looking for
 // asset transfers. This is important to allow nodes like Erigon and
 // OpenEthereum with tracing to catch up to where we are.
-const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 100
+const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
 // The number of asset transfer lookups that will be done per account to rebuild
 // historic activity.
