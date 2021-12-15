@@ -1,10 +1,14 @@
 import React, { ReactElement } from "react"
+import { useDispatch } from "react-redux"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 
 export default function Receive(): ReactElement {
+  const dispatch = useDispatch()
+
   const currentAccount: { address: string } =
     useBackgroundSelector(selectCurrentAccount)
   if (!currentAccount) return <></>
@@ -29,12 +33,13 @@ export default function Receive(): ReactElement {
           type="primary"
           onClick={() => {
             navigator.clipboard.writeText(currentAccount.address)
+            dispatch(setSnackbarMessage("Copied!"))
           }}
         >
           {`${currentAccount.address.slice(
             0,
             7
-          )}...${currentAccount.address.slice(35, 41)}`}
+          )}...${currentAccount.address.slice(-6)}`}
         </SharedButton>
       </div>
       <style jsx>

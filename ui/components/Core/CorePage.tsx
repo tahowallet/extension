@@ -13,6 +13,7 @@ import TabBar from "../TabBar/TabBar"
 import TopMenu from "../TopMenu/TopMenu"
 import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
 import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
+import Snackbar from "../Snackbar/Snackbar"
 
 interface Props {
   children: React.ReactNode
@@ -149,6 +150,7 @@ export default function CorePage(props: Props): ReactElement {
         ) : null}
         <div className="page_content">{children}</div>
         {hasTabBar ? <TabBar /> : null}
+        <Snackbar />
       </div>
       <style jsx>
         {`

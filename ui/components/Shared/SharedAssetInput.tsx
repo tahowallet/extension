@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
+import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -32,7 +33,11 @@ function SelectAssetMenuContent(
       <ul>
         {assets.map((asset) => {
           return (
-            <SharedAssetItem asset={asset} onClick={setSelectedAssetAndClose} />
+            <SharedAssetItem
+              key={asset.metadata?.coinGeckoID || asset.symbol}
+              asset={asset}
+              onClick={setSelectedAssetAndClose}
+            />
           )
         })}
       </ul>
@@ -132,7 +137,8 @@ interface SharedAssetInputProps {
   amount: string
   maxBalance: number
   isAssetOptionsLocked: boolean
-  onAssetSelect: (asset: Asset) => void
+  disableDropdown: boolean
+  onAssetSelect: (token: Asset) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
 }
@@ -148,6 +154,7 @@ export default function SharedAssetInput(
     amount,
     maxBalance,
     isAssetOptionsLocked,
+    disableDropdown,
     onAssetSelect,
     onAmountChange,
     onSendToAddressChange,
@@ -211,39 +218,37 @@ export default function SharedAssetInput(
                 onSendToAddressChange(event.target.value)
               }}
             />
-            <SharedButton
-              type="tertiary"
-              size="medium"
-              icon="paste"
-              iconSize="large"
-            >
-              Paste
-            </SharedButton>
           </>
         ) : (
           <>
-            {selectedAsset?.symbol ? (
-              <SelectedAssetButton
-                asset={selectedAsset}
-                toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
-              />
-            ) : (
-              <SharedButton
-                type="secondary"
-                size="medium"
-                onClick={toggleIsAssetMenuOpen}
-                icon="chevron"
-              >
-                Select token
-              </SharedButton>
-            )}
+            <div className={classNames({ disable_click: disableDropdown })}>
+              {selectedAsset?.symbol ? (
+                <SelectedAssetButton
+                  asset={selectedAsset}
+                  toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
+                />
+              ) : (
+                <SharedButton
+                  type="secondary"
+                  size="medium"
+                  onClick={toggleIsAssetMenuOpen}
+                  icon="chevron"
+                >
+                  Select token
+                </SharedButton>
+              )}
+            </div>
+
             <input
               className="input_amount"
               type="number"
               placeholder="0.0"
               value={amount}
-              onChange={(e) =>
-                onAmountChange(e.target.value, getErrorMessage(e.target.value))
+              onChange={(event) =>
+                onAmountChange(
+                  event.target.value,
+                  getErrorMessage(event.target.value)
+                )
               }
             />
           </>
@@ -325,6 +330,9 @@ export default function SharedAssetInput(
             margin-left: 172px;
             z-index: 1;
           }
+          .disable_click {
+            pointer-events: none;
+          }
         `}
       </style>
     </label>
@@ -334,6 +342,7 @@ export default function SharedAssetInput(
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isAssetOptionsLocked: false,
+  disableDropdown: false,
   assets: [{ symbol: "ETH", name: "Example Asset" }],
   defaultAsset: { symbol: "", name: "" },
   label: "",
