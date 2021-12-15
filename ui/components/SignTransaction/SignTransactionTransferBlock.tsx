@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
-import { truncateAddress, truncateDecimalAmount } from "../../utils/truncate"
+import {
+  truncateAddress,
+  truncateDecimalAmount,
+} from "@tallyho/tally-background/lib/utils"
 
 interface Props {
   token: string

@@ -2,8 +2,8 @@ import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
-import { truncateAddress } from "../../utils/truncate"
 
 interface Props {
   onClick: () => void
