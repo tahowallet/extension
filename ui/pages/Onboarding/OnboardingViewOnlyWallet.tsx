@@ -53,21 +53,29 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       <div className="subtitle">
         Add an Ethereum address to view an existing wallet in Tally.
       </div>
-      <div className="input_wrap">
-        <SharedInput
-          placeholder="ETH address"
-          onChange={handleInputChange}
-          errorMessage={errorMessage}
-        />
-      </div>
-      <SharedButton
-        type="primary"
-        size="large"
-        onClick={handleSubmitViewOnlyAddress}
-        showLoadingOnClick={!!errorMessage}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          handleSubmitViewOnlyAddress()
+        }}
       >
-        Explore Tally
-      </SharedButton>
+        <div className="input_wrap">
+          <SharedInput
+            placeholder="ETH address"
+            onChange={handleInputChange}
+            errorMessage={errorMessage}
+          />
+        </div>
+        <SharedButton
+          type="primary"
+          size="large"
+          onClick={handleSubmitViewOnlyAddress}
+          showLoadingOnClick={!!errorMessage}
+          isFormSubmit
+        >
+          Explore Tally
+        </SharedButton>
+      </form>
       <style jsx>
         {`
           .wordmark {
