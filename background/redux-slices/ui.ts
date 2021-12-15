@@ -1,18 +1,33 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
+import Emittery from "emittery"
 import { AddressNetwork } from "../accounts"
 import { getEthereumNetwork } from "../lib/utils"
+import { createBackgroundAsyncThunk } from "./utils"
 
 type SelectedAccount = {
   addressNetwork: AddressNetwork
   truncatedAddress: string
 }
 
+const defaultSettings = {
+  hideDust: false,
+  defaultWallet: false,
+}
+
 export type UIState = {
   currentAccount: SelectedAccount
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
-  settings: undefined | { hideDust: boolean | undefined }
+  settings: { hideDust: boolean; defaultWallet: boolean }
+  snackbarMessage: string
 }
+
+export type Events = {
+  snackbarMessage: string
+  newDefaultWalletValue: boolean
+}
+
+export const emitter = new Emittery<Events>()
 
 export const initialState: UIState = {
   showingActivityDetailID: null,
@@ -21,9 +36,8 @@ export const initialState: UIState = {
     truncatedAddress: "",
   },
   initializationLoadingTimeExpired: false,
-  settings: {
-    hideDust: false,
-  },
+  settings: defaultSettings,
+  snackbarMessage: "",
 }
 
 const uiSlice = createSlice({
@@ -32,10 +46,11 @@ const uiSlice = createSlice({
   reducers: {
     toggleHideDust: (
       immerState,
-      { payload: shouldHideDust }: { payload: boolean | undefined }
+      { payload: shouldHideDust }: { payload: boolean }
     ): void => {
       immerState.settings = {
         hideDust: shouldHideDust,
+        defaultWallet: immerState.settings?.defaultWallet,
       }
     },
     setShowingActivityDetail: (
@@ -60,6 +75,29 @@ const uiSlice = createSlice({
       ...state,
       initializationLoadingTimeExpired: true,
     }),
+    setSnackbarMessage: (
+      state,
+      { payload: snackbarMessage }: { payload: string }
+    ): UIState => {
+      return {
+        ...state,
+        snackbarMessage,
+      }
+    },
+    clearSnackbarMessage: (state): UIState => ({
+      ...state,
+      snackbarMessage: "",
+    }),
+    setDefaultWallet: (
+      state,
+      { payload: defaultWallet }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        defaultWallet,
+      },
+    }),
   },
 })
 
@@ -68,9 +106,22 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   setCurrentAccount,
+  setSnackbarMessage,
+  setDefaultWallet,
+  clearSnackbarMessage,
 } = uiSlice.actions
 
 export default uiSlice.reducer
+
+// Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
+export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
+  "ui/setNewDefaultWalletValue",
+  async (defaultWallet: boolean, { dispatch }) => {
+    await emitter.emit("newDefaultWalletValue", defaultWallet)
+    // Once the default value has persisted, propagate to the store.
+    dispatch(uiSlice.actions.setDefaultWallet(defaultWallet))
+  }
+)
 
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
@@ -82,4 +133,14 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust
+)
+
+export const selectSnackbarMessage = createSelector(
+  selectUI,
+  (ui) => ui.snackbarMessage
+)
+
+export const selectDefaultWallet = createSelector(
+  selectSettings,
+  (settings) => settings?.defaultWallet
 )

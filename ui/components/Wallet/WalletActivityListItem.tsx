@@ -1,20 +1,17 @@
 import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
-
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
-
+import {
+  sameEVMAddress,
+  truncateAddress,
+} from "@tallyho/tally-background/lib/utils"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
   activity: ActivityItem
   asAccount: string
-}
-
-function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
 }
 
 function isReceiveActivity(activity: ActivityItem, account: string): boolean {

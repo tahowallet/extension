@@ -7,6 +7,7 @@ import BaseService from "../base"
 
 interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
+  initializeDefaultWallet: boolean
 }
 
 /*
@@ -29,6 +30,12 @@ export default class PreferenceService extends BaseService<Events> {
     super()
   }
 
+  protected async internalStartService(): Promise<void> {
+    await super.internalStartService()
+
+    this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
+  }
+
   protected async internalStopService(): Promise<void> {
     this.db.close()
 
@@ -41,5 +48,13 @@ export default class PreferenceService extends BaseService<Events> {
 
   async getTokenListPreferences(): Promise<TokenListPreferences> {
     return (await this.db.getLatestPreferences())?.tokenLists
+  }
+
+  async getDefaultWallet(): Promise<boolean> {
+    return (await this.db.getLatestPreferences())?.defaultWallet
+  }
+
+  async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<number> {
+    return this.db.setDefaultWalletValue(newDefaultWalletValue)
   }
 }

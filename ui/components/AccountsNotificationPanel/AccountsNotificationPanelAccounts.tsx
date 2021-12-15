@@ -16,7 +16,7 @@ type WalletTypeInfo = {
 
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
-    title: "Read-only mode",
+    title: "Read-only",
     icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {

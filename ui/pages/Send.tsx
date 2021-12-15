@@ -208,7 +208,7 @@ export default function Send(): ReactElement {
             display: flex;
             align-items: center;
             margin-bottom: 25px;
-            margin-top: 17px;
+            margin-top: 12px;
           }
           .form_input {
             margin-bottom: 22px;
