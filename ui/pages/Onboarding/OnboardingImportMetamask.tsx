@@ -73,27 +73,35 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       <div className="back_button_wrap">
         <SharedBackButton />
       </div>
-      <div className="portion top">
-        <div className="metamask_onboarding_image" />
-        <h1 className="serif_header">Import account</h1>
-        <div className="info">
-          Enter or copy paste the recovery phrase from your Metamask account.
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          importWallet()
+        }}
+      >
+        <div className="portion top">
+          <div className="metamask_onboarding_image" />
+          <h1 className="serif_header">Import account</h1>
+          <div className="info">
+            Enter or copy paste the recovery phrase from your Metamask account.
+          </div>
+          <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
         </div>
-        <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
-      </div>
-      <div className="portion bottom">
-        <SharedButton
-          size="medium"
-          type="primary"
-          isDisabled={isImporting}
-          onClick={importWallet}
-        >
-          Import account
-        </SharedButton>
-        <SharedButton size="small" type="tertiary">
-          How do I find the seed?
-        </SharedButton>
-      </div>
+        <div className="portion bottom">
+          <SharedButton
+            size="medium"
+            type="primary"
+            isDisabled={isImporting}
+            onClick={importWallet}
+            isFormSubmit
+          >
+            Import account
+          </SharedButton>
+          <SharedButton size="small" type="tertiary">
+            How do I find the seed?
+          </SharedButton>
+        </div>
+      </form>
       <style jsx>{`
         section {
           display: flex;
