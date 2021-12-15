@@ -64,13 +64,11 @@ export default function SwapTransactionSettings(
                 </span>
 
                 <NetworkFeesChooser
-                  setFeeModalOpen={() => {}}
+                  estimatedFeesPerGas={estimatedFeesPerGas}
                   onSelectFeeOption={setSelectedEstimatedFeePerGas}
-                  currentFeeSelectionPrice={setCurrentFeeValues}
                   selectedGas={selectedEstimatedFeePerGas}
                   gasLimit={gasLimit}
                   setGasLimit={setGasLimit}
-                  estimatedFeesPerGas={estimatedFeesPerGas}
                 />
               </div>
             </div>
