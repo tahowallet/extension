@@ -17,6 +17,20 @@ function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(37, 41)}`
 }
 
+function isReceiveActivity(activity: ActivityItem, account: string): boolean {
+  return (
+    activity.annotation?.type === "asset-transfer" &&
+    sameEVMAddress(activity.annotation?.recipientAddress, account)
+  )
+}
+
+function isSendActivity(activity: ActivityItem, account: string): boolean {
+  return (
+    activity.annotation?.type === "asset-transfer" &&
+    sameEVMAddress(activity.annotation?.senderAddress, account)
+  )
+}
+
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity, asAccount } = props
 
@@ -28,7 +42,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetLogoURL: string | undefined
     assetSymbol: string
     assetValue: string
-    isSend: boolean
   } = {
     iconClass: undefined,
     label: "Contract interaction",
@@ -36,32 +49,16 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
-    isSend: false,
-  }
-
-  if (activity.value && !activity.input) {
-    if (activity.to && sameEVMAddress(asAccount, activity.to)) {
-      renderDetails = {
-        ...renderDetails,
-        label: "Received",
-      }
-    } else if (sameEVMAddress(asAccount, activity.from)) {
-      renderDetails = {
-        ...renderDetails,
-        isSend: true,
-      }
-    }
   }
 
   switch (activity.annotation?.type) {
     case "asset-transfer":
-      renderDetails.isSend = sameEVMAddress(
-        activity.annotation.recipientAddress,
-        activity.from
-      )
       renderDetails = {
         ...renderDetails,
-        label: renderDetails.isSend ? "Sent" : "Received",
+        label: isReceiveActivity(activity, asAccount) ? "Received" : "Send",
+        iconClass: isReceiveActivity(activity, asAccount)
+          ? "receive_icon"
+          : "send_icon",
         recipient: truncateAddress(activity.annotation.recipientAddress),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
@@ -70,14 +67,12 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       break
     case "asset-approval":
       renderDetails = {
-        // TODO approvals should get their own icon
         iconClass: "contract_interaction_icon",
         label: "Token approval",
         recipient: truncateAddress(activity.annotation.spenderAddress),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
         assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
-        isSend: false,
       }
       break
     case "asset-swap":
@@ -88,27 +83,20 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
-        isSend: false,
       }
       break
     case "contract-deployment":
     case "contract-interaction":
+    default:
       renderDetails = {
         iconClass: "contract_interaction_icon",
         label: "Contract interaction",
         recipient: activity.toTruncated,
-        assetLogoURL: activity.annotation.transactionLogoURL,
+        // TODO fall back to the asset URL we have in metadata
+        assetLogoURL: activity.annotation?.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
-        isSend: false,
       }
-      break
-    default:
-  }
-
-  if (renderDetails.isSend) {
-    renderDetails.label = "Sent"
-    renderDetails.iconClass = "send_icon"
   }
 
   return (
@@ -135,6 +123,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
+                // TODO this should come from a connected component that knows
+                // about all of our asset metadata
                 logoURL={renderDetails.assetLogoURL}
                 symbol={renderDetails.assetSymbol}
                 size="small"
@@ -148,7 +138,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            {renderDetails.isSend ? (
+            {isSendActivity(activity, asAccount) ? (
               <div className="outcome">
                 To:
                 {` ${renderDetails.recipient}`}
@@ -180,12 +170,16 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-80);
           }
           .activity_icon {
-            background: url("./images/activity_receive@2x.png");
+            background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
             width: 14px;
             height: 14px;
             margin-right: 4px;
             margin-left: 9px;
+          }
+          .receive_icon {
+            background: url("./images/activity_receive@2x.png");
+            background-size: cover;
           }
           .send_icon {
             background: url("./images/activity_send@2x.png");
