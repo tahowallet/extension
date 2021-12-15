@@ -58,12 +58,14 @@ export default function SignTransaction(): ReactElement {
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
-    useState<BlockEstimate>({
-      confidence: 0,
-      maxFeePerGas: 0n,
-      maxPriorityFeePerGas: 0n,
-      price: 0n,
-    })
+    useState<BlockEstimate>(
+      estimatedFeesPerGas?.regular ?? {
+        confidence: 0,
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        price: 0n,
+      }
+    )
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
@@ -129,10 +131,6 @@ export default function SignTransaction(): ReactElement {
   }
 
   const updateGasSettings = async (estimate: BlockEstimate) => {
-    if (typeof transactionDetails === "undefined") {
-      return
-    }
-
     setSelectedEstimatedFeePerGas(estimate)
     const transaction = {
       ...transactionDetails,
@@ -140,10 +138,15 @@ export default function SignTransaction(): ReactElement {
       maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
-    dispatch(updateTransactionOptions(transaction))
+    await dispatch(updateTransactionOptions(transaction))
   }
 
   const handleConfirm = async () => {
+    // FIXME Hackily handle the user not interacting with the fee selector for now.
+    if (transactionDetails.maxFeePerGas === 0n) {
+      await updateGasSettings(selectedEstimatedFeePerGas)
+    }
+
     if (isTransactionDataReady && transactionDetails) {
       dispatch(signTransaction(transactionDetails))
       setIsTransactionSigning(true)
