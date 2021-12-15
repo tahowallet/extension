@@ -2,24 +2,26 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
+  selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { ENABLE_EDIT_NETWORK_FEE } from "@tallyho/tally-background/features/features"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
-import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../hooks"
+import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 
 enum SignType {
   Sign = "sign",
@@ -51,6 +53,16 @@ export default function SignTransaction(): ReactElement {
   // TODO the below should return a promise that resolves once tx is signed
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
   const txDetails = useBackgroundSelector(selectTransactionData)
+
+  const [gasLimit, setGasLimit] = useState("")
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
+    useState<BlockEstimate>({
+      confidence: 0,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    })
 
   const [panelNumber, setPanelNumber] = useState(0)
 
@@ -121,11 +133,12 @@ export default function SignTransaction(): ReactElement {
             Estimated network fee
             <span className="detail_item_right">
               {ENABLE_EDIT_NETWORK_FEE ? (
-                <FeeSettingsButton
-                  openModal={() => {}}
-                  minFee={20}
-                  maxFee={60}
-                  currentFeeSelected="30"
+                <NetworkFeesChooser
+                  estimatedFeesPerGas={estimatedFeesPerGas}
+                  onSelectFeeOption={setSelectedEstimatedFeePerGas}
+                  selectedGas={selectedEstimatedFeePerGas}
+                  gasLimit={gasLimit}
+                  setGasLimit={setGasLimit}
                 />
               ) : (
                 `~${
