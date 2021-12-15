@@ -11,14 +11,11 @@ import {
   EIP1193_ERROR,
   isTallyInternalCommunication,
 } from "@tallyho/provider-bridge-shared"
-import {
-  PreferenceService,
-  ServiceCreatorFunction,
-  ServiceLifecycleEvents,
-} from ".."
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import PreferenceService from "../preferences"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
