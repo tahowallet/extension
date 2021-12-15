@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 import { useBackgroundSelector } from "../../hooks"
@@ -19,16 +19,13 @@ export default function TopMenu(props: Props): ReactElement {
     isConnectedToDApp,
   } = props
 
-  const { address, truncatedAddress } =
-    useBackgroundSelector(selectCurrentAccount)
+  const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
 
-  const { name, avatarURL } = useBackgroundSelector((background) => {
-    const data = background.account.accountsData[address.toLowerCase()]
-    if (typeof data === "object") {
-      return data.ens
-    }
-    return {}
-  })
+  if (typeof currentAccountTotal === "undefined") {
+    return <></>
+  }
+
+  const { shortenedAddress, name, avatarURL } = currentAccountTotal
 
   return (
     <div className="nav_wrap">
@@ -44,7 +41,7 @@ export default function TopMenu(props: Props): ReactElement {
             />
           )}
           <TopMenuProfileButton
-            address={truncatedAddress}
+            address={shortenedAddress ?? ""}
             nickname={name || undefined}
             avatar={avatarURL || undefined}
             onClick={toggleOpenNotifications}
