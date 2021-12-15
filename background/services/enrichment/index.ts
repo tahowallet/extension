@@ -77,6 +77,16 @@ interface Events extends ServiceLifecycleEvents {
   enrichedEVMTransaction: EnrichedEVMTransaction
 }
 
+function parseERC20Tx(input: string) {
+  try {
+    return ERC20_INTERFACE.parseTransaction({
+      data: input,
+    })
+  } catch (err) {
+    return undefined
+  }
+}
+
 /**
  * EnrichmentService is a coordinator service responsible for deciding when to
  * look up metadata about an application-level transaction, event, or address,
@@ -178,9 +188,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
       const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
 
-      const erc20Tx = ERC20_INTERFACE.parseTransaction({
-        data: transaction.input,
-      })
+      const erc20Tx = parseERC20Tx(transaction.input)
 
       // TODO handle the case where we don't have asset metadata already
       if (
