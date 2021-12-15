@@ -9,6 +9,11 @@ type SelectedAccount = {
   truncatedAddress: string
 }
 
+const defaultSettings = {
+  hideDust: false,
+  defaultWallet: false,
+}
+
 export type UIState = {
   currentAccount: SelectedAccount
   showingActivityDetailID: string | null
@@ -31,21 +36,8 @@ export const initialState: UIState = {
     truncatedAddress: "",
   },
   initializationLoadingTimeExpired: false,
-  settings: {
-    hideDust: false,
-    defaultWallet: false,
-  },
+  settings: defaultSettings,
 }
-
-// Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
-export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
-  "ui/setNewDefaultWalletValue",
-  // @ts-expect-error have no idea what the heck is wrong here hAlp
-  async (defaultWallet: boolean) => {
-    await emitter.emit("newDefaultWalletValue", defaultWallet)
-    return defaultWallet
-  }
-)
 
 const uiSlice = createSlice({
   name: "ui",
@@ -83,25 +75,16 @@ const uiSlice = createSlice({
       initializationLoadingTimeExpired: true,
     }),
     setDefaultWallet: (
-      immerState,
+      state,
       { payload: defaultWallet }: { payload: boolean | undefined }
-    ): void => {
-      immerState.settings = {
-        hideDust: immerState.settings?.hideDust,
+    ) => ({
+      ...state,
+      settings: {
+        ...defaultSettings,
+        ...state.settings,
         defaultWallet,
-      }
-    },
-  },
-  extraReducers: (builder) => {
-    builder.addCase(
-      setNewDefaultWalletValue.fulfilled,
-      (immerState, { payload: defaultWallet }: { payload: boolean }) => {
-        immerState.settings = {
-          hideDust: immerState.settings?.hideDust,
-          defaultWallet,
-        }
-      }
-    )
+      },
+    }),
   },
 })
 
@@ -114,6 +97,16 @@ export const {
 } = uiSlice.actions
 
 export default uiSlice.reducer
+
+// Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
+export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
+  "ui/setNewDefaultWalletValue",
+  async (defaultWallet: boolean, { dispatch }) => {
+    await emitter.emit("newDefaultWalletValue", defaultWallet)
+    // Once the default value has persisted, propagate to the store.
+    dispatch(uiSlice.actions.setDefaultWallet(defaultWallet))
+  }
+)
 
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,

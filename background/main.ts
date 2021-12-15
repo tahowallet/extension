@@ -516,7 +516,7 @@ export default class Main extends BaseService<never> {
     )
   }
 
-  async connectPreferenceService() {
+  async connectPreferenceService(): Promise<void> {
     this.preferenceService.emitter.on(
       "initializeDefaultWallet",
       async (isDefaultWallet: boolean) => {
