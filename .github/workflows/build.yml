@@ -23,6 +23,9 @@ jobs:
     - name: Build artifacts for verification
       if: github.ref != 'refs/heads/main'
       run: yarn build
+      env:
+        ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY }}
+        BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY }}
     - name: Build artifacts for upload
       if: github.ref == 'refs/heads/main'
       run: yarn build
