@@ -32,7 +32,11 @@ function SelectTokenMenuContent(
       <ul>
         {assets.map((asset) => {
           return (
-            <SharedAssetItem asset={asset} onClick={setSelectedTokenAndClose} />
+            <SharedAssetItem
+              key={asset.symbol}
+              asset={asset}
+              onClick={setSelectedTokenAndClose}
+            />
           )
         })}
       </ul>
