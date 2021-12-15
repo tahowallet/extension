@@ -5,7 +5,6 @@ import {
   isSmartContractFungibleAsset,
 } from "../../assets"
 import { AnyEVMTransaction, Network } from "../../networks"
-import { ETHEREUM } from "../../constants/networks"
 import {
   AssetDecimalAmount,
   enrichAssetAmountWithDecimalValues,
@@ -19,37 +18,41 @@ import IndexingService from "../indexing"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 
-export type BaseContractInfo = {
-  contractLogoURL?: string | undefined
+export type BaseTransactionAnnotation = {
+  // a URL to an image representing the transaction interaction, if applicable.
+  transactionLogoURL?: string | undefined
+  // when the transaction was annotated. Including this means consumers can more
+  // easily upsert annotations
+  timestamp: UNIXTime
 }
 
-export type ContractDeployment = BaseContractInfo & {
+export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
 }
 
-export type ContractInteraction = BaseContractInfo & {
+export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
 }
 
-export type AssetApproval = BaseContractInfo & {
+export type AssetApproval = BaseTransactionAnnotation & {
   type: "asset-approval"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   spenderAddress: HexString
 }
 
-export type AssetTransfer = BaseContractInfo & {
+export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipientAddress: HexString
 }
 
-export type AssetSwap = BaseContractInfo & {
+export type AssetSwap = BaseTransactionAnnotation & {
   type: "asset-swap"
   fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
   toAssetAmount: AnyAssetAmount & AssetDecimalAmount
 }
 
-export type ContractInfo =
+export type TransactionAnnotation =
   | ContractDeployment
   | ContractInteraction
   | AssetApproval
@@ -57,19 +60,18 @@ export type ContractInfo =
   | AssetSwap
   | undefined
 
-export type ResolvedContractInfo = {
-  contractInfo: ContractInfo
+export type ResolvedTransactionAnnotation = {
+  contractInfo: TransactionAnnotation
   address: HexString
   network: Network
   resolvedAt: UNIXTime
 }
 
 export type EnrichedEVMTransaction = AnyEVMTransaction & {
-  contractInfo?: ContractInfo
+  annotation?: TransactionAnnotation
 }
 
 interface Events extends ServiceLifecycleEvents {
-  resolvedContractInfo: ResolvedContractInfo
   enrichedEVMTransaction: EnrichedEVMTransaction
 }
 
@@ -87,7 +89,6 @@ export default class EnrichmentService extends BaseService<Events> {
   /**
    * Create a new EnrichmentService. The service isn't initialized until
    * startService() is called and resolved.
-   *
    * @param indexingService - Required for token metadata and currency
    * @param chainService - Required for chain interactions.
    * @returns A new, initializing EnrichmentService
@@ -122,15 +123,17 @@ export default class EnrichmentService extends BaseService<Events> {
     })
   }
 
-  async resolveContractInfo(
+  async resolveTransactionAnnotation(
     contractAddress: HexString | undefined,
     contractInput: HexString,
     desiredDecimals: number
-  ): Promise<ContractInfo | undefined> {
-    let contractInfo: ContractInfo | undefined
+  ): Promise<TransactionAnnotation | undefined> {
+    let txAnnotation: TransactionAnnotation | undefined
+
     // A missing recipient means a contract deployment.
     if (typeof contractAddress === "undefined") {
-      contractInfo = {
+      txAnnotation = {
+        timestamp: Date.now(),
         type: "contract-deployment",
       }
     } else {
@@ -143,7 +146,7 @@ export default class EnrichmentService extends BaseService<Events> {
           asset.contractAddress.toLowerCase() === contractAddress.toLowerCase()
       )
 
-      const contractLogoURL = matchingFungibleAsset?.metadata?.logoURL
+      const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
 
       const erc20Tx = ERC20_INTERFACE.parseTransaction({ data: contractInput })
 
@@ -154,9 +157,10 @@ export default class EnrichmentService extends BaseService<Events> {
         (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
       ) {
         // We have an ERC-20 transfer
-        contractInfo = {
+        txAnnotation = {
+          timestamp: Date.now(),
           type: "asset-transfer",
-          contractLogoURL,
+          transactionLogoURL,
           recipientAddress: erc20Tx.args.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
@@ -171,9 +175,10 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx &&
         erc20Tx.name === "approve"
       ) {
-        contractInfo = {
+        txAnnotation = {
+          timestamp: Date.now(),
           type: "asset-approval",
-          contractLogoURL,
+          transactionLogoURL,
           spenderAddress: erc20Tx.args.spender, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
@@ -185,24 +190,18 @@ export default class EnrichmentService extends BaseService<Events> {
         }
       } else {
         // Fall back on a standard contract interaction.
-        contractInfo = {
+        txAnnotation = {
+          timestamp: Date.now(),
           type: "contract-interaction",
           // Include the logo URL if we resolve it even if the interaction is
           // non-specific; the UI can choose to use it or not, but if we know the
           // address has an associated logo it's worth passing on.
-          contractLogoURL,
+          transactionLogoURL,
         }
       }
-
-      this.emitter.emit("resolvedContractInfo", {
-        contractInfo,
-        resolvedAt: Date.now(),
-        network: ETHEREUM, // TODO make multi-chain compatible
-        address: contractAddress,
-      })
     }
 
-    return contractInfo
+    return txAnnotation
   }
 
   async enrichTransaction(
@@ -219,7 +218,7 @@ export default class EnrichmentService extends BaseService<Events> {
     }
     const enrichedTx = {
       ...transaction,
-      contractInfo: await this.resolveContractInfo(
+      annotation: await this.resolveTransactionAnnotation(
         transaction.to,
         transaction.input,
         desiredDecimals

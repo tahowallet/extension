@@ -53,19 +53,19 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     }
   }
 
-  switch (activity.contractInfo?.type) {
+  switch (activity.annotation?.type) {
     case "asset-transfer":
       renderDetails.isSend = sameEVMAddress(
-        activity.contractInfo.recipientAddress,
+        activity.annotation.recipientAddress,
         activity.from
       )
       renderDetails = {
         ...renderDetails,
         label: renderDetails.isSend ? "Sent" : "Received",
-        recipient: truncateAddress(activity.contractInfo.recipientAddress),
-        assetLogoURL: activity.contractInfo.contractLogoURL,
-        assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
-        assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+        recipient: truncateAddress(activity.annotation.recipientAddress),
+        assetLogoURL: activity.annotation.transactionLogoURL,
+        assetSymbol: activity.annotation.assetAmount.asset.symbol,
+        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
       }
       break
     case "asset-approval":
@@ -73,10 +73,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         // TODO approvals should get their own icon
         iconClass: "contract_interaction_icon",
         label: "Token approval",
-        recipient: truncateAddress(activity.contractInfo.spenderAddress),
-        assetLogoURL: activity.contractInfo.contractLogoURL,
-        assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
-        assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+        recipient: truncateAddress(activity.annotation.spenderAddress),
+        assetLogoURL: activity.annotation.transactionLogoURL,
+        assetSymbol: activity.annotation.assetAmount.asset.symbol,
+        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
         isSend: false,
       }
       break
@@ -85,7 +85,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         iconClass: "swap_icon",
         label: "Swap",
         recipient: activity.toTruncated,
-        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
         isSend: false,
@@ -97,7 +97,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         iconClass: "contract_interaction_icon",
         label: "Contract interaction",
         recipient: activity.toTruncated,
-        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
         isSend: false,
