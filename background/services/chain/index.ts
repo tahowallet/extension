@@ -32,7 +32,7 @@ import {
   blockFromWebsocketBlock,
   enrichTransactionWithReceipt,
   ethersTransactionRequestFromEIP1559TransactionRequest,
-  ethersTxFromSignedTx,
+  ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
 import { getEthereumNetwork } from "../../lib/utils"
@@ -381,7 +381,8 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     // TODO make proper use of tx.network to choose provider
     const serialized = utils.serializeTransaction(
-      ethersTxFromSignedTx(transaction)
+      ethersTransactionFromSignedTransaction(transaction),
+      { r: transaction.r, s: transaction.s, v: transaction.v }
     )
     try {
       await Promise.all([

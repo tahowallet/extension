@@ -115,7 +115,7 @@ export function eip1559TransactionRequestFromEthersTransactionRequest(
   }
 }
 
-export function ethersTxFromSignedTx(
+export function ethersTransactionFromSignedTransaction(
   tx: SignedEVMTransaction
 ): EthersTransaction {
   const baseTx = {

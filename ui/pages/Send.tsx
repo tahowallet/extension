@@ -17,6 +17,7 @@ import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import { SignType } from "./SignTransaction"
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
@@ -174,7 +175,7 @@ export default function Send(): ReactElement {
                     assetSymbol,
                     amount,
                     to: destinationAddress,
-                    signType: "sign",
+                    signType: SignType.SignTransfer,
                     value: getTotalLocalizedValue(),
                   },
                 }}

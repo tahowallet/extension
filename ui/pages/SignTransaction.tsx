@@ -7,8 +7,8 @@ import {
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ENABLE_EDIT_NETWORK_FEE } from "@tallyho/tally-background/features/features"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -22,11 +22,13 @@ import {
   useAreKeyringsUnlocked,
 } from "../hooks"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
+import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 
-enum SignType {
+export enum SignType {
   Sign = "sign",
   SignSwap = "sign-swap",
   SignSpend = "sign-spend",
+  SignTransfer = "sign-transfer",
 }
 
 interface SignLocationState {
@@ -44,15 +46,16 @@ export default function SignTransaction(): ReactElement {
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
-  const location = useLocation<SignLocationState>()
-  const { assetSymbol, amount, signType, to, value } = location.state
+  const location = useLocation<SignLocationState | undefined>()
+  const { assetSymbol, amount, to, value, signType } = location.state ?? {
+    signType: SignType.Sign,
+  }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
 
-  // TODO the below should return a promise that resolves once tx is signed
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
-  const txDetails = useBackgroundSelector(selectTransactionData)
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
@@ -65,6 +68,13 @@ export default function SignTransaction(): ReactElement {
     })
 
   const [panelNumber, setPanelNumber] = useState(0)
+  const [isTransactionSigning, setIsTransactionSigning] = useState(false)
+
+  useEffect(() => {
+    if (isTransactionSigning && isTransactionSigned) {
+      history.push("/")
+    }
+  }, [history, isTransactionSigned, isTransactionSigning])
 
   useEffect(() => {
     if (areKeyringsUnlocked && isTransactionSigned && signing) {
@@ -74,6 +84,12 @@ export default function SignTransaction(): ReactElement {
   }, [areKeyringsUnlocked, isTransactionSigned, signing, history, assetSymbol])
 
   if (!areKeyringsUnlocked) {
+    return <></>
+  }
+
+  if (typeof transactionDetails === "undefined") {
+    // TODO Some sort of unexpected state error if we end up here... Or do we
+    // go back in history? That won't work for dApp popovers though.
     return <></>
   }
 
@@ -94,24 +110,46 @@ export default function SignTransaction(): ReactElement {
       component: () => <SignTransactionApproveSpendAssetBlock />,
       confirmButtonText: "Approve",
     },
+    [SignType.SignTransfer]: {
+      title: "Sign Transfer",
+      component: () => (
+        <SignTransactionTransferBlock
+          token={assetSymbol ?? ""}
+          amount={amount ?? 0}
+          destination={to ?? ""}
+          localizedValue={value ?? ""}
+        />
+      ),
+      confirmButtonText: "Sign",
+    },
     [SignType.Sign]: {
       title: "Sign Transaction",
       component: () => (
-        <SignTransactionSignBlock
-          token={assetSymbol}
-          amount={amount}
-          destination={to}
-          localizedValue={value}
-        />
+        <SignTransactionSignBlock transactionDetails={transactionDetails} />
       ),
       confirmButtonText: "Sign",
     },
   }
 
+  const updateGasSettings = async (estimate: BlockEstimate) => {
+    if (typeof transactionDetails === "undefined") {
+      return
+    }
+
+    setSelectedEstimatedFeePerGas(estimate)
+    const transaction = {
+      ...transactionDetails,
+      maxFeePerGas: estimate.maxFeePerGas,
+      maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
+      gasLimit: BigInt(gasLimit),
+    }
+    dispatch(updateTransactionOptions(transaction))
+  }
+
   const handleConfirm = async () => {
-    if (SignType.Sign === signType && isTransactionDataReady && txDetails) {
-      dispatch(signTransaction(txDetails))
-      setSigning(true)
+    if (isTransactionDataReady && transactionDetails) {
+      dispatch(signTransaction(transactionDetails))
+      setIsTransactionSigning(true)
     }
   }
 
@@ -129,25 +167,27 @@ export default function SignTransaction(): ReactElement {
       />
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
-          <span className="detail_item">
-            Estimated network fee
+          {signType === SignType.Sign ? (
+            <NetworkFeesChooser
+              estimatedFeesPerGas={estimatedFeesPerGas}
+              onSelectFeeOption={updateGasSettings}
+              selectedGas={selectedEstimatedFeePerGas}
+              gasLimit={gasLimit}
+              setGasLimit={setGasLimit}
+            />
+          ) : (
             <span className="detail_item_right">
-              {ENABLE_EDIT_NETWORK_FEE ? (
-                <NetworkFeesChooser
-                  estimatedFeesPerGas={estimatedFeesPerGas}
-                  onSelectFeeOption={setSelectedEstimatedFeePerGas}
-                  selectedGas={selectedEstimatedFeePerGas}
-                  gasLimit={gasLimit}
-                  setGasLimit={setGasLimit}
-                />
-              ) : (
-                `~${
-                  txDetails &&
-                  formatUnits(txDetails?.maxFeePerGas, "gwei").split(".")[0]
-                } Gwei`
-              )}
+              <span className="detail_item">
+                Estimated network fee ~$
+                {
+                  formatUnits(transactionDetails.maxFeePerGas, "gwei").split(
+                    "."
+                  )[0]
+                }{" "}
+                Gwei
+              </span>
             </span>
-          </span>
+          )}
         </div>
       ) : null}
       <div className="footer_actions">
@@ -221,6 +261,7 @@ export default function SignTransaction(): ReactElement {
           .detail_items_wrap {
             display: flex;
             margin-top: 21px;
+            flex-direction: column;
           }
           .detail_item_right {
             color: var(--green-20);
