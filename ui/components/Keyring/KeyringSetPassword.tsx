@@ -57,30 +57,38 @@ export default function KeyringSetPassword(): ReactElement {
       <div className="subtitle">
         You will NOT be able to change this password for now.
       </div>
-      <div className="input_wrap">
-        <SharedInput
-          type="password"
-          placeholder="Password"
-          onChange={handleInputChange(setPassword)}
-          errorMessage={passwordErrorMessage}
-        />
-      </div>
-      <div className="input_wrap repeat_password_wrap">
-        <SharedInput
-          type="password"
-          placeholder="Repeat Password"
-          onChange={handleInputChange(setPasswordConfirmation)}
-          errorMessage={passwordErrorMessage}
-        />
-      </div>
-      <SharedButton
-        type="primary"
-        size="large"
-        onClick={dispatchCreatePassword}
-        showLoadingOnClick={!passwordErrorMessage}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          dispatchCreatePassword()
+        }}
       >
-        Continue
-      </SharedButton>
+        <div className="input_wrap">
+          <SharedInput
+            type="password"
+            placeholder="Password"
+            onChange={handleInputChange(setPassword)}
+            errorMessage={passwordErrorMessage}
+          />
+        </div>
+        <div className="input_wrap repeat_password_wrap">
+          <SharedInput
+            type="password"
+            placeholder="Repeat Password"
+            onChange={handleInputChange(setPasswordConfirmation)}
+            errorMessage={passwordErrorMessage}
+          />
+        </div>
+        <SharedButton
+          type="primary"
+          size="large"
+          onClick={dispatchCreatePassword}
+          showLoadingOnClick={!passwordErrorMessage}
+          isFormSubmit
+        >
+          Continue
+        </SharedButton>
+      </form>
       <div className="restore">
         <SharedButton type="tertiary" size="medium">
           Restoring account?
