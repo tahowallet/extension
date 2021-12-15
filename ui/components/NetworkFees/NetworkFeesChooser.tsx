@@ -195,6 +195,17 @@ export default function NetworkFeesChooser({
   }, [updateGasOptions])
 
   useEffect(() => {
+    if (gasOptions.length > 0) {
+      onSelectFeeOption({
+        confidence: Number(gasOptions[activeFeeIndex].confidence),
+        price: gasOptions[activeFeeIndex].price,
+        maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
+        maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
+      })
+    }
+  }, [activeFeeIndex, onSelectFeeOption, gasOptions])
+
+  useEffect(() => {
     const selectedOptionIndex = gasOptions.findIndex(
       (el) => el.confidence === `${selectedGas?.confidence}`
     )

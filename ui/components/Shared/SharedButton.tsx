@@ -21,6 +21,7 @@ interface Props {
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick: boolean
+  isFormSubmit: boolean
 }
 
 export default function SharedButton(props: Props): ReactElement {
@@ -35,6 +36,7 @@ export default function SharedButton(props: Props): ReactElement {
     iconPosition,
     linkTo,
     showLoadingOnClick,
+    isFormSubmit,
   } = props
 
   const [navigateTo, setNavigateTo] =
@@ -63,7 +65,7 @@ export default function SharedButton(props: Props): ReactElement {
 
   return (
     <button
-      type="button"
+      type={isFormSubmit ? "submit" : "button"}
       className={classNames(
         { large: size === "large" },
         { small: size === "small" },
@@ -277,4 +279,5 @@ SharedButton.defaultProps = {
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,
+  isFormSubmit: false,
 }

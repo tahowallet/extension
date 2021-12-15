@@ -124,7 +124,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async requestPermission(permissionRequest: PermissionRequest) {
     this.emitter.emit("requestPermission", permissionRequest)
-    await ProviderBridgeService.showDappConnectWindow(
+    await ProviderBridgeService.showExtensionPopup(
       AllowedQueryParamPage.dappPermission
     )
 
@@ -171,6 +171,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
           "eth_accounts",
           params
         )
+      case "eth_signTransaction":
+      case "eth_sendTransaction":
+        ProviderBridgeService.showExtensionPopup(
+          AllowedQueryParamPage.signTransaction
+        )
+      // Above, show the connect window, then continue on to regular handling.
+      // eslint-disable-next-line no-fallthrough
       default: {
         return this.internalEthereumProviderService.routeSafeRPCRequest(
           method,
@@ -180,7 +187,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  static async showDappConnectWindow(
+  private static async showExtensionPopup(
     url: AllowedQueryParamPageType
   ): Promise<browser.Windows.Window> {
     const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()

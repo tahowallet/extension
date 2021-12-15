@@ -32,7 +32,7 @@ import {
   blockFromWebsocketBlock,
   enrichTransactionWithReceipt,
   ethersTransactionRequestFromEIP1559TransactionRequest,
-  ethersTxFromSignedTx,
+  ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
 import { getEthereumNetwork } from "../../lib/utils"
@@ -56,11 +56,16 @@ const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 // resources... resulting in an exponential backoff. If it's too small,
 // transaction history will appear "slow" to show up for newly imported
 // accounts.
-const NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY = 128000
+const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
+
+// The number of blocks before the current block height to start looking for
+// asset transfers. This is important to allow nodes like Erigon and
+// OpenEthereum with tracing to catch up to where we are.
+const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 100
 
 // The number of asset transfer lookups that will be done per account to rebuild
 // historic activity.
-const NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
+const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressNetwork
@@ -376,7 +381,8 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     // TODO make proper use of tx.network to choose provider
     const serialized = utils.serializeTransaction(
-      ethersTxFromSignedTx(transaction)
+      ethersTransactionFromSignedTransaction(transaction),
+      { r: transaction.r, s: transaction.s, v: transaction.v }
     )
     try {
       await Promise.all([
@@ -422,8 +428,10 @@ export default class ChainService extends BaseService<Events> {
   private async loadRecentAssetTransfers(
     addressNetwork: AddressNetwork
   ): Promise<void> {
-    const blockHeight = await this.getBlockHeight(addressNetwork.network)
-    let fromBlock = blockHeight - NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY
+    const blockHeight =
+      (await this.getBlockHeight(addressNetwork.network)) -
+      BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
+    let fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
@@ -439,8 +447,7 @@ export default class ChainService extends BaseService<Events> {
     }
 
     // TODO replace the home-spun backoff with a util function
-    fromBlock =
-      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 2)
+    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 2)
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
@@ -455,8 +462,7 @@ export default class ChainService extends BaseService<Events> {
       )
     }
 
-    fromBlock =
-      blockHeight - Math.floor(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY / 4)
+    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 4)
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
@@ -493,13 +499,13 @@ export default class ChainService extends BaseService<Events> {
       const range = newest - oldest
       if (
         range <
-        NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY *
-          NUMBER_HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
+        BLOCKS_FOR_TRANSACTION_HISTORY *
+          HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
       ) {
         // if we haven't hit 10x the single-call limit, pull another.
         await this.loadAssetTransfers(
           addressNetwork,
-          oldest - BigInt(NUMBER_BLOCKS_FOR_TRANSACTION_HISTORY),
+          oldest - BigInt(BLOCKS_FOR_TRANSACTION_HISTORY),
           oldest
         )
       }

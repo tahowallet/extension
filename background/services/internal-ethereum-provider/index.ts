@@ -1,13 +1,29 @@
 import browser from "webextension-polyfill"
-import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
+import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
 
+import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import {
+  eip1559TransactionRequestFromEthersTransactionRequest,
+  ethersTransactionFromSignedTransaction,
+} from "../chain/utils"
+
+type DAppRequestEvent<T, E> = {
+  payload: T
+  resolver: (result: E | PromiseLike<E>) => void
+}
 
 type Events = ServiceLifecycleEvents & {
+  transactionSignatureRequest: DAppRequestEvent<
+    Partial<EIP1559TransactionRequest> & { from: string },
+    SignedEVMTransaction
+  >
   // connect
   // disconnet
   // account change
@@ -97,9 +113,23 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.chainService
           .getAccountsToTrack()
           .then(([account]) => [account.address])
-      case "eth_sign": // --- important wallet methods ---
       case "eth_sendTransaction":
+        return this.signTransaction(params[0] as EthersTransactionRequest).then(
+          (signed) => this.chainService.broadcastSignedTransaction(signed)
+        )
       case "eth_signTransaction":
+        return this.signTransaction(params[0] as EthersTransactionRequest).then(
+          (signedTransaction) =>
+            serializeEthersTransaction(
+              ethersTransactionFromSignedTransaction(signedTransaction),
+              {
+                r: signedTransaction.r,
+                s: signedTransaction.s,
+                v: signedTransaction.v,
+              }
+            )
+        )
+      case "eth_sign": // --- important wallet methods ---
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
@@ -131,5 +161,24 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       default:
         throw new Error(`unsupported method: ${method}`)
     }
+  }
+
+  private async signTransaction(transactionRequest: EthersTransactionRequest) {
+    const { from, ...convertedRequest } =
+      eip1559TransactionRequestFromEthersTransactionRequest(transactionRequest)
+
+    if (typeof from === "undefined") {
+      throw new Error("Transactions must have a from address for signing.")
+    }
+
+    return new Promise<SignedEVMTransaction>((resolve) => {
+      this.emitter.emit("transactionSignatureRequest", {
+        payload: {
+          ...convertedRequest,
+          from,
+        },
+        resolver: resolve,
+      })
+    })
   }
 }

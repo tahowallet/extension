@@ -21,7 +21,10 @@ export default function KeyringUnlock(): ReactElement {
     }
   }, [history, areKeyringsUnlocked])
 
-  const dispatchUnlockWallet = async (): Promise<void> => {
+  const dispatchUnlockWallet = async (
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault()
     await dispatch(unlockKeyrings(password))
     // If keyring was unable to unlock, display error message
     setErrorMessage("Incorrect password")
@@ -32,21 +35,23 @@ export default function KeyringUnlock(): ReactElement {
       <div className="full_logo" />
       <h1 className="serif_header">Unlock Your Wallet</h1>
       <div className="subtitle">The decentralized web awaits.</div>
-      <div className="input_wrap">
-        <SharedInput
-          type="password"
-          placeholder="Password"
-          onChange={(value) => {
-            setPassword(value)
-            // Clear error message on input change
-            setErrorMessage("")
-          }}
-          errorMessage={errorMessage}
-        />
-      </div>
-      <SharedButton type="primary" size="large" onClick={dispatchUnlockWallet}>
-        Unlock and Continue
-      </SharedButton>
+      <form onSubmit={dispatchUnlockWallet}>
+        <div className="input_wrap">
+          <SharedInput
+            type="password"
+            placeholder="Password"
+            onChange={(value) => {
+              setPassword(value)
+              // Clear error message on input change
+              setErrorMessage("")
+            }}
+            errorMessage={errorMessage}
+          />
+        </div>
+        <SharedButton type="primary" size="large" isFormSubmit>
+          Unlock and Continue
+        </SharedButton>
+      </form>
       <style jsx>
         {`
           ${titleStyle}

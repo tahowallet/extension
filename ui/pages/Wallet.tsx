@@ -85,6 +85,7 @@ export default function Wallet(): ReactElement {
           }
           .page_content {
             width: 100%;
+            height: inherit;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -97,7 +98,7 @@ export default function Wallet(): ReactElement {
             width: 100%;
           }
           .panel {
-            height: 284px;
+            height: 302px;
             overflow-y: auto;
             padding-top: 16px;
             box-sizing: border-box;

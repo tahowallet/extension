@@ -45,7 +45,8 @@ export default function SharedInput(props: Props): ReactElement {
           input[type="number"] {
             -moz-appearance: textfield;
           }
-          .error {
+          .error,
+          .error:focus {
             border-color: var(--error);
           }
           .error_message {
