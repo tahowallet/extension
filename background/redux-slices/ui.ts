@@ -18,12 +18,12 @@ export type UIState = {
   currentAccount: SelectedAccount
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
-  settings:
-    | undefined
-    | { hideDust: boolean | undefined; defaultWallet: boolean | undefined }
+  settings: { hideDust: boolean; defaultWallet: boolean }
+  snackbarMessage: string
 }
 
 export type Events = {
+  snackbarMessage: string
   newDefaultWalletValue: boolean
 }
 
@@ -37,6 +37,7 @@ export const initialState: UIState = {
   },
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
+  snackbarMessage: "",
 }
 
 const uiSlice = createSlice({
@@ -45,7 +46,7 @@ const uiSlice = createSlice({
   reducers: {
     toggleHideDust: (
       immerState,
-      { payload: shouldHideDust }: { payload: boolean | undefined }
+      { payload: shouldHideDust }: { payload: boolean }
     ): void => {
       immerState.settings = {
         hideDust: shouldHideDust,
@@ -74,13 +75,25 @@ const uiSlice = createSlice({
       ...state,
       initializationLoadingTimeExpired: true,
     }),
+    setSnackbarMessage: (
+      state,
+      { payload: snackbarMessage }: { payload: string }
+    ): UIState => {
+      return {
+        ...state,
+        snackbarMessage,
+      }
+    },
+    clearSnackbarMessage: (state): UIState => ({
+      ...state,
+      snackbarMessage: "",
+    }),
     setDefaultWallet: (
       state,
-      { payload: defaultWallet }: { payload: boolean | undefined }
+      { payload: defaultWallet }: { payload: boolean }
     ) => ({
       ...state,
       settings: {
-        ...defaultSettings,
         ...state.settings,
         defaultWallet,
       },
@@ -93,7 +106,9 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   setCurrentAccount,
+  setSnackbarMessage,
   setDefaultWallet,
+  clearSnackbarMessage,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -118,6 +133,11 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust
+)
+
+export const selectSnackbarMessage = createSelector(
+  selectUI,
+  (ui) => ui.snackbarMessage
 )
 
 export const selectDefaultWallet = createSelector(

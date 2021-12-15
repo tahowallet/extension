@@ -75,7 +75,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         .avatar_selected_outline {
           width: 52px;
           height: 52px;
-          border-radius: 14px;
+          border-radius: 16px;
           border: 2px solid #22c480;
           display: flex;
           justify-content: center;

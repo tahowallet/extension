@@ -258,8 +258,8 @@ export const selectAccountTotalsByCategory = createSelector(
           address,
           shortenedAddress,
           accountType: resolvedAccountType,
-          name: accountData.ens.name,
-          avatarURL: accountData.ens.avatarURL,
+          name: accountData.ens.name ?? accountData.defaultName,
+          avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(
             mainCurrencySymbol,
             totalMainCurrencyAmount,

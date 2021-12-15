@@ -45,11 +45,10 @@ export default function Menu(): ReactElement {
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)
 
-  const toggleHideDustAssets = (toggleValue: boolean | undefined) => {
+  const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
   }
-  const toggleDefaultWallet = (defaultWalletValue: boolean | undefined) => {
-    if (typeof defaultWalletValue === "undefined") return
+  const toggleDefaultWallet = (defaultWalletValue: boolean) => {
     dispatch(setNewDefaultWalletValue(defaultWalletValue))
   }
   const settings = {

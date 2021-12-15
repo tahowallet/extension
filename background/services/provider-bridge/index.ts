@@ -16,7 +16,6 @@ import {
   ServiceCreatorFunction,
   ServiceLifecycleEvents,
 } from ".."
-import logger from "../../lib/logger"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
@@ -70,7 +69,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         port.onMessage.addListener((event) => {
           this.onMessageListener(port as Required<browser.Runtime.Port>, event)
         })
-        port.onDisconnect.addListener((port) => {
+        port.onDisconnect.addListener(() => {
           this.openPorts = this.openPorts.filter(
             (openPort) => openPort !== port
           )
@@ -158,7 +157,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     port.postMessage(response)
   }
 
-  notifyContentScriptAboutConfigChange(newDefaultWalletValue: boolean) {
+  notifyContentScriptAboutConfigChange(newDefaultWalletValue: boolean): void {
     this.openPorts.forEach((p) => {
       p.postMessage({
         id: "tallyHo",
@@ -170,7 +169,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async requestPermission(permissionRequest: PermissionRequest) {
+  async requestPermission(
+    permissionRequest: PermissionRequest
+  ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
     await ProviderBridgeService.showExtensionPopup(
       AllowedQueryParamPage.dappPermission

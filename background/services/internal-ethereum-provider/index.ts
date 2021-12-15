@@ -1,14 +1,13 @@
 import browser from "webextension-polyfill"
-import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
-import {
-  ChainService,
-  ServiceCreatorFunction,
-  ServiceLifecycleEvents,
-} from ".."
+
+import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
+
 import BaseService from "../base"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import ChainService from "../chain"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
