@@ -264,6 +264,7 @@ export default class Main extends BaseService<never> {
       this.preferenceService.startService(),
       this.chainService.startService(),
       this.indexingService.startService(),
+      this.enrichmentService.startService(),
       this.keyringService.startService(),
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
@@ -276,6 +277,7 @@ export default class Main extends BaseService<never> {
       this.preferenceService.stopService(),
       this.chainService.stopService(),
       this.indexingService.stopService(),
+      this.enrichmentService.stopService(),
       this.keyringService.stopService(),
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
@@ -385,6 +387,20 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
       this.store.dispatch(estimatedFeesPerGas(blockPrices))
     })
+
+    // Report on transactions for basic activity. Fancier stuff is handled via
+    // connectEnrichmentService
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      const forAccounts: string[] = [transaction.to, transaction.from].filter(
+        Boolean
+      ) as string[]
+      this.store.dispatch(
+        activityEncountered({
+          forAccounts,
+          transaction,
+        })
+      )
+    })
   }
 
   async connectNameService(): Promise<void> {
@@ -419,17 +435,20 @@ export default class Main extends BaseService<never> {
   }
 
   async connectEnrichmentService(): Promise<void> {
-    this.chainService.emitter.on("transaction", async ({ transaction }) => {
-      const forAccounts: string[] = [transaction.to, transaction.from].filter(
-        Boolean
-      ) as string[]
-      this.store.dispatch(
-        activityEncountered({
-          forAccounts,
-          transaction,
-        })
-      )
-    })
+    this.enrichmentService.emitter.on(
+      "enrichedEVMTransaction",
+      async (transaction) => {
+        const forAccounts: string[] = [transaction.to, transaction.from].filter(
+          Boolean
+        ) as string[]
+        this.store.dispatch(
+          activityEncountered({
+            forAccounts,
+            transaction,
+          })
+        )
+      }
+    )
   }
 
   async connectKeyringService(): Promise<void> {

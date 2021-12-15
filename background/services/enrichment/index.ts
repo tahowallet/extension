@@ -102,7 +102,7 @@ export default class EnrichmentService extends BaseService<Events> {
   async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.connectChainServiceEvents()
+    await this.connectChainServiceEvents()
   }
 
   private async connectChainServiceEvents(): Promise<void> {
