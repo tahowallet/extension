@@ -41,6 +41,7 @@ export default function Snackbar(): ReactElement {
             transition: all 0.3s ease;
             opacity: 0;
             transform: translateY(10px);
+            pointer-events: none;
           }
           .open {
             opacity: 1;
