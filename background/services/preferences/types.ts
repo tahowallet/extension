@@ -8,4 +8,5 @@ export interface TokenListPreferences {
 export interface Preferences {
   tokenLists: TokenListPreferences
   currency: FiatCurrency
+  defaultWallet: boolean
 }

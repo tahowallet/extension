@@ -39,7 +39,11 @@ import {
   keyringUnlocked,
   updateKeyrings,
 } from "./redux-slices/keyrings"
-import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
+import {
+  initializationLoadingTimeHitLimit,
+  emitter as uiSliceEmitter,
+  setDefaultWallet,
+} from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
   emitter as transactionConstructionSliceEmitter,
@@ -158,7 +162,8 @@ export default class Main extends BaseService<never> {
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService)
     const providerBridgeService = ProviderBridgeService.create(
-      internalEthereumProviderService
+      internalEthereumProviderService,
+      preferenceService
     )
 
     let savedReduxState = {}
@@ -293,6 +298,7 @@ export default class Main extends BaseService<never> {
     this.connectNameService()
     this.connectInternalEthereumProviderService()
     this.connectProviderBridgeService()
+    this.connectPreferenceService()
     this.connectEnrichmentService()
     await this.connectChainService()
   }
@@ -534,6 +540,28 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await this.providerBridgeService.denyOrRevokePermission(permission)
+      }
+    )
+  }
+
+  async connectPreferenceService(): Promise<void> {
+    this.preferenceService.emitter.on(
+      "initializeDefaultWallet",
+      async (isDefaultWallet: boolean) => {
+        await this.store.dispatch(setDefaultWallet(isDefaultWallet))
+      }
+    )
+
+    uiSliceEmitter.on(
+      "newDefaultWalletValue",
+      async (newDefaultWalletValue) => {
+        await this.preferenceService.setDefaultWalletValue(
+          newDefaultWalletValue
+        )
+
+        this.providerBridgeService.notifyContentScriptAboutConfigChange(
+          newDefaultWalletValue
+        )
       }
     )
   }

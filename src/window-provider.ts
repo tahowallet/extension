@@ -16,7 +16,3 @@ window.tally = new TallyWindowProvider({
     window.removeEventListener("message", fn, false),
   origin: window.location.origin,
 })
-
-if (process.env.ENABLE_DEFAULT_WALLET === "true") {
-  window.ethereum = window.tally
-}
