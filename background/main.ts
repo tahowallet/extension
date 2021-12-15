@@ -330,7 +330,7 @@ export default class Main extends BaseService<never> {
         gasLimit: options.gasLimit ?? 0n,
         maxFeePerGas: options.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: options.maxPriorityFeePerGas ?? 0n,
-        input: "",
+        input: options.input ?? null,
         type: 2 as const,
         chainID: "1",
         nonce: resolvedNonce,
