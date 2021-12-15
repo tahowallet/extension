@@ -9,6 +9,8 @@ import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import FeeSettingsButton from "./FeeSettingsButton"
 
 type GasOption = {
   name: string
@@ -23,9 +25,7 @@ type GasOption = {
 }
 
 interface NetworkFeesChooserProps {
-  setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-  onSelectFeeOption: (arg0: BlockEstimate) => void
-  currentFeeSelectionPrice: (arg0: { gwei: string; fiat: string }) => void
+  onSelectFeeOption: (selectedFee: BlockEstimate) => void
   selectedGas?: BlockEstimate
   gasLimit: string
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
@@ -33,9 +33,7 @@ interface NetworkFeesChooserProps {
 }
 
 export default function NetworkFeesChooser({
-  setFeeModalOpen,
   onSelectFeeOption,
-  currentFeeSelectionPrice,
   selectedGas,
   gasLimit,
   setGasLimit,
@@ -45,22 +43,26 @@ export default function NetworkFeesChooser({
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
 
+  const [feeModalOpen, setFeeModalOpen] = useState(false)
+  const openSelectFeeModal = () => {
+    setFeeModalOpen(true)
+  }
+  const closeSelectFeeModal = () => {
+    setFeeModalOpen(false)
+  }
+
   const handleSelectGasOption = (index: number) => {
+    onSelectFeeOption({
+      confidence: Number(gasOptions[index].confidence),
+      price: gasOptions[index].price,
+      maxFeePerGas: gasOptions[index].maxFeePerGas,
+      maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
+    })
     setActiveFeeIndex(index)
   }
 
   const saveUserGasChoice = () => {
-    onSelectFeeOption({
-      confidence: Number(gasOptions[activeFeeIndex].confidence),
-      price: gasOptions[activeFeeIndex].price,
-      maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
-      maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
-    })
     setFeeModalOpen(false)
-    currentFeeSelectionPrice({
-      gwei: gasOptions[activeFeeIndex].estimatedGwei,
-      fiat: gasOptions[activeFeeIndex].dollarValue,
-    })
   }
   const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
 
@@ -78,6 +80,9 @@ export default function NetworkFeesChooser({
       clearTimeout(interval)
     }
   })
+
+  const [minFee, setMinFee] = useState(0)
+  const [maxFee, setMaxFee] = useState(0)
 
   const updateGasOptions = useCallback(() => {
     const formatBlockEstimate = (option: BlockEstimate) => {
@@ -151,100 +156,138 @@ export default function NetworkFeesChooser({
           formatBlockEstimate(option)
         )
         setGasOptions(updatedGasOptions)
-        const currentlySelectedFee = updatedGasOptions.find(
-          (el, index) => index === activeFeeIndex
-        )
-        if (currentlySelectedFee) {
-          onSelectFeeOption({
-            confidence: Number(currentlySelectedFee?.confidence),
-            maxFeePerGas: currentlySelectedFee?.maxFeePerGas,
-            maxPriorityFeePerGas: currentlySelectedFee?.maxPriorityFeePerGas,
-            price: currentlySelectedFee.price,
-          })
-          currentFeeSelectionPrice({
-            gwei: currentlySelectedFee.estimatedGwei,
-            fiat: currentlySelectedFee.dollarValue,
-          })
+        const currentlySelectedFee =
+          activeFeeIndex < updatedGasOptions.length
+            ? updatedGasOptions[activeFeeIndex]
+            : undefined
+        if (typeof currentlySelectedFee !== "undefined") {
+          if (
+            estimatedFeesPerGas?.baseFeePerGas &&
+            estimatedFeesPerGas?.regular?.maxPriorityFeePerGas &&
+            estimatedFeesPerGas?.instant?.maxPriorityFeePerGas
+          ) {
+            setMinFee(
+              Number(
+                formatUnits(
+                  (estimatedFeesPerGas.baseFeePerGas * BigInt(13)) / 10n +
+                    estimatedFeesPerGas.regular?.maxPriorityFeePerGas,
+                  "gwei"
+                ).split(".")[0]
+              )
+            )
+            setMaxFee(
+              Number(
+                formatUnits(
+                  (estimatedFeesPerGas.baseFeePerGas * BigInt(18)) / 10n +
+                    estimatedFeesPerGas.instant?.maxPriorityFeePerGas,
+                  "gwei"
+                ).split(".")[0]
+              )
+            )
+          }
         }
       }
     }
-  }, [
-    estimatedFeesPerGas,
-    gasLimit,
-    ethUnitPrice,
-    onSelectFeeOption,
-    activeFeeIndex,
-    currentFeeSelectionPrice,
-  ])
+  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, activeFeeIndex])
 
   useEffect(() => {
     updateGasOptions()
   }, [updateGasOptions])
 
   useEffect(() => {
-    setActiveFeeIndex(
-      gasOptions.findIndex(
-        (el) => el.confidence === `${selectedGas?.confidence}`
-      )
+    const selectedOptionIndex = gasOptions.findIndex(
+      (el) => el.confidence === `${selectedGas?.confidence}`
     )
-  }, [gasOptions, selectedGas])
+
+    setActiveFeeIndex(
+      // If we don't find it, assume regular speed.
+      // TODO User setting on which default to use?
+      selectedOptionIndex === -1 ? 0 : selectedOptionIndex
+    )
+  }, [activeFeeIndex, gasOptions, selectedGas])
 
   return (
-    <div className="wrapper">
-      <div className="fees">
-        <div className="title">Network Fees</div>
-        <div className="divider">
-          <div className="divider-background" />
-          <div
-            className="divider-cover"
-            style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
-          />
-        </div>
-        {gasOptions.map((option, i) => {
-          return (
-            <button
-              className={`option ${i === activeFeeIndex ? "active" : ""}`}
-              onClick={() => handleSelectGasOption(i)}
-              type="button"
-              key={option.name}
-            >
-              <div className="option_left">
-                <div className="name">{option.name}</div>
-                <div className="subtext">Probability: {option.confidence}%</div>
+    <>
+      <SharedSlideUpMenu
+        size="custom"
+        isOpen={feeModalOpen}
+        close={closeSelectFeeModal}
+        customSize={`${3 * 56 + 320}px`}
+      >
+        <div className="wrapper">
+          <div className="fees">
+            <div className="title">Network Fees</div>
+            <div className="divider">
+              <div className="divider-background" />
+              <div
+                className="divider-cover"
+                style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
+              />
+            </div>
+            {gasOptions.map((option, i) => {
+              return (
+                <button
+                  key={option.confidence}
+                  className={`option ${i === activeFeeIndex ? "active" : ""}`}
+                  onClick={() => handleSelectGasOption(i)}
+                  type="button"
+                >
+                  <div className="option_left">
+                    <div className="name">{option.name}</div>
+                    <div className="subtext">
+                      Probability: {option.confidence}%
+                    </div>
+                  </div>
+                  <div className="option_right">
+                    <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
+                    <div className="subtext">${option.dollarValue}</div>
+                  </div>
+                </button>
+              )
+            })}
+            <div className="info">
+              <div className="limit">
+                <label className="limit_label" htmlFor="gasLimit">
+                  Gas limit
+                </label>
+                <SharedInput
+                  id="gasLimit"
+                  value={gasLimit}
+                  onChange={(val) => setGasLimit(val)}
+                  placeholder="21000"
+                  type="number"
+                />
               </div>
-              <div className="option_right">
-                <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-                <div className="subtext">${option.dollarValue}</div>
+              <div className="max_fee">
+                <span className="max_label">Max Fee</span>
+                <div className="price">
+                  {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+                </div>
               </div>
-            </button>
-          )
-        })}
-        <div className="info">
-          <div className="limit">
-            <label className="limit_label" htmlFor="gasLimit">
-              Gas limit
-            </label>
-            <SharedInput
-              id="gasLimit"
-              value={gasLimit}
-              onChange={(val) => setGasLimit(val)}
-              placeholder="21000"
-              type="number"
-            />
-          </div>
-          <div className="max_fee">
-            <span className="max_label">Max Fee</span>
-            <div className="price">
-              {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
             </div>
           </div>
+          <div className="confirm">
+            <SharedButton
+              size="medium"
+              type="primary"
+              onClick={saveUserGasChoice}
+            >
+              Save
+            </SharedButton>
+          </div>
         </div>
+      </SharedSlideUpMenu>
+
+      <div className="network_fee">
+        <p>Estimated network fee</p>
+        <FeeSettingsButton
+          openModal={openSelectFeeModal}
+          minFee={minFee}
+          maxFee={maxFee}
+          currentFeeSelected={gasOptions?.[activeFeeIndex]?.estimatedGwei ?? ""}
+        />
       </div>
-      <div className="confirm">
-        <SharedButton size="medium" type="primary" onClick={saveUserGasChoice}>
-          Save
-        </SharedButton>
-      </div>
+
       <style jsx>
         {`
           .wrapper {
@@ -368,8 +411,16 @@ export default function NetworkFeesChooser({
             font-size: 14px;
             color: var(--green-40);
           }
+          .network_fee {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            line-height: 16px;
+            color: var(--green-40);
+            margin-bottom: 12px;
+          }
         `}
       </style>
-    </div>
+    </>
   )
 }
