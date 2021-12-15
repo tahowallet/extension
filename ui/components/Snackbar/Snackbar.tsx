@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from "react"
+import React, { ReactElement, useEffect, useRef } from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import {
@@ -12,11 +12,17 @@ export default function Snackbar(): ReactElement {
   const snackbarMessage = useBackgroundSelector(selectSnackbarMessage)
   const msTillDismiss = 5000
 
+  const snackbarTimeout = useRef<ReturnType<typeof setTimeout>>()
+
   useEffect(() => {
-    setTimeout(() => {
+    if (snackbarTimeout.current) {
+      clearTimeout(snackbarTimeout.current)
+    }
+
+    snackbarTimeout.current = setTimeout(() => {
       dispatch(clearSnackbarMessage())
     }, msTillDismiss)
-  }, [snackbarMessage, dispatch])
+  }, [snackbarTimeout, snackbarMessage, msTillDismiss, dispatch])
 
   return (
     <div className={classNames("snackbar_wrap", { open: snackbarMessage })}>
