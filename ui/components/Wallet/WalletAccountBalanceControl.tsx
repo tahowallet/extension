@@ -92,8 +92,9 @@ export default function WalletAccountBalanceControl(
                 <SharedButton
                   icon="send"
                   size="medium"
-                  type="primary"
+                  type="tertiary"
                   linkTo="/send"
+                  iconPosition="left"
                 >
                   Send
                 </SharedButton>
@@ -101,7 +102,8 @@ export default function WalletAccountBalanceControl(
                   onClick={handleClick}
                   icon="receive"
                   size="medium"
-                  type="primary"
+                  type="tertiary"
+                  iconPosition="left"
                 >
                   Receive
                 </SharedButton>
@@ -132,6 +134,8 @@ export default function WalletAccountBalanceControl(
             justify-contnet: space-between;
             align-items: center;
             flex-direction: column;
+            box-sizing: border-box;
+            padding-top: 6px;
           }
           .balance_area {
             height: 48px;
@@ -145,9 +149,8 @@ export default function WalletAccountBalanceControl(
             align-items: center;
           }
           .send_receive_button_wrap {
-            margin-top: 18px;
             display: flex;
-            width: 223px;
+            width: 180px;
             justify-content: space-between;
           }
           .balance_label {

@@ -59,7 +59,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           </div>
           <div className="right">
             <span className="icon_send_asset" />
-            <span className="icon_swap_asset" />
           </div>
         </div>
       </Link>
@@ -133,7 +132,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           .right {
             display: flex;
             width: 48px;
-            justify-content: space-between;
+            justify-content: flex-end;
             margin-right: 16px;
           }
         `}

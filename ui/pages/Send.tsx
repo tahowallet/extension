@@ -21,7 +21,9 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
 
-  const [assetSymbol, setAssetSymbol] = useState(location?.state?.symbol)
+  const [assetSymbol, setAssetSymbol] = useState(
+    location?.state?.symbol || "ETH"
+  )
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
@@ -137,6 +139,7 @@ export default function Send(): ReactElement {
                 defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
                 maxBalance={Number(currentBalance)}
+                disableDropdown
               />
               <div className="value">${getTotalLocalizedValue()}</div>
             </div>
