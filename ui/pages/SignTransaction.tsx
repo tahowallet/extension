@@ -163,7 +163,7 @@ export default function SignTransaction(): ReactElement {
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
         panelNumber={panelNumber}
-        panelNames={["Details", "Advanced"]}
+        panelNames={["Details"]}
       />
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
