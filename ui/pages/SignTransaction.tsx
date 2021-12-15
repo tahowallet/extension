@@ -40,8 +40,6 @@ interface SignLocationState {
 }
 
 export default function SignTransaction(): ReactElement {
-  const [signing, setSigning] = useState(false)
-
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const history = useHistory()
@@ -71,17 +69,16 @@ export default function SignTransaction(): ReactElement {
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   useEffect(() => {
-    if (isTransactionSigning && isTransactionSigned) {
-      history.push("/")
-    }
-  }, [history, isTransactionSigned, isTransactionSigning])
-
-  useEffect(() => {
-    if (areKeyringsUnlocked && isTransactionSigned && signing) {
-      setSigning(false)
+    if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
       history.push("/singleAsset", { symbol: assetSymbol })
     }
-  }, [areKeyringsUnlocked, isTransactionSigned, signing, history, assetSymbol])
+  }, [
+    areKeyringsUnlocked,
+    isTransactionSigned,
+    isTransactionSigning,
+    history,
+    assetSymbol,
+  ])
 
   if (!areKeyringsUnlocked) {
     return <></>
@@ -176,9 +173,10 @@ export default function SignTransaction(): ReactElement {
               setGasLimit={setGasLimit}
             />
           ) : (
-            <span className="detail_item_right">
-              <span className="detail_item">
-                Estimated network fee ~$
+            <span className="detail_item">
+              Estimated network fee
+              <span className="detail_item_right">
+                ~
                 {
                   formatUnits(transactionDetails.maxFeePerGas, "gwei").split(
                     "."
