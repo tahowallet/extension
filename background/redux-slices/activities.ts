@@ -27,7 +27,7 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
 })
 
 function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
+  return `${address.slice(0, 6)}...${address.slice(37, 42)}`
 }
 
 export type ActivitiesState = {
