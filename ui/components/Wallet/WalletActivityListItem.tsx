@@ -36,7 +36,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     case "asset-transfer":
       renderDetails = {
         iconClass: "contract_interaction_icon",
-        label: "Contract interaction",
+        label: "Contract Interaction",
         recipient: truncateAddress(activity.contractInfo.recipientAddress),
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
@@ -57,7 +57,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     case "contract-interaction":
       renderDetails = {
         iconClass: "contract_interaction_icon",
-        label: "Contract interaction",
+        label: "Contract Interaction",
         recipient: activity.toTruncated,
         assetLogoURL: activity.contractInfo.contractLogoURL,
         assetSymbol: activity.asset.symbol,
