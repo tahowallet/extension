@@ -1,6 +1,5 @@
 import {
   AnyAssetAmount,
-  AnyAsset,
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
 } from "../../assets"
@@ -11,7 +10,9 @@ import {
 } from "../../redux-slices/utils/asset-utils"
 
 import { HexString, UNIXTime } from "../../types"
+import { ETH } from "../../constants"
 import { ERC20_INTERFACE } from "../../lib/erc20"
+import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
@@ -44,6 +45,7 @@ export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipientAddress: HexString
+  senderAddress: HexString
 }
 
 export type AssetSwap = BaseTransactionAnnotation & {
@@ -124,17 +126,45 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   async resolveTransactionAnnotation(
-    contractAddress: HexString | undefined,
-    contractInput: HexString,
+    transaction: AnyEVMTransaction,
     desiredDecimals: number
   ): Promise<TransactionAnnotation | undefined> {
     let txAnnotation: TransactionAnnotation | undefined
 
-    // A missing recipient means a contract deployment.
-    if (typeof contractAddress === "undefined") {
+    if (typeof transaction.to === "undefined") {
+      // A missing recipient means a contract deployment.
       txAnnotation = {
         timestamp: Date.now(),
         type: "contract-deployment",
+      }
+    } else if (transaction.input === null || transaction.input === "0x") {
+      // This is _almost certainly_ not a contract interaction, move on. Note that
+      // a simple ETH send to a contract address can still effectively be a
+      // contract interaction (because it calls the fallback function on the
+      // contract), but for now we deliberately ignore that scenario when
+      // categorizing activities.
+      // TODO We can do more here by checking how much gas was spent. Anything
+      // over the 21k required to send ETH is a more complex contract interaction
+      if (transaction.value) {
+        txAnnotation = {
+          timestamp: Date.now(),
+          type: "asset-transfer",
+          senderAddress: transaction.from,
+          recipientAddress: transaction.to, // TODO ingest address
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: ETH,
+              amount: transaction.value,
+            },
+            desiredDecimals
+          ),
+        }
+      } else {
+        // Fall back on a standard contract interaction.
+        txAnnotation = {
+          timestamp: Date.now(),
+          type: "contract-interaction",
+        }
       }
     } else {
       const assets = await this.indexingService.getCachedAssets()
@@ -143,12 +173,14 @@ export default class EnrichmentService extends BaseService<Events> {
       const matchingFungibleAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset =>
           isSmartContractFungibleAsset(asset) &&
-          asset.contractAddress.toLowerCase() === contractAddress.toLowerCase()
+          sameEVMAddress(asset.contractAddress, transaction.to)
       )
 
       const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
 
-      const erc20Tx = ERC20_INTERFACE.parseTransaction({ data: contractInput })
+      const erc20Tx = ERC20_INTERFACE.parseTransaction({
+        data: transaction.input,
+      })
 
       // TODO handle the case where we don't have asset metadata already
       if (
@@ -161,6 +193,7 @@ export default class EnrichmentService extends BaseService<Events> {
           timestamp: Date.now(),
           type: "asset-transfer",
           transactionLogoURL,
+          senderAddress: erc20Tx.args.from ?? transaction.to,
           recipientAddress: erc20Tx.args.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
@@ -208,19 +241,10 @@ export default class EnrichmentService extends BaseService<Events> {
     transaction: AnyEVMTransaction,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransaction> {
-    if (transaction.input === null || transaction.input === "0x") {
-      // This is _almost certainly_ not a contract interaction, move on. Note that
-      // a simple ETH send to a contract address can still effectively be a
-      // contract interaction (because it calls the fallback function on the
-      // contract), but for now we deliberately ignore that scenario when
-      // categorizing activities.
-      return transaction
-    }
     const enrichedTx = {
       ...transaction,
       annotation: await this.resolveTransactionAnnotation(
-        transaction.to,
-        transaction.input,
+        transaction,
         desiredDecimals
       ),
     }
