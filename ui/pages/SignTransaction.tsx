@@ -138,7 +138,7 @@ export default function SignTransaction(): ReactElement {
       maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
-    await dispatch(updateTransactionOptions(transaction))
+    dispatch(updateTransactionOptions(transaction))
   }
 
   const handleConfirm = async () => {
