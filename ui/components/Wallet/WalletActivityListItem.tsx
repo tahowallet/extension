@@ -87,7 +87,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     default:
       renderDetails = {
         iconClass: "contract_interaction_icon",
-        label: "Contract interaction",
+        label: "Contract Interaction",
         recipient: activity.toTruncated,
         // TODO fall back to the asset URL we have in metadata
         assetLogoURL: activity.annotation?.transactionLogoURL,

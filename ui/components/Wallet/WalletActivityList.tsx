@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
 import {
   selectCurrentAccount,
@@ -23,10 +23,21 @@ export default function WalletActivityList({
     selectShowingActivityDetail
   )
 
+  // Used to fix Tx Details Slide-up menu should close
+  // when extension closes. (#618)
+  const [instantlyHideActivityDetails, setInstantlyHideActivityDetails] =
+    useState(true)
+
+  useEffect(() => {
+    setInstantlyHideActivityDetails(true)
+    dispatch(setShowingActivityDetail(null))
+  }, [dispatch])
+
   const currentAccount = useBackgroundSelector(selectCurrentAccount).address
 
   const handleOpen = useCallback(
     (activityItem: ActivityItem) => {
+      setInstantlyHideActivityDetails(false)
       dispatch(setShowingActivityDetail(activityItem.hash))
     },
     [dispatch]
@@ -60,16 +71,19 @@ export default function WalletActivityList({
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={showingActivityDetail !== null}
-        close={handleClose}
-      >
-        {showingActivityDetail ? (
-          <WalletActivityDetails activityItem={showingActivityDetail} />
-        ) : (
-          <></>
-        )}
-      </SharedSlideUpMenu>
+      {!instantlyHideActivityDetails && (
+        <SharedSlideUpMenu
+          isOpen={showingActivityDetail !== null}
+          close={handleClose}
+        >
+          {showingActivityDetail ? (
+            <WalletActivityDetails activityItem={showingActivityDetail} />
+          ) : (
+            <></>
+          )}
+        </SharedSlideUpMenu>
+      )}
+
       <ul>
         {activities.map((activityItem) => {
           if (activityItem) {

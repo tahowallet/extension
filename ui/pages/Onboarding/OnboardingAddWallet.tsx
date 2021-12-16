@@ -29,7 +29,7 @@ export default function OnboardingAddWallet(): ReactElement {
         <div className="choice_wrap">
           <h1 className="serif_header">Import seed</h1>
           <div className="subtitle">
-            Use an existing Metamask seed; other web3 wallets coming soon!
+            Use an existing MetaMask seed; other web3 wallets coming soon!
           </div>
           <SharedButton
             type="primary"
