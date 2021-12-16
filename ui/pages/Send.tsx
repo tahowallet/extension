@@ -6,6 +6,7 @@ import {
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
+  broadcastOnSign,
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -76,6 +77,7 @@ export default function Send(): ReactElement {
   }
 
   const sendTransactionRequest = async () => {
+    dispatch(broadcastOnSign(true))
     // FIXME Hackily handle the user not interacting with the fee selector for now.
     if (selectedEstimatedFeePerGas.maxFeePerGas === 0n) {
       const transaction = {
