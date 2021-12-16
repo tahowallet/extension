@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
+  broadcastSignedTransaction,
   selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
@@ -53,6 +54,13 @@ export default function SignTransaction(): ReactElement {
   )
 
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
+  const shouldBroadcastOnSign = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.broadcastOnSign ?? false
+  )
+  const signedTransaction = useBackgroundSelector(
+    ({ transactionConstruction }) => transactionConstruction.signedTransaction
+  )
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const [gasLimit, setGasLimit] = useState("")
@@ -72,6 +80,11 @@ export default function SignTransaction(): ReactElement {
 
   useEffect(() => {
     if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
+      if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
+        dispatch(broadcastSignedTransaction(signedTransaction))
+      }
+
+      // Request broadcast if not dApp...
       history.push("/singleAsset", { symbol: assetSymbol })
     }
   }, [
@@ -80,6 +93,9 @@ export default function SignTransaction(): ReactElement {
     isTransactionSigning,
     history,
     assetSymbol,
+    shouldBroadcastOnSign,
+    signedTransaction,
+    dispatch,
   ])
 
   const updateGasSettings = useCallback(

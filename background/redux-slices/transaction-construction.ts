@@ -5,6 +5,7 @@ import {
   BlockEstimate,
   BlockPrices,
   EIP1559TransactionRequest,
+  SignedEVMTransaction,
 } from "../networks"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -17,6 +18,8 @@ const enum TransactionConstructionStatus {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
+  signedTransaction?: SignedEVMTransaction
+  broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   lastGasEstimatesRefreshed: number
@@ -40,6 +43,7 @@ export type Events = {
     from: string
   }
   requestSignature: EIP1559TransactionRequest
+  broadcastSignedTransaction: SignedEVMTransaction
 }
 
 export const emitter = new Emittery<Events>()
@@ -56,6 +60,13 @@ export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
   async (transaction: EIP1559TransactionRequest) => {
     await emitter.emit("requestSignature", transaction)
+  }
+)
+
+export const broadcastSignedTransaction = createBackgroundAsyncThunk(
+  "transaction-construction/broadcast",
+  async (transaction: SignedEVMTransaction) => {
+    await emitter.emit("broadcastSignedTransaction", transaction)
   }
 )
 
@@ -76,12 +87,19 @@ const transactionSlice = createSlice({
     ) => ({
       ...immerState,
       status: TransactionConstructionStatus.Loaded,
+      signedTransaction: undefined,
       transactionRequest,
       transactionLikelyFails,
     }),
-    signed: (immerState) => {
-      immerState.status = TransactionConstructionStatus.Signed
-    },
+    signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
+      ...state,
+      status: TransactionConstructionStatus.Signed,
+      signedTransaction: payload,
+    }),
+    broadcastOnSign: (state, { payload }: { payload: boolean }) => ({
+      ...state,
+      broadcastOnSign: payload,
+    }),
     transactionLikelyFails: (state) => ({
       ...state,
       transactionLikelyFails: true,
@@ -111,6 +129,7 @@ const transactionSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(updateTransactionOptions.pending, (immerState) => {
       immerState.status = TransactionConstructionStatus.Pending
+      immerState.signedTransaction = undefined
     })
   },
 })
@@ -118,6 +137,7 @@ const transactionSlice = createSlice({
 export const {
   transactionRequest,
   transactionLikelyFails,
+  broadcastOnSign,
   signed,
   estimatedFeesPerGas,
 } = transactionSlice.actions
