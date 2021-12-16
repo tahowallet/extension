@@ -167,6 +167,7 @@ export type EIP1559TransactionRequest = Pick<
  */
 export type ConfirmedEVMTransaction = EVMTransaction & {
   gasUsed: bigint
+  status: number
   blockHash: string
   blockHeight: number
 }

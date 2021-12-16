@@ -105,6 +105,11 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               className={classNames("activity_icon", renderDetails.iconClass)}
             />
             {renderDetails.label}
+            {"status" in activity && activity.status !== 1 ? (
+              <div className="failed">Failed</div>
+            ) : (
+              <></>
+            )}
             {activity.blockHash === null ? (
               <div className="pending">Pending...</div>
             ) : (
@@ -200,6 +205,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .pending {
             color: var(--attention);
+          }
+          .failed:before {
+            content: "•";
+            margin: 0 3px;
+          }
+          .failed {
+            color: var(--error);
           }
           .top {
             height: 16px;
