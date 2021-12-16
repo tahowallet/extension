@@ -17,6 +17,20 @@ export default function TopMenuProfileButton(props: {
             align-items: center;
             user-select: none;
           }
+          button::after {
+            content: "";
+            display: block;
+            width: 36px;
+            height: 36px;
+            position: absolute;
+            right: 12.5px;
+            border-radius: 16px;
+            border: solid 2px var(--trophy-gold);
+            opacity: 0;
+          }
+          button:hover::after {
+            opacity: 1;
+          }
         `}
       </style>
     </button>

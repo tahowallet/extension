@@ -193,6 +193,7 @@ export default function WalletActivityDetails(
             align-items: top;
             justify-content: space-between;
             width: 304px;
+            margin-bottom: 10px;
           }
           .header_button {
             margin-top: 10px;
