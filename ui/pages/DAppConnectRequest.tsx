@@ -66,7 +66,7 @@ export default function DAppConnectRequest(): ReactElement {
   const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
 
   useEffect(() => {
-    window.addEventListener("beforeunload", (ev) => {
+    window.onbeforeunload = (ev) => {
       if (typeof permission !== "undefined" && lowerCaseAddress) {
         dispatch(
           denyOrRevokePermission({
@@ -76,7 +76,7 @@ export default function DAppConnectRequest(): ReactElement {
           })
         )
       }
-    })
+    }
   }, [dispatch, permission, lowerCaseAddress])
 
   const grant = useCallback(async () => {
@@ -89,21 +89,14 @@ export default function DAppConnectRequest(): ReactElement {
         })
       )
     }
+    window.onbeforeunload = null
     window.close()
   }, [dispatch, permission, lowerCaseAddress])
 
   const deny = useCallback(async () => {
-    if (typeof permission !== "undefined" && lowerCaseAddress) {
-      await dispatch(
-        denyOrRevokePermission({
-          ...permission,
-          state: "deny",
-          accountAddress: lowerCaseAddress,
-        })
-      )
-    }
+    // The denyOrRevokePermission will be dispatched in the onbeforeunload effect
     window.close()
-  }, [dispatch, permission, lowerCaseAddress])
+  }, [])
 
   if (
     typeof currentAccountTotal === "undefined" ||
