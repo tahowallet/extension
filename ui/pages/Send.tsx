@@ -15,6 +15,7 @@ import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { SignType } from "./SignTransaction"
@@ -115,6 +116,9 @@ export default function Send(): ReactElement {
     <>
       <CorePage>
         <div className="standard_width">
+          <div className="back_button_wrap">
+            <SharedBackButton />
+          </div>
           <h1 className="header">
             <span className="icon_activity_send_medium" />
             <div className="title">Send Asset</div>
@@ -218,11 +222,17 @@ export default function Send(): ReactElement {
             font-weight: 500;
             line-height: 32px;
           }
+          .back_button_wrap {
+            position: absolute;
+            margin-left: -10px;
+            margin-top: -4px;
+            z-index: 10;
+          }
           .header {
             display: flex;
             align-items: center;
-            margin-bottom: 25px;
-            margin-top: 12px;
+            margin-bottom: 4px;
+            margin-top: 30px;
           }
           .form_input {
             margin-bottom: 22px;
