@@ -8,7 +8,6 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     const currentAccountAddress = selectCurrentAccount(state).address
 
     return {
-      currentAccountAddress,
       currentAccountActivities:
         typeof currentAccountAddress !== "undefined"
           ? state.activities[currentAccountAddress]
@@ -16,7 +15,7 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
       blocks: state.account.blocks,
     }
   },
-  ({ currentAccountAddress, currentAccountActivities, blocks }) => {
+  ({ currentAccountActivities, blocks }) => {
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
       // Guaranteed by the fact that we got the id from the ids collection.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

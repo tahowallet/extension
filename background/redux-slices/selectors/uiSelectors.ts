@@ -7,7 +7,8 @@ const mainCurrencySymbol = "USD"
 export const selectShowingActivityDetail = createSelector(
   (state: RootState) => state.activities,
   (state: RootState) => state.ui.showingActivityDetailID,
-  (activities, showingActivityDetailID) => {
+  (state: RootState) => state.account.blocks,
+  (activities, showingActivityDetailID, blocks) => {
     return showingActivityDetailID === null
       ? null
       : Object.values(activities)
@@ -15,7 +16,19 @@ export const selectShowingActivityDetail = createSelector(
             (accountActivities) =>
               accountActivities.entities[showingActivityDetailID]
           )
-          .find((activity) => typeof activity !== "undefined")
+          // Filter/slice lets us use map after instead of assigning a var.
+          .filter(
+            (activity): activity is ActivityItem =>
+              typeof activity !== "undefined"
+          )
+          .slice(0, 1)
+          .map((activityItem) => ({
+            ...activityItem,
+            timestamp:
+              activityItem.blockHeight === null
+                ? undefined
+                : blocks[activityItem.blockHeight]?.timestamp,
+          }))[0]
   }
 )
 
