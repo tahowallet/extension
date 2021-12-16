@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from "react"
+import React, { ReactElement, useCallback, useEffect } from "react"
 import {
   selectCurrentPendingPermission,
   selectCurrentAccount,
@@ -64,6 +64,20 @@ export default function DAppConnectRequest(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
+
+  useEffect(() => {
+    window.addEventListener("beforeunload", (ev) => {
+      if (typeof permission !== "undefined" && lowerCaseAddress) {
+        dispatch(
+          denyOrRevokePermission({
+            ...permission,
+            state: "deny",
+            accountAddress: lowerCaseAddress,
+          })
+        )
+      }
+    })
+  }, [dispatch, permission, lowerCaseAddress])
 
   const grant = useCallback(async () => {
     if (typeof permission !== "undefined" && lowerCaseAddress) {

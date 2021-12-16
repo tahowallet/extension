@@ -1,11 +1,13 @@
 // https://eips.ethereum.org/EIPS/eip-1193#request
 
+import { isNumber, isObject, isString } from "./runtime-typechecks"
+
 export type RequestArgument = {
   readonly method: string
   readonly params?: Array<unknown>
 }
 
-export const EIP1193_ERROR = {
+export const EIP1193_ERROR_CODES = {
   userRejectedRequest: {
     code: 4001,
     message: "The user rejected the request.",
@@ -30,27 +32,43 @@ export const EIP1193_ERROR = {
     code: 4901,
     message: "The Provider is not connected to the requested chain.",
   },
-}
+} as const
 
+export type EIP1193ErrorPayload =
+  | typeof EIP1193_ERROR_CODES[keyof typeof EIP1193_ERROR_CODES] & {
+      data?: unknown
+    }
+
+export type EIP1193ErrorCodeNumbers = Pick<
+  typeof EIP1193_ERROR_CODES[keyof typeof EIP1193_ERROR_CODES],
+  "code"
+>
 export class EIP1193Error extends Error {
-  constructor(
-    public eip1193Error: { code: number; message: string },
-    public data?: unknown
-  ) {
+  constructor(public eip1193Error: EIP1193ErrorPayload) {
     super(eip1193Error.message)
   }
 
   toJSON() {
-    return {
-      code: this.eip1193Error.code,
-      message: this.eip1193Error.message,
-      data: this.data,
-    }
+    return this.eip1193Error
   }
 }
 
-export function isEIP1193ErrorCode(code: number) {
-  return Object.values(EIP1193Error)
-    .map((e) => e.code)
-    .includes(code)
+export function isEIP1193ErrorCodeNumber(
+  code: unknown
+): code is EIP1193ErrorCodeNumbers {
+  return (
+    isNumber(code) &&
+    Object.values(EIP1193_ERROR_CODES)
+      .map((e) => e.code as number)
+      .includes(code)
+  )
+}
+
+export function isEIP1193Error(arg: unknown): arg is EIP1193ErrorPayload {
+  return (
+    isObject(arg) &&
+    isNumber(arg.code) &&
+    isEIP1193ErrorCodeNumber(arg.code) &&
+    isString(arg.message)
+  )
 }
