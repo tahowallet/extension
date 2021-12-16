@@ -42,6 +42,7 @@ export default function TopMenu(props: Props): ReactElement {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding-right: 0;
           }
           .nav_wrap {
             width: 100%;
@@ -59,7 +60,6 @@ export default function TopMenu(props: Props): ReactElement {
             border: solid 3px var(--hunter-green);
             width: 32px;
             height: 32px;
-            margin-top: -5px;
             margin-right: 2px;
           }
           .connection_button:hover {
