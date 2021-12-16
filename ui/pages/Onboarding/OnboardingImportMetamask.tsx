@@ -1,6 +1,8 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
+import { isValidMnemonic } from "@ethersproject/hdnode"
+import classNames from "classnames"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import {
@@ -12,17 +14,22 @@ import {
 function TextArea({
   value,
   onChange,
+  errorMessage,
 }: {
   value: string
   onChange: (value: string) => void
+  errorMessage: string
 }) {
   return (
     <>
       <textarea
-        className="wrap center_horizontal"
+        className={classNames("wrap center_horizontal", {
+          error: errorMessage,
+        })}
         onChange={(event) => onChange(event.target.value)}
         value={value}
       />
+      {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>{`
         textarea {
           width: 332px;
@@ -31,6 +38,18 @@ function TextArea({
           border: 2px solid var(--green-60);
           padding: 12px 16px;
           box-sizing: border-box;
+        }
+        .error,
+        .error:focus {
+          border-color: var(--error);
+        }
+        .error_message {
+          color: var(--error);
+          font-weight: 500;
+          font-size: 14px;
+          line-height: 20px;
+          margin-top: 3px;
+          align-self: flex-start;
         }
       `}</style>
     </>
@@ -47,6 +66,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
+  const [errorMessage, setErrorMessage] = useState("")
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
@@ -64,8 +84,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
-    setIsImporting(true)
-    dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim() }))
+    if (isValidMnemonic(recoveryPhrase)) {
+      setIsImporting(true)
+      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim() }))
+    } else {
+      setErrorMessage("Invalid recovery phrase")
+    }
   }, [dispatch, recoveryPhrase])
 
   return areKeyringsUnlocked ? (
@@ -85,7 +109,15 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           <div className="info">
             Enter or copy paste the recovery phrase from your MetaMask account.
           </div>
-          <TextArea value={recoveryPhrase} onChange={setRecoveryPhrase} />
+          <TextArea
+            value={recoveryPhrase}
+            onChange={(value) => {
+              // Clear error message on change
+              setErrorMessage("")
+              setRecoveryPhrase(value)
+            }}
+            errorMessage={errorMessage}
+          />
         </div>
         <div className="portion bottom">
           <SharedButton

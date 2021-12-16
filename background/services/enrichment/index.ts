@@ -224,7 +224,7 @@ export default class EnrichmentService extends BaseService<Events> {
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
               asset: matchingFungibleAsset,
-              amount: BigInt(erc20Tx.args.amount),
+              amount: BigInt(erc20Tx.args.value),
             },
             desiredDecimals
           ),

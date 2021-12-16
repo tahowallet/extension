@@ -20,7 +20,7 @@ import {
 } from "./services"
 
 import { KeyringTypes } from "./types"
-import { EIP1559TransactionRequest } from "./networks"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -50,6 +50,7 @@ import {
   transactionRequest,
   signed,
   updateTransactionOptions,
+  broadcastOnSign,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -369,14 +370,20 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on(
+      "broadcastSignedTransaction",
+      async (transaction: SignedEVMTransaction) => {
+        this.chainService.broadcastSignedTransaction(transaction)
+      }
+    )
+
+    transactionConstructionSliceEmitter.on(
       "requestSignature",
       async (transaction: EIP1559TransactionRequest) => {
         const signedTx = await this.keyringService.signTransaction(
           transaction.from,
           transaction
         )
-        this.store.dispatch(signed())
-        await this.chainService.broadcastSignedTransaction(signedTx)
+        this.store.dispatch(signed(signedTx))
       }
     )
 
@@ -508,6 +515,7 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateTransactionOptions(payload))
         // TODO force route?
 
+        this.store.dispatch(broadcastOnSign(false))
         const signedTransaction = await this.keyringService.emitter.once(
           "signedTx"
         )
