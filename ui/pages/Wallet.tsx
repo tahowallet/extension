@@ -25,6 +25,7 @@ export default function Wallet(): ReactElement {
     assetAmounts: [],
     totalMainCurrencyValue: undefined,
   }
+
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivitiesWithTimestamps
   )

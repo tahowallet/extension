@@ -1,68 +1,90 @@
 import {
   AnyAssetAmount,
-  AnyAsset,
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
 } from "../../assets"
 import { AnyEVMTransaction, Network } from "../../networks"
-import { ETHEREUM } from "../../constants/networks"
 import {
   AssetDecimalAmount,
   enrichAssetAmountWithDecimalValues,
 } from "../../redux-slices/utils/asset-utils"
 
 import { HexString, UNIXTime } from "../../types"
+import { ETH } from "../../constants"
+import { ERC20_INTERFACE } from "../../lib/erc20"
+import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 
-export type BaseContractInfo = {
-  contractLogoURL?: string | undefined
+export type BaseTransactionAnnotation = {
+  // a URL to an image representing the transaction interaction, if applicable.
+  transactionLogoURL?: string | undefined
+  // when the transaction was annotated. Including this means consumers can more
+  // easily upsert annotations
+  timestamp: UNIXTime
 }
 
-export type ContractDeployment = BaseContractInfo & {
+export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
 }
 
-export type ContractInteraction = BaseContractInfo & {
+export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
 }
 
-export type AssetTransfer = BaseContractInfo & {
+export type AssetApproval = BaseTransactionAnnotation & {
+  type: "asset-approval"
+  assetAmount: AnyAssetAmount & AssetDecimalAmount
+  spenderAddress: HexString
+}
+
+export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipientAddress: HexString
+  senderAddress: HexString
 }
 
-export type AssetSwap = BaseContractInfo & {
+export type AssetSwap = BaseTransactionAnnotation & {
   type: "asset-swap"
   fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
   toAssetAmount: AnyAssetAmount & AssetDecimalAmount
 }
 
-export type ContractInfo =
+export type TransactionAnnotation =
   | ContractDeployment
   | ContractInteraction
+  | AssetApproval
   | AssetTransfer
   | AssetSwap
   | undefined
 
-export type ResolvedContractInfo = {
-  contractInfo: ContractInfo
+export type ResolvedTransactionAnnotation = {
+  contractInfo: TransactionAnnotation
   address: HexString
   network: Network
   resolvedAt: UNIXTime
 }
 
 export type EnrichedEVMTransaction = AnyEVMTransaction & {
-  contractInfo?: ContractInfo
+  annotation?: TransactionAnnotation
 }
 
 interface Events extends ServiceLifecycleEvents {
-  resolvedContractInfo: ResolvedContractInfo
   enrichedEVMTransaction: EnrichedEVMTransaction
+}
+
+function parseERC20Tx(input: string) {
+  try {
+    return ERC20_INTERFACE.parseTransaction({
+      data: input,
+    })
+  } catch (err) {
+    return undefined
+  }
 }
 
 /**
@@ -79,7 +101,6 @@ export default class EnrichmentService extends BaseService<Events> {
   /**
    * Create a new EnrichmentService. The service isn't initialized until
    * startService() is called and resolved.
-   *
    * @param indexingService - Required for token metadata and currency
    * @param chainService - Required for chain interactions.
    * @returns A new, initializing EnrichmentService
@@ -107,98 +128,131 @@ export default class EnrichmentService extends BaseService<Events> {
 
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.on("transaction", async ({ transaction }) => {
-      const assets = await this.indexingService.getCachedAssets()
-      this.enrichTransactionWithContractInfo(
-        assets,
+      this.enrichTransaction(
         transaction,
         2 /* TODO desiredDecimals should be configurable */
       )
     })
   }
 
-  async resolveContractInfo(
-    assets: AnyAsset[],
-    contractAddress: HexString | undefined,
-    contractInput: HexString,
+  async resolveTransactionAnnotation(
+    transaction: AnyEVMTransaction,
     desiredDecimals: number
-  ): Promise<ContractInfo | undefined> {
-    let contractInfo: ContractInfo | undefined
-    // A missing recipient means a contract deployment.
-    if (typeof contractAddress === "undefined") {
-      contractInfo = {
+  ): Promise<TransactionAnnotation | undefined> {
+    let txAnnotation: TransactionAnnotation | undefined
+
+    if (typeof transaction.to === "undefined") {
+      // A missing recipient means a contract deployment.
+      txAnnotation = {
+        timestamp: Date.now(),
         type: "contract-deployment",
       }
-    } else {
-      // See if the address matches a fungible asset.
-      const matchingFungibleAsset = assets.find(
-        (asset): asset is SmartContractFungibleAsset =>
-          isSmartContractFungibleAsset(asset) &&
-          asset.contractAddress.toLowerCase() === contractAddress.toLowerCase()
-      )
-
-      const contractLogoURL = matchingFungibleAsset?.metadata?.logoURL
-
-      // FIXME Move to ERC20 parsing using ethers.
-      // Derive value from transaction transfer if not sending ETH
-      if (
-        typeof matchingFungibleAsset !== "undefined" &&
-        contractInput.length === 138 &&
-        contractInput.startsWith("0xa9059cbb") // transfer selector
-      ) {
-        contractInfo = {
+    } else if (transaction.input === null || transaction.input === "0x") {
+      // This is _almost certainly_ not a contract interaction, move on. Note that
+      // a simple ETH send to a contract address can still effectively be a
+      // contract interaction (because it calls the fallback function on the
+      // contract), but for now we deliberately ignore that scenario when
+      // categorizing activities.
+      // TODO We can do more here by checking how much gas was spent. Anything
+      // over the 21k required to send ETH is a more complex contract interaction
+      if (transaction.value) {
+        txAnnotation = {
+          timestamp: Date.now(),
           type: "asset-transfer",
-          contractLogoURL,
-          recipientAddress: `0x${contractInput.substr(34, 64)}`,
+          senderAddress: transaction.from,
+          recipientAddress: transaction.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
-              asset: matchingFungibleAsset,
-              amount: BigInt(`0x${contractInput.substr(10 + 64, 64)}`),
+              asset: ETH,
+              amount: transaction.value,
             },
             desiredDecimals
           ),
         }
       } else {
         // Fall back on a standard contract interaction.
-        contractInfo = {
+        txAnnotation = {
+          timestamp: Date.now(),
+          type: "contract-interaction",
+        }
+      }
+    } else {
+      const assets = await this.indexingService.getCachedAssets()
+
+      // See if the address matches a fungible asset.
+      const matchingFungibleAsset = assets.find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(asset.contractAddress, transaction.to)
+      )
+
+      const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
+
+      const erc20Tx = parseERC20Tx(transaction.input)
+
+      // TODO handle the case where we don't have asset metadata already
+      if (
+        matchingFungibleAsset &&
+        erc20Tx &&
+        (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
+      ) {
+        // We have an ERC-20 transfer
+        txAnnotation = {
+          timestamp: Date.now(),
+          type: "asset-transfer",
+          transactionLogoURL,
+          senderAddress: erc20Tx.args.from ?? transaction.to,
+          recipientAddress: erc20Tx.args.to, // TODO ingest address
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: matchingFungibleAsset,
+              amount: BigInt(erc20Tx.args.amount),
+            },
+            desiredDecimals
+          ),
+        }
+      } else if (
+        matchingFungibleAsset &&
+        erc20Tx &&
+        erc20Tx.name === "approve"
+      ) {
+        txAnnotation = {
+          timestamp: Date.now(),
+          type: "asset-approval",
+          transactionLogoURL,
+          spenderAddress: erc20Tx.args.spender, // TODO ingest address
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: matchingFungibleAsset,
+              amount: BigInt(erc20Tx.args.amount),
+            },
+            desiredDecimals
+          ),
+        }
+      } else {
+        // Fall back on a standard contract interaction.
+        txAnnotation = {
+          timestamp: Date.now(),
           type: "contract-interaction",
           // Include the logo URL if we resolve it even if the interaction is
           // non-specific; the UI can choose to use it or not, but if we know the
           // address has an associated logo it's worth passing on.
-          contractLogoURL,
+          transactionLogoURL,
         }
       }
-
-      this.emitter.emit("resolvedContractInfo", {
-        contractInfo,
-        resolvedAt: Date.now(),
-        network: ETHEREUM, // TODO make multi-chain compatible
-        address: contractAddress,
-      })
     }
 
-    return contractInfo
+    return txAnnotation
   }
 
-  async enrichTransactionWithContractInfo(
-    assets: AnyAsset[],
+  async enrichTransaction(
     transaction: AnyEVMTransaction,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransaction> {
-    if (transaction.input === null || transaction.input === "0x") {
-      // This is _almost certainly_ not a contract interaction, move on. Note that
-      // a simple ETH send to a contract address can still effectively be a
-      // contract interaction (because it calls the fallback function on the
-      // contract), but for now we deliberately ignore that scenario when
-      // categorizing activities.
-      return transaction
-    }
-
     const enrichedTx = {
       ...transaction,
-      contractInfo: await this.resolveContractInfo(
-        assets,
-        transaction.to,
-        transaction.input,
+      annotation: await this.resolveTransactionAnnotation(
+        transaction,
         desiredDecimals
       ),
     }

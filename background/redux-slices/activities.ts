@@ -1,10 +1,9 @@
 import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
-import { AnyEVMTransaction } from "../networks"
 import { keysMap, adaptForUI, ActivityItem } from "./utils/activity-utils"
 import { truncateAddress } from "../lib/utils"
 
 import { assetAmountToDesiredDecimals } from "../assets"
-import { ContractInfo } from "../services/enrichment"
+import { EnrichedEVMTransaction } from "../services/enrichment"
 
 export { ActivityItem }
 
@@ -43,9 +42,7 @@ const activitiesSlice = createSlice({
         payload: { transaction, forAccounts },
       }: {
         payload: {
-          transaction: AnyEVMTransaction & {
-            contractInfo?: ContractInfo | undefined
-          }
+          transaction: EnrichedEVMTransaction
           forAccounts: string[]
         }
       }

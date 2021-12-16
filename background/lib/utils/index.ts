@@ -9,9 +9,12 @@ export function normalizeEVMAddress(address: string | Buffer): HexString {
 }
 
 export function sameEVMAddress(
-  address1: string | Buffer,
-  address2: string | Buffer
+  address1: string | Buffer | undefined,
+  address2: string | Buffer | undefined
 ): boolean {
+  if (typeof address1 === "undefined" || typeof address2 === "undefined") {
+    return false
+  }
   return normalizeHexAddress(address1) === normalizeHexAddress(address2)
 }
 
