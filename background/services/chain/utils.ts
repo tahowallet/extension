@@ -151,6 +151,7 @@ export function enrichTransactionWithReceipt(
   return {
     ...transaction,
     gasUsed: receipt.gasUsed.toBigInt(),
+    status: receipt.status,
     blockHash: receipt.blockHash,
     blockHeight: receipt.blockNumber,
   }
