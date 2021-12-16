@@ -84,21 +84,26 @@ function newAccountData(
   network: Network,
   existingAccountsCount: number
 ): AccountData {
-  const accountNameDefault =
-    availableDefaultNames[
-      // Don't reuse names unless we absolutely have to.
-      (existingAccountsCount % availableDefaultNames.length) +
-        Number(
-          // Treat the address as a number and mod it to get an index into
-          // default names.
-          BigInt(address) %
-            BigInt(
-              availableDefaultNames.length -
-                (existingAccountsCount % availableDefaultNames.length)
-            )
+  const defaultNameIndex =
+    // Skip potentially-used names at the beginning of the array if relevant,
+    // see below.
+    (existingAccountsCount % availableDefaultNames.length) +
+    Number(
+      // Treat the address as a number and mod it to get an index into
+      // default names.
+      BigInt(address) %
+        BigInt(
+          availableDefaultNames.length -
+            (existingAccountsCount % availableDefaultNames.length)
         )
-    ]
-  const accountAvatarDefault = `./images/avatars/${accountNameDefault.toLowerCase()}@2x.png`
+    )
+  const defaultAccountName = availableDefaultNames[defaultNameIndex]
+
+  // Move used default names to the start so they can be skipped above.
+  availableDefaultNames.splice(defaultNameIndex, 1)
+  availableDefaultNames.unshift(defaultAccountName)
+
+  const defaultAccountAvatar = `./images/avatars/${defaultAccountName.toLowerCase()}@2x.png`
 
   return {
     address,
@@ -106,8 +111,8 @@ function newAccountData(
     accountType: undefined,
     balances: {},
     ens: {},
-    defaultName: accountNameDefault,
-    defaultAvatar: accountAvatarDefault,
+    defaultName: defaultAccountName,
+    defaultAvatar: defaultAccountAvatar,
   }
 }
 
@@ -158,7 +163,9 @@ const accountSlice = createSlice({
           ...newAccountData(
             updatedAccount,
             updatedAccountBalance.network,
-            Object.entries(immerState.accountsData).length
+            Object.keys(immerState.accountsData).filter(
+              (key) => key !== updatedAccount
+            ).length
           ),
           balances: {
             [updatedAssetSymbol]: updatedAccountBalance,
@@ -204,7 +211,8 @@ const accountSlice = createSlice({
         immerState.accountsData[address],
         address,
         addressNetworkName.network,
-        Object.entries(immerState.accountsData).length
+        Object.keys(immerState.accountsData).filter((key) => key !== address)
+          .length
       )
       immerState.accountsData[address] = {
         ...baseAccountData,
@@ -223,7 +231,8 @@ const accountSlice = createSlice({
         immerState.accountsData[address],
         address,
         addressNetworkAvatar.network,
-        Object.entries(immerState.accountsData).length
+        Object.keys(immerState.accountsData).filter((key) => key !== address)
+          .length
       )
       immerState.accountsData[address] = {
         ...baseAccountData,

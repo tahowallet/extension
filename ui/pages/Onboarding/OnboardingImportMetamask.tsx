@@ -65,7 +65,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const importWallet = useCallback(async () => {
     setIsImporting(true)
-    dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase }))
+    dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim() }))
   }, [dispatch, recoveryPhrase])
 
   return areKeyringsUnlocked ? (
