@@ -82,7 +82,7 @@ export default function WalletAccountBalanceControl(
             })}
           >
             <span className="dollar_sign">$</span>
-            {balance}
+            {balance || 0}
           </span>
         </span>
         {isCurrentAccountSigner && !HIDE_SEND_BUTTON ? (
