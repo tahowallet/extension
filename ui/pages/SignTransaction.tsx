@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
@@ -82,6 +82,29 @@ export default function SignTransaction(): ReactElement {
     assetSymbol,
   ])
 
+  const updateGasSettings = useCallback(
+    async (estimate: BlockEstimate) => {
+      setSelectedEstimatedFeePerGas(estimate)
+      if (transactionDetails) {
+        const transaction = {
+          ...transactionDetails,
+          maxFeePerGas: estimate.maxFeePerGas,
+          maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
+          gasLimit: BigInt(gasLimit),
+        }
+        dispatch(updateTransactionOptions(transaction))
+      }
+    },
+    [dispatch, gasLimit, transactionDetails]
+  )
+
+  useEffect(() => {
+    // FIXME Hackily handle the user not interacting with the fee selector for now.
+    if (transactionDetails && transactionDetails.maxFeePerGas === 0n) {
+      updateGasSettings(selectedEstimatedFeePerGas)
+    }
+  }, [transactionDetails, selectedEstimatedFeePerGas, updateGasSettings])
+
   if (!areKeyringsUnlocked) {
     return <></>
   }
@@ -130,23 +153,7 @@ export default function SignTransaction(): ReactElement {
     },
   }
 
-  const updateGasSettings = async (estimate: BlockEstimate) => {
-    setSelectedEstimatedFeePerGas(estimate)
-    const transaction = {
-      ...transactionDetails,
-      maxFeePerGas: estimate.maxFeePerGas,
-      maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
-      gasLimit: BigInt(gasLimit),
-    }
-    dispatch(updateTransactionOptions(transaction))
-  }
-
   const handleConfirm = async () => {
-    // FIXME Hackily handle the user not interacting with the fee selector for now.
-    if (transactionDetails.maxFeePerGas === 0n) {
-      await updateGasSettings(selectedEstimatedFeePerGas)
-    }
-
     if (isTransactionDataReady && transactionDetails) {
       dispatch(signTransaction(transactionDetails))
       setIsTransactionSigning(true)
