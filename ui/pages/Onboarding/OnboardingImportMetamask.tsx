@@ -84,9 +84,10 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
-    if (isValidMnemonic(recoveryPhrase)) {
+    const trimmedRecoveryPhrase = recoveryPhrase.trim()
+    if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim() }))
+      dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase }))
     } else {
       setErrorMessage("Invalid recovery phrase")
     }
