@@ -9,9 +9,12 @@ export function normalizeEVMAddress(address: string | Buffer): HexString {
 }
 
 export function sameEVMAddress(
-  address1: string | Buffer,
-  address2: string | Buffer
+  address1: string | Buffer | undefined,
+  address2: string | Buffer | undefined
 ): boolean {
+  if (typeof address1 === "undefined" || typeof address2 === "undefined") {
+    return false
+  }
   return normalizeHexAddress(address1) === normalizeHexAddress(address2)
 }
 
@@ -79,4 +82,20 @@ export function getEthereumNetwork(): EVMNetwork {
 
   // Default to mainnet
   return ETHEREUM
+}
+
+export function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-5)}`
+}
+
+export function truncateDecimalAmount(
+  value: number | string,
+  decimalLength: number
+): string {
+  const valueString = value.toString()
+  if (valueString.includes(".")) {
+    const [integers, decimals] = valueString.split(".")
+    return `${integers}.${decimals.substr(0, decimalLength)}`
+  }
+  return valueString
 }

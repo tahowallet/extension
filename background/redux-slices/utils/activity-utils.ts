@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { convertToEth } from "../../lib/utils"
 import { AnyEVMTransaction } from "../../networks"
-import { ContractInfo } from "../../services/enrichment"
+import { EnrichedEVMTransaction } from "../../services/enrichment"
 
 function ethTransformer(
   value: string | number | bigint | null | undefined
@@ -22,11 +22,9 @@ export type UIAdaptationMap<T> = {
   [P in keyof T]?: FieldAdapter<T[P]>
 }
 
-export type ActivityItem = AnyEVMTransaction & {
-  contractInfo?: ContractInfo | undefined
+export type ActivityItem = EnrichedEVMTransaction & {
   localizedDecimalValue: string
   timestamp?: number
-  isSent?: boolean
   blockHeight: number | null
   fromTruncated: string
   toTruncated: string

@@ -1,7 +1,10 @@
 import React, { ReactElement, useCallback } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectCurrentAccount,
+  selectShowingActivityDetail,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { selectShowingActivityDetail } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -19,6 +22,8 @@ export default function WalletActivityList({
   const showingActivityDetail = useBackgroundSelector(
     selectShowingActivityDetail
   )
+
+  const currentAccount = useBackgroundSelector(selectCurrentAccount).address
 
   const handleOpen = useCallback(
     (activityItem: ActivityItem) => {
@@ -75,6 +80,7 @@ export default function WalletActivityList({
                 }}
                 key={activityItem?.hash}
                 activity={activityItem}
+                asAccount={currentAccount}
               />
             )
           }
