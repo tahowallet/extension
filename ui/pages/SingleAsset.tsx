@@ -33,22 +33,20 @@ export default function SingleAsset(): ReactElement {
         ) {
           return true
         }
-        if (
-          activity.annotation?.type === "asset-transfer" ||
-          activity.annotation?.type === "asset-approval"
-        ) {
-          return activity.annotation.assetAmount.asset.symbol === symbol
+        switch (activity.annotation?.type) {
+          case "asset-transfer":
+          case "asset-approval":
+            return activity.annotation.assetAmount.asset.symbol === symbol
+          case "asset-swap":
+            return (
+              activity.annotation.fromAssetAmount.asset.symbol === symbol ||
+              activity.annotation.toAssetAmount.asset.symbol === symbol
+            )
+          case "contract-interaction":
+          case "contract-deployment":
+          default:
+            return false
         }
-        if (activity.annotation?.type === "asset-swap") {
-          return (
-            activity.annotation.fromAssetAmount.asset.symbol === symbol ||
-            activity.annotation.toAssetAmount.asset.symbol === symbol
-          )
-        }
-        if (activity.annotation?.type === "contract-interaction") {
-          return activity.asset.symbol === symbol
-        }
-        return false
       }
     )
   )
