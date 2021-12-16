@@ -114,16 +114,4 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
     transformer: ethTransformer,
     detailTransformer: ethTransformer,
   },
-  timestamp: {
-    readableName: "Timestamp",
-    transformer: (item) => {
-      if (typeof item !== "undefined") {
-        return dayjs.unix(item).format("MM/DD/YYYY hh:mm a")
-      }
-      return "(Unknown)"
-    },
-    detailTransformer: () => {
-      return ""
-    },
-  },
 }

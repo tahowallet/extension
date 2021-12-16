@@ -151,6 +151,15 @@ export default function WalletActivityDetails(
             )
           }
         )}
+        <DetailRowItem
+          label="Timestamp"
+          value={
+            typeof activityItem.timestamp !== "undefined"
+              ? new Date(activityItem.timestamp * 1000).toLocaleString()
+              : "(Unknown)"
+          }
+          valueDetail=""
+        />
       </ul>
       <div className="activity_log_wrap">
         <div className="activity_log_title">Activity Log</div>
