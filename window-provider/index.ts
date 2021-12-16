@@ -187,13 +187,15 @@ export default class TallyWindowProvider extends EventEmitter {
         }
 
         if (
-          sentMethod === "eth_accounts" &&
+          (sentMethod === "eth_accounts" ||
+            sentMethod === "eth_requestAccounts") &&
           Array.isArray(result) &&
           result.length !== 0
         ) {
           const [address] = result
           if (this.selectedAddress !== address) {
             this.selectedAddress = address
+            this.emit("chainChanged", this.chainId)
             this.emit("accountsChanged", [this.selectedAddress])
           }
         }
