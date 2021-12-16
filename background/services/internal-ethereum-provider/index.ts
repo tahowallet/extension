@@ -2,7 +2,12 @@ import browser from "webextension-polyfill"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
 
-import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
+import {
+  EIP1193Error,
+  EIP1193_ERROR_CODES,
+  INTERNAL_PORT_NAME,
+  RPCRequest,
+} from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -162,7 +167,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "wallet_registerOnboarding":
       case "wallet_switchEthereumChain":
       default:
-        throw new Error(`unsupported method: ${method}`)
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
     }
   }
 

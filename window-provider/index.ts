@@ -9,6 +9,7 @@ import {
   EthersSendCallback,
   isTallyInternalCommunication,
   TallyInternalCommunication,
+  isEIP1193Error,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
@@ -130,7 +131,7 @@ export default class TallyWindowProvider extends EventEmitter {
 
     this.transport.postMessage(sendData)
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       // TODO: refactor the listener function out of the Promise
       const listener = (event: unknown) => {
         let id
@@ -164,7 +165,9 @@ export default class TallyWindowProvider extends EventEmitter {
         // TODOO: refactor these into their own function handler
         // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
 
-        // TODO: throw error if EIP1193 error
+        if (isEIP1193Error(result)) {
+          reject(result)
+        }
 
         if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
           if (!this.isConnected) {
