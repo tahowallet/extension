@@ -24,13 +24,29 @@ export default function SingleAsset(): ReactElement {
     selectIsCurrentAccountSigner
   )
 
-  // Asset filtered by contract address.
   const filteredActivities = useBackgroundSelector((state) =>
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
-      (activity) =>
-        activity.asset.symbol === symbol ||
-        (typeof location.state.contractAddress !== "undefined" &&
-          location.state.contractAddress === activity.to)
+      (activity) => {
+        if (
+          typeof location.state.contractAddress !== "undefined" &&
+          location.state.contractAddress === activity.to
+        ) {
+          return true
+        }
+        if (activity.annotation?.type === "asset-transfer") {
+          return activity.annotation.assetAmount.asset.symbol === symbol
+        }
+        if (activity.annotation?.type === "asset-swap") {
+          return (
+            activity.annotation.fromAssetAmount.asset.symbol === symbol ||
+            activity.annotation.toAssetAmount.asset.symbol === symbol
+          )
+        }
+        if (activity.annotation?.type === "contract-interaction") {
+          return activity.asset.symbol === symbol
+        }
+        return false
+      }
     )
   )
 
