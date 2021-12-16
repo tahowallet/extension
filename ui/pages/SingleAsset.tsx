@@ -33,7 +33,10 @@ export default function SingleAsset(): ReactElement {
         ) {
           return true
         }
-        if (activity.annotation?.type === "asset-transfer") {
+        if (
+          activity.annotation?.type === "asset-transfer" ||
+          activity.annotation?.type === "asset-approval"
+        ) {
           return activity.annotation.assetAmount.asset.symbol === symbol
         }
         if (activity.annotation?.type === "asset-swap") {
