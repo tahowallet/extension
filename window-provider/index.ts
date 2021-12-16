@@ -110,19 +110,24 @@ export default class TallyWindowProvider extends EventEmitter {
     return Promise.reject(new Error("Unsupported function parameters"))
   }
 
+  // Provider-wide counter for requests.
+  private requestID = 0n
+
   request(arg: RequestArgument): Promise<unknown> {
     const { method, params = [] } = arg
     if (typeof method !== "string") {
       return Promise.reject(new Error(`unsupported method type: ${method}`))
     }
     const sendData = {
-      id: Date.now().toString(),
+      id: this.requestID.toString(),
       target: PROVIDER_BRIDGE_TARGET,
       request: {
         method,
         params,
       },
     }
+
+    this.requestID += 1n
 
     this.transport.postMessage(sendData)
 

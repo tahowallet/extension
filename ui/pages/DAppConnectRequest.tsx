@@ -34,7 +34,9 @@ function RequestingDAppBlock(props: {
           width: 100%;
         }
         .dapp_favicon {
-          background: url("${faviconUrl}");
+          background: url("${faviconUrl === ""
+            ? "./images/dapp_favicon_default@2x.png"
+            : faviconUrl}");
           background-size: cover;
           width: 48px;
           height: 48px;

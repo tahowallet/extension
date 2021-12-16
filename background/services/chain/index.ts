@@ -367,7 +367,9 @@ export default class ChainService extends BaseService<Events> {
     const estimate = await this.pollingProviders.ethereum.estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
-    return BigInt(estimate.toString())
+    // Add 10% more gas as a safety net
+    const uppedEstimate = estimate.add(estimate.div(10))
+    return BigInt(uppedEstimate.toString())
   }
 
   /**

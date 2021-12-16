@@ -76,6 +76,20 @@ export default function Send(): ReactElement {
   }
 
   const sendTransactionRequest = async () => {
+    // FIXME Hackily handle the user not interacting with the fee selector for now.
+    if (selectedEstimatedFeePerGas.maxFeePerGas === 0n) {
+      const transaction = {
+        from: currentAccount.address,
+        to: destinationAddress,
+        // eslint-disable-next-line no-underscore-dangle
+        value: BigInt(utils.parseEther(amount?.toString())._hex),
+        maxFeePerGas: estimatedFeesPerGas?.regular?.maxFeePerGas,
+        maxPriorityFeePerGas:
+          estimatedFeesPerGas?.regular?.maxPriorityFeePerGas,
+        gasLimit: BigInt(gasLimit),
+      }
+      return dispatch(updateTransactionOptions(transaction))
+    }
     const transaction = {
       from: currentAccount.address,
       to: destinationAddress,
@@ -85,7 +99,7 @@ export default function Send(): ReactElement {
       maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
-    dispatch(updateTransactionOptions(transaction))
+    return dispatch(updateTransactionOptions(transaction))
   }
 
   useEffect(() => {

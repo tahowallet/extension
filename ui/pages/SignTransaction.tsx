@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
@@ -58,12 +58,14 @@ export default function SignTransaction(): ReactElement {
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
-    useState<BlockEstimate>({
-      confidence: 0,
-      maxFeePerGas: 0n,
-      maxPriorityFeePerGas: 0n,
-      price: 0n,
-    })
+    useState<BlockEstimate>(
+      estimatedFeesPerGas?.regular ?? {
+        confidence: 0,
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        price: 0n,
+      }
+    )
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
@@ -79,6 +81,29 @@ export default function SignTransaction(): ReactElement {
     history,
     assetSymbol,
   ])
+
+  const updateGasSettings = useCallback(
+    async (estimate: BlockEstimate) => {
+      setSelectedEstimatedFeePerGas(estimate)
+      if (transactionDetails) {
+        const transaction = {
+          ...transactionDetails,
+          maxFeePerGas: estimate.maxFeePerGas,
+          maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
+          gasLimit: BigInt(gasLimit),
+        }
+        dispatch(updateTransactionOptions(transaction))
+      }
+    },
+    [dispatch, gasLimit, transactionDetails]
+  )
+
+  useEffect(() => {
+    // FIXME Hackily handle the user not interacting with the fee selector for now.
+    if (transactionDetails && transactionDetails.maxFeePerGas === 0n) {
+      updateGasSettings(selectedEstimatedFeePerGas)
+    }
+  }, [transactionDetails, selectedEstimatedFeePerGas, updateGasSettings])
 
   if (!areKeyringsUnlocked) {
     return <></>
@@ -126,21 +151,6 @@ export default function SignTransaction(): ReactElement {
       ),
       confirmButtonText: "Sign",
     },
-  }
-
-  const updateGasSettings = async (estimate: BlockEstimate) => {
-    if (typeof transactionDetails === "undefined") {
-      return
-    }
-
-    setSelectedEstimatedFeePerGas(estimate)
-    const transaction = {
-      ...transactionDetails,
-      maxFeePerGas: estimate.maxFeePerGas,
-      maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
-      gasLimit: BigInt(gasLimit),
-    }
-    dispatch(updateTransactionOptions(transaction))
   }
 
   const handleConfirm = async () => {

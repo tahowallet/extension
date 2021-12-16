@@ -120,7 +120,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           .then(([account]) => [account.address])
       case "eth_sendTransaction":
         return this.signTransaction(params[0] as EthersTransactionRequest).then(
-          (signed) => this.chainService.broadcastSignedTransaction(signed)
+          async (signed) => {
+            await this.chainService.broadcastSignedTransaction(signed)
+            return signed.hash
+          }
         )
       case "eth_signTransaction":
         return this.signTransaction(params[0] as EthersTransactionRequest).then(

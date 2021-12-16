@@ -97,8 +97,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
-    const faviconUrl = tab?.favIconUrl ?? ""
-    const title = tab?.title ?? ""
+    const completeTab =
+      typeof tab !== "undefined" && typeof tab.id !== "undefined"
+        ? {
+            ...tab,
+            // Firefox sometimes requires an extra query to get favicons,
+            // unclear why but may be related to
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=1417721 .
+            ...(await browser.tabs.get(tab.id)),
+          }
+        : tab
+    const faviconUrl = completeTab?.favIconUrl ?? ""
+    const title = completeTab?.title ?? ""
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
@@ -221,9 +231,20 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )
       case "eth_signTransaction":
       case "eth_sendTransaction":
-        ProviderBridgeService.showExtensionPopup(
+        // We are monsters.
+        // eslint-disable-next-line no-case-declarations
+        const popupPromise = ProviderBridgeService.showExtensionPopup(
           AllowedQueryParamPage.signTransaction
         )
+        return this.internalEthereumProviderService
+          .routeSafeRPCRequest(method, params)
+          .finally(async () => {
+            // Close the popup once we're done submitting.
+            const popup = await popupPromise
+            if (typeof popup.id !== "undefined") {
+              browser.windows.remove(popup.id)
+            }
+          })
       // Above, show the connect window, then continue on to regular handling.
       // eslint-disable-next-line no-fallthrough
       default: {
