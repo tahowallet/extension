@@ -16,7 +16,7 @@ import { EventEmitter } from "events"
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
-  chainId: number | undefined = 1
+  chainId = "0x1"
 
   selectedAddress: string | undefined
 
@@ -162,23 +162,27 @@ export default class TallyWindowProvider extends EventEmitter {
 
         const { method: sentMethod } = sendData.request
 
-        // TODOO: refactor these into their own function handler
+        // TODO: refactor these into their own function handler
         // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
 
         if (isEIP1193Error(result)) {
           reject(result)
         }
 
-        if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
-          if (!this.isConnected) {
-            this.isConnected = true
-            this.emit("connect", { chainId: result })
-          }
+        // let's emmit connected on the first successful response from background
+        if (!this.isConnected) {
+          this.isConnected = true
+          this.emit("connect", { chainId: this.chainId })
+        }
 
-          if (this.chainId !== result) {
-            this.chainId = Number(result)
-            this.emit("chainChanged", result)
-            this.emit("networkChanged", result)
+        if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
+          if (
+            typeof result === "string" &&
+            Number(this.chainId) !== Number(result)
+          ) {
+            this.chainId = `0x${Number(result).toString(16)}`
+            this.emit("chainChanged", this.chainId)
+            this.emit("networkChanged", Number(this.chainId).toString())
           }
         }
 
