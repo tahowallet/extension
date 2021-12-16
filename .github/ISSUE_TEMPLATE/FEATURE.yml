@@ -8,7 +8,7 @@ body:
       value: >-
         Thanks for taking the time to fill out this feature request! Note that
         feature requests should start [in
-        Discord](https://discord.gg/tfU8ejqr). Please file them as issues only
+        Discord](https://discord.gg/hxeQC5wxzf). Please file them as issues only
         when suggested by a moderator so that issues can be kept organized.
   - type: input
     id: discord-link
