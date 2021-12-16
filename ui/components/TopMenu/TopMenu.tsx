@@ -1,8 +1,6 @@
 import React, { ReactElement } from "react"
-import { selectCurrentAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
-import { useBackgroundSelector } from "../../hooks"
 
 interface Props {
   toggleOpenProtocolList: () => void
@@ -19,14 +17,6 @@ export default function TopMenu(props: Props): ReactElement {
     isConnectedToDApp,
   } = props
 
-  const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
-
-  if (typeof currentAccountTotal === "undefined") {
-    return <></>
-  }
-
-  const { shortenedAddress, name, avatarURL } = currentAccountTotal
-
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
@@ -40,12 +30,7 @@ export default function TopMenu(props: Props): ReactElement {
               onClick={toggleOpenDAppConnectionInfo}
             />
           )}
-          <TopMenuProfileButton
-            address={shortenedAddress ?? ""}
-            nickname={name || undefined}
-            avatar={avatarURL || undefined}
-            onClick={toggleOpenNotifications}
-          />
+          <TopMenuProfileButton onClick={toggleOpenNotifications} />
         </div>
       </nav>
       <style jsx>
