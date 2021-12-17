@@ -219,7 +219,7 @@ export default function SignTransaction(): ReactElement {
           iconSize="large"
           size="large"
           type="secondary"
-          onClick={() => window.close()}
+          onClick={() => history.goBack()}
         >
           Reject
         </SharedButton>
