@@ -108,7 +108,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           <div className="metamask_onboarding_image" />
           <h1 className="serif_header">Import account</h1>
           <div className="info">
-            Enter or copy paste the recovery phrase from your MetaMask account.
+            Enter or copy & paste the recovery phrase from your MetaMask
+            account.
           </div>
           <TextArea
             value={recoveryPhrase}
