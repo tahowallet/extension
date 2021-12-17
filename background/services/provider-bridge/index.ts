@@ -16,6 +16,7 @@ import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
+import logger from "../../lib/logger"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -225,36 +226,41 @@ export default class ProviderBridgeService extends BaseService<Events> {
     method: string,
     params: RPCRequest["params"]
   ): Promise<unknown> {
-    switch (method) {
-      case "eth_requestAccounts":
-        return this.internalEthereumProviderService.routeSafeRPCRequest(
-          "eth_accounts",
-          params
-        )
-      case "eth_signTransaction":
-      case "eth_sendTransaction":
-        // We are monsters.
-        // eslint-disable-next-line no-case-declarations
-        const popupPromise = ProviderBridgeService.showExtensionPopup(
-          AllowedQueryParamPage.signTransaction
-        )
-        return this.internalEthereumProviderService
-          .routeSafeRPCRequest(method, params)
-          .finally(async () => {
-            // Close the popup once we're done submitting.
-            const popup = await popupPromise
-            if (typeof popup.id !== "undefined") {
-              browser.windows.remove(popup.id)
-            }
-          })
-      // Above, show the connect window, then continue on to regular handling.
-      // eslint-disable-next-line no-fallthrough
-      default: {
-        return this.internalEthereumProviderService.routeSafeRPCRequest(
-          method,
-          params
-        )
+    try {
+      switch (method) {
+        case "eth_requestAccounts":
+          return await this.internalEthereumProviderService.routeSafeRPCRequest(
+            "eth_accounts",
+            params
+          )
+        case "eth_signTransaction":
+        case "eth_sendTransaction":
+          // We are monsters.
+          // eslint-disable-next-line no-case-declarations
+          const popupPromise = ProviderBridgeService.showExtensionPopup(
+            AllowedQueryParamPage.signTransaction
+          )
+          return await this.internalEthereumProviderService
+            .routeSafeRPCRequest(method, params)
+            .finally(async () => {
+              // Close the popup once we're done submitting.
+              const popup = await popupPromise
+              if (typeof popup.id !== "undefined") {
+                browser.windows.remove(popup.id)
+              }
+            })
+        // Above, show the connect window, then continue on to regular handling.
+        // eslint-disable-next-line no-fallthrough
+        default: {
+          return await this.internalEthereumProviderService.routeSafeRPCRequest(
+            method,
+            params
+          )
+        }
       }
+    } catch (error) {
+      logger.log("error processing request", error)
+      return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
     }
   }
 
