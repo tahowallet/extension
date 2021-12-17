@@ -121,7 +121,6 @@ export default function SingleAsset(): ReactElement {
           <div className="left">Asset is on: Arbitrum</div>
           <div className="right">Move to Ethereum</div>
         </div>
-        <div className="label_light standard_width_padded">Activity</div>
         <WalletActivityList activities={filteredActivities} />
       </CorePage>
       <style jsx>
@@ -145,6 +144,7 @@ export default function SingleAsset(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding-bottom: 24px;
           }
           .header .right {
             height: 95px;

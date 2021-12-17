@@ -117,8 +117,9 @@ export default function NetworkFeesChooser({
       }
 
       const ethAmount = formatEther(
-        (baseFee * feeOptionData.estimatedMultiplier[confidence] +
-          option.maxPriorityFeePerGas) *
+        ((baseFee * feeOptionData.estimatedMultiplier[confidence] +
+          option.maxPriorityFeePerGas) /
+          10n) *
           (gasLimit ? BigInt(parseInt(gasLimit, 10)) : 21000n)
       )
 
