@@ -67,6 +67,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         .avatar {
           background: url("${avatarURL ?? "./images/avatar@2x.png"}") center
             no-repeat;
+          background-color: var(--green-40);
           background-size: cover;
           width: 48px;
           height: 48px;

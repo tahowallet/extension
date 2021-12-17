@@ -49,24 +49,25 @@ export default function WalletActivityList({
 
   if (!activities || activities.length === 0)
     return (
-      <div className="loading">
-        <SharedLoadingSpinner />
-        <span>This may initially take awhile.</span>
+      <span>
+        Tally will populate your historical activity over time; this may take an
+        hour or more for accounts that have been active for a long time. For new
+        accounts, new activity will show up here.
         <style jsx>{`
-          .loading {
-            width: 100%;
+          span {
+            width: 316px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 20px;
-          }
-          .loading span {
-            color: var(--green-60);
-            margin-top: 12px;
-            font-size: 14px;
+            color: var(--green-40);
+            font-size: 16px;
+            text-align: center;
+            line-height: 22px;
+            margin: 0 auto;
+            margin-top: 15px;
           }
         `}</style>
-      </div>
+      </span>
     )
 
   return (
