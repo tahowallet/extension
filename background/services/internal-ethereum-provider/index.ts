@@ -22,6 +22,7 @@ import {
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
+  rejecter: () => void
 }
 
 type Events = ServiceLifecycleEvents & {
@@ -190,13 +191,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       throw new Error("Transactions must have a from address for signing.")
     }
 
-    return new Promise<SignedEVMTransaction>((resolve) => {
+    return new Promise<SignedEVMTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,
           from,
         },
         resolver: resolve,
+        rejecter: reject,
       })
     })
   }

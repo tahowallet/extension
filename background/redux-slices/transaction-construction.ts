@@ -43,6 +43,7 @@ export type Events = {
     from: string
   }
   requestSignature: EIP1559TransactionRequest
+  signatureRejected: never
   broadcastSignedTransaction: SignedEVMTransaction
 }
 
@@ -75,7 +76,7 @@ const transactionSlice = createSlice({
   initialState,
   reducers: {
     transactionRequest: (
-      immerState,
+      state,
       {
         payload: { transactionRequest, transactionLikelyFails },
       }: {
@@ -85,11 +86,16 @@ const transactionSlice = createSlice({
         }
       }
     ) => ({
-      ...immerState,
+      ...state,
       status: TransactionConstructionStatus.Loaded,
       signedTransaction: undefined,
       transactionRequest,
       transactionLikelyFails,
+    }),
+    clearTransactionState: (state) => ({
+      estimatedFeesPerGas: state.estimatedFeesPerGas,
+      lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
+      status: TransactionConstructionStatus.Idle,
     }),
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
       ...state,
@@ -143,6 +149,15 @@ export const {
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
+
+export const rejectTransactionSignature = createBackgroundAsyncThunk(
+  "transaction-construction/reject",
+  async (_, { dispatch }) => {
+    await emitter.emit("signatureRejected")
+    // Provide a clean slate for future transactions.
+    dispatch(transactionSlice.actions.clearTransactionState())
+  }
+)
 
 export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
