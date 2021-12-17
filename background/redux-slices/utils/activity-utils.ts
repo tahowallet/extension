@@ -1,5 +1,5 @@
 import dayjs from "dayjs"
-import { convertToEth } from "../../lib/utils"
+import { convertToEth, weiToGwei } from "../../lib/utils"
 import { AnyEVMTransaction } from "../../networks"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 
@@ -10,6 +10,15 @@ function ethTransformer(
     return "(Unknown)"
   }
   return `${convertToEth(value)} ETH`
+}
+
+function gweiTransformer(
+  value: string | number | bigint | null | undefined
+): string {
+  if (value === null || typeof value === "undefined") {
+    return "(Unknown)"
+  }
+  return `${weiToGwei(value)} Gwei`
 }
 
 type FieldAdapter<T> = {
@@ -101,17 +110,17 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
   },
   gasUsed: {
     readableName: "Gas",
-    transformer: ethTransformer,
-    detailTransformer: ethTransformer,
+    transformer: (val) => val.toString(),
+    detailTransformer: (val) => val.toString(),
   },
   maxFeePerGas: {
     readableName: "Max Fee/Gas",
-    transformer: ethTransformer,
-    detailTransformer: ethTransformer,
+    transformer: gweiTransformer,
+    detailTransformer: gweiTransformer,
   },
   gasPrice: {
     readableName: "Gas Price",
-    transformer: ethTransformer,
-    detailTransformer: ethTransformer,
+    transformer: gweiTransformer,
+    detailTransformer: gweiTransformer,
   },
 }
