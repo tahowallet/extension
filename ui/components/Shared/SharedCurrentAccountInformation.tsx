@@ -14,7 +14,7 @@ export default function SharedCurrentAccountInformation(): ReactElement {
 
   return (
     <>
-      {name ?? shortenedAddress}
+      {name?.includes(".") ? name : shortenedAddress}
       <div className="avatar" />
       <style jsx>
         {`
