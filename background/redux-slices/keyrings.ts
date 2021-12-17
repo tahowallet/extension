@@ -30,7 +30,7 @@ export type Events = {
   createPassword: string
   unlockKeyrings: string
   generateNewKeyring: never
-  importLegacyKeyring: { mnemonic: string }
+  importLegacyKeyring: { mnemonic: string; path?: string }
 }
 
 export const emitter = new Emittery<Events>()
@@ -38,8 +38,11 @@ export const emitter = new Emittery<Events>()
 // Async thunk to bubble the importLegacyKeyring action from  store to emitter.
 export const importLegacyKeyring = createBackgroundAsyncThunk(
   "keyrings/importLegacyKeyring",
-  async ({ mnemonic }: { mnemonic: string }, { getState, dispatch }) => {
-    await emitter.emit("importLegacyKeyring", { mnemonic })
+  async (
+    { mnemonic, path }: { mnemonic: string; path?: string },
+    { getState, dispatch }
+  ) => {
+    await emitter.emit("importLegacyKeyring", { mnemonic, path })
 
     // Set the selected account as the first address of the last added keyring,
     // which will correspond to the last imported keyring, AKA this one. Note that

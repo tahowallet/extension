@@ -5,6 +5,8 @@ import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
+import SharedCheckbox from "../../components/Shared/SharedCheckbox"
+import OnboardingDerivationPathSelect from "./OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -67,6 +69,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+  const [isChecked, setIsChecked] = useState(false)
+  const [path, setPath] = useState<string>()
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
@@ -86,11 +90,15 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const importWallet = useCallback(async () => {
     if (isValidMnemonic(recoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim() }))
+      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim(), path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
     }
-  }, [dispatch, recoveryPhrase])
+  }, [dispatch, recoveryPhrase, path])
+
+  useEffect(() => {
+    if (!isChecked) setPath(undefined)
+  }, [isChecked])
 
   return areKeyringsUnlocked ? (
     <section className="center_horizontal">
@@ -118,6 +126,20 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             }}
             errorMessage={errorMessage}
           />
+
+          <div className="checkbox_wrapper">
+            <SharedCheckbox
+              label="Custom derivation"
+              checked={isChecked}
+              onChange={() => setIsChecked(!isChecked)}
+            />
+          </div>
+
+          {isChecked && (
+            <div className="select_wrapper">
+              <OnboardingDerivationPathSelect onChange={setPath} />
+            </div>
+          )}
         </div>
         <div className="portion bottom">
           <SharedButton
@@ -159,8 +181,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         .metamask_onboarding_image {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: 205.3px;
-          height: 193px;
+          width: 154px;
+          height: 144.75px;
           margin-top: 27px;
           margin-bottom: 13px;
         }
@@ -173,6 +195,13 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           line-height: 24px;
           text-align: center;
           margin-bottom: 32px;
+        }
+        .checkbox_wrapper {
+          margin-top: 6px;
+          margin-bottom: 6px;
+        }
+        .select_wrapper {
+          width: 332px;
         }
       `}</style>
     </section>
