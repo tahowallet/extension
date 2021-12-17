@@ -156,11 +156,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
         response.result = new EIP1193Error(
           EIP1193_ERROR_CODES.userRejectedRequest
-        )
+        ).toJSON()
       }
     } else {
       // sorry dear dApp, there is no love for you here
-      response.result = new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+      response.result = new EIP1193Error(
+        EIP1193_ERROR_CODES.unauthorized
+      ).toJSON()
     }
 
     port.postMessage(response)
