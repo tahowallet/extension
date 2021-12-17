@@ -26,6 +26,10 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
 import BaseService from "../base"
 
+// Transactions seen within this many blocks of the chain tip will schedule a
+// token refresh sooner than the standard rate.
+const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
+
 interface Events extends ServiceLifecycleEvents {
   accountBalance: AccountBalance
   price: PricePoint
@@ -42,6 +46,12 @@ interface Events extends ServiceLifecycleEvents {
  * token metadata. Relevant prices and balances are emitted as events.
  */
 export default class IndexingService extends BaseService<Events> {
+  /**
+   * True if an off-cycle token refresh was scheduled, typically when a watched
+   * account had a transaction confirmed.
+   */
+  private scheduledTokenRefresh = false
+
   /**
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
@@ -76,6 +86,12 @@ export default class IndexingService extends BaseService<Events> {
         },
         handler: () => this.handleTokenAlarm(),
         runAtStart: true,
+      },
+      tokenRefreshes: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => this.handleTokenRefresh(),
       },
       prices: {
         schedule: {
@@ -238,6 +254,18 @@ export default class IndexingService extends BaseService<Events> {
         )
       }
     )
+
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      if (
+        "status" in transaction &&
+        transaction.status === 1 &&
+        transaction.blockHeight >
+          (await this.chainService.getBlockHeight(transaction.network)) -
+            FAST_TOKEN_REFRESH_BLOCK_RANGE
+      ) {
+        this.scheduledTokenRefresh = true
+      }
+    })
   }
 
   /**
@@ -461,6 +489,13 @@ export default class IndexingService extends BaseService<Events> {
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up
+  }
+
+  private async handleTokenRefresh(): Promise<void> {
+    if (this.scheduledTokenRefresh) {
+      await this.handleTokenAlarm()
+      this.scheduledTokenRefresh = false
+    }
   }
 
   private async handleTokenAlarm(): Promise<void> {
