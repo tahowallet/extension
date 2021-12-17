@@ -10,7 +10,7 @@ import { useBackgroundSelector } from "../../hooks"
 export default function Snackbar(): ReactElement {
   const dispatch = useDispatch()
   const snackbarMessage = useBackgroundSelector(selectSnackbarMessage)
-  const msTillDismiss = 5000
+  const msTillDismiss = 2500
 
   const snackbarTimeout = useRef<ReturnType<typeof setTimeout>>()
 

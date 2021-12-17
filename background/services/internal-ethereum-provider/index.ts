@@ -22,6 +22,7 @@ import {
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
+  rejecter: () => void
 }
 
 type Events = ServiceLifecycleEvents & {
@@ -51,16 +52,27 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       if (port.name === INTERNAL_PORT_NAME) {
         port.onMessage.addListener(async (event) => {
           logger.log(`internal: request payload: ${JSON.stringify(event)}`)
-          const response = {
-            id: event.id,
-            result: await this.routeSafeRPCRequest(
-              event.request.method,
-              event.request.params
-            ),
-          }
-          logger.log("internal response:", response)
+          try {
+            const response = {
+              id: event.id,
+              result: await this.routeSafeRPCRequest(
+                event.request.method,
+                event.request.params
+              ),
+            }
+            logger.log("internal response:", response)
 
-          port.postMessage(response)
+            port.postMessage(response)
+          } catch (error) {
+            logger.log("error processing request", event.id, error)
+
+            port.postMessage({
+              id: event.id,
+              result: new EIP1193Error(
+                EIP1193_ERROR_CODES.userRejectedRequest
+              ).toJSON(),
+            })
+          }
         })
       }
     })
@@ -179,13 +191,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       throw new Error("Transactions must have a from address for signing.")
     }
 
-    return new Promise<SignedEVMTransaction>((resolve) => {
+    return new Promise<SignedEVMTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,
           from,
         },
         resolver: resolve,
+        rejecter: reject,
       })
     })
   }
