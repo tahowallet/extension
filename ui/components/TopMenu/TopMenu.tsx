@@ -6,6 +6,7 @@ import {
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
+import { SHOW_NETWORK_DROPDOWN } from "../../features"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
@@ -19,6 +20,8 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 export default function TopMenu(): ReactElement {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+
+  const toggleOpenProtocolList = () => setIsProtocolListOpen(!isProtocolListOpen)
 
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
@@ -103,7 +106,10 @@ export default function TopMenu(): ReactElement {
       </SharedSlideUpMenu>
       <div className="nav_wrap">
         <nav className="standard_width_padded">
-          <TopMenuProtocolSwitcher />
+          <TopMenuProtocolSwitcher
+            enabled={SHOW_NETWORK_DROPDOWN}
+            onClick={toggleOpenProtocolList}
+          />
           <div className="profile_group">
             {isConnectedToDApp && (
               <button
