@@ -1,6 +1,7 @@
 import { TokenList } from "@uniswap/token-lists"
 
-import { getEthereumNetwork } from "./utils"
+import { EVMNetwork, isEVMNetwork, Network } from "../networks"
+import { NETWORKS } from "../constants/networks"
 import { SmartContractFungibleAsset, TokenListAndReference } from "../assets"
 import { isValidUniswapTokenListResponse } from "./validate"
 
@@ -32,8 +33,18 @@ export async function fetchAndValidateTokenLists(
 
 function tokenListToFungibleAssets(
   url: string,
-  tokenList: TokenList
+  tokenList: TokenList,
+  defaultNetwork: EVMNetwork
 ): SmartContractFungibleAsset[] {
+  const networksByChainID: { [chainID: string]: EVMNetwork } = NETWORKS.reduce(
+    (acc: { [chainID: string]: EVMNetwork }, network: Network) => {
+      if (isEVMNetwork(network)) {
+        acc[network.chainID] = network
+      }
+      return acc
+    },
+    {}
+  )
   return tokenList.tokens.map((t) => {
     return {
       metadata: {
@@ -49,7 +60,7 @@ function tokenListToFungibleAssets(
       name: t.name,
       symbol: t.symbol,
       decimals: t.decimals,
-      homeNetwork: getEthereumNetwork(),
+      homeNetwork: networksByChainID[t.chainId] ?? defaultNetwork,
       contractAddress: t.address,
     }
   })
@@ -61,11 +72,16 @@ function tokenListToFungibleAssets(
  * in.
  */
 export function networkAssetsFromLists(
-  tokenLists: TokenListAndReference[]
+  tokenLists: TokenListAndReference[],
+  defaultNetwork: EVMNetwork
 ): SmartContractFungibleAsset[] {
   const fungibleAssets = tokenLists
     .map((listAndRef) =>
-      tokenListToFungibleAssets(listAndRef.url, listAndRef.tokenList)
+      tokenListToFungibleAssets(
+        listAndRef.url,
+        listAndRef.tokenList,
+        defaultNetwork
+      )
     )
     .reduce((a, b) => a.concat(b), [])
 

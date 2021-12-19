@@ -44,4 +44,4 @@ export const BITCOIN: Network = {
   family: "BTC",
 }
 
-export const NETWORKS = [ETHEREUM, BITCOIN]
+export const NETWORKS = [ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN, BITCOIN]

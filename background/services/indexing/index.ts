@@ -12,15 +12,18 @@ import {
   PricePoint,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
+import { BTC, ETH, ETHEREUM, FIAT_CURRENCIES, USD } from "../../constants"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
-import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
+import {
+  getTokenBalances,
+  getTokenMetadata,
+  isAlchemyProvider,
+} from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { getEthereumNetwork } from "../../lib/utils"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -134,8 +137,6 @@ export default class IndexingService extends BaseService<Events> {
    * @param asset The fungible asset to track.
    */
   async addAssetToTrack(asset: SmartContractFungibleAsset): Promise<void> {
-    // TODO Track across all account/network pairs, not just on one network or
-    // TODO account.
     return this.db.addAssetToTrack(asset)
   }
 
@@ -164,15 +165,19 @@ export default class IndexingService extends BaseService<Events> {
    */
   async getCachedAssets(): Promise<AnyAsset[]> {
     const baseAssets = [BTC, ETH]
-    const customAssets = await this.db.getCustomAssetsByNetwork(
-      getEthereumNetwork()
-    )
+    const customAssets = (
+      await Promise.all(
+        this.chainService.subscribedNetworks.map(async ({ network }) =>
+          this.db.getCustomAssetsByNetwork(network)
+        )
+      )
+    ).flat()
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
     return baseAssets
       .concat(customAssets)
-      .concat(networkAssetsFromLists(tokenLists))
+      .concat(networkAssetsFromLists(tokenLists, ETHEREUM))
   }
 
   /**
@@ -245,7 +250,7 @@ export default class IndexingService extends BaseService<Events> {
           .filter(isSmartContractFungibleAsset)
           .filter(
             (a) =>
-              a.homeNetwork.chainID === getEthereumNetwork().chainID &&
+              a.homeNetwork.chainID === ETHEREUM.chainID &&
               !checkedContractAddresses.has(a.contractAddress)
           )
 
@@ -295,7 +300,7 @@ export default class IndexingService extends BaseService<Events> {
       addressNetwork.network
     )
 
-    const isAlchemy = (p: any): p is AlchemyProvider =>
+    const isAlchemy = (p: unknown): p is AlchemyProvider =>
       typeof (provider as AlchemyProvider).apiKey !== "undefined"
 
     if (!isAlchemy(provider)) {
@@ -379,15 +384,21 @@ export default class IndexingService extends BaseService<Events> {
         contractAddress
       )
       if (!customAsset) {
-        // TODO hardcoded to Ethereum
-        const provider = this.chainService.pollingProviders.ethereum
-        // pull metadata from Alchemy
-        customAsset =
-          (await getTokenMetadata(
-            provider,
-            addressNetwork.network,
-            contractAddress
-          )) || undefined
+        const provider = this.chainService.requirePollingProvider(
+          addressNetwork.network
+        )
+
+        if (isAlchemyProvider(provider)) {
+          // pull metadata from Alchemy
+          customAsset =
+            (await getTokenMetadata(
+              provider,
+              addressNetwork.network,
+              contractAddress
+            )) || undefined
+        } else {
+          logger.warn("Retrieving asset metadata requires Alchemy")
+        }
 
         if (customAsset) {
           await this.db.addCustomAsset(customAsset)
@@ -431,9 +442,10 @@ export default class IndexingService extends BaseService<Events> {
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
 
-    // Filter all assets based on the currently selected network
+    // Filter all assets for Ethereum
+    // TODO check non-Ethereum asset prices
     const activeAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
+      (t) => t.homeNetwork.chainID === ETHEREUM.chainID
     )
 
     try {
@@ -529,22 +541,29 @@ export default class IndexingService extends BaseService<Events> {
     this.fetchAndCacheTokenLists()
 
     const assetsToTrack = await this.db.getAssetsToTrack()
-    // TODO doesn't support multi-network assets
-    // like USDC or CREATE2-based contracts on L1/L2
+    // TODO doesn't support multi-network assets like USDC or CREATE2-based
+    // contracts on L1/L2
     const activeAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
+      (t) => t.homeNetwork.chainID === ETHEREUM.chainID
     )
 
     // wait on balances being written to the db, don't wait on event emission
     await Promise.allSettled(
       (
         await this.chainService.getAccountsToTrack()
-      ).map(async ({ address: account }) => {
-        // TODO hardcoded to Ethereum
+      ).map(async (addressNetwork) => {
+        const provider = this.chainService.requirePollingProvider(
+          addressNetwork.network
+        )
+
+        if (!isAlchemyProvider(provider)) {
+          throw new Error("Balance checks currently require Alchemy")
+        }
+
         const balances = await getAssetBalances(
-          this.chainService.pollingProviders.ethereum,
+          provider,
           activeAssetsToTrack,
-          account
+          addressNetwork
         )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
         await this.db.addBalances(balances)

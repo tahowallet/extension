@@ -7,6 +7,7 @@ import {
 import { Provider } from "@ethersproject/abstract-provider"
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
+
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString } from "../../types"
@@ -368,7 +369,6 @@ export default class ChainService extends BaseService<Events> {
     if (cachedTx) {
       return cachedTx
     }
-    // TODO make proper use of the network
 
     const gethResult = await this.requirePollingProvider(
       network

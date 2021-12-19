@@ -3,8 +3,8 @@ import { ethers, logger } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import { TransactionDescription } from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
-import { getEthereumNetwork } from "./utils"
-import { AccountBalance } from "../accounts"
+import { ETHEREUM } from "../constants/networks"
+import { AccountBalance, AddressNetwork } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 
 export const ERC20_ABI = [
@@ -34,7 +34,7 @@ export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
 const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 const alchemyProvider = new AlchemyProvider(
-  getNetwork(Number(getEthereumNetwork().chainID)),
+  getNetwork(Number(ETHEREUM.chainID)),
   ALCHEMY_KEY
 )
 
@@ -59,11 +59,13 @@ export async function getBalance(
 export async function getBalances(
   provider: AlchemyProvider,
   tokens: SmartContractFungibleAsset[],
-  address: string
+  addressNetwork: AddressNetwork
 ): Promise<AccountBalance[]> {
   if (tokens.length === 0) {
     return [] as AccountBalance[]
   }
+
+  const { address, network } = addressNetwork
 
   const tokenBalances = await getTokenBalances(
     provider,
@@ -90,7 +92,7 @@ export async function getBalances(
           asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
         },
         address,
-        network: getEthereumNetwork(), // TODO track networks outside of .env file
+        network,
         retrievedAt: Date.now(),
         dataSource: "alchemy",
       } as AccountBalance
@@ -116,7 +118,7 @@ export const getERC20TokenMetadata = async (
   address: string
 ): Promise<SmartContractFungibleAsset | null> => {
   try {
-    const tokenMetadata = await getTokenMetadata(alchemyProvider, address)
+    const tokenMetadata = await getTokenMetadata(alchemyProvider, ETHEREUM, address)
     return tokenMetadata
   } catch (err) {
     logger.warn("Couldn't find token with specified address", address)
