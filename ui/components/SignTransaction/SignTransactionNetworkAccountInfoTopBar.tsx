@@ -1,20 +1,14 @@
-import { HexString } from "@tallyho/tally-background/types"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
-import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 
 type Props = {
-  transactionSenderAddress: HexString
+  accountTotal: AccountTotal
 }
 
 export default function SignTransactionNetworkAccountInfoTopBar({
-  transactionSenderAddress,
+  accountTotal,
 }: Props): ReactElement {
-  const accountTotal = useBackgroundSelector((state) =>
-    getAccountTotal(state, transactionSenderAddress)
-  )
-
   if (typeof accountTotal === "undefined") {
     return <></>
   }
