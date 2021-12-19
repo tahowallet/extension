@@ -50,6 +50,10 @@ export type EVMNetwork = Network & {
   family: "EVM"
 }
 
+export function isEVMNetwork(network: Network): network is EVMNetwork {
+  return network.family === "EVM"
+}
+
 /**
  * An EVM-style block identifier, including difficulty, block height, and
  * self/parent hash data.

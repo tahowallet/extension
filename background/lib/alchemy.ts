@@ -12,7 +12,6 @@ import {
   SmartContractFungibleAsset,
 } from "../assets"
 import { ETH } from "../constants"
-import { getEthereumNetwork } from "./utils"
 import { AnyEVMTransaction, EVMNetwork } from "../networks"
 import {
   isValidAlchemyAssetTransferResponse,
@@ -35,6 +34,7 @@ import {
  */
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
+  network: EVMNetwork,
   account: string,
   fromBlock: number,
   toBlock?: number
@@ -97,11 +97,11 @@ export async function getAssetTransfers(
             contractAddress: transfer.rawContract.address,
             decimals: Number(BigInt(transfer.rawContract.decimal)),
             symbol: transfer.asset,
-            homeNetwork: getEthereumNetwork(), // TODO internally track the current network instead of relying on the .env file
+            homeNetwork: network,
           }
         : ETH
       return {
-        network: getEthereumNetwork(), // TODO make this friendly across other networks
+        network,
         assetAmount: {
           asset,
           amount: BigInt(transfer.rawContract.value),
@@ -187,6 +187,7 @@ export async function getTokenBalances(
  */
 export async function getTokenMetadata(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
+  network: EVMNetwork,
   contractAddress: HexString
 ): Promise<SmartContractFungibleAsset | null> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
@@ -207,7 +208,7 @@ export async function getTokenMetadata(
       tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
-    homeNetwork: getEthereumNetwork(), // TODO make multi-network friendly
+    homeNetwork: network,
     contractAddress,
   }
 }

@@ -1,5 +1,6 @@
-import logger from "../../lib/logger"
+import { AlchemyProvider } from "@ethersproject/providers"
 
+import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import { Network } from "../../networks"
@@ -290,8 +291,19 @@ export default class IndexingService extends BaseService<Events> {
     addressNetwork: AddressNetwork,
     contractAddresses?: HexString[]
   ): ReturnType<typeof getTokenBalances> {
+    const provider = this.chainService.requirePollingProvider(
+      addressNetwork.network
+    )
+
+    const isAlchemy = (p: any): p is AlchemyProvider =>
+      typeof (provider as AlchemyProvider).apiKey !== "undefined"
+
+    if (!isAlchemy(provider)) {
+      throw new Error("Alchemy is currently required to check token balances")
+    }
+
     const balances = await getTokenBalances(
-      this.chainService.pollingProviders.ethereum,
+      provider,
       addressNetwork.address,
       contractAddresses || undefined
     )
@@ -371,7 +383,11 @@ export default class IndexingService extends BaseService<Events> {
         const provider = this.chainService.pollingProviders.ethereum
         // pull metadata from Alchemy
         customAsset =
-          (await getTokenMetadata(provider, contractAddress)) || undefined
+          (await getTokenMetadata(
+            provider,
+            addressNetwork.network,
+            contractAddress
+          )) || undefined
 
         if (customAsset) {
           await this.db.addCustomAsset(customAsset)
