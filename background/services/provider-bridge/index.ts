@@ -1,4 +1,5 @@
 import browser, { Runtime } from "webextension-polyfill"
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
@@ -242,22 +243,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
         case "eth_signTransaction":
         case "eth_sendTransaction":
-          // We are monsters.
+          // We are monsters and aren't breaking a method out quite yet.
+          // eslint-disable-next-line no-case-declarations
+          const transactionRequest = params[0] as EthersTransactionRequest
           // eslint-disable-next-line no-case-declarations
           const popupPromise = ProviderBridgeService.showExtensionPopup(
             AllowedQueryParamPage.signTransaction
           )
-          return await this.internalEthereumProviderService
-            .routeSafeRPCRequest(method, params)
-            .finally(async () => {
-              // Close the popup once we're done submitting.
-              const popup = await popupPromise
-              if (typeof popup.id !== "undefined") {
-                browser.windows.remove(popup.id)
-              }
-            })
-        // Above, show the connect window, then continue on to regular handling.
-        // eslint-disable-next-line no-fallthrough
+
+          if (transactionRequest.from === enablingPermission.accountAddress) {
+            return await this.internalEthereumProviderService
+              .routeSafeRPCRequest(method, params)
+              .finally(async () => {
+                // Close the popup once we're done submitting.
+                const popup = await popupPromise
+                if (typeof popup.id !== "undefined") {
+                  browser.windows.remove(popup.id)
+                }
+              })
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
