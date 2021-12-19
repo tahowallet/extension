@@ -113,6 +113,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
+    const originPermission = await this.checkPermission(origin)
+
     if (isTallyInternalCommunication(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
@@ -120,10 +122,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
       }
-    } else if (await this.checkPermission(origin)) {
+    } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
       response.result = await this.routeContentScriptRPCRequest(
+        originPermission,
         event.request.method,
         event.request.params
       )
@@ -145,10 +148,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       await blockUntilUserAction
 
-      if (await this.checkPermission(origin)) {
+      const persistedPermission = await this.checkPermission(origin)
+      if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
         response.result = await this.routeContentScriptRPCRequest(
+          persistedPermission,
           "eth_accounts",
           event.request.params
         )
@@ -218,21 +223,23 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  async checkPermission(origin: string): Promise<boolean> {
-    return this.db.checkPermission(origin).then((r) => !!r)
+  async checkPermission(
+    origin: string
+  ): Promise<PermissionRequest | undefined> {
+    return this.db.checkPermission(origin)
   }
 
   async routeContentScriptRPCRequest(
+    enablingPermission: PermissionRequest,
     method: string,
     params: RPCRequest["params"]
   ): Promise<unknown> {
     try {
       switch (method) {
         case "eth_requestAccounts":
-          return await this.internalEthereumProviderService.routeSafeRPCRequest(
-            "eth_accounts",
-            params
-          )
+        case "eth_accounts":
+          return [enablingPermission.accountAddress]
+
         case "eth_signTransaction":
         case "eth_sendTransaction":
           // We are monsters.

@@ -46,7 +46,9 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return this.dAppPermissions.delete(origin)
   }
 
-  async checkPermission(origin: string) {
+  async checkPermission(
+    origin: string
+  ): Promise<PermissionRequest | undefined> {
     return this.dAppPermissions.get(origin)
   }
 
