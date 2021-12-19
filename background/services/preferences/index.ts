@@ -8,6 +8,7 @@ import BaseService from "../base"
 interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
+  intilalizeCurrentAddress: string
 }
 
 /*
@@ -34,6 +35,10 @@ export default class PreferenceService extends BaseService<Events> {
     await super.internalStartService()
 
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
+    this.emitter.emit(
+      "intilalizeCurrentAddress",
+      await this.getCurrentAddress()
+    )
   }
 
   protected async internalStopService(): Promise<void> {
@@ -54,7 +59,15 @@ export default class PreferenceService extends BaseService<Events> {
     return (await this.db.getLatestPreferences())?.defaultWallet
   }
 
-  async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<number> {
+  async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<void> {
     return this.db.setDefaultWalletValue(newDefaultWalletValue)
+  }
+
+  async getCurrentAddress(): Promise<string> {
+    return (await this.db.getLatestPreferences())?.currentAddress
+  }
+
+  async setCurrentAddress(currentAddress: string): Promise<void> {
+    return this.db.setCurrentAddress(currentAddress)
   }
 }

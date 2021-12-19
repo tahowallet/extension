@@ -25,6 +25,7 @@ export type UIState = {
 export type Events = {
   snackbarMessage: string
   newDefaultWalletValue: boolean
+  newCurrentAddress: string
 }
 
 export const emitter = new Emittery<Events>()
@@ -120,6 +121,16 @@ export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
     await emitter.emit("newDefaultWalletValue", defaultWallet)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setDefaultWallet(defaultWallet))
+  }
+)
+
+// TBD @Antonio: It would be good to have a consistent naming strategy
+export const setNewCurrentAddress = createBackgroundAsyncThunk(
+  "ui/setNewCurrentAddressValue",
+  async (currentAddress: string, { dispatch }) => {
+    await emitter.emit("newCurrentAddress", currentAddress)
+    // Once the default value has persisted, propagate to the store.
+    dispatch(uiSlice.actions.setCurrentAccount(currentAddress))
   }
 )
 

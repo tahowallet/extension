@@ -9,7 +9,7 @@ export interface Preferences {
   tokenLists: { autoUpdate: boolean; urls: Array<string> }
   currency: FiatCurrency
   defaultWallet: boolean
-  currentAccount: string
+  currentAddress: string
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -56,7 +56,7 @@ export class PreferenceDatabase extends Dexie {
     // I fully expect that I might need to revert all of this, but as per my current knowledge this seems to be a good idea
     this.version(3).stores({
       migrations: null, // If we use dexie built in migrations then we don't need to keep track of them manually
-      preferences: "++id,currency,tokenLists,defaultWallet,currentAccount", // removed the savedAt field and added currentAccount
+      preferences: "++id,currency,tokenLists,defaultWallet,currentAddress", // removed the savedAt field and added currentAccount
     })
 
     // This is the old version for popuplate
@@ -78,13 +78,12 @@ export class PreferenceDatabase extends Dexie {
     return this.preferences.reverse().first() as Promise<Preferences>
   }
 
-  async setDefaultWalletValue(newDefaultWalletValue: boolean) {
-    const latestConfig = await this.getLatestPreferences()
-    const updatedConfig = {
-      ...latestConfig,
-      defaultWallet: newDefaultWalletValue,
-    }
-    return this.preferences.put(updatedConfig, latestConfig.id)
+  async setDefaultWalletValue(defaultWallet: boolean): Promise<void> {
+    await this.preferences.toCollection().modify({ defaultWallet })
+  }
+
+  async setCurrentAddress(currentAddress: string): Promise<void> {
+    await this.preferences.toCollection().modify({ currentAddress })
   }
 }
 

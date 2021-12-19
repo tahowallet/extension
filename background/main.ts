@@ -43,6 +43,7 @@ import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
   setDefaultWallet,
+  setCurrentAccount,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -580,6 +581,37 @@ export default class Main extends BaseService<never> {
         await this.store.dispatch(setDefaultWallet(isDefaultWallet))
       }
     )
+
+    this.preferenceService.emitter.on(
+      "intilalizeCurrentAddress",
+      async (dbCurrentAddress: string) => {
+        if (dbCurrentAddress) {
+          // TBD: naming the normal reducer and async thunks
+          // Initialize redux from the db
+          // !!! Important: this action belongs to a regular reducer.
+          // NOT to be confused with the setNewCurrentAddress asyncThunk
+          this.store.dispatch(setCurrentAccount(dbCurrentAddress))
+        } else {
+          // Update currentAddress in db if it's not set but it is in the store
+          // should run only one time
+          const { address } =
+            this.store.getState().ui.currentAccount.addressNetwork
+
+          if (address) {
+            await this.preferenceService.setCurrentAddress(address)
+          }
+        }
+      }
+    )
+
+    uiSliceEmitter.on("newCurrentAddress", async (newCurrentAddress) => {
+      await this.preferenceService.setCurrentAddress(newCurrentAddress)
+
+      // TODO: not sure if we want all dApps to get accountChange event. Probably this is the way to tho though
+      // this.providerBridgeService.notifyContentScriptAboutConfigChange(
+      //   newCurrentAddress
+      // )
+    })
 
     uiSliceEmitter.on(
       "newDefaultWalletValue",
