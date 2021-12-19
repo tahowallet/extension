@@ -1,4 +1,4 @@
-import Dexie from "dexie"
+import Dexie, { Transaction } from "dexie"
 import { FiatCurrency } from "../../assets"
 
 import DEFAULT_PREFERENCES from "./defaults"
@@ -9,35 +9,66 @@ export interface Preferences {
   tokenLists: { autoUpdate: boolean; urls: Array<string> }
   currency: FiatCurrency
   defaultWallet: boolean
-}
-
-export interface Migration {
-  id: number
-  appliedAt: number
+  currentAccount: string
 }
 
 export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
 
-  private migrations!: Dexie.Table<Migration, number>
-
   constructor() {
     super("tally/preferences")
+
+    // DELETE ME: No need to keep this, but because this service was using a different method
+    // I thought it's easier to follow the history if it's here at least utnil we discuss this approach
     this.version(1).stores({
       preferences: "++id,savedAt",
       migrations: "++id,appliedAt",
     })
 
-    // This is not necessary, to be kept here for Dexie >3.0 but I found it helpful
-    // This way it's easy to test a migration scenario and we also can see what has changed
-    // TBD: Migration uses a naive approach/has limited capability as it is now
-    //  - Extending the schema - adding new properties works fine
-    //  - Editing an existing property does not work - we don't want to overwrite the user's settings
-    //  - Removeing properties does not work
-    // Future improvement: introduce `overwrite` flag with every single setting.
-    this.version(2).stores({
-      preferences: "++id,savedAt,currency,tokenLists,defaultWallet",
-      migrations: "++id,appliedAt",
+    // DELETE ME: This is not necessary either, but because there was a different approach
+    // implementing the migration I kept it here for now just to make sure
+    // the db is in working condition.
+    this.version(2)
+      .stores({
+        preferences: "++id,savedAt,currency,tokenLists,defaultWallet",
+      })
+      .upgrade((tx) => {
+        // TBD @Antonio: I mutate the settings here. This could also be an add
+        // but because user actions are mutating this record now I felt that this is the right approach
+        // (did not want to create a new version of the settings every time a user changes the defaultWallet switch)
+        // if we decide to go with mutating then getLatestPreferences() should be refactored
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences) => {
+            if (!storedPreferences.deafultWallet) {
+              // Dexie api expects modification of the argument:
+              // https://dexie.org/docs/Collection/Collection.modify()
+              // eslint-disable-next-line no-param-reassign
+              storedPreferences.defaultWallet =
+                DEFAULT_PREFERENCES.defaultWallet
+            }
+          })
+      })
+
+    // TBD @Antonio: Implemented database versioning and population according to the Dexie docs
+    // https://dexie.org/docs/Tutorial/Design#database-versioning
+    // I fully expect that I might need to revert all of this, but as per my current knowledge this seems to be a good idea
+    this.version(3).stores({
+      migrations: null, // If we use dexie built in migrations then we don't need to keep track of them manually
+      preferences: "++id,currency,tokenLists,defaultWallet,currentAccount", // removed the savedAt field and added currentAccount
+    })
+
+    // This is the old version for popuplate
+    // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
+    // The this does not behave according the new docs, but works
+    this.on("populate", function (tx: Transaction) {
+      // This could be tx.preferences but the typeing for populate
+      // is not generic so it does not know about the preferences table
+      tx.table("preferences").add({
+        ...DEFAULT_PREFERENCES,
+        savedAt: Date.now(),
+      })
     })
   }
 
@@ -55,55 +86,10 @@ export class PreferenceDatabase extends Dexie {
     }
     return this.preferences.put(updatedConfig, latestConfig.id)
   }
-
-  private async migrate() {
-    const numMigrations = await this.migrations.count()
-
-    if (numMigrations === 0) {
-      // We are initializing the db
-      await this.transaction(
-        "rw",
-        this.migrations,
-        this.preferences,
-        async () => {
-          this.migrations.add({ id: 0, appliedAt: Date.now() })
-          this.preferences.add({
-            ...DEFAULT_PREFERENCES,
-            savedAt: Date.now(),
-          })
-        }
-      )
-    } else {
-      // We already have a config saved so we want to merge the saved to the new
-      const latestConfig = await this.getLatestPreferences()
-      await this.transaction(
-        "rw",
-        this.migrations,
-        this.preferences,
-        async () => {
-          this.migrations.add({ id: numMigrations, appliedAt: Date.now() })
-          // We try to keep the settings that already have been set by the user
-          // and add the new properties into the schema.
-          // We are in a pinch here because we have no idea if we changed the data in the code
-          // or the user changed it in his/her app.
-          this.preferences.add({
-            ...DEFAULT_PREFERENCES,
-            ...latestConfig,
-            savedAt: Date.now(),
-          })
-        }
-      )
-    }
-  }
 }
 
 export async function getOrCreateDB(): Promise<PreferenceDatabase> {
   const db = new PreferenceDatabase()
-
-  // Call known-private migrate function, effectively treating it as
-  // file-private.
-  // eslint-disable-next-line @typescript-eslint/dot-notation
-  await db["migrate"]()
 
   return db
 }
