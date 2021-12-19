@@ -7,9 +7,12 @@ import {
   isPortResponseEvent,
   RequestArgument,
   EthersSendCallback,
-  isTallyInternalCommunication,
-  TallyInternalCommunication,
+  isTallyConfigPayload,
+  TallyConfigPayload,
   isEIP1193Error,
+  isTallyInternalCommunication,
+  TallyAccountPayload,
+  isTallyAccountPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
@@ -30,10 +33,10 @@ export default class TallyWindowProvider extends EventEmitter {
     super()
 
     const internalListener = (event: unknown) => {
-      let result: TallyInternalCommunication
+      let result: TallyConfigPayload | TallyAccountPayload
       if (
         isWindowResponseEvent(event) &&
-        isTallyInternalCommunication(event.data.result)
+        isTallyInternalCommunication(event.data)
       ) {
         if (
           event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
@@ -46,29 +49,33 @@ export default class TallyWindowProvider extends EventEmitter {
         ;({ result } = event.data)
       } else if (
         isPortResponseEvent(event) &&
-        isTallyInternalCommunication(event.result)
+        isTallyInternalCommunication(event)
       ) {
         ;({ result } = event)
       } else {
         return
       }
 
-      if (result.defaultWallet) {
-        // let's set Tally as a default wallet
-        // and bkp any object that maybe using window.ethereum
-        if (window.ethereum) {
-          window.oldEthereum = window.ethereum
-        }
+      if (isTallyConfigPayload(result)) {
+        if (result.defaultWallet) {
+          // let's set Tally as a default wallet
+          // and bkp any object that maybe using window.ethereum
+          if (window.ethereum) {
+            window.oldEthereum = window.ethereum
+          }
 
-        window.ethereum = window.tally
-      } else if (window.oldEthereum) {
-        // let's remove tally as a default wallet
-        // and put back whatever it was there before us
-        window.ethereum = window.oldEthereum
-      } else if (window.ethereum?.isTally) {
-        // we were told not to be a default wallet anymore
-        // so in case if we have `window.ethereum` just remove ourselves
-        window.ethereum = undefined
+          window.ethereum = window.tally
+        } else if (window.oldEthereum) {
+          // let's remove tally as a default wallet
+          // and put back whatever it was there before us
+          window.ethereum = window.oldEthereum
+        } else if (window.ethereum?.isTally) {
+          // we were told not to be a default wallet anymore
+          // so in case if we have `window.ethereum` just remove ourselves
+          window.ethereum = undefined
+        }
+      } else if (isTallyAccountPayload(result)) {
+        this.handleAddressChange.bind(this)(result.address[0])
       }
     }
 
@@ -192,12 +199,7 @@ export default class TallyWindowProvider extends EventEmitter {
           Array.isArray(result) &&
           result.length !== 0
         ) {
-          const [address] = result
-          if (this.selectedAddress !== address) {
-            this.selectedAddress = address
-            this.emit("chainChanged", this.chainId)
-            this.emit("accountsChanged", [this.selectedAddress])
-          }
+          this.handleAddressChange.bind(this)(result[0])
         }
 
         resolve(result)
@@ -209,5 +211,12 @@ export default class TallyWindowProvider extends EventEmitter {
 
       this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
     })
+  }
+
+  handleAddressChange(address: string) {
+    if (this.selectedAddress !== address) {
+      this.selectedAddress = address
+      this.emit("accountsChanged", [this.selectedAddress])
+    }
   }
 }

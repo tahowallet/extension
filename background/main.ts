@@ -607,10 +607,9 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newCurrentAddress", async (newCurrentAddress) => {
       await this.preferenceService.setCurrentAddress(newCurrentAddress)
 
-      // TODO: not sure if we want all dApps to get accountChange event. Probably this is the way to tho though
-      // this.providerBridgeService.notifyContentScriptAboutConfigChange(
-      //   newCurrentAddress
-      // )
+      this.providerBridgeService.notifyContentScriptsAboutAddressChange(
+        newCurrentAddress
+      )
     })
 
     uiSliceEmitter.on(

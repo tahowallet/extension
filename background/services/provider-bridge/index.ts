@@ -9,7 +9,7 @@ import {
   EIP1193Error,
   RPCRequest,
   EIP1193_ERROR_CODES,
-  isTallyInternalCommunication,
+  isTallyConfigPayload,
 } from "@tallyho/provider-bridge-shared"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
@@ -113,7 +113,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    if (isTallyInternalCommunication(event.request)) {
+    if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {
@@ -176,6 +176,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
         result: {
           method: "tally_getConfig",
           defaultWallet: newDefaultWalletValue,
+        },
+      })
+    })
+  }
+
+  notifyContentScriptsAboutAddressChange(newAddress: string) {
+    this.openPorts.forEach((p) => {
+      p.postMessage({
+        id: "tallyHo",
+        result: {
+          method: "tally_accountChanged",
+          address: [newAddress],
         },
       })
     })
