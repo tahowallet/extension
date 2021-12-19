@@ -162,7 +162,7 @@ export default class Main extends BaseService<never> {
     const keyringService = KeyringService.create()
     const nameService = NameService.create(chainService)
     const internalEthereumProviderService =
-      InternalEthereumProviderService.create(chainService)
+      InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
       internalEthereumProviderService,
       preferenceService

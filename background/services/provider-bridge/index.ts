@@ -234,9 +234,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
             params
           )
         case "eth_signTransaction":
-        case "eth_sendTransaction":
-          // We are monsters.
-          // eslint-disable-next-line no-case-declarations
+        case "eth_sendTransaction": {
           const popupPromise = ProviderBridgeService.showExtensionPopup(
             AllowedQueryParamPage.signTransaction
           )
@@ -249,8 +247,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
                 browser.windows.remove(popup.id)
               }
             })
-        // Above, show the connect window, then continue on to regular handling.
-        // eslint-disable-next-line no-fallthrough
+        }
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
