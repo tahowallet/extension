@@ -1,6 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { DAppPermissionState } from "../dapp-permission"
+import { selectCurrentAccount } from "./uiSelectors"
 
 export const getProviderBridgeState = (state: RootState): DAppPermissionState =>
   state.dappPermission
@@ -26,5 +27,12 @@ export const selectCurrentPendingPermission = createSelector(
 
 export const selectAllowedPages = createSelector(
   getProviderBridgeState,
-  (slice: DAppPermissionState) => slice.allowedPages
+  selectCurrentAccount,
+  (slice, currentAccount) =>
+    Object.fromEntries(
+      Object.entries(slice.allowedPages).filter(
+        ([_, { accountAddress }]) =>
+          accountAddress.toLowerCase() === currentAccount.address.toLowerCase()
+      )
+    )
 )
