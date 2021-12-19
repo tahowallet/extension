@@ -183,7 +183,9 @@ export default function SignTransaction(): ReactElement {
 
   return (
     <section>
-      <SignTransactionNetworkAccountInfoTopBar />
+      <SignTransactionNetworkAccountInfoTopBar
+        transactionSenderAddress={transactionDetails.from}
+      />
       <h1 className="serif_header title">{signContent[signType].title}</h1>
       <div className="primary_info_card standard_width">
         {signContent[signType].component()}

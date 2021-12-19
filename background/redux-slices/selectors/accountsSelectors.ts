@@ -278,14 +278,26 @@ export const selectAccountTotalsByCategory = createSelector(
   }
 )
 
+function findAccountTotal(
+  categorizedAccountTotals: CategorizedAccountTotals,
+  accountAddress: string
+): AccountTotal | undefined {
+  return Object.values(categorizedAccountTotals)
+    .flat()
+    .find(
+      ({ address }) => address.toLowerCase() === accountAddress.toLowerCase()
+    )
+}
+
+export const getAccountTotal = (
+  state: RootState,
+  accountAddress: string
+): AccountTotal | undefined =>
+  findAccountTotal(selectAccountTotalsByCategory(state), accountAddress)
+
 export const selectCurrentAccountTotal = createSelector(
-  selectCurrentAccount,
   selectAccountTotalsByCategory,
-  (currentAccount, categorizedAccountTotals): AccountTotal | undefined =>
-    Object.values(categorizedAccountTotals)
-      .flat()
-      .find(
-        ({ address }) =>
-          address.toLowerCase() === currentAccount?.address?.toLowerCase()
-      )
+  selectCurrentAccount,
+  (categorizedAccountTotals, currentAccount): AccountTotal | undefined =>
+    findAccountTotal(categorizedAccountTotals, currentAccount.address)
 )
