@@ -34,7 +34,9 @@ export default function KeyringUnlock(): ReactElement {
     <section>
       <div className="full_logo" />
       <h1 className="serif_header">Unlock Your Wallet</h1>
-      <div className="subtitle">The decentralized web awaits.</div>
+      <div className="subtitle">
+        In order to continue, please unlock your wallet.
+      </div>
       <form onSubmit={dispatchUnlockWallet}>
         <div className="input_wrap">
           <SharedInput
