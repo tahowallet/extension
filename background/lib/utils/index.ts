@@ -1,8 +1,15 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
-import { EVMNetwork } from "../../networks"
-import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
+import { isEVMNetwork, EVMNetwork, Network } from "../../networks"
+import {
+  NETWORKS,
+  ETHEREUM,
+  ROPSTEN,
+  RINKEBY,
+  GOERLI,
+  KOVAN,
+} from "../../constants"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
@@ -125,4 +132,20 @@ export const numberTo32BytesHex = (value: string, decimals: number): string => {
 
 export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
   return ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
+}
+
+const networksByChainID: { [chainID: string]: EVMNetwork } = NETWORKS.reduce(
+  (acc: { [chainID: string]: EVMNetwork }, network: Network) => {
+    if (isEVMNetwork(network)) {
+      acc[network.chainID] = network
+    }
+    return acc
+  },
+  {}
+)
+
+export function getEthereumNetworkFromChainID(
+  chainID: string | number
+): EVMNetwork | undefined {
+  return networksByChainID[Number.parseInt(chainID as string, 10)]
 }

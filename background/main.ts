@@ -4,7 +4,12 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
+import {
+  decodeJSON,
+  encodeJSON,
+  getEthereumNetwork,
+  getEthereumNetworkFromChainID,
+} from "./lib/utils"
 
 import {
   BaseService,
@@ -480,8 +485,15 @@ export default class Main extends BaseService<never> {
     transactionConstructionSliceEmitter.on(
       "requestSignature",
       async (transaction: EIP1559TransactionRequest) => {
+        const network = getEthereumNetworkFromChainID(transaction.chainID)
+        if (!network) {
+          throw new Error("Unsupported chain ID.")
+        }
         const signedTx = await this.keyringService.signTransaction(
-          transaction.from,
+          {
+            address: transaction.from,
+            network,
+          },
           transaction
         )
         this.store.dispatch(signed(signedTx))

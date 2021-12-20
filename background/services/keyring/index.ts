@@ -2,7 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
-import { normalizeEVMAddress, getEthereumNetwork } from "../../lib/utils"
+import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -12,6 +12,7 @@ import {
   SaltedKey,
 } from "./encryption"
 import { HexString, KeyringTypes, EIP712TypedData, UNIXTime } from "../../types"
+import { AddressNetwork } from "../../accounts"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
@@ -351,13 +352,16 @@ export default class KeyringService extends BaseService<Events> {
    * Sign a transaction.
    *
    * @param account - the account desired to sign the transaction
+   * @param account - the account desired to sign the transaction
    * @param txRequest -
    */
   async signTransaction(
-    account: HexString,
+    addressNetwork: AddressNetwork,
     txRequest: EIP1559TransactionRequest
   ): Promise<SignedEVMTransaction> {
     this.requireUnlocked()
+
+    const { address: account, network } = addressNetwork
 
     // find the keyring using a linear search
     const keyring = await this.#findKeyring(account)
@@ -402,7 +406,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network: getEthereumNetwork(),
+      network,
     }
     this.emitter.emit("signedTx", signedTx)
     return signedTx
