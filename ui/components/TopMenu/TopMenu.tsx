@@ -1,8 +1,6 @@
 import React, { ReactElement } from "react"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
-import { useBackgroundSelector } from "../../hooks"
 
 interface Props {
   toggleOpenProtocolList: () => void
@@ -19,17 +17,6 @@ export default function TopMenu(props: Props): ReactElement {
     isConnectedToDApp,
   } = props
 
-  const { address, truncatedAddress } =
-    useBackgroundSelector(selectCurrentAccount)
-
-  const { name, avatarURL } = useBackgroundSelector((background) => {
-    const data = background.account.accountsData[address.toLowerCase()]
-    if (typeof data === "object") {
-      return data.ens
-    }
-    return {}
-  })
-
   return (
     <div className="nav_wrap">
       <nav className="standard_width_padded">
@@ -43,12 +30,7 @@ export default function TopMenu(props: Props): ReactElement {
               onClick={toggleOpenDAppConnectionInfo}
             />
           )}
-          <TopMenuProfileButton
-            address={truncatedAddress}
-            nickname={name || undefined}
-            avatar={avatarURL || undefined}
-            onClick={toggleOpenNotifications}
-          />
+          <TopMenuProfileButton onClick={toggleOpenNotifications} />
         </div>
       </nav>
       <style jsx>
@@ -60,6 +42,7 @@ export default function TopMenu(props: Props): ReactElement {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding-right: 0;
           }
           .nav_wrap {
             width: 100%;
@@ -77,7 +60,6 @@ export default function TopMenu(props: Props): ReactElement {
             border: solid 3px var(--hunter-green);
             width: 32px;
             height: 32px;
-            margin-top: -5px;
             margin-right: 2px;
           }
           .connection_button:hover {

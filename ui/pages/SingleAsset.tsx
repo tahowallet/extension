@@ -24,13 +24,30 @@ export default function SingleAsset(): ReactElement {
     selectIsCurrentAccountSigner
   )
 
-  // Asset filtered by contract address.
   const filteredActivities = useBackgroundSelector((state) =>
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
-      (activity) =>
-        activity.asset.symbol === symbol ||
-        (typeof location.state.contractAddress !== "undefined" &&
-          location.state.contractAddress === activity.to)
+      (activity) => {
+        if (
+          typeof location.state.contractAddress !== "undefined" &&
+          location.state.contractAddress === activity.to
+        ) {
+          return true
+        }
+        switch (activity.annotation?.type) {
+          case "asset-transfer":
+          case "asset-approval":
+            return activity.annotation.assetAmount.asset.symbol === symbol
+          case "asset-swap":
+            return (
+              activity.annotation.fromAssetAmount.asset.symbol === symbol ||
+              activity.annotation.toAssetAmount.asset.symbol === symbol
+            )
+          case "contract-interaction":
+          case "contract-deployment":
+          default:
+            return false
+        }
+      }
     )
   )
 
@@ -104,7 +121,6 @@ export default function SingleAsset(): ReactElement {
           <div className="left">Asset is on: Arbitrum</div>
           <div className="right">Move to Ethereum</div>
         </div>
-        <div className="label_light standard_width_padded">Activity</div>
         <WalletActivityList activities={filteredActivities} />
       </CorePage>
       <style jsx>
@@ -128,6 +144,7 @@ export default function SingleAsset(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding-bottom: 24px;
           }
           .header .right {
             height: 95px;

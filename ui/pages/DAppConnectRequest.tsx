@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from "react"
+import React, { ReactElement, useCallback, useEffect } from "react"
 import {
   selectCurrentPendingPermission,
   selectCurrentAccount,
@@ -34,7 +34,9 @@ function RequestingDAppBlock(props: {
           width: 100%;
         }
         .dapp_favicon {
-          background: url("${faviconUrl}");
+          background: url("${faviconUrl === ""
+            ? "./images/dapp_favicon_default@2x.png"
+            : faviconUrl}");
           background-size: cover;
           width: 48px;
           height: 48px;
@@ -65,6 +67,20 @@ export default function DAppConnectRequest(): ReactElement {
 
   const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
 
+  useEffect(() => {
+    window.onbeforeunload = (ev) => {
+      if (typeof permission !== "undefined" && lowerCaseAddress) {
+        dispatch(
+          denyOrRevokePermission({
+            ...permission,
+            state: "deny",
+            accountAddress: lowerCaseAddress,
+          })
+        )
+      }
+    }
+  }, [dispatch, permission, lowerCaseAddress])
+
   const grant = useCallback(async () => {
     if (typeof permission !== "undefined" && lowerCaseAddress) {
       await dispatch(
@@ -75,21 +91,14 @@ export default function DAppConnectRequest(): ReactElement {
         })
       )
     }
+    window.onbeforeunload = null
     window.close()
   }, [dispatch, permission, lowerCaseAddress])
 
   const deny = useCallback(async () => {
-    if (typeof permission !== "undefined" && lowerCaseAddress) {
-      await dispatch(
-        denyOrRevokePermission({
-          ...permission,
-          state: "deny",
-          accountAddress: lowerCaseAddress,
-        })
-      )
-    }
+    // The denyOrRevokePermission will be dispatched in the onbeforeunload effect
     window.close()
-  }, [dispatch, permission, lowerCaseAddress])
+  }, [])
 
   if (
     typeof currentAccountTotal === "undefined" ||

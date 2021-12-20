@@ -18,7 +18,7 @@ function ReadOnlyNotice(): ReactElement {
           height: 40px;
           background: rgba(238, 178, 24, 0.1);
           border-radius: 2px;
-          margin-top: 12px;
+          margin-top: 6px;
           font-weight: 500;
           font-size: 16px;
           display: flex;
@@ -82,7 +82,7 @@ export default function WalletAccountBalanceControl(
             })}
           >
             <span className="dollar_sign">$</span>
-            {balance}
+            {balance ?? 0}
           </span>
         </span>
         {isCurrentAccountSigner && !HIDE_SEND_BUTTON ? (

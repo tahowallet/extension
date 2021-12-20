@@ -1,7 +1,10 @@
-import React, { ReactElement, useCallback } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectCurrentAccount,
+  selectShowingActivityDetail,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { selectShowingActivityDetail } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -20,8 +23,21 @@ export default function WalletActivityList({
     selectShowingActivityDetail
   )
 
+  // Used to fix Tx Details Slide-up menu should close
+  // when extension closes. (#618)
+  const [instantlyHideActivityDetails, setInstantlyHideActivityDetails] =
+    useState(true)
+
+  useEffect(() => {
+    setInstantlyHideActivityDetails(true)
+    dispatch(setShowingActivityDetail(null))
+  }, [dispatch])
+
+  const currentAccount = useBackgroundSelector(selectCurrentAccount).address
+
   const handleOpen = useCallback(
     (activityItem: ActivityItem) => {
+      setInstantlyHideActivityDetails(false)
       dispatch(setShowingActivityDetail(activityItem.hash))
     },
     [dispatch]
@@ -33,38 +49,42 @@ export default function WalletActivityList({
 
   if (!activities || activities.length === 0)
     return (
-      <div className="loading">
-        <SharedLoadingSpinner />
-        <span>This may initially take awhile.</span>
+      <span>
+        Tally will populate your historical activity over time; this may take an
+        hour or more for accounts that have been active for a long time. For new
+        accounts, new activity will show up here.
         <style jsx>{`
-          .loading {
-            width: 100%;
+          span {
+            width: 316px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 20px;
-          }
-          .loading span {
-            color: var(--green-60);
-            margin-top: 12px;
-            font-size: 14px;
+            color: var(--green-40);
+            font-size: 16px;
+            text-align: center;
+            line-height: 22px;
+            margin: 0 auto;
+            margin-top: 15px;
           }
         `}</style>
-      </div>
+      </span>
     )
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={showingActivityDetail !== null}
-        close={handleClose}
-      >
-        {showingActivityDetail ? (
-          <WalletActivityDetails activityItem={showingActivityDetail} />
-        ) : (
-          <></>
-        )}
-      </SharedSlideUpMenu>
+      {!instantlyHideActivityDetails && (
+        <SharedSlideUpMenu
+          isOpen={showingActivityDetail !== null}
+          close={handleClose}
+        >
+          {showingActivityDetail ? (
+            <WalletActivityDetails activityItem={showingActivityDetail} />
+          ) : (
+            <></>
+          )}
+        </SharedSlideUpMenu>
+      )}
+
       <ul>
         {activities.map((activityItem) => {
           if (activityItem) {
@@ -75,6 +95,7 @@ export default function WalletActivityList({
                 }}
                 key={activityItem?.hash}
                 activity={activityItem}
+                asAccount={currentAccount}
               />
             )
           }

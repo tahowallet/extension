@@ -12,6 +12,7 @@ import {
   SignedEVMTransaction,
   AnyEVMBlock,
   EIP1559TransactionRequest,
+  ConfirmedEVMTransaction,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { getEthereumNetwork } from "../../lib/utils"
@@ -147,10 +148,16 @@ export function ethersTransactionFromSignedTransaction(
 export function enrichTransactionWithReceipt(
   transaction: AnyEVMTransaction,
   receipt: EthersTransactionReceipt
-): AnyEVMTransaction {
+): ConfirmedEVMTransaction {
+  const gasUsed = receipt.gasUsed.toBigInt()
   return {
     ...transaction,
-    gasUsed: receipt.gasUsed.toBigInt(),
+    gasUsed,
+    status:
+      receipt.status ??
+      // Pre-Byzantium transactions require a guesswork approach or an
+      // eth_call; we go for guesswork.
+      (gasUsed === transaction.gasLimit ? 0 : 1),
     blockHash: receipt.blockHash,
     blockHeight: receipt.blockNumber,
   }

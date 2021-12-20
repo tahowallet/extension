@@ -16,7 +16,7 @@ type WalletTypeInfo = {
 
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
-    title: "Read-only mode",
+    title: "Read-only",
     icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {
@@ -69,7 +69,7 @@ function WalletTypeHeader({
           font-weight: 600;
           line-height: 24px;
           padding: 0px 12px 0px 16px;
-          margin: 8px 0 16px;
+          margin: 8px 0px;
         }
         .icon {
           background: url("${icon}");
@@ -201,9 +201,15 @@ export default function AccountsNotificationPanelAccounts({
             justify-content: center;
             align-items: center;
             align-content: center;
+            margin-bottom: 8px;
           }
           li {
-            margin-bottom: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 0px 8px 24px;
+          }
+          li:hover {
+            background-color: var(--hunter-green);
           }
           footer {
             width: 100%;

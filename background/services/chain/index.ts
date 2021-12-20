@@ -61,7 +61,7 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // The number of blocks before the current block height to start looking for
 // asset transfers. This is important to allow nodes like Erigon and
 // OpenEthereum with tracing to catch up to where we are.
-const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 100
+const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
 // The number of asset transfer lookups that will be done per account to rebuild
 // historic activity.
@@ -367,7 +367,9 @@ export default class ChainService extends BaseService<Events> {
     const estimate = await this.pollingProviders.ethereum.estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
-    return BigInt(estimate.toString())
+    // Add 10% more gas as a safety net
+    const uppedEstimate = estimate.add(estimate.div(10))
+    return BigInt(uppedEstimate.toString())
   }
 
   /**
@@ -590,6 +592,8 @@ export default class ChainService extends BaseService<Events> {
         } else if (transaction.blockHash) {
           // Get relevant block data.
           await this.getBlockData(transaction.network, transaction.blockHash)
+          // Retrieve gas used, status, etc
+          this.retrieveTransactionReceipt(transaction.network, transaction)
         }
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
@@ -739,7 +743,7 @@ export default class ChainService extends BaseService<Events> {
    * the database and informing subscribers via the emitter.
    *
    * @param network the EVM network we're interested in
-   * @param txHash the hash of the unconfirmed transaction we're interested in
+   * @param transaction the unconfirmed transaction we're interested in
    */
   private async subscribeToTransactionConfirmation(
     network: EVMNetwork,
@@ -754,6 +758,26 @@ export default class ChainService extends BaseService<Events> {
           "alchemy"
         )
       }
+    )
+  }
+
+  /**
+   * Retrieve a confirmed transaction's transaction receipt, saving the results.
+   *
+   * @param network the EVM network we're interested in
+   * @param transaction the confirmed transaction we're interested in
+   */
+  private async retrieveTransactionReceipt(
+    network: EVMNetwork,
+    transaction: AnyEVMTransaction
+  ): Promise<void> {
+    // TODO make proper use of the network
+    const receipt = await this.pollingProviders.ethereum.getTransactionReceipt(
+      transaction.hash
+    )
+    await this.saveTransaction(
+      enrichTransactionWithReceipt(transaction, receipt),
+      "alchemy"
     )
   }
 

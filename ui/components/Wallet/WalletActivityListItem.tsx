@@ -2,19 +2,34 @@ import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import {
+  sameEVMAddress,
+  truncateAddress,
+} from "@tallyho/tally-background/lib/utils"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
   activity: ActivityItem
+  asAccount: string
 }
 
-function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(37, 41)}`
+function isReceiveActivity(activity: ActivityItem, account: string): boolean {
+  return (
+    activity.annotation?.type === "asset-transfer" &&
+    sameEVMAddress(activity.annotation?.recipientAddress, account)
+  )
+}
+
+function isSendActivity(activity: ActivityItem, account: string): boolean {
+  return (
+    activity.annotation?.type === "asset-transfer" &&
+    sameEVMAddress(activity.annotation?.senderAddress, account)
+  )
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
-  const { onClick, activity } = props
+  const { onClick, activity, asAccount } = props
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
@@ -26,21 +41,35 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetValue: string
   } = {
     iconClass: undefined,
-    label: activity.isSent ? "Sent" : "Received",
+    label: "Contract interaction",
     recipient: activity.toTruncated,
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
   }
-  switch (activity.contractInfo?.type) {
+
+  switch (activity.annotation?.type) {
     case "asset-transfer":
       renderDetails = {
-        iconClass: "contract_interaction_icon",
-        label: "Contract interaction",
-        recipient: truncateAddress(activity.contractInfo.recipientAddress),
-        assetLogoURL: activity.contractInfo.contractLogoURL,
-        assetSymbol: activity.contractInfo.assetAmount.asset.symbol,
-        assetValue: activity.contractInfo.assetAmount.localizedDecimalAmount,
+        ...renderDetails,
+        label: isReceiveActivity(activity, asAccount) ? "Received" : "Send",
+        iconClass: isReceiveActivity(activity, asAccount)
+          ? "receive_icon"
+          : "send_icon",
+        recipient: truncateAddress(activity.annotation.recipientAddress),
+        assetLogoURL: activity.annotation.transactionLogoURL,
+        assetSymbol: activity.annotation.assetAmount.asset.symbol,
+        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
+      }
+      break
+    case "asset-approval":
+      renderDetails = {
+        label: "Token approval",
+        iconClass: "approve_icon",
+        recipient: truncateAddress(activity.annotation.spenderAddress),
+        assetLogoURL: activity.annotation.transactionLogoURL,
+        assetSymbol: activity.annotation.assetAmount.asset.symbol,
+        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
       }
       break
     case "asset-swap":
@@ -48,23 +77,23 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         iconClass: "swap_icon",
         label: "Swap",
         recipient: activity.toTruncated,
-        assetLogoURL: activity.contractInfo.contractLogoURL,
+        assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
       }
       break
     case "contract-deployment":
     case "contract-interaction":
+    default:
       renderDetails = {
         iconClass: "contract_interaction_icon",
-        label: "Contract interaction",
+        label: "Contract Interaction",
         recipient: activity.toTruncated,
-        assetLogoURL: activity.contractInfo.contractLogoURL,
+        // TODO fall back to the asset URL we have in metadata
+        assetLogoURL: activity.annotation?.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
       }
-      break
-    default:
   }
 
   return (
@@ -73,11 +102,14 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         <div className="top">
           <div className="left">
             <div
-              className={classNames("activity_icon", renderDetails.iconClass, {
-                send_icon: activity.isSent,
-              })}
+              className={classNames("activity_icon", renderDetails.iconClass)}
             />
             {renderDetails.label}
+            {"status" in activity && activity.status !== 1 ? (
+              <div className="failed">Failed</div>
+            ) : (
+              <></>
+            )}
             {activity.blockHash === null ? (
               <div className="pending">Pending...</div>
             ) : (
@@ -93,6 +125,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
+                // TODO this should come from a connected component that knows
+                // about all of our asset metadata
                 logoURL={renderDetails.assetLogoURL}
                 symbol={renderDetails.assetSymbol}
                 size="small"
@@ -106,7 +140,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            {activity.isSent ? (
+            {isSendActivity(activity, asAccount) ? (
               <div className="outcome">
                 To:
                 {` ${renderDetails.recipient}`}
@@ -138,15 +172,23 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-80);
           }
           .activity_icon {
-            background: url("./images/activity_receive@2x.png");
+            background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
             width: 14px;
             height: 14px;
             margin-right: 4px;
             margin-left: 9px;
           }
+          .receive_icon {
+            background: url("./images/activity_receive@2x.png");
+            background-size: cover;
+          }
           .send_icon {
             background: url("./images/activity_send@2x.png");
+            background-size: cover;
+          }
+          .approve_icon {
+            background: url("./images/activity_approve@2x.png");
             background-size: cover;
           }
           .swap_icon {
@@ -163,6 +205,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .pending {
             color: var(--attention);
+          }
+          .failed:before {
+            content: "•";
+            margin: 0 3px;
+          }
+          .failed {
+            color: var(--error);
           }
           .top {
             height: 16px;

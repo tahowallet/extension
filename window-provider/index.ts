@@ -7,16 +7,16 @@ import {
   isPortResponseEvent,
   RequestArgument,
   EthersSendCallback,
-  EIP1193_ERROR,
-  isEIP1193ErrorCode,
-  isNumber,
+  isTallyInternalCommunication,
+  TallyInternalCommunication,
+  isEIP1193Error,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
-  chainId: number | undefined = 1
+  chainId = "0x1"
 
   selectedAddress: string | undefined
 
@@ -28,6 +28,51 @@ export default class TallyWindowProvider extends EventEmitter {
 
   constructor(public transport: ProviderTransport) {
     super()
+
+    const internalListener = (event: unknown) => {
+      let result: TallyInternalCommunication
+      if (
+        isWindowResponseEvent(event) &&
+        isTallyInternalCommunication(event.data.result)
+      ) {
+        if (
+          event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
+          event.source !== window || // we want to recieve messages only from the provider-bridge script
+          event.data.target !== WINDOW_PROVIDER_TARGET
+        ) {
+          return
+        }
+
+        ;({ result } = event.data)
+      } else if (
+        isPortResponseEvent(event) &&
+        isTallyInternalCommunication(event.result)
+      ) {
+        ;({ result } = event)
+      } else {
+        return
+      }
+
+      if (result.defaultWallet) {
+        // let's set Tally as a default wallet
+        // and bkp any object that maybe using window.ethereum
+        if (window.ethereum) {
+          window.oldEthereum = window.ethereum
+        }
+
+        window.ethereum = window.tally
+      } else if (window.oldEthereum) {
+        // let's remove tally as a default wallet
+        // and put back whatever it was there before us
+        window.ethereum = window.oldEthereum
+      } else if (window.ethereum?.isTally) {
+        // we were told not to be a default wallet anymore
+        // so in case if we have `window.ethereum` just remove ourselves
+        window.ethereum = undefined
+      }
+    }
+
+    this.transport.addEventListener(internalListener)
   }
 
   // deprecated EIP-1193 method
@@ -65,13 +110,16 @@ export default class TallyWindowProvider extends EventEmitter {
     return Promise.reject(new Error("Unsupported function parameters"))
   }
 
+  // Provider-wide counter for requests.
+  private requestID = 0n
+
   request(arg: RequestArgument): Promise<unknown> {
     const { method, params = [] } = arg
     if (typeof method !== "string") {
       return Promise.reject(new Error(`unsupported method type: ${method}`))
     }
     const sendData = {
-      id: Date.now().toString(),
+      id: this.requestID.toString(),
       target: PROVIDER_BRIDGE_TARGET,
       request: {
         method,
@@ -79,13 +127,16 @@ export default class TallyWindowProvider extends EventEmitter {
       },
     }
 
+    this.requestID += 1n
+
     this.transport.postMessage(sendData)
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       // TODO: refactor the listener function out of the Promise
       const listener = (event: unknown) => {
         let id
         let result: unknown
+
         if (isWindowResponseEvent(event)) {
           if (
             event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
@@ -111,32 +162,40 @@ export default class TallyWindowProvider extends EventEmitter {
 
         const { method: sentMethod } = sendData.request
 
-        // TODOO: refactor these into their own function handler
+        // TODO: refactor these into their own function handler
         // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
 
-        // TODO: throw error if EIP1193 error
+        if (isEIP1193Error(result)) {
+          reject(result)
+        }
+
+        // let's emmit connected on the first successful response from background
+        if (!this.isConnected) {
+          this.isConnected = true
+          this.emit("connect", { chainId: this.chainId })
+        }
 
         if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
-          if (!this.isConnected) {
-            this.isConnected = true
-            this.emit("connect", { chainId: result })
-          }
-
-          if (this.chainId !== result) {
-            this.chainId = Number(result)
-            this.emit("chainChanged", result)
-            this.emit("networkChanged", result)
+          if (
+            typeof result === "string" &&
+            Number(this.chainId) !== Number(result)
+          ) {
+            this.chainId = `0x${Number(result).toString(16)}`
+            this.emit("chainChanged", this.chainId)
+            this.emit("networkChanged", Number(this.chainId).toString())
           }
         }
 
         if (
-          sentMethod === "eth_accounts" &&
+          (sentMethod === "eth_accounts" ||
+            sentMethod === "eth_requestAccounts") &&
           Array.isArray(result) &&
           result.length !== 0
         ) {
           const [address] = result
           if (this.selectedAddress !== address) {
             this.selectedAddress = address
+            this.emit("chainChanged", this.chainId)
             this.emit("accountsChanged", [this.selectedAddress])
           }
         }

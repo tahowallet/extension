@@ -1,6 +1,6 @@
 name: Bug Report
 description: File a bug report
-title: ""
+title: "Please include an informative title that describes the bug!"
 labels: ["🐛 bug", "👩‍⚕️ triage"]
 assignees: ["mr-michael"]
 body:
@@ -8,7 +8,7 @@ body:
     attributes:
       value: >-
         Thanks for taking the time to fill out this bug report! Note that bug
-        reports should start [in Discord](https://discord.gg/AF3aWeJv). Please
+        reports should start [in Discord](https://discord.gg/wn3KDAF5eU). Please
         file them as issues only when suggested by a moderator so that issues
         can be kept organized.
   - type: input

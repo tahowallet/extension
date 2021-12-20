@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill"
+import browser, { Runtime } from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
@@ -8,13 +8,15 @@ import {
   PortResponseEvent,
   EIP1193Error,
   RPCRequest,
-  EIP1193_ERROR,
+  EIP1193_ERROR_CODES,
+  isTallyInternalCommunication,
 } from "@tallyho/provider-bridge-shared"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from ".."
-import logger from "../../lib/logger"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import PreferenceService from "../preferences"
+import logger from "../../lib/logger"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -39,20 +41,24 @@ export default class ProviderBridgeService extends BaseService<Events> {
     [origin: string]: (value: unknown) => void
   } = {}
 
+  openPorts: Array<Runtime.Port> = []
+
   static create: ServiceCreatorFunction<
     Events,
     ProviderBridgeService,
-    [Promise<InternalEthereumProviderService>]
-  > = async (internalEthereumProviderService) => {
+    [Promise<InternalEthereumProviderService>, Promise<PreferenceService>]
+  > = async (internalEthereumProviderService, preferenceService) => {
     return new this(
       await getOrCreateDB(),
-      await internalEthereumProviderService
+      await internalEthereumProviderService,
+      await preferenceService
     )
   }
 
   private constructor(
     private db: ProviderBridgeServiceDatabase,
-    private internalEthereumProviderService: InternalEthereumProviderService
+    private internalEthereumProviderService: InternalEthereumProviderService,
+    private preferenceService: PreferenceService
   ) {
     super()
 
@@ -61,7 +67,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
         port.onMessage.addListener((event) => {
           this.onMessageListener(port as Required<browser.Runtime.Port>, event)
         })
-        // TODO: store port with listener to handle cleanup
+        port.onDisconnect.addListener(() => {
+          this.openPorts = this.openPorts.filter(
+            (openPort) => openPort !== port
+          )
+        })
+        this.openPorts.push(port)
       }
     })
 
@@ -87,17 +98,39 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
-    const faviconUrl = tab?.favIconUrl ?? ""
-    const title = tab?.title ?? ""
+    const completeTab =
+      typeof tab !== "undefined" && typeof tab.id !== "undefined"
+        ? {
+            ...tab,
+            // Firefox sometimes requires an extra query to get favicons,
+            // unclear why but may be related to
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=1417721 .
+            ...(await browser.tabs.get(tab.id)),
+          }
+        : tab
+    const faviconUrl = completeTab?.favIconUrl ?? ""
+    const title = completeTab?.title ?? ""
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    if (await this.checkPermission(origin)) {
+    if (isTallyInternalCommunication(event.request)) {
+      // let's start with the internal communication
+      response.id = "tallyHo"
+      response.result = {
+        method: event.request.method,
+        defaultWallet: await this.preferenceService.getDefaultWallet(),
+      }
+    } else if (await this.checkPermission(origin)) {
+      // if it's not internal but dapp has permission to communicate we proxy the request
+      // TODO: here comes format validation
       response.result = await this.routeContentScriptRPCRequest(
         event.request.method,
         event.request.params
       )
     } else if (event.request.method === "eth_requestAccounts") {
+      // if it's external communication AND the dApp does not have permission BUT asks for it
+      // then let's ask the user what he/she thinks
+
       const permissionRequest: PermissionRequest = {
         origin,
         faviconUrl,
@@ -112,17 +145,45 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       await blockUntilUserAction
 
-      if (!(await this.checkPermission(origin))) {
-        response.result = new EIP1193Error(EIP1193_ERROR.userRejectedRequest)
+      if (await this.checkPermission(origin)) {
+        // if agrees then let's return the account data
+
+        response.result = await this.routeContentScriptRPCRequest(
+          "eth_accounts",
+          event.request.params
+        )
+      } else {
+        // if user does NOT agree, then reject
+
+        response.result = new EIP1193Error(
+          EIP1193_ERROR_CODES.userRejectedRequest
+        ).toJSON()
       }
     } else {
-      response.result = new EIP1193Error(EIP1193_ERROR.unauthorized)
+      // sorry dear dApp, there is no love for you here
+      response.result = new EIP1193Error(
+        EIP1193_ERROR_CODES.unauthorized
+      ).toJSON()
     }
 
     port.postMessage(response)
   }
 
-  async requestPermission(permissionRequest: PermissionRequest) {
+  notifyContentScriptAboutConfigChange(newDefaultWalletValue: boolean): void {
+    this.openPorts.forEach((p) => {
+      p.postMessage({
+        id: "tallyHo",
+        result: {
+          method: "tally_getConfig",
+          defaultWallet: newDefaultWalletValue,
+        },
+      })
+    })
+  }
+
+  async requestPermission(
+    permissionRequest: PermissionRequest
+  ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
     await ProviderBridgeService.showExtensionPopup(
       AllowedQueryParamPage.dappPermission
@@ -165,25 +226,41 @@ export default class ProviderBridgeService extends BaseService<Events> {
     method: string,
     params: RPCRequest["params"]
   ): Promise<unknown> {
-    switch (method) {
-      case "eth_requestAccounts":
-        return this.internalEthereumProviderService.routeSafeRPCRequest(
-          "eth_accounts",
-          params
-        )
-      case "eth_signTransaction":
-      case "eth_sendTransaction":
-        ProviderBridgeService.showExtensionPopup(
-          AllowedQueryParamPage.signTransaction
-        )
-      // Above, show the connect window, then continue on to regular handling.
-      // eslint-disable-next-line no-fallthrough
-      default: {
-        return this.internalEthereumProviderService.routeSafeRPCRequest(
-          method,
-          params
-        )
+    try {
+      switch (method) {
+        case "eth_requestAccounts":
+          return await this.internalEthereumProviderService.routeSafeRPCRequest(
+            "eth_accounts",
+            params
+          )
+        case "eth_signTransaction":
+        case "eth_sendTransaction":
+          // We are monsters.
+          // eslint-disable-next-line no-case-declarations
+          const popupPromise = ProviderBridgeService.showExtensionPopup(
+            AllowedQueryParamPage.signTransaction
+          )
+          return await this.internalEthereumProviderService
+            .routeSafeRPCRequest(method, params)
+            .finally(async () => {
+              // Close the popup once we're done submitting.
+              const popup = await popupPromise
+              if (typeof popup.id !== "undefined") {
+                browser.windows.remove(popup.id)
+              }
+            })
+        // Above, show the connect window, then continue on to regular handling.
+        // eslint-disable-next-line no-fallthrough
+        default: {
+          return await this.internalEthereumProviderService.routeSafeRPCRequest(
+            method,
+            params
+          )
+        }
       }
+    } catch (error) {
+      logger.log("error processing request", error)
+      return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
     }
   }
 

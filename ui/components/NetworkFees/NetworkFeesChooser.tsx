@@ -58,7 +58,6 @@ export default function NetworkFeesChooser({
       maxFeePerGas: gasOptions[index].maxFeePerGas,
       maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
     })
-    setActiveFeeIndex(index)
   }
 
   const saveUserGasChoice = () => {
@@ -118,8 +117,9 @@ export default function NetworkFeesChooser({
       }
 
       const ethAmount = formatEther(
-        (baseFee * feeOptionData.estimatedMultiplier[confidence] +
-          option.maxPriorityFeePerGas) *
+        ((baseFee * feeOptionData.estimatedMultiplier[confidence] +
+          option.maxPriorityFeePerGas) /
+          10n) *
           (gasLimit ? BigInt(parseInt(gasLimit, 10)) : 21000n)
       )
 
@@ -144,22 +144,30 @@ export default function NetworkFeesChooser({
       }
     }
     if (estimatedFeesPerGas) {
-      const regular = estimatedFeesPerGas?.regular
-      const express = estimatedFeesPerGas?.express
-      const instant = estimatedFeesPerGas?.instant
+      const { regular, express, instant } = estimatedFeesPerGas ?? {}
       if (
-        instant !== undefined &&
-        express !== undefined &&
-        regular !== undefined
+        typeof instant !== "undefined" &&
+        typeof express !== "undefined" &&
+        typeof regular !== "undefined"
       ) {
-        const updatedGasOptions = [regular, express, instant].map((option) =>
+        const basePrices = [regular, express, instant]
+        const selectedGasFeeIndex = basePrices.findIndex(
+          (estimate) =>
+            typeof estimate !== "bigint" &&
+            typeof estimate !== "undefined" &&
+            estimate.confidence === selectedGas?.confidence
+        )
+        const currentlySelectedFeeIndex =
+          selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
+        const currentlySelectedFee = basePrices[currentlySelectedFeeIndex]
+
+        const updatedGasOptions = basePrices.map((option) =>
           formatBlockEstimate(option)
         )
         setGasOptions(updatedGasOptions)
-        const currentlySelectedFee =
-          activeFeeIndex < updatedGasOptions.length
-            ? updatedGasOptions[activeFeeIndex]
-            : undefined
+
+        setActiveFeeIndex(currentlySelectedFeeIndex)
+
         if (typeof currentlySelectedFee !== "undefined") {
           if (
             estimatedFeesPerGas?.baseFeePerGas &&
@@ -188,34 +196,11 @@ export default function NetworkFeesChooser({
         }
       }
     }
-  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, activeFeeIndex])
+  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, selectedGas?.confidence])
 
   useEffect(() => {
     updateGasOptions()
   }, [updateGasOptions])
-
-  useEffect(() => {
-    if (gasOptions.length > 0) {
-      onSelectFeeOption({
-        confidence: Number(gasOptions[activeFeeIndex].confidence),
-        price: gasOptions[activeFeeIndex].price,
-        maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
-        maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
-      })
-    }
-  }, [activeFeeIndex, onSelectFeeOption, gasOptions])
-
-  useEffect(() => {
-    const selectedOptionIndex = gasOptions.findIndex(
-      (el) => el.confidence === `${selectedGas?.confidence}`
-    )
-
-    setActiveFeeIndex(
-      // If we don't find it, assume regular speed.
-      // TODO User setting on which default to use?
-      selectedOptionIndex === -1 ? 0 : selectedOptionIndex
-    )
-  }, [activeFeeIndex, gasOptions, selectedGas])
 
   return (
     <>

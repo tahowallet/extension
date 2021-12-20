@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 
 export default function SignTransactionNetworkAccountInfoTopBar(): ReactElement {
   return (
@@ -8,8 +9,7 @@ export default function SignTransactionNetworkAccountInfoTopBar(): ReactElement 
         <span className="network_name">Arbitrum</span>
       </div>
       <div className="row_part">
-        <span className="account_name">Foxhunter</span>
-        <div className="account_avatar" />
+        <SharedCurrentAccountInformation />
       </div>
       <style jsx>
         {`

@@ -1,14 +1,18 @@
 import browser from "webextension-polyfill"
-import { INTERNAL_PORT_NAME, RPCRequest } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
+
 import {
-  ChainService,
-  ServiceCreatorFunction,
-  ServiceLifecycleEvents,
-} from ".."
+  EIP1193Error,
+  EIP1193_ERROR_CODES,
+  INTERNAL_PORT_NAME,
+  RPCRequest,
+} from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
+
 import BaseService from "../base"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import ChainService from "../chain"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
@@ -18,6 +22,7 @@ import {
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
+  rejecter: () => void
 }
 
 type Events = ServiceLifecycleEvents & {
@@ -47,16 +52,27 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       if (port.name === INTERNAL_PORT_NAME) {
         port.onMessage.addListener(async (event) => {
           logger.log(`internal: request payload: ${JSON.stringify(event)}`)
-          const response = {
-            id: event.id,
-            result: await this.routeSafeRPCRequest(
-              event.request.method,
-              event.request.params
-            ),
-          }
-          logger.log("internal response:", response)
+          try {
+            const response = {
+              id: event.id,
+              result: await this.routeSafeRPCRequest(
+                event.request.method,
+                event.request.params
+              ),
+            }
+            logger.log("internal response:", response)
 
-          port.postMessage(response)
+            port.postMessage(response)
+          } catch (error) {
+            logger.log("error processing request", event.id, error)
+
+            port.postMessage({
+              id: event.id,
+              result: new EIP1193Error(
+                EIP1193_ERROR_CODES.userRejectedRequest
+              ).toJSON(),
+            })
+          }
         })
       }
     })
@@ -116,7 +132,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           .then(([account]) => [account.address])
       case "eth_sendTransaction":
         return this.signTransaction(params[0] as EthersTransactionRequest).then(
-          (signed) => this.chainService.broadcastSignedTransaction(signed)
+          async (signed) => {
+            await this.chainService.broadcastSignedTransaction(signed)
+            return signed.hash
+          }
         )
       case "eth_signTransaction":
         return this.signTransaction(params[0] as EthersTransactionRequest).then(
@@ -160,7 +179,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "wallet_registerOnboarding":
       case "wallet_switchEthereumChain":
       default:
-        throw new Error(`unsupported method: ${method}`)
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
     }
   }
 
@@ -172,13 +191,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       throw new Error("Transactions must have a from address for signing.")
     }
 
-    return new Promise<SignedEVMTransaction>((resolve) => {
+    return new Promise<SignedEVMTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,
           from,
         },
         resolver: resolve,
+        rejecter: reject,
       })
     })
   }

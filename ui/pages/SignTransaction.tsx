@@ -1,7 +1,9 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
+  broadcastSignedTransaction,
+  rejectTransactionSignature,
   selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
@@ -53,23 +55,37 @@ export default function SignTransaction(): ReactElement {
   )
 
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
+  const shouldBroadcastOnSign = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.broadcastOnSign ?? false
+  )
+  const signedTransaction = useBackgroundSelector(
+    ({ transactionConstruction }) => transactionConstruction.signedTransaction
+  )
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
-    useState<BlockEstimate>({
-      confidence: 0,
-      maxFeePerGas: 0n,
-      maxPriorityFeePerGas: 0n,
-      price: 0n,
-    })
+    useState<BlockEstimate>(
+      estimatedFeesPerGas?.regular ?? {
+        confidence: 0,
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        price: 0n,
+      }
+    )
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   useEffect(() => {
     if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
+      if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
+        dispatch(broadcastSignedTransaction(signedTransaction))
+      }
+
+      // Request broadcast if not dApp...
       history.push("/singleAsset", { symbol: assetSymbol })
     }
   }, [
@@ -78,7 +94,33 @@ export default function SignTransaction(): ReactElement {
     isTransactionSigning,
     history,
     assetSymbol,
+    shouldBroadcastOnSign,
+    signedTransaction,
+    dispatch,
   ])
+
+  const updateGasSettings = useCallback(
+    async (estimate: BlockEstimate) => {
+      setSelectedEstimatedFeePerGas(estimate)
+      if (transactionDetails) {
+        const transaction = {
+          ...transactionDetails,
+          maxFeePerGas: estimate.maxFeePerGas,
+          maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
+          gasLimit: BigInt(gasLimit),
+        }
+        dispatch(updateTransactionOptions(transaction))
+      }
+    },
+    [dispatch, gasLimit, transactionDetails]
+  )
+
+  useEffect(() => {
+    // FIXME Hackily handle the user not interacting with the fee selector for now.
+    if (transactionDetails && transactionDetails.maxFeePerGas === 0n) {
+      updateGasSettings(selectedEstimatedFeePerGas)
+    }
+  }, [transactionDetails, selectedEstimatedFeePerGas, updateGasSettings])
 
   if (!areKeyringsUnlocked) {
     return <></>
@@ -128,21 +170,10 @@ export default function SignTransaction(): ReactElement {
     },
   }
 
-  const updateGasSettings = async (estimate: BlockEstimate) => {
-    if (typeof transactionDetails === "undefined") {
-      return
-    }
-
-    setSelectedEstimatedFeePerGas(estimate)
-    const transaction = {
-      ...transactionDetails,
-      maxFeePerGas: estimate.maxFeePerGas,
-      maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
-      gasLimit: BigInt(gasLimit),
-    }
-    dispatch(updateTransactionOptions(transaction))
+  const handleReject = async () => {
+    await dispatch(rejectTransactionSignature())
+    history.goBack()
   }
-
   const handleConfirm = async () => {
     if (isTransactionDataReady && transactionDetails) {
       dispatch(signTransaction(transactionDetails))
@@ -193,7 +224,7 @@ export default function SignTransaction(): ReactElement {
           iconSize="large"
           size="large"
           type="secondary"
-          onClick={() => history.goBack()}
+          onClick={handleReject}
         >
           Reject
         </SharedButton>

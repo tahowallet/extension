@@ -1,16 +1,13 @@
 import React, { ReactElement } from "react"
+import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 
 export default function TopMenuProfileButton(props: {
-  address: string
-  nickname?: string
-  avatar?: string
   onClick?: () => void
 }): ReactElement {
-  const { address, nickname, avatar, onClick } = props
+  const { onClick } = props
   return (
     <button type="button" onClick={onClick}>
-      {nickname ?? address}
-      <div className="avatar" />
+      <SharedCurrentAccountInformation />
       <style jsx>
         {`
           button {
@@ -20,14 +17,19 @@ export default function TopMenuProfileButton(props: {
             align-items: center;
             user-select: none;
           }
-          .avatar {
-            border-radius: 12px;
-            width: 32px;
-            height: 32px;
-            background-color: white;
-            margin-left: 8px;
-            background: url("${avatar ?? "./images/portrait.png"}");
-            background-size: cover;
+          button::after {
+            content: "";
+            display: block;
+            width: 36px;
+            height: 36px;
+            position: absolute;
+            right: 12.5px;
+            border-radius: 16px;
+            border: solid 2px var(--trophy-gold);
+            opacity: 0;
+          }
+          button:hover::after {
+            opacity: 1;
           }
         `}
       </style>

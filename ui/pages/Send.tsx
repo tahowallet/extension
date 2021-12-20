@@ -6,6 +6,7 @@ import {
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
+  broadcastOnSign,
   selectEstimatedFeesPerGas,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -15,6 +16,7 @@ import { useLocation } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { SignType } from "./SignTransaction"
@@ -75,6 +77,21 @@ export default function Send(): ReactElement {
   }
 
   const sendTransactionRequest = async () => {
+    dispatch(broadcastOnSign(true))
+    // FIXME Hackily handle the user not interacting with the fee selector for now.
+    if (selectedEstimatedFeePerGas.maxFeePerGas === 0n) {
+      const transaction = {
+        from: currentAccount.address,
+        to: destinationAddress,
+        // eslint-disable-next-line no-underscore-dangle
+        value: BigInt(utils.parseEther(amount?.toString())._hex),
+        maxFeePerGas: estimatedFeesPerGas?.regular?.maxFeePerGas,
+        maxPriorityFeePerGas:
+          estimatedFeesPerGas?.regular?.maxPriorityFeePerGas,
+        gasLimit: BigInt(gasLimit),
+      }
+      return dispatch(updateTransactionOptions(transaction))
+    }
     const transaction = {
       from: currentAccount.address,
       to: destinationAddress,
@@ -84,7 +101,7 @@ export default function Send(): ReactElement {
       maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
-    dispatch(updateTransactionOptions(transaction))
+    return dispatch(updateTransactionOptions(transaction))
   }
 
   useEffect(() => {
@@ -101,6 +118,9 @@ export default function Send(): ReactElement {
     <>
       <CorePage>
         <div className="standard_width">
+          <div className="back_button_wrap">
+            <SharedBackButton />
+          </div>
           <h1 className="header">
             <span className="icon_activity_send_medium" />
             <div className="title">Send Asset</div>
@@ -204,11 +224,17 @@ export default function Send(): ReactElement {
             font-weight: 500;
             line-height: 32px;
           }
+          .back_button_wrap {
+            position: absolute;
+            margin-left: -10px;
+            margin-top: -4px;
+            z-index: 10;
+          }
           .header {
             display: flex;
             align-items: center;
-            margin-bottom: 25px;
-            margin-top: 17px;
+            margin-bottom: 4px;
+            margin-top: 30px;
           }
           .form_input {
             margin-bottom: 22px;
