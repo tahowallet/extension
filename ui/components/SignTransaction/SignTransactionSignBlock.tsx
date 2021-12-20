@@ -2,10 +2,7 @@ import { AnyAssetAmount } from "@tallyho/tally-background/assets"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
-import {
-  selectCurrentAddressNetwork,
-  selectMainCurrency,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAddressNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AssetDecimalAmount,
   enrichAssetAmountWithDecimalValues,
@@ -24,21 +21,15 @@ export default function SignTransactionSignBlock({
   const {
     addressNetwork: { network },
   } = useBackgroundSelector(selectCurrentAddressNetwork)
-  const mainCurrency = useBackgroundSelector(selectMainCurrency)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(
-      state.assets,
-      network.baseAsset.symbol,
-      mainCurrency?.symbol
-    )
+    selectAssetPricePoint(state.assets, network.baseAsset.symbol, "USD")
   )
-
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {
       asset: network.baseAsset,
       amount: transactionDetails.value,
     },
-    2
+    4
   )
 
   const completeTransactionAssetAmount:
@@ -79,7 +70,7 @@ export default function SignTransactionSignBlock({
           </div>
           <div className="main_currency_value">
             {"localizedMainCurrencyAmount" in completeTransactionAssetAmount ? (
-              completeTransactionAssetAmount.localizedMainCurrencyAmount
+              `$${completeTransactionAssetAmount.localizedMainCurrencyAmount}`
             ) : (
               <></>
             )}
@@ -104,7 +95,7 @@ export default function SignTransactionSignBlock({
           .spend_amount {
             color: #fff;
             font-size: 28px;
-            text-align: right;
+            text-align: center;
             text-transform: uppercase;
           }
           .divider {
@@ -121,6 +112,11 @@ export default function SignTransactionSignBlock({
           }
           .send-to {
             font-size: 16px;
+          }
+          .main_currency_value {
+            color: var(--green-40);
+            font-size: 16px;
+            line-height: 24px;
           }
         `}
       </style>
