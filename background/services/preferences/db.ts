@@ -3,6 +3,8 @@ import { FiatCurrency } from "../../assets"
 
 import DEFAULT_PREFERENCES from "./defaults"
 
+// The idea is to use this interface to describe the data structure stored in indexedDb
+// In the future this might also have a runtime type check capability, but it's good enough for now.
 export interface Preferences {
   id?: number
   savedAt: number
@@ -34,7 +36,7 @@ export class PreferenceDatabase extends Dexie {
       })
       .upgrade((tx) => {
         // TBD @Antonio: I mutate the settings here. This could also be an add
-        // but because user actions are mutating this record now I felt that this is the right approach
+        // but because user actions are mutating this record now, I felt that this is the right approach
         // (did not want to create a new version of the settings every time a user changes the defaultWallet switch)
         // if we decide to go with mutating then getLatestPreferences() should be refactored
         return tx
@@ -56,7 +58,7 @@ export class PreferenceDatabase extends Dexie {
     // I fully expect that I might need to revert all of this, but as per my current knowledge this seems to be a good idea
     this.version(3).stores({
       migrations: null, // If we use dexie built in migrations then we don't need to keep track of them manually
-      preferences: "++id,currency,tokenLists,defaultWallet,currentAddress", // removed the savedAt field and added currentAccount
+      preferences: "++id", // removed all the unused indexes
     })
 
     // This is the old version for popuplate
@@ -65,10 +67,7 @@ export class PreferenceDatabase extends Dexie {
     this.on("populate", function (tx: Transaction) {
       // This could be tx.preferences but the typeing for populate
       // is not generic so it does not know about the preferences table
-      tx.table("preferences").add({
-        ...DEFAULT_PREFERENCES,
-        savedAt: Date.now(),
-      })
+      tx.table("preferences").add(DEFAULT_PREFERENCES)
     })
   }
 
@@ -88,7 +87,5 @@ export class PreferenceDatabase extends Dexie {
 }
 
 export async function getOrCreateDB(): Promise<PreferenceDatabase> {
-  const db = new PreferenceDatabase()
-
-  return db
+  return new PreferenceDatabase()
 }
