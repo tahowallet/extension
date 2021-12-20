@@ -1,11 +1,6 @@
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import Dexie from "dexie"
 
-type Migration = {
-  id: number
-  appliedAt: number
-}
-
 function keyBy(
   permissionsArray: Array<PermissionRequest>,
   key: keyof PermissionRequest
@@ -19,14 +14,53 @@ function keyBy(
 export class ProviderBridgeServiceDatabase extends Dexie {
   private dAppPermissions!: Dexie.Table<PermissionRequest, string>
 
-  private migrations!: Dexie.Table<Migration, number>
-
   constructor() {
     super("tally/provider-bridge-service")
 
     this.version(1).stores({
       migrations: "++id,appliedAt",
       dAppPermissions: "&origin,faviconUrl,title,state,accountAddress",
+    })
+
+    // This is my penance for designing a database schema in a release crunch
+    // without fully understanding the constraints of indexedDb
+    // The problem is that it's not possible to change the primary key on an existing db
+    //  -v2: create Tmp table and copy everything over
+    //  -v3: delete main table
+    //  -v4: recreate main table with the correct primary key and copy the data
+    //  -v5: delete temp table
+    const tempTable = "dAppPermissionsTemp"
+    const mainTable = "dAppPermissions"
+
+    this.version(2)
+      .stores({
+        migrations: null,
+        [tempTable]: "&[origin+accountAddress],origin,accountAddress",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table(mainTable)
+          .toArray()
+          .then((permissions) => tx.table(tempTable).bulkAdd(permissions))
+      })
+
+    this.version(3).stores({
+      [mainTable]: null,
+    })
+
+    this.version(4)
+      .stores({
+        [mainTable]: "&[origin+accountAddress],origin,accountAddress",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table(tempTable)
+          .toArray()
+          .then((permissions) => tx.table(mainTable).bulkAdd(permissions))
+      })
+
+    this.version(5).stores({
+      [tempTable]: null,
     })
   }
 
@@ -49,25 +83,8 @@ export class ProviderBridgeServiceDatabase extends Dexie {
   async checkPermission(origin: string) {
     return this.dAppPermissions.get(origin)
   }
-
-  private async migrate() {
-    const numMigrations = await this.migrations.count()
-    if (numMigrations === 0) {
-      await this.transaction("rw", this.migrations, async () => {
-        this.migrations.add({ id: 0, appliedAt: Date.now() })
-        // TODO decide migrations before the initial release
-      })
-    }
-  }
 }
 
 export async function getOrCreateDB(): Promise<ProviderBridgeServiceDatabase> {
-  const db = new ProviderBridgeServiceDatabase()
-
-  // Call known-private migrate function, effectively treating it as
-  // file-private.
-  // eslint-disable-next-line @typescript-eslint/dot-notation
-  await db["migrate"]()
-
-  return db
+  return new ProviderBridgeServiceDatabase()
 }
