@@ -4,7 +4,12 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
+import {
+  decodeJSON,
+  encodeJSON,
+  getEthereumNetwork,
+  signKeeperDaoLimitOrder,
+} from "./lib/utils"
 
 import {
   BaseService,
@@ -19,7 +24,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { KeyringTypes } from "./types"
+import { BaseLimitOrder, KeeperDAOLimitOrder, KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 
 import rootReducer from "./redux-slices"
@@ -59,6 +64,8 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
+import logger from "./lib/logger"
+import axios from "axios"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -385,6 +392,27 @@ export default class Main extends BaseService<never> {
           transaction
         )
         this.store.dispatch(signed(signedTx))
+      }
+    )
+
+    transactionConstructionSliceEmitter.on(
+      "signAndSendLimitOrder",
+      async (transaction: BaseLimitOrder) => {
+        logger.log("Got Limit Order Request!")
+        try {
+          const signature = await this.keyringService.signLimitOrder(
+            transaction
+          )
+
+          const res = await axios.post(
+            "https://hidingbook.keeperdao.com/api/v1/orders",
+            [signature]
+          )
+          logger.log("Limit Order Posted Successfully!", res.data.message)
+        } catch (e) {
+          logger.error(e)
+          throw e
+        }
       }
     )
 

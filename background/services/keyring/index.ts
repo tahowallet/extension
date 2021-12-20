@@ -2,7 +2,11 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
-import { normalizeEVMAddress, getEthereumNetwork } from "../../lib/utils"
+import {
+  normalizeEVMAddress,
+  getEthereumNetwork,
+  signKeeperDaoLimitOrder,
+} from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -11,10 +15,16 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import { HexString, KeyringTypes, UNIXTime } from "../../types"
+import {
+  BaseLimitOrder,
+  HexString,
+  KeeperDAOLimitOrder,
+  KeyringTypes,
+  UNIXTime,
+} from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH, MINUTE } from "../../constants"
+import { ETH, MINUTE, ZEROEX_DOMAIN_DEFAULTS } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
@@ -301,6 +311,29 @@ export default class KeyringService extends BaseService<Events> {
     this.emitKeyrings()
 
     return newKeyring.id
+  }
+
+  signLimitOrder = async (
+    limitOrder: BaseLimitOrder
+  ): Promise<KeeperDAOLimitOrder> => {
+    this.requireUnlocked()
+
+    // find the keyring using a linear search
+    const keyring = this.#keyrings.find((kr) => {
+      return kr
+        .getAddressesSync()
+        .includes(normalizeEVMAddress(limitOrder.maker))
+    })
+
+    if (!keyring) {
+      throw new Error("No Keyring Found")
+    }
+
+    const signedKeeperDAOLimitOrder = await signKeeperDaoLimitOrder(
+      limitOrder,
+      keyring
+    )
+    return signedKeeperDAOLimitOrder
   }
 
   /**
