@@ -468,10 +468,6 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  async send(method: string, params: unknown[]): Promise<unknown> {
-    return this.websocketProviders.ethereum.send(method, params)
-  }
-
   /* *****************
    * PRIVATE METHODS *
    * **************** */
