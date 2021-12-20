@@ -1,4 +1,5 @@
 import { AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { USD } from "@tallyho/tally-background/constants"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
@@ -22,7 +23,7 @@ export default function SignTransactionSignBlock({
     addressNetwork: { network },
   } = useBackgroundSelector(selectCurrentAddressNetwork)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.assets, network.baseAsset.symbol, "USD")
+    selectAssetPricePoint(state.assets, network.baseAsset.symbol, USD.symbol)
   )
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {
