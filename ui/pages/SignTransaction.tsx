@@ -118,6 +118,7 @@ export default function SignTransaction(): ReactElement {
   useEffect(() => {
     // FIXME Hackily handle the user not interacting with the fee selector for now.
     if (transactionDetails && transactionDetails.maxFeePerGas === 0n) {
+      setGasLimit(transactionDetails.gasLimit.toString())
       updateGasSettings(selectedEstimatedFeePerGas)
     }
   }, [transactionDetails, selectedEstimatedFeePerGas, updateGasSettings])
