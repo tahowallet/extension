@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork, NameNetwork } from "../accounts"
-import { AnyEVMBlock, Network } from "../networks"
+import { Network } from "../networks"
 import { AnyAssetAmount } from "../assets"
 import {
   AssetMainCurrencyAmount,
@@ -49,9 +49,6 @@ export type AccountState = {
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
   accountsData: { [address: string]: AccountData | "loading" }
   combinedData: CombinedAccountData
-  // TODO the blockHeight key should be changed to something
-  // compatible with the idea of multiple networks.
-  blocks: { [blockHeight: number]: AnyEVMBlock }
 }
 
 export type CombinedAccountData = {
@@ -73,7 +70,6 @@ export const initialState = {
     totalMainCurrencyValue: "",
     assets: [],
   },
-  blocks: {},
 } as AccountState
 
 function newAccountData(
@@ -131,9 +127,6 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    blockSeen: (immerState, { payload: block }: { payload: AnyEVMBlock }) => {
-      immerState.blocks[block.blockHeight] = block
-    },
     loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
       return state.accountsData[accountToLoad]
         ? state // If the account data already exists, the account is already loaded.
@@ -247,7 +240,6 @@ export const {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
-  blockSeen,
 } = accountSlice.actions
 
 export default accountSlice.reducer

@@ -7,7 +7,10 @@ const mainCurrencySymbol = "USD"
 export const selectShowingActivityDetail = createSelector(
   (state: RootState) => state.activities,
   (state: RootState) => state.ui.showingActivityDetailID,
-  (state: RootState) => state.account.blocks,
+  (state: RootState) => {
+    const { network } = state.ui.selectedAccount
+    return state.networks.networkData[network.chainID].blocks
+  },
   (activities, showingActivityDetailID, blocks) => {
     return showingActivityDetailID === null
       ? null
