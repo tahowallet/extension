@@ -46,7 +46,7 @@ export default function KeyringUnlock(): ReactElement {
 
   return (
     <section>
-      {isPopup && (
+      {isPopup ? (
         <div className="back_button_wrap">
           <SharedButton
             type="tertiaryWhite"
@@ -56,6 +56,8 @@ export default function KeyringUnlock(): ReactElement {
             Cancel tx
           </SharedButton>
         </div>
+      ) : (
+        <div className="spacer" />
       )}
       <div className="illustration_unlock" />
       <h1 className="serif_header">Unlock Your Wallet</h1>
@@ -105,6 +107,9 @@ export default function KeyringUnlock(): ReactElement {
             justify-content: flex-end;
             margin-bottom: -5px;
             opacity: 0.7;
+          }
+          .spacer {
+            margin-top: 42px;
           }
         `}
       </style>
