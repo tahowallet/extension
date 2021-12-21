@@ -8,7 +8,7 @@ import BaseService from "../base"
 interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
-  intilalizeCurrentAddress: string
+  initializeCurrentAddress: string
 }
 
 /*
@@ -17,7 +17,7 @@ interface Events extends ServiceLifecycleEvents {
  */
 export default class PreferenceService extends BaseService<Events> {
   /*
-   * Create a new PrefenceService. The service isn't initialized until
+   * Create a new PreferenceService. The service isn't initialized until
    * startService() is called and resolved.
    */
   static create: ServiceCreatorFunction<Events, PreferenceService, []> =
@@ -36,7 +36,7 @@ export default class PreferenceService extends BaseService<Events> {
 
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
     this.emitter.emit(
-      "intilalizeCurrentAddress",
+      "initializeCurrentAddress",
       await this.getCurrentAddress()
     )
   }
@@ -48,15 +48,15 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async getCurrency(): Promise<FiatCurrency> {
-    return (await this.db.getLatestPreferences())?.currency
+    return (await this.db.getPreferences())?.currency
   }
 
   async getTokenListPreferences(): Promise<TokenListPreferences> {
-    return (await this.db.getLatestPreferences())?.tokenLists
+    return (await this.db.getPreferences())?.tokenLists
   }
 
   async getDefaultWallet(): Promise<boolean> {
-    return (await this.db.getLatestPreferences())?.defaultWallet
+    return (await this.db.getPreferences())?.defaultWallet
   }
 
   async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<void> {
@@ -64,7 +64,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async getCurrentAddress(): Promise<string> {
-    return (await this.db.getLatestPreferences())?.currentAddress
+    return (await this.db.getPreferences())?.currentAddress
   }
 
   async setCurrentAddress(currentAddress: string): Promise<void> {

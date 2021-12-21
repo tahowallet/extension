@@ -61,7 +61,7 @@ import {
 } from "./redux-slices/dapp-permission"
 
 // This sanitizer runs on store and action data before serializing for remote
-// redux devtools. The goal is to end up with an object that is direcetly
+// redux devtools. The goal is to end up with an object that is directly
 // JSON-serializable and deserializable; the remote end will display the
 // resulting objects without additional processing or decoding logic.
 const devToolsSanitizer = (input: unknown) => {
@@ -583,7 +583,7 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
-      "intilalizeCurrentAddress",
+      "initializeCurrentAddress",
       async (dbCurrentAddress: string) => {
         if (dbCurrentAddress) {
           // TBD: naming the normal reducer and async thunks
