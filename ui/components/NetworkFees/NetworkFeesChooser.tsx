@@ -109,11 +109,10 @@ export default function NetworkFeesChooser({
           99: "instant",
         },
       }
-      const formatToGwei = () => {
-        return formatUnits(
-          option.maxFeePerGas + option.maxPriorityFeePerGas,
-          "gwei"
-        ).split(".")[0]
+      const formatToGwei = (value: bigint) => {
+        return formatUnits(value + option.maxPriorityFeePerGas, "gwei").split(
+          "."
+        )[0]
       }
 
       const ethAmount = formatEther(
@@ -129,8 +128,10 @@ export default function NetworkFeesChooser({
       return {
         name: feeOptionData.name[confidence],
         confidence: `${confidence}`,
-        estimatedGwei: formatToGwei(),
-        maxGwei: formatToGwei(),
+        estimatedGwei: formatToGwei(
+          (baseFee * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
+        ),
+        maxGwei: formatToGwei(option.maxFeePerGas),
         dollarValue: feeFiatPrice,
         price: option.price,
         estimatedFeePerGas:
