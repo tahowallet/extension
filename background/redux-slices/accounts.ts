@@ -46,9 +46,6 @@ type AccountData = {
 }
 
 export type AccountState = {
-  account?: AddressNetwork
-  accountLoading?: string
-  hasAccountError?: boolean
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
   accountsData: { [address: string]: AccountData | "loading" }
   combinedData: CombinedAccountData
