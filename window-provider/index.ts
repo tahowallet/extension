@@ -75,7 +75,7 @@ export default class TallyWindowProvider extends EventEmitter {
           window.ethereum = undefined
         }
       } else if (isTallyAccountPayload(result)) {
-        this.handleAddressChange.bind(this)(result.address[0])
+        this.handleAddressChange.bind(this)(result.address)
       }
     }
 
@@ -199,7 +199,7 @@ export default class TallyWindowProvider extends EventEmitter {
           Array.isArray(result) &&
           result.length !== 0
         ) {
-          this.handleAddressChange.bind(this)(result[0])
+          this.handleAddressChange.bind(this)(result)
         }
 
         resolve(result)
@@ -213,10 +213,11 @@ export default class TallyWindowProvider extends EventEmitter {
     })
   }
 
-  handleAddressChange(address: string) {
-    if (this.selectedAddress !== address) {
-      this.selectedAddress = address
-      this.emit("accountsChanged", [this.selectedAddress])
+  handleAddressChange(address: Array<string>) {
+    if (this.selectedAddress !== address[0]) {
+      // eslint-disable-next-line prefer-destructuring
+      this.selectedAddress = address[0]
+      this.emit("accountsChanged", address)
     }
   }
 }

@@ -93,8 +93,6 @@ export function isTallyAccountPayload(
   return (
     isObject(arg) &&
     arg.method === "tally_accountChanged" &&
-    isArray(arg.address) &&
-    arg.address.length > 0 &&
-    isString(arg.address[0])
+    isArray(arg.address)
   )
 }

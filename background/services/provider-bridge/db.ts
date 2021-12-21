@@ -3,10 +3,14 @@ import Dexie from "dexie"
 
 function keyBy(
   permissionsArray: Array<PermissionRequest>,
-  key: keyof PermissionRequest
+  keyOrKeysArray: keyof PermissionRequest | Array<keyof PermissionRequest>,
+  separator = "_"
 ): Record<string, PermissionRequest> {
   return permissionsArray.reduce((acc, current) => {
-    acc[current[key]] = current
+    const key = Array.isArray(keyOrKeysArray)
+      ? keyOrKeysArray.map((k) => current[k]).join(separator)
+      : current[keyOrKeysArray]
+    acc[key] = current
     return acc
   }, {} as Record<string, PermissionRequest>)
 }
@@ -67,7 +71,9 @@ export class ProviderBridgeServiceDatabase extends Dexie {
   async getAllPermission() {
     return this.dAppPermissions
       .toArray()
-      .then((permissionsArray) => keyBy(permissionsArray, "origin"))
+      .then((permissionsArray) =>
+        keyBy(permissionsArray, ["origin", "accountAddress"])
+      )
   }
 
   async setPermission(
@@ -76,12 +82,12 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return this.dAppPermissions.put(permission)
   }
 
-  async deletePermission(origin: string) {
-    return this.dAppPermissions.delete(origin)
+  async deletePermission(origin: string, accountAddress: string) {
+    return this.dAppPermissions.where({ origin, accountAddress }).delete()
   }
 
-  async checkPermission(origin: string) {
-    return this.dAppPermissions.get(origin)
+  async checkPermission(origin: string, accountAddress: string) {
+    return this.dAppPermissions.get({ origin, accountAddress })
   }
 }
 

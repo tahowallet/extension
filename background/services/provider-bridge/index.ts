@@ -32,7 +32,7 @@ type Events = ServiceLifecycleEvents & {
  * in shared dapp space and can be modified by other extensions - and our
  * internal service layer.
  *
- * The reponsibility of this service is 2 fold.
+ * The responsibility of this service is 2 fold.
  * - Provide connection interface - handle port communication, connect, disconnect etc
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
@@ -181,15 +181,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  notifyContentScriptsAboutAddressChange(newAddress: string) {
-    this.openPorts.forEach((p) => {
-      p.postMessage({
-        id: "tallyHo",
-        result: {
-          method: "tally_accountChanged",
-          address: [newAddress],
-        },
-      })
+  async notifyContentScriptsAboutAddressChange(newAddress: string) {
+    this.openPorts.forEach(async (port) => {
+      // we know that url exists because it was required to store the port
+      const { origin } = new URL(port.sender?.url as string)
+      if (await this.checkPermission(origin)) {
+        port.postMessage({
+          id: "tallyHo",
+          result: {
+            method: "tally_accountChanged",
+            address: [newAddress],
+          },
+        })
+      } else {
+        port.postMessage({
+          id: "tallyHo",
+          result: {
+            method: "tally_accountChanged",
+            address: [],
+          },
+        })
+      }
     })
   }
 
@@ -222,7 +234,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // FIXME proper error handling if this happens - should not tho
     if (permission.state !== "deny" || !permission.accountAddress) return
 
-    await this.db.deletePermission(permission.origin)
+    await this.db.deletePermission(
+      permission.origin,
+      await this.preferenceService.getCurrentAddress()
+    )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
@@ -230,8 +245,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   }
 
-  async checkPermission(origin: string): Promise<boolean> {
-    return this.db.checkPermission(origin).then((r) => !!r)
+  async checkPermission(origin: string, address?: string): Promise<boolean> {
+    const currentAddress =
+      address ?? (await await this.preferenceService.getCurrentAddress())
+    const permission = await this.db
+      .checkPermission(origin, currentAddress)
+      .then((r) => !!r)
+    return permission
   }
 
   async routeContentScriptRPCRequest(
