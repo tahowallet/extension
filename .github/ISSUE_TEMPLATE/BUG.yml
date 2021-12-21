@@ -55,6 +55,8 @@ body:
       label: Version
       description: What version of the extension are you running?
       options:
+        - Community Edition v0.9.1
+        - Community Edition v0.9.0
         - OG Edition v0.0.7
         - OG Edition v0.0.6
         - OG Edition v0.0.5

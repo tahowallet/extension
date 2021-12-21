@@ -1,13 +1,28 @@
 import React, { ReactElement } from "react"
+import { FungibleAsset } from "@tallyho/tally-background/assets"
+
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
-export default function SwapQuoteAssetCard(): ReactElement {
+interface SwapQuoteAssetCardProps {
+  amount?: string
+  asset?: FungibleAsset
+  label: string
+}
+
+export default function SwapQuoteAssetCard(
+  props: SwapQuoteAssetCardProps
+): ReactElement {
+  const { amount, asset, label } = props
+
   return (
     <div className="card_wrap">
-      <div className="top_label">You pay</div>
-      <SharedAssetIcon />
-      <div className="amount">0.342</div>
-      <div className="asset_name">ETH</div>
+      <div className="top_label">{label}</div>
+      <SharedAssetIcon
+        logoURL={asset?.metadata?.logoURL}
+        symbol={asset?.symbol}
+      />
+      <div className="amount">{amount}</div>
+      <div className="asset_name">{asset?.symbol}</div>
       <style jsx>
         {`
           .card_wrap {
@@ -41,6 +56,7 @@ export default function SwapQuoteAssetCard(): ReactElement {
             text-transform: uppercase;
           }
           .amount {
+            max-width: 70%;
             height: 32px;
             color: #ffffff;
             font-size: 22px;
@@ -48,6 +64,8 @@ export default function SwapQuoteAssetCard(): ReactElement {
             line-height: 32px;
             text-align: center;
             margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
         `}
       </style>

@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
 import classNames from "classnames"
 import SharedButton from "./SharedButton"
@@ -6,15 +6,15 @@ import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface SelectTokenMenuContentProps {
+interface SelectAssetMenuContentProps {
   assets: Asset[]
-  setSelectedTokenAndClose: (token: Asset) => void
+  setSelectedAssetAndClose: (asset: Asset) => void
 }
 
-function SelectTokenMenuContent(
-  props: SelectTokenMenuContentProps
+function SelectAssetMenuContent(
+  props: SelectAssetMenuContentProps
 ): ReactElement {
-  const { setSelectedTokenAndClose, assets } = props
+  const { setSelectedAssetAndClose, assets } = props
 
   return (
     <>
@@ -36,7 +36,7 @@ function SelectTokenMenuContent(
             <SharedAssetItem
               key={asset.metadata?.coinGeckoID || asset.symbol}
               asset={asset}
-              onClick={setSelectedTokenAndClose}
+              onClick={setSelectedAssetAndClose}
             />
           )
         })}
@@ -88,16 +88,16 @@ function SelectTokenMenuContent(
   )
 }
 
-interface SelectedTokenButtonProps {
+interface SelectedAssetButtonProps {
   asset: Asset
-  toggleIsTokenMenuOpen?: () => void
+  toggleIsAssetMenuOpen?: () => void
 }
 
-function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
-  const { asset, toggleIsTokenMenuOpen } = props
+function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
+  const { asset, toggleIsAssetMenuOpen } = props
 
   return (
-    <button type="button" onClick={toggleIsTokenMenuOpen}>
+    <button type="button" onClick={toggleIsAssetMenuOpen}>
       <div className="asset_icon_wrap">
         <SharedAssetIcon
           logoURL={asset?.metadata?.logoURL}
@@ -125,18 +125,18 @@ function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
   )
 }
 
-SelectedTokenButton.defaultProps = {
-  toggleIsTokenMenuOpen: null,
+SelectedAssetButton.defaultProps = {
+  toggleIsAssetMenuOpen: null,
 }
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
   assets: Asset[]
   label: string
-  defaultToken: Asset
+  defaultAsset: Asset
   amount: string
   maxBalance: number
-  isTokenOptionsLocked: boolean
+  isAssetOptionsLocked: boolean
   disableDropdown: boolean
   onAssetSelect: (token: Asset) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
@@ -150,10 +150,10 @@ export default function SharedAssetInput(
     isTypeDestination,
     assets,
     label,
-    defaultToken,
+    defaultAsset,
     amount,
     maxBalance,
-    isTokenOptionsLocked,
+    isAssetOptionsLocked,
     disableDropdown,
     onAssetSelect,
     onAmountChange,
@@ -161,19 +161,24 @@ export default function SharedAssetInput(
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
-  const [selectedToken, setSelectedToken] = useState(defaultToken)
+  const [selectedAsset, setSelectedAsset] = useState(defaultAsset)
 
-  const toggleIsTokenMenuOpen = useCallback(() => {
-    if (!isTokenOptionsLocked) {
+  // TODO: Refactor this to track state in a more reasonable way
+  useEffect(() => {
+    setSelectedAsset(defaultAsset)
+  }, [defaultAsset])
+
+  const toggleIsAssetMenuOpen = useCallback(() => {
+    if (!isAssetOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
     }
-  }, [isTokenOptionsLocked])
+  }, [isAssetOptionsLocked])
 
-  const setSelectedTokenAndClose = useCallback(
-    (token) => {
-      setSelectedToken(token)
+  const setSelectedAssetAndClose = useCallback(
+    (asset) => {
+      setSelectedAsset(asset)
       setOpenAssetMenu(false)
-      onAssetSelect?.(token)
+      onAssetSelect?.(asset)
     },
 
     [onAssetSelect]
@@ -196,17 +201,17 @@ export default function SharedAssetInput(
         }}
       >
         {assets && (
-          <SelectTokenMenuContent
+          <SelectAssetMenuContent
             assets={assets}
-            setSelectedTokenAndClose={setSelectedTokenAndClose}
+            setSelectedAssetAndClose={setSelectedAssetAndClose}
           />
         )}
       </SharedSlideUpMenu>
-      <div className="asset_input standard_width">
+      <div className="asset_wrap standard_width">
         {isTypeDestination ? (
           <>
             <input
-              className="token_input"
+              className="asset_input"
               type="text"
               placeholder="0x..."
               onChange={(event) => {
@@ -217,22 +222,23 @@ export default function SharedAssetInput(
         ) : (
           <>
             <div className={classNames({ disable_click: disableDropdown })}>
-              {selectedToken?.symbol ? (
-                <SelectedTokenButton
-                  asset={selectedToken}
-                  toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
+              {selectedAsset?.symbol ? (
+                <SelectedAssetButton
+                  asset={selectedAsset}
+                  toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
                 />
               ) : (
                 <SharedButton
                   type="secondary"
                   size="medium"
-                  onClick={toggleIsTokenMenuOpen}
+                  onClick={toggleIsAssetMenuOpen}
                   icon="chevron"
                 >
                   Select token
                 </SharedButton>
               )}
             </div>
+
             <input
               className="input_amount"
               type="number"
@@ -251,7 +257,7 @@ export default function SharedAssetInput(
       </div>
       <style jsx>
         {`
-          .asset_input {
+          .asset_wrap {
             height: 72px;
             border-radius: 4px;
             background-color: var(--green-95);
@@ -261,7 +267,7 @@ export default function SharedAssetInput(
             padding: 0px 16px;
             box-sizing: border-box;
           }
-          .token_input {
+          .asset_input {
             width: 100%;
             height: 34px;
             font-size: 28px;
@@ -269,7 +275,7 @@ export default function SharedAssetInput(
             line-height: 32px;
             color: #fff;
           }
-          .token_input::placeholder {
+          .asset_input::placeholder {
             color: var(--green-40);
             opacity: 1;
           }
@@ -335,10 +341,10 @@ export default function SharedAssetInput(
 
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
-  isTokenOptionsLocked: false,
+  isAssetOptionsLocked: false,
   disableDropdown: false,
   assets: [{ symbol: "ETH", name: "Example Asset" }],
-  defaultToken: { symbol: "", name: "" },
+  defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
   maxBalance: 0,

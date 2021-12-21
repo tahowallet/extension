@@ -1,9 +1,10 @@
+import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { RootState, BackgroundDispatch } from "@tallyho/tally-background"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
-import { RefObject, useEffect } from "react"
+import { RefObject, useState, useEffect } from "react"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()
@@ -63,4 +64,20 @@ export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
       document.removeEventListener("touchstart", listener)
     }
   }, [ref, handler]) // Reload only if ref or handler changes
+}
+
+export function useIsDappPopup(): boolean {
+  const [isDappPopup, setIsDappPopup] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const maybePage = params.get("page")
+    if (isAllowedQueryParamPage(maybePage)) {
+      setIsDappPopup(true)
+    } else {
+      setIsDappPopup(false)
+    }
+  }, [])
+
+  return isDappPopup
 }
