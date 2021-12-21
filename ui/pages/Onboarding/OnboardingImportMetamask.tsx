@@ -3,6 +3,7 @@ import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyr
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
+import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
@@ -130,15 +131,16 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             errorMessage={errorMessage}
           />
 
-          <div className="checkbox_wrapper">
-            <SharedCheckbox
-              label="Custom derivation"
-              checked={isChecked}
-              onChange={() => setIsChecked(!isChecked)}
-            />
-          </div>
-
-          {isChecked && (
+          {!HIDE_IMPORT_DERIVATION_PATH && (
+            <div className="checkbox_wrapper">
+              <SharedCheckbox
+                label="Custom derivation"
+                checked={isChecked}
+                onChange={() => setIsChecked(!isChecked)}
+              />
+            </div>
+          )}
+          {!HIDE_IMPORT_DERIVATION_PATH && isChecked && (
             <div className="select_wrapper">
               <OnboardingDerivationPathSelect onChange={setPath} />
             </div>
@@ -184,8 +186,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         .metamask_onboarding_image {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: 154px;
-          height: 144.75px;
+          width: ${HIDE_IMPORT_DERIVATION_PATH ? "205.3px" : "154px"};
+          height: ${HIDE_IMPORT_DERIVATION_PATH ? "193px" : "144.75"};
           margin-top: 27px;
           margin-bottom: 13px;
         }
