@@ -1,26 +1,20 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
+import { utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { isSmartContractFungibleAsset, Asset } from "../assets"
-import { AssetsState } from "./assets"
+import { Asset, FungibleAsset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
+import { jtdValidatorFor } from "../lib/validation"
 
-interface SwapAsset extends Asset {
-  price?: string
+interface PartialSwapAssets {
+  sellAsset?: FungibleAsset
+  buyAsset?: FungibleAsset
 }
 
-export interface SwapState {
-  sellToken?: SwapAsset
-  buyToken?: SwapAsset
-  sellAmount: string
-  buyAmount: string
-  tokens: Asset[]
-}
-
-interface SwapToken {
-  sellToken?: Asset
-  buyToken?: Asset
+interface SwapAssets {
+  sellAsset: FungibleAsset
+  buyAsset: FungibleAsset
 }
 
 interface SwapAmount {
@@ -28,7 +22,7 @@ interface SwapAmount {
   buyAmount: string
 }
 
-interface ZrxToken {
+interface ZrxAsset {
   symbol: string
   name: string
   decimals: number
@@ -40,56 +34,331 @@ interface ZrxPrice {
   price: string
 }
 
-export const fetchTokens = createBackgroundAsyncThunk(
-  "0x-swap/fetchTokens",
-  async (_, { getState }) => {
-    const state = getState() as { assets: AssetsState }
-    const assets = state.assets as Asset[]
+interface ZrxOrder {
+  makerAmount: string
+  makerToken: string
+  source: string
+  sourcePathId: string
+  takerAmount: string
+  takerToken: string
+  type: number
+}
+
+interface ZrxSources {
+  name: string
+  proportion: string
+}
+
+interface ZrxQuote {
+  allowanceTarget: string
+  buyAmount: string
+  buyTokenAddress: string
+  buyTokenToEthRate: string
+  chainId: number
+  data: string
+  estimatedGas: string
+  gas: string
+  gasPrice: string
+  guaranteedPrice: string
+  minimumProtocolFee: string
+  orders: ZrxOrder[]
+  price: string
+  protocolFee: string
+  sellAmount: string
+  sellTokenAddress: string
+  sellTokenToEthRate: string
+  sources: ZrxSources[]
+  to: string
+  value: string
+}
+
+export interface SwapState {
+  sellAsset?: FungibleAsset
+  buyAsset?: FungibleAsset
+  sellAmount: string
+  buyAmount: string
+  zrxAssets: ZrxAsset[]
+  zrxPrices: ZrxPrice[]
+  quote?: ZrxQuote
+}
+
+export const initialState: SwapState = {
+  sellAsset: undefined,
+  buyAsset: undefined,
+  sellAmount: "",
+  buyAmount: "",
+  zrxAssets: [],
+  zrxPrices: [],
+}
+
+const swapAssetsJTD = {
+  properties: {
+    records: {
+      elements: {
+        properties: {
+          address: { type: "string" },
+          decimals: { type: "int8" },
+          name: { type: "string" },
+          symbol: { type: "string" },
+        },
+      },
+    },
+  },
+}
+
+const isValidSwapAssetsResponse = jtdValidatorFor(swapAssetsJTD)
+
+export const fetchSwapAssets = createBackgroundAsyncThunk(
+  "0x-swap/fetchAssets",
+  async () => {
     const apiData = await fetchJson(`https://api.0x.org/swap/v1/tokens`)
 
-    const filteredAssets = assets
+    if (isValidSwapAssetsResponse(apiData)) {
+      return apiData.records as ZrxAsset[]
+    }
+
+    logger.warn(
+      "Swap asset API call didn't validate, did the 0x API change?",
+      apiData,
+      isValidSwapAssetsResponse.errors
+    )
+
+    return []
+  }
+)
+
+const swapPriceJTD = {
+  properties: {
+    records: {
+      elements: {
+        properties: {
+          price: { type: "string" },
+          symbol: { type: "string" },
+        },
+      },
+    },
+    page: { type: "uint32" },
+    perPage: { type: "uint32" },
+    total: { type: "uint32" },
+  },
+}
+
+const isValidSwapPriceResponse = jtdValidatorFor(swapPriceJTD)
+
+export const fetchSwapPrices = createBackgroundAsyncThunk(
+  "0x-swap/fetchPrices",
+  async (asset: Asset) => {
+    const apiData = await fetchJson(
+      `https://api.0x.org/swap/v1/prices?sellToken=${asset.symbol}&perPage=1000`
+    )
+
+    if (isValidSwapPriceResponse(apiData)) {
+      return apiData.records as ZrxPrice[]
+    }
+
+    logger.warn(
+      "Swap price API call didn't validate, did the 0x API change?",
+      apiData,
+      isValidSwapPriceResponse.errors
+    )
+
+    return []
+  }
+)
+
+const swapQuoteJTD = {
+  properties: {
+    allowanceTarget: { type: "string" },
+    buyAmount: { type: "string" },
+    buyTokenAddress: { type: "string" },
+    buyTokenToEthRate: { type: "string" },
+    chainId: { type: "uint32" },
+    data: { type: "string" },
+    estimatedGas: { type: "string" },
+    gas: { type: "string" },
+    gasPrice: { type: "string" },
+    guaranteedPrice: { type: "string" },
+    minimumProtocolFee: { type: "string" },
+    orders: {
+      elements: {
+        properties: {
+          makerAmount: { type: "string" },
+          makerToken: { type: "string" },
+          source: { type: "string" },
+          sourcePathId: { type: "string" },
+          takerAmount: { type: "string" },
+          takerToken: { type: "string" },
+          type: { type: "uint32" },
+        },
+      },
+    },
+    price: { type: "string" },
+    protocolFee: { type: "string" },
+    sellAmount: { type: "string" },
+    sellTokenAddress: { type: "string" },
+    sellTokenToEthRate: { type: "string" },
+    sources: {
+      elements: {
+        properties: {
+          name: { type: "string" },
+          proportion: { type: "string" },
+        },
+      },
+    },
+    to: { type: "string" },
+    value: { type: "string" },
+  },
+}
+
+const isValidSwapQuoteResponse = jtdValidatorFor(swapQuoteJTD)
+
+export const fetchSwapQuote = createBackgroundAsyncThunk(
+  "0x-swap/fetchQuote",
+  async (quote: { assets: SwapAssets; amount: SwapAmount }) => {
+    const sellAmount = utils.parseUnits(
+      quote.amount.sellAmount,
+      quote.assets.sellAsset.decimals
+    )
+
+    const apiData = await fetchJson(
+      `https://api.0x.org/swap/v1/quote?` +
+        `sellToken=${quote.assets.sellAsset.symbol}&` +
+        `buyToken=${quote.assets.buyAsset.symbol}&` +
+        `sellAmount=${sellAmount}`
+    )
+
+    return apiData as ZrxQuote
+
+    if (isValidSwapQuoteResponse(apiData)) {
+      return apiData as ZrxQuote
+    }
+
+    logger.warn(
+      "Swap quote API call didn't validate, did the 0x API change?",
+      apiData,
+      isValidSwapPriceResponse.errors
+    )
+
+    return undefined
+  }
+)
+
+const swapSlice = createSlice({
+  name: "0x-swap",
+  initialState,
+  reducers: {
+    setSwapAmount: (state, { payload: amount }: { payload: SwapAmount }) => {
+      return { ...state, ...amount }
+    },
+
+    setSwapTrade: (
+      state,
+      { payload: swap }: { payload: PartialSwapAssets }
+    ) => {
+      // Reset the buy token to be empty when the user changes their sell token
+      // This is necessary because we have to fetch price data from the 0x API whenver the sell token changes
+      if (swap.sellAsset) {
+        return {
+          ...state,
+          sellAsset: swap.sellAsset,
+          buyAsset: undefined,
+          sellAmount: "",
+          buyAmount: "",
+        }
+      }
+
+      return { ...state, ...swap }
+    },
+
+    clearSwapQuote: (state) => {
+      return { ...state, quote: undefined }
+    },
+  },
+
+  extraReducers: (builder) => {
+    builder
+      .addCase(
+        fetchSwapAssets.fulfilled,
+        (state, { payload: zrxAssets }: { payload: ZrxAsset[] }) => {
+          return { ...state, zrxAssets }
+        }
+      )
+      .addCase(
+        fetchSwapPrices.fulfilled,
+        (state, { payload: zrxPrices }: { payload: ZrxPrice[] }) => {
+          return { ...state, zrxPrices }
+        }
+      )
+      .addCase(
+        fetchSwapQuote.fulfilled,
+        (state, { payload: quote }: { payload: ZrxQuote | undefined }) => {
+          return { ...state, quote }
+        }
+      )
+  },
+})
+
+export const selectSwappableAssets = createSelector(
+  (state: { assets: Asset[]; swap: SwapState }) => ({
+    walletAssets: state.assets,
+    zrxAssets: state.swap.zrxAssets,
+    zrxPrices: state.swap.zrxPrices,
+  }),
+  ({ walletAssets, zrxAssets, zrxPrices }) => {
+    const filteredAssets = walletAssets
       .filter(isSmartContractFungibleAsset)
-      .filter((asset) => {
-        const matchingTokens = apiData.records.filter((zrxToken: ZrxToken) => {
-          // Only allow tokens to be swapped if the data from 0x matches our asset information
+      .filter((walletAsset) => {
+        const matchingAsset = zrxAssets.find((zrxAsset) => {
+          // Only allow assets to be swapped if the data from 0x matches our asset information
           if (
-            asset.symbol.toLowerCase() === zrxToken.symbol.toLowerCase() &&
-            asset.contractAddress.toLowerCase() ===
-              zrxToken.address.toLowerCase()
+            walletAsset.symbol.toLowerCase() ===
+              zrxAsset.symbol.toLowerCase() &&
+            walletAsset.contractAddress.toLowerCase() ===
+              zrxAsset.address.toLowerCase()
           ) {
             return true
           }
 
           if (
-            asset.symbol.toLowerCase() === zrxToken.symbol.toLowerCase() &&
-            asset.contractAddress.toLowerCase() !==
-              zrxToken.address.toLowerCase()
+            walletAsset.symbol.toLowerCase() ===
+              zrxAsset.symbol.toLowerCase() &&
+            walletAsset.contractAddress.toLowerCase() !==
+              zrxAsset.address.toLowerCase() &&
+            process.env.DEBUG === "true"
           ) {
             logger.warn(
-              "Swap Token Discrepancy: Symbol matches but contract address doesn't",
-              asset,
-              zrxToken
+              "Swap Asset Discrepancy: Symbol matches but contract address doesn't",
+              walletAsset,
+              zrxAsset
             )
           }
 
           if (
-            asset.contractAddress.toLowerCase() ===
-              zrxToken.address.toLowerCase() &&
-            asset.symbol.toLowerCase() !== zrxToken.symbol.toLowerCase()
+            walletAsset.contractAddress.toLowerCase() ===
+              zrxAsset.address.toLowerCase() &&
+            walletAsset.symbol.toLowerCase() !==
+              zrxAsset.symbol.toLowerCase() &&
+            process.env.DEBUG === "true"
           ) {
             logger.warn(
-              "Swap Token Discrepancy: Contract address matches but symbol doesn't",
-              asset,
-              zrxToken
+              "Swap Asset Discrepancy: Contract address matches but symbol doesn't",
+              walletAsset,
+              zrxAsset
             )
           }
 
           return false
         })
 
-        // TODO: What if multiple assets match?
-        if (matchingTokens.length) {
-          return matchingTokens[0]
+        // Make sure the matched asset has price data
+        if (matchingAsset) {
+          const priceData = zrxPrices.find(
+            (zrxPrice: ZrxPrice) =>
+              matchingAsset.symbol.toLowerCase() ===
+              zrxPrice.symbol.toLowerCase()
+          )
+
+          return !!priceData
         }
 
         return false
@@ -99,73 +368,26 @@ export const fetchTokens = createBackgroundAsyncThunk(
   }
 )
 
-export const fetchSwapPrices = createBackgroundAsyncThunk(
-  "0x-swap/fetchSwapPrices",
-  async (token: Asset) => {
-    const apiData = await fetchJson(
-      `https://api.0x.org/swap/v1/prices?sellToken=${token.symbol}&perPage=1000`
-    )
+export const selectSwapPrice = createSelector(
+  (state: { swap: SwapState }) => ({
+    buyAsset: state.swap.buyAsset,
+    zrxPrices: state.swap.zrxPrices,
+  }),
+  ({ buyAsset, zrxPrices }) => {
+    if (buyAsset) {
+      const priceData = zrxPrices.find(
+        (zrxPrice: ZrxPrice) =>
+          buyAsset.symbol.toLowerCase() === zrxPrice.symbol.toLowerCase()
+      )
 
-    return apiData.records
+      if (priceData) {
+        return priceData.price
+      }
+    }
+
+    return "0"
   }
 )
 
-export const initialState: SwapState = {
-  sellToken: undefined,
-  buyToken: undefined,
-  sellAmount: "",
-  buyAmount: "",
-  tokens: [],
-}
-
-const swapSlice = createSlice({
-  name: "0x-swap",
-  initialState,
-  reducers: {
-    setSwapAmount: (
-      immerState,
-      { payload: amount }: { payload: SwapAmount }
-    ) => {
-      return { ...immerState, ...amount }
-    },
-
-    setSwapTrade: (immerState, { payload: token }: { payload: SwapToken }) => {
-      return { ...immerState, ...token }
-    },
-  },
-
-  extraReducers: (builder) => {
-    builder
-      .addCase(
-        fetchSwapPrices.fulfilled,
-        (immerState, { payload: assetPrices }: { payload: ZrxPrice[] }) => {
-          const tokensWithPrices = immerState.tokens.map((asset) => {
-            const matchingAsset = assetPrices.filter((price) => {
-              if (asset.symbol.toLowerCase() === price.symbol.toLowerCase()) {
-                return true
-              }
-
-              return false
-            })
-
-            if (matchingAsset.length) {
-              return { ...asset, price: matchingAsset[0].price }
-            }
-
-            return { ...asset, price: 0 }
-          })
-
-          return { ...immerState, tokens: tokensWithPrices }
-        }
-      )
-      .addCase(
-        fetchTokens.fulfilled,
-        (immerState, { payload: tokens }: { payload: Asset[] }) => {
-          return { ...immerState, tokens }
-        }
-      )
-  },
-})
-
-export const { setSwapAmount, setSwapTrade } = swapSlice.actions
+export const { setSwapAmount, setSwapTrade, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer

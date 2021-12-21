@@ -157,7 +157,7 @@ export default function Send(): ReactElement {
                     setHasError(false)
                   }
                 }}
-                defaultToken={{ symbol: assetSymbol, name: assetSymbol }}
+                defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
                 amount={amount}
                 maxBalance={Number(currentBalance)}
                 disableDropdown
