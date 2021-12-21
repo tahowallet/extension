@@ -60,7 +60,7 @@ export default function KeyringUnlock(): ReactElement {
       <h1 className="serif_header">Unlock Your Wallet</h1>
       <div className="subtitle">
         You locked your signing permissions or the session has timed out. In
-        order to continue, please unlock your wallet
+        order to continue, please unlock your wallet.
       </div>
       <form onSubmit={dispatchUnlockWallet}>
         <div className="input_wrap">
