@@ -1,45 +1,87 @@
+import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { BlockEstimate } from "@tallyho/tally-background/networks"
+
 import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
+import NetworkFeesChooser from "../NetworkFees/NetworkFeesChooser"
+import { useBackgroundSelector } from "../../hooks"
 
-export default function SwapTransactionSettings(): ReactElement {
+interface SwapTransactionSettingsProps {
+  isSettingsLocked?: boolean
+}
+
+export default function SwapTransactionSettings(
+  props: SwapTransactionSettingsProps
+): ReactElement {
+  const { isSettingsLocked } = props
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
+  const [gasLimit, setGasLimit] = useState("")
+  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
+    useState<BlockEstimate>({
+      confidence: 0,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    })
+  const [currentFeeValues, setCurrentFeeValues] = useState({
+    gwei: "",
+    fiat: "",
+  })
 
-  function handleClick() {
-    setIsSlideUpMenuOpen(!isSlideUpMenuOpen)
+  function openSettings() {
+    if (!isSettingsLocked) {
+      setIsSlideUpMenuOpen(true)
+    }
   }
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={isSlideUpMenuOpen}
-        size="small"
-        close={() => {
-          setIsSlideUpMenuOpen(false)
-        }}
-      >
-        <div className="settings_wrap">
-          <div className="row row_slippage">
-            <span className="settings_label">Slippage tolerance</span>
-            <SharedButton type="secondary" size="medium" icon="chevron">
-              1%
-            </SharedButton>
+      {isSettingsLocked ? (
+        <div className="top_label label">Transaction settings</div>
+      ) : (
+        <>
+          <SharedSlideUpMenu
+            isOpen={isSlideUpMenuOpen}
+            size="large"
+            close={() => {
+              setIsSlideUpMenuOpen(false)
+            }}
+          >
+            <div className="settings_wrap">
+              <div className="row row_slippage">
+                <span className="settings_label">Slippage tolerance</span>
+                <SharedButton type="secondary" size="medium" icon="chevron">
+                  1%
+                </SharedButton>
+              </div>
+              <div className="row row_fee">
+                <span className="settings_label settings_label_fee">
+                  Transaction Fee/Speed
+                </span>
+
+                <NetworkFeesChooser
+                  estimatedFeesPerGas={estimatedFeesPerGas}
+                  onSelectFeeOption={setSelectedEstimatedFeePerGas}
+                  selectedGas={selectedEstimatedFeePerGas}
+                  gasLimit={gasLimit}
+                  setGasLimit={setGasLimit}
+                />
+              </div>
+            </div>
+          </SharedSlideUpMenu>
+
+          <div className="top_label label">
+            Transaction settings
+            <button type="button" onClick={openSettings}>
+              <span className="icon_cog" />
+            </button>
           </div>
-          <div className="row row_fee">
-            <span className="settings_label settings_label_fee">
-              Transaction Fee/Speed
-            </span>
-            <SharedNetworkFeeGroup />
-          </div>
-        </div>
-      </SharedSlideUpMenu>
-      <div className="top_label label">
-        Transaction settings
-        <button type="button" onClick={handleClick}>
-          <span className="icon_cog" />
-        </button>
-      </div>
+        </>
+      )}
       <div className="labels_wrap standard_width">
         <span className="label">
           Slippage tolerance
@@ -100,11 +142,10 @@ export default function SwapTransactionSettings(): ReactElement {
           }
           .settings_wrap {
             width: 384px;
-            height: 208px;
-            background-color: var(--hunter-green);
             margin-top: 36px;
             padding: 0px 17px;
             box-sizing: border-box;
+            background-color: var(--green-95);
           }
           .label:first-of-type {
             margin-bottom: 7px;

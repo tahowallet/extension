@@ -386,7 +386,6 @@ export default function NetworkFeesChooser({
           }
           .confirm {
             width: 100%;
-            background: #002522;
             display: flex;
             box-sizing: border-box;
             justify-content: flex-end;
