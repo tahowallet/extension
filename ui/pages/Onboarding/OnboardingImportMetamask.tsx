@@ -88,9 +88,11 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
-    if (isValidMnemonic(recoveryPhrase)) {
+    const trimmedRecoveryPhrase = recoveryPhrase.trim()
+    if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim(), path }))
+      dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
     }
@@ -115,7 +117,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           <div className="metamask_onboarding_image" />
           <h1 className="serif_header">Import account</h1>
           <div className="info">
-            Enter or copy paste the recovery phrase from your MetaMask account.
+            Enter or copy & paste the recovery phrase from your MetaMask
+            account.
           </div>
           <TextArea
             value={recoveryPhrase}

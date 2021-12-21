@@ -14,7 +14,7 @@ export default function SharedCurrentAccountInformation(): ReactElement {
 
   return (
     <>
-      {name ?? shortenedAddress}
+      {name?.includes(".") ? name : shortenedAddress}
       <div className="avatar" />
       <style jsx>
         {`
@@ -22,9 +22,9 @@ export default function SharedCurrentAccountInformation(): ReactElement {
             border-radius: 12px;
             width: 32px;
             height: 32px;
-            background-color: white;
             margin-left: 8px;
             background: url("${avatarURL ?? "./images/portrait.png"}");
+            background-color: var(--green-40);
             background-size: cover;
           }
         `}

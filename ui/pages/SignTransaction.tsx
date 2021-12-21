@@ -3,6 +3,7 @@ import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
   broadcastSignedTransaction,
+  rejectTransactionSignature,
   selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
@@ -117,6 +118,7 @@ export default function SignTransaction(): ReactElement {
   useEffect(() => {
     // FIXME Hackily handle the user not interacting with the fee selector for now.
     if (transactionDetails && transactionDetails.maxFeePerGas === 0n) {
+      setGasLimit(transactionDetails.gasLimit.toString())
       updateGasSettings(selectedEstimatedFeePerGas)
     }
   }, [transactionDetails, selectedEstimatedFeePerGas, updateGasSettings])
@@ -169,6 +171,10 @@ export default function SignTransaction(): ReactElement {
     },
   }
 
+  const handleReject = async () => {
+    await dispatch(rejectTransactionSignature())
+    history.goBack()
+  }
   const handleConfirm = async () => {
     if (isTransactionDataReady && transactionDetails) {
       dispatch(signTransaction(transactionDetails))
@@ -219,7 +225,7 @@ export default function SignTransaction(): ReactElement {
           iconSize="large"
           size="large"
           type="secondary"
-          onClick={() => history.goBack()}
+          onClick={handleReject}
         >
           Reject
         </SharedButton>

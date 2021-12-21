@@ -514,16 +514,37 @@ export default class Main extends BaseService<never> {
   async connectInternalEthereumProviderService(): Promise<void> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
-      async ({ payload, resolver }) => {
+      async ({ payload, resolver, rejecter }) => {
         this.store.dispatch(updateTransactionOptions(payload))
         // TODO force route?
 
         this.store.dispatch(broadcastOnSign(false))
-        const signedTransaction = await this.keyringService.emitter.once(
-          "signedTx"
-        )
 
-        resolver(signedTransaction)
+        const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
+          this.keyringService.emitter.off("signedTx", resolveAndClear)
+          transactionConstructionSliceEmitter.off(
+            "signatureRejected",
+            // Ye olde mutual dependency.
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            rejectAndClear
+          )
+          resolver(signedTransaction)
+        }
+
+        const rejectAndClear = () => {
+          this.keyringService.emitter.off("signedTx", resolveAndClear)
+          transactionConstructionSliceEmitter.off(
+            "signatureRejected",
+            rejectAndClear
+          )
+          rejecter()
+        }
+
+        this.keyringService.emitter.on("signedTx", resolveAndClear)
+        transactionConstructionSliceEmitter.on(
+          "signatureRejected",
+          rejectAndClear
+        )
       }
     )
   }
