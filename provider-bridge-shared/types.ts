@@ -1,4 +1,5 @@
 export type PermissionRequest = {
+  key: string
   origin: string
   faviconUrl: string
   title: string
