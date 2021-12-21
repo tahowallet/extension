@@ -2,7 +2,11 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
 import { unlockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useAreKeyringsUnlocked,
+  useIsPopup,
+} from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import titleStyle from "../Onboarding/titleStyle"
@@ -10,6 +14,7 @@ import titleStyle from "../Onboarding/titleStyle"
 export default function KeyringUnlock(): ReactElement {
   const [password, setPassword] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+  const isPopup = useIsPopup()
   const history: {
     entries?: { pathname: string }[]
     goBack: () => void
@@ -37,12 +42,6 @@ export default function KeyringUnlock(): ReactElement {
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
   }
-
-  // TODO: replace this
-  const isPopup =
-    history?.entries &&
-    history.entries[0]?.pathname === "/" &&
-    history.entries[1]?.pathname === "/keyring/unlock"
 
   return (
     <section>

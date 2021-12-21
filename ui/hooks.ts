@@ -1,9 +1,10 @@
+import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { RootState, BackgroundDispatch } from "@tallyho/tally-background"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()
@@ -39,4 +40,20 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   })
 
   return keyringStatus === "unlocked"
+}
+
+export function useIsPopup(): boolean {
+  const [isPopup, setIsPopup] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const maybePage = params.get("page")
+    if (isAllowedQueryParamPage(maybePage)) {
+      setIsPopup(true)
+    } else {
+      setIsPopup(false)
+    }
+  }, [])
+
+  return isPopup
 }
