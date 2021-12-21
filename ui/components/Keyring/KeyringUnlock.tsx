@@ -111,13 +111,6 @@ export default function KeyringUnlock(): ReactElement {
           }
         `}
       </style>
-      <style jsx global>
-        {`
-          body {
-            height: 100%;
-          }
-        `}
-      </style>
     </section>
   )
 }
