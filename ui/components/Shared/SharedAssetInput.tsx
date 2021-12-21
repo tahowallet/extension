@@ -262,7 +262,7 @@ export default function SharedAssetInput(
             box-sizing: border-box;
           }
           .token_input {
-            width: 204px;
+            width: 100%;
             height: 34px;
             font-size: 28px;
             font-weight: 500;
