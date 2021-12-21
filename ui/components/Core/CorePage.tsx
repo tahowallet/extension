@@ -2,7 +2,10 @@ import React, { ReactElement, useCallback, useEffect, useState } from "react"
 
 import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
-import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectAllowedPages,
+  selectCurrentAccount,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -37,6 +40,7 @@ export default function CorePage(props: Props): ReactElement {
   const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
 
   const allowedPages = useBackgroundSelector(selectAllowedPages)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
 
   const initPermissionAndOrigin = useCallback(async () => {
     const { url, favIconUrl, title } = await browser.tabs
@@ -52,19 +56,15 @@ export default function CorePage(props: Props): ReactElement {
 
     const { origin } = new URL(url)
 
-    if (allowedPages[origin]) {
-      setCurrentPermission(allowedPages[origin])
+    const allowPermission = allowedPages[`${origin}_${currentAccount.address}`]
+
+    if (allowPermission) {
+      setCurrentPermission(allowPermission)
       setIsConnectedToDApp(true)
     } else {
-      setCurrentPermission({
-        origin,
-        faviconUrl: favIconUrl ?? "",
-        title: title ?? "",
-        state: "deny",
-        accountAddress: "",
-      })
+      setIsConnectedToDApp(false)
     }
-  }, [allowedPages, setCurrentPermission])
+  }, [allowedPages, setCurrentPermission, currentAccount])
 
   useEffect(() => {
     initPermissionAndOrigin()
