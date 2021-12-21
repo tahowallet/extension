@@ -45,7 +45,7 @@ export default function KeyringUnlock(): ReactElement {
 
   return (
     <section>
-      {isPopup ? (
+      {isPopup && (
         <div className="back_button_wrap">
           <SharedButton
             type="tertiaryWhite"
@@ -55,8 +55,6 @@ export default function KeyringUnlock(): ReactElement {
             Cancel tx
           </SharedButton>
         </div>
-      ) : (
-        <div className="spacer" />
       )}
       <div className="illustration_unlock" />
       <h1 className="serif_header">Unlock Your Wallet</h1>
@@ -91,6 +89,9 @@ export default function KeyringUnlock(): ReactElement {
             height: 214.21px;
             margin-bottom: 17px;
           }
+          section {
+            padding-top: 42px;
+          }
           .input_wrap {
             width: 211px;
             margin-bottom: 30px;
@@ -100,15 +101,13 @@ export default function KeyringUnlock(): ReactElement {
             text-align: center;
           }
           .back_button_wrap {
-            margin-top: -50px;
             width: 100%;
             display: flex;
             justify-content: flex-end;
-            margin-bottom: -5px;
             opacity: 0.7;
-          }
-          .spacer {
-            margin-top: 42px;
+            position: fixed;
+            right: 0px;
+            top: 0px;
           }
         `}
       </style>
