@@ -46,7 +46,7 @@ export default function KeyringUnlock(): ReactElement {
   return (
     <section>
       {isPopup && (
-        <div className="back_button_wrap">
+        <div className="cancel_tx_button_wrap">
           <SharedButton
             type="tertiaryWhite"
             size="small"
@@ -100,7 +100,7 @@ export default function KeyringUnlock(): ReactElement {
             width: 321px;
             text-align: center;
           }
-          .back_button_wrap {
+          .cancel_tx_button_wrap {
             width: 100%;
             display: flex;
             justify-content: flex-end;
