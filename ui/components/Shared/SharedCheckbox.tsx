@@ -29,9 +29,6 @@ export default function SharedCheckbox(props: Props): ReactElement {
           cursor: pointer;
           font-size: 14px;
           color: var(--green-60);
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
           user-select: none;
         }
 
@@ -71,8 +68,6 @@ export default function SharedCheckbox(props: Props): ReactElement {
           height: 7px;
           border: solid white;
           border-width: 0 3px 3px 0;
-          -webkit-transform: rotate(45deg);
-          -ms-transform: rotate(45deg);
           transform: rotate(45deg);
         }
         .label {
