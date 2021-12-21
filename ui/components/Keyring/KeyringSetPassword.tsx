@@ -52,8 +52,8 @@ export default function KeyringSetPassword(): ReactElement {
 
   return (
     <section>
-      <div className="full_logo" />
-      <h1 className="serif_header">Create a password</h1>
+      <div className="wordmark" />
+      <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
       <div className="subtitle">
         You will NOT be able to change this password for now.
       </div>
@@ -86,7 +86,7 @@ export default function KeyringSetPassword(): ReactElement {
           showLoadingOnClick={!passwordErrorMessage}
           isFormSubmit
         >
-          Continue
+          Begin the hunt
         </SharedButton>
       </form>
       <div className="restore">
@@ -97,19 +97,27 @@ export default function KeyringSetPassword(): ReactElement {
       <style jsx>
         {`
           ${titleStyle}
-          .full_logo {
-            background: url("./images/full_logo@2x.png");
+          .serif_header {
+            width: 335px;
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 7px;
+          }
+          section {
+            padding-top: 25px;
+          }
+          .wordmark {
+            background: url("./images/wordmark@2x.png");
             background-size: cover;
-            width: 118px;
-            height: 120px;
-            margin-bottom: 17px;
+            width: 52px;
+            height: 25px;
           }
           .input_wrap {
             width: 211px;
           }
           .repeat_password_wrap {
             margin-top: 30px;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
           }
           .restore {
             display: none; // TODO Implement account restoration.

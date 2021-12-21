@@ -9,6 +9,7 @@ import {
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
+import { useIsDappPopup } from "../hooks"
 
 import Wallet from "./Wallet"
 import SignTransaction from "./SignTransaction"
@@ -48,65 +49,78 @@ function transformLocation(inputLocation: Location): Location {
 }
 
 export default function Popup({ store }: { store: Store }): ReactElement {
+  const isDappPopup = useIsDappPopup()
+
   return (
-    <Provider store={store}>
-      <Router>
-        <Route
-          render={(routeProps) => (
-            // @ts-expect-error TODO: fix the typing when the feature works
-            <Switch location={transformLocation(routeProps.location)}>
-              <Route path="/keyring/set-password">
-                <KeyringSetPassword />
-              </Route>
-              <Route path="/keyring/unlock">
-                <KeyringUnlock />
-              </Route>
-              <Route path="/singleAsset">
-                <SingleAsset />
-              </Route>
-              <Route path="/onboarding/importMetamask">
-                <OnboardingImportMetamask nextPage="/" />
-              </Route>
-              <Route path="/onboarding/viewOnlyWallet">
-                <OnboardingViewOnlyWallet />
-              </Route>
-              <Route path="/onboarding/infoIntro">
-                <OnboardingInfoIntro />
-              </Route>
-              <Route path="/onboarding/addWallet">
-                <OnboardingAddWallet />
-              </Route>
-              <Route path="/signTransaction">
-                <SignTransaction />
-              </Route>
-              <Route path="/overview">
-                <Overview />
-              </Route>
-              <Route path="/earn/deposit">
-                <EarnDeposit />
-              </Route>
-              <Route path="/earn">
-                <Earn />
-              </Route>
-              <Route path="/menu">
-                <Menu />
-              </Route>
-              <Route path="/send">
-                <Send />
-              </Route>
-              <Route path="/swap">
-                <Swap />
-              </Route>
-              <Route path="/dapp-permission">
-                <DAppPermissionRequest />
-              </Route>
-              <Route path="/">
-                <Wallet />
-              </Route>
-            </Switch>
-          )}
-        />
-      </Router>
-    </Provider>
+    <>
+      <Provider store={store}>
+        <Router>
+          <Route
+            render={(routeProps) => (
+              // @ts-expect-error TODO: fix the typing when the feature works
+              <Switch location={transformLocation(routeProps.location)}>
+                <Route path="/keyring/set-password">
+                  <KeyringSetPassword />
+                </Route>
+                <Route path="/keyring/unlock">
+                  <KeyringUnlock />
+                </Route>
+                <Route path="/singleAsset">
+                  <SingleAsset />
+                </Route>
+                <Route path="/onboarding/importMetamask">
+                  <OnboardingImportMetamask nextPage="/" />
+                </Route>
+                <Route path="/onboarding/viewOnlyWallet">
+                  <OnboardingViewOnlyWallet />
+                </Route>
+                <Route path="/onboarding/infoIntro">
+                  <OnboardingInfoIntro />
+                </Route>
+                <Route path="/onboarding/addWallet">
+                  <OnboardingAddWallet />
+                </Route>
+                <Route path="/signTransaction">
+                  <SignTransaction />
+                </Route>
+                <Route path="/overview">
+                  <Overview />
+                </Route>
+                <Route path="/earn/deposit">
+                  <EarnDeposit />
+                </Route>
+                <Route path="/earn">
+                  <Earn />
+                </Route>
+                <Route path="/menu">
+                  <Menu />
+                </Route>
+                <Route path="/send">
+                  <Send />
+                </Route>
+                <Route path="/swap">
+                  <Swap />
+                </Route>
+                <Route path="/dapp-permission">
+                  <DAppPermissionRequest />
+                </Route>
+                <Route path="/">
+                  <Wallet />
+                </Route>
+              </Switch>
+            )}
+          />
+        </Router>
+      </Provider>
+      {isDappPopup && (
+        <style jsx global>
+          {`
+            body {
+              height: 100%;
+            }
+          `}
+        </style>
+      )}
+    </>
   )
 }
