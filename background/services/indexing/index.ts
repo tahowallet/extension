@@ -167,8 +167,8 @@ export default class IndexingService extends BaseService<Events> {
     const baseAssets = [BTC, ETH]
     const customAssets = (
       await Promise.all(
-        this.chainService.subscribedNetworks.map(async ({ network }) =>
-          this.db.getCustomAssetsByNetwork(network)
+        Object.values(this.chainService.subscribedNetworks).map(
+          async ({ network }) => this.db.getCustomAssetsByNetwork(network)
         )
       )
     ).flat()
