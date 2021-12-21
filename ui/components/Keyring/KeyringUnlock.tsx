@@ -5,7 +5,7 @@ import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slic
 import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
-  useIsPopup,
+  useIsDappPopup,
 } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
@@ -14,7 +14,7 @@ import titleStyle from "../Onboarding/titleStyle"
 export default function KeyringUnlock(): ReactElement {
   const [password, setPassword] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
-  const isPopup = useIsPopup()
+  const isDappPopup = useIsDappPopup()
   const history: {
     entries?: { pathname: string }[]
     goBack: () => void
@@ -45,7 +45,7 @@ export default function KeyringUnlock(): ReactElement {
 
   return (
     <section>
-      {isPopup && (
+      {isDappPopup && (
         <div className="cancel_tx_button_wrap">
           <SharedButton
             type="tertiaryWhite"

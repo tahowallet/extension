@@ -42,18 +42,18 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   return keyringStatus === "unlocked"
 }
 
-export function useIsPopup(): boolean {
-  const [isPopup, setIsPopup] = useState(false)
+export function useIsDappPopup(): boolean {
+  const [isDappPopup, setIsDappPopup] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const maybePage = params.get("page")
     if (isAllowedQueryParamPage(maybePage)) {
-      setIsPopup(true)
+      setIsDappPopup(true)
     } else {
-      setIsPopup(false)
+      setIsDappPopup(false)
     }
   }, [])
 
-  return isPopup
+  return isDappPopup
 }
