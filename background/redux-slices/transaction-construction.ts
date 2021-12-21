@@ -1,5 +1,11 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
+import {
+  EXPRESS,
+  INSTANT,
+  MAX_FEE_MULTIPLIER,
+  REGULAR,
+} from "../constants/networkFees"
 
 import {
   BlockEstimate,
@@ -15,6 +21,12 @@ const enum TransactionConstructionStatus {
   Loaded = "loaded",
   Signed = "signed",
 }
+
+export enum NetworkFeeTypeChosen {
+  Regular = "regular",
+  Express = "express",
+  Instant = "instant",
+}
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
@@ -23,6 +35,7 @@ export type TransactionConstruction = {
   transactionLikelyFails?: boolean
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   lastGasEstimatesRefreshed: number
+  feeTypeSelected: NetworkFeeTypeChosen
 }
 
 export type EstimatedFeesPerGas = {
@@ -34,6 +47,7 @@ export type EstimatedFeesPerGas = {
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
+  feeTypeSelected: NetworkFeeTypeChosen.Regular,
   estimatedFeesPerGas: undefined,
   lastGasEstimatesRefreshed: Date.now(),
 }
@@ -89,13 +103,34 @@ const transactionSlice = createSlice({
       ...state,
       status: TransactionConstructionStatus.Loaded,
       signedTransaction: undefined,
-      transactionRequest,
+      transactionRequest: {
+        ...transactionRequest,
+        maxFeePerGas:
+          state.estimatedFeesPerGas?.[state.feeTypeSelected]?.maxFeePerGas ??
+          transactionRequest.maxFeePerGas,
+        maxPriorityFeePerGas:
+          state.estimatedFeesPerGas?.[state.feeTypeSelected]
+            ?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
+      },
       transactionLikelyFails,
     }),
     clearTransactionState: (state) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
       status: TransactionConstructionStatus.Idle,
+      feeTypeSelected: NetworkFeeTypeChosen.Regular,
+    }),
+    regularFeeType: (state): TransactionConstruction => ({
+      ...state,
+      feeTypeSelected: NetworkFeeTypeChosen.Regular,
+    }),
+    expressFeeType: (state): TransactionConstruction => ({
+      ...state,
+      feeTypeSelected: NetworkFeeTypeChosen.Express,
+    }),
+    instantFeeType: (state): TransactionConstruction => ({
+      ...state,
+      feeTypeSelected: NetworkFeeTypeChosen.Instant,
     }),
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
       ...state,
@@ -118,15 +153,51 @@ const transactionSlice = createSlice({
         ...immerState,
         estimatedFeesPerGas: {
           baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
-          instant: estimatedFeesPerGas.estimatedPrices.find(
-            (el) => el.confidence === 99
-          ),
-          express: estimatedFeesPerGas.estimatedPrices.find(
-            (el) => el.confidence === 95
-          ),
-          regular: estimatedFeesPerGas.estimatedPrices.find(
-            (el) => el.confidence === 70
-          ),
+          instant: {
+            maxFeePerGas:
+              (estimatedFeesPerGas.baseFeePerGas *
+                MAX_FEE_MULTIPLIER[INSTANT]) /
+              10n,
+            confidence: INSTANT,
+            maxPriorityFeePerGas:
+              estimatedFeesPerGas.estimatedPrices.find(
+                (el) => el.confidence === INSTANT
+              )?.maxPriorityFeePerGas ?? 0n,
+            price:
+              estimatedFeesPerGas.estimatedPrices.find(
+                (el) => el.confidence === INSTANT
+              )?.price ?? 0n,
+          },
+          express: {
+            maxFeePerGas:
+              (estimatedFeesPerGas.baseFeePerGas *
+                MAX_FEE_MULTIPLIER[EXPRESS]) /
+              10n,
+            confidence: EXPRESS,
+            maxPriorityFeePerGas:
+              estimatedFeesPerGas.estimatedPrices.find(
+                (el) => el.confidence === EXPRESS
+              )?.maxPriorityFeePerGas ?? 0n,
+            price:
+              estimatedFeesPerGas.estimatedPrices.find(
+                (el) => el.confidence === EXPRESS
+              )?.price ?? 0n,
+          },
+          regular: {
+            maxFeePerGas:
+              (estimatedFeesPerGas.baseFeePerGas *
+                MAX_FEE_MULTIPLIER[REGULAR]) /
+              10n,
+            confidence: REGULAR,
+            maxPriorityFeePerGas:
+              estimatedFeesPerGas.estimatedPrices.find(
+                (el) => el.confidence === REGULAR
+              )?.maxPriorityFeePerGas ?? 0n,
+            price:
+              estimatedFeesPerGas.estimatedPrices.find(
+                (el) => el.confidence === REGULAR
+              )?.price ?? 0n,
+          },
         },
         lastGasEstimatesRefreshed: Date.now(),
       }
@@ -145,6 +216,9 @@ export const {
   transactionLikelyFails,
   broadcastOnSign,
   signed,
+  regularFeeType,
+  expressFeeType,
+  instantFeeType,
   estimatedFeesPerGas,
 } = transactionSlice.actions
 
@@ -163,6 +237,12 @@ export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.estimatedFeesPerGas,
   (gasData) => gasData
+)
+
+export const selectFeeType = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.feeTypeSelected,
+  (feeTypeChosen) => feeTypeChosen
 )
 
 export const selectLastGasEstimatesRefreshTime = createSelector(
