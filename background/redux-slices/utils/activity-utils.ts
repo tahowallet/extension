@@ -1,6 +1,4 @@
-import dayjs from "dayjs"
 import { convertToEth, weiToGwei } from "../../lib/utils"
-import { AnyEVMTransaction } from "../../networks"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 
 function ethTransformer(
