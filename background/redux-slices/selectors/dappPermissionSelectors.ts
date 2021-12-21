@@ -26,12 +26,14 @@ export const selectCurrentPendingPermission = createSelector(
 )
 
 export const selectAllowedPages = createSelector(
-  getProviderBridgeState,
+  (state: RootState) => getProviderBridgeState(state).allowedPages,
   selectCurrentAccount,
-  (slice, currentAccount) =>
+  (allowedPages, currentAccount) =>
+    // Decompose the origin -> permission mapping and leave only the origin ->
+    // permissions that reference the current account address.
     Object.fromEntries(
-      Object.entries(slice.allowedPages).filter(
-        ([_, { accountAddress }]) =>
+      Object.entries(allowedPages).filter(
+        ([, { accountAddress }]) =>
           accountAddress.toLowerCase() === currentAccount.address.toLowerCase()
       )
     )
