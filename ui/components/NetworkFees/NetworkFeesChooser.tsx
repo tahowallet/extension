@@ -250,7 +250,7 @@ export default function NetworkFeesChooser({
                   id="gasLimit"
                   value={gasLimit}
                   onChange={(val) => setGasLimit(val)}
-                  placeholder="21000"
+                  label="Gas limit"
                   type="number"
                 />
               </div>

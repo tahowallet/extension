@@ -25,7 +25,7 @@ export default function SharedInput(props: Props): ReactElement {
           error: errorMessage,
         })}
       />
-      <label htmlFor={id}>{placeholder}</label>
+      <label htmlFor={id}>{label}</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>
         {`
@@ -89,6 +89,5 @@ export default function SharedInput(props: Props): ReactElement {
 }
 
 SharedInput.defaultProps = {
-  placeholder: "",
   type: "text",
 }
