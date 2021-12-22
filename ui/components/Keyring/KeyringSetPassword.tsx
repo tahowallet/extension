@@ -66,7 +66,7 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap">
           <SharedInput
             type="password"
-            placeholder="Password"
+            label="Password"
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
           />
@@ -74,7 +74,7 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap repeat_password_wrap">
           <SharedInput
             type="password"
-            placeholder="Repeat Password"
+            label="Repeat Password"
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
           />
