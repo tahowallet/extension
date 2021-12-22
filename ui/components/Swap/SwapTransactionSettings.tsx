@@ -1,5 +1,4 @@
 import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { BlockEstimate } from "@tallyho/tally-background/networks"
 
 import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -20,13 +19,6 @@ export default function SwapTransactionSettings(
 
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
   const [gasLimit, setGasLimit] = useState("")
-  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
-    useState<BlockEstimate>({
-      confidence: 0,
-      maxFeePerGas: 0n,
-      maxPriorityFeePerGas: 0n,
-      price: 0n,
-    })
   const [currentFeeValues, setCurrentFeeValues] = useState({
     gwei: "",
     fiat: "",
@@ -65,8 +57,6 @@ export default function SwapTransactionSettings(
 
                 <NetworkFeesChooser
                   estimatedFeesPerGas={estimatedFeesPerGas}
-                  onSelectFeeOption={setSelectedEstimatedFeePerGas}
-                  selectedGas={selectedEstimatedFeePerGas}
                   gasLimit={gasLimit}
                   setGasLimit={setGasLimit}
                 />
