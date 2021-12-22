@@ -18,6 +18,7 @@ import {
   eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
 } from "../chain/utils"
+import PreferenceService from "../preferences"
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -40,12 +41,15 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   static create: ServiceCreatorFunction<
     Events,
     InternalEthereumProviderService,
-    [Promise<ChainService>]
-  > = async (chainService) => {
-    return new this(await chainService)
+    [Promise<ChainService>, Promise<PreferenceService>]
+  > = async (chainService, preferenceService) => {
+    return new this(await chainService, await preferenceService)
   }
 
-  private constructor(private chainService: ChainService) {
+  private constructor(
+    private chainService: ChainService,
+    private preferenceService: PreferenceService
+  ) {
     super()
 
     browser.runtime.onConnect.addListener(async (port) => {
@@ -126,10 +130,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "web3_clientVersion":
       case "web3_sha3":
         return this.chainService.send(method, params)
-      case "eth_accounts": // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
-        return this.chainService
-          .getAccountsToTrack()
-          .then(([account]) => [account.address])
+      case "eth_accounts": {
+        // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
+        const currentAccount = await this.preferenceService.getCurrentAddress()
+        return [currentAccount]
+      }
       case "eth_sendTransaction":
         return this.signTransaction(params[0] as EthersTransactionRequest).then(
           async (signed) => {

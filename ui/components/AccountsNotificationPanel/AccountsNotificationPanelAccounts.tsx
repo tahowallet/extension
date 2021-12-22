@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { setNewCurrentAddress } from "@tallyho/tally-background/redux-slices/ui"
 import {
   selectAccountTotalsByCategory,
   selectCurrentAccount,
@@ -125,7 +125,7 @@ export default function AccountsNotificationPanelAccounts({
 
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
-    dispatch(setCurrentAccount(address))
+    dispatch(setNewCurrentAddress(address))
   }
 
   useEffect(() => {

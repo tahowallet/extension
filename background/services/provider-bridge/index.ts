@@ -1,4 +1,5 @@
 import browser, { Runtime } from "webextension-polyfill"
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
@@ -9,7 +10,7 @@ import {
   EIP1193Error,
   RPCRequest,
   EIP1193_ERROR_CODES,
-  isTallyInternalCommunication,
+  isTallyConfigPayload,
 } from "@tallyho/provider-bridge-shared"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
@@ -32,7 +33,7 @@ type Events = ServiceLifecycleEvents & {
  * in shared dapp space and can be modified by other extensions - and our
  * internal service layer.
  *
- * The reponsibility of this service is 2 fold.
+ * The responsibility of this service is 2 fold.
  * - Provide connection interface - handle port communication, connect, disconnect etc
  * - Validate the incoming communication and make sure that what we receive is what we expect
  */
@@ -113,17 +114,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    if (isTallyInternalCommunication(event.request)) {
+    const originPermission = await this.checkPermission(origin)
+    if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
       }
-    } else if (await this.checkPermission(origin)) {
+    } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
       response.result = await this.routeContentScriptRPCRequest(
+        originPermission,
         event.request.method,
         event.request.params
       )
@@ -131,12 +134,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
+      const accountAddress = await this.preferenceService.getCurrentAddress()
       const permissionRequest: PermissionRequest = {
+        key: `${origin}_${accountAddress}`,
         origin,
         faviconUrl,
         title,
         state: "request",
-        accountAddress: "",
+        accountAddress,
       }
 
       const blockUntilUserAction = await this.requestPermission(
@@ -145,10 +150,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       await blockUntilUserAction
 
-      if (await this.checkPermission(origin)) {
+      const persistedPermission = await this.checkPermission(origin)
+      if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
         response.result = await this.routeContentScriptRPCRequest(
+          persistedPermission,
           "eth_accounts",
           event.request.params
         )
@@ -181,6 +188,30 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
+  async notifyContentScriptsAboutAddressChange(newAddress?: string) {
+    this.openPorts.forEach(async (port) => {
+      // we know that url exists because it was required to store the port
+      const { origin } = new URL(port.sender?.url as string)
+      if (await this.checkPermission(origin)) {
+        port.postMessage({
+          id: "tallyHo",
+          result: {
+            method: "tally_accountChanged",
+            address: [newAddress],
+          },
+        })
+      } else {
+        port.postMessage({
+          id: "tallyHo",
+          result: {
+            method: "tally_accountChanged",
+            address: [],
+          },
+        })
+      }
+    })
+  }
+
   async requestPermission(
     permissionRequest: PermissionRequest
   ): Promise<unknown> {
@@ -210,47 +241,62 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // FIXME proper error handling if this happens - should not tho
     if (permission.state !== "deny" || !permission.accountAddress) return
 
-    await this.db.deletePermission(permission.origin)
+    await this.db.deletePermission(
+      permission.origin,
+      await this.preferenceService.getCurrentAddress()
+    )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.origin]
     }
+
+    await this.notifyContentScriptsAboutAddressChange()
   }
 
-  async checkPermission(origin: string): Promise<boolean> {
-    return this.db.checkPermission(origin).then((r) => !!r)
+  async checkPermission(
+    origin: string,
+    address?: string
+  ): Promise<PermissionRequest | undefined> {
+    const currentAddress =
+      address ?? (await await this.preferenceService.getCurrentAddress())
+    return this.db.checkPermission(origin, currentAddress)
   }
 
   async routeContentScriptRPCRequest(
+    enablingPermission: PermissionRequest,
     method: string,
     params: RPCRequest["params"]
   ): Promise<unknown> {
     try {
       switch (method) {
         case "eth_requestAccounts":
-          return await this.internalEthereumProviderService.routeSafeRPCRequest(
-            "eth_accounts",
-            params
-          )
+        case "eth_accounts":
+          return [enablingPermission.accountAddress]
+
         case "eth_signTransaction":
         case "eth_sendTransaction":
-          // We are monsters.
+          // We are monsters and aren't breaking a method out quite yet.
+          // eslint-disable-next-line no-case-declarations
+          const transactionRequest = params[0] as EthersTransactionRequest
           // eslint-disable-next-line no-case-declarations
           const popupPromise = ProviderBridgeService.showExtensionPopup(
             AllowedQueryParamPage.signTransaction
           )
-          return await this.internalEthereumProviderService
-            .routeSafeRPCRequest(method, params)
-            .finally(async () => {
-              // Close the popup once we're done submitting.
-              const popup = await popupPromise
-              if (typeof popup.id !== "undefined") {
-                browser.windows.remove(popup.id)
-              }
-            })
-        // Above, show the connect window, then continue on to regular handling.
-        // eslint-disable-next-line no-fallthrough
+
+          if (transactionRequest.from === enablingPermission.accountAddress) {
+            return await this.internalEthereumProviderService
+              .routeSafeRPCRequest(method, params)
+              .finally(async () => {
+                // Close the popup once we're done submitting.
+                const popup = await popupPromise
+                if (typeof popup.id !== "undefined") {
+                  browser.windows.remove(popup.id)
+                }
+              })
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,

@@ -1,17 +1,16 @@
 import React, { ReactElement } from "react"
 
-import { selectCurrentAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundSelector } from "../../hooks"
+type Props = {
+  shortenedAddress: string
+  name: string | undefined
+  avatarURL: string | undefined
+}
 
-export default function SharedCurrentAccountInformation(): ReactElement {
-  const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
-
-  if (typeof currentAccountTotal === "undefined") {
-    return <></>
-  }
-
-  const { shortenedAddress, name, avatarURL } = currentAccountTotal
-
+export default function SharedCurrentAccountInformation({
+  shortenedAddress,
+  name,
+  avatarURL,
+}: Props): ReactElement {
   return (
     <>
       {name?.includes(".") ? name : shortenedAddress}

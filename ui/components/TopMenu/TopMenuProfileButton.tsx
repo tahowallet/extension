@@ -1,13 +1,27 @@
+import { selectCurrentAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 
 export default function TopMenuProfileButton(props: {
   onClick?: () => void
 }): ReactElement {
+  const { shortenedAddress, name, avatarURL } =
+    useBackgroundSelector(selectCurrentAccountTotal) ?? {}
+
   const { onClick } = props
+
   return (
     <button type="button" onClick={onClick}>
-      <SharedCurrentAccountInformation />
+      {typeof shortenedAddress === "undefined" ? (
+        <></>
+      ) : (
+        <SharedCurrentAccountInformation
+          shortenedAddress={shortenedAddress}
+          name={name}
+          avatarURL={avatarURL}
+        />
+      )}
       <style jsx>
         {`
           button {

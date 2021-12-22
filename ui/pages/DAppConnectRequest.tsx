@@ -1,7 +1,6 @@
 import React, { ReactElement, useCallback, useEffect } from "react"
 import {
   selectCurrentPendingPermission,
-  selectCurrentAccount,
   selectCurrentAccountTotal,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -65,35 +64,31 @@ export default function DAppConnectRequest(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const lowerCaseAddress = currentAccountTotal?.address.toLowerCase()
-
   useEffect(() => {
     window.onbeforeunload = (ev) => {
-      if (typeof permission !== "undefined" && lowerCaseAddress) {
+      if (typeof permission !== "undefined") {
         dispatch(
           denyOrRevokePermission({
             ...permission,
             state: "deny",
-            accountAddress: lowerCaseAddress,
           })
         )
       }
     }
-  }, [dispatch, permission, lowerCaseAddress])
+  }, [dispatch, permission])
 
   const grant = useCallback(async () => {
-    if (typeof permission !== "undefined" && lowerCaseAddress) {
+    if (typeof permission !== "undefined") {
       await dispatch(
         grantPermission({
           ...permission,
           state: "allow",
-          accountAddress: lowerCaseAddress,
         })
       )
     }
     window.onbeforeunload = null
     window.close()
-  }, [dispatch, permission, lowerCaseAddress])
+  }, [dispatch, permission])
 
   const deny = useCallback(async () => {
     // The denyOrRevokePermission will be dispatched in the onbeforeunload effect
@@ -101,8 +96,8 @@ export default function DAppConnectRequest(): ReactElement {
   }, [])
 
   if (
-    typeof currentAccountTotal === "undefined" ||
-    typeof permission === "undefined"
+    typeof permission === "undefined" ||
+    permission.accountAddress !== currentAccountTotal?.address
   ) {
     // FIXME What do we do if we end up in a weird state here? Dismiss the
     // FIXME popover? Show an error?
@@ -128,7 +123,7 @@ export default function DAppConnectRequest(): ReactElement {
           <div className="icon_connection" />
           <div className="connection_destination">
             <SharedPanelAccountItem
-              key={lowerCaseAddress}
+              key={permission.accountAddress}
               accountTotal={currentAccountTotal}
               hideMenu
             />
