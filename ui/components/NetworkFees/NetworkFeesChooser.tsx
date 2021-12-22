@@ -1,11 +1,19 @@
 import { formatUnits, formatEther } from "@ethersproject/units"
+import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/networkFees"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import { selectMainCurrencyUnitPrice } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   EstimatedFeesPerGas,
+  expressFeeType,
+  instantFeeType,
+  regularFeeType,
+  selectFeeType,
   selectLastGasEstimatesRefreshTime,
+  selectTransactionData,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
@@ -25,16 +33,12 @@ type GasOption = {
 }
 
 interface NetworkFeesChooserProps {
-  onSelectFeeOption: (selectedFee: BlockEstimate) => void
-  selectedGas?: BlockEstimate
   gasLimit: string
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
 }
 
 export default function NetworkFeesChooser({
-  onSelectFeeOption,
-  selectedGas,
   gasLimit,
   setGasLimit,
   estimatedFeesPerGas,
@@ -43,29 +47,44 @@ export default function NetworkFeesChooser({
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
 
+  const dispatch = useDispatch()
+
+  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
+  const selectedFeeType: string = useBackgroundSelector(selectFeeType)
+  const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
+
   const [feeModalOpen, setFeeModalOpen] = useState(false)
   const openSelectFeeModal = () => {
     setFeeModalOpen(true)
   }
   const closeSelectFeeModal = () => {
+    setActiveFeeIndex(gasOptions.findIndex((el) => el.name === selectedFeeType))
     setFeeModalOpen(false)
   }
 
   const handleSelectGasOption = (index: number) => {
-    onSelectFeeOption({
-      confidence: Number(gasOptions[index].confidence),
-      price: gasOptions[index].price,
-      maxFeePerGas: gasOptions[index].maxFeePerGas,
-      maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
-    })
+    setActiveFeeIndex(index)
   }
-
   const saveUserGasChoice = () => {
+    switch (gasOptions[activeFeeIndex].name) {
+      case "regular":
+        dispatch(regularFeeType())
+        break
+      case "express":
+        dispatch(expressFeeType())
+        break
+      case "instant":
+        dispatch(instantFeeType())
+        break
+      default:
+        break
+    }
+    if (transactionDetails !== undefined) {
+      dispatch(updateTransactionOptions(transactionDetails))
+    }
     setFeeModalOpen(false)
   }
-  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-
-  const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
 
   const getSecondsTillGasUpdate = useCallback(() => {
     const now = new Date().getTime()
@@ -89,37 +108,21 @@ export default function NetworkFeesChooser({
       const baseFee = estimatedFeesPerGas?.baseFeePerGas || 0n
       const feeOptionData: {
         name: { [key: number]: string }
-        estimatedMultiplier: { [key: number]: bigint }
-        maxMultiplier: { [key: number]: bigint }
       } = {
         name: {
-          70: "Regular",
-          95: "Express",
-          99: "Instant",
-        },
-        estimatedMultiplier: {
-          70: 11n,
-          95: 13n,
-          99: 18n,
-        },
-        maxMultiplier: {
-          70: 13n,
-          95: 15n,
-          99: 20n,
+          70: "regular",
+          95: "express",
+          99: "instant",
         },
       }
-      const formatToGwei = (multiplier: bigint) => {
-        return formatUnits(
-          BigInt(Number((baseFee * multiplier) / 10n).toFixed()) +
-            option.maxPriorityFeePerGas,
-          "gwei"
-        ).split(".")[0]
+      const formatToGwei = (value: bigint) => {
+        return formatUnits(value + option.maxPriorityFeePerGas, "gwei").split(
+          "."
+        )[0]
       }
 
       const ethAmount = formatEther(
-        ((baseFee * feeOptionData.estimatedMultiplier[confidence] +
-          option.maxPriorityFeePerGas) /
-          10n) *
+        (option.maxFeePerGas + option.maxPriorityFeePerGas) *
           (gasLimit ? BigInt(parseInt(gasLimit, 10)) : 21000n)
       )
 
@@ -132,14 +135,14 @@ export default function NetworkFeesChooser({
         name: feeOptionData.name[confidence],
         confidence: `${confidence}`,
         estimatedGwei: formatToGwei(
-          feeOptionData.estimatedMultiplier[confidence]
+          (baseFee * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
         ),
-        maxGwei: formatToGwei(feeOptionData.maxMultiplier[confidence]),
+        maxGwei: formatToGwei(option.maxFeePerGas),
         dollarValue: feeFiatPrice,
         price: option.price,
         estimatedFeePerGas:
-          (baseFee * feeOptionData.estimatedMultiplier[confidence]) / 10n,
-        maxFeePerGas: (baseFee * feeOptionData.maxMultiplier[confidence]) / 10n,
+          (baseFee * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
+        maxFeePerGas: option.maxFeePerGas,
         maxPriorityFeePerGas: option.maxPriorityFeePerGas,
       }
     }
@@ -151,19 +154,17 @@ export default function NetworkFeesChooser({
         typeof regular !== "undefined"
       ) {
         const basePrices = [regular, express, instant]
-        const selectedGasFeeIndex = basePrices.findIndex(
-          (estimate) =>
-            typeof estimate !== "bigint" &&
-            typeof estimate !== "undefined" &&
-            estimate.confidence === selectedGas?.confidence
+
+        const updatedGasOptions = basePrices.map((option) =>
+          formatBlockEstimate(option)
+        )
+        const selectedGasFeeIndex = updatedGasOptions.findIndex(
+          (el) => el.name === selectedFeeType
         )
         const currentlySelectedFeeIndex =
           selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
         const currentlySelectedFee = basePrices[currentlySelectedFeeIndex]
 
-        const updatedGasOptions = basePrices.map((option) =>
-          formatBlockEstimate(option)
-        )
         setGasOptions(updatedGasOptions)
 
         setActiveFeeIndex(currentlySelectedFeeIndex)
@@ -186,7 +187,7 @@ export default function NetworkFeesChooser({
             setMaxFee(
               Number(
                 formatUnits(
-                  (estimatedFeesPerGas.baseFeePerGas * BigInt(18)) / 10n +
+                  (estimatedFeesPerGas.baseFeePerGas * BigInt(20)) / 10n +
                     estimatedFeesPerGas.instant?.maxPriorityFeePerGas,
                   "gwei"
                 ).split(".")[0]
@@ -196,11 +197,16 @@ export default function NetworkFeesChooser({
         }
       }
     }
-  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, selectedGas?.confidence])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice])
 
   useEffect(() => {
     updateGasOptions()
   }, [updateGasOptions])
+
+  const capitalize = (s: string) => {
+    return s[0].toUpperCase() + s.slice(1)
+  }
 
   return (
     <>
@@ -229,7 +235,7 @@ export default function NetworkFeesChooser({
                   type="button"
                 >
                   <div className="option_left">
-                    <div className="name">{option.name}</div>
+                    <div className="name">{capitalize(option.name)}</div>
                     <div className="subtext">
                       Probability: {option.confidence}%
                     </div>

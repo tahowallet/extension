@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
@@ -9,9 +9,7 @@ import {
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
-  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { BlockEstimate } from "@tallyho/tally-background/networks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -66,15 +64,6 @@ export default function SignTransaction(): ReactElement {
 
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
-  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
-    useState<BlockEstimate>(
-      estimatedFeesPerGas?.regular ?? {
-        confidence: 0,
-        maxFeePerGas: 0n,
-        maxPriorityFeePerGas: 0n,
-        price: 0n,
-      }
-    )
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
@@ -98,30 +87,6 @@ export default function SignTransaction(): ReactElement {
     signedTransaction,
     dispatch,
   ])
-
-  const updateGasSettings = useCallback(
-    async (estimate: BlockEstimate) => {
-      setSelectedEstimatedFeePerGas(estimate)
-      if (transactionDetails) {
-        const transaction = {
-          ...transactionDetails,
-          maxFeePerGas: estimate.maxFeePerGas,
-          maxPriorityFeePerGas: estimate.maxPriorityFeePerGas,
-          gasLimit: BigInt(gasLimit),
-        }
-        dispatch(updateTransactionOptions(transaction))
-      }
-    },
-    [dispatch, gasLimit, transactionDetails]
-  )
-
-  useEffect(() => {
-    // FIXME Hackily handle the user not interacting with the fee selector for now.
-    if (transactionDetails && transactionDetails.maxFeePerGas === 0n) {
-      setGasLimit(transactionDetails.gasLimit.toString())
-      updateGasSettings(selectedEstimatedFeePerGas)
-    }
-  }, [transactionDetails, selectedEstimatedFeePerGas, updateGasSettings])
 
   if (!areKeyringsUnlocked) {
     return <></>
@@ -199,8 +164,6 @@ export default function SignTransaction(): ReactElement {
           {signType === SignType.Sign ? (
             <NetworkFeesChooser
               estimatedFeesPerGas={estimatedFeesPerGas}
-              onSelectFeeOption={updateGasSettings}
-              selectedGas={selectedEstimatedFeePerGas}
               gasLimit={gasLimit}
               setGasLimit={setGasLimit}
             />
