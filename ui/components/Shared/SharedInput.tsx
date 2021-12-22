@@ -1,9 +1,12 @@
-import classNames from "classnames"
 import React, { ReactElement } from "react"
+import classNames from "classnames"
+import { useRunOnFirstRender } from "../../hooks"
 
 interface Props {
   id?: string
-  placeholder: string
+  label: string
+  focusedLabelBackgroundColor: string
+  defaultValue?: string
   type: "password" | "text" | "number"
   value?: string | number | undefined
   onChange?: (value: string) => void
@@ -11,20 +14,37 @@ interface Props {
 }
 
 export default function SharedInput(props: Props): ReactElement {
-  const { id, placeholder, type, onChange, value, errorMessage } = props
+  const {
+    id,
+    label,
+    defaultValue,
+    focusedLabelBackgroundColor,
+    type,
+    onChange,
+    value,
+    errorMessage,
+  } = props
+
+  useRunOnFirstRender(() => {
+    if (defaultValue) {
+      onChange?.(defaultValue)
+    }
+  })
 
   return (
     <>
       <input
         id={id}
         type={type}
-        placeholder={placeholder}
+        placeholder=" "
         value={value}
+        spellCheck={false}
         onChange={(event) => onChange?.(event.target.value)}
         className={classNames({
           error: errorMessage,
         })}
       />
+      <label htmlFor={id}>{label}</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>
         {`
@@ -57,6 +77,30 @@ export default function SharedInput(props: Props): ReactElement {
             line-height: 20px;
             margin-top: 3px;
           }
+          label {
+            position: absolute;
+            pointer-events: none;
+            display: flex;
+            width: fit-content;
+            margin-left: 16px;
+            transform: translateY(-32px);
+            background-color: ${focusedLabelBackgroundColor};
+            border-radius: 5px;
+            box-sizing: border-box;
+            color: var(--green-40);
+            transition: font-size 0.2s ease, transform 0.2s ease,
+              font-weight 0.2s ease, padding 0.2s ease;
+          }
+          input:focus ~ label,
+          input:not(:placeholder-shown) ~ label {
+            transform: translateY(-57px) translateX(-5px);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 0px 6px;
+          }
+          .error ~ label {
+            color: var(--error);
+          }
         `}
       </style>
     </>
@@ -64,6 +108,6 @@ export default function SharedInput(props: Props): ReactElement {
 }
 
 SharedInput.defaultProps = {
-  placeholder: "",
   type: "text",
+  focusedLabelBackgroundColor: "var(--hunter-green)",
 }

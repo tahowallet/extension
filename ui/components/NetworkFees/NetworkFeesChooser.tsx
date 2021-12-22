@@ -249,15 +249,14 @@ export default function NetworkFeesChooser({
             })}
             <div className="info">
               <div className="limit">
-                <label className="limit_label" htmlFor="gasLimit">
-                  Gas limit
-                </label>
                 <SharedInput
                   id="gasLimit"
                   value={gasLimit}
                   onChange={(val) => setGasLimit(val)}
-                  placeholder="21000"
+                  defaultValue="21000"
+                  label="Gas limit"
                   type="number"
+                  focusedLabelBackgroundColor="var(--green-95)"
                 />
               </div>
               <div className="max_fee">
@@ -333,15 +332,6 @@ export default function NetworkFeesChooser({
             margin: 16px 0;
             width: 40%;
             position: relative;
-          }
-          .limit_label {
-            position: absolute;
-            top: -8px;
-            left: 10px;
-            font-size: 12px;
-            padding: 0 4px;
-            background-color: var(--green-95);
-            color: var(--green-40);
           }
           .title {
             font-size: 22px;

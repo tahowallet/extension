@@ -66,7 +66,7 @@ export default function KeyringUnlock(): ReactElement {
         <div className="input_wrap">
           <SharedInput
             type="password"
-            placeholder="Password"
+            label="Password"
             onChange={(value) => {
               setPassword(value)
               // Clear error message on input change

@@ -4,7 +4,7 @@ import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/sele
 import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
-import { RefObject, useState, useEffect } from "react"
+import { RefObject, useState, useEffect, useRef } from "react"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()
@@ -72,6 +72,7 @@ export function useIsDappPopup(): boolean {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const maybePage = params.get("page")
+
     if (isAllowedQueryParamPage(maybePage)) {
       setIsDappPopup(true)
     } else {
@@ -80,4 +81,13 @@ export function useIsDappPopup(): boolean {
   }, [])
 
   return isDappPopup
+}
+
+export function useRunOnFirstRender(func: () => void): void {
+  const isFirst = useRef(true)
+
+  if (isFirst.current) {
+    isFirst.current = false
+    func()
+  }
 }
