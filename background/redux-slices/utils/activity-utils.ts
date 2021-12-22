@@ -1,6 +1,4 @@
-import dayjs from "dayjs"
 import { convertToEth, weiToGwei } from "../../lib/utils"
-import { AnyEVMTransaction } from "../../networks"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 
 function ethTransformer(
@@ -108,11 +106,6 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
     transformer: ethTransformer,
     detailTransformer: ethTransformer,
   },
-  gasUsed: {
-    readableName: "Gas",
-    transformer: (val) => val.toString(),
-    detailTransformer: (val) => val.toString(),
-  },
   maxFeePerGas: {
     readableName: "Max Fee/Gas",
     transformer: gweiTransformer,
@@ -122,5 +115,10 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
     readableName: "Gas Price",
     transformer: gweiTransformer,
     detailTransformer: gweiTransformer,
+  },
+  gasUsed: {
+    readableName: "Gas",
+    transformer: (val) => val?.toString(),
+    detailTransformer: (val) => val?.toString(),
   },
 }

@@ -1,4 +1,5 @@
 import browser, { Runtime } from "webextension-polyfill"
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
@@ -113,6 +114,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
+    const originPermission = await this.checkPermission(origin)
     if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
@@ -120,10 +122,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
       }
-    } else if (await this.checkPermission(origin)) {
+    } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
       response.result = await this.routeContentScriptRPCRequest(
+        originPermission,
         event.request.method,
         event.request.params
       )
@@ -147,10 +150,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       await blockUntilUserAction
 
-      if (await this.checkPermission(origin)) {
+      const persistedPermission = await this.checkPermission(origin)
+      if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
         response.result = await this.routeContentScriptRPCRequest(
+          persistedPermission,
           "eth_accounts",
           event.request.params
         )
@@ -183,7 +188,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async notifyContentScriptsAboutAddressChange(newAddress: string) {
+  async notifyContentScriptsAboutAddressChange(newAddress?: string) {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
@@ -245,43 +250,53 @@ export default class ProviderBridgeService extends BaseService<Events> {
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.origin]
     }
+
+    await this.notifyContentScriptsAboutAddressChange()
   }
 
-  async checkPermission(origin: string, address?: string): Promise<boolean> {
+  async checkPermission(
+    origin: string,
+    address?: string
+  ): Promise<PermissionRequest | undefined> {
     const currentAddress =
       address ?? (await await this.preferenceService.getCurrentAddress())
-    const permission = await this.db
-      .checkPermission(origin, currentAddress)
-      .then((r) => !!r)
-    return permission
+    return this.db.checkPermission(origin, currentAddress)
   }
 
   async routeContentScriptRPCRequest(
+    enablingPermission: PermissionRequest,
     method: string,
     params: RPCRequest["params"]
   ): Promise<unknown> {
     try {
       switch (method) {
         case "eth_requestAccounts":
-          return await this.internalEthereumProviderService.routeSafeRPCRequest(
-            "eth_accounts",
-            params
-          )
+        case "eth_accounts":
+          return [enablingPermission.accountAddress]
+
         case "eth_signTransaction":
-        case "eth_sendTransaction": {
+        case "eth_sendTransaction":
+          // We are monsters and aren't breaking a method out quite yet.
+          // eslint-disable-next-line no-case-declarations
+          const transactionRequest = params[0] as EthersTransactionRequest
+          // eslint-disable-next-line no-case-declarations
           const popupPromise = ProviderBridgeService.showExtensionPopup(
             AllowedQueryParamPage.signTransaction
           )
-          return await this.internalEthereumProviderService
-            .routeSafeRPCRequest(method, params)
-            .finally(async () => {
-              // Close the popup once we're done submitting.
-              const popup = await popupPromise
-              if (typeof popup.id !== "undefined") {
-                browser.windows.remove(popup.id)
-              }
-            })
-        }
+
+          if (transactionRequest.from === enablingPermission.accountAddress) {
+            return await this.internalEthereumProviderService
+              .routeSafeRPCRequest(method, params)
+              .finally(async () => {
+                // Close the popup once we're done submitting.
+                const popup = await popupPromise
+                if (typeof popup.id !== "undefined") {
+                  browser.windows.remove(popup.id)
+                }
+              })
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,

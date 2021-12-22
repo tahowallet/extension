@@ -11,7 +11,9 @@ import {
   signTransaction,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -63,6 +65,12 @@ export default function SignTransaction(): ReactElement {
     ({ transactionConstruction }) => transactionConstruction.signedTransaction
   )
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+
+  const signerAccountTotal = useBackgroundSelector((state) =>
+    typeof transactionDetails === "undefined"
+      ? undefined
+      : getAccountTotal(state, transactionDetails.from)
+  )
 
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
@@ -127,7 +135,10 @@ export default function SignTransaction(): ReactElement {
     return <></>
   }
 
-  if (typeof transactionDetails === "undefined") {
+  if (
+    typeof transactionDetails === "undefined" ||
+    typeof signerAccountTotal === "undefined"
+  ) {
     // TODO Some sort of unexpected state error if we end up here... Or do we
     // go back in history? That won't work for dApp popovers though.
     return <></>
@@ -184,7 +195,9 @@ export default function SignTransaction(): ReactElement {
 
   return (
     <section>
-      <SignTransactionNetworkAccountInfoTopBar />
+      <SignTransactionNetworkAccountInfoTopBar
+        accountTotal={signerAccountTotal}
+      />
       <h1 className="serif_header title">{signContent[signType].title}</h1>
       <div className="primary_info_card standard_width">
         {signContent[signType].component()}
@@ -229,15 +242,19 @@ export default function SignTransaction(): ReactElement {
         >
           Reject
         </SharedButton>
-        <SharedButton
-          type="primary"
-          iconSize="large"
-          size="large"
-          onClick={handleConfirm}
-          showLoadingOnClick
-        >
-          {signContent[signType].confirmButtonText}
-        </SharedButton>
+        {signerAccountTotal.accountType === AccountType.Imported ? (
+          <SharedButton
+            type="primary"
+            iconSize="large"
+            size="large"
+            onClick={handleConfirm}
+            showLoadingOnClick
+          >
+            {signContent[signType].confirmButtonText}
+          </SharedButton>
+        ) : (
+          <span className="no-signing">Read-only accounts cannot sign</span>
+        )}
       </div>
       <style jsx>
         {`

@@ -1,7 +1,20 @@
 import React, { ReactElement } from "react"
+import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 
-export default function SignTransactionNetworkAccountInfoTopBar(): ReactElement {
+type Props = {
+  accountTotal: AccountTotal
+}
+
+export default function SignTransactionNetworkAccountInfoTopBar({
+  accountTotal,
+}: Props): ReactElement {
+  if (typeof accountTotal === "undefined") {
+    return <></>
+  }
+
+  const { shortenedAddress, name, avatarURL } = accountTotal
+
   return (
     <div className="top_bar_wrap standard_width">
       <div className="row_part">
@@ -9,7 +22,11 @@ export default function SignTransactionNetworkAccountInfoTopBar(): ReactElement 
         <span className="network_name">Arbitrum</span>
       </div>
       <div className="row_part">
-        <SharedCurrentAccountInformation />
+        <SharedCurrentAccountInformation
+          shortenedAddress={shortenedAddress}
+          name={name}
+          avatarURL={avatarURL}
+        />
       </div>
       <style jsx>
         {`
