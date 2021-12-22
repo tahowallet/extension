@@ -1,9 +1,12 @@
-import classNames from "classnames"
 import React, { ReactElement } from "react"
+import classNames from "classnames"
+import { useRunOnFirstRender } from "../../hooks"
 
 interface Props {
   id?: string
-  placeholder: string
+  label: string
+  focusedLabelBackgroundColor: string
+  defaultValue?: string
   type: "password" | "text" | "number"
   value?: string | number | undefined
   onChange?: (value: string) => void
@@ -11,7 +14,22 @@ interface Props {
 }
 
 export default function SharedInput(props: Props): ReactElement {
-  const { id, placeholder, type, onChange, value, errorMessage } = props
+  const {
+    id,
+    label,
+    defaultValue,
+    focusedLabelBackgroundColor,
+    type,
+    onChange,
+    value,
+    errorMessage,
+  } = props
+
+  useRunOnFirstRender(() => {
+    if (defaultValue) {
+      onChange?.(defaultValue)
+    }
+  })
 
   return (
     <>
@@ -20,6 +38,7 @@ export default function SharedInput(props: Props): ReactElement {
         type={type}
         placeholder=" "
         value={value}
+        spellCheck={false}
         onChange={(event) => onChange?.(event.target.value)}
         className={classNames({
           error: errorMessage,
@@ -65,7 +84,7 @@ export default function SharedInput(props: Props): ReactElement {
             width: fit-content;
             margin-left: 16px;
             transform: translateY(-32px);
-            background-color: var(--hunter-green);
+            background-color: ${focusedLabelBackgroundColor};
             border-radius: 5px;
             box-sizing: border-box;
             color: var(--green-40);
@@ -90,4 +109,5 @@ export default function SharedInput(props: Props): ReactElement {
 
 SharedInput.defaultProps = {
   type: "text",
+  focusedLabelBackgroundColor: "var(--hunter-green)",
 }
