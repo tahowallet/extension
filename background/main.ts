@@ -504,9 +504,12 @@ export default class Main extends BaseService<never> {
       )
     })
 
-    keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
-      await this.keyringService.importLegacyKeyring(mnemonic)
-    })
+    keyringSliceEmitter.on(
+      "importLegacyKeyring",
+      async ({ mnemonic, path }) => {
+        await this.keyringService.importLegacyKeyring(mnemonic, path)
+      }
+    )
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {

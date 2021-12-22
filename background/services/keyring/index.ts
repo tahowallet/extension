@@ -281,7 +281,7 @@ export default class KeyringService extends BaseService<Events> {
    * @param mnemonic - a 12-word seed phrase compatible with MetaMask.
    * @returns The string ID of the new keyring.
    */
-  async importLegacyKeyring(mnemonic: string): Promise<string> {
+  async importLegacyKeyring(mnemonic: string, path?: string): Promise<string> {
     this.requireUnlocked()
 
     // confirm the mnemonic is 12-word for a 128-bit seed + checksum. Leave
@@ -290,7 +290,9 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Invalid legacy mnemonic.")
     }
 
-    const newKeyring = new HDKeyring({ mnemonic })
+    const newKeyring = path
+      ? new HDKeyring({ mnemonic, path })
+      : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()

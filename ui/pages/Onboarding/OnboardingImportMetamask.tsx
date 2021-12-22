@@ -3,8 +3,11 @@ import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyr
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
+import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
+import SharedCheckbox from "../../components/Shared/SharedCheckbox"
+import OnboardingDerivationPathSelect from "./OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -67,6 +70,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+  const [isChecked, setIsChecked] = useState(false)
+  const [path, setPath] = useState<string>()
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
@@ -87,11 +92,16 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     const trimmedRecoveryPhrase = recoveryPhrase.trim()
     if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase }))
+      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim(), path }))
+      dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
     }
-  }, [dispatch, recoveryPhrase])
+  }, [dispatch, recoveryPhrase, path])
+
+  useEffect(() => {
+    if (!isChecked) setPath(undefined)
+  }, [isChecked])
 
   return areKeyringsUnlocked ? (
     <section className="center_horizontal">
@@ -120,6 +130,21 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             }}
             errorMessage={errorMessage}
           />
+
+          {!HIDE_IMPORT_DERIVATION_PATH && (
+            <div className="checkbox_wrapper">
+              <SharedCheckbox
+                label="Custom derivation"
+                checked={isChecked}
+                onChange={() => setIsChecked(!isChecked)}
+              />
+            </div>
+          )}
+          {!HIDE_IMPORT_DERIVATION_PATH && isChecked && (
+            <div className="select_wrapper">
+              <OnboardingDerivationPathSelect onChange={setPath} />
+            </div>
+          )}
         </div>
         <div className="portion bottom">
           <SharedButton
@@ -161,8 +186,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         .metamask_onboarding_image {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: 205.3px;
-          height: 193px;
+          width: ${HIDE_IMPORT_DERIVATION_PATH ? "205.3px" : "154px"};
+          height: ${HIDE_IMPORT_DERIVATION_PATH ? "193px" : "144.75"};
           margin-top: 27px;
           margin-bottom: 13px;
         }
@@ -175,6 +200,13 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           line-height: 24px;
           text-align: center;
           margin-bottom: 32px;
+        }
+        .checkbox_wrapper {
+          margin-top: 6px;
+          margin-bottom: 6px;
+        }
+        .select_wrapper {
+          width: 332px;
         }
       `}</style>
     </section>

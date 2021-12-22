@@ -4,7 +4,7 @@ import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/sele
 import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
-import { useState, useEffect } from "react"
+import { RefObject, useState, useEffect } from "react"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()
@@ -40,6 +40,30 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   })
 
   return keyringStatus === "unlocked"
+}
+
+export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
+  ref: RefObject<T>,
+  handler: (event: MouseEvent | TouchEvent) => void
+): void => {
+  useEffect(() => {
+    const listener = (event: MouseEvent | TouchEvent) => {
+      const el = ref?.current
+      if (!el || el.contains((event?.target as Node) || null)) {
+        return
+      }
+
+      handler(event) // Call the handler only if the click is outside of the element passed.
+    }
+
+    document.addEventListener("mousedown", listener)
+    document.addEventListener("touchstart", listener)
+
+    return () => {
+      document.removeEventListener("mousedown", listener)
+      document.removeEventListener("touchstart", listener)
+    }
+  }, [ref, handler]) // Reload only if ref or handler changes
 }
 
 export function useIsDappPopup(): boolean {
