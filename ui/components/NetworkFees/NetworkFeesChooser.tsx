@@ -9,6 +9,8 @@ import {
   regularFeeType,
   selectFeeType,
   selectLastGasEstimatesRefreshTime,
+  selectTransactionData,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
@@ -50,6 +52,7 @@ export default function NetworkFeesChooser({
   const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
   const selectedFeeType: string = useBackgroundSelector(selectFeeType)
   const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const [feeModalOpen, setFeeModalOpen] = useState(false)
   const openSelectFeeModal = () => {
@@ -76,6 +79,9 @@ export default function NetworkFeesChooser({
         break
       default:
         break
+    }
+    if (transactionDetails !== undefined) {
+      dispatch(updateTransactionOptions(transactionDetails))
     }
     setFeeModalOpen(false)
   }
