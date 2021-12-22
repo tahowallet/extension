@@ -1,5 +1,5 @@
-import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 
 type Props = {
