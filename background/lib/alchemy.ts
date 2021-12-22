@@ -161,8 +161,8 @@ const alchemyTokenBalanceJTD = {
       elements: {
         properties: {
           contractAddress: { type: "string" },
-          error: { type: "string", nullable: true },
           tokenBalance: { type: "string", nullable: true },
+          error: {},
         },
       },
     },
