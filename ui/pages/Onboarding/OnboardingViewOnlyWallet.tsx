@@ -3,7 +3,7 @@ import { Redirect } from "react-router-dom"
 import { isAddress } from "@ethersproject/address"
 import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
-import { setCurrentAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { setNewCurrentAddress } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -25,7 +25,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
           network: getEthereumNetwork(),
         })
       )
-      dispatch(setCurrentAccount(trimmedAddress))
+      dispatch(setNewCurrentAddress(trimmedAddress))
       setRedirect(true)
     } else {
       setErrorMessage("Please enter a valid address")

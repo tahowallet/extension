@@ -1,4 +1,5 @@
 export type PermissionRequest = {
+  key: string
   origin: string
   faviconUrl: string
   title: string
@@ -55,7 +56,17 @@ export type PortTransport = {
 export type EthersSendCallback = (error: unknown, response: unknown) => void
 
 export type TallyInternalCommunication = {
+  id: "tallyHo"
+  result: TallyConfigPayload | TallyAccountPayload
+}
+
+export type TallyConfigPayload = {
   method: "tally_getConfig"
   defaultWallet: boolean
   [prop: string]: unknown
+}
+
+export type TallyAccountPayload = {
+  method: "tally_accountChanged"
+  address: Array<string>
 }

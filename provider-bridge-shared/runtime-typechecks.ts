@@ -2,7 +2,9 @@ import {
   RPCRequest,
   WindowResponseEvent,
   PortResponseEvent,
+  TallyConfigPayload,
   TallyInternalCommunication,
+  TallyAccountPayload,
 } from "./types"
 
 export function getType(arg: unknown) {
@@ -78,5 +80,19 @@ export function isAllowedQueryParamPage(
 export function isTallyInternalCommunication(
   arg: unknown
 ): arg is TallyInternalCommunication {
+  return isObject(arg) && arg.id === "tallyHo"
+}
+
+export function isTallyConfigPayload(arg: unknown): arg is TallyConfigPayload {
   return isObject(arg) && arg.method === "tally_getConfig"
+}
+
+export function isTallyAccountPayload(
+  arg: unknown
+): arg is TallyAccountPayload {
+  return (
+    isObject(arg) &&
+    arg.method === "tally_accountChanged" &&
+    isArray(arg.address)
+  )
 }

@@ -34,14 +34,6 @@ export default function Send(): ReactElement {
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
 
-  const [selectedEstimatedFeePerGas, setSelectedEstimatedFeePerGas] =
-    useState<BlockEstimate>({
-      confidence: 0,
-      maxFeePerGas: 0n,
-      maxPriorityFeePerGas: 0n,
-      price: 0n,
-    })
-
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const dispatch = useBackgroundDispatch()
@@ -75,30 +67,13 @@ export default function Send(): ReactElement {
       setAmount(currentBalance)
     }
   }
-
   const sendTransactionRequest = async () => {
     dispatch(broadcastOnSign(true))
-    // FIXME Hackily handle the user not interacting with the fee selector for now.
-    if (selectedEstimatedFeePerGas.maxFeePerGas === 0n) {
-      const transaction = {
-        from: currentAccount.address,
-        to: destinationAddress,
-        // eslint-disable-next-line no-underscore-dangle
-        value: BigInt(utils.parseEther(amount?.toString())._hex),
-        maxFeePerGas: estimatedFeesPerGas?.regular?.maxFeePerGas,
-        maxPriorityFeePerGas:
-          estimatedFeesPerGas?.regular?.maxPriorityFeePerGas,
-        gasLimit: BigInt(gasLimit),
-      }
-      return dispatch(updateTransactionOptions(transaction))
-    }
     const transaction = {
       from: currentAccount.address,
       to: destinationAddress,
       // eslint-disable-next-line no-underscore-dangle
       value: BigInt(utils.parseEther(amount?.toString())._hex),
-      maxFeePerGas: selectedEstimatedFeePerGas?.maxFeePerGas,
-      maxPriorityFeePerGas: selectedEstimatedFeePerGas?.maxPriorityFeePerGas,
       gasLimit: BigInt(gasLimit),
     }
     return dispatch(updateTransactionOptions(transaction))
@@ -173,8 +148,6 @@ export default function Send(): ReactElement {
             </div>
             <NetworkFeesChooser
               estimatedFeesPerGas={estimatedFeesPerGas}
-              onSelectFeeOption={setSelectedEstimatedFeePerGas}
-              selectedGas={selectedEstimatedFeePerGas}
               gasLimit={gasLimit}
               setGasLimit={setGasLimit}
             />

@@ -15,4 +15,5 @@ export default {
   },
   currency: USD,
   defaultWallet: true,
+  currentAddress: "",
 } as Preferences

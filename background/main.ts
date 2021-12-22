@@ -43,6 +43,7 @@ import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
   setDefaultWallet,
+  setCurrentAccount,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -60,7 +61,7 @@ import {
 } from "./redux-slices/dapp-permission"
 
 // This sanitizer runs on store and action data before serializing for remote
-// redux devtools. The goal is to end up with an object that is direcetly
+// redux devtools. The goal is to end up with an object that is directly
 // JSON-serializable and deserializable; the remote end will display the
 // resulting objects without additional processing or decoding logic.
 const devToolsSanitizer = (input: unknown) => {
@@ -161,7 +162,7 @@ export default class Main extends BaseService<never> {
     const keyringService = KeyringService.create()
     const nameService = NameService.create(chainService)
     const internalEthereumProviderService =
-      InternalEthereumProviderService.create(chainService)
+      InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
       internalEthereumProviderService,
       preferenceService
@@ -583,6 +584,36 @@ export default class Main extends BaseService<never> {
         await this.store.dispatch(setDefaultWallet(isDefaultWallet))
       }
     )
+
+    this.preferenceService.emitter.on(
+      "initializeCurrentAddress",
+      async (dbCurrentAddress: string) => {
+        if (dbCurrentAddress) {
+          // TBD: naming the normal reducer and async thunks
+          // Initialize redux from the db
+          // !!! Important: this action belongs to a regular reducer.
+          // NOT to be confused with the setNewCurrentAddress asyncThunk
+          this.store.dispatch(setCurrentAccount(dbCurrentAddress))
+        } else {
+          // Update currentAddress in db if it's not set but it is in the store
+          // should run only one time
+          const { address } =
+            this.store.getState().ui.currentAccount.addressNetwork
+
+          if (address) {
+            await this.preferenceService.setCurrentAddress(address)
+          }
+        }
+      }
+    )
+
+    uiSliceEmitter.on("newCurrentAddress", async (newCurrentAddress) => {
+      await this.preferenceService.setCurrentAddress(newCurrentAddress)
+
+      this.providerBridgeService.notifyContentScriptsAboutAddressChange(
+        newCurrentAddress
+      )
+    })
 
     uiSliceEmitter.on(
       "newDefaultWalletValue",

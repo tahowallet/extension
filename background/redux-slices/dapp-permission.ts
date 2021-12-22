@@ -5,7 +5,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 
 export type DAppPermissionState = {
   permissionRequests: { [url: string]: PermissionRequest }
-  allowedPages: { [origin: string]: PermissionRequest }
+  allowedPages: { [origin_accountAddress: string]: PermissionRequest }
 }
 
 export const initialState: DAppPermissionState = {
@@ -56,14 +56,14 @@ const dappPermissionSlice = createSlice({
       state,
       { payload: request }: { payload: PermissionRequest }
     ) => {
-      if (state.permissionRequests[request.origin]?.state !== "allow") {
+      if (state.permissionRequests[request.key]?.state !== "allow") {
         return {
           ...state,
           permissionRequests: {
             // Quick fix: store only the latest permission request.
             // TODO: put this back when we fixed the performance issues and/or updated our UI to handle multiple requests
             // ...state.permissionRequests,
-            [request.origin]: { ...request },
+            [request.key]: { ...request },
           },
         }
       }
@@ -77,13 +77,13 @@ const dappPermissionSlice = createSlice({
         grantPermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
-          delete updatedPermissionRequests[permission.origin]
+          delete updatedPermissionRequests[permission.key]
 
           return {
             permissionRequests: updatedPermissionRequests,
             allowedPages: {
               ...state.allowedPages,
-              [permission.origin]: permission,
+              [permission.key]: permission,
             },
           }
         }
@@ -92,11 +92,11 @@ const dappPermissionSlice = createSlice({
         denyOrRevokePermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
-          delete updatedPermissionRequests[permission.origin]
+          delete updatedPermissionRequests[permission.key]
 
           // remove page from the allowedPages list
           const updatedAllowedPages = { ...state.allowedPages }
-          delete updatedAllowedPages[permission.origin]
+          delete updatedAllowedPages[permission.key]
 
           return {
             permissionRequests: updatedPermissionRequests,
