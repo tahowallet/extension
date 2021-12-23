@@ -174,17 +174,6 @@ const isValidAlchemyTokenBalanceResponse = jtdValidatorFor(
   alchemyTokenBalanceJTD
 )
 
-export async function getMainNetworkCurrencyBalance(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
-  address: HexString
-): Promise<{ amount: bigint }> {
-  const json: HexString = await provider.send("eth_getBalance", [
-    address,
-    "latest",
-  ])
-  return { amount: BigInt(json) }
-}
-
 /**
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
  *

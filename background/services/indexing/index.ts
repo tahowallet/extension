@@ -13,11 +13,7 @@ import {
 } from "../../assets"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
-import {
-  getMainNetworkCurrencyBalance,
-  getTokenBalances,
-  getTokenMetadata,
-} from "../../lib/alchemy"
+import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -512,23 +508,6 @@ export default class IndexingService extends BaseService<Events> {
     const activeAssetsToTrack = assetsToTrack.filter(
       (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
     )
-    const accounts = await this.chainService.getAccountsToTrack()
-    const mainCurrencyBalance = await getMainNetworkCurrencyBalance(
-      this.chainService.pollingProviders.ethereum,
-      accounts[0].address
-    )
-    const accountBalance = {
-      address: accounts[0].address,
-      assetAmount: {
-        asset: ETH,
-        amount: mainCurrencyBalance.amount,
-      },
-      network: getEthereumNetwork(),
-      dataSource: "alchemy",
-      retrievedAt: Date.now(),
-    } as AccountBalance
-    this.emitter.emit("accountBalance", accountBalance)
-    await this.db.addBalances([accountBalance])
 
     // wait on balances being written to the db, don't wait on event emission
     await Promise.allSettled(
