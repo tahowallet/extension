@@ -172,7 +172,9 @@ export const selectCurrentAccountBalances = createSelector(
           typeof assetAmount.mainCurrencyAmount === "undefined"
             ? true
             : assetAmount.mainCurrencyAmount > userValueDustThreshold
-        const isPresent = assetAmount.decimalAmount > 0
+        // TODO Update below to be network responsive
+        const isPresent =
+          assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
 
         // Hide dust and missing amounts.
         return hideDust ? isNotDust && isPresent : isPresent
