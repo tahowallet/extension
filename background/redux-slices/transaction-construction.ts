@@ -14,8 +14,9 @@ import {
   EIP1559TransactionRequest,
   SignedEVMTransaction,
 } from "../networks"
-import { BaseLimitOrder } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
+
+import { BaseLimitOrder } from "../lib/keeper-dao"
 
 const enum TransactionConstructionStatus {
   Idle = "idle",

@@ -4,10 +4,9 @@ import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import LimitQuoteAssetCard from "./LimitQuoteAssetCard"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { DAY, HOUR } from "@tallyho/tally-background/constants"
-import {
-  BaseLimitOrder,
-  KeeperDAOLimitOrder,
-} from "@tallyho/tally-background/types"
+
+import { BaseLimitOrder } from "@tallyho/tally-background/lib/keeper-dao"
+
 import {
   selectCurrentLimitOrder,
   resetLimitState,

@@ -6,7 +6,7 @@ import { isSmartContractFungibleAsset, Asset } from "../assets"
 import { AssetsState } from "./assets"
 import logger from "../lib/logger"
 import { UIState } from "./ui"
-import { BaseLimitOrder } from "../types"
+import { BaseLimitOrder } from "../lib/keeper-dao"
 
 export interface LimitAsset extends Asset {
   contractAddress?: string
