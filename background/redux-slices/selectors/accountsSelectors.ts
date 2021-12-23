@@ -172,6 +172,7 @@ export const selectCurrentAccountBalances = createSelector(
           typeof assetAmount.mainCurrencyAmount === "undefined"
             ? true
             : assetAmount.mainCurrencyAmount > userValueDustThreshold
+        // TODO Update below to be network responsive
         const isPresent =
           assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
 
