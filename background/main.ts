@@ -78,6 +78,19 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
+// The version of persisted Redux state the extension is expecting. Any previous
+// state without this version, or with a lower version, ought to be migrated.
+const REDUX_STATE_VERSION = 1
+
+// Migrate a previous version of the Redux state to that expected by the current
+// code base.
+function migrateReduxState(
+  previousState: Record<string, unknown>,
+  version?: number
+): Record<string, unknown> {
+  return previousState
+}
+
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
@@ -85,7 +98,10 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
-    browser.storage.local.set({ state: encodeJSON(state) })
+    browser.storage.local.set({
+      state: encodeJSON(state),
+      version: REDUX_STATE_VERSION,
+    })
   }
 
   return result
@@ -93,9 +109,9 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (startupState = {}) =>
+const initializeStore = (preloadedState = {}) =>
   configureStore({
-    preloadedState: startupState,
+    preloadedState,
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) => {
       const middleware = getDefaultMiddleware({
@@ -172,7 +188,10 @@ export default class Main extends BaseService<never> {
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
-      const { state } = await browser.storage.local.get("state")
+      const { state, version } = await browser.storage.local.get([
+        "state",
+        "version",
+      ])
 
       if (state) {
         const restoredState = decodeJSON(state)
@@ -180,7 +199,10 @@ export default class Main extends BaseService<never> {
           // If someone managed to sneak JSON that decodes to typeof "object"
           // but isn't a Record<string, unknown>, there is a very large
           // problem...
-          savedReduxState = restoredState as Record<string, unknown>
+          savedReduxState = migrateReduxState(
+            restoredState as Record<string, unknown>,
+            version || undefined
+          )
         } else {
           throw new Error(`Unexpected JSON persisted for state: ${state}`)
         }
@@ -254,6 +276,7 @@ export default class Main extends BaseService<never> {
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState)
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
