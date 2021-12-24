@@ -1,3 +1,4 @@
+import { Resolution as UnstoppableDomainsResolution } from "@unstoppabledomains/resolution"
 import { DomainName, HexString, UNIXTime } from "../../types"
 import { Network } from "../../networks"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
@@ -47,6 +48,17 @@ type Events = ServiceLifecycleEvents & {
   resolvedName: ResolvedNameRecord
   resolvedAvatar: ResolvedAvatarRecord
 }
+
+const supportedDomains = [
+  ".crypto",
+  ".coin",
+  ".wallet",
+  ".bitcoin",
+  ".888",
+  ".nft",
+  ".dao",
+  ".zil",
+]
 
 const ipfsGateway = new URL("https://ipfs.io/ipfs/")
 const arweaveGateway = new URL("https://arweave.net/")
@@ -155,25 +167,43 @@ export default class NameService extends BaseService<Events> {
   async lookUpEthereumAddress(
     name: DomainName
   ): Promise<HexString | undefined> {
-    // if doesn't end in .eth, throw. TODO turn on other domain endings soon +
-    // include support for UNS
-    if (!name.match(/.*\.eth$/)) {
-      throw new Error("Only .eth names can be resolved today.")
+    // if the name is not an ENS or UNS supported domain name
+    // throw an error
+    const domainExtension = name.slice(name.lastIndexOf("."))
+
+    if (!supportedDomains.includes(domainExtension)) {
+      throw new Error("Only ENS & UNS names can be resolved today.")
     }
-    // TODO ENS lookups should work on Ethereum mainnet and a few testnets as well.
-    // This is going to be strange, though, as we'll be looking up ENS names for
-    // non-Ethereum networks (eg eventually Bitcoin).
-    const provider = this.chainService.pollingProviders.ethereum
-    // TODO cache name resolution and TTL
-    const address = await provider.resolveName(name)
+
+    let address: string | null
+    let system: "ENS" | "UNS" = "ENS"
+
+    if (name.match(/.*\.eth$/)) {
+      // TODO ENS lookups should work on Ethereum mainnet and a few testnets as well.
+      // This is going to be strange, though, as we'll be looking up ENS names for
+      // non-Ethereum networks (eg eventually Bitcoin).
+      // Use the ethers.js resolver to get the address
+      const provider = this.chainService.pollingProviders.ethereum
+      // TODO cache name resolution and TTL
+      address = await provider.resolveName(name)
+    } else {
+      // Otherwise we try to resolve the namme using unstoppable domains
+      const resolution = new UnstoppableDomainsResolution()
+      const currency = "ETH"
+
+      system = "UNS"
+      address = await resolution.addr(name, currency)
+    }
+
     if (!address || !address.match(/^0x[a-zA-Z0-9]*$/)) {
       return undefined
     }
+
     const normalized = normalizeEVMAddress(address)
     this.emitter.emit("resolvedAddress", {
       from: { name },
       resolved: { addressNetwork: { address: normalized, network: ETHEREUM } },
-      system: "ENS",
+      system,
     })
     return normalized
   }
@@ -250,11 +280,11 @@ export default class NameService extends BaseService<Events> {
     // TODO handle if it doesn't exist
     const provider = this.chainService.pollingProviders.ethereum
     const resolver = await provider.getResolver(name)
-    if (!sameEVMAddress(await resolver.getAddress(), address)) {
+    if (!sameEVMAddress(await resolver?.getAddress(), address)) {
       return undefined
     }
 
-    const avatar = await resolver.getText("avatar")
+    const avatar = await resolver?.getText("avatar")
 
     if (avatar) {
       if (avatar.match(/^eip155:1\/erc721:/)) {

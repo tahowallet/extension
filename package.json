@@ -49,6 +49,7 @@
     "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
     "@tallyho/window-provider": "0.0.1",
+    "@unstoppabledomains/resolution": "^7.1.2",
     "buffer": "^6.0.3",
     "git-revision-webpack-plugin": "^5.0.0",
     "react": "^17.0.2",
