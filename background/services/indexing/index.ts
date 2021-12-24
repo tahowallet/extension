@@ -271,7 +271,7 @@ export default class IndexingService extends BaseService<Events> {
       ) {
         const addressNetwork = {
           address: transaction.from.toLowerCase(),
-          network: getEthereumNetwork(),
+          network: transaction.network,
         }
         await this.chainService.getLatestBaseAccountBalance(addressNetwork)
       }
