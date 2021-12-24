@@ -20,12 +20,10 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
     if (isAddress(trimmedAddress)) {
       const addressNetwork = {
-      address: trimmedAddress,
-      network: ETHEREUM,
-    }
-      await dispatch(
-        addAddressNetwork(addressNetwork)
-      )
+        address: trimmedAddress,
+        network: ETHEREUM,
+      }
+      await dispatch(addAddressNetwork(addressNetwork))
       dispatch(setNewSelectedAccount(addressNetwork))
       setRedirect(true)
     } else {

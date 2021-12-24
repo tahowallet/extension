@@ -44,7 +44,10 @@ export const importLegacyKeyring = createBackgroundAsyncThunk(
   ) => {
     await emitter.emit("importLegacyKeyring", { mnemonic, path })
 
-    const { keyrings, ui } = getState() as { keyrings: KeyringsState, ui: UIState }
+    const { keyrings, ui } = getState() as {
+      keyrings: KeyringsState
+      ui: UIState
+    }
     // Set the selected account as the first address of the last added keyring,
     // which will correspond to the last imported keyring, AKA this one. Note that
     // this does rely on the KeyringService's behavior of pushing new keyrings to

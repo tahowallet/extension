@@ -43,7 +43,7 @@ export class PreferenceDatabase extends Dexie {
           .toCollection()
           .modify((storedPreferences: Preferences) => {
             if (!storedPreferences.defaultWallet) {
-              // Dexie api expects modification of the argument:
+              // Dexie API expects modification of the argument:
               // https://dexie.org/docs/Collection/Collection.modify()
               // eslint-disable-next-line no-param-reassign
               storedPreferences.defaultWallet =
@@ -71,11 +71,13 @@ export class PreferenceDatabase extends Dexie {
           .toCollection()
           .modify((storedPreferences: Preferences) => {
             if (storedPreferences.currentAddress) {
+              // eslint-disable-next-line no-param-reassign
               storedPreferences.selectedAccount = {
                 network: DEFAULT_PREFERENCES.selectedAccount.network,
                 address: storedPreferences.currentAddress,
               }
             } else {
+              // eslint-disable-next-line no-param-reassign
               storedPreferences.selectedAccount =
                 DEFAULT_PREFERENCES.selectedAccount
             }
@@ -103,7 +105,9 @@ export class PreferenceDatabase extends Dexie {
   }
 
   async setSelectedAccount(addressNetwork: AddressNetwork): Promise<void> {
-    await this.preferences.toCollection().modify({ selectedAccount: addressNetwork })
+    await this.preferences
+      .toCollection()
+      .modify({ selectedAccount: addressNetwork })
   }
 }
 

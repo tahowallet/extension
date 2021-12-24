@@ -126,10 +126,12 @@ export default function AccountsNotificationPanelAccounts({
 
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
-    dispatch(setNewSelectedAccount({
+    dispatch(
+      setNewSelectedAccount({
         address,
         network: ETHEREUM,
-    }))
+      })
+    )
   }
 
   useEffect(() => {
