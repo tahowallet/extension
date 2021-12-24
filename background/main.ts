@@ -21,7 +21,7 @@ import {
 
 import { KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
-import { ETHEREUM } from "./constants/networks"
+import { AddressNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
@@ -610,36 +610,31 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
-      "initializeCurrentAddress",
-      async (dbCurrentAddress: string) => {
-        if (dbCurrentAddress) {
+      "initializeSelectedAccount",
+      async (dbAddressNetwork: AddressNetwork) => {
+        if (dbAddressNetwork) {
           // TBD: naming the normal reducer and async thunks
           // Initialize redux from the db
           // !!! Important: this action belongs to a regular reducer.
           // NOT to be confused with the setNewCurrentAddress asyncThunk
-          this.store.dispatch(
-            setSelectedAccount({
-              address: dbCurrentAddress,
-              network: ETHEREUM,
-            })
-          )
+          this.store.dispatch(setSelectedAccount(dbAddressNetwork))
         } else {
           // Update currentAddress in db if it's not set but it is in the store
           // should run only one time
-          const { address } = this.store.getState().ui.selectedAccount
+          const addressNetwork = this.store.getState().ui.selectedAccount
 
-          if (address) {
-            await this.preferenceService.setCurrentAddress(address)
+          if (addressNetwork) {
+            await this.preferenceService.setSelectedAccount(addressNetwork)
           }
         }
       }
     )
 
-    uiSliceEmitter.on("newCurrentAddress", async (newCurrentAddress) => {
-      await this.preferenceService.setCurrentAddress(newCurrentAddress)
+    uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
+      await this.preferenceService.setSelectedAccount(addressNetwork)
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
-        newCurrentAddress
+        addressNetwork.address
       )
     })
 

@@ -134,7 +134,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
-      const accountAddress = await this.preferenceService.getCurrentAddress()
+      const { address: accountAddress } = await this.preferenceService.getSelectedAccount()
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}`,
         origin,
@@ -241,9 +241,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // FIXME proper error handling if this happens - should not tho
     if (permission.state !== "deny" || !permission.accountAddress) return
 
+    const { address } = await this.preferenceService.getSelectedAccount()
+
+    // TODO make this multi-network friendly
     await this.db.deletePermission(
       permission.origin,
-      await this.preferenceService.getCurrentAddress()
+      address,
     )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
@@ -258,8 +261,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
     origin: string,
     address?: string
   ): Promise<PermissionRequest | undefined> {
-    const currentAddress =
-      address ?? (await await this.preferenceService.getCurrentAddress())
+    const { address: selectedAddress } = await this.preferenceService.getSelectedAccount()
+    const currentAddress = address ?? selectedAddress
+    // TODO make this multi-network friendly
     return this.db.checkPermission(origin, currentAddress)
   }
 
