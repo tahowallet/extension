@@ -1,9 +1,10 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { setNewCurrentAddress } from "@tallyho/tally-background/redux-slices/ui"
+import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import {
   selectAccountTotalsByCategory,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
@@ -125,7 +126,10 @@ export default function AccountsNotificationPanelAccounts({
 
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
-    dispatch(setNewCurrentAddress(address))
+    dispatch(setNewSelectedAccount({
+        address,
+        network: ETHEREUM,
+    }))
   }
 
   useEffect(() => {

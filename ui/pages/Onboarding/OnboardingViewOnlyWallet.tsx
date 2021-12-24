@@ -2,8 +2,8 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { isAddress } from "@ethersproject/address"
 import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
-import { getEthereumNetwork } from "@tallyho/tally-background/lib/utils"
-import { setNewCurrentAddress } from "@tallyho/tally-background/redux-slices/ui"
+import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
+import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -19,13 +19,14 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
     const trimmedAddress = address.trim()
 
     if (isAddress(trimmedAddress)) {
+      const addressNetwork = {
+      address: trimmedAddress,
+      network: ETHEREUM,
+    }
       await dispatch(
-        addAddressNetwork({
-          address: trimmedAddress,
-          network: getEthereumNetwork(),
-        })
+        addAddressNetwork(addressNetwork)
       )
-      dispatch(setNewCurrentAddress(trimmedAddress))
+      dispatch(setNewSelectedAccount(addressNetwork))
       setRedirect(true)
     } else {
       setErrorMessage("Please enter a valid address")

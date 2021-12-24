@@ -21,6 +21,7 @@ import {
 
 import { KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
+import { ETHEREUM } from "./constants/networks"
 
 import rootReducer from "./redux-slices"
 import {
@@ -43,7 +44,7 @@ import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
   setDefaultWallet,
-  setCurrentAccount,
+  setSelectedAccount,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -616,12 +617,16 @@ export default class Main extends BaseService<never> {
           // Initialize redux from the db
           // !!! Important: this action belongs to a regular reducer.
           // NOT to be confused with the setNewCurrentAddress asyncThunk
-          this.store.dispatch(setCurrentAccount(dbCurrentAddress))
+          this.store.dispatch(
+            setSelectedAccount({
+              address: dbCurrentAddress,
+              network: ETHEREUM,
+            })
+          )
         } else {
           // Update currentAddress in db if it's not set but it is in the store
           // should run only one time
-          const { address } =
-            this.store.getState().ui.currentAccount.addressNetwork
+          const { address } = this.store.getState().ui.selectedAccount
 
           if (address) {
             await this.preferenceService.setCurrentAddress(address)
