@@ -24,7 +24,7 @@ export default function SharedBackButton(): ReactElement {
   return (
     <button
       type="button"
-      className={classNames("standard_width_padded", {
+      className={classNames({
         hide: history.entries.length <= 1,
       })}
       onClick={() => {

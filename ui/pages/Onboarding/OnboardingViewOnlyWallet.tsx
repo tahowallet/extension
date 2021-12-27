@@ -7,7 +7,7 @@ import { setNewCurrentAddress } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedButton from "../../components/Shared/SharedButton"
-import BackButton from "../../components/Shared/SharedBackButton"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
 
 export default function OnboardingViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -45,9 +45,9 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   return (
     <section className="standard_width">
-      <div className="wordmark" />
-      <div className="back_button_wrap">
-        <BackButton />
+      <div className="top">
+        <SharedBackButton />
+        <div className="wordmark" />
       </div>
       <div className="content">
         <h1 className="serif_header">Explore Tally</h1>
@@ -81,11 +81,19 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
       <style jsx>
         {`
+          .top {
+            display: flex;
+            width: 100%;
+          }
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
             width: 52px;
             height: 25px;
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            margin: 0 auto;
           }
           section {
             background-color: var(--hunter-green);

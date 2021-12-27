@@ -13,7 +13,7 @@ import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
-import BackButton from "../components/Shared/SharedBackButton"
+import SharedBackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
   const location = useLocation<{ symbol: string; contractAddress?: string }>()
@@ -69,7 +69,9 @@ export default function SingleAsset(): ReactElement {
 
   return (
     <>
-      <BackButton />
+      <div className="back_button_wrap standard_width_padded">
+        <SharedBackButton />
+      </div>
       <div className="header standard_width_padded">
         <div className="left">
           <div className="asset_wrap">
@@ -122,6 +124,9 @@ export default function SingleAsset(): ReactElement {
       <WalletActivityList activities={filteredActivities} />
       <style jsx>
         {`
+          .back_button_wrap {
+            margin-bottom: 4px;
+          }
           .sub_info_separator_wrap {
             display: none; // TODO asset network location and transfer for later
             border: 1px solid var(--green-120);

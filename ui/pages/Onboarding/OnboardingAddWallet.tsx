@@ -7,9 +7,9 @@ export default function OnboardingAddWallet(): ReactElement {
   return (
     <>
       <section className="standard_width">
-        <div className="wordmark" />
-        <div className="back_button_wrap">
+        <div className="top">
           <SharedBackButton />
+          <div className="wordmark" />
         </div>
         <div className="primary_wrap">
           <div className="choice_wrap">
@@ -50,18 +50,22 @@ export default function OnboardingAddWallet(): ReactElement {
         <div className="forest" />
         <style jsx>
           {`
+            .top {
+              display: flex;
+              width: 100%;
+            }
             .wordmark {
               background: url("./images/wordmark@2x.png");
               background-size: cover;
               width: 52px;
               height: 25px;
+              position: absolute;
+              left: 0px;
+              right: 0px;
+              margin: 0 auto;
             }
             section {
               background-color: var(--hunter-green);
-            }
-            .back_button_wrap {
-              position: fixed;
-              top: 25px;
             }
             .choice_wrap {
               display: flex;
