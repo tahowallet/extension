@@ -86,7 +86,8 @@ export default function Popup({ store }: { store: Store }): ReactElement {
                     timeout={300}
                     classNames="page-transition"
                     key={
-                      routeProps.location.pathname.includes("onboarding")
+                      routeProps.location.pathname.includes("onboarding") ||
+                      routeProps.location.pathname.includes("keyring")
                         ? ""
                         : transformedLocation.key
                     }
