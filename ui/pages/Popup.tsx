@@ -109,7 +109,7 @@ export default function Popup({ store }: { store: Store }): ReactElement {
                                   hasTabBar={hasTabBar}
                                   hasTopBar={hasTopBar}
                                 >
-                                  <Component />
+                                  <Component location={transformedLocation} />
                                 </CorePage>
                               </Route>
                             )

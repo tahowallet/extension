@@ -62,8 +62,8 @@ const pageList = [
   {
     path: "/signTransaction",
     Component: SignTransaction,
-    hasTabBar: true,
-    hasTopBar: true,
+    hasTabBar: false,
+    hasTopBar: false,
   },
   {
     path: "/overview",
