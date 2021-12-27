@@ -9,13 +9,6 @@ import {
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
-import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import TabBar from "../TabBar/TabBar"
-import TopMenu from "../TopMenu/TopMenu"
-import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
-import TopMenuProtocolList from "../TopMenu/TopMenuProtocolList"
 import Snackbar from "../Snackbar/Snackbar"
 
 interface Props {
@@ -29,11 +22,6 @@ export default function CorePage(props: Props): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
-  const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
-    useState(false)
   const [currentPermission, setCurrentPermission] = useState<PermissionRequest>(
     {} as PermissionRequest
   )
@@ -79,91 +67,15 @@ export default function CorePage(props: Props): ReactElement {
     window.close()
   }, [dispatch, currentPermission])
 
-  function handleOpenHiddenDevMenu(e: React.MouseEvent) {
-    if (process.env.NODE_ENV === "development" && e.detail === 3) {
-      setIsDevToolsOpen(true)
-    }
-  }
 
   return (
     <main>
-      {isConnectedToDApp && isActiveDAppConnectionInfoOpen ? (
-        <TopMenuConnectedDAppInfo
-          title={currentPermission.title}
-          url={currentPermission.origin}
-          faviconUrl={currentPermission.faviconUrl}
-          close={() => {
-            setIsActiveDAppConnectionInfoOpen(false)
-          }}
-          disconnect={deny}
-        />
-      ) : null}
-      <SharedSlideUpMenu
-        isOpen={isProtocolListOpen}
-        close={() => {
-          setIsProtocolListOpen(false)
-        }}
-      >
-        <TopMenuProtocolList />
-      </SharedSlideUpMenu>
-      <SharedSlideUpMenu
-        isOpen={isNotificationsOpen}
-        close={() => {
-          setIsNotificationsOpen(false)
-        }}
-      >
-        <AccountsNotificationPanel
-          onCurrentAddressChange={() => setIsNotificationsOpen(false)}
-        />
-      </SharedSlideUpMenu>
-      <SharedSlideUpMenu
-        isOpen={isDevToolsOpen}
-        size="small"
-        close={() => {
-          setIsDevToolsOpen(false)
-        }}
-      >
-        <HiddenDevPanel />
-      </SharedSlideUpMenu>
-      <div className="page">
-        <div className="community_edition_label">Community Edition</div>
-        {hasTopBar ? (
-          // Don't lint the extremely-custom-behavior completely-not-accessible
-          // hidden dev menu for now.
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-          <div className="top_menu_wrap" onClick={handleOpenHiddenDevMenu}>
-            <TopMenu
-              toggleOpenProtocolList={() => {
-                setIsProtocolListOpen(!isProtocolListOpen)
-              }}
-              toggleOpenNotifications={() => {
-                setIsNotificationsOpen(!isNotificationsOpen)
-              }}
-              toggleOpenDAppConnectionInfo={() => {
-                setIsActiveDAppConnectionInfoOpen(
-                  !isActiveDAppConnectionInfoOpen
-                )
-              }}
-              isConnectedToDApp={isConnectedToDApp}
-            />
-          </div>
-        ) : null}
-        <div className="page_content">{children}</div>
-        {hasTabBar ? <TabBar /> : null}
-        <Snackbar />
-      </div>
+    <div className="page">
+      {children}
+      <Snackbar />
       <style jsx>
         {`
           .page {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            height: 100vh;
-            width: 100%;
-          }
-          .page_content {
-            height: 480px;
             width: 100%;
             overflow-y: auto;
             display: flex;
