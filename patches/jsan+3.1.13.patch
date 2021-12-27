@@ -1,0 +1,18 @@
+diff --git a/node_modules/jsan/lib/index.js b/node_modules/jsan/lib/index.js
+index c32b85b..dcdde87 100644
+--- a/node_modules/jsan/lib/index.js
++++ b/node_modules/jsan/lib/index.js
+@@ -30,7 +30,12 @@ exports.stringify = function stringify(value, replacer, space, _options) {
+ 
+   var decycled = cycle.decycle(value, options, replacer);
+   if (arguments.length === 1) {
+-    return JSON.stringify(decycled);
++    return JSON.stringify(decycled, (_, value) => {
++      if (typeof value === "bigint") {
++        return { B_I_G_I_N_T: value.toString() }
++      }
++      return value
++    })
+   } else {
+     // decycle already handles when replacer is a function.
+     return JSON.stringify(decycled, Array.isArray(replacer) ? replacer : null, space);
