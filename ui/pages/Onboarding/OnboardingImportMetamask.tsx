@@ -51,8 +51,10 @@ function TextArea({
           font-weight: 500;
           font-size: 14px;
           line-height: 20px;
-          margin-top: 3px;
           align-self: flex-start;
+          height: 20px;
+          margin-top: 3px;
+          margin-bottom: -23px;
         }
       `}</style>
     </>
@@ -172,6 +174,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         }
         .content {
           animation: fadeIn ease 200ms;
+          width: inherit;
         }
         .back_button_wrap {
           position: fixed;
@@ -190,6 +193,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           justify-content: space-between;
           flex-direction: column;
           margin-bottom: 24px;
+          margin-top: 35px;
         }
         .metamask_onboarding_image {
           background: url("./images/illustration_import_seed@2x.png");
