@@ -161,11 +161,13 @@ export default function DAppConnectRequest(): ReactElement {
           display: flex;
           flex-direction: column;
           height: 100vh;
+          margin: 0 auto;
         }
         .page {
           background-color: var(--green-95);
           height: 100vh;
           width: 100vw;
+          z-index: 1000;
         }
         h1 {
           color: var(--trophy-gold);
