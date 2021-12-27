@@ -1,25 +1,88 @@
-import React, { ReactElement, useState } from "react"
-import { TransitionGroup, CSSTransition } from "react-transition-group"
-import { useHistory } from "react-router-dom"
+import React, { ReactElement, useState, useEffect, useCallback } from "react"
+import { browser } from "@tallyho/tally-background"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import {
+  selectAllowedPages,
+  selectCurrentAccount,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
-import HiddenDevPanel from "../HiddenDevPanel/HiddenDevPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import TopMenuConnectedDAppInfo from "./TopMenuConnectedDAppInfo"
 import TopMenuProtocolList from "./TopMenuProtocolList"
 
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+
 export default function TopMenu(): ReactElement {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [isDevToolsOpen, setIsDevToolsOpen] = useState(false)
+
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
 
-  const isConnectedToDApp = true
+  const dispatch = useBackgroundDispatch()
+
+  const [currentPermission, setCurrentPermission] = useState<PermissionRequest>(
+    {} as PermissionRequest
+  )
+  const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
+
+  const allowedPages = useBackgroundSelector(selectAllowedPages)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  const initPermissionAndOrigin = useCallback(async () => {
+    const { url, favIconUrl, title } = await browser.tabs
+      .query({
+        active: true,
+        lastFocusedWindow: true,
+      })
+      .then((tabs) =>
+        tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
+      )
+
+    if (!url) return
+
+    const { origin } = new URL(url)
+
+    const allowPermission = allowedPages[`${origin}_${currentAccount.address}`]
+
+    if (allowPermission) {
+      setCurrentPermission(allowPermission)
+      setIsConnectedToDApp(true)
+    } else {
+      setIsConnectedToDApp(false)
+    }
+  }, [allowedPages, setCurrentPermission, currentAccount])
+
+  useEffect(() => {
+    initPermissionAndOrigin()
+  }, [initPermissionAndOrigin])
+
+  const deny = useCallback(async () => {
+    if (typeof currentPermission !== "undefined") {
+      await dispatch(
+        denyOrRevokePermission({ ...currentPermission, state: "deny" })
+      )
+    }
+    window.close()
+  }, [dispatch, currentPermission])
+
   return (
     <>
+      {isConnectedToDApp && isActiveDAppConnectionInfoOpen ? (
+        <TopMenuConnectedDAppInfo
+          title={currentPermission.title}
+          url={currentPermission.origin}
+          faviconUrl={currentPermission.faviconUrl}
+          close={() => {
+            setIsActiveDAppConnectionInfoOpen(false)
+          }}
+          disconnect={deny}
+        />
+      ) : null}
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         close={() => {
@@ -47,7 +110,11 @@ export default function TopMenu(): ReactElement {
                 type="button"
                 aria-label="Show current dApp connection"
                 className="connection_button"
-                onClick={() => {}}
+                onClick={() => {
+                  setIsActiveDAppConnectionInfoOpen(
+                    !isActiveDAppConnectionInfoOpen
+                  )
+                }}
               />
             )}
             <TopMenuProfileButton
