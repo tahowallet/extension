@@ -265,6 +265,16 @@ export default class IndexingService extends BaseService<Events> {
       ) {
         this.scheduledTokenRefresh = true
       }
+      if (
+        "status" in transaction &&
+        (transaction.status === 1 || transaction.status === 0)
+      ) {
+        const addressNetwork = {
+          address: transaction.from.toLowerCase(),
+          network: getEthereumNetwork(),
+        }
+        await this.chainService.getLatestBaseAccountBalance(addressNetwork)
+      }
     })
   }
 
