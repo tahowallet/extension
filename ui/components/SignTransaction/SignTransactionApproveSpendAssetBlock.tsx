@@ -1,8 +1,57 @@
-import React, { ReactElement } from "react"
+import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { ethers } from "ethers"
+import React, { ReactElement, useEffect, useState } from "react"
+import { useDispatch } from "react-redux"
+import { useBackgroundSelector } from "../../hooks"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedButton from "../Shared/SharedButton"
+import SharedInput from "../Shared/SharedInput"
 
-export default function SignTransactionApproveSpendAssetBlock(): ReactElement {
+interface Props {
+  transactionDetails: EIP1559TransactionRequest
+}
+
+export default function SignTransactionApproveSpendAssetBlock({
+  transactionDetails,
+}: Props): ReactElement {
+  const [approvalLimit, setApprovalLimit] = useState("")
+  const dispatch = useDispatch()
+  const [changing, setChanging] = useState(false)
+  const accountData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const { assetAmounts } = accountData ?? {
+    assetAmounts: [],
+  }
+
+  const approveAmount = transactionDetails?.input?.substring(
+    74,
+    transactionDetails?.input.length
+  )
+  const infiniteApproval =
+    approvalLimit ===
+    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+  const asset = assetAmounts.find((el) =>
+    "contractAddress" in el.asset
+      ? el.asset.contractAddress === transactionDetails.to
+      : undefined
+  )
+  const hexedAmount = ethers.utils.hexlify(2)
+
+  // TODO Update the transaction request input (hex string is 64chars for uint256)
+
+  useEffect(() => {
+    setApprovalLimit(Number(`0x${approveAmount}`).toString() ?? "")
+  }, [approveAmount])
+
+  const handleUpdateClick = () => {
+    setChanging(!changing)
+    if (changing) {
+      dispatch(updateTransactionOptions(transactionDetails))
+    }
+  }
   return (
     <>
       <div className="spend_destination_icons">
@@ -12,11 +61,25 @@ export default function SignTransactionApproveSpendAssetBlock(): ReactElement {
         </div>
       </div>
       <span className="site">Uniswap</span>
-      <span className="spending_label">Spend KEEP tokens</span>
+      <span className="spending_label">{`Spend ${asset?.asset.symbol} tokens`}</span>
       <span className="speed_limit_label">Spend limit</span>
-      <span className="spend_amount">422,391,328.23 KEEP</span>
-      <SharedButton size="small" type="tertiary">
-        Change limit
+      {changing ? (
+        <div>
+          <SharedInput
+            label=""
+            value={approvalLimit}
+            onChange={setApprovalLimit}
+          />
+        </div>
+      ) : (
+        <span className="spend_amount">
+          {`${
+            infiniteApproval ? "Infinite" : approvalLimit
+          } ${asset?.asset.symbol.toUpperCase()}`}
+        </span>
+      )}
+      <SharedButton size="small" type="tertiary" onClick={handleUpdateClick}>
+        {changing ? "Update spend limit" : "Change limit"}
       </SharedButton>
       <div className="spacer" />
       <style jsx>
@@ -63,8 +126,6 @@ export default function SignTransactionApproveSpendAssetBlock(): ReactElement {
             color: #fff;
             font-size: 16px;
             line-height: 24px;
-            text-align: right;
-            text-transform: uppercase;
           }
           .spacer {
             margin-bottom: 18px;
