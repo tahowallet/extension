@@ -20,6 +20,7 @@ export default function TopMenuProfileButton(props: {
           shortenedAddress={shortenedAddress}
           name={name}
           avatarURL={avatarURL}
+          showHoverStyle
         />
       )}
       <style jsx>
