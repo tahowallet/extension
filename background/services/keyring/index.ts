@@ -304,6 +304,23 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Return an array of keyring representations that can safely be stored and
+   * used outside the extension.
+   */
+  getKeyrings(): Keyring[] {
+    this.requireUnlocked()
+
+    return this.#keyrings.map((kr) => ({
+      // TODO this type is meanlingless from the library's perspective.
+      // Reconsider, or explicitly track which keyrings have been generated vs
+      // imported as well as their strength
+      type: KeyringTypes.mnemonicBIP39S256,
+      addresses: [...kr.getAddressesSync()],
+      id: kr.id,
+    }))
+  }
+
+  /**
    * Derive and return the next address from an HDKeyring.
    *
    * @param keyringID - a string ID corresponding to an unlocked keyring.
@@ -397,11 +414,7 @@ export default class KeyringService extends BaseService<Events> {
   // //////////////////
 
   private emitKeyrings() {
-    const keyrings = this.#keyrings.map((kr) => ({
-      type: KeyringTypes.mnemonicBIP39S256,
-      addresses: [...kr.getAddressesSync()],
-      id: kr.id,
-    }))
+    const keyrings = this.getKeyrings()
     this.emitter.emit("keyrings", keyrings)
   }
 
