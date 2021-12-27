@@ -73,7 +73,7 @@ export async function injectTallyWindowProvider(): Promise<void> {
     throw new Error(
       `Tally: oh nos the content-script failed to initilaize the Tally window provider.
         ${e}
-        It's time for a seppoku...🗡`
+        It's time for a seppuku...🗡`
     )
   }
 }
