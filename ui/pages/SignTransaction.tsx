@@ -47,11 +47,19 @@ export default function SignTransaction(): ReactElement {
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const location = useLocation<SignLocationState | undefined>()
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
   const { assetSymbol, amount, to, value, signType } = location.state ?? {
-    signType: SignType.Sign,
+    // If tx input begins with bytecode that corresponds to ERC-20 approve
+    // we load the approve page
+    signType: transactionDetails?.input?.startsWith("0x095ea7b")
+      ? SignType.SignSpend
+      : SignType.Sign,
   }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
+  )
+  const signedTransaction = useBackgroundSelector(
+    ({ transactionConstruction }) => transactionConstruction.signedTransaction
   )
 
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
@@ -59,10 +67,6 @@ export default function SignTransaction(): ReactElement {
     ({ transactionConstruction }) =>
       transactionConstruction.broadcastOnSign ?? false
   )
-  const signedTransaction = useBackgroundSelector(
-    ({ transactionConstruction }) => transactionConstruction.signedTransaction
-  )
-  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const signerAccountTotal = useBackgroundSelector((state) =>
     typeof transactionDetails === "undefined"
@@ -123,7 +127,11 @@ export default function SignTransaction(): ReactElement {
     },
     [SignType.SignSpend]: {
       title: "Approve asset spend",
-      component: () => <SignTransactionApproveSpendAssetBlock />,
+      component: () => (
+        <SignTransactionApproveSpendAssetBlock
+          transactionDetails={transactionDetails}
+        />
+      ),
       confirmButtonText: "Approve",
     },
     [SignType.SignTransfer]: {
