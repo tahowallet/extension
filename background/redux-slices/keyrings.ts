@@ -30,6 +30,7 @@ export type Events = {
   createPassword: string
   unlockKeyrings: string
   generateNewKeyring: never
+  deriveAddress: string
   importLegacyKeyring: { mnemonic: string; path?: string }
 }
 
@@ -106,6 +107,13 @@ export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
   async () => {
     await emitter.emit("generateNewKeyring")
+  }
+)
+
+export const deriveAddress = createBackgroundAsyncThunk(
+  "keyrings/deriveAddress",
+  async (id: string) => {
+    await emitter.emit("deriveAddress", id)
   }
 )
 
