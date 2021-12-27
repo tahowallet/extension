@@ -67,9 +67,7 @@ export default function CorePage(props: Props): ReactElement {
     window.close()
   }, [dispatch, currentPermission])
 
-
   return (
-    <main>
     <div className="page">
       {children}
       <Snackbar />
@@ -83,6 +81,10 @@ export default function CorePage(props: Props): ReactElement {
             flex-grow: 1;
             margin: 0 auto;
             align-items: center;
+            background-color: var(--hunter-green);
+            z-index: 10;
+            height: ${hasTopBar ? "480px" : "100vh"};
+            margin-top: ${hasTopBar ? "0px" : "-64px"};
           }
           .top_menu_wrap {
             z-index: 10;
@@ -104,7 +106,7 @@ export default function CorePage(props: Props): ReactElement {
           }
         `}
       </style>
-    </main>
+    </div>
   )
 }
 
