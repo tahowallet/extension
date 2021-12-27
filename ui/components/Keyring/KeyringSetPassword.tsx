@@ -105,6 +105,7 @@ export default function KeyringSetPassword(): ReactElement {
           }
           section {
             padding-top: 25px;
+            background-color: var(--hunter-green);
           }
           .wordmark {
             background: url("./images/wordmark@2x.png");

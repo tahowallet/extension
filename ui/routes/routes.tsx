@@ -20,8 +20,8 @@ const pageList = [
   {
     path: "/keyring/set-password",
     Component: KeyringSetPassword,
-    hasTabBar: true,
-    hasTopBar: true,
+    hasTabBar: false,
+    hasTopBar: false,
   },
   {
     path: "/keyring/unlock",
