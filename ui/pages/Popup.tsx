@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import classNames from "classnames"
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
@@ -63,22 +64,20 @@ export default function Popup({ store }: { store: Store }): ReactElement {
         <Router>
           <Route
             render={(routeProps) => {
+              // @ts-expect-error TODO: fix the typing when the feature works
+              const transformedLocation = transformLocation(routeProps.location)
+              const normalizedPathname =
+                transformedLocation.pathname !== "/wallet"
+                  ? routeProps.location.pathname
+                  : "/"
+
               setAnimationConditions(
                 routeProps,
                 pagePreferences,
                 setShouldDisplayDecoy,
                 setIsDirectionRight
               )
-              setShowTabBar(
-                pagePreferences[
-                  routeProps.location.pathname !== "/wallet"
-                    ? routeProps.location.pathname
-                    : "/"
-                ].hasTabBar
-              )
-
-              // @ts-expect-error TODO: fix the typing when the feature works
-              const transformedLocation = transformLocation(routeProps.location)
+              setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
 
               return (
                 <TransitionGroup>
@@ -94,9 +93,10 @@ export default function Popup({ store }: { store: Store }): ReactElement {
                   >
                     <div>
                       <div
-                        className={`top_menu_wrap${
-                          shouldDisplayDecoy ? " anti_animation" : ""
-                        }`}
+                        className={classNames("top_menu_wrap", {
+                          anti_animation: shouldDisplayDecoy,
+                          hide: !pagePreferences[normalizedPathname].hasTopBar,
+                        })}
                       >
                         <TopMenu />
                       </div>
@@ -156,6 +156,9 @@ export default function Popup({ store }: { store: Store }): ReactElement {
               justify-content: center;
               z-index: 0;
               margin-top: 5px;
+            }
+            .hide {
+              opacity: 0;
             }
           `}
         </style>
