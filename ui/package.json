@@ -40,10 +40,12 @@
     "react-qr-code": "^2.0.0",
     "react-redux": "^7.2.4",
     "react-router-dom": "^5.3.0",
+    "react-transition-group": "^4.4.2",
     "redux": "^4.1.0"
   },
   "devDependencies": {
     "@types/react-dom": "^17.0.9",
+    "@types/react-transition-group": "^4.4.4",
     "webext-redux": "^2.1.7"
   }
 }
