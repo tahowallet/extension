@@ -180,6 +180,41 @@ describe("KeyringService when initialized", () => {
     await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
   })
 
+  it("will return keyring IDs and addresses", async () => {
+    const keyrings = service.getKeyrings()
+    expect(keyrings).toHaveLength(1)
+    expect(keyrings[0]).toMatchObject({
+      id: expect.anything(),
+      addresses: expect.arrayContaining([
+        expect.stringMatching(new RegExp(address, "i")),
+      ]),
+    })
+  })
+
+  it.only("will derive a new address", async () => {
+    const [
+      {
+        id,
+        addresses: [originalAddress],
+      },
+    ] = service.getKeyrings()
+
+    const newAddress = id ? await service.deriveAddress(id) : ""
+    expect(newAddress).toEqual(
+      expect.not.stringMatching(new RegExp(originalAddress, "i"))
+    )
+
+    const keyrings = service.getKeyrings()
+    expect(keyrings).toHaveLength(1)
+    expect(keyrings[0]).toMatchObject({
+      id: expect.anything(),
+      addresses: expect.arrayContaining([
+        expect.stringMatching(new RegExp(originalAddress, "i")),
+        expect.stringMatching(new RegExp(newAddress, "i")),
+      ]),
+    })
+  })
+
   it("will sign a transaction", async () => {
     const transactionWithFrom = {
       ...validTransactionRequests.simple,
