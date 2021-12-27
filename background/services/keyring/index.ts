@@ -304,6 +304,29 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Derive and return the next address from an HDKeyring.
+   *
+   * @param keyringID - a string ID corresponding to an unlocked keyring.
+   */
+  async deriveAddress(keyringID: string): Promise<HexString> {
+    this.requireUnlocked()
+
+    // find the keyring using a linear search
+    const keyring = this.#keyrings.find((kr) => kr.id === keyringID)
+    if (!keyring) {
+      throw new Error("Keyring not found.")
+    }
+
+    const [newAddress] = keyring.addAddressesSync(1)
+    await this.persistKeyrings()
+
+    this.emitter.emit("address", newAddress)
+    this.emitKeyrings()
+
+    return newAddress
+  }
+
+  /**
    * Sign a transaction.
    *
    * @param account - the account desired to sign the transaction
