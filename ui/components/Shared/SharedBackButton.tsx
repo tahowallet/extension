@@ -1,17 +1,35 @@
-import React, { ReactElement } from "react"
-import { useHistory } from "react-router-dom"
+import React, { ReactElement, useState } from "react"
+import { useHistory, Redirect } from "react-router-dom"
 import classNames from "classnames"
 
 export default function SharedBackButton(): ReactElement {
-  const history = useHistory()
+  const historyPre: unknown = useHistory()
+  const [redirect, setRedirect] = useState(false)
+  const history = historyPre as {
+    entries: { pathName: string }[]
+  }
+
+  if (redirect) {
+    return (
+      <Redirect
+        push
+        to={{
+          pathname: history.entries[history.entries.length - 1].pathName,
+          state: { isBack: true },
+        }}
+      />
+    )
+  }
 
   return (
     <button
       type="button"
       className={classNames("standard_width_padded", {
-        hide: history.length <= 1,
+        hide: history.entries.length <= 1,
       })}
-      onClick={() => history.goBack()}
+      onClick={() => {
+        setRedirect(true)
+      }}
     >
       <div className="icon_chevron_left" />
       Back
