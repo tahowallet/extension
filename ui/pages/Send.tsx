@@ -1,6 +1,6 @@
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { isAddress } from "@ethersproject/address"
 import { formatEther } from "@ethersproject/units"
-import { BlockEstimate } from "@tallyho/tally-background/networks"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -11,9 +11,7 @@ import {
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
-import CorePage from "../components/Core/CorePage"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
@@ -91,95 +89,93 @@ export default function Send(): ReactElement {
 
   return (
     <>
-      <CorePage>
-        <div className="standard_width">
-          <div className="back_button_wrap">
-            <SharedBackButton />
-          </div>
-          <h1 className="header">
-            <span className="icon_activity_send_medium" />
-            <div className="title">Send Asset</div>
-          </h1>
-          <div className="form">
-            <div className="form_input">
-              <div className="balance">
-                Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
-                <button
-                  type="button"
-                  className="max"
-                  onClick={setMaxBalance}
-                  tabIndex={0}
-                >
-                  Max
-                </button>
-              </div>
-              <SharedAssetInput
-                label="Asset / Amount"
-                onAssetSelect={(token) => {
-                  setAssetSymbol(token.symbol)
-                }}
-                assets={assetAmounts.map((asset) => {
-                  return {
-                    symbol: asset.asset.symbol,
-                    name: asset.asset.name,
-                  }
-                })}
-                onAmountChange={(value, errorMessage) => {
-                  setAmount(value)
-                  if (errorMessage) {
-                    setHasError(true)
-                  } else {
-                    setHasError(false)
-                  }
-                }}
-                defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
-                amount={amount}
-                maxBalance={Number(currentBalance)}
-                disableDropdown
-              />
-              <div className="value">${getTotalLocalizedValue()}</div>
-            </div>
-            <div className="form_input">
-              <SharedAssetInput
-                isTypeDestination
-                label="Send To:"
-                onSendToAddressChange={setDestinationAddress}
-              />
-            </div>
-            <NetworkFeesChooser
-              estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={gasLimit}
-              setGasLimit={setGasLimit}
-            />
-            <div className="divider" />
-            <div className="send_footer standard_width_padded">
-              <SharedButton
-                type="primary"
-                size="large"
-                isDisabled={
-                  selectedCount <= 0 ||
-                  Number(amount) === 0 ||
-                  !isAddress(destinationAddress) ||
-                  hasError
-                }
-                linkTo={{
-                  pathname: "/signTransaction",
-                  state: {
-                    assetSymbol,
-                    amount,
-                    to: destinationAddress,
-                    signType: SignType.SignTransfer,
-                    value: getTotalLocalizedValue(),
-                  },
-                }}
-                onClick={sendTransactionRequest}
+      <div className="standard_width">
+        <div className="back_button_wrap">
+          <SharedBackButton />
+        </div>
+        <h1 className="header">
+          <span className="icon_activity_send_medium" />
+          <div className="title">Send Asset</div>
+        </h1>
+        <div className="form">
+          <div className="form_input">
+            <div className="balance">
+              Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
+              <button
+                type="button"
+                className="max"
+                onClick={setMaxBalance}
+                tabIndex={0}
               >
-                Send
-              </SharedButton>
+                Max
+              </button>
             </div>
+            <SharedAssetInput
+              label="Asset / Amount"
+              onAssetSelect={(token) => {
+                setAssetSymbol(token.symbol)
+              }}
+              assets={assetAmounts.map((asset) => {
+                return {
+                  symbol: asset.asset.symbol,
+                  name: asset.asset.name,
+                }
+              })}
+              onAmountChange={(value, errorMessage) => {
+                setAmount(value)
+                if (errorMessage) {
+                  setHasError(true)
+                } else {
+                  setHasError(false)
+                }
+              }}
+              defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
+              amount={amount}
+              maxBalance={Number(currentBalance)}
+              disableDropdown
+            />
+            <div className="value">${getTotalLocalizedValue()}</div>
+          </div>
+          <div className="form_input">
+            <SharedAssetInput
+              isTypeDestination
+              label="Send To:"
+              onSendToAddressChange={setDestinationAddress}
+            />
+          </div>
+          <NetworkFeesChooser
+            estimatedFeesPerGas={estimatedFeesPerGas}
+            gasLimit={gasLimit}
+            setGasLimit={setGasLimit}
+          />
+          <div className="divider" />
+          <div className="send_footer standard_width_padded">
+            <SharedButton
+              type="primary"
+              size="large"
+              isDisabled={
+                selectedCount <= 0 ||
+                Number(amount) === 0 ||
+                !isAddress(destinationAddress) ||
+                hasError
+              }
+              linkTo={{
+                pathname: "/signTransaction",
+                state: {
+                  assetSymbol,
+                  amount,
+                  to: destinationAddress,
+                  signType: SignType.SignTransfer,
+                  value: getTotalLocalizedValue(),
+                },
+              }}
+              onClick={sendTransactionRequest}
+            >
+              Send
+            </SharedButton>
           </div>
         </div>
-      </CorePage>
+      </div>
       <style jsx>
         {`
           .icon_activity_send_medium {

@@ -10,7 +10,6 @@ import {
   HIDE_SWAP,
 } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../hooks"
-import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
@@ -70,59 +69,57 @@ export default function SingleAsset(): ReactElement {
 
   return (
     <>
-      <CorePage>
-        <BackButton />
-        <div className="header standard_width_padded">
-          <div className="left">
-            <div className="asset_wrap">
-              <SharedAssetIcon
-                logoURL={asset?.metadata?.logoURL}
-                symbol={asset?.symbol}
-              />
-              <span className="asset_name">{symbol}</span>
-            </div>
-            <div className="balance">{localizedDecimalAmount}</div>
-            {typeof localizedMainCurrencyAmount !== "undefined" ? (
-              <div className="usd_value">${localizedMainCurrencyAmount}</div>
-            ) : (
-              <></>
-            )}
+      <BackButton />
+      <div className="header standard_width_padded">
+        <div className="left">
+          <div className="asset_wrap">
+            <SharedAssetIcon
+              logoURL={asset?.metadata?.logoURL}
+              symbol={asset?.symbol}
+            />
+            <span className="asset_name">{symbol}</span>
           </div>
-          <div className="right">
-            {isCurrentAccountSigner ? (
-              <>
-                {!HIDE_SEND_BUTTON && symbol === "ETH" && (
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    icon="send"
-                    linkTo={{
-                      pathname: "/send",
-                      state: {
-                        symbol,
-                      },
-                    }}
-                  >
-                    Send
-                  </SharedButton>
-                )}
-                {!HIDE_SWAP && (
-                  <SharedButton type="primary" size="medium" icon="swap">
-                    Swap
-                  </SharedButton>
-                )}
-              </>
-            ) : (
-              <></>
-            )}
-          </div>
+          <div className="balance">{localizedDecimalAmount}</div>
+          {typeof localizedMainCurrencyAmount !== "undefined" ? (
+            <div className="usd_value">${localizedMainCurrencyAmount}</div>
+          ) : (
+            <></>
+          )}
         </div>
-        <div className="sub_info_separator_wrap standard_width_padded">
-          <div className="left">Asset is on: Arbitrum</div>
-          <div className="right">Move to Ethereum</div>
+        <div className="right">
+          {isCurrentAccountSigner ? (
+            <>
+              {!HIDE_SEND_BUTTON && symbol === "ETH" && (
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  icon="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: {
+                      symbol,
+                    },
+                  }}
+                >
+                  Send
+                </SharedButton>
+              )}
+              {!HIDE_SWAP && (
+                <SharedButton type="primary" size="medium" icon="swap">
+                  Swap
+                </SharedButton>
+              )}
+            </>
+          ) : (
+            <></>
+          )}
         </div>
-        <WalletActivityList activities={filteredActivities} />
-      </CorePage>
+      </div>
+      <div className="sub_info_separator_wrap standard_width_padded">
+        <div className="left">Asset is on: Arbitrum</div>
+        <div className="right">Move to Ethereum</div>
+      </div>
+      <WalletActivityList activities={filteredActivities} />
       <style jsx>
         {`
           .sub_info_separator_wrap {

@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 
@@ -80,26 +79,24 @@ function EarnCard() {
 export default function Earn(): ReactElement {
   return (
     <>
-      <CorePage>
-        <header>
-          <div className="left">
-            <div className="pre_title">Total value locked</div>
-            <div className="balance">23,928,292</div>
-          </div>
-          <div className="right">
-            <div className="pre_title">24h Change</div>
-            <div className="percentage">+12%</div>
-          </div>
-        </header>
-        <section className="standard_width">
-          <h3>Your deposits</h3>
-          <div className="cards_wrap">{Array(2).fill("").map(EarnCard)}</div>
-        </section>
-        <section className="standard_width">
-          <h3>Earn</h3>
-          <div className="cards_wrap">{Array(2).fill("").map(EarnCard)}</div>
-        </section>
-      </CorePage>
+      <header>
+        <div className="left">
+          <div className="pre_title">Total value locked</div>
+          <div className="balance">23,928,292</div>
+        </div>
+        <div className="right">
+          <div className="pre_title">24h Change</div>
+          <div className="percentage">+12%</div>
+        </div>
+      </header>
+      <section className="standard_width">
+        <h3>Your deposits</h3>
+        <div className="cards_wrap">{Array(2).fill("").map(EarnCard)}</div>
+      </section>
+      <section className="standard_width">
+        <h3>Earn</h3>
+        <div className="cards_wrap">{Array(2).fill("").map(EarnCard)}</div>
+      </section>
       <style jsx>
         {`
           h3 {

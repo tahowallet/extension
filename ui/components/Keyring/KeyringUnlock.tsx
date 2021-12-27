@@ -44,7 +44,7 @@ export default function KeyringUnlock(): ReactElement {
   }
 
   return (
-    <section>
+    <section className="standard_width">
       {isDappPopup && (
         <div className="cancel_tx_button_wrap">
           <SharedButton
@@ -91,6 +91,7 @@ export default function KeyringUnlock(): ReactElement {
           }
           section {
             padding-top: 42px;
+            background-color: var(--hunter-green);
           }
           .input_wrap {
             width: 211px;

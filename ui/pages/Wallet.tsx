@@ -5,7 +5,6 @@ import {
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
-import CorePage from "../components/Core/CorePage"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
@@ -41,49 +40,35 @@ export default function Wallet(): ReactElement {
 
   return (
     <>
-      <CorePage>
-        <div className="page_content">
-          <div className="section">
-            <WalletAccountBalanceControl
-              balance={totalMainCurrencyValue}
-              initializationLoadingTimeExpired={
-                initializationLoadingTimeExpired
-              }
-            />
-          </div>
-          <div className="section">
-            <SharedPanelSwitcher
-              setPanelNumber={setPanelNumber}
-              panelNumber={panelNumber}
-              panelNames={["Assets", "Activity"]}
-            />
-            <div className="panel standard_width">
-              {panelNumber === 0 ? (
-                <WalletAssetList
-                  assetAmounts={assetAmounts}
-                  initializationLoadingTimeExpired={
-                    initializationLoadingTimeExpired
-                  }
-                />
-              ) : (
-                <WalletActivityList
-                  activities={currentAccountActivities ?? []}
-                />
-              )}
-            </div>
+      <div className="page_content">
+        <div className="section">
+          <WalletAccountBalanceControl
+            balance={totalMainCurrencyValue}
+            initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+          />
+        </div>
+        <div className="section">
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={["Assets", "Activity"]}
+          />
+          <div className="panel standard_width">
+            {panelNumber === 0 ? (
+              <WalletAssetList
+                assetAmounts={assetAmounts}
+                initializationLoadingTimeExpired={
+                  initializationLoadingTimeExpired
+                }
+              />
+            ) : (
+              <WalletActivityList activities={currentAccountActivities ?? []} />
+            )}
           </div>
         </div>
-      </CorePage>
+      </div>
       <style jsx>
         {`
-          .wrap {
-            height: 100vh;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-          }
           .page_content {
             width: 100%;
             height: inherit;

@@ -6,7 +6,6 @@ import {
   selectHideDust,
   toggleHideDust,
 } from "@tallyho/tally-background/redux-slices/ui"
-import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 
@@ -76,45 +75,45 @@ export default function Menu(): ReactElement {
 
   return (
     <>
-      <CorePage hasTopBar={false}>
-        <section className="standard_width_padded">
-          <h1>Settings</h1>
-          <ul>
-            {settings.general.map((setting) => (
-              <SettingRow
-                key={setting.title}
-                title={setting.title}
-                component={setting.component}
-              />
-            ))}
-          </ul>
-          <div className="community_cta_wrap">
-            <div className="illustration_discord" />
-            <h2 className="serif_header">Community release!</h2>
-            <p>Join our discord to give us feedback!</p>
-            <SharedButton
-              type="primary"
-              size="large"
-              icon="discord"
-              iconSize="large"
-              iconPosition="left"
-              onClick={() => {
-                window.open(`https://chat.tally.cash/`, "_blank")?.focus()
-              }}
-            >
-              Give feedback!
-            </SharedButton>
-          </div>
-        </section>
-      </CorePage>
+      <section className="standard_width_padded">
+        <h1>Settings</h1>
+        <ul>
+          {settings.general.map((setting) => (
+            <SettingRow
+              key={setting.title}
+              title={setting.title}
+              component={setting.component}
+            />
+          ))}
+        </ul>
+        <div className="community_cta_wrap">
+          <div className="illustration_discord" />
+          <h2 className="serif_header">Community release!</h2>
+          <p>Join our discord to give us feedback!</p>
+          <SharedButton
+            type="primary"
+            size="large"
+            icon="discord"
+            iconSize="large"
+            iconPosition="left"
+            onClick={() => {
+              window.open(`https://chat.tally.cash/`, "_blank")?.focus()
+            }}
+          >
+            Give feedback!
+          </SharedButton>
+        </div>
+      </section>
       <style jsx>
         {`
+          section {
+            background-color: var(--hunter-green);
+          }
           .community_cta_wrap {
-            height: 435px;
-            width: 384px;
-            position: absolute;
-            bottom: 0px;
-            left: 0px;
+            width: 100vw;
+            height: 370px;
+            margin-top: 19px;
+            margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;
             padding-top: 24px;

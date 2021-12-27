@@ -44,38 +44,41 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   }
 
   return (
-    <section>
+    <section className="standard_width">
       <div className="wordmark" />
       <div className="back_button_wrap">
         <BackButton />
       </div>
-      <h1 className="serif_header">Explore Tally</h1>
-      <div className="subtitle">
-        Add an Ethereum address to view an existing wallet in Tally.
-      </div>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          handleSubmitViewOnlyAddress()
-        }}
-      >
-        <div className="input_wrap">
-          <SharedInput
-            placeholder="ETH address"
-            onChange={handleInputChange}
-            errorMessage={errorMessage}
-          />
+      <div className="content">
+        <h1 className="serif_header">Explore Tally</h1>
+        <div className="subtitle">
+          Add an Ethereum address to view an existing wallet in Tally.
         </div>
-        <SharedButton
-          type="primary"
-          size="large"
-          onClick={handleSubmitViewOnlyAddress}
-          showLoadingOnClick={!!errorMessage}
-          isFormSubmit
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            handleSubmitViewOnlyAddress()
+          }}
         >
-          Explore Tally
-        </SharedButton>
-      </form>
+          <div className="input_wrap">
+            <SharedInput
+              placeholder="ETH address"
+              onChange={handleInputChange}
+              errorMessage={errorMessage}
+            />
+          </div>
+          <SharedButton
+            type="primary"
+            size="large"
+            onClick={handleSubmitViewOnlyAddress}
+            showLoadingOnClick={!!errorMessage}
+            isFormSubmit
+          >
+            Explore Tally
+          </SharedButton>
+        </form>
+      </div>
+
       <style jsx>
         {`
           .wordmark {
@@ -83,6 +86,15 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             background-size: cover;
             width: 52px;
             height: 25px;
+          }
+          section {
+            background-color: var(--hunter-green);
+          }
+          .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn ease 200ms;
           }
           .back_button_wrap {
             position: fixed;
