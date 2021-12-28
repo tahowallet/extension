@@ -33,16 +33,17 @@ export const selectShowingActivityDetail = createSelector(
 )
 
 export const selectCurrentAccount = createSelector(
-  (state: RootState) => state.ui.currentAccount,
-  ({ addressNetwork: { address }, truncatedAddress }) => ({
+  (state: RootState) => state.ui.selectedAccount,
+  ({ address, network }) => ({
     address,
-    truncatedAddress,
+    network,
+    truncatedAddress: address.toLowerCase().slice(0, 7),
   })
 )
 
 export const selectCurrentAddressNetwork = createSelector(
-  (state: RootState) => state.ui.currentAccount,
-  (currentAccount) => currentAccount
+  (state: RootState) => state.ui.selectedAccount,
+  (selectedAccount) => selectedAccount
 )
 
 export const selectMainCurrency = createSelector(

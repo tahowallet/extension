@@ -132,8 +132,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.chainService.send(method, params)
       case "eth_accounts": {
         // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
-        const currentAccount = await this.preferenceService.getCurrentAddress()
-        return [currentAccount]
+        const { address } = await this.preferenceService.getSelectedAccount()
+        return [address]
       }
       case "eth_sendTransaction":
         return this.signTransaction(params[0] as EthersTransactionRequest).then(
