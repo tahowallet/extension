@@ -156,20 +156,23 @@ const accountSlice = createSlice({
         },
       } = updatedAccountBalance
       const existingAccountData = immerState.accountsData[updatedAccount]
-      if (existingAccountData && existingAccountData !== "loading") {
-        existingAccountData.balances[updatedAssetSymbol] = updatedAccountBalance
-      } else {
-        immerState.accountsData[updatedAccount] = {
-          ...newAccountData(
-            updatedAccount,
-            updatedAccountBalance.network,
-            Object.keys(immerState.accountsData).filter(
-              (key) => key !== updatedAccount
-            ).length
-          ),
-          balances: {
-            [updatedAssetSymbol]: updatedAccountBalance,
-          },
+      if (existingAccountData) {
+        if (existingAccountData !== "loading") {
+          existingAccountData.balances[updatedAssetSymbol] =
+            updatedAccountBalance
+        } else {
+          immerState.accountsData[updatedAccount] = {
+            ...newAccountData(
+              updatedAccount,
+              updatedAccountBalance.network,
+              Object.keys(immerState.accountsData).filter(
+                (key) => key !== updatedAccount
+              ).length
+            ),
+            balances: {
+              [updatedAssetSymbol]: updatedAccountBalance,
+            },
+          }
         }
       }
 
