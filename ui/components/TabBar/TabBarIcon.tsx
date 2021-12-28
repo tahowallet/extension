@@ -33,8 +33,10 @@ export default function TabBarIcon(props: Props): ReactElement {
             justify-content: center;
             align-items: center;
             justify-items: center;
-            transform: translateY(0px);
+            transform: translateY(0px) translateZ(0);
             transition: 0.3s ease;
+            -webkit-backface-visibility: hidden;
+            will-change: transform;
           }
           .icon {
             mask-image: url("./images/${name}.svg");
@@ -45,15 +47,12 @@ export default function TabBarIcon(props: Props): ReactElement {
             background-color: var(--green-40);
             transition: 0.3s ease;
           }
-          .icon:not(.active):hover {
-            background-color: var(--green-20);
-          }
           span {
             position: absolute;
             opacity: 0;
             text-align: center;
             margin-bottom: -39px;
-            color: var(--green-40);
+            color: var(--green-20);
             font-size: 12px;
             font-weight: 600;
             text-transform: capitalize;
@@ -67,13 +66,15 @@ export default function TabBarIcon(props: Props): ReactElement {
           .active span {
             opacity: 1;
           }
-
           .tab_bar_icon_wrap:hover,
           .active {
-            transform: translateY(-8px);
+            transform: translateY(-8px) translateZ(0);
+          }
+          .tab_bar_icon_wrap:hover:not(.active) .icon {
+            background-color: var(--green-20);
           }
           .active span {
-            color: #d08e39;
+            color: var(--trophy-gold);
           }
         `}
       </style>
