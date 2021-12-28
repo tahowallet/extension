@@ -195,7 +195,7 @@ export default function Send(): ReactElement {
           }
           .back_button_wrap {
             position: absolute;
-            margin-left: -10px;
+            margin-left: -1px;
             margin-top: -4px;
             z-index: 10;
           }
