@@ -25,31 +25,41 @@ export default function SignTransactionApproveSpendAssetBlock({
     assetAmounts: [],
   }
 
-  const approveAmount = transactionDetails?.input?.substring(
-    74,
-    transactionDetails?.input.length
-  )
+  // ERC-20 the approval amount will be in the range of 74-138 in form of a 32 bytes hex string
+  const approveAmount = transactionDetails?.input?.substring(74, 138)
   const infiniteApproval =
-    approvalLimit ===
-    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    approveAmount ===
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
   const asset = assetAmounts.find((el) =>
     "contractAddress" in el.asset
       ? el.asset.contractAddress === transactionDetails.to
       : undefined
   )
-  const hexedAmount = ethers.utils.hexlify(2)
 
-  // TODO Update the transaction request input (hex string is 64chars for uint256)
+  const getNumericStringValueFromHex = (hexString: string | undefined) => {
+    let hexValue = hexString
+    if (hexValue && !hexString?.includes("x")) {
+      hexValue = `0x${hexString}`
+    }
+    return Number(hexValue).toString()
+  }
 
   useEffect(() => {
-    setApprovalLimit(Number(`0x${approveAmount}`).toString() ?? "")
+    setApprovalLimit(getNumericStringValueFromHex(approveAmount) ?? "0")
   }, [approveAmount])
 
   const handleUpdateClick = () => {
     setChanging(!changing)
-    if (changing) {
-      dispatch(updateTransactionOptions(transactionDetails))
+    if (changing && transactionDetails) {
+      const updatedInput = `${transactionDetails.input?.substring(0, 74)}${
+        ethers.utils
+          .hexZeroPad(ethers.utils.hexlify(Number(approvalLimit)), 32)
+          .split("0x")[1]
+      }`
+      const newTxDetails = { ...transactionDetails }
+      newTxDetails.input = updatedInput
+      dispatch(updateTransactionOptions(newTxDetails))
     }
   }
   return (
