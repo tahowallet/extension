@@ -11,12 +11,12 @@ export default function CorePage(props: Props): ReactElement {
   const { children, hasTabBar, hasTopBar } = props
 
   return (
-    <div className="page">
+    <main>
       {children}
       <Snackbar />
       <style jsx>
         {`
-          .page {
+          main {
             width: 100%;
             overflow-y: auto;
             display: flex;
@@ -49,7 +49,7 @@ export default function CorePage(props: Props): ReactElement {
           }
         `}
       </style>
-    </div>
+    </main>
   )
 }
 
