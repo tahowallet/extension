@@ -45,6 +45,7 @@ export default function TabBarIcon(props: Props): ReactElement {
             height: 24px;
             cursor: pointer;
             background-color: var(--green-40);
+            transition: 0.1s ease;
           }
           span {
             position: absolute;
@@ -55,7 +56,7 @@ export default function TabBarIcon(props: Props): ReactElement {
             font-size: 12px;
             font-weight: 600;
             text-transform: capitalize;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, color 0.1s ease;
           }
           .active .icon {
             background-color: var(--trophy-gold);
