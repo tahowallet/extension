@@ -34,7 +34,11 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   }
 
   useEffect(() => {
-    if (redirectIfNot && typeof redirectTarget !== "undefined") {
+    if (
+      redirectIfNot &&
+      typeof redirectTarget !== "undefined" &&
+      history.location.pathname !== redirectTarget
+    ) {
       history.push(redirectTarget)
     }
   })
