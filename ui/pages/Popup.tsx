@@ -61,6 +61,7 @@ export default function Popup({ store }: { store: Store }): ReactElement {
         <div className="top_menu_wrap_decoy">
           <TopMenu />
         </div>
+        <div className="community_edition_label">Community Edition</div>
         <Router>
           <Route
             render={(routeProps) => {
@@ -159,6 +160,21 @@ export default function Popup({ store }: { store: Store }): ReactElement {
             }
             .hide {
               opacity: 0;
+            }
+            .community_edition_label {
+              width: 140px;
+              height: 20px;
+              left: 24px;
+              position: fixed;
+              background-color: var(--gold-60);
+              color: var(--hunter-green);
+              font-weight: 500;
+              text-align: center;
+              border-bottom-left-radius: 4px;
+              border-bottom-right-radius: 4px;
+              font-size: 14px;
+              z-index: 1000;
+              top: 0px;
             }
           `}
         </style>

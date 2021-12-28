@@ -33,20 +33,6 @@ export default function CorePage(props: Props): ReactElement {
             z-index: 10;
             cursor: default;
           }
-          .community_edition_label {
-            width: 140px;
-            height: 20px;
-            left: 24px;
-            position: fixed;
-            background-color: var(--gold-60);
-            color: var(--hunter-green);
-            font-weight: 500;
-            text-align: center;
-            border-bottom-left-radius: 4px;
-            border-bottom-right-radius: 4px;
-            font-size: 14px;
-            z-index: 1000;
-          }
         `}
       </style>
     </main>
