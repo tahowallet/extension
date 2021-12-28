@@ -1,5 +1,7 @@
 import Dexie, { Transaction } from "dexie"
+
 import { FiatCurrency } from "../../assets"
+import { AddressNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES from "./defaults"
 
@@ -8,10 +10,11 @@ import DEFAULT_PREFERENCES from "./defaults"
 export interface Preferences {
   id?: number
   savedAt: number
-  tokenLists: { autoUpdate: boolean; urls: Array<string> }
+  tokenLists: { autoUpdate: boolean; urls: string[] }
   currency: FiatCurrency
   defaultWallet: boolean
-  currentAddress: string
+  currentAddress?: string
+  selectedAccount: AddressNetwork
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -40,7 +43,7 @@ export class PreferenceDatabase extends Dexie {
           .toCollection()
           .modify((storedPreferences: Preferences) => {
             if (!storedPreferences.defaultWallet) {
-              // Dexie api expects modification of the argument:
+              // Dexie API expects modification of the argument:
               // https://dexie.org/docs/Collection/Collection.modify()
               // eslint-disable-next-line no-param-reassign
               storedPreferences.defaultWallet =
@@ -57,10 +60,34 @@ export class PreferenceDatabase extends Dexie {
       preferences: "++id", // removed all the unused indexes
     })
 
+    //
+    this.version(4)
+      .stores({
+        preferences: "++id",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences: Preferences) => {
+            if (storedPreferences.currentAddress) {
+              // eslint-disable-next-line no-param-reassign
+              storedPreferences.selectedAccount = {
+                network: DEFAULT_PREFERENCES.selectedAccount.network,
+                address: storedPreferences.currentAddress,
+              }
+            } else {
+              // eslint-disable-next-line no-param-reassign
+              storedPreferences.selectedAccount =
+                DEFAULT_PREFERENCES.selectedAccount
+            }
+          })
+      })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
-    this.on("populate", function (tx: Transaction) {
+    this.on("populate", (tx: Transaction) => {
       // This could be tx.preferences but the typing for populate
       // is not generic so it does not know about the preferences table
       tx.table("preferences").add(DEFAULT_PREFERENCES)
@@ -77,8 +104,10 @@ export class PreferenceDatabase extends Dexie {
     await this.preferences.toCollection().modify({ defaultWallet })
   }
 
-  async setCurrentAddress(currentAddress: string): Promise<void> {
-    await this.preferences.toCollection().modify({ currentAddress })
+  async setSelectedAccount(addressNetwork: AddressNetwork): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify({ selectedAccount: addressNetwork })
   }
 }
 

@@ -21,6 +21,7 @@ import {
 
 import { KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
+import { AddressNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
@@ -43,7 +44,7 @@ import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
   setDefaultWallet,
-  setCurrentAccount,
+  setSelectedAccount,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -78,6 +79,66 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
+// The version of persisted Redux state the extension is expecting. Any previous
+// state without this version, or with a lower version, ought to be migrated.
+const REDUX_STATE_VERSION = 2
+
+type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
+
+// An object mapping a version number to a state migration. Each migration for
+// version n is expected to take a state consistent with version n-1, and return
+// state consistent with version n.
+const REDUX_MIGRATIONS: { [version: number]: Migration } = {
+  2: (prevState: Record<string, unknown>) => {
+    // Migrate the old currentAccount SelectedAccount type to a bare
+    // selectedAccount AddressNetwork type. Note the avoidance of imported types
+    // so this migration will work in the future, regardless of other code changes
+    type BroadAddressNetwork = {
+      address: string
+      network: Record<string, unknown>
+    }
+    type OldState = {
+      ui: {
+        currentAccount?: {
+          addressNetwork: BroadAddressNetwork
+          truncatedAddress: string
+        }
+      }
+    }
+    const newState = { ...prevState }
+    const addressNetwork = (prevState as OldState)?.ui?.currentAccount
+      ?.addressNetwork
+    delete (newState as OldState)?.ui?.currentAccount
+    newState.selectedAccount = addressNetwork as BroadAddressNetwork
+    return newState
+  },
+}
+
+// Migrate a previous version of the Redux state to that expected by the current
+// code base.
+function migrateReduxState(
+  previousState: Record<string, unknown>,
+  previousVersion?: number
+): Record<string, unknown> {
+  const resolvedVersion = previousVersion ?? 1
+  let migratedState: Record<string, unknown> = previousState
+
+  if (resolvedVersion < REDUX_STATE_VERSION) {
+    const outstandingMigrations = Object.entries(REDUX_MIGRATIONS)
+      .sort()
+      .filter(([version]) => parseInt(version, 10) > resolvedVersion)
+      .map(([, migration]) => migration)
+    migratedState = outstandingMigrations.reduce(
+      (state: Record<string, unknown>, migration: Migration) => {
+        return migration(state)
+      },
+      migratedState
+    )
+  }
+
+  return migratedState
+}
+
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
@@ -85,7 +146,10 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
-    browser.storage.local.set({ state: encodeJSON(state) })
+    browser.storage.local.set({
+      state: encodeJSON(state),
+      version: REDUX_STATE_VERSION,
+    })
   }
 
   return result
@@ -93,9 +157,9 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (startupState = {}) =>
+const initializeStore = (preloadedState = {}) =>
   configureStore({
-    preloadedState: startupState,
+    preloadedState,
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) => {
       const middleware = getDefaultMiddleware({
@@ -172,7 +236,10 @@ export default class Main extends BaseService<never> {
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
-      const { state } = await browser.storage.local.get("state")
+      const { state, version } = await browser.storage.local.get([
+        "state",
+        "version",
+      ])
 
       if (state) {
         const restoredState = decodeJSON(state)
@@ -180,7 +247,10 @@ export default class Main extends BaseService<never> {
           // If someone managed to sneak JSON that decodes to typeof "object"
           // but isn't a Record<string, unknown>, there is a very large
           // problem...
-          savedReduxState = restoredState as Record<string, unknown>
+          savedReduxState = migrateReduxState(
+            restoredState as Record<string, unknown>,
+            version || undefined
+          )
         } else {
           throw new Error(`Unexpected JSON persisted for state: ${state}`)
         }
@@ -254,6 +324,7 @@ export default class Main extends BaseService<never> {
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState)
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
@@ -590,32 +661,31 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
-      "initializeCurrentAddress",
-      async (dbCurrentAddress: string) => {
-        if (dbCurrentAddress) {
+      "initializeSelectedAccount",
+      async (dbAddressNetwork: AddressNetwork) => {
+        if (dbAddressNetwork) {
           // TBD: naming the normal reducer and async thunks
           // Initialize redux from the db
           // !!! Important: this action belongs to a regular reducer.
           // NOT to be confused with the setNewCurrentAddress asyncThunk
-          this.store.dispatch(setCurrentAccount(dbCurrentAddress))
+          this.store.dispatch(setSelectedAccount(dbAddressNetwork))
         } else {
           // Update currentAddress in db if it's not set but it is in the store
           // should run only one time
-          const { address } =
-            this.store.getState().ui.currentAccount.addressNetwork
+          const addressNetwork = this.store.getState().ui.selectedAccount
 
-          if (address) {
-            await this.preferenceService.setCurrentAddress(address)
+          if (addressNetwork) {
+            await this.preferenceService.setSelectedAccount(addressNetwork)
           }
         }
       }
     )
 
-    uiSliceEmitter.on("newCurrentAddress", async (newCurrentAddress) => {
-      await this.preferenceService.setCurrentAddress(newCurrentAddress)
+    uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
+      await this.preferenceService.setSelectedAccount(addressNetwork)
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
-        newCurrentAddress
+        addressNetwork.address
       )
     })
 

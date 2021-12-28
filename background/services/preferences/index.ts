@@ -1,4 +1,5 @@
 import { FiatCurrency } from "../../assets"
+import { AddressNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
 import { Preferences, TokenListPreferences } from "./types"
@@ -8,7 +9,7 @@ import BaseService from "../base"
 interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
-  initializeCurrentAddress: string
+  initializeSelectedAccount: AddressNetwork
 }
 
 /*
@@ -36,8 +37,8 @@ export default class PreferenceService extends BaseService<Events> {
 
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
     this.emitter.emit(
-      "initializeCurrentAddress",
-      await this.getCurrentAddress()
+      "initializeSelectedAccount",
+      await this.getSelectedAccount()
     )
   }
 
@@ -63,11 +64,11 @@ export default class PreferenceService extends BaseService<Events> {
     return this.db.setDefaultWalletValue(newDefaultWalletValue)
   }
 
-  async getCurrentAddress(): Promise<string> {
-    return (await this.db.getPreferences())?.currentAddress
+  async getSelectedAccount(): Promise<AddressNetwork> {
+    return (await this.db.getPreferences())?.selectedAccount
   }
 
-  async setCurrentAddress(currentAddress: string): Promise<void> {
-    return this.db.setCurrentAddress(currentAddress)
+  async setSelectedAccount(addressNetwork: AddressNetwork): Promise<void> {
+    return this.db.setSelectedAccount(addressNetwork)
   }
 }
