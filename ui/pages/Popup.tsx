@@ -1,32 +1,33 @@
-import React, { ReactElement } from "react"
-import {
-  useHistory,
-  MemoryRouter as Router,
-  Switch,
-  Route,
-} from "react-router-dom"
+import React, { ReactElement, useState } from "react"
+import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import classNames from "classnames"
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
+import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { useIsDappPopup } from "../hooks"
+import setAnimationConditions, {
+  animationStyles,
+} from "../utils/pageTransition"
 
-import Wallet from "./Wallet"
-import SignTransaction from "./SignTransaction"
-import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
-import OnboardingViewOnlyWallet from "./Onboarding/OnboardingViewOnlyWallet"
-import OnboardingInfoIntro from "./Onboarding/OnboardingInfoIntro"
-import OnboardingAddWallet from "./Onboarding/OnboardingAddWallet"
-import Overview from "./Overview"
-import SingleAsset from "./SingleAsset"
-import Earn from "./Earn"
-import EarnDeposit from "./EarnDeposit"
-import Menu from "./Menu"
-import Send from "./Send"
-import Swap from "./Swap"
-import DAppPermissionRequest from "./DAppConnectRequest"
-import KeyringUnlock from "../components/Keyring/KeyringUnlock"
-import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
+import TabBar from "../components/TabBar/TabBar"
+import TopMenu from "../components/TopMenu/TopMenu"
+import CorePage from "../components/Core/CorePage"
+
+import pageList from "../routes/routes"
+
+const pagePreferences = Object.fromEntries(
+  pageList.map((item) => [
+    item.path,
+    { hasTabBar: item.hasTabBar, hasTopBar: item.hasTopBar },
+  ])
+)
+
+interface Location {
+  key: string
+  pathname: string
+}
 
 function transformLocation(inputLocation: Location): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -50,66 +51,84 @@ function transformLocation(inputLocation: Location): Location {
 
 export default function Popup({ store }: { store: Store }): ReactElement {
   const isDappPopup = useIsDappPopup()
+  const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
+  const [isDirectionRight, setIsDirectionRight] = useState(true)
+  const [showTabBar, setShowTabBar] = useState(true)
 
   return (
     <>
       <Provider store={store}>
+        <div className="top_menu_wrap_decoy">
+          <TopMenu />
+        </div>
+        <div className="community_edition_label">Community Edition</div>
         <Router>
           <Route
-            render={(routeProps) => (
+            render={(routeProps) => {
               // @ts-expect-error TODO: fix the typing when the feature works
-              <Switch location={transformLocation(routeProps.location)}>
-                <Route path="/keyring/set-password">
-                  <KeyringSetPassword />
-                </Route>
-                <Route path="/keyring/unlock">
-                  <KeyringUnlock />
-                </Route>
-                <Route path="/singleAsset">
-                  <SingleAsset />
-                </Route>
-                <Route path="/onboarding/importMetamask">
-                  <OnboardingImportMetamask nextPage="/" />
-                </Route>
-                <Route path="/onboarding/viewOnlyWallet">
-                  <OnboardingViewOnlyWallet />
-                </Route>
-                <Route path="/onboarding/infoIntro">
-                  <OnboardingInfoIntro />
-                </Route>
-                <Route path="/onboarding/addWallet">
-                  <OnboardingAddWallet />
-                </Route>
-                <Route path="/signTransaction">
-                  <SignTransaction />
-                </Route>
-                <Route path="/overview">
-                  <Overview />
-                </Route>
-                <Route path="/earn/deposit">
-                  <EarnDeposit />
-                </Route>
-                <Route path="/earn">
-                  <Earn />
-                </Route>
-                <Route path="/menu">
-                  <Menu />
-                </Route>
-                <Route path="/send">
-                  <Send />
-                </Route>
-                <Route path="/swap">
-                  <Swap />
-                </Route>
-                <Route path="/dapp-permission">
-                  <DAppPermissionRequest />
-                </Route>
-                <Route path="/">
-                  <Wallet />
-                </Route>
-              </Switch>
-            )}
+              const transformedLocation = transformLocation(routeProps.location)
+              const normalizedPathname =
+                transformedLocation.pathname !== "/wallet"
+                  ? routeProps.location.pathname
+                  : "/"
+
+              setAnimationConditions(
+                routeProps,
+                pagePreferences,
+                setShouldDisplayDecoy,
+                setIsDirectionRight
+              )
+              setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
+
+              return (
+                <TransitionGroup>
+                  <CSSTransition
+                    timeout={300}
+                    classNames="page-transition"
+                    key={
+                      routeProps.location.pathname.includes("onboarding") ||
+                      routeProps.location.pathname.includes("keyring")
+                        ? ""
+                        : transformedLocation.key
+                    }
+                  >
+                    <div>
+                      <div
+                        className={classNames("top_menu_wrap", {
+                          anti_animation: shouldDisplayDecoy,
+                          hide: !pagePreferences[normalizedPathname].hasTopBar,
+                        })}
+                      >
+                        <TopMenu />
+                      </div>
+                      {/* @ts-expect-error TODO: fix the typing when the feature works */}
+                      <Switch location={transformedLocation}>
+                        {pageList.map(
+                          ({ path, Component, hasTabBar, hasTopBar }) => {
+                            return (
+                              <Route path={path} key={path}>
+                                <CorePage
+                                  hasTabBar={hasTabBar}
+                                  hasTopBar={hasTopBar}
+                                >
+                                  <Component location={transformedLocation} />
+                                </CorePage>
+                              </Route>
+                            )
+                          }
+                        )}
+                      </Switch>
+                    </div>
+                  </CSSTransition>
+                </TransitionGroup>
+              )
+            }}
           />
+          {showTabBar && (
+            <div className="tab_bar_wrap">
+              <TabBar />
+            </div>
+          )}
         </Router>
       </Provider>
       {isDappPopup && (
@@ -121,6 +140,45 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           `}
         </style>
       )}
+
+      <>
+        <style jsx global>
+          {`
+            ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
+            .tab_bar_wrap {
+              position: fixed;
+              bottom: 0px;
+              width: 100%;
+            }
+            .top_menu_wrap {
+              margin: 0 auto;
+              width: max-content;
+              display: block;
+              justify-content: center;
+              z-index: 0;
+              margin-top: 5px;
+            }
+            .hide {
+              opacity: 0;
+            }
+            .community_edition_label {
+              width: 140px;
+              height: 20px;
+              left: 24px;
+              position: fixed;
+              background-color: var(--gold-60);
+              color: var(--hunter-green);
+              font-weight: 500;
+              text-align: center;
+              border-bottom-left-radius: 4px;
+              border-bottom-right-radius: 4px;
+              font-size: 14px;
+              z-index: 1000;
+              top: 0px;
+            }
+          `}
+        </style>
+      </>
     </>
   )
 }

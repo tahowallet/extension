@@ -43,6 +43,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           position: fixed;
           z-index: 99999;
           top: 55px;
+          left: 0px;
         }
         .window {
           width: 352px;
@@ -66,7 +67,6 @@ export default function TopMenuConnectedDAppInfo(props: {
           background-color: var(--green-20);
           z-index: 1;
           margin-top: 17px;
-          margin-right: 17px;
         }
         .void_space {
           height: 100%;

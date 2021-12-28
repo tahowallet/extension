@@ -41,13 +41,17 @@ interface SignLocationState {
   value: string | number
 }
 
-export default function SignTransaction(): ReactElement {
+export default function SignTransaction({
+  location,
+}: {
+  location: { key: string; pathname: string; state?: SignLocationState }
+}): ReactElement {
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
-  const location = useLocation<SignLocationState | undefined>()
-  const { assetSymbol, amount, to, value, signType } = location.state ?? {
+
+  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
     signType: SignType.Sign,
   }
   const isTransactionDataReady = useBackgroundSelector(
@@ -228,6 +232,7 @@ export default function SignTransaction(): ReactElement {
             flex-direction: column;
             align-items: center;
             background-color: var(--green-95);
+            z-index: 5;
           }
           .title {
             color: var(--trophy-gold);

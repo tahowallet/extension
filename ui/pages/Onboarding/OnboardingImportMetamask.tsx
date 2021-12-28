@@ -51,8 +51,10 @@ function TextArea({
           font-weight: 500;
           font-size: 14px;
           line-height: 20px;
-          margin-top: 3px;
           align-self: flex-start;
+          height: 20px;
+          margin-top: 3px;
+          margin-bottom: -23px;
         }
       `}</style>
     </>
@@ -103,60 +105,64 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     if (!isChecked) setPath(undefined)
   }, [isChecked])
 
-  return areKeyringsUnlocked ? (
-    <section className="center_horizontal">
-      <div className="back_button_wrap">
-        <SharedBackButton />
-      </div>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          importWallet()
-        }}
-      >
-        <div className="portion top">
-          <div className="metamask_onboarding_image" />
-          <h1 className="serif_header">Import account</h1>
-          <div className="info">
-            Enter or copy & paste the recovery phrase from your MetaMask
-            account.
-          </div>
-          <TextArea
-            value={recoveryPhrase}
-            onChange={(value) => {
-              // Clear error message on change
-              setErrorMessage("")
-              setRecoveryPhrase(value)
-            }}
-            errorMessage={errorMessage}
-          />
+  if (!areKeyringsUnlocked) return <></>
 
-          {!HIDE_IMPORT_DERIVATION_PATH && (
-            <div className="checkbox_wrapper">
-              <SharedCheckbox
-                label="Custom derivation"
-                checked={isChecked}
-                onChange={() => setIsChecked(!isChecked)}
-              />
-            </div>
-          )}
-          {!HIDE_IMPORT_DERIVATION_PATH && isChecked && (
-            <div className="select_wrapper">
-              <OnboardingDerivationPathSelect onChange={setPath} />
-            </div>
-          )}
+  return (
+    <section className="center_horizontal standard_width">
+      <div className="content">
+        <div className="back_button_wrap">
+          <SharedBackButton />
         </div>
-        <div className="portion bottom">
-          <SharedButton
-            size="medium"
-            type="primary"
-            isDisabled={isImporting}
-            onClick={importWallet}
-          >
-            Import account
-          </SharedButton>
-        </div>
-      </form>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            importWallet()
+          }}
+        >
+          <div className="portion top">
+            <div className="metamask_onboarding_image" />
+            <h1 className="serif_header">Import account</h1>
+            <div className="info">
+              Enter or copy & paste the recovery phrase from your MetaMask
+              account.
+            </div>
+            <TextArea
+              value={recoveryPhrase}
+              onChange={(value) => {
+                // Clear error message on change
+                setErrorMessage("")
+                setRecoveryPhrase(value)
+              }}
+              errorMessage={errorMessage}
+            />
+
+            {!HIDE_IMPORT_DERIVATION_PATH && (
+              <div className="checkbox_wrapper">
+                <SharedCheckbox
+                  label="Custom derivation"
+                  checked={isChecked}
+                  onChange={() => setIsChecked(!isChecked)}
+                />
+              </div>
+            )}
+            {!HIDE_IMPORT_DERIVATION_PATH && isChecked && (
+              <div className="select_wrapper">
+                <OnboardingDerivationPathSelect onChange={setPath} />
+              </div>
+            )}
+          </div>
+          <div className="portion bottom">
+            <SharedButton
+              size="medium"
+              type="primary"
+              isDisabled={isImporting}
+              onClick={importWallet}
+            >
+              Import account
+            </SharedButton>
+          </div>
+        </form>
+      </div>
       <style jsx>{`
         section {
           display: flex;
@@ -164,6 +170,11 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           flex-direction: column;
           justify-content: space-between;
           height: 100%;
+          background-color: var(--hunter-green);
+        }
+        .content {
+          animation: fadeIn ease 200ms;
+          width: inherit;
         }
         .back_button_wrap {
           position: fixed;
@@ -182,6 +193,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           justify-content: space-between;
           flex-direction: column;
           margin-bottom: 24px;
+          margin-top: 35px;
         }
         .metamask_onboarding_image {
           background: url("./images/illustration_import_seed@2x.png");
@@ -210,7 +222,5 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         }
       `}</style>
     </section>
-  ) : (
-    <></>
   )
 }
