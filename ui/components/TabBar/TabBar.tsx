@@ -1,30 +1,24 @@
-import React, { ReactElement } from "react"
-import {
-  HIDE_SWAP,
-  HIDE_EARN_PAGE,
-} from "@tallyho/tally-background/features/features"
+import React, { ReactElement, useState } from "react"
+
 import { useLocation } from "react-router-dom"
 import TabBarIcon from "./TabBarIcon"
+import tabs from "../../utils/tabs"
 
 export default function TabBar(): ReactElement {
   const location = useLocation()
-  const activeTabName = location.pathname.split("/")[1] || "wallet"
-  const tabs = ["overview", "wallet", "swap", "earn", "menu"].filter((tab) => {
-    if ((tab === "earn" && HIDE_EARN_PAGE) || (tab === "swap" && HIDE_SWAP)) {
-      return false
-    }
-    return true
-  })
+  const activeTabName = location?.pathname?.split("/")[1] || "wallet"
 
   return (
     <nav>
-      {tabs.map((tabName) => (
-        <TabBarIcon
-          key={tabName}
-          name={tabName}
-          isActive={activeTabName === tabName}
-        />
-      ))}
+      {tabs.map((tabName) => {
+        return (
+          <TabBarIcon
+            key={tabName}
+            name={tabName}
+            isActive={activeTabName === tabName}
+          />
+        )
+      })}
       <style jsx>
         {`
           nav {
@@ -33,7 +27,7 @@ export default function TabBar(): ReactElement {
             background-color: var(--hunter-green);
             display: flex;
             justify-content: space-around;
-            padding: 0px 40px;
+            padding: 0px 46px;
             box-sizing: border-box;
             align-items: center;
             flex-shrink: 0;

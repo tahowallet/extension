@@ -11,42 +11,40 @@ export default function EarnDeposit(): ReactElement {
 
   return (
     <>
-      <CorePage>
-        <section className="primary_info">
-          <BackButton />
-          <header>
-            <div className="left side_column">
-              <div className="side_title">Reward</div>
-              <span className="reward_wrap">
-                <div className="icon_reward" />
-                TALLY
-              </span>
-            </div>
-            <div className="center">
-              <SharedAssetIcon size="large" />
-              <span className="asset_name">USDT</span>
-            </div>
-            <div className="right side_column">
-              <div className="side_title">est. APR</div>
-              250%
-            </div>
-          </header>
-        </section>
-        <SharedPanelSwitcher
-          setPanelNumber={setPanelNumber}
-          panelNumber={panelNumber}
-          panelNames={["Deposit", "Withdraw", "Risk"]}
+      <section className="primary_info">
+        <BackButton />
+        <header>
+          <div className="left side_column">
+            <div className="side_title">Reward</div>
+            <span className="reward_wrap">
+              <div className="icon_reward" />
+              TALLY
+            </span>
+          </div>
+          <div className="center">
+            <SharedAssetIcon size="large" />
+            <span className="asset_name">USDT</span>
+          </div>
+          <div className="right side_column">
+            <div className="side_title">est. APR</div>
+            250%
+          </div>
+        </header>
+      </section>
+      <SharedPanelSwitcher
+        setPanelNumber={setPanelNumber}
+        panelNumber={panelNumber}
+        panelNames={["Deposit", "Withdraw", "Risk"]}
+      />
+      <div className="deposit_wrap">
+        <SharedAssetInput
+          label="Deposit amount"
+          defaultAsset={{ symbol: "ETH", name: "Ether" }}
         />
-        <div className="deposit_wrap">
-          <SharedAssetInput
-            label="Deposit amount"
-            defaultAsset={{ symbol: "ETH", name: "Ether" }}
-          />
-          <SharedButton type="primary" size="large">
-            Approve & Deposit
-          </SharedButton>
-        </div>
-      </CorePage>
+        <SharedButton type="primary" size="large">
+          Approve & Deposit
+        </SharedButton>
+      </div>
       <style jsx>
         {`
           .primary_info {

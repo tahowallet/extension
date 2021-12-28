@@ -2,7 +2,6 @@ import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
-import CorePage from "../../components/Core/CorePage"
 
 const steps = [
   {
@@ -60,123 +59,121 @@ export default function OnboardingInfoIntro(): ReactElement {
   }
 
   return (
-    <CorePage hasTabBar={false} hasTopBar={false}>
-      <section>
-        <div className="illustration_section">
-          <div className="illustration" />
-          <div className="forest" />
-        </div>
-        <div className="bottom_part">
-          <div className="bottom_content">
-            <SharedProgressIndicator
-              numberOfSteps={4}
-              activeStep={activeStep}
-              onProgressStepClicked={(step) => {
-                setActiveStep(step)
-              }}
-            />
-            <h1 className="bottom_title">{steps[activeStep - 1].title} </h1>
-            <p>{steps[activeStep - 1].body}</p>
-          </div>
-          <SharedButton
-            type="primary"
-            size="large"
-            onClick={() => {
-              if (activeStep < steps.length) {
-                setActiveStep(activeStep + 1)
-              } else {
-                setRedirectToAddWallet(true)
-              }
+    <section>
+      <div className="illustration_section">
+        <div className="illustration" />
+        <div className="forest" />
+      </div>
+      <div className="bottom_part">
+        <div className="bottom_content">
+          <SharedProgressIndicator
+            numberOfSteps={4}
+            activeStep={activeStep}
+            onProgressStepClicked={(step) => {
+              setActiveStep(step)
             }}
-          >
-            {steps[activeStep - 1].buttonCopy}
-          </SharedButton>
+          />
+          <h1 className="bottom_title">{steps[activeStep - 1].title} </h1>
+          <p>{steps[activeStep - 1].body}</p>
         </div>
-        <style jsx>
-          {`
-            .bottom_content {
-              margin-top: 28px;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
+        <SharedButton
+          type="primary"
+          size="large"
+          onClick={() => {
+            if (activeStep < steps.length) {
+              setActiveStep(activeStep + 1)
+            } else {
+              setRedirectToAddWallet(true)
             }
-            .illustration_section {
-              height: 380px;
-              display: flex;
-              background-color: var(--green-95);
+          }}
+        >
+          {steps[activeStep - 1].buttonCopy}
+        </SharedButton>
+      </div>
+      <style jsx>
+        {`
+          .bottom_content {
+            margin-top: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .illustration_section {
+            height: 380px;
+            display: flex;
+            background-color: var(--green-95);
+          }
+          section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
+          h1 {
+            font-family: "Quincy CF";
+            font-weight: 500;
+            font-size: 36px;
+            line-height: 42px;
+            margin: 12px 0px 0px 0px;
+          }
+          .forest {
+            background: url("./images/dark_forest@2x.png");
+            background-size: cover;
+            width: 384px;
+            height: 141px;
+            align-self: flex-end;
+            justify-self: flex-end;
+          }
+          p {
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 24px;
+            color: var(--green-40);
+            width: 320px;
+            text-align: center;
+            margin-top: 5px;
+          }
+          .bottom_part {
+            display: flex;
+            position: fixed;
+            bottom: 0;
+            padding-top: 22px;
+            padding-bottom: 32px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 230px;
+            text-align: center;
+          }
+        `}
+      </style>
+      <style jsx>
+        {`
+          .illustration {
+            background: url("./images/${steps[activeStep - 1].image
+              .fileName}@2x.png");
+            background-size: cover;
+            width: ${steps[activeStep - 1].image.width}px;
+            height: ${steps[activeStep - 1].image.height}px;
+            flex-shrink: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            margin-top: 21px;
+            position: absolute;
+            animation: fadeIn ease 0.5s;
+            ${steps[activeStep - 1].image.extraStyles}
+          }
+          @keyframes fadeIn {
+            0% {
+              opacity: 0;
             }
-            section {
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
+            100% {
+              opacity: 1;
             }
-            h1 {
-              font-family: "Quincy CF";
-              font-weight: 500;
-              font-size: 36px;
-              line-height: 42px;
-              margin: 12px 0px 0px 0px;
-            }
-            .forest {
-              background: url("./images/dark_forest@2x.png");
-              background-size: cover;
-              width: 384px;
-              height: 141px;
-              align-self: flex-end;
-              justify-self: flex-end;
-            }
-            p {
-              font-size: 16px;
-              font-weight: 400;
-              line-height: 24px;
-              color: var(--green-40);
-              width: 320px;
-              text-align: center;
-              margin-top: 5px;
-            }
-            .bottom_part {
-              display: flex;
-              position: fixed;
-              bottom: 0;
-              padding-top: 22px;
-              padding-bottom: 32px;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-between;
-              height: 230px;
-              text-align: center;
-            }
-          `}
-        </style>
-        <style jsx>
-          {`
-            .illustration {
-              background: url("./images/${steps[activeStep - 1].image
-                .fileName}@2x.png");
-              background-size: cover;
-              width: ${steps[activeStep - 1].image.width}px;
-              height: ${steps[activeStep - 1].image.height}px;
-              flex-shrink: 0;
-              left: 0;
-              right: 0;
-              margin: 0 auto;
-              margin-top: 21px;
-              position: absolute;
-              animation: fadeIn ease 0.5s;
-              ${steps[activeStep - 1].image.extraStyles}
-            }
-            @keyframes fadeIn {
-              0% {
-                opacity: 0;
-              }
-              100% {
-                opacity: 1;
-              }
-            }
-          `}
-        </style>
-      </section>
-    </CorePage>
+          }
+        `}
+      </style>
+    </section>
   )
 }

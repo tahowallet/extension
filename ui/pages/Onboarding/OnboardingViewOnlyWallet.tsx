@@ -7,7 +7,7 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { useBackgroundDispatch } from "../../hooks"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedButton from "../../components/Shared/SharedButton"
-import BackButton from "../../components/Shared/SharedBackButton"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
 
 export default function OnboardingViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -43,45 +43,65 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   }
 
   return (
-    <section>
-      <div className="wordmark" />
-      <div className="back_button_wrap">
-        <BackButton />
+    <section className="standard_width">
+      <div className="top">
+        <SharedBackButton />
+        <div className="wordmark" />
       </div>
-      <h1 className="serif_header">Explore Tally</h1>
-      <div className="subtitle">
-        Add an Ethereum address to view an existing wallet in Tally.
-      </div>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          handleSubmitViewOnlyAddress()
-        }}
-      >
-        <div className="input_wrap">
-          <SharedInput
-            label="ETH address"
-            onChange={handleInputChange}
-            errorMessage={errorMessage}
-          />
+      <div className="content">
+        <h1 className="serif_header">Explore Tally</h1>
+        <div className="subtitle">
+          Add an Ethereum address to view an existing wallet in Tally.
         </div>
-        <SharedButton
-          type="primary"
-          size="large"
-          onClick={handleSubmitViewOnlyAddress}
-          showLoadingOnClick={!!errorMessage}
-          isFormSubmit
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            handleSubmitViewOnlyAddress()
+          }}
         >
-          Explore Tally
-        </SharedButton>
-      </form>
+          <div className="input_wrap">
+            <SharedInput
+              label="ETH address"
+              onChange={handleInputChange}
+              errorMessage={errorMessage}
+            />
+          </div>
+          <SharedButton
+            type="primary"
+            size="large"
+            onClick={handleSubmitViewOnlyAddress}
+            showLoadingOnClick={!!errorMessage}
+            isFormSubmit
+          >
+            Explore Tally
+          </SharedButton>
+        </form>
+      </div>
+
       <style jsx>
         {`
+          .top {
+            display: flex;
+            width: 100%;
+          }
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
             width: 52px;
             height: 25px;
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            margin: 0 auto;
+          }
+          section {
+            background-color: var(--hunter-green);
+          }
+          .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn ease 200ms;
           }
           .back_button_wrap {
             position: fixed;

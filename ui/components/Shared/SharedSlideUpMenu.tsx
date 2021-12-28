@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 
 interface Props {
   isOpen: boolean
@@ -11,6 +11,13 @@ interface Props {
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {
   const { isOpen, close, size, children, customSize } = props
+  const [forceHide, setForceHide] = useState(true)
+
+  useEffect(() => {
+    if (isOpen) {
+      setForceHide(false)
+    }
+  }, [isOpen])
 
   let menuHeight = "536px"
   if (size === "large") {
@@ -26,6 +33,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
       className={classNames("slide_up_menu", {
         large: size === "large",
         closed: !isOpen,
+        force_hide: forceHide,
       })}
     >
       <button
@@ -70,13 +78,12 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           .large {
             background-color: var(--hunter-green);
           }
-          .open_animate {
-            transform: translateY(0px);
-            animation: slideUp cubic-bezier(0.19, 1, 0.22, 1) 0.445s;
-            animation-direction: forward;
-          }
           .closed {
             transform: translateY(${menuHeight});
+          }
+          .force_hide {
+            opacity: 0;
+            pointer-events: none;
           }
         `}
       </style>
