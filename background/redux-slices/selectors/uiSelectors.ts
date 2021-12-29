@@ -49,6 +49,11 @@ export const selectCurrentAddressNetwork = createSelector(
   (selectedAccount) => selectedAccount
 )
 
+export const selectCurrentNetwork = createSelector(
+  (state: RootState) => state.ui.selectedAccount,
+  (selectedAccount) => selectedAccount.network
+)
+
 export const selectMainCurrency = createSelector(
   (state: RootState) => state.ui,
   (state: RootState) => state.assets,

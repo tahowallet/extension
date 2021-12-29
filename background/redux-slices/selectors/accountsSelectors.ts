@@ -29,7 +29,7 @@ const mainCurrencySymbol = "USD"
 const userValueDustThreshold = 2
 
 const getAccountState = (state: RootState) => state.account
-const getCurrentAccountState = (state: RootState) => {
+const getSelectedAccountState = (state: RootState) => {
   const { address, network } = state.ui.selectedAccount
   if (!address) {
     return "loading"
@@ -128,7 +128,7 @@ export const selectMainCurrencyUnitPrice = createSelector(
 )
 
 export const selectCurrentAccountBalances = createSelector(
-  getCurrentAccountState,
+  getSelectedAccountState,
   getAssetsState,
   selectHideDust,
   (currentAccount, assets, hideDust) => {
@@ -208,7 +208,7 @@ export type AccountTotal = {
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
 export const selectAccountTotalsByCategory = createSelector(
-  getCurrentAccountState,
+  getSelectedAccountState,
   getAccountState,
   getAssetsState,
   selectSigningAddresses,

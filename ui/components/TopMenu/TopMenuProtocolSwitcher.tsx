@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
 
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { useBackgroundSelector } from "../../hooks"
+
 type Props = {
   onClick?: () => void
   enabled?: boolean
@@ -7,12 +10,13 @@ type Props = {
 
 export default function TopMenuProtocolSwitcher({
   onClick,
-  enabled
+  enabled,
 }: Props): ReactElement {
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   return (
     <button type="button" onClick={onClick}>
-      Ethereum
-      { enabled && <span className="icon_chevron_down" /> }
+      {selectedNetwork.name}
+      {enabled && <span className="icon_chevron_down" />}
       <style jsx>
         {`
           button {
