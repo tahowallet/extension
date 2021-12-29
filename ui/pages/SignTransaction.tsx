@@ -48,10 +48,13 @@ export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const location = useLocation<SignLocationState | undefined>()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const approvalCodes = ["0x095ea7b", "0xcae9ca51"] // approve, approveAndCall
   const { assetSymbol, amount, to, value, signType } = location.state ?? {
-    // If tx input begins with bytecode that corresponds to ERC-20 approve
+    // If tx input begins with bytecode that corresponds to ERC-20 signature
     // we load the approve page
-    signType: transactionDetails?.input?.startsWith("0x095ea7b")
+    signType: approvalCodes.some((code) =>
+      transactionDetails?.input?.includes(code)
+    )
       ? SignType.SignSpend
       : SignType.Sign,
   }
