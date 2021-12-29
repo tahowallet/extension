@@ -1,14 +1,20 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   selectAccountTotalsByCategory,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useAreKeyringsUnlocked,
+} from "../../hooks"
 
 type WalletTypeInfo = {
   title: string
@@ -28,12 +34,14 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
 
 function WalletTypeHeader({
   accountType,
-  canAddAddress,
+  onClickAddAddress,
 }: {
   accountType: AccountType
-  canAddAddress: boolean
+  onClickAddAddress?: () => void
 }) {
   const { title, icon } = walletTypeDetails[accountType]
+  const history = useHistory()
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   return (
     <>
@@ -42,14 +50,20 @@ function WalletTypeHeader({
           <div className="icon" />
           {title}
         </h2>
-        {canAddAddress ? (
+        {onClickAddAddress ? (
           <div className="right">
             <SharedButton
-              type="tertiary"
+              type="tertiaryGray"
               size="small"
               icon="plus"
               iconSize="medium"
-              isDisabled
+              onClick={() => {
+                if (areKeyringsUnlocked) {
+                  onClickAddAddress()
+                } else {
+                  history.push("/keyring/unlock")
+                }
+              }}
             >
               Add address
             </SharedButton>
@@ -101,7 +115,7 @@ function WalletTypeHeader({
         }
         .right {
           align-items: center;
-          display: none; // TODO Display when Add address is hooked up.
+          margin-right: 4px;
         }
       `}</style>
     </>
@@ -123,6 +137,10 @@ export default function AccountsNotificationPanelAccounts({
 
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
+
+  const firstKeyringId = useBackgroundSelector((state) => {
+    return state.keyrings.keyrings[0]?.id
+  })
 
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
@@ -157,7 +175,15 @@ export default function AccountsNotificationPanelAccounts({
             <section key={accountType}>
               <WalletTypeHeader
                 accountType={accountType}
-                canAddAddress={false}
+                onClickAddAddress={
+                  accountType === "imported"
+                    ? () => {
+                        if (firstKeyringId) {
+                          dispatch(deriveAddress(firstKeyringId))
+                        }
+                      }
+                    : undefined
+                }
               />
               <ul>
                 {accountTypeTotals.map((accountTotal) => {
