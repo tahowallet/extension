@@ -106,3 +106,21 @@ export function getEthereumNetwork(): EVMNetwork {
 export function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-5)}`
 }
+
+export const getNumericStringValueFromHex = (
+  hexString: string | undefined
+): string => {
+  let hexValue = hexString
+  if (hexValue && !hexString?.includes("x")) {
+    hexValue = `0x${hexString}`
+  }
+  const value = BigInt(hexValue ?? "0")
+  const decimal = utils.formatEther(value)
+  return decimal
+}
+
+export const numberTo32BytesHex = (value: string): string => {
+  const parsedToWei = utils.parseEther(value)
+  const hex = parsedToWei.toHexString()
+  return utils.hexZeroPad(hex, 32).split("0x")[1]
+}
