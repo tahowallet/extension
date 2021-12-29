@@ -1,7 +1,13 @@
+import {
+  getNumericStringValueFromHex,
+  numberTo32BytesHex,
+} from "@tallyho/tally-background/lib/utils"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
-import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAssetsState,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ethers } from "ethers"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
@@ -19,44 +25,45 @@ export default function SignTransactionApproveSpendAssetBlock({
   const [approvalLimit, setApprovalLimit] = useState("")
   const dispatch = useDispatch()
   const [changing, setChanging] = useState(false)
+
+  const assets = useBackgroundSelector(getAssetsState)
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
 
   const { assetAmounts } = accountData ?? {
     assetAmounts: [],
   }
 
+  const asset = assetAmounts.find(
+    (el) =>
+      ("contractAddress" in el.asset &&
+        el.asset.contractAddress === transactionDetails.to) ||
+      assets.find(
+        (a) =>
+          "contractAddress" in a && a.contractAddress === transactionDetails.to
+      )
+  )
   // ERC-20 the approval amount will be in the range of 74-138 in form of a 32 bytes hex string
   const approveAmount = transactionDetails?.input?.substring(74, 138)
   const infiniteApproval =
     approveAmount ===
     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
-  const asset = assetAmounts.find((el) =>
-    "contractAddress" in el.asset
-      ? el.asset.contractAddress === transactionDetails.to
-      : undefined
-  )
-
-  const getNumericStringValueFromHex = (hexString: string | undefined) => {
-    let hexValue = hexString
-    if (hexValue && !hexString?.includes("x")) {
-      hexValue = `0x${hexString}`
-    }
-    return Number(hexValue).toString()
-  }
-
   useEffect(() => {
-    setApprovalLimit(getNumericStringValueFromHex(approveAmount) ?? "0")
+    setApprovalLimit(getNumericStringValueFromHex(approveAmount))
   }, [approveAmount])
 
   const handleUpdateClick = () => {
     setChanging(!changing)
     if (changing && transactionDetails) {
-      const updatedInput = `${transactionDetails.input?.substring(0, 74)}${
-        ethers.utils
-          .hexZeroPad(ethers.utils.hexlify(Number(approvalLimit)), 32)
-          .split("0x")[1]
-      }`
+      const updatedInput = `${transactionDetails.input?.substring(
+        0,
+        74
+      )}${numberTo32BytesHex(
+        approvalLimit
+      )}${transactionDetails.input?.substring(
+        138,
+        transactionDetails.input.length
+      )}`
       const newTxDetails = { ...transactionDetails }
       newTxDetails.input = updatedInput
       dispatch(updateTransactionOptions(newTxDetails))
@@ -67,11 +74,13 @@ export default function SignTransactionApproveSpendAssetBlock({
       <div className="spend_destination_icons">
         <div className="site_icon" />
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" />
+          <SharedAssetIcon size="large" symbol={asset?.asset.symbol ?? ""} />
         </div>
       </div>
-      <span className="site">Uniswap</span>
-      <span className="spending_label">{`Spend ${asset?.asset.symbol} tokens`}</span>
+      <span className="site">Smart Contract Interaction</span>
+      <span className="spending_label">{`Spend ${
+        asset?.asset.symbol ?? ""
+      } tokens`}</span>
       <span className="speed_limit_label">Spend limit</span>
       {changing ? (
         <div>
@@ -83,9 +92,9 @@ export default function SignTransactionApproveSpendAssetBlock({
         </div>
       ) : (
         <span className="spend_amount">
-          {`${
-            infiniteApproval ? "Infinite" : approvalLimit
-          } ${asset?.asset.symbol.toUpperCase()}`}
+          {`${infiniteApproval ? "Infinite" : approvalLimit} ${
+            asset?.asset.symbol.toUpperCase() ?? ""
+          }`}
         </span>
       )}
       <SharedButton size="small" type="tertiary" onClick={handleUpdateClick}>
@@ -95,7 +104,7 @@ export default function SignTransactionApproveSpendAssetBlock({
       <style jsx>
         {`
           .site_icon {
-            background: url("./images/uniswap_large@2x.png");
+            background: url("./images/dapp_favicon_default@2x.png");
             background-size: cover;
             width: 48px;
             height: 48px;
