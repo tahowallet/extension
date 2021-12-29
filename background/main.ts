@@ -182,6 +182,40 @@ const initializeStore = (preloadedState = {}) =>
       middleware.unshift(alias(allAliases))
       middleware.push(reduxCache)
 
+      // @ts-expect-error
+      middleware.push((store) => (next) => (action) => {
+        // @ts-expect-error
+        const bigIntEncoder = (_, value) => {
+          if (typeof value === "bigint") {
+            return { B_I_G_I_N_T: value.toString() }
+          }
+          return value
+        }
+
+        console.groupCollapsed(action.type)
+        try {
+          console.group("dispatch")
+          console.log("dispatching", JSON.stringify(action, bigIntEncoder, 2))
+          console.groupEnd()
+        } catch (e) {
+          console.warn("dispatch error", e)
+        }
+
+        let result = next(action)
+        try {
+          console.group("next state")
+          console.log(
+            "next state",
+            JSON.stringify(store.getState(), bigIntEncoder, 2)
+          )
+          console.groupEnd()
+        } catch (e) {
+          console.warn("state error", e)
+        }
+        console.groupEnd()
+        return result
+      })
+
       return middleware
     },
     devTools: false,

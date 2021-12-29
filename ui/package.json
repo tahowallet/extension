@@ -46,6 +46,6 @@
   "devDependencies": {
     "@types/react-dom": "^17.0.9",
     "@types/react-transition-group": "^4.4.4",
-    "webext-redux": "^2.1.7"
+    "webext-redux": "https://github.com/greg-nagy/webext-redux.git"
   }
 }
