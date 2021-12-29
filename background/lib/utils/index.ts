@@ -2,6 +2,7 @@ import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { isEVMNetwork, EVMNetwork, Network } from "../../networks"
+import { AddressNetwork } from "../../accounts"
 import {
   NETWORKS,
   ETHEREUM,
@@ -13,6 +14,15 @@ import {
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
+}
+
+export function normalizeAddressNetwork(
+  addressNetwork: AddressNetwork
+): AddressNetwork {
+  return {
+    ...addressNetwork,
+    address: normalizeEVMAddress(addressNetwork.address),
+  }
 }
 
 export function truncateDecimalAmount(

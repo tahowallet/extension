@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { AccountType, CompleteAssetAmount } from "../accounts"
+import { AccountData, AccountType, CompleteAssetAmount } from "../accounts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -15,6 +15,7 @@ import {
   UnitPricePoint,
   unitPricePointForPricePoint,
 } from "../../assets"
+import { ETHEREUM } from "../../constants/networks"
 import { selectSigningAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
@@ -29,7 +30,11 @@ const userValueDustThreshold = 2
 
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
-  return state.account.accountsData[state.ui.selectedAccount.address]
+  const { address, network } = state.ui.selectedAccount
+  if (!address) {
+    return "loading"
+  }
+  return state.account.accountsData[address][network.chainID]
 }
 export const getAssetsState = (state: RootState): AssetsState => state.assets
 
@@ -203,11 +208,29 @@ export type AccountTotal = {
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
 export const selectAccountTotalsByCategory = createSelector(
+  getCurrentAccountState,
   getAccountState,
   getAssetsState,
   selectSigningAddresses,
-  (accounts, assets, signingAddresses): CategorizedAccountTotals => {
+  (
+    selectedAccount,
+    accounts,
+    assets,
+    signingAddresses
+  ): CategorizedAccountTotals => {
+    // NB this only returns data for the currently selected network
+
+    const network =
+      selectedAccount !== "loading" ? selectedAccount.network : ETHEREUM
+
     return Object.entries(accounts.accountsData)
+      .map(
+        ([address, chainIDToAccountData]) =>
+          [address, chainIDToAccountData[network.chainID]] as [
+            string,
+            AccountData | "loading"
+          ]
+      )
       .map(([address, accountData]) => {
         const shortenedAddress = truncateAddress(address)
 

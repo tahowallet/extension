@@ -2,13 +2,15 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork, NameNetwork } from "../accounts"
-import { Network } from "../networks"
+import { EVMNetwork } from "../networks"
 import { AnyAssetAmount } from "../assets"
+import { DomainName, HexString, URI } from "../types"
+import { normalizeAddressNetwork, sameEVMAddress } from "../lib/utils"
+import { ETHEREUM } from "../constants/networks"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
 } from "./utils/asset-utils"
-import { DomainName, HexString, URI } from "../types"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -30,9 +32,9 @@ const availableDefaultNames = [
   "Foz",
 ]
 
-type AccountData = {
+export type AccountData = {
   address: HexString
-  network: Network
+  network: EVMNetwork
   accountType: AccountType | undefined
   balances: {
     [assetSymbol: string]: AccountBalance
@@ -46,8 +48,15 @@ type AccountData = {
 }
 
 export type AccountState = {
-  // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
-  accountsData: { [address: string]: AccountData | "loading" }
+  // Key account data by address and chainID. This only works for cooperating
+  // EVM-based chains, and should be refactored with the addition of Solana
+  // or Bitcoin
+  accountsData: {
+    [address: HexString]: {
+      [chainID: string]: AccountData | "loading"
+    }
+  }
+  // TODO This should all be in a selector
   combinedData: CombinedAccountData
 }
 
@@ -72,9 +81,16 @@ export const initialState = {
   },
 } as AccountState
 
+/*
+ * Get data for a new address / network pair, including the default name and
+ * avatar.
+ *
+ * Note that name and avatar will be unique per address, rather than per
+ * address and network.
+ */
 function newAccountData(
   address: HexString,
-  network: Network,
+  network: EVMNetwork,
   existingAccountsCount: number
 ): AccountData {
   const defaultNameIndex =
@@ -112,7 +128,7 @@ function newAccountData(
 function getOrCreateAccountData(
   data: AccountData | "loading" | undefined,
   account: HexString,
-  network: Network,
+  network: EVMNetwork,
   existingAccountsCount: number
 ): AccountData {
   if (data === "loading" || !data) {
@@ -127,36 +143,67 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
-      return state.accountsData[accountToLoad]
-        ? state // If the account data already exists, the account is already loaded.
-        : {
-            ...state,
-            accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
-          }
+    newKeyringAddress: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      // TODO In an ideal world, this would look up the currently selected
+      // account's network, set this address + that network as loading, and
+      // fire off whatever needs to happen for an account to be tracked.
+      // Instead, we assume a new address starts on Ethereum
+      if (immerState.accountsData[address]) {
+        if (immerState.accountsData[address][ETHEREUM.chainID]) {
+          return immerState
+        }
+        immerState.accountsData[address] = {}
+      }
+      immerState.accountsData[address][ETHEREUM.chainID] = "loading"
+      return immerState
+    },
+    loadAccount: (
+      immerState,
+      { payload: accountToLoad }: { payload: AddressNetwork }
+    ) => {
+      const { address, network } = normalizeAddressNetwork(accountToLoad)
+
+      if (immerState.accountsData[address]) {
+        if (immerState.accountsData[address][network.chainID]) {
+          return immerState
+        }
+      } else {
+        immerState.accountsData[address] = {}
+      }
+      immerState.accountsData[address][network.chainID] = "loading"
+      return immerState
     },
     updateAccountBalance: (
       immerState,
       { payload: updatedAccountBalance }: { payload: AccountBalance }
     ) => {
       const {
-        address: updatedAccount,
+        address,
+        network,
         assetAmount: {
           asset: { symbol: updatedAssetSymbol },
         },
-      } = updatedAccountBalance
-      const existingAccountData = immerState.accountsData[updatedAccount]
-      if (existingAccountData) {
-        if (existingAccountData !== "loading") {
-          existingAccountData.balances[updatedAssetSymbol] =
-            updatedAccountBalance
+      } = normalizeAddressNetwork(
+        updatedAccountBalance as AddressNetwork
+      ) as AccountBalance
+
+      // If this is a tracked account, update state. Otherwise, ignore the
+      // balance update.
+      if (immerState.accountsData[address]) {
+        if (immerState.accountsData[address][network.chainID] !== "loading") {
+          ;(
+            immerState.accountsData[address][network.chainID] as AccountData
+          ).balances[updatedAssetSymbol] = updatedAccountBalance
         } else {
-          immerState.accountsData[updatedAccount] = {
+          immerState.accountsData[address][network.chainID] = {
             ...newAccountData(
-              updatedAccount,
-              updatedAccountBalance.network,
+              address,
+              network,
               Object.keys(immerState.accountsData).filter(
-                (key) => key !== updatedAccount
+                (key) => !sameEVMAddress(key, address)
               ).length
             ),
             balances: {
@@ -170,7 +217,10 @@ const accountSlice = createSlice({
       // accountsData are mutually exclusive; that is, that there are no two
       // accounts in accountsData all or part of whose balances are shared with
       // each other.
-      const combinedAccountBalances = Object.values(immerState.accountsData)
+      const accounts = Object.values(immerState.accountsData).flatMap((d) =>
+        Object.values(d)
+      )
+      const combinedAccountBalances = accounts
         .flatMap((ad) =>
           ad === "loading"
             ? []
@@ -198,16 +248,20 @@ const accountSlice = createSlice({
         payload: addressNetworkName,
       }: { payload: AddressNetwork & { name: DomainName } }
     ) => {
-      // TODO Refactor when accounts are also keyed per network.
-      const address = addressNetworkName.address.toLowerCase()
+      const { address, network } = normalizeAddressNetwork(addressNetworkName)
+
+      if (!immerState.accountsData[address]) {
+        immerState.accountsData[address] = {}
+      }
+
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData[address],
+        immerState.accountsData[address][network.chainID],
         address,
-        addressNetworkName.network,
+        network,
         Object.keys(immerState.accountsData).filter((key) => key !== address)
           .length
       )
-      immerState.accountsData[address] = {
+      immerState.accountsData[address][network.chainID] = {
         ...baseAccountData,
         ens: { ...baseAccountData.ens, name: addressNetworkName.name },
       }
@@ -218,16 +272,20 @@ const accountSlice = createSlice({
         payload: addressNetworkAvatar,
       }: { payload: AddressNetwork & { avatar: URI } }
     ) => {
-      // TODO Refactor when accounts are also keyed per network.
-      const address = addressNetworkAvatar.address.toLowerCase()
+      const { address, network } = normalizeAddressNetwork(addressNetworkAvatar)
+
+      if (!immerState.accountsData[address]) {
+        immerState.accountsData[address] = {}
+      }
+
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData[address],
+        immerState.accountsData[address][network.chainID],
         address,
-        addressNetworkAvatar.network,
+        network,
         Object.keys(immerState.accountsData).filter((key) => key !== address)
           .length
       )
-      immerState.accountsData[address] = {
+      immerState.accountsData[address][network.chainID] = {
         ...baseAccountData,
         ens: { ...baseAccountData.ens, avatarURL: addressNetworkAvatar.avatar },
       }
@@ -236,6 +294,7 @@ const accountSlice = createSlice({
 })
 
 export const {
+  newKeyringAddress,
   loadAccount,
   updateAccountBalance,
   updateENSName,
@@ -262,12 +321,9 @@ export const emitter = new Emittery<Events>()
 export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
   async (addressNetwork: AddressNetwork, { dispatch }) => {
-    const normalizedAddressNetwork = {
-      address: addressNetwork.address.toLowerCase(),
-      network: addressNetwork.network,
-    }
+    const normalizedAddressNetwork = normalizeAddressNetwork(addressNetwork)
 
-    dispatch(loadAccount(normalizedAddressNetwork.address))
+    dispatch(loadAccount(normalizedAddressNetwork))
     await emitter.emit("addAccount", normalizedAddressNetwork)
   }
 )
