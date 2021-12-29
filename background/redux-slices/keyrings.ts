@@ -12,6 +12,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 type Keyring = {
   type: KeyringTypes
   addresses: string[]
+  id?: string | null
 }
 
 type KeyringsState = {
