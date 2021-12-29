@@ -1,7 +1,6 @@
 import React, { ReactElement } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
-import CorePage from "../components/Core/CorePage"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 
@@ -20,7 +19,7 @@ export default function Overview(): ReactElement {
     })
 
   return (
-    <CorePage hasTopBar={false}>
+    <>
       <header className="standard_width">
         <div className="header_primary_content">
           <span className="total_balance_label">Total balance</span>
@@ -131,6 +130,6 @@ export default function Overview(): ReactElement {
           }
         `}
       </style>
-    </CorePage>
+    </>
   )
 }

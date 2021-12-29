@@ -4,18 +4,13 @@ import { AddressNetwork } from "../accounts"
 import { getEthereumNetwork } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
 
-type SelectedAccount = {
-  addressNetwork: AddressNetwork
-  truncatedAddress: string
-}
-
 const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
 }
 
 export type UIState = {
-  currentAccount: SelectedAccount
+  selectedAccount: AddressNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   settings: { hideDust: boolean; defaultWallet: boolean }
@@ -25,16 +20,16 @@ export type UIState = {
 export type Events = {
   snackbarMessage: string
   newDefaultWalletValue: boolean
-  newCurrentAddress: string
+  newSelectedAccount: AddressNetwork
 }
 
 export const emitter = new Emittery<Events>()
 
 export const initialState: UIState = {
   showingActivityDetailID: null,
-  currentAccount: {
-    addressNetwork: { address: "", network: getEthereumNetwork() },
-    truncatedAddress: "",
+  selectedAccount: {
+    address: "",
+    network: getEthereumNetwork(),
   },
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
@@ -61,16 +56,8 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetailID: transactionID,
     }),
-    setCurrentAccount: (immerState, { payload: address }) => {
-      const lowercaseAddress = address.toLowerCase()
-
-      immerState.currentAccount = {
-        addressNetwork: {
-          address: lowercaseAddress,
-          network: getEthereumNetwork(),
-        },
-        truncatedAddress: lowercaseAddress.slice(0, 7),
-      }
+    setSelectedAccount: (immerState, { payload: addressNetwork }) => {
+      immerState.selectedAccount = addressNetwork
     },
     initializationLoadingTimeHitLimit: (state) => ({
       ...state,
@@ -106,7 +93,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
-  setCurrentAccount,
+  setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
   clearSnackbarMessage,
@@ -125,12 +112,12 @@ export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
 )
 
 // TBD @Antonio: It would be good to have a consistent naming strategy
-export const setNewCurrentAddress = createBackgroundAsyncThunk(
+export const setNewSelectedAccount = createBackgroundAsyncThunk(
   "ui/setNewCurrentAddressValue",
-  async (currentAddress: string, { dispatch }) => {
-    await emitter.emit("newCurrentAddress", currentAddress)
+  async (addressNetwork: AddressNetwork, { dispatch }) => {
+    await emitter.emit("newSelectedAccount", addressNetwork)
     // Once the default value has persisted, propagate to the store.
-    dispatch(uiSlice.actions.setCurrentAccount(currentAddress))
+    dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
   }
 )
 

@@ -8,7 +8,6 @@ import {
   grantPermission,
 } from "@tallyho/tally-background/redux-slices/dapp-permission"
 
-import CorePage from "../components/Core/CorePage"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelAccountItem from "../components/Shared/SharedPanelAccountItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
@@ -110,65 +109,65 @@ export default function DAppConnectRequest(): ReactElement {
 
   return (
     <div className="page">
-      <CorePage hasTabBar={false} hasTopBar={false}>
-        <section className="standard_width">
-          <h1 className="serif_header">Connect to dApp</h1>
-          <div className="connection_destination">
-            <RequestingDAppBlock
-              title={permission.title}
-              url={permission.origin}
-              faviconUrl={permission.faviconUrl}
-            />
-          </div>
-          <div className="icon_connection" />
-          <div className="connection_destination">
-            <SharedPanelAccountItem
-              key={permission.accountAddress}
-              accountTotal={currentAccountTotal}
-              hideMenu
-            />
-          </div>
-          <ul className="permissions_list">
-            <li className="permissions_list_title">
-              dApp would get permission to:
-            </li>
-            <li>
-              <ul>
-                <li>View address of connected account</li>
-                <li>Create but not sign transactions for you</li>
-              </ul>
-            </li>
-          </ul>
-        </section>
-        <div className="footer_actions">
-          <SharedButton
-            iconSize="large"
-            size="large"
-            type="secondary"
-            onClick={deny}
-          >
-            Reject
-          </SharedButton>
-          <SharedButton
-            type="primary"
-            iconSize="large"
-            size="large"
-            onClick={grant}
-          >
-            Connect
-          </SharedButton>
+      <section className="standard_width">
+        <h1 className="serif_header">Connect to dApp</h1>
+        <div className="connection_destination">
+          <RequestingDAppBlock
+            title={permission.title}
+            url={permission.origin}
+            faviconUrl={permission.faviconUrl}
+          />
         </div>
-      </CorePage>
+        <div className="icon_connection" />
+        <div className="connection_destination">
+          <SharedPanelAccountItem
+            key={permission.accountAddress}
+            accountTotal={currentAccountTotal}
+            hideMenu
+          />
+        </div>
+        <ul className="permissions_list">
+          <li className="permissions_list_title">
+            dApp would get permission to:
+          </li>
+          <li>
+            <ul>
+              <li>View address of connected account</li>
+              <li>Create but not sign transactions for you</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+      <div className="footer_actions">
+        <SharedButton
+          iconSize="large"
+          size="large"
+          type="secondary"
+          onClick={deny}
+        >
+          Reject
+        </SharedButton>
+        <SharedButton
+          type="primary"
+          iconSize="large"
+          size="large"
+          onClick={grant}
+        >
+          Connect
+        </SharedButton>
+      </div>
       <style jsx>{`
         section {
           display: flex;
           flex-direction: column;
           height: 100vh;
+          margin: 0 auto;
         }
         .page {
           background-color: var(--green-95);
           height: 100vh;
           width: 100vw;
+          z-index: 1000;
         }
         h1 {
           color: var(--trophy-gold);

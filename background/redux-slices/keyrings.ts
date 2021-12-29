@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
 import { KeyringTypes } from "../types"
-import { setNewCurrentAddress } from "./ui"
+import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 // TODO this is very simple. We'll want to expand to include "capabilities" per
@@ -12,6 +12,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 type Keyring = {
   type: KeyringTypes
   addresses: string[]
+  id?: string | null
 }
 
 type KeyringsState = {
@@ -30,6 +31,7 @@ export type Events = {
   createPassword: string
   unlockKeyrings: string
   generateNewKeyring: never
+  deriveAddress: string
   importLegacyKeyring: { mnemonic: string; path?: string }
 }
 
@@ -44,16 +46,19 @@ export const importLegacyKeyring = createBackgroundAsyncThunk(
   ) => {
     await emitter.emit("importLegacyKeyring", { mnemonic, path })
 
+    const { keyrings, ui } = getState() as {
+      keyrings: KeyringsState
+      ui: UIState
+    }
     // Set the selected account as the first address of the last added keyring,
     // which will correspond to the last imported keyring, AKA this one. Note that
     // this does rely on the KeyringService's behavior of pushing new keyrings to
     // the end of the keyring list.
     dispatch(
-      setNewCurrentAddress(
-        (getState() as { keyrings: KeyringsState }).keyrings.keyrings.slice(
-          -1
-        )[0].addresses[0]
-      )
+      setNewSelectedAccount({
+        address: keyrings.keyrings.slice(-1)[0].addresses[0],
+        network: ui.selectedAccount.network,
+      })
     )
   }
 )
@@ -106,6 +111,13 @@ export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
   async () => {
     await emitter.emit("generateNewKeyring")
+  }
+)
+
+export const deriveAddress = createBackgroundAsyncThunk(
+  "keyrings/deriveAddress",
+  async (id: string) => {
+    await emitter.emit("deriveAddress", id)
   }
 )
 

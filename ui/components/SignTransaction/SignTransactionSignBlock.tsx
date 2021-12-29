@@ -19,9 +19,7 @@ interface Props {
 export default function SignTransactionSignBlock({
   transactionDetails,
 }: Props): ReactElement {
-  const {
-    addressNetwork: { network },
-  } = useBackgroundSelector(selectCurrentAddressNetwork)
+  const { network } = useBackgroundSelector(selectCurrentAddressNetwork)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
     selectAssetPricePoint(state.assets, network.baseAsset.symbol, USD.symbol)
   )
