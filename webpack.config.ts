@@ -92,18 +92,6 @@ const baseConfig: Configuration = {
     }) as unknown as WebpackPluginInstance,
   ],
   optimization: {
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          mangle: false,
-          compress: false,
-          output: {
-            beautify: true,
-            indent_level: 2, // eslint-disable-line camelcase
-          },
-        },
-      }),
-    ],
     splitChunks: { automaticNameDelimiter: "-" },
   },
 }
@@ -122,6 +110,20 @@ const modeConfigs: {
         // FIXME webpack version.
       }) as unknown as WebpackPluginInstance,
     ],
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            mangle: false,
+            compress: false,
+            output: {
+              beautify: true,
+              indent_level: 2, // eslint-disable-line camelcase
+            },
+          },
+        }),
+      ],
+    },
   }),
   production: (browser) => ({
     plugins: [
@@ -129,6 +131,23 @@ const modeConfigs: {
         filename: browser,
       }),
     ],
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            mangle: browser === "firefox",
+            compress: browser === "firefox",
+            output:
+              browser === "firefox"
+                ? undefined
+                : {
+                    beautify: true,
+                    indent_level: 2, // eslint-disable-line camelcase
+                  },
+          },
+        }),
+      ],
+    },
   }),
 }
 
