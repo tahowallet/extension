@@ -540,9 +540,24 @@ export default class Main extends BaseService<never> {
   }
 
   async connectIndexingService(): Promise<void> {
-    this.indexingService.emitter.on("accountBalance", (accountWithBalance) => {
-      this.store.dispatch(updateAccountBalance(accountWithBalance))
-    })
+    this.indexingService.emitter.on(
+      "accountBalance",
+      async (accountWithBalance) => {
+        const assetsToTrack = await this.indexingService.getAssetsToTrack()
+
+        // TODO support multi-network assets
+        const doesThisBalanceHaveAnAlreadyTrackedAsset = !!assetsToTrack.filter(
+          (t) => t.symbol === accountWithBalance.assetAmount.asset.symbol
+        )[0]
+
+        if (
+          accountWithBalance.assetAmount.amount > 0 ||
+          doesThisBalanceHaveAnAlreadyTrackedAsset
+        ) {
+          this.store.dispatch(updateAccountBalance(accountWithBalance))
+        }
+      }
+    )
 
     this.indexingService.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
