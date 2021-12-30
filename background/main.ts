@@ -146,12 +146,18 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
-    console.time('redux cache persist')
+    const persistStart = Date.now()
+    const stateSizeInKb = encodeJSON(state).length / 1024
+    console.time('>> redux cache persist blocking')
     browser.storage.local.set({
       state: encodeJSON(state),
       version: REDUX_STATE_VERSION,
+    }).then(() => {
+      const persistLengthMs = Date.now() - persistStart
+      console.log(">> persist took ASYNC ms: ", persistLengthMs)
+      console.log(">> localstorage throughput [mb/s]: ", (stateSizeInKb*1024) / (persistLengthMs*1000))
     })
-    console.timeEnd('redux cache persist')
+    console.timeEnd('>> redux cache persist blocking')
   }
 
   return result
