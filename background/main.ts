@@ -146,10 +146,12 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
+    console.time('redux cache persist')
     browser.storage.local.set({
       state: encodeJSON(state),
       version: REDUX_STATE_VERSION,
     })
+    console.timeEnd('redux cache persist')
   }
 
   return result
@@ -192,9 +194,9 @@ const initializeStore = (preloadedState = {}) =>
           return value
         }
 
-        console.groupCollapsed(action.type)
+        console.group(action.type)
         try {
-          console.group("dispatch")
+          console.groupCollapsed("dispatch")
           console.log("dispatching", JSON.stringify(action, bigIntEncoder, 2))
           console.groupEnd()
         } catch (e) {
@@ -203,7 +205,7 @@ const initializeStore = (preloadedState = {}) =>
 
         let result = next(action)
         try {
-          console.group("next state")
+          console.groupCollapsed("next state")
           console.log(
             "next state",
             JSON.stringify(store.getState(), bigIntEncoder, 2)
