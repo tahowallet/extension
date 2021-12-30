@@ -153,9 +153,11 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
       state: encodeJSON(state),
       version: REDUX_STATE_VERSION,
     }).then(() => {
-      const persistLengthMs = Date.now() - persistStart
-      console.log(">> persist took ASYNC ms: ", persistLengthMs)
-      console.log(">> localstorage throughput [kb/s]: ", stateSizeInKb*1000/persistLengthMs)
+      browser.storage.local.get("state").then(() => {
+        const persistLengthMs = Date.now() - persistStart
+        console.log(">> persist took ASYNC ms: ", persistLengthMs)
+        console.log(">> localstorage throughput [kb/s]: ", stateSizeInKb*1000/persistLengthMs)
+      }) 
     })
     console.timeEnd('>> redux cache persist blocking')
   }
