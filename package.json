@@ -29,7 +29,7 @@
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
     "test": "jest",
-    "preversion": "which jq &>1 || (echo 'You must install jq; scripts/macos-setup.sh for macOS.' && exit 1)",
+    "preversion": "(which jq &>1 && which yq &>1) || (echo 'You must install jq and yq; scripts/macos-setup.sh for macOS.' && exit 1)",
     "version": "scripts/update-version.sh",
     "postversion": "git push --tags origin release-$npm_package_version",
     "postinstall": "patch-package"
