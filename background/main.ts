@@ -194,6 +194,9 @@ const initializeStore = (preloadedState = {}) =>
           return value
         }
 
+        // @ts-expect-error
+        globalThis.lastAction = action.type
+
         console.group(action.type)
         try {
           console.groupCollapsed("dispatch")
