@@ -38,7 +38,7 @@
 
 body {
   width: 384px;
-  height: 600px;
+  height: 594px;
   margin: 0;
   font-family: "Segment", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
     sans-serif;
@@ -46,6 +46,7 @@ body {
   color: #fff;
   font-size: 16px;
   background-color: var(--hunter-green);
+  scrollbar-width: none;
 }
 
 a {
