@@ -682,6 +682,8 @@ export default class ChainService extends BaseService<Events> {
       network,
       provider,
     })
+
+    this.pollBlockPrices()
   }
 
   /**
