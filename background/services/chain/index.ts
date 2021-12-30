@@ -148,7 +148,7 @@ export default class ChainService extends BaseService<Events> {
         runAtStart: true,
       },
       blockPrices: {
-        runAtStart: true,
+        runAtStart: false,
         schedule: {
           periodInMinutes:
             Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY ?? "120") / 60,
