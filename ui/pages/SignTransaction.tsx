@@ -51,8 +51,16 @@ export default function SignTransaction({
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
 
-  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
-    signType: SignType.Sign,
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const approvalCodes = ["0x095ea7b", "0xcae9ca51"] // approve, approveAndCall
+  const { assetSymbol, amount, to, value, signType } = location.state ?? {
+    // If tx input begins with bytecode that corresponds to ERC-20 signature
+    // we load the approve page
+    signType: approvalCodes.some((code) =>
+      transactionDetails?.input?.includes(code)
+    )
+      ? SignType.SignSpend
+      : SignType.Sign,
   }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -66,7 +74,6 @@ export default function SignTransaction({
   const signedTransaction = useBackgroundSelector(
     ({ transactionConstruction }) => transactionConstruction.signedTransaction
   )
-  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const signerAccountTotal = useBackgroundSelector((state) =>
     typeof transactionDetails === "undefined"
@@ -127,7 +134,11 @@ export default function SignTransaction({
     },
     [SignType.SignSpend]: {
       title: "Approve asset spend",
-      component: () => <SignTransactionApproveSpendAssetBlock />,
+      component: () => (
+        <SignTransactionApproveSpendAssetBlock
+          transactionDetails={transactionDetails}
+        />
+      ),
       confirmButtonText: "Approve",
     },
     [SignType.SignTransfer]: {
