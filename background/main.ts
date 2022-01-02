@@ -146,20 +146,21 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
-    const persistStart = Date.now()
-    const stateSizeInKb = encodeJSON(state).length / 1024
-    console.time('>> redux cache persist blocking')
+    // const persistStart = Date.now()
+    // const stateSizeInKb = encodeJSON(state).length / 1024
+    // console.time('>> redux cache persist blocking')
     browser.storage.local.set({
       state: encodeJSON(state),
       version: REDUX_STATE_VERSION,
-    }).then(() => {
-      browser.storage.local.get("state").then(() => {
-        const persistLengthMs = Date.now() - persistStart
-        console.log(">> persist took ASYNC ms: ", persistLengthMs)
-        console.log(">> localstorage throughput [kb/s]: ", stateSizeInKb*1000/persistLengthMs)
-      }) 
     })
-    console.timeEnd('>> redux cache persist blocking')
+    // .then(() => {
+    //   browser.storage.local.get("state").then(() => {
+    //     const persistLengthMs = Date.now() - persistStart
+    //     console.log(">> persist took ASYNC ms: ", persistLengthMs)
+    //     console.log(">> localstorage throughput [kb/s]: ", stateSizeInKb*1000/persistLengthMs)
+    //   })
+    // })
+    // console.timeEnd('>> redux cache persist blocking')
   }
 
   return result
@@ -194,38 +195,38 @@ const initializeStore = (preloadedState = {}) =>
 
       // @ts-expect-error
       middleware.push((store) => (next) => (action) => {
-        // @ts-expect-error
-        const bigIntEncoder = (_, value) => {
-          if (typeof value === "bigint") {
-            return { B_I_G_I_N_T: value.toString() }
-          }
-          return value
-        }
+        //   // @ts-expect-error
+        // const bigIntEncoder = (_, value) => {
+        //   if (typeof value === "bigint") {
+        //     return { B_I_G_I_N_T: value.toString() }
+        //   }
+        //   return value
+        // }
 
         // @ts-expect-error
         globalThis.lastAction = action.type
 
-        console.group(action.type)
-        try {
-          console.groupCollapsed("dispatch")
-          console.log("dispatching", JSON.stringify(action, bigIntEncoder, 2))
-          console.groupEnd()
-        } catch (e) {
-          console.warn("dispatch error", e)
-        }
+        //   console.groupCollapsed(action.type)
+        //   try {
+        //     console.groupCollapsed("dispatch")
+        //     console.log("dispatching", JSON.stringify(action, bigIntEncoder, 2))
+        //     console.groupEnd()
+        //   } catch (e) {
+        //     console.warn("dispatch error", e)
+        //   }
 
         let result = next(action)
-        try {
-          console.groupCollapsed("next state")
-          console.log(
-            "next state",
-            JSON.stringify(store.getState(), bigIntEncoder, 2)
-          )
-          console.groupEnd()
-        } catch (e) {
-          console.warn("state error", e)
-        }
-        console.groupEnd()
+        //   try {
+        //     console.groupCollapsed("next state")
+        //     console.log(
+        //       "next state",
+        //       JSON.stringify(store.getState(), bigIntEncoder, 2)
+        //     )
+        //     console.groupEnd()
+        //   } catch (e) {
+        //     console.warn("state error", e)
+        //   }
+        //   console.groupEnd()
         return result
       })
 
