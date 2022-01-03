@@ -7,12 +7,36 @@ import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
-import OnboardingDerivationPathSelect from "./OnboardingDerivationPathSelect"
+import SharedSelect from "../../components/Shared/SharedSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../hooks"
+
+// TODO make this network specific
+const derivationPaths: { value: string; label: string }[] = [
+  {
+    value: "m/44'/60'/0'/0",
+    label: "ETH (m/44'/60'/0'/0)",
+  },
+  {
+    value: "m/44'/1'/0'/0",
+    label: "ETH Testnet (m/44'/1'/0'/0)",
+  },
+  {
+    value: "m/44'/61'/0'/0",
+    label: "Trezor (m/44'/61'/0'/0)",
+  },
+  {
+    value: "m/44'/137'/0'/0",
+    label: "RSK (m/44'/137'/0'/0)",
+  },
+  {
+    value: "m/44'/37310'/0'/1",
+    label: "RSK Testnet (m/44'/37310'/0'/0)",
+  },
+]
 
 function TextArea({
   value,
@@ -94,7 +118,6 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     const trimmedRecoveryPhrase = recoveryPhrase.trim()
     if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim(), path }))
       dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
@@ -147,7 +170,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             )}
             {!HIDE_IMPORT_DERIVATION_PATH && isChecked && (
               <div className="select_wrapper">
-                <OnboardingDerivationPathSelect onChange={setPath} />
+                <SharedSelect
+                  placement="top"
+                  placeholder="Select derivation path"
+                  options={derivationPaths}
+                  onChange={setPath}
+                />
               </div>
             )}
           </div>
