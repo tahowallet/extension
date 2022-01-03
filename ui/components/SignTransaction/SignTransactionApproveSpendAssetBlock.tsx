@@ -1,6 +1,7 @@
 import {
   getNumericStringValueFromHex,
   numberTo32BytesHex,
+  truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 import {
@@ -47,7 +48,6 @@ export default function SignTransactionApproveSpendAssetBlock({
   const infiniteApproval =
     approveAmount ===
     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-
   useEffect(() => {
     setApprovalLimit(getNumericStringValueFromHex(approveAmount))
   }, [approveAmount])
@@ -69,6 +69,7 @@ export default function SignTransactionApproveSpendAssetBlock({
       dispatch(updateTransactionOptions(newTxDetails))
     }
   }
+
   return (
     <>
       <div className="spend_destination_icons">
@@ -79,7 +80,7 @@ export default function SignTransactionApproveSpendAssetBlock({
       </div>
       <span className="site">Smart Contract Interaction</span>
       <span className="spending_label">{`Spend ${
-        asset?.asset.symbol ?? ""
+        asset?.asset.symbol ?? truncateAddress(transactionDetails.to || "")
       } tokens`}</span>
       <span className="speed_limit_label">Spend limit</span>
       {changing ? (

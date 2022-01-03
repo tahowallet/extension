@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory, useLocation } from "react-router-dom"
+import { useHistory } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
   broadcastSignedTransaction,
@@ -51,7 +51,7 @@ export default function SignTransaction({
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
-  const approvalCodes = ["0x095ea7b", "0xcae9ca51"] // approve, approveAndCall
+  const approvalCodes = ["0x095ea7b3", "0xcae9ca51"] // approve, approveAndCall
   const { assetSymbol, amount, to, value, signType } = location.state ?? {
     // If tx input begins with bytecode that corresponds to ERC-20 signature
     // we load the approve page

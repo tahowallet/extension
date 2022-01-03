@@ -108,12 +108,14 @@ export function truncateAddress(address: string): string {
 }
 
 export const getNumericStringValueFromHex = (
-  hexString: string | undefined
+  hexString: string | undefined,
+  tokenDecimals?: string
 ): string => {
   let hexValue = hexString
   if (hexValue && !hexString?.includes("x")) {
     hexValue = `0x${hexString}`
   }
+  // TODO I need to know the decimals of a token to properly format
   const value = BigInt(hexValue ?? "0")
   const decimal = utils.formatEther(value)
   return decimal

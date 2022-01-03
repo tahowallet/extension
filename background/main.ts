@@ -33,7 +33,11 @@ import {
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoint,
+  emitter as assetsEmitter,
+} from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -456,6 +460,13 @@ export default class Main extends BaseService<never> {
           transaction
         )
         this.store.dispatch(signed(signedTx))
+      }
+    )
+
+    assetsEmitter.on(
+      "fetchTokenData",
+      async (contractAddress: string): Promise<void> => {
+        await this.indexingService.getTokenMetadata(contractAddress)
       }
     )
 
