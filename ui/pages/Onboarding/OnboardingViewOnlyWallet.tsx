@@ -1,7 +1,10 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { isAddress } from "@ethersproject/address"
-import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  addAddressNetwork,
+  addAccountByName,
+} from "@tallyho/tally-background/redux-slices/accounts"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch } from "../../hooks"
@@ -17,8 +20,14 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
     const trimmedAddress = address.trim()
-
-    if (isAddress(trimmedAddress)) {
+    if (trimmedAddress.endsWith(".eth")) {
+      const nameNetwork = {
+        name: trimmedAddress,
+        network: ETHEREUM,
+      }
+      await dispatch(addAccountByName(nameNetwork))
+      setRedirect(true)
+    } else if (isAddress(trimmedAddress)) {
       const addressNetwork = {
         address: trimmedAddress,
         network: ETHEREUM,
