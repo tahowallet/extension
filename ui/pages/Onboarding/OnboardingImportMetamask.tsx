@@ -94,7 +94,6 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     const trimmedRecoveryPhrase = recoveryPhrase.trim()
     if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim(), path }))
       dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
