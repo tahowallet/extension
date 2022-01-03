@@ -54,6 +54,7 @@ function TextArea({
           align-self: flex-start;
           height: 20px;
           margin-top: 3px;
+          margin-left: 10px;
           margin-bottom: -23px;
         }
       `}</style>
@@ -92,9 +93,10 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const importWallet = useCallback(async () => {
     const trimmedRecoveryPhrase = recoveryPhrase.trim()
-    if (isValidMnemonic(trimmedRecoveryPhrase)) {
+    if (trimmedRecoveryPhrase.split(" ").length !== 12) {
+      setErrorMessage("Must be a 12-word recovery phrase")
+    } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: recoveryPhrase.trim(), path }))
       dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
@@ -123,8 +125,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             <div className="metamask_onboarding_image" />
             <h1 className="serif_header">Import account</h1>
             <div className="info">
-              Enter or copy & paste the recovery phrase from your MetaMask
-              account.
+              Enter or copy & paste the 12-word recovery phrase from your
+              MetaMask account.
             </div>
             <TextArea
               value={recoveryPhrase}
@@ -204,7 +206,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           margin-bottom: 13px;
         }
         .info {
-          width: 313px;
+          width: 320px;
           height: 43px;
           color: var(--green-60);
           font-size: 16px;

@@ -21,7 +21,7 @@ import {
 
 import { KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
-import { AddressNetwork } from "./accounts"
+import { AddressNetwork, NameNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
@@ -45,6 +45,7 @@ import {
   emitter as uiSliceEmitter,
   setDefaultWallet,
   setSelectedAccount,
+  setNewSelectedAccount,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -389,6 +390,33 @@ export default class Main extends BaseService<never> {
     accountSliceEmitter.on("addAccount", async (addressNetwork) => {
       await this.chainService.addAccountToTrack(addressNetwork)
     })
+
+    accountSliceEmitter.on(
+      "addAccountByName",
+      async (nameNetwork: NameNetwork) => {
+        try {
+          const address = await this.nameService.lookUpEthereumAddress(
+            nameNetwork.name
+          )
+
+          if (address) {
+            const addressNetwork = {
+              address,
+              network: nameNetwork.network,
+            }
+            await this.chainService.addAccountToTrack(addressNetwork)
+            this.store.dispatch(loadAccount(address))
+            this.store.dispatch(setNewSelectedAccount(addressNetwork))
+          } else {
+            throw new Error("Name not found")
+          }
+        } catch (error) {
+          throw new Error(
+            `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
+          )
+        }
+      }
+    )
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       // TODO Deal with pending transactions.

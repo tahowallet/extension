@@ -15,15 +15,15 @@ export default function OnboardingAddWallet(): ReactElement {
           <div className="choice_wrap">
             <h1 className="serif_header">Explore Tally</h1>
             <div className="subtitle">
-              Use one of your existing addresses to explore Tally. You will not
-              be able to sign transactions until you import a seed.
+              Use one of your existing addresses or ENS domain to explore Tally.
+              You will not be able to sign transactions until you import a seed.
             </div>
             <SharedButton
               type="primary"
               size="medium"
               linkTo="/onboarding/viewOnlyWallet"
             >
-              Add address
+              Add address or ENS domain
             </SharedButton>
           </div>
           <div className="or_divider">or</div>
