@@ -54,6 +54,7 @@ function TextArea({
           align-self: flex-start;
           height: 20px;
           margin-top: 3px;
+          margin-left: 10px;
           margin-bottom: -23px;
         }
       `}</style>
@@ -92,7 +93,9 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const importWallet = useCallback(async () => {
     const trimmedRecoveryPhrase = recoveryPhrase.trim()
-    if (isValidMnemonic(trimmedRecoveryPhrase)) {
+    if (trimmedRecoveryPhrase.split(" ").length !== 12) {
+      setErrorMessage("Must be a 12-word recovery phrase")
+    } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
