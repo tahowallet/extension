@@ -1,11 +1,24 @@
 import React, { ReactElement } from "react"
 
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundSelector } from "../../hooks"
+import {
+  ETHEREUM,
+  EVM_NETWORKS_BY_CHAIN_ID,
+} from "@tallyho/tally-background/constants/networks"
+import { selectCurrentAddressNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 
-const networks = [
+type NetworkDisplay = {
+  name: string
+  info: string
+  width: number
+  height: 29
+  chainID: string
+}
+
+const networks: NetworkDisplay[] = [
   {
     name: "Ethereum",
     info: "Mainnet",
@@ -15,7 +28,7 @@ const networks = [
   },
 ]
 
-const testNetworks = [
+const testNetworks: NetworkDisplay[] = [
   {
     name: "Kovan",
     info: "Ethereum Proof-of-Authority Testnet",
@@ -52,37 +65,49 @@ const testNetworks = [
 //   },
 // ]
 
+const ProtocolItemFromNetwork = ({
+  name,
+  chainID,
+  height,
+  width,
+  info,
+}: NetworkDisplay): ReactElement => {
+  const { network: selectedNetwork, address } = useBackgroundSelector(
+    selectCurrentAddressNetwork
+  )
+  const dispatch = useBackgroundDispatch()
+  return (
+    <TopMenuProtocolListItem
+      isSelected={chainID === selectedNetwork.chainID}
+      key={name}
+      name={name}
+      info={info}
+      height={height}
+      width={width}
+      onClick={() =>
+        dispatch(
+          setNewSelectedAccount({
+            network: EVM_NETWORKS_BY_CHAIN_ID[chainID] ?? ETHEREUM,
+            address,
+          })
+        )
+      }
+    />
+  )
+}
+
 export default function TopMenuProtocolList(): ReactElement {
-  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {networks.map((network) => (
-          <TopMenuProtocolListItem
-            isSelected={network.chainID === selectedNetwork.chainID}
-            key={network.name}
-            name={network.name}
-            info={network.info}
-            width={network.width}
-            height={network.height}
-          />
-        ))}
+        {networks.map(ProtocolItemFromNetwork)}
         {testNetworks.length > 0 && (
           <>
             <li className="divider">
               <div className="divider_label">Testnets</div>
               <div className="divider_line" />
             </li>
-            {testNetworks.map((network) => (
-              <TopMenuProtocolListItem
-                isSelected={network.chainID === selectedNetwork.chainID}
-                key={network.name}
-                name={network.name}
-                info={network.info}
-                width={network.width}
-                height={network.height}
-              />
-            ))}
+            {testNetworks.map(ProtocolItemFromNetwork)}
           </>
         )}
         {/* <li className="divider">

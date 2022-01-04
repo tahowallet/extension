@@ -7,27 +7,37 @@ interface Props {
   width: number
   height: number
   isSelected: boolean
+  onClick: () => void
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
-  const { name, width, height, info, isSelected } = props
+  const { name, width, height, info, isSelected, onClick } = props
 
   return (
     <li className={classNames({ select: isSelected })}>
-      <div className="left">
-        <div className="icon_wrap">
-          <span className="icon" />
+      <button
+        type="button"
+        aria-label={`Switch to the ${name} network`}
+        onClick={onClick}
+      >
+        <div className="left">
+          <div className="icon_wrap">
+            <span className="icon" />
+          </div>
         </div>
-      </div>
-      <div className="right">
-        <div className="title">{name}</div>
-        <div className="sub_title">
-          {info}
-          {isSelected && <span className="status">Connected</span>}
+        <div className="right">
+          <div className="title">{name}</div>
+          <div className="sub_title">
+            {info}
+            {isSelected && <span className="status">Connected</span>}
+          </div>
         </div>
-      </div>
+      </button>
       <style jsx>
         {`
+          button {
+            display: flex;
+          }
           li {
             display: flex;
             margin-bottom: 15px;

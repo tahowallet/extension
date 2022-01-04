@@ -44,4 +44,21 @@ export const BITCOIN: Network = {
   family: "BTC",
 }
 
+export const EVM_NETWORKS: EVMNetwork[] = [
+  ETHEREUM,
+  ROPSTEN,
+  RINKEBY,
+  GOERLI,
+  KOVAN,
+]
+
+export const EVM_NETWORKS_BY_CHAIN_ID: { [chainID: string]: EVMNetwork } =
+  EVM_NETWORKS.reduce(
+    (agg, network) => ({
+      ...agg,
+      [network.chainID]: network,
+    }),
+    {}
+  )
+
 export const NETWORKS = [ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN, BITCOIN]
