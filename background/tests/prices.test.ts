@@ -22,7 +22,7 @@ describe("lib/prices.ts", () => {
     jest.spyOn(logger, "warn").mockImplementation()
   })
   describe("CoinGecko Price response validation", () => {
-      const validate: ValidateFunction<JSONSchemaType<typeof coingeckoPriceSchema>> = require("./validate/json-validators.js")
+      const validate: ValidateFunction<JSONSchemaType<typeof coingeckoPriceSchema>> = require("../lib/validate/json-validators.js")
     it("passes for correct simple price response", () => {
       const apiResponse = {
         ethereum: {
