@@ -88,6 +88,15 @@ details what you’ll need. The script additionally sets up pre-commit hooks.
 $ ./scripts/macos-setup.sh
 ```
 
+### Validators
+
+If you need to create or update a validation function then:
+- You need to write the schema in the `.ts` file to have correct typing.
+- And you also need to create a json equivalent of that schema in `/background/lib/validate/...` folder
+- run `yarn run generate:validators`
+
+This setup is necessary so we don't need to include `unsafe-eval` in the CSP policy.
+
 #### Required Software
 
 If you can't use the macOS setup script, here is the software you'll need to
