@@ -1,17 +1,15 @@
 // It's necessary to have an object w/ the function on it so we can use spyOn
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
 
-import { jsonSchemaValidatorFor } from "../lib/validation"
-
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { CoinGeckoAsset } from "../assets"
 import {
-  CoingeckoPriceData,
   coingeckoPriceSchema,
   getPrice,
   getPrices,
 } from "../lib/prices"
+import { JSONSchemaType, ValidateFunction } from "ajv"
 
 const dateNow = 1634911514834
 
@@ -24,8 +22,7 @@ describe("lib/prices.ts", () => {
     jest.spyOn(logger, "warn").mockImplementation()
   })
   describe("CoinGecko Price response validation", () => {
-    const validate =
-      jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
+      const validate: ValidateFunction<JSONSchemaType<typeof coingeckoPriceSchema>> = require("./validate/json-validators.js")
     it("passes for correct simple price response", () => {
       const apiResponse = {
         ethereum: {
