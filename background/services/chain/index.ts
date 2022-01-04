@@ -222,16 +222,6 @@ export default class ChainService extends BaseService<Events> {
     // service to block on potentially spotty chains, or just on one or two? How
     // do we recover from failure here?
 
-    // fetch latest block for all network
-    Promise.all(
-      SUPPORTED_NETWORKS.map(async (network) => {
-        const provider = this.requirePollingProvider(network)
-        const n = await provider.getBlockNumber()
-        const result = await provider.getBlock(n)
-        const block = blockFromEthersBlock(result, network)
-        await this.db.addBlock(block)
-      })
-    )
     // subscribe to new blocks for all accounts we're tracking
     Promise.all(
       Object.values(
@@ -259,6 +249,11 @@ export default class ChainService extends BaseService<Events> {
           })
         )
         .concat([])
+    )
+
+    // fetch latest block for all networks
+    Promise.allSettled(
+      SUPPORTED_NETWORKS.map((network) => this.getLatestBlockData(network))
     )
   }
 
@@ -322,6 +317,8 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async getBlockHeight(network: Network): Promise<number> {
+    // FIXME: Why would we ever want to this caching behavior? Consider adding
+    // some sort of expiry
     const cachedBlock = await this.db.getLatestBlock(network)
     if (cachedBlock) {
       return cachedBlock.blockHeight
@@ -357,6 +354,21 @@ export default class ChainService extends BaseService<Events> {
 
     const block = blockFromEthersBlock(resultBlock, network)
 
+    await this.db.addBlock(block)
+    this.emitter.emit("block", block)
+    return block
+  }
+
+  /**
+   * Fetch and return the latest block in a network without caching.
+   *
+   * @param network the EVM network we're interested in
+   */
+  async getLatestBlockData(network: EVMNetwork): Promise<AnyEVMBlock> {
+    const provider = this.requirePollingProvider(network)
+    const n = await provider.getBlockNumber()
+    const result = await provider.getBlock(n)
+    const block = blockFromEthersBlock(result, network)
     await this.db.addBlock(block)
     this.emitter.emit("block", block)
     return block
