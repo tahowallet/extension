@@ -42,3 +42,11 @@ export type AddressNetwork = {
   address: HexString
   network: Network
 }
+
+/**
+ * A domain name, with a particular network.
+ */
+export type NameNetwork = {
+  name: string
+  network: Network
+}
