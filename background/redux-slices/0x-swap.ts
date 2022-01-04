@@ -5,7 +5,7 @@ import { utils } from "ethers"
 import { createBackgroundAsyncThunk } from "./utils"
 import { Asset, FungibleAsset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
-import { jtdValidatorFor } from "../lib/validation"
+import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
 
 interface PartialSwapAssets {
   sellAsset?: FungibleAsset
@@ -106,7 +106,7 @@ const swapAssetsJTD = {
   },
 }
 
-const isValidSwapAssetsResponse = jtdValidatorFor(swapAssetsJTD)
+const isValidSwapAssetsResponse: ValidateFunction<JTDDataType<typeof swapAssetsJTD>> = require("../lib/validate/jtd-validators.js")["swap-assets.jtd.schema.json"]
 
 export const fetchSwapAssets = createBackgroundAsyncThunk(
   "0x-swap/fetchAssets",
@@ -143,7 +143,7 @@ const swapPriceJTD = {
   },
 }
 
-const isValidSwapPriceResponse = jtdValidatorFor(swapPriceJTD)
+const isValidSwapPriceResponse: ValidateFunction<JTDDataType<typeof swapPriceJTD>> = require("../lib/validate/jtd-validators.js")["swap-price.jtd.schema.json"]
 
 export const fetchSwapPrices = createBackgroundAsyncThunk(
   "0x-swap/fetchPrices",
@@ -210,7 +210,7 @@ const swapQuoteJTD = {
   },
 }
 
-const isValidSwapQuoteResponse = jtdValidatorFor(swapQuoteJTD)
+const isValidSwapQuoteResponse: ValidateFunction<JTDDataType<typeof swapQuoteJTD>> = require("../lib/validate/jtd-validators.js")["swap-quote.jtd.schema.json"]
 
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",

@@ -1,0 +1,15 @@
+{
+  "properties": {
+    "records": {
+      "elements": {
+        "properties": {
+          "price": { "type": "string" },
+          "symbol": { "type": "string" }
+        }
+      }
+    },
+    "page": { "type": "uint32" },
+    "perPage": { "type": "uint32" },
+    "total": { "type": "uint32" }
+  }
+}

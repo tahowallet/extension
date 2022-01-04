@@ -12,9 +12,9 @@ import {
   SmartContractFungibleAsset,
 } from "../assets"
 import { ETH } from "../constants"
-import { jtdValidatorFor } from "./validation"
 import { getEthereumNetwork } from "./utils"
 import { AnyEVMTransaction, EVMNetwork } from "../networks"
+import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
 
 // JSON Type Definition for the Alchemy assetTransfers API.
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
@@ -51,9 +51,7 @@ const alchemyGetAssetTransfersJTD = {
   additionalProperties: true,
 } as const
 
-const isValidAlchemyAssetTransferResponse = jtdValidatorFor(
-  alchemyGetAssetTransfersJTD
-)
+const isValidAlchemyAssetTransferResponse: ValidateFunction<JTDDataType<typeof alchemyGetAssetTransfersJTD>> = require("./validate/jtd-validators.js")["alchemy-get-asset-transfers.jtd.schema.json"]
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -170,9 +168,7 @@ const alchemyTokenBalanceJTD = {
   additionalProperties: false,
 } as const
 
-const isValidAlchemyTokenBalanceResponse = jtdValidatorFor(
-  alchemyTokenBalanceJTD
-)
+const isValidAlchemyTokenBalanceResponse: ValidateFunction<JTDDataType<typeof alchemyTokenBalanceJTD>> = require("./validate/jtd-validators.js")["alchemy-token-balance.jtd.schema.json"]
 
 /**
  * Use Alchemy's getTokenBalances call to get balances for a particular address.
@@ -248,9 +244,7 @@ const alchemyTokenMetadataJTD = {
   additionalProperties: false,
 } as const
 
-const isValidAlchemyTokenMetadataResponse = jtdValidatorFor(
-  alchemyTokenMetadataJTD
-)
+const isValidAlchemyTokenMetadataResponse : ValidateFunction<JTDDataType<typeof alchemyTokenMetadataJTD>> = require("./validate/jtd-validators.js")["alchemy-token-metadata.jtd.schema.json"]
 
 /**
  * Use Alchemy's getTokenMetadata call to get metadata for a token contract on

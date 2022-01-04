@@ -4,7 +4,7 @@ import { fetchJson } from "@ethersproject/web"
 
 import logger from "./logger"
 import { HexString, URI } from "../types"
-import { jtdValidatorFor } from "./validation"
+import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
 
 const abi = [
   "function tokenURI(uint256 _tokenId) external view returns (string)",
@@ -36,7 +36,7 @@ const metadataJTD = {
   additionalProperties: true,
 } as const
 
-const isValidMetadata = jtdValidatorFor(metadataJTD)
+const isValidMetadata: ValidateFunction<JTDDataType<typeof metadataJTD>> = require("./validate/jtd-validators.js")["erc721-metadata.jtd.schema.json"]
 
 export interface ERC721Metadata {
   name: string | undefined

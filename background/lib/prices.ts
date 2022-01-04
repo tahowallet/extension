@@ -1,5 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
-import { JSONSchemaType } from "ajv"
+import { JSONSchemaType, ValidateFunction } from "ajv"
 import logger from "./logger"
 import {
   AnyAsset,
@@ -8,7 +8,6 @@ import {
   PricePoint,
   UnitPricePoint,
 } from "../assets"
-import { jsonSchemaValidatorFor } from "./validation"
 
 import { toFixedPoint } from "./fixed-point"
 
@@ -59,7 +58,7 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  const validate = jsonSchemaValidatorFor(coingeckoPriceSchema)
+  const validate: ValidateFunction<JSONSchemaType<typeof coingeckoPriceSchema>> = require("./validate/json-validators.js")
 
   if (!validate(json)) {
     logger.warn(
@@ -89,7 +88,7 @@ export async function getPrices(
   const json = await fetchJson(url)
   // TODO fix loss of precision from json
   // TODO: TESTME
-  const validate = jsonSchemaValidatorFor(coingeckoPriceSchema)
+  const validate: ValidateFunction<JSONSchemaType<typeof coingeckoPriceSchema>> = require("./validate/json-validators.js")
 
   if (!validate(json)) {
     logger.warn(
