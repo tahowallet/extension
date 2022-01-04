@@ -108,21 +108,26 @@ export function truncateAddress(address: string): string {
 }
 
 export const getNumericStringValueFromHex = (
-  hexString: string | undefined,
-  tokenDecimals?: string
+  hexString: string,
+  tokenDecimals: number
 ): string => {
   let hexValue = hexString
   if (hexValue && !hexString?.includes("x")) {
     hexValue = `0x${hexString}`
   }
-  // TODO I need to know the decimals of a token to properly format
-  const value = BigInt(hexValue ?? "0")
-  const decimal = utils.formatEther(value)
-  return decimal
+
+  return Number(BigInt(hexValue) / 10n ** BigInt(tokenDecimals)).toString()
 }
 
-export const numberTo32BytesHex = (value: string): string => {
-  const parsedToWei = utils.parseEther(value)
-  const hex = parsedToWei.toHexString()
+export const numberTo32BytesHex = (value: string, decimals: number): string => {
+  const withDecimals = BigInt(value) * 10n ** BigInt(decimals)
+  const hex = utils.hexlify(withDecimals)
   return utils.hexZeroPad(hex, 32).split("0x")[1]
+}
+
+export const verifyIsInfiniteAmount = (amount: string): boolean => {
+  return (
+    amount ===
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  )
 }

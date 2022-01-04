@@ -1,6 +1,7 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
-import { ethers } from "ethers"
-import { getTokenBalances } from "./alchemy"
+import { ethers, logger } from "ethers"
+import { getNetwork } from "@ethersproject/networks"
+import { getTokenBalances, getTokenMetadata } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
 import { AccountBalance } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
@@ -28,6 +29,13 @@ export const ERC2612_ABI = ERC20_ABI.concat([
 ])
 
 export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
+
+const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
+
+const alchemyProvider = new AlchemyProvider(
+  getNetwork(Number(getEthereumNetwork().chainID)),
+  ALCHEMY_KEY
+)
 
 /*
  * Get an account's balance from an ERC20-compliant contract.
@@ -91,6 +99,17 @@ export async function getBalances(
   )
 }
 
+export const getERC20TokenMetadata = async (
+  address: string
+): Promise<SmartContractFungibleAsset | null> => {
+  try {
+    const tokenMetadata = await getTokenMetadata(alchemyProvider, address)
+    return tokenMetadata
+  } catch (err) {
+    logger.warn("Couldn't find token with specified address", address)
+  }
+  return null
+}
 // TODO get token balances of a many token contracts for a particular account the slow way, cache
 // TODO get price data from 0xAPI
 // TODO export a function that can take a tx and return any involved ERC-20s using traces

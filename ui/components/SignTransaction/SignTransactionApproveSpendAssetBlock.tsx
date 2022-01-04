@@ -1,20 +1,19 @@
+import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
+import { getERC20TokenMetadata } from "@tallyho/tally-background/lib/erc20"
 import {
   getNumericStringValueFromHex,
   numberTo32BytesHex,
   truncateAddress,
+  verifyIsInfiniteAmount,
 } from "@tallyho/tally-background/lib/utils"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
-import {
-  getAssetsState,
-  selectCurrentAccountBalances,
-} from "@tallyho/tally-background/redux-slices/selectors"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
-import { useBackgroundSelector } from "../../hooks"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 interface Props {
   transactionDetails: EIP1559TransactionRequest
@@ -25,41 +24,41 @@ export default function SignTransactionApproveSpendAssetBlock({
 }: Props): ReactElement {
   const [approvalLimit, setApprovalLimit] = useState("")
   const dispatch = useDispatch()
+  const [asset, setAsset] = useState<SmartContractFungibleAsset | null>()
   const [changing, setChanging] = useState(false)
 
-  const assets = useBackgroundSelector(getAssetsState)
-  const accountData = useBackgroundSelector(selectCurrentAccountBalances)
-
-  const { assetAmounts } = accountData ?? {
-    assetAmounts: [],
-  }
-
-  const asset = assetAmounts.find(
-    (el) =>
-      ("contractAddress" in el.asset &&
-        el.asset.contractAddress === transactionDetails.to) ||
-      assets.find(
-        (a) =>
-          "contractAddress" in a && a.contractAddress === transactionDetails.to
+  useEffect(() => {
+    const getTokenData = async () => {
+      const tokenMetadata = await getERC20TokenMetadata(
+        transactionDetails.to || ""
       )
-  )
+      setAsset(tokenMetadata)
+    }
+    getTokenData()
+  }, [transactionDetails.to])
+
   // ERC-20 the approval amount will be in the range of 74-138 in form of a 32 bytes hex string
   const approveAmount = transactionDetails?.input?.substring(74, 138)
-  const infiniteApproval =
-    approveAmount ===
-    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+  const infiniteApproval = verifyIsInfiniteAmount(approveAmount ?? "0")
+
   useEffect(() => {
-    setApprovalLimit(getNumericStringValueFromHex(approveAmount))
-  }, [approveAmount])
+    if (approveAmount && asset?.decimals) {
+      setApprovalLimit(
+        getNumericStringValueFromHex(approveAmount, asset?.decimals)
+      )
+    }
+  }, [approveAmount, asset?.decimals])
 
   const handleUpdateClick = () => {
     setChanging(!changing)
-    if (changing && transactionDetails) {
+    if (changing && transactionDetails && asset?.decimals) {
       const updatedInput = `${transactionDetails.input?.substring(
         0,
         74
       )}${numberTo32BytesHex(
-        approvalLimit
+        approvalLimit,
+        asset?.decimals
       )}${transactionDetails.input?.substring(
         138,
         transactionDetails.input.length
@@ -75,13 +74,19 @@ export default function SignTransactionApproveSpendAssetBlock({
       <div className="spend_destination_icons">
         <div className="site_icon" />
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" symbol={asset?.asset.symbol ?? ""} />
+          <SharedAssetIcon size="large" symbol={asset?.symbol ?? ""} />
         </div>
       </div>
       <span className="site">Smart Contract Interaction</span>
-      <span className="spending_label">{`Spend ${
-        asset?.asset.symbol ?? truncateAddress(transactionDetails.to || "")
-      } tokens`}</span>
+      <span className="spending_label">
+        {asset?.symbol ? (
+          `Spend ${
+            asset?.symbol ?? truncateAddress(transactionDetails.to || "")
+          } tokens`
+        ) : (
+          <SharedSkeletonLoader />
+        )}
+      </span>
       <span className="speed_limit_label">Spend limit</span>
       {changing ? (
         <div>
@@ -93,9 +98,13 @@ export default function SignTransactionApproveSpendAssetBlock({
         </div>
       ) : (
         <span className="spend_amount">
-          {`${infiniteApproval ? "Infinite" : approvalLimit} ${
-            asset?.asset.symbol.toUpperCase() ?? ""
-          }`}
+          {asset?.symbol ? (
+            `${
+              infiniteApproval ? "Infinite" : approvalLimit
+            } ${asset?.symbol.toUpperCase()}`
+          ) : (
+            <SharedSkeletonLoader />
+          )}
         </span>
       )}
       <SharedButton size="small" type="tertiary" onClick={handleUpdateClick}>
@@ -135,6 +144,7 @@ export default function SignTransactionApproveSpendAssetBlock({
             border-bottom: 1px solid var(--green-120);
             padding-bottom: 16px;
             margin-bottom: 16px;
+            text-align: center;
           }
           .speed_limit_label {
             color: var(--green-40);
