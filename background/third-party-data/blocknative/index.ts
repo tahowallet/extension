@@ -116,6 +116,7 @@ export default class Blocknative {
           }
         }
       ),
+      dataSource: "blocknative",
     }
   }
 }

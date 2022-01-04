@@ -14,11 +14,13 @@ export default function TopMenuNotifications({
 
   return (
     <div>
-      <SharedPanelSwitcher
-        setPanelNumber={setPanelNumber}
-        panelNumber={panelNumber}
-        panelNames={["Accounts"]}
-      />
+      <div className="panel_switcher_wrap">
+        <SharedPanelSwitcher
+          setPanelNumber={setPanelNumber}
+          panelNumber={panelNumber}
+          panelNames={["Accounts"]}
+        />
+      </div>
       {panelNumber === 1 ? (
         <AccountsNotificationPanelNotifications />
       ) : (
@@ -26,6 +28,17 @@ export default function TopMenuNotifications({
           onCurrentAddressChange={onCurrentAddressChange}
         />
       )}
+      <style jsx>{`
+        .panel_switcher_wrap {
+          width: 100%;
+          background-color: var(--green-95);
+          position: sticky;
+          top: -25px;
+          padding-top: 25px;
+          margin-top: -25px;
+          z-index: 1;
+        }
+      `}</style>
     </div>
   )
 }

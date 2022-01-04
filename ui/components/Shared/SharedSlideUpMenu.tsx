@@ -68,9 +68,12 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             width: 12px;
             height: 12px;
             position: absolute;
-            right: 24px;
             background-color: var(--green-20);
-            z-index: 1;
+            z-index: 2;
+            position: sticky;
+            top: 0px;
+            right: 24px;
+            float: right;
           }
           .icon_close:hover {
             background-color: #fff;
