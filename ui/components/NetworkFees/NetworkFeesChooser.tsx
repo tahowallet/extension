@@ -217,7 +217,7 @@ export default function NetworkFeesChooser({
         customSize={`${3 * 56 + 320}px`}
       >
         <div className="wrapper">
-          <div className="fees">
+          <div className="fees standard_width">
             <div className="title">Network Fees</div>
             <div className="divider">
               <div className="divider-background" />
@@ -296,10 +296,10 @@ export default function NetworkFeesChooser({
             display: flex;
             flex-flow: column;
             justify-content: space-between;
+            margin-left: 12px;
           }
           .fees {
             background-color: var(--green-95);
-            width: 352px;
             margin: 0 auto;
             display: flex;
             flex-flow: column;
@@ -385,7 +385,7 @@ export default function NetworkFeesChooser({
             display: flex;
             box-sizing: border-box;
             justify-content: flex-end;
-            padding: 20px 16px;
+            padding: 20px 10px;
           }
           .info {
             display: flex;
@@ -395,7 +395,7 @@ export default function NetworkFeesChooser({
           .max_fee {
             display: flex;
             flex-flow: column;
-            margin-right: 16px;
+            margin-right: 10px;
             align-items: flex-end;
           }
           .max_label {
