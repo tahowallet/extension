@@ -34,8 +34,8 @@ interface NetworkFeesChooserProps {
   gasLimit: string
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
-  setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-  feeModalOpen: boolean
+  setFeeModalOpen?: React.Dispatch<React.SetStateAction<boolean>>
+  feeModalOpen?: boolean
   setSelectedFeeInGwei?: React.Dispatch<React.SetStateAction<string>>
 }
 
@@ -91,7 +91,9 @@ export default function NetworkFeesChooser({
     if (transactionDetails !== undefined) {
       dispatch(updateTransactionOptions(transactionDetails))
     }
-    setFeeModalOpen(false)
+    if (setFeeModalOpen) {
+      setFeeModalOpen(false)
+    }
   }
 
   const getSecondsTillGasUpdate = useCallback(() => {
@@ -342,11 +344,15 @@ export default function NetworkFeesChooser({
             font-size: 14px;
           }
           .confirm {
-            width: 100%;
+            width: 384px;
             display: flex;
+            position: relative;
+            left: -17px;
+            bottom: 0;
             box-sizing: border-box;
             justify-content: flex-end;
             padding: 20px 10px;
+            background-color: var(--hunter-green);
           }
           .info {
             display: flex;
