@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory, useLocation } from "react-router-dom"
+import { useHistory } from "react-router-dom"
 import { formatUnits } from "@ethersproject/units"
 import {
   broadcastSignedTransaction,
@@ -25,6 +25,8 @@ import {
 } from "../hooks"
 import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export enum SignType {
   Sign = "sign",
@@ -46,7 +48,9 @@ export default function SignTransaction({
 }: {
   location: { key: string; pathname: string; state?: SignLocationState }
 }): ReactElement {
+  const [feeModalOpen, setFeeModalOpen] = useState(false)
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+  const [selectedFeeInGwei, setSelectedFeeInGwei] = useState("")
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
@@ -178,26 +182,28 @@ export default function SignTransaction({
       />
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
-          {signType === SignType.Sign ? (
+          <SharedSlideUpMenu
+            size="custom"
+            isOpen={feeModalOpen}
+            close={() => setFeeModalOpen(false)}
+            customSize={`${3 * 56 + 320}px`}
+          >
             <NetworkFeesChooser
               estimatedFeesPerGas={estimatedFeesPerGas}
               gasLimit={gasLimit}
               setGasLimit={setGasLimit}
+              setFeeModalOpen={setFeeModalOpen}
+              feeModalOpen={feeModalOpen}
+              setSelectedFeeInGwei={setSelectedFeeInGwei}
             />
-          ) : (
-            <span className="detail_item">
-              Estimated network fee
-              <span className="detail_item_right">
-                ~
-                {
-                  formatUnits(transactionDetails.maxFeePerGas, "gwei").split(
-                    "."
-                  )[0]
-                }{" "}
-                Gwei
-              </span>
-            </span>
-          )}
+          </SharedSlideUpMenu>
+          <span className="detail_item">
+            Estimated network fee
+            <FeeSettingsButton
+              openModal={() => setFeeModalOpen(true)}
+              currentFeeSelected={selectedFeeInGwei}
+            />
+          </span>
         </div>
       ) : null}
       <div className="footer_actions">

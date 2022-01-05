@@ -18,6 +18,8 @@ import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { SignType } from "./SignTransaction"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
@@ -31,6 +33,8 @@ export default function Send(): ReactElement {
   const [currentBalance, setCurrentBalance] = useState("")
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
+  const [feeModalOpen, setFeeModalOpen] = useState(false)
+  const [selectedFeeInGwei, setSelectedFeeInGwei] = useState("")
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
@@ -143,11 +147,28 @@ export default function Send(): ReactElement {
               onSendToAddressChange={setDestinationAddress}
             />
           </div>
-          <NetworkFeesChooser
-            estimatedFeesPerGas={estimatedFeesPerGas}
-            gasLimit={gasLimit}
-            setGasLimit={setGasLimit}
-          />
+          <SharedSlideUpMenu
+            size="custom"
+            isOpen={feeModalOpen}
+            close={() => setFeeModalOpen(false)}
+            customSize={`${3 * 56 + 320}px`}
+          >
+            <NetworkFeesChooser
+              estimatedFeesPerGas={estimatedFeesPerGas}
+              gasLimit={gasLimit}
+              setGasLimit={setGasLimit}
+              setFeeModalOpen={setFeeModalOpen}
+              feeModalOpen={feeModalOpen}
+              setSelectedFeeInGwei={setSelectedFeeInGwei}
+            />
+          </SharedSlideUpMenu>
+          <div className="network_fee">
+            <p>Estimated network fee</p>
+            <FeeSettingsButton
+              openModal={() => setFeeModalOpen(true)}
+              currentFeeSelected={selectedFeeInGwei}
+            />
+          </div>
           <div className="divider" />
           <div className="send_footer standard_width_padded">
             <SharedButton
@@ -247,6 +268,11 @@ export default function Send(): ReactElement {
             justify-content: flex-end;
             margin-top: 21px;
             padding-bottom: 20px;
+          }
+          .network_fee {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
           }
         `}
       </style>
