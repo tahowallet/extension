@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "build": "webpack --mode=production",
-    "generate:validators": "cd ./lib/validate && npx ajv compile --spec=jtd -s '*.jtd.schema.json' -o jtd-validators.js && npx ajv compile -s '*.json.schema.json' -o json-validators.js",
+    "generate:validators": "cd ./lib/validate/ && npx ajv compile --spec=jtd -s '*.jtd.schema.json' -o jtd-validators.js && npx ajv compile -s '*.json.schema.json' -o json-validators.js",
     "lint": "run-p lint:*",
     "lint-fix": "run-p 'lint:* -- --fix'",
     "lint:js": "eslint .",

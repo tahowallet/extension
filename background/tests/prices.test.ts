@@ -1,15 +1,12 @@
 // It's necessary to have an object w/ the function on it so we can use spyOn
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
+import { JSONSchemaType, ValidateFunction } from "ajv"
 
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { CoinGeckoAsset } from "../assets"
-import {
-  coingeckoPriceSchema,
-  getPrice,
-  getPrices,
-} from "../lib/prices"
-import { JSONSchemaType, ValidateFunction } from "ajv"
+import { getPrice, getPrices } from "../lib/prices"
+import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
 const dateNow = 1634911514834
 
@@ -22,7 +19,6 @@ describe("lib/prices.ts", () => {
     jest.spyOn(logger, "warn").mockImplementation()
   })
   describe("CoinGecko Price response validation", () => {
-      const validate: ValidateFunction<JSONSchemaType<typeof coingeckoPriceSchema>> = require("../lib/validate/json-validators.js")
     it("passes for correct simple price response", () => {
       const apiResponse = {
         ethereum: {
@@ -31,8 +27,8 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeTruthy()
-      expect(validate.errors).toBeNull()
+      expect(isValidCoinGeckoPriceResponse(apiResponse)).toBeTruthy()
+      expect(isValidCoinGeckoPriceResponse.errors).toBeNull()
     })
 
     it("passes for correct complex price response", () => {
@@ -51,8 +47,8 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeTruthy()
-      expect(validate.errors).toBeNull()
+      expect(isValidCoinGeckoPriceResponse(apiResponse)).toBeTruthy()
+      expect(isValidCoinGeckoPriceResponse.errors).toBeNull()
     })
 
     it("fails if required prop is missing w/ the correct error", () => {
@@ -72,9 +68,9 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      const validationResult = validate(apiResponse)
+      const validationResult = isValidCoinGeckoPriceResponse(apiResponse)
 
-      expect(validate.errors).toMatchObject(error)
+      expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
     })
 
@@ -96,9 +92,9 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      const validationResult = validate(apiResponse)
+      const validationResult = isValidCoinGeckoPriceResponse(apiResponse)
 
-      expect(validate.errors).toMatchObject(error)
+      expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
     })
 
@@ -120,9 +116,9 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      const validationResult = validate(apiResponse)
+      const validationResult = isValidCoinGeckoPriceResponse(apiResponse)
 
-      expect(validate.errors).toMatchObject(error)
+      expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
     })
   })
