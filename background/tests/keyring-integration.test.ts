@@ -92,7 +92,7 @@ describe("KeyringService when uninitialized", () => {
   describe("and locked", () => {
     it("won't import or create accounts", async () => {
       await expect(
-        service.importLegacyKeyring(validMnemonics.metamask[0])
+        service.importKeyring(validMnemonics.metamask[0])
       ).rejects.toThrow("KeyringService must be unlocked.")
 
       await Promise.all(
@@ -119,20 +119,20 @@ describe("KeyringService when uninitialized", () => {
     it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
       async (mnemonic) => {
-        return expect(service.importLegacyKeyring(mnemonic)).resolves
+        return expect(service.importKeyring(mnemonic)).resolves
       }
     )
 
-    it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {
+    it("will create multiple distinct BIP-39 S128 accounts and expose mnemonics", async () => {
       const keyringOne = service.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+        KeyringTypes.mnemonicBIP39S128
       )
       await expect(keyringOne).resolves.toMatchObject({
         id: expect.stringMatching(/.+/),
       })
 
       const keyringTwo = service.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+        KeyringTypes.mnemonicBIP39S128
       )
       await expect(keyringTwo).resolves.toMatchObject({
         id: expect.stringMatching(/.+/),
@@ -143,8 +143,8 @@ describe("KeyringService when uninitialized", () => {
 
       expect(idOne).not.toEqual(idTwo)
       expect(mnemonicOne).not.toEqual(mnemonicTwo)
-      expect(mnemonicOne.length).toEqual(24)
-      expect(mnemonicTwo.length).toEqual(24)
+      expect(mnemonicOne.length).toEqual(12)
+      expect(mnemonicTwo.length).toEqual(12)
     })
   })
 })
@@ -177,7 +177,10 @@ describe("KeyringService when initialized", () => {
     service.emitter.on("address", (emittedAddress) => {
       address = emittedAddress
     })
-    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+    const { mnemonic } = await service.generateNewKeyring(
+      KeyringTypes.mnemonicBIP39S128
+    )
+    await service.importKeyring(mnemonic.join(" "))
   })
 
   it("will return keyring IDs and addresses", async () => {
@@ -293,14 +296,17 @@ describe("KeyringService when saving keyrings", () => {
             vault: expect.objectContaining({
               salt: expectBase64String(),
               initializationVector: expectBase64String(),
-              cipherText: expectBase64String({ minLength: 24, maxLength: 24 }),
+              cipherText: expectBase64String({ minLength: 12, maxLength: 12 }),
             }),
           }),
         ],
       }),
     })
 
-    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+    const { mnemonic } = await service.generateNewKeyring(
+      KeyringTypes.mnemonicBIP39S128
+    )
+    await service.importKeyring(mnemonic.join(" "))
 
     expect(localStorageCalls.shift()).toMatchObject({
       tallyVaults: expect.objectContaining({
@@ -310,7 +316,7 @@ describe("KeyringService when saving keyrings", () => {
             vault: expect.objectContaining({
               salt: expectBase64String(),
               initializationVector: expectBase64String(),
-              cipherText: expectBase64String({ minLength: 24, maxLength: 24 }),
+              cipherText: expectBase64String({ minLength: 12, maxLength: 12 }),
             }),
           }),
           expect.objectContaining({
@@ -398,7 +404,10 @@ describe("Keyring service when autolocking", () => {
     service.emitter.on("address", (emittedAddress) => {
       address = emittedAddress
     })
-    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+    const { mnemonic } = await service.generateNewKeyring(
+      KeyringTypes.mnemonicBIP39S128
+    )
+    await service.importKeyring(mnemonic.join(" "))
   })
 
   it("will autolock after the keyring idle time but not sooner", async () => {
@@ -436,13 +445,13 @@ describe("Keyring service when autolocking", () => {
     {
       action: "importing a keyring",
       call: async () => {
-        await service.importLegacyKeyring(validMnemonics.metamask[0])
+        await service.importKeyring(validMnemonics.metamask[0])
       },
     },
     {
       action: "generating a keyring",
       call: async () => {
-        await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+        await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S128)
       },
     },
   ])("will bump keyring activity idle time when $action", async ({ call }) => {
@@ -481,7 +490,7 @@ describe("Keyring service when autolocking", () => {
     jest
       .spyOn(Date, "now")
       .mockReturnValue(dateNowValue + MAX_KEYRING_IDLE_TIME - 1)
-    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S128)
 
     callAutolockHandler(MAX_OUTSIDE_IDLE_TIME)
     expect(service.locked()).toEqual(false)
