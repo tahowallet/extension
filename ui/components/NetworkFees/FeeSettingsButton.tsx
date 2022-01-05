@@ -3,33 +3,16 @@ import React, { ReactElement } from "react"
 interface FeeSettingsButtonProps {
   openModal: () => void
   currentFeeSelected: string
-  minFee: number
-  maxFee: number
 }
 
 export default function FeeSettingsButton({
   openModal,
   currentFeeSelected,
-  minFee,
-  maxFee,
 }: FeeSettingsButtonProps): ReactElement {
   return (
-    <button
-      className="settings"
-      type="button"
-      onClick={openModal}
-      style={{
-        background: `linear-gradient(90deg, var(--green-80) ${(
-          ((Number(currentFeeSelected) || minFee) / maxFee) *
-          100
-        ).toFixed()}%, rgba(0, 0, 0, 0) ${(
-          ((Number(currentFeeSelected) || minFee) / maxFee) *
-          100
-        ).toFixed()}%)`,
-      }}
-    >
+    <button className="settings" type="button" onClick={openModal}>
       <div>
-        ~{currentFeeSelected || minFee}
+        ~{currentFeeSelected}
         Gwei
       </div>
       <img className="settings_image" src="./images/cog@2x.png" alt="" />
@@ -45,11 +28,19 @@ export default function FeeSettingsButton({
             border-radius: 4px;
             padding-left: 4px;
             border: 1px solid #33514e;
+            transition: all 0.3s ease;
           }
           .settings_image {
             width: 14px;
             height: 14px;
             padding: 0 8px;
+            transition: all 0.3s ease;
+          }
+          .settings:hover {
+            border: 1px solid #578f89;
+          }
+          .settings:hover .settings_image {
+            filter: brightness(1.5);
           }
         `}
       </style>
