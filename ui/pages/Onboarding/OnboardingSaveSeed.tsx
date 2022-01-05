@@ -39,7 +39,7 @@ export default function OnboardingSaveSeed(): ReactElement {
               </div>
             </div>
             <div className="column_wrap">
-              <div className="column numbers">1 2 3 4 5 6</div>
+              <div className="column numbers">7 8 9 10 11 12</div>
               <div className="column dashes">- - - - - -</div>
               <div className="column words">
                 {freshMnemonic?.slice(6, 12).map((word) => {
@@ -72,12 +72,13 @@ export default function OnboardingSaveSeed(): ReactElement {
           ${titleStyle}
           .words_group {
             display: flex;
-            width: 232px;
+            width: 250px;
             justify-content: space-between;
             margin-bottom: 40px;
           }
           .numbers {
-            width: 12px;
+            width: 18px;
+            text-align: right;
           }
           .dashes {
             width: 12px;
