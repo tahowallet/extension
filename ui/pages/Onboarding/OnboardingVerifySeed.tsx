@@ -47,6 +47,7 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
             flex-direction: column;
             align-items: center;
             width: 100%;
+            margin-top: 16px;
           }
           .message {
             color: #fff;
@@ -59,6 +60,7 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
+            margin-bottom: 17px;
           }
           .button_container {
             width: fit-content;
@@ -130,9 +132,7 @@ export default function OnboardingVerifySeed(): ReactElement {
             {isSelected.join() === mnemonicToVerify?.join() ? (
               <SuccessMessage mnemonic={isSelected} />
             ) : (
-              <span className="error_message">
-                Incorrect order. Please try again.
-              </span>
+              <span className="error_message">Incorrect order</span>
             )}
           </>
         ) : (
