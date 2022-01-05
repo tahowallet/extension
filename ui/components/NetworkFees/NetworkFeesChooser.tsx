@@ -17,8 +17,6 @@ import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import FeeSettingsButton from "./FeeSettingsButton"
 
 type GasOption = {
   name: string
@@ -36,12 +34,18 @@ interface NetworkFeesChooserProps {
   gasLimit: string
   setGasLimit: React.Dispatch<React.SetStateAction<string>>
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
+  setFeeModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  feeModalOpen: boolean
+  setSelectedFeeInGwei?: React.Dispatch<React.SetStateAction<string>>
 }
 
 export default function NetworkFeesChooser({
   gasLimit,
   setGasLimit,
   estimatedFeesPerGas,
+  setFeeModalOpen,
+  feeModalOpen,
+  setSelectedFeeInGwei,
 }: NetworkFeesChooserProps): ReactElement {
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
@@ -54,14 +58,18 @@ export default function NetworkFeesChooser({
   const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
-  const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const openSelectFeeModal = () => {
-    setFeeModalOpen(true)
-  }
-  const closeSelectFeeModal = () => {
+  useEffect(() => {
     setActiveFeeIndex(gasOptions.findIndex((el) => el.name === selectedFeeType))
-    setFeeModalOpen(false)
-  }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feeModalOpen])
+
+  useEffect(() => {
+    if (setSelectedFeeInGwei) {
+      setSelectedFeeInGwei(gasOptions?.[activeFeeIndex]?.estimatedGwei ?? "")
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feeModalOpen, gasOptions, activeFeeIndex])
 
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
@@ -98,9 +106,6 @@ export default function NetworkFeesChooser({
       clearTimeout(interval)
     }
   })
-
-  const [minFee, setMinFee] = useState(0)
-  const [maxFee, setMaxFee] = useState(0)
 
   const updateGasOptions = useCallback(() => {
     const formatBlockEstimate = (option: BlockEstimate) => {
@@ -163,37 +168,10 @@ export default function NetworkFeesChooser({
         )
         const currentlySelectedFeeIndex =
           selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
-        const currentlySelectedFee = basePrices[currentlySelectedFeeIndex]
 
         setGasOptions(updatedGasOptions)
-
-        setActiveFeeIndex(currentlySelectedFeeIndex)
-
-        if (typeof currentlySelectedFee !== "undefined") {
-          if (
-            estimatedFeesPerGas?.baseFeePerGas &&
-            estimatedFeesPerGas?.regular?.maxPriorityFeePerGas &&
-            estimatedFeesPerGas?.instant?.maxPriorityFeePerGas
-          ) {
-            setMinFee(
-              Number(
-                formatUnits(
-                  (estimatedFeesPerGas.baseFeePerGas * BigInt(13)) / 10n +
-                    estimatedFeesPerGas.regular?.maxPriorityFeePerGas,
-                  "gwei"
-                ).split(".")[0]
-              )
-            )
-            setMaxFee(
-              Number(
-                formatUnits(
-                  (estimatedFeesPerGas.baseFeePerGas * BigInt(20)) / 10n +
-                    estimatedFeesPerGas.instant?.maxPriorityFeePerGas,
-                  "gwei"
-                ).split(".")[0]
-              )
-            )
-          }
+        if (!feeModalOpen) {
+          setActiveFeeIndex(currentlySelectedFeeIndex)
         }
       }
     }
@@ -210,83 +188,66 @@ export default function NetworkFeesChooser({
 
   return (
     <>
-      <SharedSlideUpMenu
-        size="custom"
-        isOpen={feeModalOpen}
-        close={closeSelectFeeModal}
-        customSize={`${3 * 56 + 320}px`}
-      >
-        <div className="wrapper">
-          <div className="fees standard_width">
-            <div className="title">Network Fees</div>
-            <div className="divider">
-              <div className="divider-background" />
-              <div
-                className="divider-cover"
-                style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
+      <div className="wrapper">
+        <div className="fees standard_width">
+          <div className="title">Network Fees</div>
+          <div className="divider">
+            <div className="divider-background" />
+            <div
+              className="divider-cover"
+              style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
+            />
+          </div>
+          {gasOptions.map((option, i) => {
+            return (
+              <button
+                key={option.confidence}
+                className={`option ${i === activeFeeIndex ? "active" : ""}`}
+                onClick={() => handleSelectGasOption(i)}
+                type="button"
+              >
+                <div className="option_left">
+                  <div className="name">{capitalize(option.name)}</div>
+                  <div className="subtext">
+                    Probability: {option.confidence}%
+                  </div>
+                </div>
+                <div className="option_right">
+                  <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
+                  <div className="subtext">${option.dollarValue}</div>
+                </div>
+              </button>
+            )
+          })}
+          <div className="info">
+            <div className="limit">
+              <SharedInput
+                id="gasLimit"
+                value={gasLimit}
+                onChange={(val) => setGasLimit(val)}
+                defaultValue="21000"
+                label="Gas limit"
+                type="number"
+                focusedLabelBackgroundColor="var(--green-95)"
               />
             </div>
-            {gasOptions.map((option, i) => {
-              return (
-                <button
-                  key={option.confidence}
-                  className={`option ${i === activeFeeIndex ? "active" : ""}`}
-                  onClick={() => handleSelectGasOption(i)}
-                  type="button"
-                >
-                  <div className="option_left">
-                    <div className="name">{capitalize(option.name)}</div>
-                    <div className="subtext">
-                      Probability: {option.confidence}%
-                    </div>
-                  </div>
-                  <div className="option_right">
-                    <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-                    <div className="subtext">${option.dollarValue}</div>
-                  </div>
-                </button>
-              )
-            })}
-            <div className="info">
-              <div className="limit">
-                <SharedInput
-                  id="gasLimit"
-                  value={gasLimit}
-                  onChange={(val) => setGasLimit(val)}
-                  defaultValue="21000"
-                  label="Gas limit"
-                  type="number"
-                  focusedLabelBackgroundColor="var(--green-95)"
-                />
-              </div>
-              <div className="max_fee">
-                <span className="max_label">Max Fee</span>
-                <div className="price">
-                  {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
-                </div>
+            <div className="max_fee">
+              <span className="max_label">Max Fee</span>
+              <div className="price">
+                {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
               </div>
             </div>
           </div>
-          <div className="confirm">
-            <SharedButton
-              size="medium"
-              type="primary"
-              onClick={saveUserGasChoice}
-            >
-              Save
-            </SharedButton>
-          </div>
         </div>
-      </SharedSlideUpMenu>
-
-      <div className="network_fee">
-        <p>Estimated network fee</p>
-        <FeeSettingsButton
-          openModal={openSelectFeeModal}
-          minFee={minFee}
-          maxFee={maxFee}
-          currentFeeSelected={gasOptions?.[activeFeeIndex]?.estimatedGwei ?? ""}
-        />
+        <div className="confirm">
+          <SharedButton
+            size="medium"
+            type="primary"
+            onClick={saveUserGasChoice}
+          >
+            Save
+          </SharedButton>
+        </div>
       </div>
 
       <style jsx>
