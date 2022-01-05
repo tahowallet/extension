@@ -242,7 +242,7 @@ export default class KeyringService extends BaseService<Events> {
   // ///////////////////////////////////////////
 
   /**
-   * Generate a new keyring, saving it to extension storage.
+   * Generate a new keyring
    *
    * @param type - the type of keyring to generate. Currently only supports 256-
    *        bit HD keys.
@@ -262,12 +262,6 @@ export default class KeyringService extends BaseService<Events> {
     }
 
     const newKeyring = new HDKeyring({ strength: 256 })
-    this.#keyrings.push(newKeyring)
-    const [address] = newKeyring.addAddressesSync(1)
-    await this.persistKeyrings()
-
-    this.emitter.emit("address", address)
-    this.emitKeyrings()
 
     const { mnemonic } = newKeyring.serializeSync()
 
