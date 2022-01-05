@@ -14,15 +14,26 @@ export default function Snackbar(): ReactElement {
 
   const snackbarTimeout = useRef<ReturnType<typeof setTimeout>>()
 
-  useEffect(() => {
+  const clearSnackbarTimeout = () => {
     if (snackbarTimeout.current) {
       clearTimeout(snackbarTimeout.current)
     }
+  }
+
+  useEffect(() => {
+    clearSnackbarTimeout()
 
     snackbarTimeout.current = setTimeout(() => {
       dispatch(clearSnackbarMessage())
     }, msTillDismiss)
   }, [snackbarTimeout, snackbarMessage, msTillDismiss, dispatch])
+
+  useEffect(() => {
+    window.onblur = () => {
+      clearSnackbarTimeout()
+      dispatch(clearSnackbarMessage())
+    }
+  }, [dispatch])
 
   return (
     <div className={classNames("snackbar_wrap", { open: snackbarMessage })}>

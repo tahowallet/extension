@@ -6,6 +6,7 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import logger from "../../lib/logger"
+import getBlockPrices from "../../lib/gas"
 import { HexString } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
@@ -36,9 +37,6 @@ import {
   transactionFromEthersTransaction,
 } from "./utils"
 import { getEthereumNetwork } from "../../lib/utils"
-import Blocknative, {
-  BlocknativeNetworkIds,
-} from "../../third-party-data/blocknative"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -113,8 +111,6 @@ export default class ChainService extends BaseService<Events> {
     provider: AlchemyWebSocketProvider
   }[]
 
-  blocknative: Blocknative | null = null
-
   /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
    */
@@ -125,15 +121,10 @@ export default class ChainService extends BaseService<Events> {
     ChainService,
     [Promise<PreferenceService>]
   > = async (preferenceService) => {
-    return new this(
-      process.env.BLOCKNATIVE_API_KEY,
-      await getOrCreateDB(),
-      await preferenceService
-    )
+    return new this(await getOrCreateDB(), await preferenceService)
   }
 
   private constructor(
-    blocknativeApiKey: string | undefined,
     private db: ChainDatabase,
     private preferenceService: PreferenceService
   ) {
@@ -157,10 +148,10 @@ export default class ChainService extends BaseService<Events> {
         runAtStart: true,
       },
       blockPrices: {
-        runAtStart: true,
+        runAtStart: false,
         schedule: {
           periodInMinutes:
-            Number(process.env.BLOCKNATIVE_POLLING_FREQUENCY ?? "120") / 60,
+            Number(process.env.GAS_PRICE_POLLING_FREQUENCY ?? "120") / 60,
         },
         handler: () => {
           this.pollBlockPrices()
@@ -184,12 +175,6 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
-    if (typeof blocknativeApiKey !== "undefined") {
-      this.blocknative = Blocknative.connect(
-        blocknativeApiKey,
-        BlocknativeNetworkIds.ethereum.mainnet // BlockNative only supports gas estimation for Ethereum mainnet
-      )
-    }
   }
 
   async internalStartService(): Promise<void> {
@@ -406,11 +391,12 @@ export default class ChainService extends BaseService<Events> {
    * Write block prices to IndexedDB so we have them for later
    */
   async pollBlockPrices(): Promise<void> {
-    // Immediately fetch the current block prices when this function gets called
-    if (this.blocknative) {
-      const blockPrices = await this.blocknative?.getBlockPrices()
-      this.emitter.emit("blockPrices", blockPrices)
-    }
+    await Promise.allSettled(
+      this.subscribedNetworks.map(async ({ network, provider }) => {
+        const blockPrices = await getBlockPrices(network, provider)
+        this.emitter.emit("blockPrices", blockPrices)
+      })
+    )
   }
 
   async send(method: string, params: unknown[]): Promise<unknown> {
@@ -696,6 +682,8 @@ export default class ChainService extends BaseService<Events> {
       network,
       provider,
     })
+
+    this.pollBlockPrices()
   }
 
   /**

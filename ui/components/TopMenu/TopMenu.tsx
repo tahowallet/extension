@@ -119,7 +119,7 @@ export default function TopMenu(): ReactElement {
             )}
             <TopMenuProfileButton
               onClick={() => {
-                setIsNotificationsOpen(true)
+                setIsNotificationsOpen(!isNotificationsOpen)
               }}
             />
           </div>
