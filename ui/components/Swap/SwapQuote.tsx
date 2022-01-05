@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { utils } from "ethers"
+import { getProvider } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
@@ -9,6 +10,8 @@ import SwapApprovalStep from "./SwapApprovalStep"
 import { useBackgroundSelector } from "../../hooks"
 
 export default function SwapQoute(): ReactElement {
+  const provider = getProvider()
+
   const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
     useBackgroundSelector((state) => {
       if (state.swap.quote) {
@@ -42,16 +45,7 @@ export default function SwapQoute(): ReactElement {
   const [stepComplete, setStepComplete] = useState(-1)
 
   const handleApproveClick = useCallback(() => {
-    setStepComplete(0)
-    setTimeout(() => {
-      setStepComplete(1)
-    }, 1500)
-    setTimeout(() => {
-      setStepComplete(2)
-    }, 3000)
-    setTimeout(() => {
-      setStepComplete(3)
-    }, 4500)
+    // console.log(provider)
   }, [])
 
   return (
