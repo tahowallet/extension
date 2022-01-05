@@ -19,12 +19,17 @@ type KeyringsState = {
   keyrings: Keyring[]
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
+  keyringToVerify: {
+    id: string
+    mnemonic: string[]
+  } | null
 }
 
 export const initialState: KeyringsState = {
   keyrings: [],
   importing: false,
   status: "uninitialized",
+  keyringToVerify: null,
 }
 
 export type Events = {
@@ -83,6 +88,10 @@ const keyringsSlice = createSlice({
         keyrings,
       }
     },
+    setKeyringToVerify: (state, { payload }) => ({
+      ...state,
+      keyringToVerify: payload,
+    }),
   },
   extraReducers: (builder) => {
     builder
@@ -101,8 +110,12 @@ const keyringsSlice = createSlice({
   },
 })
 
-export const { updateKeyrings, keyringLocked, keyringUnlocked } =
-  keyringsSlice.actions
+export const {
+  updateKeyrings,
+  keyringLocked,
+  keyringUnlocked,
+  setKeyringToVerify,
+} = keyringsSlice.actions
 
 export default keyringsSlice.reducer
 
