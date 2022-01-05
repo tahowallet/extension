@@ -255,13 +255,13 @@ export default class KeyringService extends BaseService<Events> {
   ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
-    if (type !== KeyringTypes.mnemonicBIP39S256) {
+    if (type !== KeyringTypes.mnemonicBIP39S128) {
       throw new Error(
-        "KeyringService only supports generating 256-bit HD key trees"
+        "KeyringService only supports generating 128-bit HD key trees"
       )
     }
 
-    const newKeyring = new HDKeyring({ strength: 256 })
+    const newKeyring = new HDKeyring({ strength: 128 })
 
     const { mnemonic } = newKeyring.serializeSync()
 
