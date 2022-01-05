@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import { Provider, Web3Provider } from "@ethersproject/providers"
 import { INTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
 import TallyWindowProvider from "@tallyho/window-provider"
@@ -8,8 +9,8 @@ export function getProvider(this: unknown): Provider {
 
   const provider = new TallyWindowProvider({
     postMessage: port.postMessage,
-    addEventListener: port.onMessage.addListener,
-    removeEventListener: port.onMessage.removeListener,
+    addEventListener: port.onMessage.addListener.bind(port.onMessage),
+    removeEventListener: port.onMessage.removeListener.bind(port.onMessage),
     origin: window.location.origin,
   })
 
