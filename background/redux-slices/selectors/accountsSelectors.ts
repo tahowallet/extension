@@ -221,7 +221,9 @@ export const selectAccountTotalsByCategory = createSelector(
     // NB this only returns data for the currently selected network
 
     const network =
-      selectedAccount !== "loading" ? selectedAccount.network : ETHEREUM
+      selectedAccount && selectedAccount !== "loading"
+        ? selectedAccount.network
+        : ETHEREUM
 
     return Object.entries(accounts.accountsData)
       .map(
