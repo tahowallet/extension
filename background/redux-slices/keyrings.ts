@@ -37,19 +37,19 @@ export type Events = {
   unlockKeyrings: string
   generateNewKeyring: never
   deriveAddress: string
-  importLegacyKeyring: { mnemonic: string; path?: string }
+  importKeyring: { mnemonic: string; path?: string }
 }
 
 export const emitter = new Emittery<Events>()
 
-// Async thunk to bubble the importLegacyKeyring action from  store to emitter.
-export const importLegacyKeyring = createBackgroundAsyncThunk(
-  "keyrings/importLegacyKeyring",
+// Async thunk to bubble the importKeyring action from  store to emitter.
+export const importKeyring = createBackgroundAsyncThunk(
+  "keyrings/importKeyring",
   async (
     { mnemonic, path }: { mnemonic: string; path?: string },
     { getState, dispatch }
   ) => {
-    await emitter.emit("importLegacyKeyring", { mnemonic, path })
+    await emitter.emit("importKeyring", { mnemonic, path })
 
     const { keyrings, ui } = getState() as {
       keyrings: KeyringsState
@@ -95,13 +95,13 @@ const keyringsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(importLegacyKeyring.pending, (state) => {
+      .addCase(importKeyring.pending, (state) => {
         return {
           ...state,
           importing: "pending",
         }
       })
-      .addCase(importLegacyKeyring.fulfilled, (state) => {
+      .addCase(importKeyring.fulfilled, (state) => {
         return {
           ...state,
           importing: "done",

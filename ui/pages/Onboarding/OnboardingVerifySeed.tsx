@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from "react"
 import {
-  importLegacyKeyring,
+  importKeyring,
   setKeyringToVerify,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -33,9 +33,7 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
           type="primary"
           linkTo="/"
           onClick={async () => {
-            await dispatch(
-              importLegacyKeyring({ mnemonic: mnemonic.join(" ") })
-            )
+            await dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
             await dispatch(setKeyringToVerify(null))
           }}
         >
