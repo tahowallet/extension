@@ -113,7 +113,7 @@ export default function OnboardingVerifySeed(): ReactElement {
         {isSelected.map((item, index) => (
           <li className="button_spacing" key={item}>
             <SharedButton
-              type="tertiaryWhite"
+              type="deemphasizedWhite"
               size="small"
               onClick={() => {
                 handleRemove(item)

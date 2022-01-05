@@ -12,7 +12,7 @@ interface Props {
     | "tertiary"
     | "tertiaryWhite"
     | "tertiaryGray"
-    | "specialDisabledWhite"
+    | "deemphasizedWhite"
     | "warning"
   size: "small" | "medium" | "large"
   icon?: string
@@ -77,7 +77,7 @@ export default function SharedButton(props: Props): ReactElement {
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
-        { special_disabled_white: type === "specialDisabledWhite" },
+        { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" }
       )}
       onClick={handleClick}
@@ -251,10 +251,18 @@ export default function SharedButton(props: Props): ReactElement {
           .tertiary.disabled .icon_button {
             background-color: var(--green-60);
           }
-          .special_disabled_white {
+          .deemphasized_white {
+            color: #fff;
+            background-color: var(--green-95);
+          }
+          .deemphasized_white .icon_button {
+            background-color: #fff;
+          }
+          .deemphasized_white:hover {
+            background-color: var(--green-60);
             color: #fff;
           }
-          .special_disabled_white .icon_button {
+          .deemphasized_white:hover .icon_button {
             background-color: #fff;
           }
           .small {
