@@ -1,63 +1,71 @@
 import React, { ReactElement } from "react"
-import { Link } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
 import titleStyle from "../../components/Onboarding/titleStyle"
+import { useBackgroundSelector } from "../../hooks"
 
-interface Props {
-  triggerNextStep: () => void
-}
-
-export default function OnboardingSaveSeed(props: Props): ReactElement {
-  const { triggerNextStep } = props
+export default function OnboardingSaveSeed(): ReactElement {
+  const freshMnemonic = useBackgroundSelector((state) => {
+    return state.keyrings.keyringToVerify?.mnemonic
+  })
 
   return (
     <section>
+      <div className="top">
+        <div className="wordmark" />
+      </div>
       <OnboardingStepsIndicator activeStep={1} />
       <h1 className="serif_header center_text title">
-        Save and store your recovery seed
+        Write down your recovery phrase
       </h1>
       <div className="subtitle">
         This is the only way to restore your tally wallett
       </div>
-      <div className="words_group">
-        <div className="column_wrap">
-          <div className="column numbers">1 2 3 4 5 6</div>
-          <div className="column dashes">- - - - - -</div>
-          <div className="column words">hub plum catering desk mouse cap</div>
-        </div>
-        <div className="column_wrap">
-          <div className="column numbers">1 2 3 4 5 6</div>
-          <div className="column dashes">- - - - - -</div>
-          <div className="column words">hub plum catering desk mouse cap</div>
-        </div>
-      </div>
+      {freshMnemonic && (
+        <>
+          <div className="words_group">
+            <div className="column_wrap">
+              <div className="column numbers">1 2 3 4 5 6</div>
+              <div className="column dashes">- - - - - -</div>
+              <div className="column words">
+                {freshMnemonic?.slice(0, 6).map((word) => {
+                  return (
+                    <>
+                      {word}
+                      <br />
+                    </>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="column_wrap">
+              <div className="column numbers">1 2 3 4 5 6</div>
+              <div className="column dashes">- - - - - -</div>
+              <div className="column words">
+                {freshMnemonic?.slice(6, 12).map((word) => {
+                  return (
+                    <>
+                      {word}
+                      <br />
+                    </>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="button_group">
         <SharedButton
           type="primary"
           size="medium"
           icon="arrow_right"
           iconSize="large"
-          onClick={triggerNextStep}
+          linkTo="/onboarding/verifySeed"
         >
-          I wrote it down, verify recovery seed
+          Verify recovery seed
         </SharedButton>
-        <div className="copy_button">
-          <SharedButton
-            type="secondary"
-            size="medium"
-            icon="arrow_right"
-            iconSize="large"
-            onClick={triggerNextStep}
-          >
-            Copy and verify recovery seed
-          </SharedButton>
-        </div>
-        <Link to="/">
-          <SharedButton type="tertiary" size="medium">
-            remind me later
-          </SharedButton>
-        </Link>
       </div>
       <style jsx>
         {`
@@ -76,6 +84,9 @@ export default function OnboardingSaveSeed(props: Props): ReactElement {
           }
           .words {
             width: 69px;
+          }
+          section {
+            padding-top: 25px;
           }
           .column {
             height: 142px;
@@ -100,9 +111,26 @@ export default function OnboardingSaveSeed(props: Props): ReactElement {
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            position: fixed;
+            bottom: 68px;
           }
           .copy_button {
             margin: 16px 0px 4px 0px;
+          }
+          .top {
+            display: flex;
+            width: 100%;
+            height: 58px;
+          }
+          .wordmark {
+            background: url("./images/wordmark@2x.png");
+            background-size: cover;
+            width: 52px;
+            height: 25px;
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            margin: 0 auto;
           }
         `}
       </style>
