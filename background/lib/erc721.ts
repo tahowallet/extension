@@ -4,7 +4,7 @@ import { fetchJson } from "@ethersproject/web"
 
 import logger from "./logger"
 import { HexString, URI } from "../types"
-import { jtdValidatorFor } from "./validation"
+import { isValidMetadata } from "./validate"
 
 const abi = [
   "function tokenURI(uint256 _tokenId) external view returns (string)",
@@ -22,21 +22,6 @@ export async function getTokenURI(
   const tokenContract = new Contract(tokenAddress, abi).connect(provider)
   return tokenContract.tokenURI(tokenID)
 }
-
-// JSON Type Definition for the ERC-721 Metadata Extension
-// https://eips.ethereum.org/EIPS/eip-721
-const metadataJTD = {
-  optionalProperties: {
-    name: { type: "string" },
-    description: { type: "string" },
-    image: { type: "string" },
-    title: { type: "string" }, // not found in 721, but seen in the wild
-    external_url: { type: "string" }, // not found in 721, but seen in the wild
-  },
-  additionalProperties: true,
-} as const
-
-const isValidMetadata = jtdValidatorFor(metadataJTD)
 
 export interface ERC721Metadata {
   name: string | undefined
