@@ -3,7 +3,7 @@ import { JSONSchemaType, ValidateFunction } from "ajv"
 /* eslint-disable @typescript-eslint/no-var-requires, global-require */
 export const isValidCoinGeckoPriceResponse: ValidateFunction<
   JSONSchemaType<typeof coingeckoPriceSchema>
-> = require("./json-validators")
+> = require("./json-validators")["coingecko-price.json.schema.json"]
 /* eslint-enable @typescript-eslint/no-var-requires, global-require */
 
 export type CoingeckoPriceData = {

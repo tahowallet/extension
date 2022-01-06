@@ -34,13 +34,21 @@
     "postversion": "git push --tags origin release-$npm_package_version",
     "postinstall": "patch-package"
   },
-  "workspaces": [
-    "ui",
-    "background",
-    "provider-bridge",
-    "provider-bridge-shared",
-    "window-provider"
-  ],
+  "workspaces": {
+    "packages": [
+      "ui",
+      "background",
+      "provider-bridge",
+      "provider-bridge-shared",
+      "window-provider"
+    ],
+    "nohoist": [
+      "**/@uniswap/token-lists",
+      "**/ajv",
+      "**/ajv-formats",
+      "**/ajv-cli"
+    ]
+  },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@tallyho/provider-bridge": "0.0.1",
