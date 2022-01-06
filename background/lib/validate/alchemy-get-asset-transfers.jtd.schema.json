@@ -1,0 +1,28 @@
+{
+  "properties": {
+    "transfers": {
+      "elements": {
+        "properties": {
+          "asset": { "type": "string", "nullable": true },
+          "hash": { "type": "string" },
+          "blockNum": { "type": "string" },
+          "category": { "enum": ["token", "internal", "external"] },
+          "from": { "type": "string", "nullable": true },
+          "to": { "type": "string", "nullable": true },
+          "erc721TokenId": { "type": "string", "nullable": true }
+        },
+        "optionalProperties": {
+          "rawContract": {
+            "properties": {
+              "address": { "type": "string", "nullable": true },
+              "decimal": { "type": "string", "nullable": true },
+              "value": { "type": "string", "nullable": true }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
