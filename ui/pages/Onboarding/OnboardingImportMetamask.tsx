@@ -7,7 +7,7 @@ import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
-import OnboardingDerivationPathSelect from "./OnboardingDerivationPathSelect"
+import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,

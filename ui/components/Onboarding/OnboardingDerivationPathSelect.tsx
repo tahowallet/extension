@@ -1,11 +1,8 @@
 import React, { ReactElement } from "react"
-import SharedSelect from "../../components/Shared/SharedSelect"
+import SharedSelect from "../Shared/SharedSelect"
 
-type OptionType = {
-  value: string
-  label: string
-}
-const derivationPaths: OptionType[] = [
+// TODO make this network specific
+const derivationPaths: { value: string; label: string }[] = [
   {
     value: "m/44'/60'/0'/0",
     label: "ETH (m/44'/60'/0'/0)",
