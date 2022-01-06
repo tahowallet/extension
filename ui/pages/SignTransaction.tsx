@@ -1,6 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
-import { formatUnits } from "@ethersproject/units"
 import {
   broadcastSignedTransaction,
   rejectTransactionSignature,
@@ -8,7 +7,9 @@ import {
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
   selectTransactionData,
+  setFeeType,
   signTransaction,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
@@ -23,7 +24,7 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../hooks"
-import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
+import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
@@ -43,14 +44,19 @@ interface SignLocationState {
   value: string | number
 }
 
+type NetworkFeeSetting = {
+  feeType: string
+  gasLimit: string
+}
+
 export default function SignTransaction({
   location,
 }: {
   location: { key: string; pathname: string; state?: SignLocationState }
 }): ReactElement {
-  const [feeModalOpen, setFeeModalOpen] = useState(false)
+  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
+    useState(false)
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
-  const [selectedFeeInGwei, setSelectedFeeInGwei] = useState("")
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
@@ -165,6 +171,12 @@ export default function SignTransaction({
       setIsTransactionSigning(true)
     }
   }
+  const networkSettingsSaved = async (networkSetting: NetworkFeeSetting) => {
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    dispatch(updateTransactionOptions(transactionDetails))
+    setNetworkSettingsModalOpen(false)
+  }
 
   return (
     <section>
@@ -184,24 +196,22 @@ export default function SignTransaction({
         <div className="detail_items_wrap standard_width_padded">
           <SharedSlideUpMenu
             size="custom"
-            isOpen={feeModalOpen}
-            close={() => setFeeModalOpen(false)}
+            isOpen={networkSettingsModalOpen}
+            close={() => setNetworkSettingsModalOpen(false)}
             customSize={`${3 * 56 + 320}px`}
           >
-            <NetworkFeesChooser
-              estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={gasLimit}
-              setGasLimit={setGasLimit}
-              setFeeModalOpen={setFeeModalOpen}
-              feeModalOpen={feeModalOpen}
-              setSelectedFeeInGwei={setSelectedFeeInGwei}
+            <NetworkSettingsChooser
+              networkSettings={{
+                estimatedFeesPerGas,
+                gasLimit,
+              }}
+              onNetworkSettingsSave={networkSettingsSaved}
             />
           </SharedSlideUpMenu>
           <span className="detail_item">
             Estimated network fee
             <FeeSettingsButton
-              openModal={() => setFeeModalOpen(true)}
-              currentFeeSelected={selectedFeeInGwei}
+              openModal={() => setNetworkSettingsModalOpen(true)}
             />
           </span>
         </div>

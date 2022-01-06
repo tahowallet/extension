@@ -7,12 +7,14 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   broadcastOnSign,
+  NetworkFeeSetting,
   selectEstimatedFeesPerGas,
+  setFeeType,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
 import { useLocation } from "react-router-dom"
-import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
+import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -33,8 +35,8 @@ export default function Send(): ReactElement {
   const [currentBalance, setCurrentBalance] = useState("")
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
-  const [feeModalOpen, setFeeModalOpen] = useState(false)
-  const [selectedFeeInGwei, setSelectedFeeInGwei] = useState("")
+  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
+    useState(false)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
@@ -91,6 +93,12 @@ export default function Send(): ReactElement {
     }
   }, [assetSymbol])
 
+  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    setNetworkSettingsModalOpen(false)
+  }
+
   return (
     <>
       <div className="standard_width">
@@ -104,7 +112,7 @@ export default function Send(): ReactElement {
         <div className="form">
           <div className="form_input">
             <div className="balance">
-              Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
+              Balance: {`${currentBalance.substring(0, 8)}\u2026 `}
               <button
                 type="button"
                 className="max"
@@ -149,24 +157,22 @@ export default function Send(): ReactElement {
           </div>
           <SharedSlideUpMenu
             size="custom"
-            isOpen={feeModalOpen}
-            close={() => setFeeModalOpen(false)}
+            isOpen={networkSettingsModalOpen}
+            close={() => setNetworkSettingsModalOpen(false)}
             customSize={`${3 * 56 + 320}px`}
           >
-            <NetworkFeesChooser
-              estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={gasLimit}
-              setGasLimit={setGasLimit}
-              setFeeModalOpen={setFeeModalOpen}
-              feeModalOpen={feeModalOpen}
-              setSelectedFeeInGwei={setSelectedFeeInGwei}
+            <NetworkSettingsChooser
+              networkSettings={{
+                estimatedFeesPerGas,
+                gasLimit,
+              }}
+              onNetworkSettingsSave={networkSettingsSaved}
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
             <p>Estimated network fee</p>
             <FeeSettingsButton
-              openModal={() => setFeeModalOpen(true)}
-              currentFeeSelected={selectedFeeInGwei}
+              openModal={() => setNetworkSettingsModalOpen(true)}
             />
           </div>
           <div className="divider" />
