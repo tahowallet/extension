@@ -22,6 +22,15 @@ const enum TransactionConstructionStatus {
   Signed = "signed",
 }
 
+export type NetworkFeeSetting = {
+  feeType: string
+  gasLimit: string
+  values: {
+    maxFeePerGas: bigint
+    maxPriorityFeePerGas: bigint
+  }
+}
+
 export enum NetworkFeeTypeChosen {
   Regular = "regular",
   Express = "express",
