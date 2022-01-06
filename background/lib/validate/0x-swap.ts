@@ -1,20 +1,4 @@
-import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
-
-/* eslint-disable @typescript-eslint/no-var-requires, global-require */
-export const isValidSwapAssetsResponse: ValidateFunction<
-  JTDDataType<typeof swapAssetsJTD>
-> = require("./jtd-validators")["swap-assets.jtd.schema.json"]
-
-export const isValidSwapPriceResponse: ValidateFunction<
-  JTDDataType<typeof swapPriceJTD>
-> = require("./jtd-validators")["swap-price.jtd.schema.json"]
-
-export const isValidSwapQuoteResponse: ValidateFunction<
-  JTDDataType<typeof swapQuoteJTD>
-> = require("./jtd-validators")["swap-quote.jtd.schema.json"]
-/* eslint-enable @typescript-eslint/no-var-requires, global-require */
-
-const swapAssetsJTD = {
+export const swapAssetsJTD = {
   properties: {
     records: {
       elements: {
@@ -29,7 +13,7 @@ const swapAssetsJTD = {
   },
 }
 
-const swapPriceJTD = {
+export const swapPriceJTD = {
   properties: {
     records: {
       elements: {
@@ -45,7 +29,7 @@ const swapPriceJTD = {
   },
 }
 
-const swapQuoteJTD = {
+export const swapQuoteJTD = {
   properties: {
     allowanceTarget: { type: "string" },
     buyAmount: { type: "string" },
