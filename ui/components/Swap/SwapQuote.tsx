@@ -1,6 +1,8 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { utils } from "ethers"
+import { TransactionRequest } from "@ethersproject/abstract-provider"
 import { getProvider } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
+import logger from "@tallyho/tally-background/lib/logger"
 
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
@@ -11,6 +13,7 @@ import { useBackgroundSelector } from "../../hooks"
 
 export default function SwapQoute(): ReactElement {
   const provider = getProvider()
+  const signer = provider.getSigner()
 
   const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
     useBackgroundSelector((state) => {
@@ -45,8 +48,11 @@ export default function SwapQoute(): ReactElement {
   const [stepComplete, setStepComplete] = useState(-1)
 
   const handleApproveClick = useCallback(() => {
-    // console.log(provider)
-  }, [])
+    logger.log("look at this provider", provider)
+    logger.log("look at this signer", signer)
+
+    signer.sendTransaction(quote as TransactionRequest)
+  }, [provider, signer, quote])
 
   return (
     <section className="center_horizontal standard_width">
