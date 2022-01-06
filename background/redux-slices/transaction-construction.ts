@@ -120,18 +120,35 @@ const transactionSlice = createSlice({
       status: TransactionConstructionStatus.Idle,
       feeTypeSelected: NetworkFeeTypeChosen.Regular,
     }),
-    regularFeeType: (state): TransactionConstruction => ({
-      ...state,
-      feeTypeSelected: NetworkFeeTypeChosen.Regular,
-    }),
-    expressFeeType: (state): TransactionConstruction => ({
-      ...state,
-      feeTypeSelected: NetworkFeeTypeChosen.Express,
-    }),
-    instantFeeType: (state): TransactionConstruction => ({
-      ...state,
-      feeTypeSelected: NetworkFeeTypeChosen.Instant,
-    }),
+    setFeeType: (
+      state,
+      { payload }: { payload: string }
+    ): TransactionConstruction => {
+      switch (payload) {
+        case "regular":
+          return {
+            ...state,
+            feeTypeSelected: NetworkFeeTypeChosen.Regular,
+          }
+        case "express":
+          return {
+            ...state,
+            feeTypeSelected: NetworkFeeTypeChosen.Express,
+          }
+        case "instant":
+          return {
+            ...state,
+            feeTypeSelected: NetworkFeeTypeChosen.Instant,
+          }
+
+        default:
+          break
+      }
+      return {
+        ...state,
+        feeTypeSelected: NetworkFeeTypeChosen.Express,
+      }
+    },
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
       ...state,
       status: TransactionConstructionStatus.Signed,
@@ -216,9 +233,7 @@ export const {
   transactionLikelyFails,
   broadcastOnSign,
   signed,
-  regularFeeType,
-  expressFeeType,
-  instantFeeType,
+  setFeeType,
   estimatedFeesPerGas,
 } = transactionSlice.actions
 
