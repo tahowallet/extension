@@ -163,7 +163,7 @@ export default function AccountsNotificationPanelAccounts({
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
   return (
-    <div>
+    <div className="switcher_wrap">
       {[AccountType.Imported, AccountType.ReadOnly]
         .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
         .map((accountType) => {
@@ -255,8 +255,8 @@ export default function AccountsNotificationPanelAccounts({
             padding: 0px 12px;
             box-sizing: border-box;
           }
-          section {
-            height: 416px;
+          .switcher_wrap {
+            height: 432px;
             overflow-y: scroll;
           }
           section:first-of-type {
