@@ -4,7 +4,7 @@ import { INTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
 import TallyWindowProvider from "@tallyho/window-provider"
 import { Contract, ethers, ContractInterface } from "ethers"
 
-export function getProvider(this: unknown): Provider {
+export function getProvider(this: unknown): Web3Provider {
   const port = browser.runtime.connect({ name: INTERNAL_PORT_NAME })
 
   const provider = new TallyWindowProvider({
