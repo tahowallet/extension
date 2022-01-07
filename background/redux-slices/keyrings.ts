@@ -105,6 +105,7 @@ const keyringsSlice = createSlice({
         return {
           ...state,
           importing: "done",
+          keyringToVerify: null,
         }
       })
   },

@@ -32,9 +32,8 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
           size="medium"
           type="primary"
           linkTo="/"
-          onClick={async () => {
-            await dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
-            await dispatch(setKeyringToVerify(null))
+          onClick={() => {
+            dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
           }}
         >
           Take me to my wallet
