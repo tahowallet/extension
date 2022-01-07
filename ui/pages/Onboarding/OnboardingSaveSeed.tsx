@@ -18,7 +18,7 @@ export default function OnboardingSaveSeed(props: Props): ReactElement {
         Save and store your recovery seed
       </h1>
       <div className="subtitle">
-        This is the only way to restore your tally wallet
+        This is the only way to restore your Tally wallet
       </div>
       <div className="words_group">
         <div className="column_wrap">
