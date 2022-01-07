@@ -23,7 +23,7 @@ const enum TransactionConstructionStatus {
 }
 
 export type NetworkFeeSetting = {
-  feeType: string
+  feeType: NetworkFeeTypeChosen
   gasLimit: string
   values: {
     maxFeePerGas: bigint
@@ -131,33 +131,12 @@ const transactionSlice = createSlice({
     }),
     setFeeType: (
       state,
-      { payload }: { payload: string }
-    ): TransactionConstruction => {
-      switch (payload) {
-        case "regular":
-          return {
-            ...state,
-            feeTypeSelected: NetworkFeeTypeChosen.Regular,
-          }
-        case "express":
-          return {
-            ...state,
-            feeTypeSelected: NetworkFeeTypeChosen.Express,
-          }
-        case "instant":
-          return {
-            ...state,
-            feeTypeSelected: NetworkFeeTypeChosen.Instant,
-          }
+      { payload }: { payload: NetworkFeeTypeChosen }
+    ): TransactionConstruction => ({
+      ...state,
+      feeTypeSelected: payload,
+    }),
 
-        default:
-          break
-      }
-      return {
-        ...state,
-        feeTypeSelected: NetworkFeeTypeChosen.Express,
-      }
-    },
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
       ...state,
       status: TransactionConstructionStatus.Signed,
@@ -291,4 +270,12 @@ export const selectIsTransactionSigned = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.status,
   (status) => status === "signed"
+)
+
+export const selectCurrentlyChosenNetworkFees = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction?.estimatedFeesPerGas?.[
+      state.transactionConstruction.feeTypeSelected
+    ],
+  (feeData) => feeData
 )
