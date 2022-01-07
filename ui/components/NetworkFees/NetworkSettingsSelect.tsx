@@ -19,7 +19,7 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 
-interface NetworkSettingsOptionsProps {
+interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   gasLimit: string
   setCustomGasLimit: React.Dispatch<SetStateAction<string>>
@@ -38,12 +38,12 @@ type GasOption = {
   maxPriorityFeePerGas: bigint
 }
 
-export default function NetworkSettingsOptions({
+export default function NetworkSettingsSelect({
   estimatedFeesPerGas,
   gasLimit,
   setCustomGasLimit,
   onSelectNetworkSetting,
-}: NetworkSettingsOptionsProps): ReactElement {
+}: NetworkSettingsSelectProps): ReactElement {
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
 
@@ -139,11 +139,9 @@ export default function NetworkSettingsOptions({
 
         setGasOptions(updatedGasOptions)
         setActiveFeeIndex(currentlySelectedFeeIndex)
-        setGasOptions(updatedGasOptions)
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice])
+  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, selectedFeeType])
 
   useEffect(() => {
     updateGasOptions()
@@ -160,7 +158,12 @@ export default function NetworkSettingsOptions({
             type="button"
           >
             <div className="option_left">
-              <div className="name">{capitalize(option.type)}</div>
+              <div className="name">
+                {capitalize(option.type)}{" "}
+                {selectedFeeType === option.type ? (
+                  <span className="currentlySelected">CURRENTLY SELECTED</span>
+                ) : null}
+              </div>
               <div className="subtext">Probability: {option.confidence}%</div>
             </div>
             <div className="option_right">
@@ -243,6 +246,11 @@ export default function NetworkSettingsOptions({
           .max_label {
             font-size: 14px;
             color: var(--green-40);
+          }
+          .currentlySelected {
+            color: #22c480;
+            opacity: 0.8;
+            font-size: 10px;
           }
           .info {
             display: flex;
