@@ -2,6 +2,7 @@ import { BlockEstimate } from "@tallyho/tally-background/networks"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSetting,
+  NetworkFeeTypeChosen,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { formatEther } from "@ethersproject/units"
@@ -26,8 +27,8 @@ interface NetworkSettingsOptionsProps {
 }
 
 type GasOption = {
-  name: string
   confidence: string
+  type: NetworkFeeTypeChosen
   estimatedGwei: string
   maxGwei: string
   dollarValue: string
@@ -57,7 +58,7 @@ export default function NetworkSettingsOptions({
   useEffect(() => {
     if (gasOptions.length > 0) {
       onSelectNetworkSetting({
-        feeType: gasOptions[activeFeeIndex].name,
+        feeType: gasOptions[activeFeeIndex].type,
         values: {
           maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
           maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
@@ -70,7 +71,7 @@ export default function NetworkSettingsOptions({
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
     onSelectNetworkSetting({
-      feeType: gasOptions[index].name,
+      feeType: gasOptions[index].type,
       values: {
         maxFeePerGas: gasOptions[index].maxFeePerGas,
         maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
@@ -84,12 +85,12 @@ export default function NetworkSettingsOptions({
       const { confidence } = option
       const baseFee = estimatedFeesPerGas?.baseFeePerGas || 0n
       const feeOptionData: {
-        name: { [key: number]: string }
+        type: { [key: number]: NetworkFeeTypeChosen }
       } = {
-        name: {
-          70: "regular",
-          95: "express",
-          99: "instant",
+        type: {
+          70: NetworkFeeTypeChosen.Regular,
+          95: NetworkFeeTypeChosen.Express,
+          99: NetworkFeeTypeChosen.Instant,
         },
       }
 
@@ -104,8 +105,8 @@ export default function NetworkSettingsOptions({
           : "N/A"
 
       return {
-        name: feeOptionData.name[confidence],
         confidence: `${confidence}`,
+        type: feeOptionData.type[confidence],
         estimatedGwei: weiToGwei(
           (baseFee * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
         ).split(".")[0],
@@ -131,7 +132,7 @@ export default function NetworkSettingsOptions({
           formatBlockEstimate(option)
         )
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
-          (el) => el.name === selectedFeeType
+          (el) => el.type === selectedFeeType
         )
         const currentlySelectedFeeIndex =
           selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
@@ -159,7 +160,7 @@ export default function NetworkSettingsOptions({
             type="button"
           >
             <div className="option_left">
-              <div className="name">{capitalize(option.name)}</div>
+              <div className="name">{capitalize(option.type)}</div>
               <div className="subtext">Probability: {option.confidence}%</div>
             </div>
             <div className="option_right">

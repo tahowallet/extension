@@ -1,6 +1,7 @@
 import {
   EstimatedFeesPerGas,
   NetworkFeeSetting,
+  NetworkFeeTypeChosen,
   selectLastGasEstimatesRefreshTime,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
@@ -23,7 +24,7 @@ export default function SwapSettingsChooser({
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [customGasLimit, setCustomGasLimit] = useState(gasLimit)
   const [selectedSetting, setSelectedSetting] = useState({
-    feeType: "",
+    feeType: NetworkFeeTypeChosen.Regular,
     gasLimit: "",
     values: {
       maxFeePerGas: 0n,

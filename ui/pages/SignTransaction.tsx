@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
 import {
   broadcastSignedTransaction,
+  NetworkFeeSetting,
   rejectTransactionSignature,
   selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
@@ -44,11 +45,6 @@ interface SignLocationState {
   value: string | number
 }
 
-type NetworkFeeSetting = {
-  feeType: string
-  gasLimit: string
-}
-
 export default function SignTransaction({
   location,
 }: {
@@ -69,6 +65,7 @@ export default function SignTransaction({
   )
 
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
+
   const shouldBroadcastOnSign = useBackgroundSelector(
     ({ transactionConstruction }) =>
       transactionConstruction.broadcastOnSign ?? false
@@ -211,7 +208,7 @@ export default function SignTransaction({
           <span className="detail_item">
             Estimated network fee
             <FeeSettingsButton
-              openModal={() => setNetworkSettingsModalOpen(true)}
+              onClick={() => setNetworkSettingsModalOpen(true)}
             />
           </span>
         </div>

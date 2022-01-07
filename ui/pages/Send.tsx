@@ -172,7 +172,7 @@ export default function Send(): ReactElement {
           <div className="network_fee">
             <p>Estimated network fee</p>
             <FeeSettingsButton
-              openModal={() => setNetworkSettingsModalOpen(true)}
+              onClick={() => setNetworkSettingsModalOpen(true)}
             />
           </div>
           <div className="divider" />
