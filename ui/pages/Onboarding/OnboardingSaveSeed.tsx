@@ -19,7 +19,7 @@ export default function OnboardingSaveSeed(): ReactElement {
         Write down your recovery phrase
       </h1>
       <div className="subtitle">
-        This is the only way to restore your tally wallett
+        This is the only way to restore your Tally wallet
       </div>
       {freshMnemonic && (
         <>
