@@ -58,7 +58,7 @@ export default function SharedButton(props: Props): ReactElement {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) {
     setIsClicked(true)
-    await onClick?.(e)
+    onClick?.(e)
     if (linkTo) {
       setNavigateTo(linkTo)
     }
