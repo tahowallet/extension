@@ -27,7 +27,7 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {
-    title: "Imported",
+    title: "Full access",
     icon: "./images/imported@2x.png",
   },
 }

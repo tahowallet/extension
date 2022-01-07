@@ -1,6 +1,8 @@
 import React, { ReactElement } from "react"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
+import OnboardingSaveSeed from "../pages/Onboarding/OnboardingSaveSeed"
+import OnboardingVerifySeed from "../pages/Onboarding/OnboardingVerifySeed"
 import OnboardingImportMetamask from "../pages/Onboarding/OnboardingImportMetamask"
 import OnboardingViewOnlyWallet from "../pages/Onboarding/OnboardingViewOnlyWallet"
 import OnboardingInfoIntro from "../pages/Onboarding/OnboardingInfoIntro"
@@ -104,6 +106,18 @@ const pageList = [
   {
     path: "/dapp-permission",
     Component: DAppPermissionRequest,
+    hasTabBar: false,
+    hasTopBar: false,
+  },
+  {
+    path: "/onboarding/saveSeed",
+    Component: OnboardingSaveSeed,
+    hasTabBar: false,
+    hasTopBar: false,
+  },
+  {
+    path: "/onboarding/verifySeed",
+    Component: OnboardingVerifySeed,
     hasTabBar: false,
     hasTopBar: false,
   },
