@@ -1,40 +1,44 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement } from "react"
 import {
   selectEstimatedFeesPerGas,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { ESTIMATED_FEE_MULTIPLIERS_BY_TYPE } from "@tallyho/tally-background/constants/networkFees"
-import { weiToGwei } from "@tallyho/tally-background/lib/utils"
+import {
+  truncateDecimalAmount,
+  weiToGwei,
+} from "@tallyho/tally-background/lib/utils"
 import { useBackgroundSelector } from "../../hooks"
 
 interface FeeSettingsButtonProps {
-  openModal: () => void
+  onClick: () => void
 }
 
 export default function FeeSettingsButton({
-  openModal,
+  onClick,
 }: FeeSettingsButtonProps): ReactElement {
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const selectedFeeType = useBackgroundSelector(selectFeeType)
-  const [estimatedGweiPrice, setEstimatedGweiPrice] = useState("")
 
-  useEffect(() => {
-    if (estimatedFeesPerGas !== undefined && selectedFeeType !== undefined) {
-      const estimatedGweiAmount = weiToGwei(
-        (estimatedFeesPerGas?.baseFeePerGas *
-          ESTIMATED_FEE_MULTIPLIERS_BY_TYPE[selectedFeeType.toString()]) /
-          10n
-      ).split(".")[0]
-
-      setEstimatedGweiPrice(estimatedGweiAmount)
-    }
-  }, [estimatedFeesPerGas, selectedFeeType])
+  const estimatedGweiAmount =
+    typeof estimatedFeesPerGas !== "undefined" &&
+    typeof selectedFeeType !== "undefined"
+      ? truncateDecimalAmount(
+          weiToGwei(
+            (estimatedFeesPerGas?.baseFeePerGas *
+              ESTIMATED_FEE_MULTIPLIERS_BY_TYPE[selectedFeeType]) /
+              10n
+          ),
+          0
+        )
+      : ""
 
   return (
-    <button className="settings" type="button" onClick={openModal}>
+    <button className="settings" type="button" onClick={onClick}>
       <div>
-        ~{estimatedGweiPrice}
-        Gwei
+        {typeof estimatedFeesPerGas !== "undefined"
+          ? `~${estimatedGweiAmount} Gwei`
+          : "Unknown"}
       </div>
       <img className="settings_image" src="./images/cog@2x.png" alt="" />
       <style jsx>
