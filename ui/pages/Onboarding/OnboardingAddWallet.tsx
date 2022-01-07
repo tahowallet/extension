@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
-import { HIDE_ADD_SEED } from "@tallyho/tally-background/features/features"
+import {
+  HIDE_ADD_SEED,
+  HIDE_CREATE_PHRASE,
+} from "@tallyho/tally-background/features/features"
 import { generateNewKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
@@ -7,7 +10,8 @@ import SharedButton from "../../components/Shared/SharedButton"
 
 export default function OnboardingStartTheHunt(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  useAreKeyringsUnlocked(true)
+
+  useAreKeyringsUnlocked(!HIDE_CREATE_PHRASE && true)
 
   return (
     <section className="start_wrap">
@@ -46,20 +50,26 @@ export default function OnboardingStartTheHunt(): ReactElement {
             </SharedButton>
           </li>
         )}
-        <li className="label_small">Start Fresh</li>
-        <li className="option standard_width">
-          <div className="icon tally_icon" />
-          <SharedButton
-            type="secondary"
-            size="medium"
-            linkTo="/onboarding/saveSeed"
-            onClick={() => {
-              dispatch(generateNewKeyring())
-            }}
-          >
-            Create new wallet
-          </SharedButton>
-        </li>
+        {HIDE_CREATE_PHRASE ? (
+          <></>
+        ) : (
+          <>
+            <li className="label_small">Start Fresh</li>
+            <li className="option standard_width">
+              <div className="icon tally_icon" />
+              <SharedButton
+                type="secondary"
+                size="medium"
+                linkTo="/onboarding/saveSeed"
+                onClick={() => {
+                  dispatch(generateNewKeyring())
+                }}
+              >
+                Create new wallet
+              </SharedButton>
+            </li>
+          </>
+        )}
       </ul>
       <style jsx>
         {`
