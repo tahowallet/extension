@@ -7,7 +7,7 @@ import {
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
-import NetworkSettingsOptions from "./NetworkSettingsOptions"
+import NetworkSettingsSelect from "./NetworkSettingsSelect"
 
 interface NetworkSettingsChooserProps {
   networkSettings: {
@@ -62,7 +62,7 @@ export default function SwapSettingsChooser({
               style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
             />
           </div>
-          <NetworkSettingsOptions
+          <NetworkSettingsSelect
             estimatedFeesPerGas={estimatedFeesPerGas}
             gasLimit={customGasLimit}
             setCustomGasLimit={setCustomGasLimit}

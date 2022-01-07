@@ -33,7 +33,6 @@ export default function SwapTransactionSettings(
 
   // TODO pass proper gas to SwapSettingsChooser to display real fees
 
-  // TODO currently user must save to return the fees, makes the swap use default values if user does not interact with the chooser at all
   const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
     dispatch(setFeeType(networkSetting.feeType))
     setIsSlideUpMenuOpen(false)

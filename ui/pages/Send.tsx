@@ -159,7 +159,7 @@ export default function Send(): ReactElement {
             size="custom"
             isOpen={networkSettingsModalOpen}
             close={() => setNetworkSettingsModalOpen(false)}
-            customSize={`${3 * 56 + 320}px`}
+            customSize="488px"
           >
             <NetworkSettingsChooser
               networkSettings={{
