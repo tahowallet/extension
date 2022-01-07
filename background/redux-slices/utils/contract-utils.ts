@@ -8,7 +8,7 @@ export function getProvider(this: unknown): Web3Provider {
   const port = browser.runtime.connect({ name: INTERNAL_PORT_NAME })
 
   const provider = new TallyWindowProvider({
-    postMessage: port.postMessage,
+    postMessage: port.postMessage.bind(port),
     addEventListener: port.onMessage.addListener.bind(port.onMessage),
     removeEventListener: port.onMessage.removeListener.bind(port.onMessage),
     origin: window.location.origin,
