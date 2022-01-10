@@ -24,6 +24,7 @@ interface NetworkSettingsSelectProps {
   gasLimit: string
   setCustomGasLimit: React.Dispatch<SetStateAction<string>>
   onSelectNetworkSetting: ({ feeType, gasLimit }: NetworkFeeSetting) => void
+  selectedFeeType: string
 }
 
 type GasOption = {
@@ -43,12 +44,14 @@ export default function NetworkSettingsSelect({
   gasLimit,
   setCustomGasLimit,
   onSelectNetworkSetting,
+  selectedFeeType,
 }: NetworkSettingsSelectProps): ReactElement {
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
+  const [currentlySelectedType, setCurrentlySelectedType] =
+    useState(selectedFeeType)
 
   const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
 
   const capitalize = (s: string) => {
     return s[0].toUpperCase() + s.slice(1)
@@ -70,6 +73,7 @@ export default function NetworkSettingsSelect({
 
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
+    setCurrentlySelectedType(gasOptions[index].type)
     onSelectNetworkSetting({
       feeType: gasOptions[index].type,
       values: {
@@ -132,7 +136,7 @@ export default function NetworkSettingsSelect({
           formatBlockEstimate(option)
         )
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
-          (el) => el.type === selectedFeeType
+          (el) => el.type === currentlySelectedType
         )
         const currentlySelectedFeeIndex =
           selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
@@ -141,7 +145,7 @@ export default function NetworkSettingsSelect({
         setActiveFeeIndex(currentlySelectedFeeIndex)
       }
     }
-  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, selectedFeeType])
+  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, currentlySelectedType])
 
   useEffect(() => {
     updateGasOptions()
@@ -158,12 +162,7 @@ export default function NetworkSettingsSelect({
             type="button"
           >
             <div className="option_left">
-              <div className="name">
-                {capitalize(option.type)}{" "}
-                {selectedFeeType === option.type ? (
-                  <span className="currentlySelected">CURRENTLY SELECTED</span>
-                ) : null}
-              </div>
+              <div className="name">{capitalize(option.type)}</div>
               <div className="subtext">Probability: {option.confidence}%</div>
             </div>
             <div className="option_right">

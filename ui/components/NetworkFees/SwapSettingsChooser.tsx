@@ -2,6 +2,7 @@ import {
   EstimatedFeesPerGas,
   NetworkFeeSetting,
   NetworkFeeTypeChosen,
+  selectFeeType,
   selectLastGasEstimatesRefreshTime,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
@@ -15,11 +16,13 @@ interface NetworkSettingsChooserProps {
     gasLimit: string
   }
   onNetworkSettingsSave: (setting: NetworkFeeSetting) => void
+  visible: boolean
 }
 
 export default function SwapSettingsChooser({
   networkSettings: { estimatedFeesPerGas, gasLimit },
   onNetworkSettingsSave,
+  visible,
 }: NetworkSettingsChooserProps): ReactElement {
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [customGasLimit, setCustomGasLimit] = useState(gasLimit)
@@ -33,6 +36,7 @@ export default function SwapSettingsChooser({
   })
 
   const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
+  const selectedFeeType = useBackgroundSelector(selectFeeType)
 
   const saveUserGasChoice = () => {
     onNetworkSettingsSave(selectedSetting)
@@ -62,12 +66,17 @@ export default function SwapSettingsChooser({
               style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
             />
           </div>
-          <NetworkSettingsSelect
-            estimatedFeesPerGas={estimatedFeesPerGas}
-            gasLimit={customGasLimit}
-            setCustomGasLimit={setCustomGasLimit}
-            onSelectNetworkSetting={setSelectedSetting}
-          />
+          {visible ? (
+            <NetworkSettingsSelect
+              estimatedFeesPerGas={estimatedFeesPerGas}
+              gasLimit={customGasLimit}
+              setCustomGasLimit={setCustomGasLimit}
+              onSelectNetworkSetting={setSelectedSetting}
+              selectedFeeType={selectedFeeType}
+            />
+          ) : (
+            <></>
+          )}
         </div>
         <div className="confirm">
           <SharedButton
@@ -128,11 +137,15 @@ export default function SwapSettingsChooser({
             margin-bottom: 12px;
           }
           .confirm {
+            background-color: var(--hunter-green);
             width: 100%;
             display: flex;
+            position: absolute;
+            bottom: 0;
+            right: 0;
             box-sizing: border-box;
             justify-content: flex-end;
-            padding: 20px 10px;
+            padding: 20px 16px;
           }
         `}
       </style>

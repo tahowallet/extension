@@ -69,6 +69,7 @@ export default function SwapTransactionSettings(
                     gasLimit,
                   }}
                   onNetworkSettingsSave={networkSettingsSaved}
+                  visible={isSlideUpMenuOpen}
                 />
               </div>
             </div>

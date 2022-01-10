@@ -203,6 +203,7 @@ export default function SignTransaction({
                 gasLimit,
               }}
               onNetworkSettingsSave={networkSettingsSaved}
+              visible={networkSettingsModalOpen}
             />
           </SharedSlideUpMenu>
           <span className="detail_item">

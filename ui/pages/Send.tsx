@@ -167,6 +167,7 @@ export default function Send(): ReactElement {
                 gasLimit,
               }}
               onNetworkSettingsSave={networkSettingsSaved}
+              visible={networkSettingsModalOpen}
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
