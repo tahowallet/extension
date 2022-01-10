@@ -43,6 +43,7 @@ import {
   keyringLocked,
   keyringUnlocked,
   updateKeyrings,
+  setKeyringToVerify,
 } from "./redux-slices/keyrings"
 import {
   initializationLoadingTimeHitLimit,
@@ -628,17 +629,19 @@ export default class Main extends BaseService<never> {
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
-      await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+      const generated: {
+        id: string
+        mnemonic: string[]
+      } = await this.keyringService.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S128
       )
+
+      this.store.dispatch(setKeyringToVerify(generated))
     })
 
-    keyringSliceEmitter.on(
-      "importLegacyKeyring",
-      async ({ mnemonic, path }) => {
-        await this.keyringService.importLegacyKeyring(mnemonic, path)
-      }
-    )
+    keyringSliceEmitter.on("importKeyring", async ({ mnemonic, path }) => {
+      await this.keyringService.importKeyring(mnemonic, path)
+    })
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {

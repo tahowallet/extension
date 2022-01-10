@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
@@ -7,7 +7,7 @@ import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
-import OnboardingDerivationPathSelect from "./OnboardingDerivationPathSelect"
+import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -97,7 +97,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       setErrorMessage("Must be a 12-word recovery phrase")
     } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
+      dispatch(importKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
     }

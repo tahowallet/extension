@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "records": {
+      "elements": {
+        "properties": {
+          "address": { "type": "string" },
+          "decimals": { "type": "int8" },
+          "name": { "type": "string" },
+          "symbol": { "type": "string" }
+        }
+      }
+    }
+  }
+}

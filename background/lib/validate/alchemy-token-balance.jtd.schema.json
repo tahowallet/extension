@@ -1,0 +1,15 @@
+{
+  "properties": {
+    "address": { "type": "string" },
+    "tokenBalances": {
+      "elements": {
+        "properties": {
+          "contractAddress": { "type": "string" },
+          "tokenBalance": { "type": "string", "nullable": true },
+          "error": {}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
