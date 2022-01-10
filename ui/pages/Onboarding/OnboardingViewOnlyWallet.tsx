@@ -60,7 +60,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       <div className="content">
         <h1 className="serif_header">Explore Tally</h1>
         <div className="subtitle">
-          Add an Ethereum address or ENS domain to view an existing wallet in
+          Add an Ethereum address or ENS name to view an existing wallet in
           Tally.
         </div>
         <form
@@ -71,7 +71,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
         >
           <div className="input_wrap">
             <SharedInput
-              label="ETH address or ENS domain"
+              label="ETH address or ENS name"
               onChange={handleInputChange}
               errorMessage={errorMessage}
             />

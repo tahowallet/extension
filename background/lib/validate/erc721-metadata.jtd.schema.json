@@ -1,0 +1,10 @@
+{
+  "optionalProperties": {
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "image": { "type": "string" },
+    "title": { "type": "string" },
+    "external_url": { "type": "string" }
+  },
+  "additionalProperties": true
+}
