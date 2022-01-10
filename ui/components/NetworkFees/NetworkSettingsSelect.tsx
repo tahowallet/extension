@@ -3,7 +3,6 @@ import {
   EstimatedFeesPerGas,
   NetworkFeeSetting,
   NetworkFeeTypeChosen,
-  selectFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { formatEther } from "@ethersproject/units"
 import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/networkFees"
