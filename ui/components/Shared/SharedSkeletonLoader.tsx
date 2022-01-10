@@ -14,11 +14,7 @@ export default function SharedSkeletonLoader(props: {
           .skeleton {
             width: ${width};
             height: ${height};
-            background: linear-gradient(
-              -90deg,
-              var(--green-120) 0%,
-              var(--green-80) 100%
-            );
+            background: var(--green-60);
             margin: 0 auto;
             border-radius: 8px;
           }
