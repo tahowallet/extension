@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "start": "run-p devtools \"dev {@}\" --",
+    "generate:validators": "ts-node background/generate-validators.ts",
     "build": "webpack --mode=production",
     "dev": "webpack --mode=development --watch",
     "devtools": "remotedev --hostname=localhost --port=8000",
