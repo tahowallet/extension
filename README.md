@@ -94,7 +94,7 @@ If you need to create or update a validation function then:
 
 - You need to write the schema in the `.ts` file to have correct typing.
 - Add the new schema with the validator function name to the `generate-validators.ts` file
-- You need to update the `json-validators.d.ts` or `json-validators.d.ts` files with the typing definition
+- You need to update the `jtd-validators.d.ts` or `json-validators.d.ts` files with the typing definition
 - run `yarn run generate:validators`
 - import it in your code and happy validating :)
 
