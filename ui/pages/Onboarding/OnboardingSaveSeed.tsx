@@ -18,44 +18,42 @@ export default function OnboardingSaveSeed(): ReactElement {
       <h1 className="serif_header center_text title">
         Write down your recovery phrase
       </h1>
-      <div className="subtitle">
-        This is the only way to restore your Tally wallet
+      <div className="words_group">
+        {freshMnemonic && (
+          <>
+            <div className="column_wrap">
+              <div className="column numbers">1 2 3 4 5 6 7 8 9 10 11 12</div>
+              <div className="column dashes">- - - - - - - - - - - -</div>
+              <div className="column words">
+                {freshMnemonic?.slice(0, 12).map((word) => {
+                  return (
+                    <>
+                      {word}
+                      <br />
+                    </>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="column_wrap">
+              <div className="column numbers">
+                13 14 15 16 17 18 19 20 21 22 23 24
+              </div>
+              <div className="column dashes">- - - - - - - - - - - -</div>
+              <div className="column words">
+                {freshMnemonic?.slice(12, 24).map((word) => {
+                  return (
+                    <>
+                      {word}
+                      <br />
+                    </>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
-      {freshMnemonic && (
-        <>
-          <div className="words_group">
-            <div className="column_wrap">
-              <div className="column numbers">1 2 3 4 5 6</div>
-              <div className="column dashes">- - - - - -</div>
-              <div className="column words">
-                {freshMnemonic?.slice(0, 6).map((word) => {
-                  return (
-                    <>
-                      {word}
-                      <br />
-                    </>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="column_wrap">
-              <div className="column numbers">7 8 9 10 11 12</div>
-              <div className="column dashes">- - - - - -</div>
-              <div className="column words">
-                {freshMnemonic?.slice(6, 12).map((word) => {
-                  return (
-                    <>
-                      {word}
-                      <br />
-                    </>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
       <div className="button_group">
         <SharedButton
           type="primary"
@@ -64,7 +62,7 @@ export default function OnboardingSaveSeed(): ReactElement {
           iconSize="large"
           linkTo="/onboarding/verifySeed"
         >
-          Verify recovery seed
+          I wrote it down
         </SharedButton>
       </div>
       <style jsx>
@@ -74,17 +72,17 @@ export default function OnboardingSaveSeed(): ReactElement {
             display: flex;
             width: 250px;
             justify-content: space-between;
+            height: 272px;
             margin-bottom: 40px;
+            margin-top: 5px;
+          }
+          .serif_header {
+            font-size: 31px;
+            margin-top: 16px;
           }
           .numbers {
             width: 18px;
             text-align: right;
-          }
-          .dashes {
-            width: 12px;
-          }
-          .words {
-            width: 69px;
           }
           section {
             padding-top: 25px;
@@ -92,7 +90,7 @@ export default function OnboardingSaveSeed(): ReactElement {
           .column {
             height: 142px;
             color: #ffffff;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             line-height: 24px;
             text-align: right;
@@ -101,10 +99,12 @@ export default function OnboardingSaveSeed(): ReactElement {
             display: flex;
           }
           .dashes {
+            width: 12px;
             margin-right: 8px;
             margin-left: 5px;
           }
           .words {
+            width: 69px;
             text-align: left;
           }
           .button_group {
@@ -112,8 +112,6 @@ export default function OnboardingSaveSeed(): ReactElement {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: fixed;
-            bottom: 68px;
           }
           .copy_button {
             margin: 16px 0px 4px 0px;
@@ -121,7 +119,7 @@ export default function OnboardingSaveSeed(): ReactElement {
           .top {
             display: flex;
             width: 100%;
-            height: 58px;
+            height: 47px;
           }
           .wordmark {
             background: url("./images/wordmark@2x.png");
