@@ -1,5 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { importLegacyKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
@@ -97,7 +97,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       setErrorMessage("Must be a 12-word recovery phrase")
     } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importLegacyKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
+      dispatch(importKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
     } else {
       setErrorMessage("Invalid recovery phrase")
     }

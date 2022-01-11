@@ -1,19 +1,4 @@
-import { JSONSchemaType, ValidateFunction } from "ajv"
-
-/* eslint-disable @typescript-eslint/no-var-requires, global-require */
-export const isValidCoinGeckoPriceResponse: ValidateFunction<
-  JSONSchemaType<typeof coingeckoPriceSchema>
-> = require("./json-validators")
-/* eslint-enable @typescript-eslint/no-var-requires, global-require */
-
-export type CoingeckoPriceData = {
-  [coinId: string]:
-    | {
-        last_updated_at: number
-        [currencyId: string]: number | undefined
-      }
-    | undefined
-}
+import { JSONSchemaType } from "ajv"
 
 // Ajv's typing incorrectly requires nullable: true for last_updated_at because
 // the remaining keys in the coin entry are optional. This in turn interferes
@@ -42,4 +27,13 @@ export const coingeckoPriceSchema: JSONSchemaType<CoingeckoPriceData> = {
     additionalProperties: { type: "number", nullable: true },
     nullable: true,
   },
+}
+
+export type CoingeckoPriceData = {
+  [coinId: string]:
+    | {
+        last_updated_at: number
+        [currencyId: string]: number | undefined
+      }
+    | undefined
 }
