@@ -53,7 +53,17 @@ export const swapQuoteJTD = {
           takerToken: { type: "string" },
           type: { type: "uint32" },
         },
+        optionalProperties: {
+          fillData: {
+            properties: {
+              router: { type: "string" },
+              uniswapPath: { type: "string" },
+            },
+            additionalProperties: true,
+          },
+        },
       },
+      additionalProperties: true,
     },
     price: { type: "string" },
     protocolFee: { type: "string" },
@@ -71,4 +81,5 @@ export const swapQuoteJTD = {
     to: { type: "string" },
     value: { type: "string" },
   },
+  additionalProperties: true,
 }
