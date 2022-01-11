@@ -1,7 +1,5 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
-import Emittery from "emittery"
 import { AnyAsset, PricePoint } from "../assets"
-import { createBackgroundAsyncThunk } from "./utils"
 
 type SingleAssetState = AnyAsset & {
   prices: PricePoint[]
@@ -13,11 +11,6 @@ type SingleAssetState = AnyAsset & {
 export type AssetsState = SingleAssetState[]
 
 export const initialState = [] as AssetsState
-
-export type Events = {
-  fetchTokenData: string
-}
-export const emitter = new Emittery<Events>()
 
 /*
  * Use heuristics to score two assets based on their metadata similarity. The
@@ -96,13 +89,6 @@ function prunePrices(prices: PricePoint[]): PricePoint[] {
   pricesToSort.sort()
   return pricesToSort.map(([, pp]) => pp)
 }
-
-export const fetchTokenData = createBackgroundAsyncThunk(
-  "assets/getTokenData",
-  async (contractAddress: string) => {
-    await emitter.emit("fetchTokenData", contractAddress)
-  }
-)
 
 /*
  * Reduce a list of asset prices to an object mapping symbols to price.

@@ -387,22 +387,6 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
-  getTokenMetadata = async (
-    contractAddress: string
-  ): Promise<SmartContractFungibleAsset | undefined> => {
-    const provider = this.chainService.pollingProviders.ethereum
-    // pull metadata from Alchemy
-    const customAsset =
-      (await getTokenMetadata(provider, contractAddress)) || undefined
-
-    if (customAsset) {
-      await this.db.addCustomAsset(customAsset)
-      this.emitter.emit("assets", [customAsset])
-    }
-
-    return customAsset
-  }
-
   private async handlePriceAlarm(): Promise<void> {
     // TODO refactor for multiple price sources
     try {

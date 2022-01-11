@@ -11,7 +11,7 @@ import {
 
 import { HexString, UNIXTime } from "../../types"
 import { ETH } from "../../constants"
-import { ERC20_INTERFACE } from "../../lib/erc20"
+import { parseERC20Tx } from "../../lib/erc20"
 import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
@@ -75,16 +75,6 @@ export type EnrichedEVMTransaction = AnyEVMTransaction & {
 
 interface Events extends ServiceLifecycleEvents {
   enrichedEVMTransaction: EnrichedEVMTransaction
-}
-
-function parseERC20Tx(input: string) {
-  try {
-    return ERC20_INTERFACE.parseTransaction({
-      data: input,
-    })
-  } catch (err) {
-    return undefined
-  }
 }
 
 /**
