@@ -63,7 +63,6 @@ export const swapQuoteJTD = {
           },
         },
       },
-      additionalProperties: true,
     },
     price: { type: "string" },
     protocolFee: { type: "string" },
@@ -81,5 +80,4 @@ export const swapQuoteJTD = {
     to: { type: "string" },
     value: { type: "string" },
   },
-  additionalProperties: true,
 }
