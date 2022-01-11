@@ -158,7 +158,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     logger.warn(
       "Swap quote API call didn't validate, did the 0x API change?",
       apiData,
-      isValidSwapPriceResponse.errors
+      isValidSwapQuoteResponse.errors
     )
 
     return undefined
