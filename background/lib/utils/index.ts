@@ -1,4 +1,4 @@
-import { utils } from "ethers"
+import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { EVMNetwork } from "../../networks"
@@ -107,27 +107,19 @@ export function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-5)}`
 }
 
-export const getNumericStringValueFromHex = (
-  hexString: string,
+export const getNumericStringValueFromBigNumber = (
+  value: BigNumber,
   tokenDecimals: number
 ): string => {
-  let hexValue = hexString
-  if (hexValue && !hexString?.includes("x")) {
-    hexValue = `0x${hexString}`
-  }
-
-  return Number(BigInt(hexValue) / 10n ** BigInt(tokenDecimals)).toString()
+  return Number(value.toBigInt() / 10n ** BigInt(tokenDecimals)).toString()
 }
 
 export const numberTo32BytesHex = (value: string, decimals: number): string => {
   const withDecimals = BigInt(value) * 10n ** BigInt(decimals)
   const hex = utils.hexlify(withDecimals)
-  return utils.hexZeroPad(hex, 32).split("0x")[1]
+  return hex
 }
 
-export const verifyIsInfiniteAmount = (amount: string): boolean => {
-  return (
-    amount ===
-    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-  )
+export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
+  return ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
 }

@@ -12,6 +12,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -51,15 +52,11 @@ export default function SignTransaction({
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
-  const approvalCodes = ["0x095ea7b3", "0xcae9ca51"] // approve, approveAndCall
+
+  const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
+  const isApproveTx = parsedTx?.name === "approve"
   const { assetSymbol, amount, to, value, signType } = location.state ?? {
-    // If tx input begins with bytecode that corresponds to ERC-20 signature
-    // we load the approve page
-    signType: approvalCodes.some((code) =>
-      transactionDetails?.input?.includes(code)
-    )
-      ? SignType.SignSpend
-      : SignType.Sign,
+    signType: isApproveTx ? SignType.SignSpend : SignType.Sign,
   }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -136,6 +133,7 @@ export default function SignTransaction({
       component: () => (
         <SignTransactionApproveSpendAssetBlock
           transactionDetails={transactionDetails}
+          parsedTx={parsedTx}
         />
       ),
       confirmButtonText: "Approve",

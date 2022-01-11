@@ -1,6 +1,7 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers, logger } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
+import { TransactionDescription } from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
 import { AccountBalance } from "../accounts"
@@ -99,6 +100,18 @@ export async function getBalances(
   )
 }
 
+export function parseERC20Tx(
+  input: string
+): TransactionDescription | undefined {
+  try {
+    return ERC20_INTERFACE.parseTransaction({
+      data: input,
+    })
+  } catch (err) {
+    return undefined
+  }
+}
+
 export const getERC20TokenMetadata = async (
   address: string
 ): Promise<SmartContractFungibleAsset | null> => {
@@ -110,6 +123,7 @@ export const getERC20TokenMetadata = async (
   }
   return null
 }
+
 // TODO get token balances of a many token contracts for a particular account the slow way, cache
 // TODO get price data from 0xAPI
 // TODO export a function that can take a tx and return any involved ERC-20s using traces

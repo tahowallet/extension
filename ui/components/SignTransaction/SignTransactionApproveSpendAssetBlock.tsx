@@ -1,13 +1,17 @@
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
-import { getERC20TokenMetadata } from "@tallyho/tally-background/lib/erc20"
 import {
-  getNumericStringValueFromHex,
+  ERC20_INTERFACE,
+  getERC20TokenMetadata,
+} from "@tallyho/tally-background/lib/erc20"
+import {
+  getNumericStringValueFromBigNumber,
   numberTo32BytesHex,
   truncateAddress,
-  verifyIsInfiniteAmount,
+  isMaxUint256,
 } from "@tallyho/tally-background/lib/utils"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { TransactionDescription } from "ethers/lib/utils"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
@@ -17,10 +21,12 @@ import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 interface Props {
   transactionDetails: EIP1559TransactionRequest
+  parsedTx: TransactionDescription | undefined
 }
 
 export default function SignTransactionApproveSpendAssetBlock({
   transactionDetails,
+  parsedTx,
 }: Props): ReactElement {
   const [approvalLimit, setApprovalLimit] = useState("")
   const dispatch = useDispatch()
@@ -37,32 +43,25 @@ export default function SignTransactionApproveSpendAssetBlock({
     getTokenData()
   }, [transactionDetails.to])
 
-  // ERC-20 the approval amount will be in the range of 74-138 in form of a 32 bytes hex string
-  const approveAmount = transactionDetails?.input?.substring(74, 138)
+  const approveAmount = parsedTx?.args[1]
 
-  const infiniteApproval = verifyIsInfiniteAmount(approveAmount ?? "0")
+  const infiniteApproval = isMaxUint256(approveAmount ?? 0n)
 
   useEffect(() => {
     if (approveAmount && asset?.decimals) {
       setApprovalLimit(
-        getNumericStringValueFromHex(approveAmount, asset?.decimals)
+        getNumericStringValueFromBigNumber(approveAmount, asset?.decimals)
       )
     }
   }, [approveAmount, asset?.decimals])
 
   const handleUpdateClick = () => {
     setChanging(!changing)
-    if (changing && transactionDetails && asset?.decimals) {
-      const updatedInput = `${transactionDetails.input?.substring(
-        0,
-        74
-      )}${numberTo32BytesHex(
-        approvalLimit,
-        asset?.decimals
-      )}${transactionDetails.input?.substring(
-        138,
-        transactionDetails.input.length
-      )}`
+    if (changing && transactionDetails && parsedTx && asset?.decimals) {
+      const updatedInput = ERC20_INTERFACE.encodeFunctionData(parsedTx?.name, [
+        parsedTx.args[0],
+        numberTo32BytesHex(approvalLimit, asset?.decimals),
+      ])
       const newTxDetails = { ...transactionDetails }
       newTxDetails.input = updatedInput
       dispatch(updateTransactionOptions(newTxDetails))
@@ -81,7 +80,7 @@ export default function SignTransactionApproveSpendAssetBlock({
       <span className="spending_label">
         {asset?.symbol ? (
           `Spend ${
-            asset?.symbol ?? truncateAddress(transactionDetails.to || "")
+            asset?.symbol ?? truncateAddress(transactionDetails.to ?? "")
           } tokens`
         ) : (
           <SharedSkeletonLoader />
