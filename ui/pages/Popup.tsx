@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useState, useRef } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import classNames from "classnames"
 
@@ -24,9 +24,16 @@ const pagePreferences = Object.fromEntries(
   ])
 )
 
+const initialEntries = JSON.parse(
+  (localStorage.getItem("entries") !== "undefined" &&
+    localStorage.getItem("entries")) ||
+    `["/"]`
+)
+
 interface Location {
-  key: string
   pathname: string
+  key?: string
+  hash: string
 }
 
 function transformLocation(inputLocation: Location): Location {
@@ -54,6 +61,32 @@ export default function Popup({ store }: { store: Store }): ReactElement {
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
   const [showTabBar, setShowTabBar] = useState(true)
+  const renderCount = useRef(0)
+
+  function saveHistoryEntries(routeHistoryEntities: Location[]) {
+    // Initial extension load takes two renders because of setting
+    // animation control states. `initialEntries` needs to be a reversed
+    // version of route history entities. Without avoiding the initial load,
+    // entries will keep reversing.
+    if (renderCount.current > 1) {
+      const entries = routeHistoryEntities
+        .reduce((agg: Partial<Location>[], entity) => {
+          const { ...entityCopy } = entity as Partial<Location>
+          delete entityCopy.hash
+          delete entityCopy.key
+          agg.push(entityCopy)
+          return agg
+        }, [])
+        .reverse()
+
+      localStorage.setItem(
+        "entries",
+        JSON.stringify(entries, (key, value) => {
+          return value
+        })
+      )
+    }
+  }
 
   return (
     <>
@@ -62,14 +95,16 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           <TopMenu />
         </div>
         <div className="community_edition_label">Community Edition</div>
-        <Router>
+        <Router initialEntries={initialEntries}>
           <Route
             render={(routeProps) => {
-              // @ts-expect-error TODO: fix the typing when the feature works
               const transformedLocation = transformLocation(routeProps.location)
+              // @ts-expect-error TODO: fix the typing
+              saveHistoryEntries(routeProps?.history?.entries)
+
               const normalizedPathname =
                 transformedLocation.pathname !== "/wallet"
-                  ? routeProps.location.pathname
+                  ? transformedLocation.pathname
                   : "/"
 
               setAnimationConditions(
@@ -79,6 +114,7 @@ export default function Popup({ store }: { store: Store }): ReactElement {
                 setIsDirectionRight
               )
               setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
+              renderCount.current += 1
 
               return (
                 <TransitionGroup>
@@ -140,7 +176,6 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           `}
         </style>
       )}
-
       <>
         <style jsx global>
           {`
