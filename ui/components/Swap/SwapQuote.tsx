@@ -1,8 +1,9 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { utils } from "ethers"
+import { ethers, utils } from "ethers"
 import { TransactionRequest } from "@ethersproject/abstract-provider"
 import { getProvider } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 import logger from "@tallyho/tally-background/lib/logger"
+import { ERC20_ABI } from "@tallyho/tally-background/lib/erc20"
 
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
@@ -47,12 +48,33 @@ export default function SwapQoute(): ReactElement {
 
   const [stepComplete, setStepComplete] = useState(-1)
 
-  const handleApproveClick = useCallback(() => {
-    logger.log("look at this provider", provider)
-    logger.log("look at this signer", signer)
+  const handleApproveClick = useCallback(async () => {
+    // Guard against undefined quote type errors
+    if (quote) {
+      // We have to approve the asset we want to swap
+      const assetContract = new ethers.Contract(
+        quote.sellTokenAddress,
+        ERC20_ABI,
+        signer
+      )
 
-    signer.sendTransaction(quote as TransactionRequest)
-  }, [provider, signer, quote])
+      const approvalTransactionData =
+        await assetContract.populateTransaction.approve(
+          quote.allowanceTarget,
+          ethers.constants.MaxUint256.sub(1)
+        )
+
+      logger.log("Populated transaction data", approvalTransactionData)
+
+      const approvalTransactionHash = await signer.sendUncheckedTransaction(
+        approvalTransactionData
+      )
+
+      logger.log("Approval transaction hash", approvalTransactionHash)
+
+      signer.sendTransaction(quote as TransactionRequest)
+    }
+  }, [signer, quote])
 
   return (
     <section className="center_horizontal standard_width">
