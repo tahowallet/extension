@@ -7,17 +7,21 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   broadcastOnSign,
+  NetworkFeeSetting,
   selectEstimatedFeesPerGas,
+  setFeeType,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
 import { useLocation } from "react-router-dom"
-import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
+import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { SignType } from "./SignTransaction"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
@@ -31,6 +35,8 @@ export default function Send(): ReactElement {
   const [currentBalance, setCurrentBalance] = useState("")
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
+  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
+    useState(false)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
@@ -87,6 +93,12 @@ export default function Send(): ReactElement {
     }
   }, [assetSymbol])
 
+  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    setNetworkSettingsModalOpen(false)
+  }
+
   return (
     <>
       <div className="standard_width">
@@ -100,7 +112,7 @@ export default function Send(): ReactElement {
         <div className="form">
           <div className="form_input">
             <div className="balance">
-              Balance: {`${currentBalance.substr(0, 8)}\u2026 `}
+              Balance: {`${currentBalance.substring(0, 8)}\u2026 `}
               <button
                 type="button"
                 className="max"
@@ -143,11 +155,27 @@ export default function Send(): ReactElement {
               onSendToAddressChange={setDestinationAddress}
             />
           </div>
-          <NetworkFeesChooser
-            estimatedFeesPerGas={estimatedFeesPerGas}
-            gasLimit={gasLimit}
-            setGasLimit={setGasLimit}
-          />
+          <SharedSlideUpMenu
+            size="custom"
+            isOpen={networkSettingsModalOpen}
+            close={() => setNetworkSettingsModalOpen(false)}
+            customSize="488px"
+          >
+            <NetworkSettingsChooser
+              networkSettings={{
+                estimatedFeesPerGas,
+                gasLimit,
+              }}
+              onNetworkSettingsSave={networkSettingsSaved}
+              visible={networkSettingsModalOpen}
+            />
+          </SharedSlideUpMenu>
+          <div className="network_fee">
+            <p>Estimated network fee</p>
+            <FeeSettingsButton
+              onClick={() => setNetworkSettingsModalOpen(true)}
+            />
+          </div>
           <div className="divider" />
           <div className="send_footer standard_width_padded">
             <SharedButton
@@ -247,6 +275,11 @@ export default function Send(): ReactElement {
             justify-content: flex-end;
             margin-top: 21px;
             padding-bottom: 20px;
+          }
+          .network_fee {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
           }
         `}
       </style>

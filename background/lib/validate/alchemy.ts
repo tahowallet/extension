@@ -1,22 +1,6 @@
-import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
-
-/* eslint-disable @typescript-eslint/no-var-requires, global-require */
-export const isValidAlchemyAssetTransferResponse: ValidateFunction<
-  JTDDataType<typeof alchemyGetAssetTransfersJTD>
-> = require("./jtd-validators")["alchemy-get-asset-transfers.jtd.schema.json"]
-
-export const isValidAlchemyTokenBalanceResponse: ValidateFunction<
-  JTDDataType<typeof alchemyTokenBalanceJTD>
-> = require("./jtd-validators")["alchemy-token-balance.jtd.schema.json"]
-
-export const isValidAlchemyTokenMetadataResponse: ValidateFunction<
-  JTDDataType<typeof alchemyTokenMetadataJTD>
-> = require("./jtd-validators")["alchemy-token-metadata.jtd.schema.json"]
-/* eslint-enable @typescript-eslint/no-var-requires, global-require */
-
 // JSON Type Definition for the Alchemy assetTransfers API.
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
-export const alchemyAssetTransferJTD = {
+const alchemyAssetTransferJTD = {
   properties: {
     asset: { type: "string", nullable: true },
     hash: { type: "string" },

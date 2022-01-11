@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Tally, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "start": "run-p devtools \"dev {@}\" --",
+    "generate:validators": "ts-node background/generate-validators.ts",
     "build": "webpack --mode=production",
     "dev": "webpack --mode=development --watch",
     "devtools": "remotedev --hostname=localhost --port=8000",
