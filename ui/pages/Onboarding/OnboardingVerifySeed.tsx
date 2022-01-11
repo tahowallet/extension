@@ -1,27 +1,14 @@
-import React, {
-  ReactElement,
-  useCallback,
-  useState,
-  useRef,
-  useEffect,
-} from "react"
-import {
-  importKeyring,
-  setKeyringToVerify,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+import React, { ReactElement, useCallback, useState } from "react"
+import { useHistory } from "react-router-dom"
+import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedButton from "../../components/Shared/SharedButton"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
 import titleStyle from "../../components/Onboarding/titleStyle"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
-function KeepInView() {
-  const element = useRef<HTMLDivElement>(null)
-  useEffect(() => element?.current?.scrollIntoView())
-  return <div ref={element} />
-}
-
 function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
 
   return (
     <div className="success_wrap">
@@ -31,9 +18,9 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
         <SharedButton
           size="medium"
           type="primary"
-          linkTo="/"
-          onClick={() => {
-            dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
+          onClick={async () => {
+            await dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
+            history.push("/")
           }}
         >
           Take me to my wallet
@@ -77,9 +64,40 @@ export default function OnboardingVerifySeed(): ReactElement {
     return state.keyrings.keyringToVerify?.mnemonic
   })
 
-  const [isNotSelected, setIsNotSelected] = useState(
-    mnemonicToVerify?.slice().sort(() => Math.random() - 0.5)
+  const [randomOrderedMnemonic] = useState(
+    mnemonicToVerify
+      ?.slice()
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 8)
   )
+
+  const indexesOfRandomOrderedMnemonic = randomOrderedMnemonic?.map((item) => {
+    return mnemonicToVerify?.indexOf(item)
+  })
+
+  const sortedIndexesOfRandomOrderedMnemonic =
+    indexesOfRandomOrderedMnemonic?.sort((a, b) => {
+      if (a === 0) {
+        return -1
+      }
+      return (a && b && a - b) || 0
+    })
+
+  function hasUserSelectedCorrectOrder() {
+    for (let i = 0; i < isSelected.length; i + 1) {
+      const word = isSelected[i]
+      const assignedNumber =
+        (sortedIndexesOfRandomOrderedMnemonic &&
+          sortedIndexesOfRandomOrderedMnemonic[i]) ||
+        0
+      if (mnemonicToVerify && mnemonicToVerify[assignedNumber] !== word) {
+        return false
+      }
+    }
+    return true
+  }
+
+  const [isNotSelected, setIsNotSelected] = useState(randomOrderedMnemonic)
 
   const handleAdd = useCallback((item) => {
     setIsSelected((currentlySelected) => [...currentlySelected, item])
@@ -106,30 +124,65 @@ export default function OnboardingVerifySeed(): ReactElement {
         <div className="wordmark" />
       </div>
       <OnboardingStepsIndicator activeStep={2} />
-      <h1 className="serif_header center_text title">Confirm phrase</h1>
-      <div className="subtitle">
-        This is the only way to restore your tally wallet
+      <h1 className="serif_header center_text title">
+        Verify secret recovery phrase
+      </h1>
+      <div className="subtitle">Add the missing words in order</div>
+      <div className="words_group">
+        <div className="column_wrap">
+          <div className="column numbers">
+            {sortedIndexesOfRandomOrderedMnemonic
+              ?.slice(0, 4)
+              .map((n) => typeof n === "number" && n + 1)
+              .join(" ")}
+          </div>
+          <div className="column dashes">- - - -</div>
+          <div className="column words">
+            {isSelected.slice(0, 4).map((item, index) => (
+              <div className="button_spacing" key={item}>
+                <SharedButton
+                  type="deemphasizedWhite"
+                  size="small"
+                  onClick={() => {
+                    handleRemove(item)
+                  }}
+                  icon="close"
+                >{`${item}`}</SharedButton>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="column_wrap">
+          <div className="column numbers">
+            {sortedIndexesOfRandomOrderedMnemonic
+              ?.slice(4, 8)
+              .map((n) => typeof n === "number" && n + 1)
+              .join(" ")}
+          </div>
+          <div className="column dashes">- - - -</div>
+          <div className="column words">
+            {isSelected.slice(4, 8).map((item, index) => (
+              <div className="button_spacing" key={item}>
+                <SharedButton
+                  type="deemphasizedWhite"
+                  size="small"
+                  onClick={() => {
+                    handleRemove(item)
+                  }}
+                  icon="close"
+                >
+                  {item}
+                </SharedButton>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <ul className="standard_width_padded button_group center_horizontal selected_wrap">
-        {isSelected.map((item, index) => (
-          <li className="button_spacing" key={item}>
-            <SharedButton
-              type="deemphasizedWhite"
-              size="small"
-              onClick={() => {
-                handleRemove(item)
-              }}
-              icon="close"
-            >{`${index + 1} - ${item}`}</SharedButton>
-          </li>
-        ))}
-        <KeepInView />
-      </ul>
       <ul className="standard_width_padded button_group center_horizontal bottom">
         {isNotSelected?.length === 0 ? (
           <>
-            {isSelected.join() === mnemonicToVerify?.join() ? (
-              <SuccessMessage mnemonic={isSelected} />
+            {mnemonicToVerify && hasUserSelectedCorrectOrder() ? (
+              <SuccessMessage mnemonic={mnemonicToVerify} />
             ) : (
               <span className="error_message">Incorrect order</span>
             )}
@@ -158,6 +211,15 @@ export default function OnboardingVerifySeed(): ReactElement {
             flex-wrap: wrap;
             align-content: flex-start;
           }
+          .serif_header {
+            font-size: 31px;
+            margin-top: 16px;
+            width: 228px;
+            margin-bottom: 7px;
+          }
+          .subtitle {
+            margin-bottom: 22px;
+          }
           .button_spacing {
             margin-right: 8px;
             margin-bottom: 8px;
@@ -185,7 +247,7 @@ export default function OnboardingVerifySeed(): ReactElement {
           .top {
             display: flex;
             width: 100%;
-            height: 58px;
+            height: 47px;
           }
           .wordmark {
             background: url("./images/wordmark@2x.png");
@@ -196,6 +258,36 @@ export default function OnboardingVerifySeed(): ReactElement {
             left: 0px;
             right: 0px;
             margin: 0 auto;
+          }
+          .column {
+            height: 142px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 38.5px;
+            text-align: right;
+          }
+          .column_wrap {
+            display: flex;
+            width: 167px;
+          }
+          .dashes {
+            margin-right: 8px;
+            margin-left: 5px;
+            width: 12px;
+          }
+          .words {
+            width: 69px;
+            text-align: left;
+          }
+          .numbers {
+            width: 18px;
+            text-align: right;
+          }
+          .words_group {
+            display: flex;
+            width: 351px;
+            justify-content: space-between;
           }
         `}
       </style>
