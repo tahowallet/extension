@@ -66,13 +66,17 @@ export default function SwapQoute(): ReactElement {
 
       logger.log("Populated transaction data", approvalTransactionData)
 
-      const approvalTransactionHash = await signer.sendUncheckedTransaction(
+      const approvalTransactionHash = await signer.sendTransaction(
         approvalTransactionData
       )
 
-      logger.log("Approval transaction hash", approvalTransactionHash)
+      logger.log("Approval transaction #", approvalTransactionHash)
 
-      signer.sendTransaction(quote as TransactionRequest)
+      const swapTransactionHash = await signer.sendTransaction(
+        quote as TransactionRequest
+      )
+
+      logger.log("Swap transaction #", swapTransactionHash)
     }
   }, [signer, quote])
 
