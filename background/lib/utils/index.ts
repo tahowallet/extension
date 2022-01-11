@@ -1,10 +1,36 @@
 import { utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
-import { HexString, EVMNetwork } from "../../types"
+import { HexString } from "../../types"
+import { EVMNetwork } from "../../networks"
 import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
+}
+
+export function truncateDecimalAmount(
+  value: number | string,
+  decimalLength: number
+): string {
+  const valueString = value.toString()
+  if (decimalLength === 0) {
+    return valueString.split(".")[0]
+  }
+  if (valueString.includes(".")) {
+    const [integers, decimals] = valueString.split(".")
+    return `${integers}.${decimals.substring(0, decimalLength)}`
+  }
+  return valueString
+}
+
+export function sameEVMAddress(
+  address1: string | Buffer | undefined,
+  address2: string | Buffer | undefined
+): boolean {
+  if (typeof address1 === "undefined" || typeof address2 === "undefined") {
+    return false
+  }
+  return normalizeHexAddress(address1) === normalizeHexAddress(address2)
 }
 
 export function gweiToWei(value: number | bigint): bigint {
@@ -14,6 +40,13 @@ export function gweiToWei(value: number | bigint): bigint {
 export function convertToEth(value: string | number | bigint): string {
   if (value && value >= 1) {
     return utils.formatUnits(BigInt(value))
+  }
+  return ""
+}
+
+export function weiToGwei(value: string | number | bigint): string {
+  if (value && value >= 1) {
+    return truncateDecimalAmount(utils.formatUnits(BigInt(value), "gwei"), 2)
   }
   return ""
 }
@@ -71,4 +104,8 @@ export function getEthereumNetwork(): EVMNetwork {
 
   // Default to mainnet
   return ETHEREUM
+}
+
+export function truncateAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-5)}`
 }

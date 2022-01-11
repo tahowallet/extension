@@ -1,10 +1,8 @@
-import Ajv from "ajv"
-import addAJVFormats from "ajv-formats"
-
-import { TokenList, schema } from "@uniswap/token-lists"
+import { TokenList } from "@uniswap/token-lists"
 
 import { getEthereumNetwork } from "./utils"
-import { SmartContractFungibleAsset, TokenListAndReference } from "../types"
+import { SmartContractFungibleAsset, TokenListAndReference } from "../assets"
+import { isValidUniswapTokenListResponse } from "./validate"
 
 export async function fetchAndValidateTokenList(
   url: string
@@ -14,11 +12,8 @@ export async function fetchAndValidateTokenList(
     throw new Error(`Error resolving token list at ${url}`)
   }
   const json = await response.json()
-  const validator = new Ajv()
-  addAJVFormats(validator)
-  const valid = validator.validate(schema, json)
 
-  if (!valid) {
+  if (!isValidUniswapTokenListResponse(json)) {
     throw new Error(`Invalid token list at ${url}`)
   }
   return {

@@ -1,53 +1,17 @@
 import { fetchJson } from "@ethersproject/web"
-import { JSONSchemaType } from "ajv"
 import logger from "./logger"
 import {
+  AnyAsset,
   CoinGeckoAsset,
   FiatCurrency,
   PricePoint,
   UnitPricePoint,
-} from "../types"
-import { jsonSchemaValidatorFor } from "./validation"
+} from "../assets"
+
+import { toFixedPoint } from "./fixed-point"
+import { isValidCoinGeckoPriceResponse } from "./validate"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
-
-export type CoingeckoPriceData = {
-  [coinId: string]:
-    | {
-        last_updated_at: number
-        [currencyId: string]: number | undefined
-      }
-    | undefined
-}
-
-// Ajv's typing incorrectly requires nullable: true for last_updated_at because
-// the remaining keys in the coin entry are optional. This in turn interferes
-// with the fact that last_updated_at is listed in `required`. The two `as`
-// type casts below trick the type system into allowing the schema correctly.
-// Note that the schema will validate as required, and the casts allow it to
-// match the corret TypeScript types.
-//
-// This all stems from Ajv also incorrectly requiring an optional property (`|
-// undefined`) to be nullable (`| null`). See
-// https://github.com/ajv-validator/ajv/issues/1664, which should be fixed in
-// Ajv v9 via
-// https://github.com/ajv-validator/ajv/commit/b4b806fd03a9906e9126ad86cef233fa405c9a3e
-export const coingeckoPriceSchema: JSONSchemaType<CoingeckoPriceData> = {
-  type: "object",
-  required: [],
-  additionalProperties: {
-    type: "object",
-    properties: {
-      last_updated_at: { type: "number" } as {
-        type: "number"
-        nullable: true
-      },
-    },
-    required: ["last_updated_at"] as never[],
-    additionalProperties: { type: "number", nullable: true },
-    nullable: true,
-  },
-}
 
 export async function getPrice(
   coingeckoCoinId = "ethereum",
@@ -56,13 +20,12 @@ export async function getPrice(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
 
   const json = await fetchJson(url)
-  const validate = jsonSchemaValidatorFor(coingeckoPriceSchema)
 
-  if (!validate(json)) {
+  if (!isValidCoinGeckoPriceResponse(json)) {
     logger.warn(
       "CoinGecko price response didn't validate, did the API change?",
       json,
-      validate.errors
+      isValidCoinGeckoPriceResponse.errors
     )
 
     return null
@@ -71,18 +34,11 @@ export async function getPrice(
   return json?.[coingeckoCoinId]?.[currencySymbol] || null
 }
 
-function multiplyByFloat(n: bigint, f: number, precision: number) {
-  return (
-    (n * BigInt(Math.floor(f * 10 ** precision))) /
-    BigInt(10) ** BigInt(precision)
-  )
-}
-
 export async function getPrices(
-  assets: CoinGeckoAsset[],
+  assets: (AnyAsset & CoinGeckoAsset)[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoId).join(",")
+  const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
 
   const currencySymbols = vsCurrencies
     .map((c) => c.symbol.toLowerCase())
@@ -93,13 +49,12 @@ export async function getPrices(
   const json = await fetchJson(url)
   // TODO fix loss of precision from json
   // TODO: TESTME
-  const validate = jsonSchemaValidatorFor(coingeckoPriceSchema)
 
-  if (!validate(json)) {
+  if (!isValidCoinGeckoPriceResponse(json)) {
     logger.warn(
       "CoinGecko price response didn't validate, did the API change?",
       json,
-      validate.errors
+      isValidCoinGeckoPriceResponse.errors
     )
 
     return []
@@ -107,19 +62,23 @@ export async function getPrices(
 
   const resolutionTime = Date.now()
   return assets.flatMap((asset) => {
-    const simpleCoinPrices = json[asset.metadata.coinGeckoId]
+    const simpleCoinPrices = json[asset.metadata.coinGeckoID]
 
     return vsCurrencies
-      .map<PricePoint | undefined>((c) => {
-        const symbol = c.symbol.toLowerCase()
+      .map<PricePoint | undefined>((currency) => {
+        const symbol = currency.symbol.toLowerCase()
         const coinPrice = simpleCoinPrices?.[symbol]
 
         if (coinPrice) {
+          // Scale amounts to the asset's decimals; if the asset is not fungible,
+          // assume 0 decimals, i.e. that this is a unit price.
+          const assetPrecision = "decimals" in asset ? asset.decimals : 0
+
           return {
-            pair: [c, asset],
+            pair: [currency, asset],
             amounts: [
-              multiplyByFloat(BigInt(10) ** BigInt(c.decimals), coinPrice, 8),
-              BigInt(1),
+              toFixedPoint(coinPrice, currency.decimals),
+              10n ** BigInt(assetPrecision),
             ],
             time: resolutionTime,
           }
@@ -139,11 +98,13 @@ export async function getPrices(
  */
 export async function getEthereumTokenPrices(
   tokenAddresses: string[],
-  currencySymbol: string
+  fiatCurrency: FiatCurrency
 ): Promise<{ [contractAddress: string]: UnitPricePoint }> {
+  const fiatSymbol = fiatCurrency.symbol
+
   // TODO cover failed schema validation and http & network errors
   const addys = tokenAddresses.join(",")
-  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${currencySymbol}&include_last_updated_at=true&contract_addresses=${addys}`
+  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   const json = await fetchJson(url)
 
@@ -161,18 +122,12 @@ export async function getEthereumTokenPrices(
     // TODO parse this as a fixed decimal rather than a number. Will require
     // custom JSON deserialization
     const price: number = Number.parseFloat(
-      priceDetails[currencySymbol.toLowerCase()]
+      priceDetails[fiatSymbol.toLowerCase()]
     )
-    // TODO fiat currency data lookups
-    const fiatDecimals = 10 // SHIB only needs 8, we're going all out
     prices[address] = {
       unitPrice: {
-        asset: {
-          name: currencySymbol,
-          symbol: currencySymbol.toUpperCase(),
-          decimals: fiatDecimals,
-        },
-        amount: BigInt(Math.trunc(price * 10 ** fiatDecimals)),
+        asset: fiatCurrency,
+        amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
       },
       time: priceDetails.last_updated_at,
     }

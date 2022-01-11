@@ -1,17 +1,12 @@
 // It's necessary to have an object w/ the function on it so we can use spyOn
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
-
-import { jsonSchemaValidatorFor } from "../lib/validation"
+import { JSONSchemaType, ValidateFunction } from "ajv"
 
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
-import { CoinGeckoAsset } from "../types"
-import {
-  CoingeckoPriceData,
-  coingeckoPriceSchema,
-  getPrice,
-  getPrices,
-} from "../lib/prices"
+import { CoinGeckoAsset } from "../assets"
+import { getPrice, getPrices } from "../lib/prices"
+import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
 const dateNow = 1634911514834
 
@@ -24,8 +19,6 @@ describe("lib/prices.ts", () => {
     jest.spyOn(logger, "warn").mockImplementation()
   })
   describe("CoinGecko Price response validation", () => {
-    const validate =
-      jsonSchemaValidatorFor<CoingeckoPriceData>(coingeckoPriceSchema)
     it("passes for correct simple price response", () => {
       const apiResponse = {
         ethereum: {
@@ -34,8 +27,8 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeTruthy()
-      expect(validate.errors).toBeNull()
+      expect(isValidCoinGeckoPriceResponse(apiResponse)).toBeTruthy()
+      expect(isValidCoinGeckoPriceResponse.errors).toBeNull()
     })
 
     it("passes for correct complex price response", () => {
@@ -54,8 +47,8 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      expect(validate(apiResponse)).toBeTruthy()
-      expect(validate.errors).toBeNull()
+      expect(isValidCoinGeckoPriceResponse(apiResponse)).toBeTruthy()
+      expect(isValidCoinGeckoPriceResponse.errors).toBeNull()
     })
 
     it("fails if required prop is missing w/ the correct error", () => {
@@ -75,9 +68,9 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      const validationResult = validate(apiResponse)
+      const validationResult = isValidCoinGeckoPriceResponse(apiResponse)
 
-      expect(validate.errors).toMatchObject(error)
+      expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
     })
 
@@ -99,9 +92,9 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      const validationResult = validate(apiResponse)
+      const validationResult = isValidCoinGeckoPriceResponse(apiResponse)
 
-      expect(validate.errors).toMatchObject(error)
+      expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
     })
 
@@ -121,11 +114,20 @@ describe("lib/prices.ts", () => {
           params: { type: "number" },
           schemaPath: "#/additionalProperties/additionalProperties/type",
         },
+        {
+          instancePath: "/ethereum/last_updated_at",
+          keyword: "type",
+          message: "must be number",
+          params: {
+            type: "number",
+          },
+          schemaPath: "#/additionalProperties/properties/last_updated_at/type",
+        },
       ]
 
-      const validationResult = validate(apiResponse)
+      const validationResult = isValidCoinGeckoPriceResponse(apiResponse)
 
-      expect(validate.errors).toMatchObject(error)
+      expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
     })
   })
@@ -191,13 +193,13 @@ describe("lib/prices.ts", () => {
 
       const getPricesResponse = [
         {
-          amounts: [639090000000000n, 1n],
+          amounts: [639090000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             {
               decimals: 8,
               metadata: {
-                coinGeckoId: "bitcoin",
+                coinGeckoID: "bitcoin",
                 tokenLists: [],
                 websiteURL: "https://bitcoin.org",
               },
@@ -208,13 +210,13 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [549280000000000n, 1n],
+          amounts: [549280000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "euro", symbol: "EUR" },
             {
               decimals: 8,
               metadata: {
-                coinGeckoId: "bitcoin",
+                coinGeckoID: "bitcoin",
                 tokenLists: [],
                 websiteURL: "https://bitcoin.org",
               },
@@ -225,13 +227,13 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [4079080000000000n, 1n],
+          amounts: [4079080000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "renminbi", symbol: "CNY" },
             {
               decimals: 8,
               metadata: {
-                coinGeckoId: "bitcoin",
+                coinGeckoID: "bitcoin",
                 tokenLists: [],
                 websiteURL: "https://bitcoin.org",
               },
@@ -242,13 +244,13 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [38365300000000n, 1n],
+          amounts: [38365300000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
@@ -259,13 +261,13 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [32973600000000n, 1n],
+          amounts: [32973600000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "euro", symbol: "EUR" },
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
@@ -276,13 +278,13 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [244870000000000n, 1n],
+          amounts: [244870000000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "renminbi", symbol: "CNY" },
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },
@@ -315,7 +317,7 @@ describe("lib/prices.ts", () => {
         symbol: "qwerqwer",
         decimals: 18,
         metadata: {
-          coinGeckoId: "qwerqwer",
+          coinGeckoID: "qwerqwer",
           tokenLists: [],
           websiteURL: "https://www.youtube.com/watch?v=xvFZjo5PgG0",
         },
@@ -328,13 +330,13 @@ describe("lib/prices.ts", () => {
       }
       const getPricesResponse = [
         {
-          amounts: [38365300000000n, 1n],
+          amounts: [38365300000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             {
               decimals: 18,
               metadata: {
-                coinGeckoId: "ethereum",
+                coinGeckoID: "ethereum",
                 tokenLists: [],
                 websiteURL: "https://ethereum.org",
               },

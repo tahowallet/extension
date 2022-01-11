@@ -1,32 +1,124 @@
-import React, { ReactElement, useState } from "react"
-import { useHistory, useLocation } from "react-router-dom"
+import React, { ReactElement, useEffect, useState } from "react"
+import { useHistory } from "react-router-dom"
+import {
+  broadcastSignedTransaction,
+  NetworkFeeSetting,
+  rejectTransactionSignature,
+  selectEstimatedFeesPerGas,
+  selectIsTransactionLoaded,
+  selectIsTransactionSigned,
+  selectTransactionData,
+  setFeeType,
+  signTransaction,
+  updateTransactionOptions,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useAreKeyringsUnlocked,
+} from "../hooks"
+import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
+import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
-enum SignType {
+export enum SignType {
   Sign = "sign",
   SignSwap = "sign-swap",
   SignSpend = "sign-spend",
+  SignTransfer = "sign-transfer",
 }
 
 interface SignLocationState {
-  token: string
+  assetSymbol: string
   amount: number
-  speed: number
-  network: string
   signType: SignType
+  to: string
+  value: string | number
 }
 
-export default function SignTransaction(): ReactElement {
+export default function SignTransaction({
+  location,
+}: {
+  location: { key: string; pathname: string; state?: SignLocationState }
+}): ReactElement {
+  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
+    useState(false)
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+
   const history = useHistory()
-  const location = useLocation<SignLocationState>()
-  const { token, amount, speed, network, signType } = location.state
+  const dispatch = useBackgroundDispatch()
+
+  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
+    signType: SignType.Sign,
+  }
+  const isTransactionDataReady = useBackgroundSelector(
+    selectIsTransactionLoaded
+  )
+
+  const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
+
+  const shouldBroadcastOnSign = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.broadcastOnSign ?? false
+  )
+  const signedTransaction = useBackgroundSelector(
+    ({ transactionConstruction }) => transactionConstruction.signedTransaction
+  )
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
+
+  const signerAccountTotal = useBackgroundSelector((state) =>
+    typeof transactionDetails === "undefined"
+      ? undefined
+      : getAccountTotal(state, transactionDetails.from)
+  )
+
+  const [gasLimit, setGasLimit] = useState("")
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const [panelNumber, setPanelNumber] = useState(0)
+  const [isTransactionSigning, setIsTransactionSigning] = useState(false)
+
+  useEffect(() => {
+    if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
+      if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
+        dispatch(broadcastSignedTransaction(signedTransaction))
+      }
+
+      // Request broadcast if not dApp...
+      history.push("/singleAsset", { symbol: assetSymbol })
+    }
+  }, [
+    areKeyringsUnlocked,
+    isTransactionSigned,
+    isTransactionSigning,
+    history,
+    assetSymbol,
+    shouldBroadcastOnSign,
+    signedTransaction,
+    dispatch,
+  ])
+
+  if (!areKeyringsUnlocked) {
+    return <></>
+  }
+
+  if (
+    typeof transactionDetails === "undefined" ||
+    typeof signerAccountTotal === "undefined"
+  ) {
+    // TODO Some sort of unexpected state error if we end up here... Or do we
+    // go back in history? That won't work for dApp popovers though.
+    return <></>
+  }
 
   const signContent: {
     [signType in SignType]: {
@@ -45,18 +137,49 @@ export default function SignTransaction(): ReactElement {
       component: () => <SignTransactionApproveSpendAssetBlock />,
       confirmButtonText: "Approve",
     },
+    [SignType.SignTransfer]: {
+      title: "Sign Transfer",
+      component: () => (
+        <SignTransactionTransferBlock
+          token={assetSymbol ?? ""}
+          amount={amount ?? 0}
+          destination={to ?? ""}
+          localizedValue={value ?? ""}
+        />
+      ),
+      confirmButtonText: "Sign",
+    },
     [SignType.Sign]: {
       title: "Sign Transaction",
       component: () => (
-        <SignTransactionSignBlock token={token} amount={amount} />
+        <SignTransactionSignBlock transactionDetails={transactionDetails} />
       ),
       confirmButtonText: "Sign",
     },
   }
 
+  const handleReject = async () => {
+    await dispatch(rejectTransactionSignature())
+    history.goBack()
+  }
+  const handleConfirm = async () => {
+    if (isTransactionDataReady && transactionDetails) {
+      dispatch(signTransaction(transactionDetails))
+      setIsTransactionSigning(true)
+    }
+  }
+  const networkSettingsSaved = async (networkSetting: NetworkFeeSetting) => {
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    dispatch(updateTransactionOptions(transactionDetails))
+    setNetworkSettingsModalOpen(false)
+  }
+
   return (
     <section>
-      <SignTransactionNetworkAccountInfoTopBar />
+      <SignTransactionNetworkAccountInfoTopBar
+        accountTotal={signerAccountTotal}
+      />
       <h1 className="serif_header title">{signContent[signType].title}</h1>
       <div className="primary_info_card standard_width">
         {signContent[signType].component()}
@@ -64,13 +187,30 @@ export default function SignTransaction(): ReactElement {
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
         panelNumber={panelNumber}
-        panelNames={["Details", "Advanced"]}
+        panelNames={["Details"]}
       />
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
+          <SharedSlideUpMenu
+            size="custom"
+            isOpen={networkSettingsModalOpen}
+            close={() => setNetworkSettingsModalOpen(false)}
+            customSize={`${3 * 56 + 320}px`}
+          >
+            <NetworkSettingsChooser
+              networkSettings={{
+                estimatedFeesPerGas,
+                gasLimit,
+              }}
+              onNetworkSettingsSave={networkSettingsSaved}
+              visible={networkSettingsModalOpen}
+            />
+          </SharedSlideUpMenu>
           <span className="detail_item">
-            Network Fee/Speed
-            <span className="detail_item_right">{"$24 / <1min"}</span>
+            Estimated network fee
+            <FeeSettingsButton
+              onClick={() => setNetworkSettingsModalOpen(true)}
+            />
           </span>
         </div>
       ) : null}
@@ -79,13 +219,23 @@ export default function SignTransaction(): ReactElement {
           iconSize="large"
           size="large"
           type="secondary"
-          onClick={() => history.goBack()}
+          onClick={handleReject}
         >
           Reject
         </SharedButton>
-        <SharedButton type="primary" iconSize="large" size="large">
-          {signContent[signType].confirmButtonText}
-        </SharedButton>
+        {signerAccountTotal.accountType === AccountType.Imported ? (
+          <SharedButton
+            type="primary"
+            iconSize="large"
+            size="large"
+            onClick={handleConfirm}
+            showLoadingOnClick
+          >
+            {signContent[signType].confirmButtonText}
+          </SharedButton>
+        ) : (
+          <span className="no-signing">Read-only accounts cannot sign</span>
+        )}
       </div>
       <style jsx>
         {`
@@ -96,6 +246,7 @@ export default function SignTransaction(): ReactElement {
             flex-direction: column;
             align-items: center;
             background-color: var(--green-95);
+            z-index: 5;
           }
           .title {
             color: var(--trophy-gold);
@@ -139,6 +290,7 @@ export default function SignTransaction(): ReactElement {
           .detail_items_wrap {
             display: flex;
             margin-top: 21px;
+            flex-direction: column;
           }
           .detail_item_right {
             color: var(--green-20);

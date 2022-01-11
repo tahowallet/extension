@@ -11,14 +11,14 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import {
-  EIP1559TransactionRequest,
-  HexString,
-  KeyringTypes,
-  SignedEVMTransaction,
-} from "../../types"
+import { HexString, KeyringTypes, UNIXTime } from "../../types"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH } from "../../constants"
+import { ETH, MINUTE } from "../../constants"
+import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+
+export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
+export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
 export type Keyring = {
   type: KeyringTypes
@@ -37,11 +37,32 @@ interface Events extends ServiceLifecycleEvents {
 /*
  * KeyringService is responsible for all key material, as well as applying the
  * material to sign messages, sign transactions, and derive child keypairs.
+ *
+ * The service can be in two states, locked or unlocked, and starts up locked.
+ * Keyrings are persisted in encrypted form when the service is locked.
+ *
+ * When unlocked, the service automatically locks itself after it has not seen
+ * activity for a certain amount of time. The service can be notified of
+ * outside activity that should be considered for the purposes of keeping the
+ * service unlocked. No keyring activity for 30 minutes causes the service to
+ * lock, while no outside activity for 30 minutes has the same effect.
  */
 export default class KeyringService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
 
   #keyrings: HDKeyring[] = []
+
+  /**
+   * The last time a keyring took an action that required the service to be
+   * unlocked (signing, adding a keyring, etc).
+   */
+  lastKeyringActivity: UNIXTime | undefined
+
+  /**
+   * The last time the keyring was notified of an activity outside of the
+   * keyring. {@see markOutsideActivity}
+   */
+  lastOutsideActivity: UNIXTime | undefined
 
   static create: ServiceCreatorFunction<Events, KeyringService, []> =
     async () => {
@@ -49,7 +70,25 @@ export default class KeyringService extends BaseService<Events> {
     }
 
   private constructor() {
-    super()
+    super({
+      autolock: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.autolockIfNeeded()
+        },
+      },
+    })
+  }
+
+  async internalStartService(): Promise<void> {
+    // Emit locked status on startup. Should always be locked, but the main
+    // goal is to have external viewers synced to internal state no matter what
+    // it is. Don't emit if there are no keyrings to unlock.
+    if ((await getEncryptedVaults()).vaults.length > 0) {
+      this.emitter.emit("locked", this.locked())
+    }
   }
 
   async internalStopService(): Promise<void> {
@@ -58,6 +97,9 @@ export default class KeyringService extends BaseService<Events> {
     await super.internalStopService()
   }
 
+  /**
+   * @return True if the keyring is locked, false if it is unlocked.
+   */
   locked(): boolean {
     return this.#cachedKey === null
   }
@@ -126,6 +168,9 @@ export default class KeyringService extends BaseService<Events> {
       this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
       await this.persistKeyrings()
     }
+
+    this.lastKeyringActivity = Date.now()
+    this.lastOutsideActivity = Date.now()
     this.emitter.emit("locked", false)
     return true
   }
@@ -135,16 +180,61 @@ export default class KeyringService extends BaseService<Events> {
    * encryption key and keyrings.
    */
   async lock(): Promise<void> {
+    this.lastKeyringActivity = undefined
+    this.lastOutsideActivity = undefined
     this.#cachedKey = null
     this.#keyrings = []
     this.emitter.emit("locked", true)
     this.emitKeyrings()
   }
 
+  /**
+   * Notifies the keyring that an outside activity occurred. Outside activities
+   * are used to delay autolocking.
+   */
+  markOutsideActivity(): void {
+    if (typeof this.lastOutsideActivity !== "undefined") {
+      this.lastOutsideActivity = Date.now()
+    }
+  }
+
+  // Locks the keyring if the time since last keyring or outside activity
+  // exceeds preset levels.
+  private async autolockIfNeeded(): Promise<void> {
+    if (
+      typeof this.lastKeyringActivity === "undefined" ||
+      typeof this.lastOutsideActivity === "undefined"
+    ) {
+      // Normally both activity counters should be undefined only if the keyring
+      // is locked, otherwise they should both be set; regardless, fail safe if
+      // either is undefined and the keyring is unlocked.
+      if (!this.locked()) {
+        await this.lock()
+      }
+
+      return
+    }
+
+    const now = Date.now()
+    const timeSinceLastKeyringActivity = now - this.lastKeyringActivity
+    const timeSinceLastOutsideActivity = now - this.lastOutsideActivity
+
+    if (timeSinceLastKeyringActivity >= MAX_KEYRING_IDLE_TIME) {
+      this.lock()
+    } else if (timeSinceLastOutsideActivity >= MAX_OUTSIDE_IDLE_TIME) {
+      this.lock()
+    }
+  }
+
+  // Throw if the keyring is not unlocked; if it is, update the last keyring
+  // activity timestamp.
   private requireUnlocked(): void {
     if (!this.#cachedKey) {
       throw new Error("KeyringService must be unlocked.")
     }
+
+    this.lastKeyringActivity = Date.now()
+    this.markOutsideActivity()
   }
 
   // ///////////////////////////////////////////
@@ -152,7 +242,7 @@ export default class KeyringService extends BaseService<Events> {
   // ///////////////////////////////////////////
 
   /**
-   * Generate a new keyring, saving it to extension storage.
+   * Generate a new keyring
    *
    * @param type - the type of keyring to generate. Currently only supports 256-
    *        bit HD keys.
@@ -165,19 +255,13 @@ export default class KeyringService extends BaseService<Events> {
   ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
-    if (type !== KeyringTypes.mnemonicBIP39S256) {
+    if (type !== KeyringTypes.mnemonicBIP39S128) {
       throw new Error(
-        "KeyringService only supports generating 256-bit HD key trees"
+        "KeyringService only supports generating 128-bit HD key trees"
       )
     }
 
-    const newKeyring = new HDKeyring({ strength: 256 })
-    this.#keyrings.push(newKeyring)
-    const [address] = newKeyring.addAddressesSync(1)
-    await this.persistKeyrings()
-
-    this.emitter.emit("address", address)
-    this.emitKeyrings()
+    const newKeyring = new HDKeyring({ strength: 128 })
 
     const { mnemonic } = newKeyring.serializeSync()
 
@@ -185,22 +269,18 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * Import a legacy 128 bit keyring and pull the first address from that
+   * Import keyring and pull the first address from that
    * keyring for system use.
    *
-   * @param mnemonic - a 12-word seed phrase compatible with MetaMask.
+   * @param mnemonic - a seed phrase
    * @returns The string ID of the new keyring.
    */
-  async importLegacyKeyring(mnemonic: string): Promise<string> {
+  async importKeyring(mnemonic: string, path?: string): Promise<string> {
     this.requireUnlocked()
 
-    // confirm the mnemonic is 12-word for a 128-bit seed + checksum. Leave
-    // further validation to HDKeyring
-    if (mnemonic.split(/\s+/).length !== 12) {
-      throw new Error("Invalid legacy mnemonic.")
-    }
-
-    const newKeyring = new HDKeyring({ mnemonic })
+    const newKeyring = path
+      ? new HDKeyring({ mnemonic, path })
+      : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
@@ -209,6 +289,46 @@ export default class KeyringService extends BaseService<Events> {
     this.emitKeyrings()
 
     return newKeyring.id
+  }
+
+  /**
+   * Return an array of keyring representations that can safely be stored and
+   * used outside the extension.
+   */
+  getKeyrings(): Keyring[] {
+    this.requireUnlocked()
+
+    return this.#keyrings.map((kr) => ({
+      // TODO this type is meanlingless from the library's perspective.
+      // Reconsider, or explicitly track which keyrings have been generated vs
+      // imported as well as their strength
+      type: KeyringTypes.mnemonicBIP39S256,
+      addresses: [...kr.getAddressesSync()],
+      id: kr.id,
+    }))
+  }
+
+  /**
+   * Derive and return the next address from an HDKeyring.
+   *
+   * @param keyringID - a string ID corresponding to an unlocked keyring.
+   */
+  async deriveAddress(keyringID: string): Promise<HexString> {
+    this.requireUnlocked()
+
+    // find the keyring using a linear search
+    const keyring = this.#keyrings.find((kr) => kr.id === keyringID)
+    if (!keyring) {
+      throw new Error("Keyring not found.")
+    }
+
+    const [newAddress] = keyring.addAddressesSync(1)
+    await this.persistKeyrings()
+
+    this.emitter.emit("address", newAddress)
+    this.emitKeyrings()
+
+    return newAddress
   }
 
   /**
@@ -222,6 +342,7 @@ export default class KeyringService extends BaseService<Events> {
     txRequest: EIP1559TransactionRequest
   ): Promise<SignedEVMTransaction> {
     this.requireUnlocked()
+
     // find the keyring using a linear search
     const keyring = this.#keyrings.find((kr) =>
       kr.getAddressesSync().includes(normalizeEVMAddress(account))
@@ -231,14 +352,8 @@ export default class KeyringService extends BaseService<Events> {
     }
 
     // ethers has a looser / slightly different request type
-    const ethersTxRequest = {
-      to: txRequest.to,
-      nonce: txRequest.nonce,
-      maxPriorityFeePerGas: txRequest.maxPriorityFeePerGas,
-      maxFeePerGas: txRequest.maxFeePerGas,
-      type: txRequest.type,
-      chainId: Number.parseInt(txRequest.chainID, 10),
-    }
+    const ethersTxRequest =
+      ethersTransactionRequestFromEIP1559TransactionRequest(txRequest)
     // unfortunately, ethers gives us a serialized signed tx here
     const signed = await keyring.signTransaction(account, ethersTxRequest)
 
@@ -287,11 +402,7 @@ export default class KeyringService extends BaseService<Events> {
   // //////////////////
 
   private emitKeyrings() {
-    const keyrings = this.#keyrings.map((kr) => ({
-      type: KeyringTypes.mnemonicBIP39S256,
-      addresses: [...kr.getAddressesSync()],
-      id: kr.id,
-    }))
+    const keyrings = this.getKeyrings()
     this.emitter.emit("keyrings", keyrings)
   }
 

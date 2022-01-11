@@ -1,5 +1,7 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import classNames from "classnames"
+import { selectIsCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
+import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -16,7 +18,7 @@ function ReadOnlyNotice(): ReactElement {
           height: 40px;
           background: rgba(238, 178, 24, 0.1);
           border-radius: 2px;
-          margin-top: 12px;
+          margin-top: 6px;
           font-weight: 500;
           font-size: 16px;
           display: flex;
@@ -44,20 +46,14 @@ export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
   const { balance, initializationLoadingTimeExpired } = props
-  const keyringImport = useBackgroundSelector(
-    (state) => state.keyrings.importing
-  )
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
-  const hasSavedSeed = window.localStorage.getItem("hasSavedSeed")
 
-  /*
-   * Check to see if a keyring has been imported.
-   * If not, we can assume they're using a read-only wallet.
-   * Currently the wallet tab incorrectly merges all accounts
-   * together. So we'll need to,
-   * TODO: Give this multi-account support.
-   */
-  const isViewOnlyWallet = keyringImport !== "done"
+  // TODO When non-imported accounts are supported, generalize this.
+  const hasSavedSeed = true
+
+  const isCurrentAccountSigner = useBackgroundSelector(
+    selectIsCurrentAccountSigner
+  )
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -86,20 +82,19 @@ export default function WalletAccountBalanceControl(
             })}
           >
             <span className="dollar_sign">$</span>
-            {balance}
+            {balance ?? 0}
           </span>
         </span>
-        {isViewOnlyWallet ? (
-          <ReadOnlyNotice />
-        ) : (
+        {isCurrentAccountSigner && !HIDE_SEND_BUTTON ? (
           <>
             {hasSavedSeed ? (
               <div className="send_receive_button_wrap">
                 <SharedButton
                   icon="send"
                   size="medium"
-                  type="primary"
+                  type="tertiary"
                   linkTo="/send"
+                  iconPosition="left"
                 >
                   Send
                 </SharedButton>
@@ -107,7 +102,8 @@ export default function WalletAccountBalanceControl(
                   onClick={handleClick}
                   icon="receive"
                   size="medium"
-                  type="primary"
+                  type="tertiary"
+                  iconPosition="left"
                 >
                   Receive
                 </SharedButton>
@@ -126,6 +122,8 @@ export default function WalletAccountBalanceControl(
               </div>
             )}
           </>
+        ) : (
+          <ReadOnlyNotice />
         )}
       </div>
       <style jsx>
@@ -136,6 +134,8 @@ export default function WalletAccountBalanceControl(
             justify-contnet: space-between;
             align-items: center;
             flex-direction: column;
+            box-sizing: border-box;
+            padding-top: 6px;
           }
           .balance_area {
             height: 48px;
@@ -149,9 +149,8 @@ export default function WalletAccountBalanceControl(
             align-items: center;
           }
           .send_receive_button_wrap {
-            margin-top: 18px;
             display: flex;
-            width: 223px;
+            width: 180px;
             justify-content: space-between;
           }
           .balance_label {

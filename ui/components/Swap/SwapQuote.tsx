@@ -1,11 +1,44 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { utils } from "ethers"
+
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
 import SwapTransactionSettings from "./SwapTransactionSettings"
 import SwapApprovalStep from "./SwapApprovalStep"
+import { useBackgroundSelector } from "../../hooks"
 
 export default function SwapQoute(): ReactElement {
+  const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
+    useBackgroundSelector((state) => {
+      if (state.swap.quote) {
+        return {
+          ...state.swap,
+          sellAmount: utils.formatUnits(
+            state.swap.quote.sellAmount,
+            state.swap.sellAsset?.decimals
+          ),
+          buyAmount: utils.formatUnits(
+            state.swap.quote.buyAmount,
+            state.swap.buyAsset?.decimals
+          ),
+          sources: state.swap.quote.sources.filter((source) => {
+            if (parseFloat(source.proportion) > 0) {
+              return true
+            }
+
+            return false
+          }),
+        }
+      }
+
+      // We should always have a quote by the time we get to this page, but just in case!
+      return {
+        ...state.swap,
+        sources: [],
+      }
+    })
+
   const [stepComplete, setStepComplete] = useState(-1)
 
   const handleApproveClick = useCallback(() => {
@@ -24,14 +57,24 @@ export default function SwapQoute(): ReactElement {
   return (
     <section className="center_horizontal standard_width">
       <SharedActivityHeader label="Swap Assets" activity="swap" />
-      <div className="qoute_cards">
-        <SwapQuoteAssetCard />
+      <div className="quote_cards">
+        <SwapQuoteAssetCard
+          label="You pay"
+          asset={sellAsset}
+          amount={sellAmount}
+        />
         <span className="icon_switch" />
-        <SwapQuoteAssetCard />
+        <SwapQuoteAssetCard
+          label="You receive"
+          asset={buyAsset}
+          amount={buyAmount}
+        />
       </div>
-      <span className="label label_right">1 ETH = 9,843 KEEP</span>
+      <span className="label label_right">
+        1 {sellAsset?.symbol} = {quote?.price} {buyAsset?.symbol}
+      </span>
       <div className="settings_wrap">
-        <SwapTransactionSettings />
+        <SwapTransactionSettings isSettingsLocked />
       </div>
       {stepComplete > -1 ? (
         <>
@@ -53,14 +96,17 @@ export default function SwapQoute(): ReactElement {
       ) : (
         <>
           <div className="exchange_section_wrap">
-            <span className="label">Exchange route</span>
-            <div className="exchange_content standard_width">
-              <div className="left">
-                <span className="icon_uniswap" />
-                Uniswap v3
+            <span className="top_label label">Exchange route</span>
+
+            {sources.map((source) => (
+              <div className="exchange_content standard_width">
+                <div className="left">
+                  <span className="icon_uniswap" />
+                  {source.name}
+                </div>
+                <div>{parseFloat(source.proportion) * 100}%</div>
               </div>
-              <div>100%</div>
-            </div>
+            ))}
           </div>
           <div className="approve_button center_horizontal">
             <SharedButton
@@ -106,10 +152,13 @@ export default function SwapQoute(): ReactElement {
             flex-grow: 1;
             flex-shrink: 0;
           }
-          .qoute_cards {
+          .quote_cards {
             display: flex;
             justify-content: space-between;
             align-items: center;
+          }
+          .top_label {
+            margin-bottom: 7px;
           }
           .label_right {
             float: right;

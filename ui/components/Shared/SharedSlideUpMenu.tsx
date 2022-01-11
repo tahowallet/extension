@@ -1,27 +1,40 @@
-import React, { ReactElement } from "react"
+import classNames from "classnames"
+import React, { ReactElement, useState, useEffect } from "react"
 
 interface Props {
   isOpen: boolean
   close: () => void
   children: React.ReactNode
-  size: "small" | "medium" | "large"
+  customSize?: string
+  size: "small" | "medium" | "large" | "custom"
 }
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {
-  const { isOpen, close, size, children } = props
+  const { isOpen, close, size, children, customSize } = props
+  const [forceHide, setForceHide] = useState(true)
+
+  useEffect(() => {
+    if (isOpen) {
+      setForceHide(false)
+    }
+  }, [isOpen])
 
   let menuHeight = "536px"
   if (size === "large") {
     menuHeight = "600px"
   } else if (size === "small") {
     menuHeight = "268px"
+  } else if (size === "custom") {
+    menuHeight = customSize || "600px"
   }
 
   return (
     <div
-      className={`slide_up_menu
-        ${size === "large" ? " large" : ""}
-        ${!isOpen ? " closed" : ""}`}
+      className={classNames("slide_up_menu", {
+        large: size === "large",
+        closed: !isOpen,
+        force_hide: forceHide,
+      })}
     >
       <button
         type="button"
@@ -33,8 +46,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
       <style jsx>
         {`
           .slide_up_menu {
-            width: 100vw;
+            width: 100%;
             height: ${menuHeight};
+            overflow-y: auto;
+            overflow-x: hidden;
             border-radius: 16px;
             background-color: var(--green-95);
             position: fixed;
@@ -53,9 +68,12 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             width: 12px;
             height: 12px;
             position: absolute;
-            right: 24px;
             background-color: var(--green-20);
-            z-index: 1;
+            z-index: 2;
+            position: sticky;
+            top: 0px;
+            right: 24px;
+            float: right;
           }
           .icon_close:hover {
             background-color: #fff;
@@ -63,13 +81,12 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           .large {
             background-color: var(--hunter-green);
           }
-          .open_animate {
-            transform: translateY(0px);
-            animation: slideUp cubic-bezier(0.19, 1, 0.22, 1) 0.445s;
-            animation-direction: forward;
-          }
           .closed {
             transform: translateY(${menuHeight});
+          }
+          .force_hide {
+            opacity: 0;
+            pointer-events: none;
           }
         `}
       </style>

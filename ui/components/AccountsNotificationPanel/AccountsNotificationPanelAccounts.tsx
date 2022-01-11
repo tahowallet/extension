@@ -1,42 +1,99 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
-import AccountsNotificationPanelAccountItem from "./AccountsNotificationPanelAccountItem"
+import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
+import {
+  selectAccountTotalsByCategory,
+  selectCurrentAccount,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { useHistory } from "react-router-dom"
+import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useAreKeyringsUnlocked,
+} from "../../hooks"
 
-function WalletName() {
+type WalletTypeInfo = {
+  title: string
+  icon: string
+}
+
+const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
+  [AccountType.ReadOnly]: {
+    title: "Read-only",
+    icon: "./images/eye_account@2x.png",
+  },
+  [AccountType.Imported]: {
+    title: "Full access",
+    icon: "./images/imported@2x.png",
+  },
+}
+
+function WalletTypeHeader({
+  accountType,
+  onClickAddAddress,
+}: {
+  accountType: AccountType
+  onClickAddAddress?: () => void
+}) {
+  const { title, icon } = walletTypeDetails[accountType]
+  const history = useHistory()
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+
   return (
     <>
-      <div className="wallet_title">
-        <div className="left">
-          <div className="icon_wallet" />
-          Trezor
-          <div className="icon_edit" />
-        </div>
-        <div className="right">
-          <SharedButton
-            type="tertiary"
-            size="small"
-            icon="plus"
-            iconSize="medium"
-            isDisabled
-          >
-            Add address
-          </SharedButton>
-        </div>
-      </div>
+      <header className="wallet_title">
+        <h2 className="left">
+          <div className="icon" />
+          {title}
+        </h2>
+        {onClickAddAddress ? (
+          <div className="right">
+            <SharedButton
+              type="tertiaryGray"
+              size="small"
+              icon="plus"
+              iconSize="medium"
+              onClick={() => {
+                if (areKeyringsUnlocked) {
+                  onClickAddAddress()
+                } else {
+                  history.push("/keyring/unlock")
+                }
+              }}
+            >
+              Add address
+            </SharedButton>
+          </div>
+        ) : (
+          <></>
+        )}
+      </header>
       <style jsx>{`
         .wallet_title {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .wallet_title > h2 {
           color: #fff;
           font-size: 18px;
           font-weight: 600;
           line-height: 24px;
           padding: 0px 12px 0px 16px;
-          margin-bottom: 16px;
-          margin-top: 8px;
-          align-items: center;
-          display: flex;
-          justify-content: space-between;
+          margin: 8px 0px;
+        }
+        .icon {
+          background: url("${icon}");
+          background-size: cover;
+          background-color: #faf9f4;
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          margin: 0 7px 0 0;
         }
         .icon_wallet {
           background: url("./images/wallet_kind_icon@2x.png") center no-repeat;
@@ -58,59 +115,104 @@ function WalletName() {
         }
         .right {
           align-items: center;
-          display: flex;
+          margin-right: 4px;
         }
       `}</style>
     </>
   )
 }
 
-export default function AccountsNotificationPanelAccounts(): ReactElement {
-  const [selectedWallet, setSelectedWallet] = useState(0)
+type Props = {
+  onCurrentAddressChange: (newAddress: string) => void
+}
 
+export default function AccountsNotificationPanelAccounts({
+  onCurrentAddressChange,
+}: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
-  const accountAddresses = useBackgroundSelector((background) => {
-    return Object.keys(background.account.accountsData)
+  const accountTotals = useBackgroundSelector(selectAccountTotalsByCategory)
+
+  const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
+
+  const selectedAccountAddress =
+    useBackgroundSelector(selectCurrentAccount).address
+
+  const firstKeyringId = useBackgroundSelector((state) => {
+    return state.keyrings.keyrings[0]?.id
   })
 
-  const selectedAccount = useBackgroundSelector((background) => {
-    return background.ui.selectedAccount?.address
-  })
+  const updateCurrentAccount = (address: string) => {
+    setPendingSelectedAddress(address)
+    dispatch(
+      setNewSelectedAccount({
+        address,
+        network: ETHEREUM,
+      })
+    )
+  }
 
   useEffect(() => {
-    function selectFirstAccountIfNoneSelected() {
-      if (selectedAccount === "" && accountAddresses[0]) {
-        dispatch(setSelectedAccount(accountAddresses[0].toLowerCase()))
-      }
+    if (
+      pendingSelectedAddress !== "" &&
+      pendingSelectedAddress === selectedAccountAddress
+    ) {
+      onCurrentAddressChange(pendingSelectedAddress)
+      setPendingSelectedAddress("")
     }
-    selectFirstAccountIfNoneSelected()
-  }, [dispatch, accountAddresses, selectedAccount])
+  }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
   return (
-    <div>
-      <WalletName />
-      <ul>
-        {accountAddresses.map((item, index) => {
-          const lowerCaseItem = item.toLocaleLowerCase()
+    <div className="switcher_wrap">
+      {[AccountType.Imported, AccountType.ReadOnly]
+        .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
+        .map((accountType) => {
+          // Known-non-null due to above filter.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const accountTypeTotals = accountTotals[accountType]!
+
           return (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedWallet(0)
-                setSelectedAccount(index)
-                dispatch(setSelectedAccount(lowerCaseItem))
-              }}
-            >
-              <AccountsNotificationPanelAccountItem
-                key={lowerCaseItem}
-                address={lowerCaseItem.slice(0, 16)}
-                isSelected={lowerCaseItem === selectedAccount}
+            <section key={accountType}>
+              <WalletTypeHeader
+                accountType={accountType}
+                onClickAddAddress={
+                  accountType === "imported"
+                    ? () => {
+                        if (firstKeyringId) {
+                          dispatch(deriveAddress(firstKeyringId))
+                        }
+                      }
+                    : undefined
+                }
               />
-            </button>
+              <ul>
+                {accountTypeTotals.map((accountTotal) => {
+                  const lowerCaseAddress =
+                    accountTotal.address.toLocaleLowerCase()
+                  return (
+                    <li key={lowerCaseAddress}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateCurrentAccount(lowerCaseAddress)
+                        }}
+                      >
+                        <SharedPanelAccountItem
+                          key={lowerCaseAddress}
+                          accountTotal={accountTotal}
+                          isSelected={
+                            lowerCaseAddress === selectedAccountAddress
+                          }
+                          hideMenu
+                        />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
           )
         })}
-      </ul>
       <footer>
         <SharedButton
           type="tertiary"
@@ -118,7 +220,7 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-          linkTo="/onboarding/1"
+          linkTo="/onboarding/addWallet"
         >
           Add Wallet
         </SharedButton>
@@ -131,6 +233,15 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
             justify-content: center;
             align-items: center;
             align-content: center;
+            margin-bottom: 8px;
+          }
+          li {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 0px 8px 24px;
+          }
+          li:hover {
+            background-color: var(--hunter-green);
           }
           footer {
             width: 100%;
@@ -144,13 +255,15 @@ export default function AccountsNotificationPanelAccounts(): ReactElement {
             padding: 0px 12px;
             box-sizing: border-box;
           }
+          .switcher_wrap {
+            height: 432px;
+            overflow-y: scroll;
+          }
+          section:first-of-type {
+            padding-top: 16px;
+          }
         `}
       </style>
-      <style jsx global>{`
-        .wallet_title:first-of-type {
-          margin-top: 24px;
-        }
-      `}</style>
     </div>
   )
 }

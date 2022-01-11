@@ -1,17 +1,20 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import { Asset } from "@tallyho/tally-background/assets"
+import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface SelectTokenMenuContentProps {
-  setSelectedTokenAndClose: (token: { name: string }) => void
+interface SelectAssetMenuContentProps {
+  assets: Asset[]
+  setSelectedAssetAndClose: (asset: Asset) => void
 }
 
-function SelectTokenMenuContent(
-  props: SelectTokenMenuContentProps
+function SelectAssetMenuContent(
+  props: SelectAssetMenuContentProps
 ): ReactElement {
-  const { setSelectedTokenAndClose } = props
+  const { setSelectedAssetAndClose, assets } = props
 
   return (
     <>
@@ -28,11 +31,15 @@ function SelectTokenMenuContent(
       </div>
       <div className="divider" />
       <ul>
-        {Array(13)
-          .fill("")
-          .map(() => (
-            <SharedAssetItem onClick={setSelectedTokenAndClose} />
-          ))}
+        {assets.map((asset) => {
+          return (
+            <SharedAssetItem
+              key={asset.metadata?.coinGeckoID || asset.symbol}
+              asset={asset}
+              onClick={setSelectedAssetAndClose}
+            />
+          )
+        })}
       </ul>
       <style jsx>
         {`
@@ -81,19 +88,25 @@ function SelectTokenMenuContent(
   )
 }
 
-interface SelectedTokenButtonProps {
-  toggleIsTokenMenuOpen?: () => void
+interface SelectedAssetButtonProps {
+  asset: Asset
+  toggleIsAssetMenuOpen?: () => void
 }
 
-function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
-  const { toggleIsTokenMenuOpen } = props
+function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
+  const { asset, toggleIsAssetMenuOpen } = props
 
   return (
-    <button type="button" onClick={toggleIsTokenMenuOpen}>
+    <button type="button" onClick={toggleIsAssetMenuOpen}>
       <div className="asset_icon_wrap">
-        <SharedAssetIcon />
+        <SharedAssetIcon
+          logoURL={asset?.metadata?.logoURL}
+          symbol={asset?.symbol}
+        />
       </div>
-      ETH
+
+      {asset?.symbol}
+
       <style jsx>{`
         button {
           display: flex;
@@ -112,17 +125,21 @@ function SelectedTokenButton(props: SelectedTokenButtonProps): ReactElement {
   )
 }
 
-SelectedTokenButton.defaultProps = {
-  toggleIsTokenMenuOpen: null,
+SelectedAssetButton.defaultProps = {
+  toggleIsAssetMenuOpen: null,
 }
 
 interface SharedAssetInputProps {
   isTypeDestination: boolean
-  onAssetSelected?: () => void
+  assets: Asset[]
   label: string
-  defaultToken: { name: string }
-  isTokenOptionsLocked: boolean
-  onAmountChange: (value: number) => void
+  defaultAsset: Asset
+  amount: string
+  maxBalance: number
+  isAssetOptionsLocked: boolean
+  disableDropdown: boolean
+  onAssetSelect: (token: Asset) => void
+  onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
 }
 
@@ -131,28 +148,48 @@ export default function SharedAssetInput(
 ): ReactElement {
   const {
     isTypeDestination,
+    assets,
     label,
-    defaultToken,
-    isTokenOptionsLocked,
-    onAssetSelected,
+    defaultAsset,
+    amount,
+    maxBalance,
+    isAssetOptionsLocked,
+    disableDropdown,
+    onAssetSelect,
     onAmountChange,
     onSendToAddressChange,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
-  const [selectedToken, setSelectedToken] = useState(defaultToken)
+  const [selectedAsset, setSelectedAsset] = useState(defaultAsset)
 
-  const toggleIsTokenMenuOpen = useCallback(() => {
-    if (!isTokenOptionsLocked) {
+  // TODO: Refactor this to track state in a more reasonable way
+  useEffect(() => {
+    setSelectedAsset(defaultAsset)
+  }, [defaultAsset])
+
+  const toggleIsAssetMenuOpen = useCallback(() => {
+    if (!isAssetOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
-      onAssetSelected?.()
     }
-  }, [isTokenOptionsLocked, onAssetSelected])
+  }, [isAssetOptionsLocked])
 
-  const setSelectedTokenAndClose = useCallback((token) => {
-    setSelectedToken(token)
-    setOpenAssetMenu(false)
-  }, [])
+  const setSelectedAssetAndClose = useCallback(
+    (asset) => {
+      setSelectedAsset(asset)
+      setOpenAssetMenu(false)
+      onAssetSelect?.(asset)
+    },
+
+    [onAssetSelect]
+  )
+
+  const getErrorMessage = (givenAmount: string): string | undefined => {
+    return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
+      Number(givenAmount) === 0
+      ? undefined
+      : "Insufficient balance"
+  }
 
   return (
     <label className="label">
@@ -163,60 +200,66 @@ export default function SharedAssetInput(
           setOpenAssetMenu(false)
         }}
       >
-        <SelectTokenMenuContent
-          setSelectedTokenAndClose={setSelectedTokenAndClose}
-        />
+        {assets && (
+          <SelectAssetMenuContent
+            assets={assets}
+            setSelectedAssetAndClose={setSelectedAssetAndClose}
+          />
+        )}
       </SharedSlideUpMenu>
-      <div className="asset_input standard_width">
+      <div className="asset_wrap standard_width">
         {isTypeDestination ? (
           <>
             <input
-              className="token_input"
+              className="asset_input"
               type="text"
               placeholder="0x..."
               onChange={(event) => {
                 onSendToAddressChange(event.target.value)
               }}
             />
-            <SharedButton
-              type="tertiary"
-              size="medium"
-              icon="paste"
-              iconSize="large"
-            >
-              Paste
-            </SharedButton>
           </>
         ) : (
           <>
-            {selectedToken?.name ? (
-              <SelectedTokenButton
-                toggleIsTokenMenuOpen={toggleIsTokenMenuOpen}
-              />
-            ) : (
-              <SharedButton
-                type="secondary"
-                size="medium"
-                onClick={toggleIsTokenMenuOpen}
-                icon="chevron"
-              >
-                Select token
-              </SharedButton>
-            )}
+            <div className={classNames({ disable_click: disableDropdown })}>
+              {selectedAsset?.symbol ? (
+                <SelectedAssetButton
+                  asset={selectedAsset}
+                  toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
+                />
+              ) : (
+                <SharedButton
+                  type="secondary"
+                  size="medium"
+                  onClick={toggleIsAssetMenuOpen}
+                  icon="chevron"
+                >
+                  Select token
+                </SharedButton>
+              )}
+            </div>
+
             <input
               className="input_amount"
-              type="text"
+              type="number"
+              step="any"
               placeholder="0.0"
-              onChange={(event) => {
-                onAmountChange(parseInt(event.target.value, 10))
-              }}
+              min="0"
+              value={amount}
+              onChange={(event) =>
+                onAmountChange(
+                  event.target.value,
+                  getErrorMessage(event.target.value)
+                )
+              }
             />
           </>
         )}
+        <div className="error_message">{getErrorMessage(amount)}</div>
       </div>
       <style jsx>
         {`
-          .asset_input {
+          .asset_wrap {
             height: 72px;
             border-radius: 4px;
             background-color: var(--green-95);
@@ -226,15 +269,15 @@ export default function SharedAssetInput(
             padding: 0px 16px;
             box-sizing: border-box;
           }
-          .token_input {
-            width: 204px;
+          .asset_input {
+            width: 100%;
             height: 34px;
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
             color: #fff;
           }
-          .token_input::placeholder {
+          .asset_input::placeholder {
             color: var(--green-40);
             opacity: 1;
           }
@@ -254,6 +297,10 @@ export default function SharedAssetInput(
             height: 24px;
             margin-left: 8px;
           }
+          .input_amount::placeholder {
+            color: var(--green-40);
+            opacity: 1;
+          }
           .input_amount {
             width: 98px;
             height: 32px;
@@ -263,8 +310,30 @@ export default function SharedAssetInput(
             line-height: 32px;
             text-align: right;
           }
-          .input_amount::placeholder {
-            color: #ffffff;
+          input::-webkit-outer-spin-button,
+          input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+          input[type="number"] {
+            -moz-appearance: textfield;
+          }
+          .error_message {
+            color: var(--error);
+            position: absolute;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 20px;
+            transform: translateY(-3px);
+            align-self: flex-end;
+            text-align: end;
+            width: 150px;
+            background-color: var(--green-95);
+            margin-left: 172px;
+            z-index: 1;
+          }
+          .disable_click {
+            pointer-events: none;
           }
         `}
       </style>
@@ -274,10 +343,14 @@ export default function SharedAssetInput(
 
 SharedAssetInput.defaultProps = {
   isTypeDestination: false,
-  isTokenOptionsLocked: false,
-  defaultToken: { name: "" },
+  isAssetOptionsLocked: false,
+  disableDropdown: false,
+  assets: [{ symbol: "ETH", name: "Example Asset" }],
+  defaultAsset: { symbol: "", name: "" },
   label: "",
-  onAssetSelected: () => {
+  amount: "0.0",
+  maxBalance: 0,
+  onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
   },

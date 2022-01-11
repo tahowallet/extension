@@ -1,80 +1,134 @@
 import React, { ReactElement } from "react"
 import { useLocation } from "react-router-dom"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountBalances,
+  selectIsCurrentAccountSigner,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  HIDE_SEND_BUTTON,
+  HIDE_SWAP,
+} from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../hooks"
-import CorePage from "../components/Core/CorePage"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
-import BackButton from "../components/Shared/SharedBackButton"
+import SharedBackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation<{ symbol: string }>()
+  const location = useLocation<{ symbol: string; contractAddress?: string }>()
   const { symbol } = location.state
-  const { combinedData, activity } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
+
+  const isCurrentAccountSigner = useBackgroundSelector(
+    selectIsCurrentAccountSigner
   )
 
-  const filteredActivity = activity.filter((item) => {
-    return item?.asset?.symbol === symbol
-  })
+  const filteredActivities = useBackgroundSelector((state) =>
+    (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
+      (activity) => {
+        if (
+          typeof location.state.contractAddress !== "undefined" &&
+          location.state.contractAddress === activity.to
+        ) {
+          return true
+        }
+        switch (activity.annotation?.type) {
+          case "asset-transfer":
+          case "asset-approval":
+            return activity.annotation.assetAmount.asset.symbol === symbol
+          case "asset-swap":
+            return (
+              activity.annotation.fromAssetAmount.asset.symbol === symbol ||
+              activity.annotation.toAssetAmount.asset.symbol === symbol
+            )
+          case "contract-interaction":
+          case "contract-deployment":
+          default:
+            return false
+        }
+      }
+    )
+  )
 
-  const filteredAsset = combinedData.assets.filter((item) => {
-    return item?.asset?.symbol === symbol
-  })[0]
+  const { asset, localizedMainCurrencyAmount, localizedDecimalAmount } =
+    useBackgroundSelector((state) => {
+      const balances = selectCurrentAccountBalances(state)
+
+      if (typeof balances === "undefined") {
+        return undefined
+      }
+
+      return balances.assetAmounts.find(
+        (assetAmount) => assetAmount.asset.symbol === symbol
+      )
+    }) ?? {
+      asset: undefined,
+      localizedMainCurrencyAmount: undefined,
+      localizedDecimalAmount: undefined,
+    }
 
   return (
     <>
-      <CorePage>
-        <BackButton />
-        <div className="header standard_width_padded">
-          <div className="left">
-            <div className="asset_wrap">
-              <SharedAssetIcon
-                logoURL={filteredAsset?.asset?.metadata?.logoURL}
-                symbol={filteredAsset?.asset?.symbol}
-              />
-              <span className="asset_name">{symbol}</span>
-            </div>
-            <div className="balance">{filteredAsset.localizedDecimalValue}</div>
-            {filteredAsset.localizedUserValue && (
-              <div className="usd_value">
-                ${filteredAsset.localizedUserValue}
-              </div>
-            )}
+      <div className="back_button_wrap standard_width_padded">
+        <SharedBackButton />
+      </div>
+      <div className="header standard_width_padded">
+        <div className="left">
+          <div className="asset_wrap">
+            <SharedAssetIcon
+              logoURL={asset?.metadata?.logoURL}
+              symbol={asset?.symbol}
+            />
+            <span className="asset_name">{symbol}</span>
           </div>
-          <div className="right">
-            {process.env.HIDE_SEND_BUTTON === "true" ? null : (
-              <SharedButton
-                type="primary"
-                size="medium"
-                icon="send"
-                linkTo={{
-                  pathname: "/send",
-                  state: {
-                    token: { name: symbol },
-                  },
-                }}
-              >
-                Send
-              </SharedButton>
-            )}
-            <SharedButton type="primary" size="medium" icon="swap">
-              Swap
-            </SharedButton>
-          </div>
+          <div className="balance">{localizedDecimalAmount}</div>
+          {typeof localizedMainCurrencyAmount !== "undefined" ? (
+            <div className="usd_value">${localizedMainCurrencyAmount}</div>
+          ) : (
+            <></>
+          )}
         </div>
-        <div className="sub_info_seperator_wrap standard_width_padded">
-          <div className="left">Asset is on: Arbitrum</div>
-          <div className="right">Move to Ethereum</div>
+        <div className="right">
+          {isCurrentAccountSigner ? (
+            <>
+              {!HIDE_SEND_BUTTON && symbol === "ETH" && (
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  icon="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: {
+                      symbol,
+                    },
+                  }}
+                >
+                  Send
+                </SharedButton>
+              )}
+              {!HIDE_SWAP && (
+                <SharedButton type="primary" size="medium" icon="swap">
+                  Swap
+                </SharedButton>
+              )}
+            </>
+          ) : (
+            <></>
+          )}
         </div>
-        <div className="label_light standard_width_padded">Activity</div>
-        <WalletActivityList />
-      </CorePage>
+      </div>
+      <div className="sub_info_separator_wrap standard_width_padded">
+        <div className="left">Asset is on: Arbitrum</div>
+        <div className="right">Move to Ethereum</div>
+      </div>
+      <WalletActivityList activities={filteredActivities} />
       <style jsx>
         {`
-          .sub_info_seperator_wrap {
-            display: flex;
+          .back_button_wrap {
+            margin-bottom: 4px;
+          }
+          .sub_info_separator_wrap {
+            display: none; // TODO asset network location and transfer for later
             border: 1px solid var(--green-120);
             border-left: 0px;
             border-right: 0px;
@@ -92,6 +146,7 @@ export default function SingleAsset(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding-bottom: 24px;
           }
           .header .right {
             height: 95px;

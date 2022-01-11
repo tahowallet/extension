@@ -31,10 +31,6 @@
   --info-20: #d4e9f0;
 }
 
-html {
-  overflow: scroll;
-}
-
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
@@ -42,7 +38,7 @@ html {
 
 body {
   width: 384px;
-  height: 600px;
+  height: 594px;
   margin: 0;
   font-family: "Segment", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
     sans-serif;
@@ -50,6 +46,7 @@ body {
   color: #fff;
   font-size: 16px;
   background-color: var(--hunter-green);
+  scrollbar-width: none;
 }
 
 a {
@@ -71,6 +68,11 @@ ul,
 li {
   all: unset;
   list-style-type: none;
+}
+
+form {
+  all: inherit;
+  padding: 0;
 }
 
 * {
@@ -114,10 +116,15 @@ label {
 }
 
 .label {
-  color: var(--green-60);
+  color: var(--green-40);
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.42px;
   display: flex;
   justify-content: space-between;
+}
+
+.hide {
+  opacity: 0;
+  pointer-events: none;
 }

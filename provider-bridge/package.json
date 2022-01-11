@@ -1,0 +1,33 @@
+{
+  "name": "@tallyho/provider-bridge",
+  "version": "0.0.1",
+  "description": "Tally, the community owned and operated Web3 wallet: provider bridge to connect the in-page provider with the background script.",
+  "main": "index.ts",
+  "repository": "git@github.com:thesis/tally-extension.git",
+  "author": "Greg Nagy <gergo.nagy@tally.cash>",
+  "license": "GPL-3.0",
+  "keywords": [
+    "ethereum",
+    "bitcoin",
+    "cryptocurrency",
+    "wallet",
+    "web3",
+    "dapp"
+  ],
+  "scripts": {
+    "build": "webpack --mode=production",
+    "lint": "run-p lint:*",
+    "lint-fix": "run-p 'lint:* -- --fix'",
+    "lint:js": "eslint .",
+    "test": "run-p lint:* build",
+    "test:unit": "node tests/index.js",
+    "watch": "webpack --mode=development --watch"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.8.0",
+    "@tallyho/provider-bridge-shared": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/webextension-polyfill": "^0.8.0"
+  }
+}

@@ -1,5 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit"
-import { AnyAsset, PricePoint } from "../types"
+import { createSelector, createSlice } from "@reduxjs/toolkit"
+import { AnyAsset, PricePoint } from "../assets"
 
 type SingleAssetState = AnyAsset & {
   prices: PricePoint[]
@@ -207,3 +207,55 @@ const assetsSlice = createSlice({
 export const { assetsLoaded, newPricePoint } = assetsSlice.actions
 
 export default assetsSlice.reducer
+
+const selectAssetsState = (state: AssetsState) => state
+const selectAssetSymbol = (_: AssetsState, assetSymbol: string) => assetSymbol
+const selectPairedAssetSymbol = (
+  _: AssetsState,
+  _2: string,
+  pairedAssetSymbol: string
+) => pairedAssetSymbol
+
+/**
+ * Selects a particular asset price point given the asset symbol and the paired
+ * asset symbol used to price it.
+ *
+ * For example, calling `selectAssetPricePoint(state.assets, "ETH", "USD")`
+ * will return the ETH-USD price point, if it exists. Note that this selector
+ * guarantees that the returned price point will have the pair in the specified
+ * order, so even if the store price point has amounts in the order [USD, ETH],
+ * the selector will return them in the order [ETH, USD].
+ */
+export const selectAssetPricePoint = createSelector(
+  [selectAssetsState, selectAssetSymbol, selectPairedAssetSymbol],
+  (assets, assetSymbol, pairedAssetSymbol) => {
+    const pricedAsset = assets.find(
+      (asset) =>
+        asset.symbol === assetSymbol &&
+        pairedAssetSymbol in asset.recentPrices &&
+        asset.recentPrices[pairedAssetSymbol].pair
+          .map(({ symbol }) => symbol)
+          .includes(assetSymbol)
+    )
+
+    if (pricedAsset) {
+      const pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]
+      const { pair, amounts, time } = pricePoint
+
+      if (pair[0].symbol === assetSymbol) {
+        return pricePoint
+      }
+
+      const flippedPricePoint: PricePoint = {
+        pair: [pair[1], pair[0]],
+        amounts: [amounts[1], amounts[0]],
+        time,
+      }
+
+      return flippedPricePoint
+    }
+
+    // If no matching priced asset was found, return undefined.
+    return undefined
+  }
+)

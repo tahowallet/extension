@@ -1,6 +1,6 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import SharedActivityHeader from "../Shared/SharedActivityHeader"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
@@ -60,7 +60,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   return (
     <div className="card_wrap">
       <div className="sub_info from">{label}:</div>
-      {address.slice(0, 6)}...{address.slice(37, 41)}
+      {truncateAddress(address)}
       <div className="sub_info name" />
       <style jsx>
         {`
@@ -115,15 +115,9 @@ export default function WalletActivityDetails(
 
   if (!activityItem) return <></>
 
-  const headerTitle = `${activityItem.isSent ? "Sent Asset" : "Received"}`
-
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        <SharedActivityHeader
-          label={headerTitle}
-          activity={activityItem.isSent ? "send" : "receive"}
-        />
         <div className="header_button">
           <SharedButton
             type="tertiary"
@@ -145,17 +139,27 @@ export default function WalletActivityDetails(
         />
       </div>
       <ul>
-        {activityItem &&
-          Object.entries(activityItem.infoRows).map(([key, value]) => {
+        {Object.entries(activityItem.infoRows).map(
+          ([key, { label, value }]) => {
             return (
               <DetailRowItem
                 key={key}
-                label={key}
+                label={label}
                 value={value}
                 valueDetail=""
               />
             )
-          })}
+          }
+        )}
+        <DetailRowItem
+          label="Timestamp"
+          value={
+            typeof activityItem.timestamp !== "undefined"
+              ? new Date(activityItem.timestamp * 1000).toLocaleString()
+              : "(Unknown)"
+          }
+          valueDetail=""
+        />
       </ul>
       <div className="activity_log_wrap">
         <div className="activity_log_title">Activity Log</div>
@@ -189,9 +193,10 @@ export default function WalletActivityDetails(
             align-items: top;
             justify-content: space-between;
             width: 304px;
+            margin-bottom: 10px;
           }
           .header_button {
-            margin-top: 14px;
+            margin-top: 10px;
           }
           .icon_transfer {
             background: url("./images/transfer@2x.png") center no-repeat;

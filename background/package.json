@@ -31,7 +31,9 @@
     "@ethersproject/providers": "^5.4.3",
     "@ethersproject/transactions": "^5.4.0",
     "@ethersproject/web": "^5.4.0",
-    "@tallyho/hd-keyring": "^0.3.2",
+    "@tallyho/hd-keyring": "^0.3.3",
+    "@tallyho/provider-bridge-shared": "0.0.1",
+    "@tallyho/window-provider": "0.0.1",
     "@uniswap/token-lists": "^1.0.0-beta.25",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
@@ -55,6 +57,7 @@
     "redux": "^4.1.1",
     "remote-redux-devtools": "^0.5.16",
     "remotedev-server": "^0.3.1",
+    "ts-node": "^10.4.0",
     "webext-redux": "^2.1.7"
   }
 }

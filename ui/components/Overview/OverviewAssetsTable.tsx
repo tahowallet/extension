@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react"
-import { CombinedAccountData } from "@tallyho/tally-background/redux-slices/accounts"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 interface Props {
-  assets: CombinedAccountData["assets"]
+  assets: CompleteAssetAmount[]
   initializationLoadingTimeExpired: boolean
 }
 
@@ -23,7 +23,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
       </thead>
       <tbody>
         {assets.map((asset) => (
-          <tr>
+          <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
             <td>
               <div className="asset_descriptor">
                 <SharedAssetIcon
@@ -35,10 +35,10 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
               </div>
             </td>
             <td>
-              {asset.localizedPricePerToken ? (
+              {asset.localizedUnitPrice ? (
                 <div>
                   <span className="lighter_color">$</span>
-                  {asset.localizedPricePerToken}
+                  {asset.localizedUnitPrice}
                 </div>
               ) : (
                 <div className="loading_wrap">
@@ -51,14 +51,14 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
               )}
             </td>
             <td>
-              {asset.localizedUserValue && (
+              {asset.localizedMainCurrencyAmount && (
                 <div>
                   <span className="lighter_color">$</span>
-                  {asset.localizedUserValue}
+                  {asset.localizedMainCurrencyAmount}
                 </div>
               )}
               <div className="balance_token_amount">
-                {asset.localizedDecimalValue}
+                {asset.localizedDecimalAmount}
               </div>
             </td>
           </tr>

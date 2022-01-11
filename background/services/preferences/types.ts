@@ -1,4 +1,5 @@
-import { FiatCurrency } from "../../types"
+import { FiatCurrency } from "../../assets"
+import { AddressNetwork } from "../../accounts"
 
 export interface TokenListPreferences {
   autoUpdate: boolean
@@ -8,4 +9,6 @@ export interface TokenListPreferences {
 export interface Preferences {
   tokenLists: TokenListPreferences
   currency: FiatCurrency
+  defaultWallet: boolean
+  selectedAccount: AddressNetwork
 }

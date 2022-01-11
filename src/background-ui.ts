@@ -1,4 +1,5 @@
-import { browser, newProxyStore } from "@tallyho/tally-background"
+// TODO This is meant to do UI notifications, but is incomplete.
+/* import { browser, newProxyStore } from "@tallyho/tally-background"
 
 newProxyStore().then((backgroundStore) => {
   // undefined if no account has been resolved, string array with the latest
@@ -8,7 +9,7 @@ newProxyStore().then((backgroundStore) => {
   backgroundStore.subscribe(() => {
     const state = backgroundStore.getState()
     const {
-      combinedData: { totalUserValue, activity: updatedActivity },
+      combinedData: { totalMainCurrencyValue, activity: updatedActivity },
     } = state.account
 
     if (updatedActivity) {
@@ -24,8 +25,8 @@ newProxyStore().then((backgroundStore) => {
         browser.notifications.create("balance-update", {
           type: "basic",
           title: "Balance Update",
-          message: `<address> has balance ${totalUserValue}`,
-          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalUserValue}`,
+          message: `<address> has balance ${totalMainCurrencyValue}`,
+          contextMessage: `${newActivity.length} transactions have updated the balance for <address> to ${totalMainCurrencyValue}`,
         })
       }
 
@@ -39,4 +40,4 @@ newProxyStore().then((backgroundStore) => {
       latestActivityHashes = undefined
     }
   })
-})
+}) */

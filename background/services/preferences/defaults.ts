@@ -1,7 +1,7 @@
-import { USD } from "../../constants"
+import { ETHEREUM, USD } from "../../constants"
 import { Preferences } from "./types"
 
-export default {
+const defaultPreferences: Preferences = {
   tokenLists: {
     autoUpdate: false,
     urls: [
@@ -14,4 +14,11 @@ export default {
     ],
   },
   currency: USD,
-} as Preferences
+  defaultWallet: true,
+  selectedAccount: {
+    address: "",
+    network: ETHEREUM,
+  },
+}
+
+export default defaultPreferences

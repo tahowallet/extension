@@ -1,4 +1,15 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useEffect, useCallback, useState } from "react"
+import {
+  fetchSwapAssets,
+  fetchSwapPrices,
+  fetchSwapQuote,
+  setSwapTrade,
+  setSwapAmount,
+  selectSwappableAssets,
+  selectSwapPrice,
+  clearSwapQuote,
+} from "@tallyho/tally-background/redux-slices/0x-swap"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -6,25 +17,140 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQoute from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
-  const [openTokenMenu, setOpenTokenMenu] = useState(false)
-  const [selectedCount, setSelectedCount] = useState(0)
+  const dispatch = useBackgroundDispatch()
+  const [confirmationMenu, setConfirmationMenu] = useState(false)
 
-  const handleClick = useCallback(() => {
-    setOpenTokenMenu((isCurrentlyOpen) => !isCurrentlyOpen)
-  }, [])
+  const { sellAsset, buyAsset, sellAmount, buyAmount, quote } =
+    useBackgroundSelector((state) => state.swap)
 
-  const handleAssetSelect = useCallback(() => {
-    setSelectedCount((currentCount) => currentCount + 1)
-  }, [])
+  // Fetch assets from the 0x API whenever the swap page is loaded
+  useEffect(() => {
+    dispatch(fetchSwapAssets())
+
+    // Clear any saved quote data when the swap page is closed
+    return () => {
+      dispatch(clearSwapQuote())
+    }
+  }, [dispatch])
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+
+  const sellAssets = combinedData.assets.map(({ asset }) => asset)
+  const buyAssets = useBackgroundSelector(selectSwappableAssets)
+  const buyPrice = useBackgroundSelector(selectSwapPrice)
+
+  const getQuote = useCallback(async () => {
+    if (buyAsset && sellAsset) {
+      const quoteOptions = {
+        assets: { sellAsset, buyAsset },
+        amount: { sellAmount, buyAmount },
+      }
+
+      // TODO: Display a loading indicator while fetching the quote
+      dispatch(fetchSwapQuote(quoteOptions))
+    }
+  }, [dispatch, sellAsset, buyAsset, sellAmount, buyAmount])
+
+  // We have to watch the state to determine when the quote is fetched
+  useEffect(() => {
+    if (quote) {
+      // Now open the asset menu
+      setConfirmationMenu(true)
+    }
+  }, [quote])
+
+  const fromAssetSelected = useCallback(
+    async (asset) => {
+      dispatch(
+        setSwapTrade({
+          sellAsset: asset,
+        })
+      )
+
+      await dispatch(fetchSwapPrices(asset))
+    },
+
+    [dispatch]
+  )
+
+  const toAssetSelected = useCallback(
+    (asset) => {
+      dispatch(
+        setSwapTrade({
+          buyAsset: asset,
+        })
+      )
+    },
+
+    [dispatch]
+  )
+
+  const fromAmountChanged = useCallback(
+    (amount) => {
+      const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
+      const floatValue = parseFloat(inputValue)
+
+      if (Number.isNaN(floatValue)) {
+        dispatch(
+          setSwapAmount({
+            sellAmount: inputValue,
+            buyAmount: "0",
+          })
+        )
+      } else {
+        dispatch(
+          setSwapAmount({
+            sellAmount: inputValue,
+            // TODO: Use a safe math library
+            buyAmount: (floatValue / parseFloat(buyPrice)).toString(),
+          })
+        )
+      }
+    },
+
+    [dispatch, buyPrice]
+  )
+
+  const toAmountChanged = useCallback(
+    (amount) => {
+      const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
+      const floatValue = parseFloat(inputValue)
+
+      if (Number.isNaN(floatValue)) {
+        dispatch(
+          setSwapAmount({
+            sellAmount: "0",
+            buyAmount: inputValue,
+          })
+        )
+      } else {
+        dispatch(
+          setSwapAmount({
+            // TODO: Use a safe math library
+            sellAmount: (floatValue * parseFloat(buyPrice)).toString(),
+            buyAmount: inputValue,
+          })
+        )
+      }
+    },
+
+    [dispatch, buyPrice]
+  )
 
   return (
     <>
       <CorePage>
         <SharedSlideUpMenu
-          isOpen={openTokenMenu}
-          close={handleClick}
+          isOpen={confirmationMenu}
+          close={() => {
+            setConfirmationMenu(false)
+            dispatch(clearSwapQuote())
+          }}
           size="large"
         >
           <SwapQoute />
@@ -34,14 +160,22 @@ export default function Swap(): ReactElement {
           <div className="form">
             <div className="form_input">
               <SharedAssetInput
-                onAssetSelected={handleAssetSelect}
+                assets={sellAssets}
+                defaultAsset={sellAsset}
+                onAssetSelect={fromAssetSelected}
+                onAmountChange={fromAmountChanged}
+                amount={sellAmount}
                 label="Swap from:"
               />
             </div>
             <div className="icon_change" />
             <div className="form_input">
               <SharedAssetInput
-                onAssetSelected={handleAssetSelect}
+                assets={buyAssets}
+                defaultAsset={buyAsset}
+                onAssetSelect={toAssetSelected}
+                onAmountChange={toAmountChanged}
+                amount={buyAmount}
                 label="Swap to:"
               />
             </div>
@@ -49,20 +183,14 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {selectedCount < 2 ? (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  isDisabled
-                  onClick={handleClick}
-                >
-                  Review swap
-                </SharedButton>
-              ) : (
-                <SharedButton type="primary" size="large" onClick={handleClick}>
-                  Get final quote
-                </SharedButton>
-              )}
+              <SharedButton
+                type="primary"
+                size="large"
+                isDisabled={!sellAsset || !buyAsset}
+                onClick={getQuote}
+              >
+                Get final quote
+              </SharedButton>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
@@ -11,7 +11,8 @@ interface Props {
     | "secondary"
     | "tertiary"
     | "tertiaryWhite"
-    | "specialDisabledWhite"
+    | "tertiaryGray"
+    | "deemphasizedWhite"
     | "warning"
   size: "small" | "medium" | "large"
   icon?: string
@@ -21,6 +22,7 @@ interface Props {
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick: boolean
+  isFormSubmit: boolean
 }
 
 export default function SharedButton(props: Props): ReactElement {
@@ -35,17 +37,26 @@ export default function SharedButton(props: Props): ReactElement {
     iconPosition,
     linkTo,
     showLoadingOnClick,
+    isFormSubmit,
   } = props
 
   const [navigateTo, setNavigateTo] =
     React.useState<History.LocationDescriptor<unknown> | null>(null)
   const [isClicked, setIsClicked] = useState(false)
 
+  // If the prop deciding if the loader should be displayed or not
+  // changes, assume resetting the loading state condition.
+  useEffect(() => {
+    setIsClicked(false)
+  }, [showLoadingOnClick])
+
   if (navigateTo && navigateTo === linkTo) {
     return <Redirect push to={linkTo} />
   }
 
-  function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  async function handleClick(
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) {
     setIsClicked(true)
     onClick?.(e)
     if (linkTo) {
@@ -57,7 +68,7 @@ export default function SharedButton(props: Props): ReactElement {
 
   return (
     <button
-      type="button"
+      type={isFormSubmit ? "submit" : "button"}
       className={classNames(
         { large: size === "large" },
         { small: size === "small" },
@@ -65,9 +76,9 @@ export default function SharedButton(props: Props): ReactElement {
         { disabled: isDisabled },
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
-        { special_disabled_white: type === "specialDisabledWhite" },
-        { warning: type === "warning" },
-        { icon_left: iconPosition === "left" }
+        { "tertiary gray": type === "tertiaryGray" },
+        { deemphasized_white: type === "deemphasizedWhite" },
+        { warning: type === "warning" }
       )}
       onClick={handleClick}
     >
@@ -76,7 +87,12 @@ export default function SharedButton(props: Props): ReactElement {
           <SharedLoadingSpinner />
         </div>
       )}
-      <div className={classNames({ hide_me: isShowingLoadingSpinner })}>
+      <div
+        className={classNames("button_content", {
+          hide_me: isShowingLoadingSpinner,
+          icon_left: iconPosition === "left",
+        })}
+      >
         {children}
         {icon ? (
           <span
@@ -120,6 +136,10 @@ export default function SharedButton(props: Props): ReactElement {
           button:active .icon_button {
             background-color: var(--green-120);
           }
+          .button_content {
+            display: flex;
+            align-items: center;
+          }
           .icon_button {
             mask-image: url("./images/${icon}@2x.png");
             mask-size: cover;
@@ -127,6 +147,8 @@ export default function SharedButton(props: Props): ReactElement {
             height: 12px;
             margin-left: 9px;
             background-color: #ffffff;
+            display: inline-block;
+            margin-top: -1px;
           }
           .large {
             height: 48px;
@@ -161,7 +183,7 @@ export default function SharedButton(props: Props): ReactElement {
           .disabled {
             background-color: var(--green-60);
             color: var(--green-80);
-            cursor: not-allowed;
+            pointer-events: none;
           }
           .disabled .icon_button {
             background-color: var(--green-80);
@@ -211,16 +233,36 @@ export default function SharedButton(props: Props): ReactElement {
           .white .icon_button {
             background-color: #ffffff;
           }
+          .gray {
+            color: var(--green-60);
+          }
+          .gray .icon_button {
+            background-color: var(--green-60);
+          }
+          .gray:hover {
+            color: var(--green-40);
+          }
+          .gray:hover .icon_button {
+            background-color: var(--green-40);
+          }
           .tertiary.disabled {
             color: var(--green-60);
           }
           .tertiary.disabled .icon_button {
             background-color: var(--green-60);
           }
-          .special_disabled_white {
+          .deemphasized_white {
+            color: #fff;
+            background-color: var(--green-95);
+          }
+          .deemphasized_white .icon_button {
+            background-color: #fff;
+          }
+          .deemphasized_white:hover {
+            background-color: var(--green-60);
             color: #fff;
           }
-          .special_disabled_white .icon_button {
+          .deemphasized_white:hover .icon_button {
             background-color: #fff;
           }
           .small {
@@ -261,4 +303,5 @@ SharedButton.defaultProps = {
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,
+  isFormSubmit: false,
 }

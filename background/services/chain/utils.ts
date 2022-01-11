@@ -1,15 +1,20 @@
 import { BigNumber } from "ethers"
-import { Block as EthersBlock } from "@ethersproject/abstract-provider"
-import { Network as EthersNetwork } from "@ethersproject/networks"
+import {
+  Block as EthersBlock,
+  TransactionReceipt as EthersTransactionReceipt,
+  TransactionRequest as EthersTransactionRequest,
+} from "@ethersproject/abstract-provider"
 import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
-  FungibleAsset,
   EVMNetwork,
   SignedEVMTransaction,
   AnyEVMBlock,
-} from "../../types"
+  EIP1559TransactionRequest,
+  ConfirmedEVMTransaction,
+} from "../../networks"
+import { FungibleAsset } from "../../assets"
 import { getEthereumNetwork } from "../../lib/utils"
 
 /**
@@ -61,7 +66,57 @@ export function blockFromWebsocketBlock(
   }
 }
 
-export function ethersTxFromSignedTx(
+export function ethersTransactionRequestFromEIP1559TransactionRequest(
+  transaction: EIP1559TransactionRequest
+): EthersTransactionRequest {
+  return {
+    to: transaction.to,
+    data: transaction.input ?? undefined,
+    from: transaction.from,
+    type: transaction.type,
+    nonce: transaction.nonce,
+    value: transaction.value,
+    chainId: parseInt(transaction.chainID, 10),
+    gasLimit: transaction.gasLimit,
+    maxFeePerGas: transaction.maxFeePerGas,
+    maxPriorityFeePerGas: transaction.maxPriorityFeePerGas,
+  }
+}
+
+export function eip1559TransactionRequestFromEthersTransactionRequest(
+  transaction: EthersTransactionRequest
+): Partial<EIP1559TransactionRequest> {
+  // TODO What to do if transaction is not EIP1559?
+  return {
+    to: transaction.to,
+    input: transaction.data?.toString() ?? null,
+    from: transaction.from,
+    type: transaction.type as 1 | 2,
+    nonce:
+      typeof transaction.nonce !== "undefined"
+        ? parseInt(transaction.nonce.toString(), 16)
+        : undefined,
+    value:
+      typeof transaction.value !== "undefined"
+        ? BigInt(transaction.value.toString())
+        : undefined,
+    chainID: transaction.chainId?.toString(16),
+    gasLimit:
+      typeof transaction.gasLimit !== "undefined"
+        ? BigInt(transaction.gasLimit.toString())
+        : undefined,
+    maxFeePerGas:
+      typeof transaction.maxFeePerGas !== "undefined"
+        ? BigInt(transaction.maxFeePerGas.toString())
+        : undefined,
+    maxPriorityFeePerGas:
+      typeof transaction.maxPriorityFeePerGas !== "undefined"
+        ? BigInt(transaction.maxPriorityFeePerGas.toString())
+        : undefined,
+  }
+}
+
+export function ethersTransactionFromSignedTransaction(
   tx: SignedEVMTransaction
 ): EthersTransaction {
   const baseTx = {
@@ -73,6 +128,7 @@ export function ethersTxFromSignedTx(
     to: tx.to,
     from: tx.from,
     data: tx.input || "",
+    type: tx.type,
     chainId: parseInt(tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
@@ -89,63 +145,28 @@ export function ethersTxFromSignedTx(
 /**
  * Parse a transaction as returned by a websocket provider subscription.
  */
-export function txFromWebsocketTx(
-  websocketTx: unknown,
-  asset: FungibleAsset,
-  network: EVMNetwork
-): AnyEVMTransaction {
-  // These are the props we expect here.
-  const tx = websocketTx as {
-    hash: string
-    to: string
-    from: string
-    gas: string
-    gasPrice: string
-    maxFeePerGas: string | undefined | null
-    maxPriorityFeePerGas: string | undefined | null
-    input: string
-    r: string
-    s: string
-    v: string
-    nonce: string
-    value: string
-    blockHash: string | undefined | null
-    blockHeight: string | undefined | null
-    blockNumber: number | undefined | null
-    type: string | undefined | null
-  }
-
+export function enrichTransactionWithReceipt(
+  transaction: AnyEVMTransaction,
+  receipt: EthersTransactionReceipt
+): ConfirmedEVMTransaction {
+  const gasUsed = receipt.gasUsed.toBigInt()
   return {
-    hash: tx.hash,
-    to: tx.to,
-    from: tx.from,
-    gasLimit: BigInt(tx.gas),
-    gasPrice: BigInt(tx.gasPrice),
-    maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,
-    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-      ? BigInt(tx.maxPriorityFeePerGas)
-      : null,
-    input: tx.input,
-    r: tx.r || undefined,
-    s: tx.s || undefined,
-    v: BigNumber.from(tx.v).toNumber(),
-    nonce: Number(tx.nonce),
-    value: BigInt(tx.value),
-    blockHash: tx.blockHash ?? null,
-    blockHeight: tx.blockNumber ?? null,
-    type:
-      tx.type !== undefined
-        ? (BigNumber.from(tx.type).toNumber() as AnyEVMTransaction["type"])
-        : 0,
-    asset,
-    network,
+    ...transaction,
+    gasUsed,
+    status:
+      receipt.status ??
+      // Pre-Byzantium transactions require a guesswork approach or an
+      // eth_call; we go for guesswork.
+      (gasUsed === transaction.gasLimit ? 0 : 1),
+    blockHash: receipt.blockHash,
+    blockHeight: receipt.blockNumber,
   }
 }
 
 /**
  * Parse a transaction as returned by a polling provider.
  */
-export function txFromEthersTx(
+export function transactionFromEthersTransaction(
   tx: EthersTransaction & {
     from: string
     blockHash?: string

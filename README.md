@@ -1,53 +1,32 @@
 # tally-extension
 
-Tally is a community owned and operated Web3 wallet, built as a
-[WebExtension](https://browserext.github.io/browserext/).
+<img alt="The community owned & operated wallet."
+     src="./github_cover@2x.png"
+     width="630" />
 
-## Package Structure, Build Structure, and Threat Model
+[Tally](https://blog.tally.cash/a-community-owned-wallet-for-the-new-internet/)
+is a community owned and operated Web3 wallet, built as a
+[browser extension](https://browserext.github.io/browserext/).
 
-The extension is built as two packages, one for the wallet and one for the
-frontend UI. These are separate packages in order to emphasize the difference
-in attack surface and clearly separate the threat models of the two packages.
-In particular, the frontend UI is considered completely untrusted code, while
-the wallet is considered trusted code. Only the wallet should interact directly
-with key material, while the frontend should only interact with key material
-via a carefully-maintained public API.
+## Why not MetaMask?
 
-The wallet package is also intended to minimize external dependencies where
-possible, to reduce the surface exposed to a supply chain attack. Dependencies
-are generally version-pinned, and yarn is used to ensure the integrity of
-builds.
+Today's Web3 landscape is dominated by a [single wallet](https://metamask.io/)
+and a [single infrastructure provider](https://infura.io/), both owned by a
+[single conglomerate](https://consensys.net/). These facts undermine the
+censorship resistance of Ethereum today... and they're also against Web3's
+spirit of community ownership.
 
-## Building and Developing
+We can do better.
 
-Builds are designed to be run from the top level of the repository.
+Tally will be
 
-### Development Setup
+- Fairly launched ⚖️
+- Sustainably aligned with users 🤲
+- Wholly owned by the community 👪
 
-If you’re on macOS, install Homebrew and run `scripts/macos-setup.sh`. Note
-that if you don’t have Homebrew or you’re not on macOS, the below information
-details what you’ll need. The script additionally sets up pre-commit hooks.
+## Quickstart
 
-```
-$ ./scripts/macos-setup.sh
-```
-
-#### Required Software
-
-If you can't use the macOS setup script, here is the software you'll need to
-install:
-
-- `jq`: [Instructions](https://stedolan.github.io/jq/download/)
-- `nvm`: [Instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
-- `pre-commit`: [Instructions](https://pre-commit.com/#install)
-
-#### Installing pre-commit hooks
-
-Before committing code to this repository or a fork/branch that you intend to
-submit for inclusion, please make sure you've installed the pre-commit hooks
-by running `pre-commit --install`. The macOS setup script does this for you.
-
-### Quickstart
+Try this.
 
 ```sh
 $ nvm use
@@ -57,8 +36,7 @@ $ yarn install # install all dependencies; rerun with --ignore-scripts if
 $ yarn start # start a continuous webpack build that will auto-update with changes
 ```
 
-Once the continuous webpack build is running, you can install the extension in
-your dev browser of choice:
+Once the build is running, you can install the extension in your browser of choice:
 
 - [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
 - [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
@@ -78,6 +56,64 @@ $ yarn start --config-name firefox
 # On change, rebuild the firefox and brave extensions but not others.
 $ yarn start --config-name firefox --config-name brave
 ```
+
+## Package Structure, Build Structure, and Threat Model
+
+The extension is built as two packages, `background` and `ui`. `background`
+contains the bulk of the extension's [background script](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background),
+while `ui` contains the code powering extension popups.
+
+These are separate packages in order to emphasize the difference in attack
+surface and clearly separate the threat models of each. In particular, `ui`
+is considered untrusted code, while `background` is considered trusted code.
+Only `background` should interact with key material regularly, while `ui` should
+only interact with key material via a carefully maintained API.
+
+The `background` package is also intended to minimize external dependencies
+where possible, reducing the surface exposed to a supply chain attack.
+Dependencies are generally version-pinned, and `yarn` is used to ensure the
+integrity of builds.
+
+## Building and Developing
+
+Builds are designed to be run from the top level of the repository.
+
+### Development Setup
+
+If you’re on macOS, install Homebrew and run `scripts/macos-setup.sh`. Note
+that if you don’t have Homebrew or you’re not on macOS, the below information
+details what you’ll need. The script additionally sets up pre-commit hooks.
+
+```
+$ ./scripts/macos-setup.sh
+```
+
+### Validators
+
+If you need to create or update a validation function then:
+
+- You need to write the schema in the `.ts` file to have correct typing.
+- Add the new schema with the validator function name to the `generate-validators.ts` file
+- You need to update the `jtd-validators.d.ts` or `json-validators.d.ts` files with the typing definition
+- run `yarn run generate:validators`
+- import it in your code and happy validating :)
+
+This setup is necessary so we don't need to include `unsafe-eval` in the CSP policy.
+
+#### Required Software
+
+If you can't use the macOS setup script, here is the software you'll need to
+install:
+
+- `jq`: [Instructions](https://stedolan.github.io/jq/download/)
+- `nvm`: [Instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
+- `pre-commit`: [Instructions](https://pre-commit.com/#install)
+
+#### Installing pre-commit hooks
+
+Before committing code to this repository or a fork/branch that you intend to
+submit for inclusion, please make sure you've installed the pre-commit hooks
+by running `pre-commit --install`. The macOS setup script does this for you.
 
 ### Releasing a version
 
@@ -253,9 +289,9 @@ manifest/         # extension manifest data
   manifest.dev.json         # manifest adjustments for dev environment
   manifest.firefox.dev.json # manifest adjustments for Firefox in dev
 
-ui/ # @tallyho/tally-ui package
+background/ # @tallyho/tally-background package with trusted wallet core
   package.json
 
-wallet/ # @tallyho/tally-wallet package with trusted wallet core
+ui/ # @tallyho/tally-ui package
   package.json
 ```

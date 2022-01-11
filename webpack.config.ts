@@ -23,9 +23,8 @@ const baseConfig: Configuration = {
     ui: "./src/ui.ts",
     background: "./src/background.ts",
     "background-ui": "./src/background-ui.ts",
-    // Don't have these yet.....
-    // inpage: './src/inpage.js',
-    // "content-script": './src/content-script.js'
+    "window-provider": "./src/window-provider.ts",
+    "provider-bridge": "./src/provider-bridge.ts",
   },
   module: {
     rules: [
@@ -57,7 +56,11 @@ const baseConfig: Configuration = {
     },
   },
   plugins: [
-    new Dotenv({ defaults: true }),
+    new Dotenv({
+      defaults: true,
+      systemvars: true,
+      safe: true,
+    }),
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         diagnosticOptions: {
@@ -89,18 +92,6 @@ const baseConfig: Configuration = {
     }) as unknown as WebpackPluginInstance,
   ],
   optimization: {
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          mangle: false,
-          compress: false,
-          output: {
-            beautify: true,
-            indent_level: 2, // eslint-disable-line camelcase
-          },
-        },
-      }),
-    ],
     splitChunks: { automaticNameDelimiter: "-" },
   },
 }
@@ -119,6 +110,20 @@ const modeConfigs: {
         // FIXME webpack version.
       }) as unknown as WebpackPluginInstance,
     ],
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            mangle: false,
+            compress: false,
+            output: {
+              beautify: true,
+              indent_level: 2, // eslint-disable-line camelcase
+            },
+          },
+        }),
+      ],
+    },
   }),
   production: (browser) => ({
     plugins: [
@@ -126,6 +131,23 @@ const modeConfigs: {
         filename: browser,
       }),
     ],
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            mangle: browser === "firefox",
+            compress: browser === "firefox",
+            output:
+              browser === "firefox"
+                ? undefined
+                : {
+                    beautify: true,
+                    indent_level: 2, // eslint-disable-line camelcase
+                  },
+          },
+        }),
+      ],
+    },
   }),
 }
 

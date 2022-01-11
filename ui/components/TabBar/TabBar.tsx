@@ -1,32 +1,33 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
+
 import { useLocation } from "react-router-dom"
 import TabBarIcon from "./TabBarIcon"
+import tabs from "../../utils/tabs"
 
 export default function TabBar(): ReactElement {
   const location = useLocation()
-  const activeTabName = location.pathname.split("/")[1] || "wallet"
-  const tabs = ["overview", "wallet", "swap", "earn", "menu"].filter((tab) => {
-    if (tab === "earn" && process.env.HIDE_EARN_PAGE === "true") {
-      return false
-    }
-
-    return true
-  })
+  const activeTabName = location?.pathname?.split("/")[1] || "wallet"
 
   return (
     <nav>
-      {tabs.map((tabName) => (
-        <TabBarIcon name={tabName} isActive={activeTabName === tabName} />
-      ))}
+      {tabs.map((tabName) => {
+        return (
+          <TabBarIcon
+            key={tabName}
+            name={tabName}
+            isActive={activeTabName === tabName}
+          />
+        )
+      })}
       <style jsx>
         {`
           nav {
-            width: 100vw;
+            width: 100%;
             height: 56px;
             background-color: var(--hunter-green);
             display: flex;
             justify-content: space-around;
-            padding: 0px 17px;
+            padding: 0px 46px;
             box-sizing: border-box;
             align-items: center;
             flex-shrink: 0;

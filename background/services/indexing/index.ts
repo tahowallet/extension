@@ -1,17 +1,16 @@
 import logger from "../../lib/logger"
 
+import { HexString } from "../../types"
+import { AccountBalance, AddressNetwork } from "../../accounts"
+import { Network } from "../../networks"
 import {
-  AccountBalance,
-  AccountNetwork,
   AnyAsset,
   CoinGeckoAsset,
   FungibleAsset,
-  HexString,
   isSmartContractFungibleAsset,
-  Network,
   PricePoint,
   SmartContractFungibleAsset,
-} from "../../types"
+} from "../../assets"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import { getBalances as getAssetBalances } from "../../lib/erc20"
 import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
@@ -26,6 +25,10 @@ import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
 import BaseService from "../base"
+
+// Transactions seen within this many blocks of the chain tip will schedule a
+// token refresh sooner than the standard rate.
+const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 
 interface Events extends ServiceLifecycleEvents {
   accountBalance: AccountBalance
@@ -43,6 +46,12 @@ interface Events extends ServiceLifecycleEvents {
  * token metadata. Relevant prices and balances are emitted as events.
  */
 export default class IndexingService extends BaseService<Events> {
+  /**
+   * True if an off-cycle token refresh was scheduled, typically when a watched
+   * account had a transaction confirmed.
+   */
+  private scheduledTokenRefresh = false
+
   /**
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
@@ -76,6 +85,13 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 30,
         },
         handler: () => this.handleTokenAlarm(),
+        runAtStart: true,
+      },
+      tokenRefreshes: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => this.handleTokenRefresh(),
       },
       prices: {
         schedule: {
@@ -83,6 +99,7 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 10,
         },
         handler: () => this.handlePriceAlarm(),
+        runAtStart: true,
       },
     })
   }
@@ -189,13 +206,13 @@ export default class IndexingService extends BaseService<Events> {
     // TODO update for NFTs
     this.chainService.emitter.on(
       "assetTransfers",
-      async ({ accountNetwork, assetTransfers }) => {
+      async ({ addressNetwork, assetTransfers }) => {
         assetTransfers.forEach((transfer) => {
           const fungibleAsset = transfer.assetAmount
             .asset as SmartContractFungibleAsset
           if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
             this.addTokenToTrackByContract(
-              accountNetwork,
+              addressNetwork,
               fungibleAsset.contractAddress,
               fungibleAsset.decimals
             )
@@ -206,10 +223,13 @@ export default class IndexingService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async (accountNetwork) => {
+      async (addressNetwork) => {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
-        const balances = await this.retrieveTokenBalances(accountNetwork)
+        const balances = await this.retrieveTokenBalances(addressNetwork)
+
+        // FIXME Refactor this to only update prices for tokens with balances.
+        await this.handlePriceAlarm()
 
         // Every asset we have that hasn't already been balance checked and is
         // on the currently selected network should be checked once.
@@ -223,16 +243,39 @@ export default class IndexingService extends BaseService<Events> {
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
           .filter(
-            (a: SmartContractFungibleAsset) =>
+            (a) =>
               a.homeNetwork.chainID === getEthereumNetwork().chainID &&
               !checkedContractAddresses.has(a.contractAddress)
           )
+
         await this.retrieveTokenBalances(
-          accountNetwork,
+          addressNetwork,
           otherActiveAssets.map((a) => a.contractAddress)
         )
       }
     )
+
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      if (
+        "status" in transaction &&
+        transaction.status === 1 &&
+        transaction.blockHeight >
+          (await this.chainService.getBlockHeight(transaction.network)) -
+            FAST_TOKEN_REFRESH_BLOCK_RANGE
+      ) {
+        this.scheduledTokenRefresh = true
+      }
+      if (
+        "status" in transaction &&
+        (transaction.status === 1 || transaction.status === 0)
+      ) {
+        const addressNetwork = {
+          address: transaction.from.toLowerCase(),
+          network: getEthereumNetwork(),
+        }
+        await this.chainService.getLatestBaseAccountBalance(addressNetwork)
+      }
+    })
   }
 
   /**
@@ -240,16 +283,16 @@ export default class IndexingService extends BaseService<Events> {
    * saving the resulting balances and adding any asset with a non-zero balance
    * to the list of assets to track.
    *
-   * @param accountNetwork
+   * @param addressNetwork
    * @param contractAddresses
    */
   private async retrieveTokenBalances(
-    accountNetwork: AccountNetwork,
+    addressNetwork: AddressNetwork,
     contractAddresses?: HexString[]
   ): ReturnType<typeof getTokenBalances> {
     const balances = await getTokenBalances(
       this.chainService.pollingProviders.ethereum,
-      accountNetwork.account,
+      addressNetwork.address,
       contractAddresses || undefined
     )
 
@@ -257,19 +300,18 @@ export default class IndexingService extends BaseService<Events> {
     await Promise.allSettled(
       balances.map(async (b) => {
         const knownAsset = await this.getKnownSmartContractAsset(
-          accountNetwork.network,
+          addressNetwork.network,
           b.contractAddress
         )
         if (knownAsset) {
           const accountBalance = {
+            ...addressNetwork,
             assetAmount: {
               asset: knownAsset,
               amount: b.amount,
             },
             retrievedAt: Date.now(),
-            network: accountNetwork.network,
             dataSource: "alchemy",
-            account: accountNetwork.account,
           } as const
           await this.db.addBalances([accountBalance])
           this.emitter.emit("accountBalance", accountBalance)
@@ -278,7 +320,7 @@ export default class IndexingService extends BaseService<Events> {
           }
         } else if (b.amount > 0) {
           await this.addTokenToTrackByContract(
-            accountNetwork,
+            addressNetwork,
             b.contractAddress
           )
           // TODO we're losing balance information here, consider an
@@ -296,7 +338,7 @@ export default class IndexingService extends BaseService<Events> {
    * If the asset has already been cached, use that. Otherwise, infer asset
    * details from the contract and outside services.
    *
-   * @param accountNetwork the account and network on which this asset should
+   * @param addressNetwork the account and network on which this asset should
    *        be tracked
    * @param contractAddress the address of the token contract on this network
    * @param decimals optionally include the number of decimals tracked by a
@@ -304,7 +346,7 @@ export default class IndexingService extends BaseService<Events> {
    *        metadata.
    */
   private async addTokenToTrackByContract(
-    accountNetwork: AccountNetwork,
+    addressNetwork: AddressNetwork,
     contractAddress: string,
     decimals?: number
   ): Promise<void> {
@@ -313,7 +355,7 @@ export default class IndexingService extends BaseService<Events> {
       (asset) =>
         "decimals" in asset &&
         "homeNetwork" in asset &&
-        asset.homeNetwork.name === accountNetwork.network.name &&
+        asset.homeNetwork.name === addressNetwork.network.name &&
         "contractAddress" in asset &&
         asset.contractAddress === contractAddress
     )
@@ -321,7 +363,7 @@ export default class IndexingService extends BaseService<Events> {
       this.addAssetToTrack(found as SmartContractFungibleAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
-        accountNetwork.network,
+        addressNetwork.network,
         contractAddress
       )
       if (!customAsset) {
@@ -390,7 +432,7 @@ export default class IndexingService extends BaseService<Events> {
       const measuredAt = Date.now()
       const activeAssetPrices = await getEthereumTokenPrices(
         Object.keys(activeAssetsByAddress),
-        "USD"
+        USD
       )
       Object.entries(activeAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
@@ -400,7 +442,7 @@ export default class IndexingService extends BaseService<Events> {
             const pricePoint = {
               pair: [asset, USD],
               amounts: [
-                BigInt(1),
+                1n * 10n ** BigInt(asset.decimals),
                 BigInt(
                   Math.trunc(
                     (Number(unitPricePoint.unitPrice.amount) /
@@ -459,6 +501,13 @@ export default class IndexingService extends BaseService<Events> {
     // the version has gone up
   }
 
+  private async handleTokenRefresh(): Promise<void> {
+    if (this.scheduledTokenRefresh) {
+      await this.handleTokenAlarm()
+      this.scheduledTokenRefresh = false
+    }
+  }
+
   private async handleTokenAlarm(): Promise<void> {
     // no need to block here, as the first fetch blocks the entire service init
     this.fetchAndCacheTokenLists()
@@ -474,7 +523,7 @@ export default class IndexingService extends BaseService<Events> {
     await Promise.allSettled(
       (
         await this.chainService.getAccountsToTrack()
-      ).map(async ({ account }) => {
+      ).map(async ({ address: account }) => {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
           this.chainService.pollingProviders.ethereum,

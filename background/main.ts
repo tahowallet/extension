@@ -2,47 +2,69 @@ import browser from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
-import ethers from "ethers"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
-import logger from "./lib/logger"
-import { ethersTxFromSignedTx } from "./services/chain/utils"
 
 import {
-  PreferenceService,
+  BaseService,
   ChainService,
+  EnrichmentService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
+  NameService,
+  PreferenceService,
+  ProviderBridgeService,
   ServiceCreatorFunction,
 } from "./services"
 
-import { SignedEVMTransaction, KeyringTypes } from "./types"
+import { KeyringTypes } from "./types"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
+import { AddressNetwork, NameNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
-  transactionConfirmed,
-  transactionSeen,
   blockSeen,
   updateAccountBalance,
+  updateENSName,
+  updateENSAvatar,
   emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   emitter as keyringSliceEmitter,
+  keyringLocked,
+  keyringUnlocked,
   updateKeyrings,
+  setKeyringToVerify,
 } from "./redux-slices/keyrings"
-import { initializationLoadingTimeHitLimit } from "./redux-slices/ui"
 import {
-  gasEstimates,
-  emitter as transactionSliceEmitter,
+  initializationLoadingTimeHitLimit,
+  emitter as uiSliceEmitter,
+  setDefaultWallet,
+  setSelectedAccount,
+  setNewSelectedAccount,
+} from "./redux-slices/ui"
+import {
+  estimatedFeesPerGas,
+  emitter as transactionConstructionSliceEmitter,
+  transactionRequest,
+  signed,
+  updateTransactionOptions,
+  broadcastOnSign,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
-import BaseService from "./services/base"
+import {
+  requestPermission,
+  emitter as providerBridgeSliceEmitter,
+  initializeAllowedPages,
+} from "./redux-slices/dapp-permission"
 
 // This sanitizer runs on store and action data before serializing for remote
-// redux devtools. The goal is to end up with an object that is direcetly
+// redux devtools. The goal is to end up with an object that is directly
 // JSON-serializable and deserializable; the remote end will display the
 // resulting objects without additional processing or decoding logic.
 const devToolsSanitizer = (input: unknown) => {
@@ -59,6 +81,66 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
+// The version of persisted Redux state the extension is expecting. Any previous
+// state without this version, or with a lower version, ought to be migrated.
+const REDUX_STATE_VERSION = 2
+
+type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
+
+// An object mapping a version number to a state migration. Each migration for
+// version n is expected to take a state consistent with version n-1, and return
+// state consistent with version n.
+const REDUX_MIGRATIONS: { [version: number]: Migration } = {
+  2: (prevState: Record<string, unknown>) => {
+    // Migrate the old currentAccount SelectedAccount type to a bare
+    // selectedAccount AddressNetwork type. Note the avoidance of imported types
+    // so this migration will work in the future, regardless of other code changes
+    type BroadAddressNetwork = {
+      address: string
+      network: Record<string, unknown>
+    }
+    type OldState = {
+      ui: {
+        currentAccount?: {
+          addressNetwork: BroadAddressNetwork
+          truncatedAddress: string
+        }
+      }
+    }
+    const newState = { ...prevState }
+    const addressNetwork = (prevState as OldState)?.ui?.currentAccount
+      ?.addressNetwork
+    delete (newState as OldState)?.ui?.currentAccount
+    newState.selectedAccount = addressNetwork as BroadAddressNetwork
+    return newState
+  },
+}
+
+// Migrate a previous version of the Redux state to that expected by the current
+// code base.
+function migrateReduxState(
+  previousState: Record<string, unknown>,
+  previousVersion?: number
+): Record<string, unknown> {
+  const resolvedVersion = previousVersion ?? 1
+  let migratedState: Record<string, unknown> = previousState
+
+  if (resolvedVersion < REDUX_STATE_VERSION) {
+    const outstandingMigrations = Object.entries(REDUX_MIGRATIONS)
+      .sort()
+      .filter(([version]) => parseInt(version, 10) > resolvedVersion)
+      .map(([, migration]) => migration)
+    migratedState = outstandingMigrations.reduce(
+      (state: Record<string, unknown>, migration: Migration) => {
+        return migration(state)
+      },
+      migratedState
+    )
+  }
+
+  return migratedState
+}
+
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
@@ -66,7 +148,10 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
-    browser.storage.local.set({ state: encodeJSON(state) })
+    browser.storage.local.set({
+      state: encodeJSON(state),
+      version: REDUX_STATE_VERSION,
+    })
   }
 
   return result
@@ -74,9 +159,9 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (startupState = {}) =>
+const initializeStore = (preloadedState = {}) =>
   configureStore({
-    preloadedState: startupState,
+    preloadedState,
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) => {
       const middleware = getDefaultMiddleware({
@@ -136,13 +221,27 @@ export default class Main extends BaseService<never> {
       preferenceService,
       chainService
     )
+    const enrichmentService = EnrichmentService.create(
+      chainService,
+      indexingService
+    )
     const keyringService = KeyringService.create()
+    const nameService = NameService.create(chainService)
+    const internalEthereumProviderService =
+      InternalEthereumProviderService.create(chainService, preferenceService)
+    const providerBridgeService = ProviderBridgeService.create(
+      internalEthereumProviderService,
+      preferenceService
+    )
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
-      const { state } = await browser.storage.local.get("state")
+      const { state, version } = await browser.storage.local.get([
+        "state",
+        "version",
+      ])
 
       if (state) {
         const restoredState = decodeJSON(state)
@@ -150,7 +249,10 @@ export default class Main extends BaseService<never> {
           // If someone managed to sneak JSON that decodes to typeof "object"
           // but isn't a Record<string, unknown>, there is a very large
           // problem...
-          savedReduxState = restoredState as Record<string, unknown>
+          savedReduxState = migrateReduxState(
+            restoredState as Record<string, unknown>,
+            version || undefined
+          )
         } else {
           throw new Error(`Unexpected JSON persisted for state: ${state}`)
         }
@@ -161,8 +263,12 @@ export default class Main extends BaseService<never> {
       savedReduxState,
       await preferenceService,
       await chainService,
+      await enrichmentService,
       await indexingService,
-      await keyringService
+      await keyringService,
+      await nameService,
+      await internalEthereumProviderService,
+      await providerBridgeService
     )
   }
 
@@ -180,6 +286,10 @@ export default class Main extends BaseService<never> {
      */
     private chainService: ChainService,
     /**
+     *
+     */
+    private enrichmentService: EnrichmentService,
+    /**
      * A promise to the indexing service, keeping track of token balances and
      * prices. The promise will be resolved when the service is initialized.
      */
@@ -189,7 +299,23 @@ export default class Main extends BaseService<never> {
      * accounts, and signs messagees and transactions. The promise will be
      * resolved when the service is initialized.
      */
-    private keyringService: KeyringService
+    private keyringService: KeyringService,
+    /**
+     * A promise to the name service, responsible for resolving names to
+     * addresses and content.
+     */
+    private nameService: NameService,
+    /**
+     * A promise to the internal ethereum provider service, which acts as
+     * web3 / ethereum provider for the internal and external dApps to use.
+     */
+    private internalEthereumProviderService: InternalEthereumProviderService,
+    /**
+     * A promise to the provider bridge service, handling and validating
+     * the communication coming from dApps according to EIP-1193 and some tribal
+     * knowledge.
+     */
+    private providerBridgeService: ProviderBridgeService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -200,6 +326,7 @@ export default class Main extends BaseService<never> {
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState)
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
@@ -217,7 +344,11 @@ export default class Main extends BaseService<never> {
       this.preferenceService.startService(),
       this.chainService.startService(),
       this.indexingService.startService(),
+      this.enrichmentService.startService(),
       this.keyringService.startService(),
+      this.nameService.startService(),
+      this.internalEthereumProviderService.startService(),
+      this.providerBridgeService.startService(),
     ])
   }
 
@@ -226,7 +357,11 @@ export default class Main extends BaseService<never> {
       this.preferenceService.stopService(),
       this.chainService.stopService(),
       this.indexingService.stopService(),
+      this.enrichmentService.stopService(),
       this.keyringService.stopService(),
+      this.nameService.stopService(),
+      this.internalEthereumProviderService.stopService(),
+      this.providerBridgeService.stopService(),
     ])
 
     await super.internalStopService()
@@ -235,6 +370,11 @@ export default class Main extends BaseService<never> {
   async initializeRedux(): Promise<void> {
     this.connectIndexingService()
     this.connectKeyringService()
+    this.connectNameService()
+    this.connectInternalEthereumProviderService()
+    this.connectProviderBridgeService()
+    this.connectPreferenceService()
+    this.connectEnrichmentService()
     await this.connectChainService()
   }
 
@@ -244,90 +384,175 @@ export default class Main extends BaseService<never> {
       // The first account balance update will transition the account to loading.
       this.store.dispatch(updateAccountBalance(accountWithBalance))
     })
-    this.chainService.emitter.on("transaction", (payload) => {
-      const { transaction } = payload
 
-      if (
-        transaction.blockHash &&
-        "gasUsed" in transaction &&
-        transaction.gasUsed !== undefined
-      ) {
-        this.store.dispatch(transactionConfirmed(transaction))
-      } else {
-        this.store.dispatch(transactionSeen(transaction))
-      }
-      this.store.dispatch(activityEncountered(payload))
-    })
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
-    accountSliceEmitter.on("addAccount", async (accountNetwork) => {
-      await this.chainService.addAccountToTrack(accountNetwork)
+    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
+      await this.chainService.addAccountToTrack(addressNetwork)
     })
 
-    transactionSliceEmitter.on("updateOptions", async (options) => {
-      if (
-        typeof options.from !== "undefined" &&
-        typeof options.gasLimit !== "undefined" &&
-        typeof options.maxFeePerGas !== "undefined" &&
-        typeof options.maxPriorityFeePerGas !== "undefined" &&
-        typeof options.value !== "undefined"
-      ) {
-        // TODO Deal with pending transactions.
-        const resolvedNonce =
-          await this.chainService.pollingProviders.ethereum.getTransactionCount(
-            options.from,
-            "latest"
+    accountSliceEmitter.on(
+      "addAccountByName",
+      async (nameNetwork: NameNetwork) => {
+        try {
+          const address = await this.nameService.lookUpEthereumAddress(
+            nameNetwork.name
           )
 
-        // Basic transaction construction based on the provided options, with extra data from the chain service
-        const transaction = {
-          from: options.from,
-          to: options.to,
-          value: options.value,
-          gasLimit: options.gasLimit,
-          maxFeePerGas: options.maxFeePerGas,
-          maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-          input: "",
-          type: 2 as const,
-          chainID: "1",
-          nonce: resolvedNonce,
-          gasPrice:
-            await this.chainService.pollingProviders.ethereum.getGasPrice(),
+          if (address) {
+            const addressNetwork = {
+              address,
+              network: nameNetwork.network,
+            }
+            await this.chainService.addAccountToTrack(addressNetwork)
+            this.store.dispatch(loadAccount(address))
+            this.store.dispatch(setNewSelectedAccount(addressNetwork))
+          } else {
+            throw new Error("Name not found")
+          }
+        } catch (error) {
+          throw new Error(
+            `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
+          )
         }
+      }
+    )
 
-        // We need to convert the transaction to a EIP1559TransactionRequest before we can estimate the gas limit
-        transaction.gasLimit = await this.chainService.estimateGasLimit(
-          getEthereumNetwork(),
-          transaction
+    transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      // TODO Deal with pending transactions.
+      const resolvedNonce =
+        await this.chainService.pollingProviders.ethereum.getTransactionCount(
+          options.from,
+          "latest"
         )
 
-        await this.keyringService.signTransaction(options.from, transaction)
+      // Basic transaction construction based on the provided options, with extra data from the chain service
+      const transaction: EIP1559TransactionRequest = {
+        from: options.from,
+        to: options.to,
+        value: options.value ?? 0n,
+        gasLimit: options.gasLimit ?? 0n,
+        maxFeePerGas: options.maxFeePerGas ?? 0n,
+        maxPriorityFeePerGas: options.maxPriorityFeePerGas ?? 0n,
+        input: options.input ?? null,
+        type: 2 as const,
+        chainID: "1",
+        nonce: resolvedNonce,
+      }
+
+      try {
+        // We use estimateGasLimit only if user did not specify the gas explicitly or it was set below minimum
+        if (
+          typeof options.gasLimit === "undefined" ||
+          options.gasLimit < 21000n
+        ) {
+          transaction.gasLimit = await this.chainService.estimateGasLimit(
+            getEthereumNetwork(),
+            transaction
+          )
+        }
+        // TODO If the user does specify gas explicitly, test for success.
+
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: false,
+          })
+        )
+      } catch (error) {
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: transaction,
+            transactionLikelyFails: true,
+          })
+        )
       }
     })
 
+    transactionConstructionSliceEmitter.on(
+      "broadcastSignedTransaction",
+      async (transaction: SignedEVMTransaction) => {
+        this.chainService.broadcastSignedTransaction(transaction)
+      }
+    )
+
+    transactionConstructionSliceEmitter.on(
+      "requestSignature",
+      async (transaction: EIP1559TransactionRequest) => {
+        const signedTx = await this.keyringService.signTransaction(
+          transaction.from,
+          transaction
+        )
+        this.store.dispatch(signed(signedTx))
+      }
+    )
+
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
-    existingAccounts.forEach((accountNetwork) => {
+    existingAccounts.forEach((addressNetwork) => {
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(accountNetwork.account))
+      this.store.dispatch(loadAccount(addressNetwork.address))
 
       // Force a refresh of the account balance to populate the store.
-      this.chainService.getLatestBaseAccountBalance(accountNetwork)
+      this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    // Start polling for blockPrices
-    this.chainService.pollBlockPrices()
-
     this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(gasEstimates(blockPrices))
+      this.store.dispatch(estimatedFeesPerGas(blockPrices))
+    })
+
+    // Report on transactions for basic activity. Fancier stuff is handled via
+    // connectEnrichmentService
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      const forAccounts: string[] = [transaction.to, transaction.from].filter(
+        Boolean
+      ) as string[]
+      this.store.dispatch(
+        activityEncountered({
+          forAccounts,
+          transaction,
+        })
+      )
     })
   }
 
+  async connectNameService(): Promise<void> {
+    this.nameService.emitter.on(
+      "resolvedName",
+      async ({ from: { addressNetwork }, resolved: { name } }) => {
+        this.store.dispatch(updateENSName({ ...addressNetwork, name }))
+      }
+    )
+    this.nameService.emitter.on(
+      "resolvedAvatar",
+      async ({ from: { addressNetwork }, resolved: { avatar } }) => {
+        this.store.dispatch(
+          updateENSAvatar({ ...addressNetwork, avatar: avatar.toString() })
+        )
+      }
+    )
+  }
+
   async connectIndexingService(): Promise<void> {
-    this.indexingService.emitter.on("accountBalance", (accountWithBalance) => {
-      this.store.dispatch(updateAccountBalance(accountWithBalance))
-    })
+    this.indexingService.emitter.on(
+      "accountBalance",
+      async (accountWithBalance) => {
+        const assetsToTrack = await this.indexingService.getAssetsToTrack()
+
+        // TODO support multi-network assets
+        const doesThisBalanceHaveAnAlreadyTrackedAsset = !!assetsToTrack.filter(
+          (t) => t.symbol === accountWithBalance.assetAmount.asset.symbol
+        )[0]
+
+        if (
+          accountWithBalance.assetAmount.amount > 0 ||
+          doesThisBalanceHaveAnAlreadyTrackedAsset
+        ) {
+          this.store.dispatch(updateAccountBalance(accountWithBalance))
+        }
+      }
+    )
 
     this.indexingService.emitter.on("assets", (assets) => {
       this.store.dispatch(assetsLoaded(assets))
@@ -338,52 +563,189 @@ export default class Main extends BaseService<never> {
     })
   }
 
+  async connectEnrichmentService(): Promise<void> {
+    this.enrichmentService.emitter.on(
+      "enrichedEVMTransaction",
+      async (transaction) => {
+        const forAccounts: string[] = [transaction.to, transaction.from].filter(
+          Boolean
+        ) as string[]
+        this.store.dispatch(
+          activityEncountered({
+            forAccounts,
+            transaction,
+          })
+        )
+      }
+    )
+  }
+
   async connectKeyringService(): Promise<void> {
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
     this.keyringService.emitter.on("address", (address) => {
+      // Mark as loading and wire things up.
+      this.store.dispatch(loadAccount(address))
+
       this.chainService.addAccountToTrack({
-        account: address,
+        address,
         // TODO support other networks
         network: getEthereumNetwork(),
       })
     })
 
-    this.keyringService.emitter.on(
-      "signedTx",
-      async (transaction: SignedEVMTransaction) => {
-        const ethersTx = ethersTxFromSignedTx(transaction)
-        const serializedTx = ethers.utils.serializeTransaction(ethersTx, {
-          r: transaction.r,
-          s: transaction.s,
-          v: transaction.v,
-        })
-
-        const response =
-          await this.chainService.pollingProviders.ethereum.sendTransaction(
-            serializedTx
-          )
-
-        logger.log("Transaction broadcast:")
-        logger.log(response)
+    this.keyringService.emitter.on("locked", async (isLocked) => {
+      if (isLocked) {
+        this.store.dispatch(keyringLocked())
+      } else {
+        this.store.dispatch(keyringUnlocked())
       }
-    )
+    })
 
-    keyringSliceEmitter.on("unlockKeyring", async (password) => {
+    keyringSliceEmitter.on("createPassword", async (password) => {
+      await this.keyringService.unlock(password, true)
+    })
+
+    keyringSliceEmitter.on("unlockKeyrings", async (password) => {
       await this.keyringService.unlock(password)
+    })
+
+    keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
+      await this.keyringService.deriveAddress(keyringID)
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
       // TODO move unlocking to a reasonable place in the initialization flow
-      await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+      const generated: {
+        id: string
+        mnemonic: string[]
+      } = await this.keyringService.generateNewKeyring(
+        KeyringTypes.mnemonicBIP39S128
+      )
+
+      this.store.dispatch(setKeyringToVerify(generated))
+    })
+
+    keyringSliceEmitter.on("importKeyring", async ({ mnemonic, path }) => {
+      await this.keyringService.importKeyring(mnemonic, path)
+    })
+  }
+
+  async connectInternalEthereumProviderService(): Promise<void> {
+    this.internalEthereumProviderService.emitter.on(
+      "transactionSignatureRequest",
+      async ({ payload, resolver, rejecter }) => {
+        this.store.dispatch(updateTransactionOptions(payload))
+        // TODO force route?
+
+        this.store.dispatch(broadcastOnSign(false))
+
+        const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
+          this.keyringService.emitter.off("signedTx", resolveAndClear)
+          transactionConstructionSliceEmitter.off(
+            "signatureRejected",
+            // Ye olde mutual dependency.
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            rejectAndClear
+          )
+          resolver(signedTransaction)
+        }
+
+        const rejectAndClear = () => {
+          this.keyringService.emitter.off("signedTx", resolveAndClear)
+          transactionConstructionSliceEmitter.off(
+            "signatureRejected",
+            rejectAndClear
+          )
+          rejecter()
+        }
+
+        this.keyringService.emitter.on("signedTx", resolveAndClear)
+        transactionConstructionSliceEmitter.on(
+          "signatureRejected",
+          rejectAndClear
+        )
+      }
+    )
+  }
+
+  async connectProviderBridgeService(): Promise<void> {
+    this.providerBridgeService.emitter.on(
+      "requestPermission",
+      (permissionRequest: PermissionRequest) => {
+        this.store.dispatch(requestPermission(permissionRequest))
+      }
+    )
+
+    this.providerBridgeService.emitter.on(
+      "initializeAllowedPages",
+      async (allowedPages: Record<string, PermissionRequest>) => {
+        this.store.dispatch(initializeAllowedPages(allowedPages))
+      }
+    )
+
+    providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      await this.providerBridgeService.grantPermission(permission)
+    })
+
+    providerBridgeSliceEmitter.on(
+      "denyOrRevokePermission",
+      async (permission) => {
+        await this.providerBridgeService.denyOrRevokePermission(permission)
+      }
+    )
+  }
+
+  async connectPreferenceService(): Promise<void> {
+    this.preferenceService.emitter.on(
+      "initializeDefaultWallet",
+      async (isDefaultWallet: boolean) => {
+        await this.store.dispatch(setDefaultWallet(isDefaultWallet))
+      }
+    )
+
+    this.preferenceService.emitter.on(
+      "initializeSelectedAccount",
+      async (dbAddressNetwork: AddressNetwork) => {
+        if (dbAddressNetwork) {
+          // TBD: naming the normal reducer and async thunks
+          // Initialize redux from the db
+          // !!! Important: this action belongs to a regular reducer.
+          // NOT to be confused with the setNewCurrentAddress asyncThunk
+          this.store.dispatch(setSelectedAccount(dbAddressNetwork))
+        } else {
+          // Update currentAddress in db if it's not set but it is in the store
+          // should run only one time
+          const addressNetwork = this.store.getState().ui.selectedAccount
+
+          if (addressNetwork) {
+            await this.preferenceService.setSelectedAccount(addressNetwork)
+          }
+        }
+      }
+    )
+
+    uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
+      await this.preferenceService.setSelectedAccount(addressNetwork)
+
+      this.providerBridgeService.notifyContentScriptsAboutAddressChange(
+        addressNetwork.address
       )
     })
 
-    keyringSliceEmitter.on("importLegacyKeyring", async ({ mnemonic }) => {
-      await this.keyringService.importLegacyKeyring(mnemonic)
-    })
+    uiSliceEmitter.on(
+      "newDefaultWalletValue",
+      async (newDefaultWalletValue) => {
+        await this.preferenceService.setDefaultWalletValue(
+          newDefaultWalletValue
+        )
+
+        this.providerBridgeService.notifyContentScriptAboutConfigChange(
+          newDefaultWalletValue
+        )
+      }
+    )
   }
 }
