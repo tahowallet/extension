@@ -500,9 +500,10 @@ export default class Main extends BaseService<never> {
           owner: permitRequest.owner,
           spender: permitRequest.spender,
           value: permitRequest.value,
-          none: 1,
+          nonce: permitRequest.nonce,
           deadline: permitRequest.deadline,
-        }
+        } as PermitRequest
+
         const domain = {
           name: "Some Token",
           version: "1",
