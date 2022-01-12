@@ -1,8 +1,12 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
-import { utils } from "ethers"
+import { BigNumber, ethers, utils } from "ethers"
 import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
 
+import {
+  TransactionRequest,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider"
 import { createBackgroundAsyncThunk } from "./utils"
 import { Asset, FungibleAsset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
@@ -11,6 +15,8 @@ import {
   isValidSwapPriceResponse,
   isValidSwapQuoteResponse,
 } from "../lib/validate"
+import { getProvider } from "./utils/contract-utils"
+import { ERC20_ABI } from "../lib/erc20"
 
 interface PartialSwapAssets {
   sellAsset?: FungibleAsset
@@ -162,6 +168,49 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     )
 
     return undefined
+  }
+)
+
+export const approveAndSwap = createBackgroundAsyncThunk(
+  "0x-swap/approveAndSwap",
+  async (quote: ZrxQuote) => {
+    const provider = getProvider()
+    const signer = provider.getSigner()
+
+    // Check if we have to approve the asset we want to swap.
+    const assetContract = new ethers.Contract(
+      quote.sellTokenAddress,
+      ERC20_ABI,
+      signer
+    )
+
+    const pendingTransactionPromises: Promise<TransactionResponse>[] = []
+
+    const existingAllowance: BigNumber =
+      await assetContract.callStatic.allowance(
+        await signer.getAddress(),
+        quote.allowanceTarget
+      )
+
+    if (existingAllowance.lt(quote.sellAmount)) {
+      const approvalTransactionData =
+        await assetContract.populateTransaction.approve(
+          quote.allowanceTarget,
+          ethers.constants.MaxUint256.sub(1)
+        )
+
+      logger.log("Populated transaction data", approvalTransactionData)
+
+      pendingTransactionPromises.push(
+        signer.sendTransaction(approvalTransactionData)
+      )
+    }
+
+    pendingTransactionPromises.push(
+      signer.sendTransaction(quote as TransactionRequest)
+    )
+
+    await Promise.all(pendingTransactionPromises)
   }
 )
 
