@@ -420,50 +420,23 @@ export default class Main extends BaseService<never> {
     )
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
-      // TODO Deal with pending transactions.
-      const resolvedNonce =
-        await this.chainService.pollingProviders.ethereum.getTransactionCount(
-          options.from,
-          "latest"
+      const { transactionRequest: populatedRequest, gasEstimationError } =
+        await this.chainService.populatePartialEVMTransactionRequest(
+          getEthereumNetwork(),
+          options
         )
 
-      // Basic transaction construction based on the provided options, with extra data from the chain service
-      const transaction: EIP1559TransactionRequest = {
-        from: options.from,
-        to: options.to,
-        value: options.value ?? 0n,
-        gasLimit: options.gasLimit ?? 0n,
-        maxFeePerGas: options.maxFeePerGas ?? 0n,
-        maxPriorityFeePerGas: options.maxPriorityFeePerGas ?? 0n,
-        input: options.input ?? null,
-        type: 2 as const,
-        chainID: "1",
-        nonce: resolvedNonce,
-      }
-
-      try {
-        // We use estimateGasLimit only if user did not specify the gas explicitly or it was set below minimum
-        if (
-          typeof options.gasLimit === "undefined" ||
-          options.gasLimit < 21000n
-        ) {
-          transaction.gasLimit = await this.chainService.estimateGasLimit(
-            getEthereumNetwork(),
-            transaction
-          )
-        }
-        // TODO If the user does specify gas explicitly, test for success.
-
+      if (typeof gasEstimationError === "undefined") {
         this.store.dispatch(
           transactionRequest({
-            transactionRequest: transaction,
+            transactionRequest: populatedRequest,
             transactionLikelyFails: false,
           })
         )
-      } catch (error) {
+      } else {
         this.store.dispatch(
           transactionRequest({
-            transactionRequest: transaction,
+            transactionRequest: populatedRequest,
             transactionLikelyFails: true,
           })
         )

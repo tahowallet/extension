@@ -5,6 +5,7 @@ import {
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
+import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString } from "../../types"
@@ -213,6 +214,69 @@ export default class ChainService extends BaseService<Events> {
         )
         .concat([])
     )
+  }
+
+  async populatePartialEVMTransactionRequest(
+    network: EVMNetwork,
+    partialRequest: Partial<EIP1559TransactionRequest> & { from: string }
+  ): Promise<{
+    transactionRequest: EIP1559TransactionRequest
+    gasEstimationError: string | undefined
+  }> {
+    const resolvedNonce = await this.resolveEVMNonce(
+      network,
+      partialRequest.from
+    )
+
+    // Basic transaction construction based on the provided options, with extra data from the chain service
+    const transactionRequest: EIP1559TransactionRequest = {
+      from: partialRequest.from,
+      to: partialRequest.to,
+      value: partialRequest.value ?? 0n,
+      gasLimit: partialRequest.gasLimit ?? 0n,
+      maxFeePerGas: partialRequest.maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: partialRequest.maxPriorityFeePerGas ?? 0n,
+      input: partialRequest.input ?? null,
+      type: 2 as const,
+      chainID: network.chainID,
+      nonce: resolvedNonce,
+    }
+
+    // Always estimate gas to decide whether the transaction will likely fail.
+    let estimatedGasLimit: bigint | undefined
+    let gasEstimationError: string | undefined
+    try {
+      estimatedGasLimit = await this.estimateGasLimit(
+        network,
+        transactionRequest
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        // Ethers does some heavily loose typing around errors to carry
+        // arbitrary info without subclassing Error, so an any cast is needed.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyError: any = error
+
+        if (
+          "code" in anyError &&
+          anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
+        ) {
+          gasEstimationError = anyError.error ?? "unknown transaction error"
+        }
+      }
+    }
+
+    // We use the estimate as the actual limit only if user did not specify the
+    // gas explicitly or if it was set below the minimum network-allowed value.
+    if (
+      typeof estimatedGasLimit !== "undefined" &&
+      (typeof partialRequest.gasLimit === "undefined" ||
+        partialRequest.gasLimit < 21000n)
+    ) {
+      transactionRequest.gasLimit = estimatedGasLimit
+    }
+
+    return { transactionRequest, gasEstimationError }
   }
 
   async resolveEVMNonce(
