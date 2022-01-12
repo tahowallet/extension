@@ -57,6 +57,8 @@ export const swapQuoteJTD = {
           fillData: {
             properties: {
               router: { type: "string" },
+            },
+            optionalProperties: {
               uniswapPath: { type: "string" },
             },
             additionalProperties: true,
