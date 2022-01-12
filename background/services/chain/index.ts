@@ -111,6 +111,10 @@ export default class ChainService extends BaseService<Events> {
     provider: AlchemyWebSocketProvider
   }[]
 
+  private evmChainNoncesByAddress: {
+    [chainID: string]: { [address: string]: number }
+  } = {}
+
   /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
    */
@@ -209,6 +213,31 @@ export default class ChainService extends BaseService<Events> {
         )
         .concat([])
     )
+  }
+
+  async resolveEVMNonce(
+    network: EVMNetwork,
+    address: HexString
+  ): Promise<number> {
+    const knownNextNonce =
+      this.evmChainNoncesByAddress[network.chainID]?.[address]
+
+    if (typeof knownNextNonce !== "undefined") {
+      this.evmChainNoncesByAddress[network.chainID][address] += 1
+      return knownNextNonce
+    }
+
+    // TODO Deal with multi-network.
+    const networkNonce =
+      await this.pollingProviders.ethereum.getTransactionCount(
+        address,
+        "latest"
+      )
+
+    this.evmChainNoncesByAddress[network.chainID] ??= {}
+    this.evmChainNoncesByAddress[network.chainID][address] = networkNonce
+
+    return networkNonce
   }
 
   async getAccountsToTrack(): Promise<AddressNetwork[]> {
@@ -707,14 +736,31 @@ export default class ChainService extends BaseService<Events> {
         // TODO use proper provider string
         // handle incoming transactions for an account
         try {
-          await this.saveTransaction(
-            transactionFromAlchemyWebsocketTransaction(
-              result,
-              ETH,
-              getEthereumNetwork()
-            ),
-            "alchemy"
+          const transaction = transactionFromAlchemyWebsocketTransaction(
+            result,
+            ETH,
+            getEthereumNetwork()
           )
+
+          // If this is an EVM chain, we're tracking the from address's
+          // nonce, and the pending transaction has a higher nonce, update our
+          // view of it. This helps reduce the number of times when a
+          // transaction submitted outside of this wallet causes this wallet to
+          // produce bad transactions with reused nonces.
+          if (
+            typeof addressNetwork.network.chainID !== "undefined" &&
+            typeof this.evmChainNoncesByAddress[
+              addressNetwork.network.chainID
+            ]?.[transaction.from.toLowerCase()] !== "undefined" &&
+            this.evmChainNoncesByAddress[addressNetwork.network.chainID]?.[
+              transaction.from.toLowerCase()
+            ] <= transaction.nonce
+          ) {
+            this.evmChainNoncesByAddress[addressNetwork.network.chainID][
+              transaction.from.toLowerCase()
+            ] = transaction.nonce + 1
+          }
+          await this.saveTransaction(transaction, "alchemy")
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }
