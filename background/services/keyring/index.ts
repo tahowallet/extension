@@ -1,6 +1,7 @@
 import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
+import { TypedDataField } from "@ethersproject/abstract-signer"
 
 import { normalizeEVMAddress, getEthereumNetwork } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -16,6 +17,7 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { EIP712DomainType } from "../../redux-slices/signing"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
@@ -395,6 +397,27 @@ export default class KeyringService extends BaseService<Events> {
     }
     this.emitter.emit("signedTx", signedTx)
     return signedTx
+  }
+
+  async signTypedData(
+    account: HexString,
+    domain: EIP712DomainType,
+    types: Record<string, TypedDataField[]>,
+    value: Record<string, unknown>
+  ): Promise<string> {
+    this.requireUnlocked()
+
+    // find the keyring using a linear search
+    const keyring = this.#keyrings.find((kr) =>
+      kr.getAddressesSync().includes(normalizeEVMAddress(account))
+    )
+    if (!keyring) {
+      throw new Error("Address keyring not found.")
+    }
+
+    const signature = await keyring.signTypedData(account, domain, types, value)
+
+    return signature
   }
 
   // //////////////////
