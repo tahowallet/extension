@@ -118,6 +118,11 @@ export default function OnboardingVerifySeed(): ReactElement {
     })
   }, [])
 
+  const columnEnds = [
+    [0, 4],
+    [4, 8],
+  ]
+
   return (
     <section>
       <div className="top">
@@ -129,54 +134,37 @@ export default function OnboardingVerifySeed(): ReactElement {
       </h1>
       <div className="subtitle">Add the missing words in order</div>
       <div className="words_group">
-        <div className="column_wrap">
-          <div className="column numbers">
-            {sortedIndexesOfRandomOrderedMnemonic
-              ?.slice(0, 4)
-              .map((n) => typeof n === "number" && n + 1)
-              .join(" ")}
-          </div>
-          <div className="column dashes">- - - -</div>
-          <div className="column words">
-            {isSelected.slice(0, 4).map((item, index) => (
-              <div className="button_spacing" key={item}>
-                <SharedButton
-                  type="deemphasizedWhite"
-                  size="small"
-                  onClick={() => {
-                    handleRemove(item)
-                  }}
-                  icon="close"
-                >{`${item}`}</SharedButton>
+        {columnEnds.map((positions) => {
+          const posOne = positions[0]
+          const posTwo = positions[1]
+          return (
+            <div className="column_wrap">
+              <div className="column numbers">
+                {sortedIndexesOfRandomOrderedMnemonic
+                  ?.slice(posOne, posTwo)
+                  .map((n) => typeof n === "number" && n + 1)
+                  .join(" ")}
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="column_wrap">
-          <div className="column numbers">
-            {sortedIndexesOfRandomOrderedMnemonic
-              ?.slice(4, 8)
-              .map((n) => typeof n === "number" && n + 1)
-              .join(" ")}
-          </div>
-          <div className="column dashes">- - - -</div>
-          <div className="column words">
-            {isSelected.slice(4, 8).map((item, index) => (
-              <div className="button_spacing" key={item}>
-                <SharedButton
-                  type="deemphasizedWhite"
-                  size="small"
-                  onClick={() => {
-                    handleRemove(item)
-                  }}
-                  icon="close"
-                >
-                  {item}
-                </SharedButton>
+              <div className="column dashes">- - - -</div>
+              <div className="column words">
+                {isSelected.slice(posOne, posTwo).map((item, index) => (
+                  <div className="button_spacing" key={item}>
+                    <SharedButton
+                      type="deemphasizedWhite"
+                      size="small"
+                      onClick={() => {
+                        handleRemove(item)
+                      }}
+                      icon="close"
+                    >
+                      {item}
+                    </SharedButton>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )
+        })}
       </div>
       <ul className="standard_width_padded button_group center_horizontal bottom">
         {isNotSelected?.length === 0 ? (
