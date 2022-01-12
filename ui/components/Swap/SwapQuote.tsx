@@ -1,20 +1,18 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { ethers, utils } from "ethers"
-import { TransactionRequest } from "@ethersproject/abstract-provider"
+import { utils } from "ethers"
 import { getProvider } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
-import logger from "@tallyho/tally-background/lib/logger"
-import { ERC20_ABI } from "@tallyho/tally-background/lib/erc20"
 
+import { approveAndSwap } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
 import SwapTransactionSettings from "./SwapTransactionSettings"
 import SwapApprovalStep from "./SwapApprovalStep"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 export default function SwapQoute(): ReactElement {
-  const provider = getProvider()
-  const signer = provider.getSigner()
+  const dispatch = useBackgroundDispatch()
 
   const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
     useBackgroundSelector((state) => {
@@ -48,37 +46,15 @@ export default function SwapQoute(): ReactElement {
 
   const [stepComplete, setStepComplete] = useState(-1)
 
+  const history = useHistory()
+
   const handleApproveClick = useCallback(async () => {
     // Guard against undefined quote type errors
     if (quote) {
-      // We have to approve the asset we want to swap
-      const assetContract = new ethers.Contract(
-        quote.sellTokenAddress,
-        ERC20_ABI,
-        signer
-      )
-
-      const approvalTransactionData =
-        await assetContract.populateTransaction.approve(
-          quote.allowanceTarget,
-          ethers.constants.MaxUint256.sub(1)
-        )
-
-      logger.log("Populated transaction data", approvalTransactionData)
-
-      const approvalTransactionHash = await signer.sendTransaction(
-        approvalTransactionData
-      )
-
-      logger.log("Approval transaction #", approvalTransactionHash)
-
-      const swapTransactionHash = await signer.sendTransaction(
-        quote as TransactionRequest
-      )
-
-      logger.log("Swap transaction #", swapTransactionHash)
+      dispatch(approveAndSwap(quote))
+      history.push("/signTransaction")
     }
-  }, [signer, quote])
+  }, [dispatch, history, quote])
 
   return (
     <section className="center_horizontal standard_width">
