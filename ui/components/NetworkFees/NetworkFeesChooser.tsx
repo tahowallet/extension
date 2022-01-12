@@ -10,7 +10,7 @@ import {
   selectFeeType,
   selectLastGasEstimatesRefreshTime,
   selectTransactionData,
-  updateTransactionOptions,
+  enqueuePartialTransactionRequest,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
@@ -81,7 +81,7 @@ export default function NetworkFeesChooser({
         break
     }
     if (transactionDetails !== undefined) {
-      dispatch(updateTransactionOptions(transactionDetails))
+      dispatch(enqueuePartialTransactionRequest(transactionDetails))
     }
     setFeeModalOpen(false)
   }

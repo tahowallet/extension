@@ -30,6 +30,7 @@ export enum NetworkFeeTypeChosen {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
+  transactionRequestQueue?: EIP1559TransactionRequest[]
   signedTransaction?: SignedEVMTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
@@ -48,12 +49,13 @@ export type EstimatedFeesPerGas = {
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
+  transactionRequestQueue: [],
   estimatedFeesPerGas: undefined,
   lastGasEstimatesRefreshed: Date.now(),
 }
 
 export type Events = {
-  updateOptions: Partial<EIP1559TransactionRequest> & {
+  enqueuePartialTransactionRequest: Partial<EIP1559TransactionRequest> & {
     from: string
   }
   requestSignature: EIP1559TransactionRequest
@@ -64,10 +66,10 @@ export type Events = {
 export const emitter = new Emittery<Events>()
 
 // Async thunk to pass transaction options from the store to the background via an event
-export const updateTransactionOptions = createBackgroundAsyncThunk(
-  "transaction-construction/update-options",
+export const enqueuePartialTransactionRequest = createBackgroundAsyncThunk(
+  "transaction-construction/enqueue-partial-transaction-request",
   async (options: Partial<EIP1559TransactionRequest> & { from: string }) => {
-    await emitter.emit("updateOptions", options)
+    await emitter.emit("enqueuePartialTransactionRequest", options)
   }
 )
 
@@ -103,15 +105,18 @@ const transactionSlice = createSlice({
       ...state,
       status: TransactionConstructionStatus.Loaded,
       signedTransaction: undefined,
-      transactionRequest: {
-        ...transactionRequest,
-        maxFeePerGas:
-          state.estimatedFeesPerGas?.[state.feeTypeSelected]?.maxFeePerGas ??
-          transactionRequest.maxFeePerGas,
-        maxPriorityFeePerGas:
-          state.estimatedFeesPerGas?.[state.feeTypeSelected]
-            ?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
-      },
+      transactionRequests: [
+        ...(state.transactionRequestQueue ?? []),
+        {
+          ...transactionRequest,
+          maxFeePerGas:
+            state.estimatedFeesPerGas?.[state.feeTypeSelected]?.maxFeePerGas ??
+            transactionRequest.maxFeePerGas,
+          maxPriorityFeePerGas:
+            state.estimatedFeesPerGas?.[state.feeTypeSelected]
+              ?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
+        },
+      ],
       transactionLikelyFails,
     }),
     clearTransactionState: (state) => ({
@@ -136,6 +141,8 @@ const transactionSlice = createSlice({
       ...state,
       status: TransactionConstructionStatus.Signed,
       signedTransaction: payload,
+      transactionRequest: (state.transactionRequestQueue ?? [])[0],
+      transactionRequestQueue: (state.transactionRequestQueue ?? []).slice(1),
     }),
     broadcastOnSign: (state, { payload }: { payload: boolean }) => ({
       ...state,
@@ -204,7 +211,7 @@ const transactionSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(updateTransactionOptions.pending, (immerState) => {
+    builder.addCase(enqueuePartialTransactionRequest.pending, (immerState) => {
       immerState.status = TransactionConstructionStatus.Pending
       immerState.signedTransaction = undefined
     })

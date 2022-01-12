@@ -8,7 +8,7 @@ import {
 import {
   broadcastOnSign,
   selectEstimatedFeesPerGas,
-  updateTransactionOptions,
+  enqueuePartialTransactionRequest,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
 import { useLocation } from "react-router-dom"
@@ -74,7 +74,7 @@ export default function Send(): ReactElement {
       value: BigInt(utils.parseEther(amount?.toString())._hex),
       gasLimit: BigInt(gasLimit),
     }
-    return dispatch(updateTransactionOptions(transaction))
+    return dispatch(enqueuePartialTransactionRequest(transaction))
   }
 
   useEffect(() => {

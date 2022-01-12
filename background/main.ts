@@ -53,7 +53,7 @@ import {
   emitter as transactionConstructionSliceEmitter,
   transactionRequest,
   signed,
-  updateTransactionOptions,
+  enqueuePartialTransactionRequest,
   broadcastOnSign,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
@@ -419,29 +419,32 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
-      const { transactionRequest: populatedRequest, gasEstimationError } =
-        await this.chainService.populatePartialEVMTransactionRequest(
-          getEthereumNetwork(),
-          options
-        )
+    transactionConstructionSliceEmitter.on(
+      "enqueuePartialTransactionRequest",
+      async (partialTransactionRequest) => {
+        const { transactionRequest: populatedRequest, gasEstimationError } =
+          await this.chainService.populatePartialEVMTransactionRequest(
+            getEthereumNetwork(),
+            partialTransactionRequest
+          )
 
-      if (typeof gasEstimationError === "undefined") {
-        this.store.dispatch(
-          transactionRequest({
-            transactionRequest: populatedRequest,
-            transactionLikelyFails: false,
-          })
-        )
-      } else {
-        this.store.dispatch(
-          transactionRequest({
-            transactionRequest: populatedRequest,
-            transactionLikelyFails: true,
-          })
-        )
+        if (typeof gasEstimationError === "undefined") {
+          this.store.dispatch(
+            transactionRequest({
+              transactionRequest: populatedRequest,
+              transactionLikelyFails: false,
+            })
+          )
+        } else {
+          this.store.dispatch(
+            transactionRequest({
+              transactionRequest: populatedRequest,
+              transactionLikelyFails: true,
+            })
+          )
+        }
       }
-    })
+    )
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
@@ -610,7 +613,7 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        this.store.dispatch(updateTransactionOptions(payload))
+        this.store.dispatch(enqueuePartialTransactionRequest(payload))
         // TODO force route?
 
         this.store.dispatch(broadcastOnSign(false))
