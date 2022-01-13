@@ -192,6 +192,8 @@ export const approveAndSwap = createBackgroundAsyncThunk(
         quote.allowanceTarget
       )
 
+    logger.log("here's our existing allowance!", existingAllowance)
+
     if (existingAllowance.lt(quote.sellAmount)) {
       const approvalTransactionData =
         await assetContract.populateTransaction.approve(
@@ -206,8 +208,31 @@ export const approveAndSwap = createBackgroundAsyncThunk(
       )
     }
 
+    logger.log("send that transaction!", quote)
+
     pendingTransactionPromises.push(
-      signer.sendTransaction(quote as TransactionRequest)
+      signer.sendTransaction({
+        // Missing properties used by the normal transaction construction function - from, nonce, gasLimit, maxFeePerGas, maxPriorityFeePerGas
+        // allowanceTarget: quote.allowanceTarget,
+        // buyAmount: quote.buyAmount,
+        // buyTokenAddress: quote.buyTokenAddress,
+        // buyTokenToEthRate: quote.buyTokenToEthRate,
+        chainId: quote.chainId,
+        data: quote.data,
+        // estimatedGas: quote.estimatedGas,
+        // gas: quote.gas,
+        gasPrice: quote.gasPrice,
+        // guaranteedPrice: quote.guaranteedPrice,
+        // minimumProtocolFee: quote.minimumProtocolFee,
+        // price: quote.price,
+        // protocolFee: quote.protocolFee,
+        // sellAmount: quote.sellAmount,
+        // sellTokenAddress: quote.sellTokenAddress,
+        // sellTokenToEthRate: quote.sellTokenToEthRate,
+        to: quote.to,
+        value: quote.value,
+        type: 1 as const,
+      })
     )
 
     await Promise.all(pendingTransactionPromises)
