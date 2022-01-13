@@ -19,7 +19,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { KeyringTypes } from "./types"
+import { HexString, KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import { AddressNetwork, NameNetwork } from "./accounts"
 
@@ -57,9 +57,9 @@ import {
   broadcastOnSign,
 } from "./redux-slices/transaction-construction"
 import {
-  PermitRequest,
   signedTypedData,
   signingSliceEmitter,
+  TypedData,
 } from "./redux-slices/signing"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -495,74 +495,18 @@ export default class Main extends BaseService<never> {
 
     signingSliceEmitter.on(
       "requestSignTypedData",
-      async (permitRequest: Partial<PermitRequest>) => {
-        const value = {
-          owner: permitRequest.owner,
-          spender: permitRequest.spender,
-          value: permitRequest.value,
-          nonce: permitRequest.nonce,
-          deadline: permitRequest.deadline,
-        } as PermitRequest
-
-        const domain = {
-          name: "Some Token",
-          version: "1",
-          chainId: 1,
-          verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-        }
-
-        const account = "0x123"
-
-        const types = {
-          EIP712Domain: [
-            {
-              name: "name",
-              type: "string",
-            },
-            {
-              name: "version",
-              type: "string",
-            },
-            {
-              name: "chainId",
-              type: "uint256",
-            },
-            {
-              name: "verifyingContract",
-              type: "address",
-            },
-          ],
-          Permit: [
-            {
-              name: "owner",
-              type: "address",
-            },
-            {
-              name: "spender",
-              type: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-            },
-            {
-              name: "nonce",
-              type: "uint256",
-            },
-            {
-              name: "deadline",
-              type: "uint256",
-            },
-          ],
-        }
-
-        const signedTypedDataHex = await this.keyringService.signTypedData(
+      async ({
+        typedData,
+        account,
+      }: {
+        typedData: TypedData
+        account: HexString
+      }) => {
+        const signedData = await this.keyringService.signTypedData({
+          typedData,
           account,
-          domain,
-          types,
-          value
-        )
-        this.store.dispatch(signedTypedData(signedTypedDataHex))
+        })
+        this.store.dispatch(signedTypedData(signedData))
       }
     )
 
