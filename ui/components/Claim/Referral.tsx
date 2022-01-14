@@ -1,20 +1,61 @@
-import React, { ReactElement, useState } from "react"
-import SharedInput from "../Shared/SharedInput"
+import React, { ReactElement } from "react"
 import AmountBanner from "./AmountBanner"
 
+function DAOButton() {
+  return (
+    <button type="button" className="option">
+      <div className="icon" />
+      <div className="name">Yearn.finance</div>
+      <div className="radio" />
+      <style jsx>{`
+        .option {
+          width: 168px;
+          height: 136px;
+          border-radius: 8px;
+          background-color: var(--green-95);
+          margin-bottom: 16px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          flex-direction: column;
+        }
+        .icon {
+          width: 48px;
+          height: 48px;
+          background-color: #006ae3;
+          border-radius: 200px;
+          margin-bottom: 8px;
+        }
+        .radio {
+          width: 16px;
+          height: 16px;
+          border: 2px solid var(--green-60);
+          border-radius: 200px;
+          margin-top: 8px;
+        }
+        .option:hover {
+          background-color: var(--green-80);
+        }
+      `}</style>
+    </button>
+  )
+}
+
 export default function Referral(): ReactElement {
-  const [referrCode, setReferrCode] = useState("")
   return (
     <div className="claim standard_width">
-      <AmountBanner step={2} />
-      <div className="claim__title">Reffer a friend</div>
-      <div className="claim__description">
-        Do you have a referral code? Referral codes come in the shape of an
-        ethereum address.
+      <AmountBanner />
+      <div className="title">
+        Get a bonus of <div className="highlight">463</div> TALLY!
       </div>
-      <div>
-        <label htmlFor="referInput">Refferal code</label>
-        <input className="refer__input" />
+      <div className="description">
+        Select a Project/DAO to share the bonus with! You each receive 463
+        TALLY!
+      </div>
+      <div className="options">
+        {["", "", "", "", "", ""].map(() => {
+          return <DAOButton />
+        })}
       </div>
       <style jsx>
         {`
@@ -23,34 +64,37 @@ export default function Referral(): ReactElement {
             flex-flow: column;
             flex-grow: 1;
           }
-          .claim__title {
-            font-family: Quincy CF;
-            font-size: 42px;
-            line-height: 58px;
-            margin-top: 12px;
+          .title {
+            height: 32px;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            margin-top: 25px;
+            margin-bottom: 11px;
           }
-          .claim__description {
-            font-family: Segment;
+          .description {
             font-size: 16px;
             line-height: 24px;
-            color: #99a8a7;
+            color: var(--green-40);
+            margin-bottom: 30px;
           }
-          .refer{
-            position: relative;
-            margin-top 24px;
+          .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
           }
-          .refer__input{
-            border: 2px solid white;
-            color: black;
-          }
-          .refer__code {
-            font-size: 12px;
-            color: #99a8a7;
-            position: absolute;
-            background-color: #193330;
-            padding: 0 6px;
-            top: -8px;
-            left: 12px;
+          .highlight {
+            color: var(--success);
+            font-size: 36px;
+            font-weight: 500;
+            line-height: 42px;
+            text-align: left;
+            font-family: Quincy CF;
+            margin: 0px 8px;
           }
         `}
       </style>
