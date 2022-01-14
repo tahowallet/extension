@@ -30,6 +30,9 @@ export enum NetworkFeeTypeChosen {
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
   transactionRequest?: EIP1559TransactionRequest
+  // A queue of requests that is signed first-in, first-out. New requests are
+  // added to the end of the queue (equivalent to  `Array.push`) and removed
+  // from the front (equivalent to `Array.unshift`).
   transactionRequestQueue?: EIP1559TransactionRequest[]
   signedTransaction?: SignedEVMTransaction
   broadcastOnSign?: boolean
@@ -105,7 +108,7 @@ const transactionSlice = createSlice({
       ...state,
       status: TransactionConstructionStatus.Loaded,
       signedTransaction: undefined,
-      transactionRequests: [
+      transactionRequestQueue: [
         ...(state.transactionRequestQueue ?? []),
         {
           ...transactionRequest,
@@ -119,11 +122,12 @@ const transactionSlice = createSlice({
       ],
       transactionLikelyFails,
     }),
-    clearTransactionState: (state) => ({
+    clearTransactionStateAndDequeueRequest: (state) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
       status: TransactionConstructionStatus.Idle,
       feeTypeSelected: NetworkFeeTypeChosen.Regular,
+      transactionRequestQueue: state.transactionRequestQueue?.slice(1),
     }),
     regularFeeType: (state): TransactionConstruction => ({
       ...state,
@@ -236,7 +240,7 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
   async (_, { dispatch }) => {
     await emitter.emit("signatureRejected")
     // Provide a clean slate for future transactions.
-    dispatch(transactionSlice.actions.clearTransactionState())
+    dispatch(transactionSlice.actions.clearTransactionStateAndDequeueRequest())
   }
 )
 
@@ -260,8 +264,14 @@ export const selectLastGasEstimatesRefreshTime = createSelector(
 
 export const selectTransactionData = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.transactionRequest,
+    state.transactionConstruction.transactionRequestQueue?.[0],
   (transactionRequestData) => transactionRequestData
+)
+
+export const selectTransactionsInQueue = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.transactionRequestQueue,
+  (transactionRequestQueue) => transactionRequestQueue?.length ?? 0
 )
 
 export const selectIsTransactionLoaded = createSelector(

@@ -4,10 +4,12 @@ import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInfor
 
 type Props = {
   accountTotal: AccountTotal
+  totalTransactionsInQueue: number
 }
 
 export default function SignTransactionNetworkAccountInfoTopBar({
   accountTotal,
+  totalTransactionsInQueue,
 }: Props): ReactElement {
   if (typeof accountTotal === "undefined") {
     return <></>
@@ -16,21 +18,47 @@ export default function SignTransactionNetworkAccountInfoTopBar({
   const { shortenedAddress, name, avatarURL } = accountTotal
 
   return (
-    <div className="top_bar_wrap standard_width">
-      <div className="row_part">
-        <div className="network_icon" />
-        <span className="network_name">Arbitrum</span>
-      </div>
-      <div className="row_part">
-        <SharedCurrentAccountInformation
-          shortenedAddress={shortenedAddress}
-          name={name}
-          avatarURL={avatarURL}
-        />
+    <>
+      {totalTransactionsInQueue > 1 ? (
+        <header>
+          <h2>Unsigned transactions</h2>
+
+          <p>
+            1<span className="remaining">/{totalTransactionsInQueue}</span>
+          </p>
+        </header>
+      ) : (
+        <></>
+      )}
+      <div className="top_bar_wrap standard_width">
+        <div className="row_part">
+          <div className="network_icon" />
+          <span className="network_name">Arbitrum</span>
+        </div>
+        <div className="row_part">
+          <SharedCurrentAccountInformation
+            shortenedAddress={shortenedAddress}
+            name={name}
+            avatarURL={avatarURL}
+          />
+        </div>
       </div>
       <style jsx>
         {`
-          .top_bar_wrap {
+          header h2 {
+            color: var(--attention);
+          }
+          header h2:before {
+            // warning icon
+          }
+          header p {
+            color: var(--white);
+          }
+          header .remaining {
+            color: var(--green-20);
+          }
+          .top_bar_wrap,
+          header {
             margin: 0 auto;
             margin-top: 16px;
             margin-bottom: 16px;
@@ -74,6 +102,6 @@ export default function SignTransactionNetworkAccountInfoTopBar({
           }
         `}
       </style>
-    </div>
+    </>
   )
 }

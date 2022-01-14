@@ -8,6 +8,7 @@ import {
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
   selectTransactionData,
+  selectTransactionsInQueue,
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
@@ -67,6 +68,7 @@ export default function SignTransaction({
     ({ transactionConstruction }) => transactionConstruction.signedTransaction
   )
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const transactionsInQueue = useBackgroundSelector(selectTransactionsInQueue)
 
   const signerAccountTotal = useBackgroundSelector((state) =>
     typeof transactionDetails === "undefined"
@@ -166,6 +168,7 @@ export default function SignTransaction({
     <section>
       <SignTransactionNetworkAccountInfoTopBar
         accountTotal={signerAccountTotal}
+        totalTransactionsInQueue={transactionsInQueue}
       />
       <h1 className="serif_header title">{signContent[signType].title}</h1>
       <div className="primary_info_card standard_width">
