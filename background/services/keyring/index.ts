@@ -33,6 +33,7 @@ interface Events extends ServiceLifecycleEvents {
   address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
+  signedData: string
 }
 
 /*
@@ -425,7 +426,7 @@ export default class KeyringService extends BaseService<Events> {
       types,
       message
     )
-
+    this.emitter.emit("signedData", signature)
     return signature
   }
 

@@ -60,6 +60,7 @@ import {
   signedTypedData,
   signingSliceEmitter,
   signTypedData,
+  SignTypedDataRequest,
   TypedData,
 } from "./redux-slices/signing"
 import { allAliases } from "./redux-slices/utils"
@@ -694,8 +695,41 @@ export default class Main extends BaseService<never> {
     )
     this.internalEthereumProviderService.emitter.on(
       "signTypedDataRequest",
-      async ({ payload, resolver, rejecter }) => {
+      async ({
+        payload,
+        resolver,
+        rejecter,
+      }: {
+        payload: SignTypedDataRequest
+        resolver: (result: string | PromiseLike<string>) => void
+        rejecter: () => void
+      }) => {
         this.store.dispatch(signTypedData(payload))
+
+        const resolveAndClear = (signature: string) => {
+          this.keyringService.emitter.off("signedData", resolveAndClear)
+          transactionConstructionSliceEmitter.off(
+            "signatureRejected",
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            rejectAndClear
+          )
+          resolver(signature)
+        }
+
+        const rejectAndClear = () => {
+          this.keyringService.emitter.off("signedData", resolveAndClear)
+          transactionConstructionSliceEmitter.off(
+            "signatureRejected",
+            rejectAndClear
+          )
+          rejecter()
+        }
+
+        this.keyringService.emitter.on("signedData", resolveAndClear)
+        transactionConstructionSliceEmitter.on(
+          "signatureRejected",
+          rejectAndClear
+        )
       }
     )
   }

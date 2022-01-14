@@ -19,6 +19,7 @@ import {
   ethersTransactionFromSignedTransaction,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
+import { SignTypedDataRequest } from "../../redux-slices/signing"
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -31,7 +32,7 @@ type Events = ServiceLifecycleEvents & {
     Partial<EIP1559TransactionRequest> & { from: string },
     SignedEVMTransaction
   >
-  signTypedDataRequest: DAppRequestEvent<any, any>
+  signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   // connect
   // disconnet
   // account change
@@ -172,16 +173,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_signTypedData_v1":
       case "eth_signTypedData_v3":
       case "eth_signTypedData_v4":
-        return this.signTypedData(params[0] as EthersTransactionRequest).then(
-          (signedTransaction) =>
-            serializeEthersTransaction(
-              ethersTransactionFromSignedTransaction(signedTransaction),
-              {
-                r: signedTransaction.r,
-                s: signedTransaction.s,
-                v: signedTransaction.v,
-              }
-            )
+        return this.signTypedData(params[0] as SignTypedDataRequest).then(
+          (res) => {
+            // console.log(res)
+          }
         )
       case "eth_submitHashrate":
       case "eth_submitWork":
@@ -220,8 +215,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async signTypedData(params: any) {
-    return new Promise<SignedEVMTransaction>((resolve, reject) => {
+  private async signTypedData(params: SignTypedDataRequest) {
+    return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signTypedDataRequest", {
         payload: params,
         resolver: resolve,

@@ -44,6 +44,12 @@ export type PermitRequest = {
   nonce: BigNumber
   deadline: BigNumber
 }
+
+export type SignTypedDataRequest = {
+  account: string
+  typedData: TypedData
+}
+
 const ROUTER_ADDRESS = "0x123"
 export const signPermitRequest = createBackgroundAsyncThunk(
   "signing/signPermitRequest",
@@ -94,9 +100,13 @@ export const signPermitRequest = createBackgroundAsyncThunk(
 
 export const signTypedData = createBackgroundAsyncThunk(
   "signing/signTypedData",
-  async (typedData: any) => {
+  async (data: SignTypedDataRequest) => {
+    const { account, typedData } = data
     // what am I getting here, where domain, where types, message, very sad
-    await signingSliceEmitter.emit("requestSignTypedData", typedData)
+    await signingSliceEmitter.emit("requestSignTypedData", {
+      typedData,
+      account,
+    })
   }
 )
 
