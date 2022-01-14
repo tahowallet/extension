@@ -1,115 +1,147 @@
-import React, { ReactElement } from "react"
-import AmountCombinedBanner from "./AmountCombinedBanner"
+import React, { ReactElement, useState } from "react"
+import AmountBanner from "./AmountBanner"
+import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
+import SharedButton from "../Shared/SharedButton"
 
-interface DelegateProps {
-  openInfo: () => void
-  openChoose: () => void
-}
+const delegates = [
+  {
+    image: "./images/uniswap@2x.png",
+    name: "Justin Sun",
+    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
+  },
+  {
+    image: "./images/uniswap@2x.png",
+    name: "Justin Sun",
+    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
+  },
+  {
+    image: "./images/uniswap@2x.png",
+    name: "Justin Sun",
+    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
+  },
+  {
+    image: "./images/uniswap@2x.png",
+    name: "Justin Sun",
+    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
+  },
+]
+export default function Delegate(): ReactElement {
+  const [panelNumber, setPanelNumber] = useState(0)
 
-export default function Delegate({
-  openInfo,
-  openChoose,
-}: DelegateProps): ReactElement {
   return (
     <div>
-      <AmountCombinedBanner />
+      <AmountBanner />
       <div className="claim standard_width">
-        <div className="claim__title">Choose a delegate!</div>
-        <div className="claim__description">
+        <div className="title">Choose a delegate!</div>
+        <div className="description">
           Delegates are your north-star, you trust them to represent you in a
           DAO voting.
-          <span
-            onClick={openInfo}
-            role="button"
-            tabIndex={0}
-            onKeyDown={openInfo}
-            className="claim__seemore"
-          >
-            {" "}
-            Read more
-          </span>
         </div>
-        <div className=" banner banner-delegate">
-          {new Array(4).fill(null).map(() => (
-            <img
-              className="delegate__icon"
-              src="./images/uniswap@2x.png"
-              alt=""
-            />
-          ))}
+        <div className="switcher_wrap">
+          {" "}
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={["List of delegates", "Custom delegation"]}
+          />
         </div>
-        <button className="delegate__button" type="button" onClick={openChoose}>
-          Choose delegate
-        </button>
+        {panelNumber === 0 ? (
+          <>
+            {delegates.map((delegate) => {
+              return (
+                <div className="delegate">
+                  <input type="radio" name="delegate" className="radio" />
+                  <div className="delegate_details">
+                    <div className="icon" />
+                    <div className="delegate_info">
+                      <div className="name">
+                        {delegate.name}
+                        <span className="count">123 Votes</span>
+                      </div>
+                      <div className="pitch">
+                        <SharedButton type="tertiaryGray" size="small">
+                          See pitch
+                        </SharedButton>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </>
+        ) : (
+          <></>
+        )}
       </div>
       <style jsx>
         {`
-          .banner {
-            width: 100%;
-            border-radius: 12px;
-            display: flex;
-            padding: 0 4px;
-            box-sizing: border-box;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 24px;
+          .switcher_wrap {
+            width: 100vw;
+            margin-left: -17px;
           }
-          .banner-delegate {
-            height: 58px;
-            padding: 0 20px;
-            margin: 20px 0 10px 0;
-            background-color: var(--hunter-green);
+          .title {
+            height: 32px;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+            text-align: left;
+            margin-top: 25px;
+            margin-bottom: 11px;
           }
-          .claim__title {
-            font-family: Quincy CF;
-            font-size: 42px;
-            line-height: 58px;
-            margin-top: 12px;
-          }
-          .claim__description {
-            font-family: Segment;
+          .description {
             font-size: 16px;
             line-height: 24px;
-            color: #99a8a7;
-          }
-          .claim__description-review {
-            font-family: Segment;
-            font-size: 16px;
-            line-height: 24px;
-            margin-top: 24px;
-            color: #99a8a7;
-          }
-          .claim__seemore {
-            color: #d08e39;
-            cursor: pointer;
+            color: var(--green-40);
+            margin-bottom: 30px;
           }
           .claim {
             display: flex;
             flex-flow: column;
             flex-grow: 1;
           }
-          .delegate__icon {
-            width: 40px;
-            opacity: 0.5;
-          }
-          .delegate__button {
-            position: relative;
-            height: 40px;
-            border-radius: 4px;
-            background-color: var(--trophy-gold);
+          .delegate {
             display: flex;
             align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+            padding-top: 20px;
+          }
+          .delegate_details {
+            display: flex;
+            align-items: center;
+            width: 100%;
+          }
+          .delegate_info {
+            display: flex;
+            width: 100%;
             justify-content: space-between;
-            color: #002522;
-            font-size: 20px;
-            letter-spacing: 0.48px;
-            line-height: 24px;
-            text-align: center;
-            padding: 0px 17px;
-            margin-bottom: 16px;
-            margin-right: 8px;
-            align-self: center;
-            top: -32px;
+            margin-left: 12px;
+          }
+          .radio {
+            all: revert;
+          }
+          .name {
+            color: var(--green-20);
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+          }
+          .count {
+            color: var(--green-60);
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+          }
+          .icon {
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            background-color: #006ae3;
+            border-radius: 999px;
+            flex-shrink: 0;
           }
         `}
       </style>
