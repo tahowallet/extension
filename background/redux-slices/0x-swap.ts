@@ -184,7 +184,7 @@ export const approveAndSwap = createBackgroundAsyncThunk(
       signer
     )
 
-    const pendingTransactionPromises: Promise<TransactionResponse>[] = []
+    const pendingSignedRawTransactions: Promise<string>[] = []
 
     const existingAllowance: BigNumber =
       await assetContract.callStatic.allowance(
@@ -203,15 +203,15 @@ export const approveAndSwap = createBackgroundAsyncThunk(
 
       logger.log("Populated transaction data", approvalTransactionData)
 
-      pendingTransactionPromises.push(
-        signer.sendTransaction(approvalTransactionData)
+      pendingSignedRawTransactions.push(
+        signer.signTransaction(approvalTransactionData)
       )
     }
 
     logger.log("send that transaction!", quote)
 
-    pendingTransactionPromises.push(
-      signer.sendTransaction({
+    pendingSignedRawTransactions.push(
+      signer.signTransaction({
         // Missing properties used by the normal transaction construction function - from, nonce, gasLimit, maxFeePerGas, maxPriorityFeePerGas
         // allowanceTarget: quote.allowanceTarget,
         // buyAmount: quote.buyAmount,
@@ -235,7 +235,16 @@ export const approveAndSwap = createBackgroundAsyncThunk(
       })
     )
 
-    await Promise.all(pendingTransactionPromises)
+    const signedRawTransactions = await Promise.all(
+      pendingSignedRawTransactions
+    )
+
+    // Send all at once.
+    await Promise.all(
+      signedRawTransactions.map((rawTransaction) =>
+        provider.sendTransaction(rawTransaction)
+      )
+    )
   }
 )
 
