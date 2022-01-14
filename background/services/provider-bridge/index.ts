@@ -279,7 +279,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
         case "eth_signTransaction":
         case "eth_sendTransaction":
-          // We are monsters and aren't breaking a method out quite yet.
+        case "eth_signTypedData_v4":
           // eslint-disable-next-line no-case-declarations
           const transactionRequest = params[0] as EthersTransactionRequest
           // eslint-disable-next-line no-case-declarations

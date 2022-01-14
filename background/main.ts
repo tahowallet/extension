@@ -59,6 +59,7 @@ import {
 import {
   signedTypedData,
   signingSliceEmitter,
+  signTypedData,
   TypedData,
 } from "./redux-slices/signing"
 import { allAliases } from "./redux-slices/utils"
@@ -689,6 +690,12 @@ export default class Main extends BaseService<never> {
           "signatureRejected",
           rejectAndClear
         )
+      }
+    )
+    this.internalEthereumProviderService.emitter.on(
+      "signTypedDataRequest",
+      async ({ payload, resolver, rejecter }) => {
+        this.store.dispatch(signTypedData(payload))
       }
     )
   }

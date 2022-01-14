@@ -46,7 +46,7 @@ export type PermitRequest = {
 }
 const ROUTER_ADDRESS = "0x123"
 export const signPermitRequest = createBackgroundAsyncThunk(
-  "signing/signTypedData",
+  "signing/signPermitRequest",
   async (data: PermitRequest) => {
     const { account, liquidityTokenAddress, liquidityAmount, nonce, deadline } =
       data
@@ -89,6 +89,14 @@ export const signPermitRequest = createBackgroundAsyncThunk(
       typedData: permitRequest,
       account,
     })
+  }
+)
+
+export const signTypedData = createBackgroundAsyncThunk(
+  "signing/signTypedData",
+  async (typedData: any) => {
+    // what am I getting here, where domain, where types, message, very sad
+    await signingSliceEmitter.emit("requestSignTypedData", typedData)
   }
 )
 

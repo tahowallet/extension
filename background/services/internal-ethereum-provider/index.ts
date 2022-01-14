@@ -31,6 +31,7 @@ type Events = ServiceLifecycleEvents & {
     Partial<EIP1559TransactionRequest> & { from: string },
     SignedEVMTransaction
   >
+  signTypedDataRequest: DAppRequestEvent<any, any>
   // connect
   // disconnet
   // account change
@@ -171,6 +172,17 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_signTypedData_v1":
       case "eth_signTypedData_v3":
       case "eth_signTypedData_v4":
+        return this.signTypedData(params[0] as EthersTransactionRequest).then(
+          (signedTransaction) =>
+            serializeEthersTransaction(
+              ethersTransactionFromSignedTransaction(signedTransaction),
+              {
+                r: signedTransaction.r,
+                s: signedTransaction.s,
+                v: signedTransaction.v,
+              }
+            )
+        )
       case "eth_submitHashrate":
       case "eth_submitWork":
       case "metamask_accountsChanged":
@@ -202,6 +214,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           ...convertedRequest,
           from,
         },
+        resolver: resolve,
+        rejecter: reject,
+      })
+    })
+  }
+
+  private async signTypedData(params: any) {
+    return new Promise<SignedEVMTransaction>((resolve, reject) => {
+      this.emitter.emit("signTypedDataRequest", {
+        payload: params,
         resolver: resolve,
         rejecter: reject,
       })
