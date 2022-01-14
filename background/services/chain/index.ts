@@ -37,7 +37,7 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
-import { getEthereumNetwork } from "../../lib/utils"
+import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -112,8 +112,16 @@ export default class ChainService extends BaseService<Events> {
     provider: AlchemyWebSocketProvider
   }[]
 
-  private evmChainNoncesByAddress: {
-    [chainID: string]: { [address: string]: number }
+  /**
+   * For each chain id, track an address's last seen nonce. The implication
+   * here is that the given nonce should not be reused.
+   *
+   * FIXME Some way to "cancel" a nonce so that e.g. if a transaction
+   * FIXME increments nonce but is not ultimately signed and broadcast, that
+   * FIXME nonce can be reused.
+   */
+  private evmChainLastSeenNoncesByNormalizedAddress: {
+    [chainID: string]: { [normalizedAddress: string]: number }
   } = {}
 
   /**
@@ -223,6 +231,9 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EIP1559TransactionRequest
     gasEstimationError: string | undefined
   }> {
+    // FIXME This should be resolved immediately prior to signing, when a
+    // FIXME signature denial can result in an immediate revocation of the
+    // FIXME assigned nonce so it can be reused.
     const resolvedNonce = await this.resolveEVMNonce(
       network,
       partialRequest.from
@@ -283,11 +294,16 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     address: HexString
   ): Promise<number> {
+    const normalizedAddress = normalizeEVMAddress(address)
     const knownNextNonce =
-      this.evmChainNoncesByAddress[network.chainID]?.[address]
+      this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+        normalizedAddress
+      ]
 
     if (typeof knownNextNonce !== "undefined") {
-      this.evmChainNoncesByAddress[network.chainID][address] += 1
+      this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+        normalizedAddress
+      ] += 1
       return knownNextNonce
     }
 
@@ -298,8 +314,10 @@ export default class ChainService extends BaseService<Events> {
         "latest"
       )
 
-    this.evmChainNoncesByAddress[network.chainID] ??= {}
-    this.evmChainNoncesByAddress[network.chainID][address] = networkNonce
+    this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID] ??= {}
+    this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+      normalizedAddress
+    ] = networkNonce
 
     return networkNonce
   }
@@ -806,6 +824,8 @@ export default class ChainService extends BaseService<Events> {
             getEthereumNetwork()
           )
 
+          const normalizedFromAddress = normalizeEVMAddress(transaction.from)
+
           // If this is an EVM chain, we're tracking the from address's
           // nonce, and the pending transaction has a higher nonce, update our
           // view of it. This helps reduce the number of times when a
@@ -813,16 +833,16 @@ export default class ChainService extends BaseService<Events> {
           // produce bad transactions with reused nonces.
           if (
             typeof addressNetwork.network.chainID !== "undefined" &&
-            typeof this.evmChainNoncesByAddress[
+            typeof this.evmChainLastSeenNoncesByNormalizedAddress[
               addressNetwork.network.chainID
-            ]?.[transaction.from.toLowerCase()] !== "undefined" &&
-            this.evmChainNoncesByAddress[addressNetwork.network.chainID]?.[
-              transaction.from.toLowerCase()
-            ] <= transaction.nonce
+            ]?.[normalizedFromAddress] !== "undefined" &&
+            this.evmChainLastSeenNoncesByNormalizedAddress[
+              addressNetwork.network.chainID
+            ]?.[normalizedFromAddress] <= transaction.nonce
           ) {
-            this.evmChainNoncesByAddress[addressNetwork.network.chainID][
-              transaction.from.toLowerCase()
-            ] = transaction.nonce + 1
+            this.evmChainLastSeenNoncesByNormalizedAddress[
+              addressNetwork.network.chainID
+            ][normalizedFromAddress] = transaction.nonce + 1
           }
           await this.saveTransaction(transaction, "alchemy")
         } catch (error) {
