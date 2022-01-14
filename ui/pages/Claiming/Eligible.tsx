@@ -1,26 +1,18 @@
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/accounts"
 import React, { ReactElement, useEffect, useState } from "react"
-import { Link, Redirect } from "react-router-dom"
-import TopMenu from "../../components/TopMenu/TopMenu"
-import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
+import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import Intro from "../../components/Claim/Intro"
 import Referral from "../../components/Claim/Referral"
 import InfoModal from "../../components/Claim/InfoModal"
-import TopBar from "../../components/Claim/TopBar"
-import AmountBanner from "../../components/Claim/AmountBanner"
 import Delegate from "../../components/Claim/Delegate"
-import ChoseModal from "../../components/Claim/ChooseModal"
 import Review from "../../components/Claim/Review"
 import ClaimFooter from "../../components/Claim/ClaimFooter"
 
 export default function Eligible(): ReactElement {
   const [account, setAccount] = useState("")
   const [step, setStep] = useState(1)
-  const [alreadyClaimed, setAlreadyClaimed] = useState(false)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
-  const [choseDelegateModalVisible, setChoseDelegateModalVisible] =
-    useState(false)
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
@@ -35,7 +27,6 @@ export default function Eligible(): ReactElement {
     return <Redirect to="/overview" />
   }
 
-  const alreadyClaimedAddresses: string[] = []
   const advanceStep = () => {
     // alreadyClaimedAddresses.push(account)
     // setAlreadyClaimed(true)
@@ -44,81 +35,75 @@ export default function Eligible(): ReactElement {
     // await claimTally()
   }
 
-  const openInfoModal = () => {
-    setInfoModalVisible(true)
-  }
-  const openChooseModal = () => {
-    setChoseDelegateModalVisible(true)
-  }
-
   return (
-    <>
-      <div className="wrap">
-        {infoModalVisible ? (
-          <InfoModal setModalVisible={setInfoModalVisible} />
-        ) : null}
-        {choseDelegateModalVisible ? (
-          <ChoseModal setModalVisible={setChoseDelegateModalVisible} />
-        ) : null}
-        <TopBar />
+    <div className="wrap">
+      {infoModalVisible ? (
+        <InfoModal setModalVisible={setInfoModalVisible} />
+      ) : null}
+      <div
+        className="background"
+        style={{ backgroundPositionX: `${(step - 1) * 100}%` }}
+      />
+      <div className="eligible">
         <div
-          className="background"
-          style={{ backgroundPositionX: `${(step - 1) * 80}%` }}
-        />
-        <div className="eligible">
-          <div
-            className="steps-container"
-            style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
-          >
-            <Intro />
-            <Referral />
-            <Delegate openInfo={openInfoModal} openChoose={openChooseModal} />
-            <Review />
-          </div>
+          className="steps-container"
+          style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
+        >
+          <Intro />
+          <Referral />
+          <Delegate />
+          <Review />
+        </div>
+        <footer>
           <ClaimFooter
             step={step}
             setStep={setStep}
             advanceStep={advanceStep}
           />
-        </div>
-        <style jsx>
-          {`
-            .steps-container {
-              display: flex;
-              position: relative;
-              gap: 32px;
-              align-self: flex-start;
-              transition: all 0.6s ease-in-out;
-            }
-
-            .wrap {
-              width: 100%;
-              height: 100vh;
-              background-color: #193330;
-              display: flex;
-              flex-flow: column;
-            }
-            .background {
-              width: 100%;
-              height: 100vh;
-              position: absolute;
-              background-image: url("./images/dark_forest@2x.png");
-              background-repeat: repeat-x;
-              background-position: bottom;
-              transition: all 0.6s ease-in-out;
-            }
-            .eligible {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-between;
-              flex-grow: 1;
-              width: 352px;
-              margin: 0 auto;
-            }
-          `}
-        </style>
+        </footer>
       </div>
-    </>
+      <style jsx>
+        {`
+          .steps-container {
+            display: flex;
+            position: relative;
+            gap: 32px;
+            align-self: flex-start;
+            transition: all 0.7s cubic-bezier(0.86, 0, 0.07, 1);
+            margin-top: -20px;
+          }
+          .wrap {
+            width: 100%;
+            display: flex;
+            flex-flow: column;
+            margin-top: 10px;
+          }
+          .background {
+            width: 100%;
+            position: absolute;
+            background-image: url("./images/dark_forest@2x.png");
+            background-repeat: repeat-x;
+            background-position: bottom;
+            height: ${step === 4 ? "557" : "307"}px;
+            background-color: var(--green-95);
+            box-shadow: 0px -10px 13px 6px var(--green-95);
+            transition: all 0.6s cubic-bezier(0.86, 0, 0.07, 1);
+          }
+          .eligible {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            flex-grow: 1;
+            width: 352px;
+            margin: 0 auto;
+          }
+          footer {
+            position: fixed;
+            bottom: 0px;
+          }
+        `}
+      </style>
+    </div>
   )
 }
