@@ -1,11 +1,15 @@
-import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  NetworkFeeSetting,
+  selectEstimatedFeesPerGas,
+  setFeeType,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 
 import React, { ReactElement, useState } from "react"
+import { useDispatch } from "react-redux"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
-import SharedNetworkFeeGroup from "../Shared/SharedNetworkFeeGroup"
-import NetworkFeesChooser from "../NetworkFees/NetworkFeesChooser"
 import { useBackgroundSelector } from "../../hooks"
+import SwapSettingsChooser from "../NetworkFees/SwapSettingsChooser"
 
 interface SwapTransactionSettingsProps {
   isSettingsLocked?: boolean
@@ -19,15 +23,19 @@ export default function SwapTransactionSettings(
 
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
   const [gasLimit, setGasLimit] = useState("")
-  const [currentFeeValues, setCurrentFeeValues] = useState({
-    gwei: "",
-    fiat: "",
-  })
+  const dispatch = useDispatch()
 
   function openSettings() {
     if (!isSettingsLocked) {
       setIsSlideUpMenuOpen(true)
     }
+  }
+
+  // TODO pass proper gas to SwapSettingsChooser to display real fees
+
+  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
+    dispatch(setFeeType(networkSetting.feeType))
+    setIsSlideUpMenuOpen(false)
   }
 
   return (
@@ -55,10 +63,13 @@ export default function SwapTransactionSettings(
                   Transaction Fee/Speed
                 </span>
 
-                <NetworkFeesChooser
-                  estimatedFeesPerGas={estimatedFeesPerGas}
-                  gasLimit={gasLimit}
-                  setGasLimit={setGasLimit}
+                <SwapSettingsChooser
+                  networkSettings={{
+                    estimatedFeesPerGas,
+                    gasLimit,
+                  }}
+                  onNetworkSettingsSave={networkSettingsSaved}
+                  visible={isSlideUpMenuOpen}
                 />
               </div>
             </div>

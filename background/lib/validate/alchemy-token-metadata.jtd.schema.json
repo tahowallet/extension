@@ -1,9 +1,0 @@
-{
-  "properties": {
-    "decimals": { "type": "uint32" },
-    "name": { "type": "string" },
-    "symbol": { "type": "string" },
-    "logo": { "type": "string", "nullable": true }
-  },
-  "additionalProperties": false
-}

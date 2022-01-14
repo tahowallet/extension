@@ -114,6 +114,15 @@ describe("lib/prices.ts", () => {
           params: { type: "number" },
           schemaPath: "#/additionalProperties/additionalProperties/type",
         },
+        {
+          instancePath: "/ethereum/last_updated_at",
+          keyword: "type",
+          message: "must be number",
+          params: {
+            type: "number",
+          },
+          schemaPath: "#/additionalProperties/properties/last_updated_at/type",
+        },
       ]
 
       const validationResult = isValidCoinGeckoPriceResponse(apiResponse)

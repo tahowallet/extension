@@ -13,9 +13,12 @@ export function truncateDecimalAmount(
   decimalLength: number
 ): string {
   const valueString = value.toString()
+  if (decimalLength === 0) {
+    return valueString.split(".")[0]
+  }
   if (valueString.includes(".")) {
     const [integers, decimals] = valueString.split(".")
-    return `${integers}.${decimals.substr(0, decimalLength)}`
+    return `${integers}.${decimals.substring(0, decimalLength)}`
   }
   return valueString
 }
