@@ -1,6 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
-import { formatUnits } from "@ethersproject/units"
 import {
   broadcastSignedTransaction,
   NetworkFeeSetting,
