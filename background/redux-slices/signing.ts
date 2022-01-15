@@ -43,6 +43,7 @@ export type PermitRequest = {
   liquidityAmount: BigNumber
   nonce: BigNumber
   deadline: BigNumber
+  spender: HexString
 }
 
 export type SignTypedDataRequest = {
@@ -50,12 +51,17 @@ export type SignTypedDataRequest = {
   typedData: TypedData
 }
 
-const ROUTER_ADDRESS = "0x123"
 export const signPermitRequest = createBackgroundAsyncThunk(
   "signing/signPermitRequest",
   async (data: PermitRequest) => {
-    const { account, liquidityTokenAddress, liquidityAmount, nonce, deadline } =
-      data
+    const {
+      account,
+      liquidityTokenAddress,
+      liquidityAmount,
+      nonce,
+      deadline,
+      spender,
+    } = data
     const EIP712Domain = [
       { name: "name", type: "string" },
       { name: "version", type: "string" },
@@ -77,7 +83,7 @@ export const signPermitRequest = createBackgroundAsyncThunk(
     ]
     const message = {
       owner: account,
-      spender: ROUTER_ADDRESS,
+      spender,
       value: liquidityAmount,
       nonce: nonce.toHexString(),
       deadline: deadline.toNumber(),
