@@ -3,6 +3,7 @@ import {
   HIDE_ADD_SEED,
   HIDE_CREATE_PHRASE,
 } from "@tallyho/tally-background/features/features"
+import { useHistory } from "react-router-dom"
 import { generateNewKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
@@ -10,6 +11,7 @@ import SharedButton from "../../components/Shared/SharedButton"
 
 export default function OnboardingStartTheHunt(): ReactElement {
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
 
   useAreKeyringsUnlocked(!HIDE_CREATE_PHRASE && true)
 
@@ -60,9 +62,9 @@ export default function OnboardingStartTheHunt(): ReactElement {
               <SharedButton
                 type="secondary"
                 size="medium"
-                linkTo="/onboarding/saveSeed"
-                onClick={() => {
-                  dispatch(generateNewKeyring())
+                onClick={async () => {
+                  await dispatch(generateNewKeyring())
+                  history.push("/onboarding/saveSeed")
                 }}
               >
                 Create new wallet
