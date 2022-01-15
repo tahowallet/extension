@@ -84,17 +84,17 @@ export default function OnboardingVerifySeed(): ReactElement {
     })
 
   function hasUserSelectedCorrectOrder() {
-    for (let i = 0; i < isSelected.length; i + 1) {
-      const word = isSelected[i]
+    let result = true
+    isSelected.forEach((word, i) => {
       const assignedNumber =
-        (sortedIndexesOfRandomOrderedMnemonic &&
-          sortedIndexesOfRandomOrderedMnemonic[i]) ||
+        (sortedIndexesOfRandomOrderedMnemonicPart &&
+          sortedIndexesOfRandomOrderedMnemonicPart[i]) ||
         0
       if (mnemonicToVerify && mnemonicToVerify[assignedNumber] !== word) {
-        return false
+        result = false
       }
-    }
-    return true
+    })
+    return result
   }
 
   const [isNotSelected, setIsNotSelected] = useState(randomOrderedMnemonic)
