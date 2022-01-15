@@ -64,19 +64,20 @@ export default function OnboardingVerifySeed(): ReactElement {
     return state.keyrings.keyringToVerify?.mnemonic
   })
 
-  const [randomOrderedMnemonic] = useState(
+  // A random set of 8 from the mnemonic used for verification UI
+  const [randomOrderedMnemonicPart] = useState(
     mnemonicToVerify
       ?.slice()
       .sort(() => Math.random() - 0.5)
       .slice(0, 8)
   )
 
-  const indexesOfRandomOrderedMnemonic = randomOrderedMnemonic?.map((item) => {
-    return mnemonicToVerify?.indexOf(item)
-  })
-
-  const sortedIndexesOfRandomOrderedMnemonic =
-    indexesOfRandomOrderedMnemonic?.sort((a, b) => {
+  // To display the order of verification in the UI (the unfilled numbers "1 -", "7 -", etc)
+  const sortedIndexesOfRandomOrderedMnemonicPart = randomOrderedMnemonicPart
+    ?.map((item) => {
+      return mnemonicToVerify?.indexOf(item)
+    })
+    ?.sort((a, b) => {
       if (a === 0) {
         return -1
       }
@@ -97,7 +98,7 @@ export default function OnboardingVerifySeed(): ReactElement {
     return result
   }
 
-  const [isNotSelected, setIsNotSelected] = useState(randomOrderedMnemonic)
+  const [isNotSelected, setIsNotSelected] = useState(randomOrderedMnemonicPart)
 
   const handleAdd = useCallback((item) => {
     setIsSelected((currentlySelected) => [...currentlySelected, item])
@@ -140,7 +141,7 @@ export default function OnboardingVerifySeed(): ReactElement {
           return (
             <div className="column_wrap">
               <div className="column numbers">
-                {sortedIndexesOfRandomOrderedMnemonic
+                {sortedIndexesOfRandomOrderedMnemonicPart
                   ?.slice(posOne, posTwo)
                   .map((n) => typeof n === "number" && n + 1)
                   .join(" ")}
