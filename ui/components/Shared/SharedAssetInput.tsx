@@ -142,7 +142,7 @@ interface SharedAssetInputProps {
   label: string
   defaultAsset: Asset
   amount: string
-  maxBalance: number
+  maxBalance: number | boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   onAssetSelect: (token: Asset) => void
@@ -193,7 +193,8 @@ export default function SharedAssetInput(
 
   const getErrorMessage = (givenAmount: string): string | undefined => {
     return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
-      Number(givenAmount) === 0
+      Number(givenAmount) === 0 ||
+      !maxBalance
       ? undefined
       : "Insufficient balance"
   }
@@ -358,7 +359,7 @@ SharedAssetInput.defaultProps = {
   defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  maxBalance: 0,
+  maxBalance: false,
   onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
