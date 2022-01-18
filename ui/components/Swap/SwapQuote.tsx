@@ -103,7 +103,9 @@ export default function SwapQoute(): ReactElement {
             {sources.map((source) => (
               <div className="exchange_content standard_width">
                 <div className="left">
-                  <span className="icon_uniswap" />
+                  {source.name.includes("Uniswap") && (
+                    <span className="icon_uniswap" />
+                  )}
                   {source.name}
                 </div>
                 <div>{parseFloat(source.proportion) * 100}%</div>
