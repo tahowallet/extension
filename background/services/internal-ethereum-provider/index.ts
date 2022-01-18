@@ -90,7 +90,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ): Promise<unknown> {
     switch (method) {
       // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
-
+      case "eth_signTypedData":
+      case "eth_signTypedData_v1":
+      case "eth_signTypedData_v3":
+      case "eth_signTypedData_v4":
+        return this.signTypedData({
+          account: params[0],
+          typedData: JSON.parse(params[1] as string),
+        } as SignTypedDataRequest)
       case "eth_blockNumber":
       case "eth_call":
       case "eth_chainId":
@@ -169,15 +176,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_hashrate":
       case "eth_mining":
       case "eth_personalSign":
-      case "eth_signTypedData":
-      case "eth_signTypedData_v1":
-      case "eth_signTypedData_v3":
-      case "eth_signTypedData_v4":
-        return this.signTypedData(params[0] as SignTypedDataRequest).then(
-          (res) => {
-            // console.log(res)
-          }
-        )
       case "eth_submitHashrate":
       case "eth_submitWork":
       case "metamask_accountsChanged":

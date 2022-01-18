@@ -59,9 +59,9 @@ import {
 import {
   signedTypedData,
   signingSliceEmitter,
-  signTypedData,
   SignTypedDataRequest,
   TypedData,
+  typedDataRequest,
 } from "./redux-slices/signing"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -704,7 +704,7 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        this.store.dispatch(signTypedData(payload))
+        this.store.dispatch(typedDataRequest(payload))
 
         const resolveAndClear = (signature: string) => {
           this.keyringService.emitter.off("signedData", resolveAndClear)
