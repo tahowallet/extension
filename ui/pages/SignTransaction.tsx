@@ -14,6 +14,10 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  selectTypedData,
+  signTypedData,
+} from "@tallyho/tally-background/redux-slices/signing"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -29,12 +33,14 @@ import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsCho
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
+import SignTypedData from "../components/SignTransaction/SignTypedData"
 
 export enum SignType {
   Sign = "sign",
   SignSwap = "sign-swap",
   SignSpend = "sign-spend",
   SignTransfer = "sign-transfer",
+  Data = "sign-data",
 }
 
 interface SignLocationState {
@@ -53,12 +59,13 @@ export default function SignTransaction({
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
-
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
 
+  const typedDataRequest = useBackgroundSelector(selectTypedData)
+
   const { assetSymbol, amount, to, value, signType } = location?.state ?? {
-    signType: SignType.Sign,
+    signType: typedDataRequest ? SignType.Data : SignType.Sign,
   }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -75,18 +82,21 @@ export default function SignTransaction({
   )
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
-  const signerAccountTotal = useBackgroundSelector((state) =>
-    typeof transactionDetails === "undefined"
-      ? undefined
-      : getAccountTotal(state, transactionDetails.from)
-  )
+  const signerAccountTotal = useBackgroundSelector((state) => {
+    if (typeof transactionDetails !== "undefined") {
+      return getAccountTotal(state, transactionDetails.from)
+    }
+    if (typeof typedDataRequest !== "undefined") {
+      return getAccountTotal(state, typedDataRequest.account)
+    }
+    return undefined
+  })
 
   const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
-
   useEffect(() => {
     if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
@@ -112,14 +122,14 @@ export default function SignTransaction({
   }
 
   if (
-    typeof transactionDetails === "undefined" ||
+    (typeof transactionDetails === "undefined" &&
+      typeof typedDataRequest === "undefined") ||
     typeof signerAccountTotal === "undefined"
   ) {
     // TODO Some sort of unexpected state error if we end up here... Or do we
     // go back in history? That won't work for dApp popovers though.
     return <></>
   }
-
   const signContent: {
     [signType in SignType]: {
       title: string
@@ -137,6 +147,16 @@ export default function SignTransaction({
       component: () => <SignTransactionApproveSpendAssetBlock />,
       confirmButtonText: "Approve",
     },
+    [SignType.Data]: {
+      title: "Sign Data",
+      component: () =>
+        typedDataRequest ? (
+          <SignTypedData typedData={typedDataRequest.typedData} />
+        ) : (
+          <></>
+        ),
+      confirmButtonText: "Sign",
+    },
     [SignType.SignTransfer]: {
       title: "Sign Transfer",
       component: () => (
@@ -151,13 +171,15 @@ export default function SignTransaction({
     },
     [SignType.Sign]: {
       title: "Sign Transaction",
-      component: () => (
-        <SignTransactionSignBlock transactionDetails={transactionDetails} />
-      ),
+      component: () =>
+        transactionDetails ? (
+          <SignTransactionSignBlock transactionDetails={transactionDetails} />
+        ) : (
+          <></>
+        ),
       confirmButtonText: "Sign",
     },
   }
-
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
     history.goBack()
@@ -167,12 +189,17 @@ export default function SignTransaction({
       dispatch(signTransaction(transactionDetails))
       setIsTransactionSigning(true)
     }
+    if (typedDataRequest !== undefined) {
+      dispatch(signTypedData(typedDataRequest))
+    }
   }
   const networkSettingsSaved = async (networkSetting: NetworkFeeSetting) => {
-    setGasLimit(networkSetting.gasLimit)
-    dispatch(setFeeType(networkSetting.feeType))
-    dispatch(updateTransactionOptions(transactionDetails))
-    setNetworkSettingsModalOpen(false)
+    if (transactionDetails) {
+      setGasLimit(networkSetting.gasLimit)
+      dispatch(setFeeType(networkSetting.feeType))
+      dispatch(updateTransactionOptions(transactionDetails))
+      setNetworkSettingsModalOpen(false)
+    }
   }
 
   return (
@@ -184,36 +211,42 @@ export default function SignTransaction({
       <div className="primary_info_card standard_width">
         {signContent[signType].component()}
       </div>
-      <SharedPanelSwitcher
-        setPanelNumber={setPanelNumber}
-        panelNumber={panelNumber}
-        panelNames={["Details"]}
-      />
-      {panelNumber === 0 ? (
-        <div className="detail_items_wrap standard_width_padded">
-          <SharedSlideUpMenu
-            size="custom"
-            isOpen={networkSettingsModalOpen}
-            close={() => setNetworkSettingsModalOpen(false)}
-            customSize={`${3 * 56 + 320}px`}
-          >
-            <NetworkSettingsChooser
-              networkSettings={{
-                estimatedFeesPerGas,
-                gasLimit,
-              }}
-              onNetworkSettingsSave={networkSettingsSaved}
-              visible={networkSettingsModalOpen}
-            />
-          </SharedSlideUpMenu>
-          <span className="detail_item">
-            Estimated network fee
-            <FeeSettingsButton
-              onClick={() => setNetworkSettingsModalOpen(true)}
-            />
-          </span>
-        </div>
-      ) : null}
+      {typeof transactionDetails !== "undefined" ? (
+        <>
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={["Details"]}
+          />
+          {panelNumber === 0 ? (
+            <div className="detail_items_wrap standard_width_padded">
+              <SharedSlideUpMenu
+                size="custom"
+                isOpen={networkSettingsModalOpen}
+                close={() => setNetworkSettingsModalOpen(false)}
+                customSize={`${3 * 56 + 320}px`}
+              >
+                <NetworkSettingsChooser
+                  networkSettings={{
+                    estimatedFeesPerGas,
+                    gasLimit,
+                  }}
+                  onNetworkSettingsSave={networkSettingsSaved}
+                  visible={networkSettingsModalOpen}
+                />
+              </SharedSlideUpMenu>
+              <span className="detail_item">
+                Estimated network fee
+                <FeeSettingsButton
+                  onClick={() => setNetworkSettingsModalOpen(true)}
+                />
+              </span>
+            </div>
+          ) : null}{" "}
+        </>
+      ) : (
+        <></>
+      )}
       <div className="footer_actions">
         <SharedButton
           iconSize="large"
