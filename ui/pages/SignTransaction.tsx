@@ -1,14 +1,16 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory, useLocation } from "react-router-dom"
-import { formatUnits } from "@ethersproject/units"
+import { useHistory } from "react-router-dom"
 import {
   broadcastSignedTransaction,
+  NetworkFeeSetting,
   rejectTransactionSignature,
   selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
   selectTransactionData,
+  setFeeType,
   signTransaction,
+  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
@@ -23,8 +25,10 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../hooks"
-import NetworkFeesChooser from "../components/NetworkFees/NetworkFeesChooser"
+import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export enum SignType {
   Sign = "sign",
@@ -46,6 +50,8 @@ export default function SignTransaction({
 }: {
   location: { key: string; pathname: string; state?: SignLocationState }
 }): ReactElement {
+  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
+    useState(false)
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const history = useHistory()
@@ -59,6 +65,7 @@ export default function SignTransaction({
   )
 
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
+
   const shouldBroadcastOnSign = useBackgroundSelector(
     ({ transactionConstruction }) =>
       transactionConstruction.broadcastOnSign ?? false
@@ -161,6 +168,12 @@ export default function SignTransaction({
       setIsTransactionSigning(true)
     }
   }
+  const networkSettingsSaved = async (networkSetting: NetworkFeeSetting) => {
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    dispatch(updateTransactionOptions(transactionDetails))
+    setNetworkSettingsModalOpen(false)
+  }
 
   return (
     <section>
@@ -178,26 +191,27 @@ export default function SignTransaction({
       />
       {panelNumber === 0 ? (
         <div className="detail_items_wrap standard_width_padded">
-          {signType === SignType.Sign ? (
-            <NetworkFeesChooser
-              estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={gasLimit}
-              setGasLimit={setGasLimit}
+          <SharedSlideUpMenu
+            size="custom"
+            isOpen={networkSettingsModalOpen}
+            close={() => setNetworkSettingsModalOpen(false)}
+            customSize={`${3 * 56 + 320}px`}
+          >
+            <NetworkSettingsChooser
+              networkSettings={{
+                estimatedFeesPerGas,
+                gasLimit,
+              }}
+              onNetworkSettingsSave={networkSettingsSaved}
+              visible={networkSettingsModalOpen}
             />
-          ) : (
-            <span className="detail_item">
-              Estimated network fee
-              <span className="detail_item_right">
-                ~
-                {
-                  formatUnits(transactionDetails.maxFeePerGas, "gwei").split(
-                    "."
-                  )[0]
-                }{" "}
-                Gwei
-              </span>
-            </span>
-          )}
+          </SharedSlideUpMenu>
+          <span className="detail_item">
+            Estimated network fee
+            <FeeSettingsButton
+              onClick={() => setNetworkSettingsModalOpen(true)}
+            />
+          </span>
         </div>
       ) : null}
       <div className="footer_actions">

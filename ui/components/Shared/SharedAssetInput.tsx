@@ -25,6 +25,7 @@ function SelectAssetMenuContent(
             type="text"
             className="search_input"
             placeholder="Search by name or address"
+            spellCheck={false}
           />
           <span className="icon_search" />
         </div>
@@ -214,6 +215,7 @@ export default function SharedAssetInput(
               className="asset_input"
               type="text"
               placeholder="0x..."
+              spellCheck={false}
               onChange={(event) => {
                 onSendToAddressChange(event.target.value)
               }}
@@ -246,6 +248,7 @@ export default function SharedAssetInput(
               placeholder="0.0"
               min="0"
               value={amount}
+              spellCheck={false}
               onChange={(event) =>
                 onAmountChange(
                   event.target.value,

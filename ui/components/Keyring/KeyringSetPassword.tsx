@@ -117,7 +117,7 @@ export default function KeyringSetPassword(): ReactElement {
             width: 211px;
           }
           .repeat_password_wrap {
-            margin-top: 30px;
+            margin-top: 33px;
             margin-bottom: 50px;
           }
           .restore {

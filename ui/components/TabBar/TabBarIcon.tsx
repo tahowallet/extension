@@ -45,7 +45,7 @@ export default function TabBarIcon(props: Props): ReactElement {
             height: 24px;
             cursor: pointer;
             background-color: var(--green-40);
-            transition: 0.1s ease;
+            transition: transform 0.1s ease;
           }
           span {
             position: absolute;
