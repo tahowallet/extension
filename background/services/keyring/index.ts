@@ -11,7 +11,7 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import { HexString, KeyringTypes, UNIXTime } from "../../types"
+import { HexString, KeyringTypes, TypedData, UNIXTime } from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
@@ -32,6 +32,7 @@ interface Events extends ServiceLifecycleEvents {
   address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
+  signedData: string
 }
 
 /*
@@ -332,6 +333,21 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Find keyring associated with an account.
+   *
+   * @param account - the account desired to search the keyring for.
+   */
+  findKeyring = async (account: HexString): Promise<HDKeyring> => {
+    const keyring = this.#keyrings.find((kr) =>
+      kr.getAddressesSync().includes(normalizeEVMAddress(account))
+    )
+    if (!keyring) {
+      throw new Error("Address keyring not found.")
+    }
+    return keyring
+  }
+
+  /**
    * Sign a transaction.
    *
    * @param account - the account desired to sign the transaction
@@ -344,12 +360,7 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
 
     // find the keyring using a linear search
-    const keyring = this.#keyrings.find((kr) =>
-      kr.getAddressesSync().includes(normalizeEVMAddress(account))
-    )
-    if (!keyring) {
-      throw new Error("Address keyring not found.")
-    }
+    const keyring = await this.findKeyring(account)
 
     // ethers has a looser / slightly different request type
     const ethersTxRequest =
@@ -395,6 +406,27 @@ export default class KeyringService extends BaseService<Events> {
     }
     this.emitter.emit("signedTx", signedTx)
     return signedTx
+  }
+
+  async signTypedData({
+    typedData,
+    account,
+  }: {
+    typedData: TypedData
+    account: HexString
+  }): Promise<string> {
+    this.requireUnlocked()
+    const { domain, types, message } = typedData
+    // find the keyring using a linear search
+    const keyring = await this.findKeyring(account)
+    const signature = await keyring.signTypedData(
+      account,
+      domain,
+      types,
+      message
+    )
+    this.emitter.emit("signedData", signature)
+    return signature
   }
 
   // //////////////////
