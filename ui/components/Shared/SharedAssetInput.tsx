@@ -15,6 +15,7 @@ function SelectAssetMenuContent(
   props: SelectAssetMenuContentProps
 ): ReactElement {
   const { setSelectedAssetAndClose, assets } = props
+  const [searchTerm, setSearchTerm] = useState("")
 
   return (
     <>
@@ -26,21 +27,26 @@ function SelectAssetMenuContent(
             className="search_input"
             placeholder="Search by name or address"
             spellCheck={false}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
           <span className="icon_search" />
         </div>
       </div>
       <div className="divider" />
       <ul>
-        {assets.map((asset) => {
-          return (
-            <SharedAssetItem
-              key={asset.metadata?.coinGeckoID || asset.symbol}
-              asset={asset}
-              onClick={setSelectedAssetAndClose}
-            />
-          )
-        })}
+        {assets
+          .filter((asset) => {
+            return asset.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+          })
+          .map((asset) => {
+            return (
+              <SharedAssetItem
+                key={asset.metadata?.coinGeckoID || asset.symbol}
+                asset={asset}
+                onClick={setSelectedAssetAndClose}
+              />
+            )
+          })}
       </ul>
       <style jsx>
         {`
