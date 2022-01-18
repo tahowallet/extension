@@ -1,5 +1,5 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
-import { createSlice } from "@reduxjs/toolkit"
+import { createSelector, createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { BigNumber } from "ethers"
 import { getEthereumNetwork } from "../lib/utils"
@@ -22,11 +22,13 @@ export type Events = {
 
 export const signingSliceEmitter = new Emittery<Events>()
 
-export type Signing = {
+export type SigningState = {
   signedTypedData: string | undefined
+  typedDataRequest: SignTypedDataRequest | undefined
 }
 
-export const initialState: Signing = {
+export const initialState: SigningState = {
+  typedDataRequest: undefined,
   signedTypedData: undefined,
 }
 
@@ -51,59 +53,6 @@ export type SignTypedDataRequest = {
   typedData: TypedData
 }
 
-export const signPermitRequest = createBackgroundAsyncThunk(
-  "signing/signPermitRequest",
-  async (data: PermitRequest) => {
-    const {
-      account,
-      liquidityTokenAddress,
-      liquidityAmount,
-      nonce,
-      deadline,
-      spender,
-    } = data
-    const EIP712Domain = [
-      { name: "name", type: "string" },
-      { name: "version", type: "string" },
-      { name: "chainId", type: "uint256" },
-      { name: "verifyingContract", type: "address" },
-    ]
-    const domain = {
-      name: "Tally LP Token",
-      version: "1",
-      chainId: Number(getEthereumNetwork().chainID),
-      verifyingContract: liquidityTokenAddress,
-    }
-    const Permit = [
-      { name: "owner", type: "address" },
-      { name: "spender", type: "address" },
-      { name: "value", type: "uint256" },
-      { name: "nonce", type: "uint256" },
-      { name: "deadline", type: "uint256" },
-    ]
-    const message = {
-      owner: account,
-      spender,
-      value: liquidityAmount,
-      nonce: nonce.toHexString(),
-      deadline: deadline.toNumber(),
-    }
-    const permitRequest = {
-      types: {
-        EIP712Domain,
-        Permit,
-      },
-      domain,
-      primaryType: "Permit",
-      message,
-    } as TypedData
-    await signingSliceEmitter.emit("requestSignTypedData", {
-      typedData: permitRequest,
-      account,
-    })
-  }
-)
-
 export const signTypedData = createBackgroundAsyncThunk(
   "signing/signTypedData",
   async (data: SignTypedDataRequest) => {
@@ -124,9 +73,21 @@ const signingSlice = createSlice({
       ...state,
       signedTypedData: payload,
     }),
+    typedDataRequest: (
+      state,
+      { payload }: { payload: SignTypedDataRequest }
+    ) => ({
+      ...state,
+      typedDataRequest: payload,
+    }),
   },
 })
 
-export const { signedTypedData } = signingSlice.actions
+export const { signedTypedData, typedDataRequest } = signingSlice.actions
 
 export default signingSlice.reducer
+
+export const selectTypedData = createSelector(
+  (state: { signing: SigningState }) => state.signing.typedDataRequest,
+  (signTypes) => signTypes
+)

@@ -17,6 +17,7 @@ import React, {
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
+import capitalize from "../../utils/text"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -51,10 +52,6 @@ export default function NetworkSettingsSelect({
     useState(selectedFeeType)
 
   const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
-
-  const capitalize = (s: string) => {
-    return s[0].toUpperCase() + s.slice(1)
-  }
 
   // Select activeFeeIndex to regular option once gasOptions load
   useEffect(() => {
