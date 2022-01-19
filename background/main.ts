@@ -622,7 +622,7 @@ export default class Main extends BaseService<never> {
         id: string
         mnemonic: string[]
       } = await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S128
+        KeyringTypes.mnemonicBIP39S256
       )
 
       this.store.dispatch(setKeyringToVerify(generated))
