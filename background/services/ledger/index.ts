@@ -1,25 +1,37 @@
-// import browser, { Runtime } from "webextension-polyfill"
-// import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
-// import {
-//   EXTERNAL_PORT_NAME,
-//   PermissionRequest,
-//   AllowedQueryParamPage,
-//   AllowedQueryParamPageType,
-//   PortRequestEvent,
-//   PortResponseEvent,
-//   EIP1193Error,
-//   RPCRequest,
-//   EIP1193_ERROR_CODES,
-//   isTallyConfigPayload,
-// } from "@tallyho/provider-bridge-shared"
+import { SignedEVMTransaction } from "../../networks"
+import { HexString } from "../../types"
 import BaseService from "../base"
-// import InternalEthereumProviderService from "../internal-ethereum-provider"
-// import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-// import PreferenceService from "../preferences"
-// import logger from "../../lib/logger"
+import logger from "../../lib/logger"
 
-type Events = ServiceLifecycleEvents
+enum LedgerType {
+  LEDGER_NANO_S,
+  LEDGER_NANO_X,
+}
+
+type MetaData = {
+  deviceVersion: string
+  ethereumDAppVersion: string
+}
+
+type Events = ServiceLifecycleEvents & {
+  ledgerAdded: {
+    id: string
+    type: LedgerType
+    accountIDs: string[]
+    metadata: MetaData
+  }
+  ledgerAccountAdded: {
+    id: string
+    ledgerID: string
+    derivationPath: string
+    addresses: HexString[]
+  }
+  connected: { id: string; type: LedgerType }
+  disconnected: { id: string; type: LedgerType }
+  address: { ledgerID: string; derivationPath: string; address: HexString }
+  signedTransaction: SignedEVMTransaction
+}
 
 /**
  * The LedgerService is responsible for
