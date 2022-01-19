@@ -64,11 +64,18 @@ export default function Popup({ store }: { store: Store }): ReactElement {
   const renderCount = useRef(0)
 
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
+    const isNotOnKeyringRelatedPage =
+      routeHistoryEntities[routeHistoryEntities.length - 1].pathname !==
+        "/signTransaction" &&
+      !routeHistoryEntities[routeHistoryEntities.length - 1].pathname.includes(
+        "/keyring/"
+      )
+
     // Initial extension load takes two renders because of setting
     // animation control states. `initialEntries` needs to be a reversed
     // version of route history entities. Without avoiding the initial load,
     // entries will keep reversing.
-    if (renderCount.current > 1) {
+    if (renderCount.current > 1 && isNotOnKeyringRelatedPage) {
       const entries = routeHistoryEntities
         .reduce((agg: Partial<Location>[], entity) => {
           const { ...entityCopy } = entity as Partial<Location>
