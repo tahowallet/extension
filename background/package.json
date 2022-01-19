@@ -27,6 +27,7 @@
     "@ethereumjs/common": "^2.4.0",
     "@ethereumjs/tx": "^3.3.0",
     "@ethersproject/abstract-provider": "^5.4.1",
+    "@ethersproject/abstract-signer": "^5.4.1",
     "@ethersproject/networks": "^5.4.2",
     "@ethersproject/providers": "^5.4.3",
     "@ethersproject/transactions": "^5.4.0",
