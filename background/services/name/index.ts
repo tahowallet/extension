@@ -49,17 +49,6 @@ type Events = ServiceLifecycleEvents & {
   resolvedAvatar: ResolvedAvatarRecord
 }
 
-const supportedDomains = [
-  ".crypto",
-  ".coin",
-  ".wallet",
-  ".bitcoin",
-  ".888",
-  ".nft",
-  ".dao",
-  ".zil",
-]
-
 const ipfsGateway = new URL("https://ipfs.io/ipfs/")
 const arweaveGateway = new URL("https://arweave.net/")
 
@@ -170,6 +159,16 @@ export default class NameService extends BaseService<Events> {
     // if the name is not an ENS or UNS supported domain name
     // throw an error
     const domainExtension = name.slice(name.lastIndexOf("."))
+    const supportedDomains = [
+      ".crypto",
+      ".coin",
+      ".wallet",
+      ".bitcoin",
+      ".888",
+      ".nft",
+      ".dao",
+      ".zil",
+    ]
 
     if (!supportedDomains.includes(domainExtension)) {
       throw new Error("Only ENS & UNS names can be resolved today.")
