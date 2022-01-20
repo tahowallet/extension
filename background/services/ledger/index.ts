@@ -1,17 +1,18 @@
-import { SignedEVMTransaction } from "../../networks"
+import { TypedDataDomain, TypedDataField } from "@ethersproject/abstract-signer"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import { HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 
 enum LedgerType {
+  UNKNOWN,
   LEDGER_NANO_S,
   LEDGER_NANO_X,
 }
 
 type MetaData = {
-  deviceVersion: string
-  ethereumDAppVersion: string
+  ethereumVersion: string
 }
 
 type Events = ServiceLifecycleEvents & {
@@ -33,6 +34,14 @@ type Events = ServiceLifecycleEvents & {
   signedTransaction: SignedEVMTransaction
 }
 
+async function requireAvailableLedger() {
+  const devs = await navigator.usb.getDevices()
+
+  if (devs.length === 0) {
+    throw new Error("No available USB devices to use!")
+  }
+}
+
 /**
  * The LedgerService is responsible for
  *
@@ -42,24 +51,60 @@ type Events = ServiceLifecycleEvents & {
  * - xxx
  */
 export default class LedgerService extends BaseService<Events> {
-  static create: ServiceCreatorFunction<
-    Events,
-    LedgerService,
-    [] // we don't know our final dependencies
-  > = async () => {
-    return new this()
-  }
+  static create: ServiceCreatorFunction<Events, LedgerService, []> =
+    async () => {
+      logger.info("LedgerService::create")
+      return new this()
+    }
 
   private constructor() {
     super()
+    logger.info("LedgerService::constructor")
   }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    // this.emitter.emit(
-    //   "initializeAllowedPages",
-    //   await this.db.getAllPermission()
-    // )
+    logger.info("LedgerService::internalStartService")
+  }
+
+  async deriveAddress(accountID: string): Promise<HexString> {
+    requireAvailableLedger()
+
+    this.deriveAddress = this.deriveAddress.bind(this)
+
+    throw new Error("Unimplemented")
+  }
+
+  async signTransaction(
+    address: HexString,
+    transactionRequest: EIP1559TransactionRequest
+  ): Promise<SignedEVMTransaction> {
+    requireAvailableLedger()
+
+    this.signTransaction = this.signTransaction.bind(this)
+
+    throw new Error("Unimplemented")
+  }
+
+  async signTypedData(
+    address: string,
+    domain: TypedDataDomain,
+    types: Record<string, Array<TypedDataField>>,
+    value: Record<string, unknown>
+  ): Promise<string> {
+    requireAvailableLedger()
+
+    this.signTypedData = this.signTypedData.bind(this)
+
+    throw new Error("Unimplemented")
+  }
+
+  async signMessage(address: string, message: string): Promise<string> {
+    requireAvailableLedger()
+
+    this.signMessage = this.signMessage.bind(this)
+
+    throw new Error("Unimplemented")
   }
 }

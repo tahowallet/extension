@@ -69,6 +69,7 @@
     "@types/react-router-dom": "^5.3.1",
     "@types/remote-redux-devtools": "^0.5.5",
     "@types/terser-webpack-plugin": "^5.0.3",
+    "@types/w3c-web-usb": "^1.0.5",
     "@types/webpack-livereload-plugin": "^2.3.2",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
     "@typescript-eslint/parser": "^4.28.4",
