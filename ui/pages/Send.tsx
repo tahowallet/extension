@@ -71,6 +71,7 @@ export default function Send(): ReactElement {
       setAmount(currentBalance)
     }
   }
+
   const sendTransactionRequest = async () => {
     dispatch(broadcastOnSign(true))
     const transaction = {
@@ -111,17 +112,6 @@ export default function Send(): ReactElement {
         </h1>
         <div className="form">
           <div className="form_input">
-            <div className="balance">
-              Balance: {`${currentBalance.substring(0, 8)}\u2026 `}
-              <button
-                type="button"
-                className="max"
-                onClick={setMaxBalance}
-                tabIndex={0}
-              >
-                Max
-              </button>
-            </div>
             <SharedAssetInput
               label="Asset / Amount"
               onAssetSelect={(token) => {
@@ -143,7 +133,7 @@ export default function Send(): ReactElement {
               }}
               defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
               amount={amount}
-              maxBalance={Number(currentBalance)}
+              showMaxBalanceControl
               disableDropdown
             />
             <div className="value">${getTotalLocalizedValue()}</div>
@@ -247,18 +237,6 @@ export default function Send(): ReactElement {
           }
           .label {
             margin-bottom: 6px;
-          }
-          .balance {
-            color: var(--green-40);
-            text-align: right;
-            position: relative;
-            font-size: 14px;
-            top: 16px;
-            right: 0;
-          }
-          .max {
-            color: #d08e39;
-            cursor: pointer;
           }
           .value {
             display: flex;
