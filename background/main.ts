@@ -62,6 +62,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
+import { EnrichedEIP1559TransactionRequest } from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -428,7 +429,7 @@ export default class Main extends BaseService<never> {
         )
 
       // Basic transaction construction based on the provided options, with extra data from the chain service
-      const transaction: EIP1559TransactionRequest = {
+      const transaction: EnrichedEIP1559TransactionRequest = {
         from: options.from,
         to: options.to,
         value: options.value ?? 0n,
@@ -439,6 +440,7 @@ export default class Main extends BaseService<never> {
         type: 2 as const,
         chainID: "1",
         nonce: resolvedNonce,
+        annotation: options.annotation,
       }
 
       try {
@@ -634,14 +636,27 @@ export default class Main extends BaseService<never> {
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
+    this.enrichmentService.emitter.on(
+      "enrichedEVMTransactionSignatureRequest",
+      async (enrichedEVMTransactionSignatureRequest) => {
+        this.store.dispatch(
+          updateTransactionOptions(enrichedEVMTransactionSignatureRequest)
+        )
+        this.store.dispatch(broadcastOnSign(false))
+      }
+    )
+
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        this.store.dispatch(updateTransactionOptions(payload))
-        // TODO force route?
+        this.enrichmentService.resolveTransactionAnnotation(
+          payload,
+          2 /* TODO desiredDecimals should be configurable */
+        )
 
-        this.store.dispatch(broadcastOnSign(false))
-
+        /* @Reviewer - I kept these in here rather than moving them to the event handler for `enrichedEVMTransactionSignatureRequest` because I wasn't
+        sure of the consequences of breaking the async flow of the `transactionSignatureRequest` emitter.  Not sure if this is the best way forward
+        */
         const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
           this.keyringService.emitter.off("signedTx", resolveAndClear)
           transactionConstructionSliceEmitter.off(
