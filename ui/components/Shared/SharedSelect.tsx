@@ -125,6 +125,7 @@ export default function SharedSelect(props: Props): ReactElement {
             width: 332px;
             position: absolute;
             left: -2px;
+            z-index: 1;
             margin: 0;
             padding: 0;
             text-align: center;
