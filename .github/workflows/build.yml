@@ -4,7 +4,7 @@ on:
   pull_request: {}
   push:
     branches:
-    - main
+    - swaps-qa-build
 
 jobs:
   build:
@@ -33,13 +33,13 @@ jobs:
         name: pr-extension-builds
         path: dist/*.zip        
     - name: Build artifacts for upload
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/swaps-qa-build'
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
-    - name: Upload build on main
-      if: github.ref == 'refs/heads/main'
+    - name: Upload build on swaps-qa-build
+      if: github.ref == 'refs/heads/swaps-qa-build'
       uses: actions/upload-artifact@v2
       with:
         name: extension-builds
