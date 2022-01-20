@@ -66,6 +66,7 @@ const signingSlice = createSlice({
     signedTypedData: (state, { payload }: { payload: string }) => ({
       ...state,
       signedTypedData: payload,
+      typedDataRequest: undefined,
     }),
     typedDataRequest: (
       state,
