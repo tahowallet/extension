@@ -165,6 +165,7 @@ export default function Swap(): ReactElement {
                 onAssetSelect={fromAssetSelected}
                 onAmountChange={fromAmountChanged}
                 amount={sellAmount}
+                showMaxBalanceControl
                 label="Swap from:"
               />
             </div>
