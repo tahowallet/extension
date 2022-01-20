@@ -339,7 +339,7 @@ export default class KeyringService extends BaseService<Events> {
    */
   async signTransaction(
     account: HexString,
-    txRequest: EIP1559TransactionRequest
+    txRequest: EIP1559TransactionRequest & { nonce: number }
   ): Promise<SignedEVMTransaction> {
     this.requireUnlocked()
 

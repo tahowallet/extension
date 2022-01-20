@@ -36,7 +36,9 @@ const validMnemonics = {
   ],
 }
 
-const validTransactionRequests: { [key: string]: EIP1559TransactionRequest } = {
+const validTransactionRequests: {
+  [key: string]: EIP1559TransactionRequest & { nonce: number }
+} = {
   simple: {
     from: "0x0",
     nonce: 0,
