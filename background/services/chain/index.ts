@@ -113,12 +113,10 @@ export default class ChainService extends BaseService<Events> {
   }[]
 
   /**
-   * For each chain id, track an address's last seen nonce. The implication
-   * here is that the given nonce should not be reused.
-   *
-   * FIXME Some way to "cancel" a nonce so that e.g. if a transaction
-   * FIXME increments nonce but is not ultimately signed and broadcast, that
-   * FIXME nonce can be reused.
+   * For each chain id, track an address's last seen nonce. The tracked nonce
+   * should generally not be allocated to a new transaction, nor should any
+   * nonces that precede it, unless the intent is deliberately to replace an
+   * unconfirmed transaction sharing the same nonce.
    */
   private evmChainLastSeenNoncesByNormalizedAddress: {
     [chainID: string]: { [normalizedAddress: string]: number }
@@ -224,6 +222,15 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /**
+   * Populates the provided partial EIP1559 transaction request with all fields
+   * except the nonce. This leaves the transaction ready for user review, and
+   * the nonce ready to be filled in immediately prior to signing to minimize the
+   * likelihood for nonce reuse.
+   *
+   * Note that if the partial request already has a defined nonce, it is not
+   * cleared.
+   */
   async populatePartialEVMTransactionRequest(
     network: EVMNetwork,
     partialRequest: Partial<EIP1559TransactionRequest> & { from: string }
@@ -231,16 +238,8 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EIP1559TransactionRequest
     gasEstimationError: string | undefined
   }> {
-    // FIXME This should be resolved immediately prior to signing, when a
-    // FIXME signature denial can result in an immediate revocation of the
-    // FIXME assigned nonce so it can be reused.
-    const resolvedNonce = await this.resolveEVMNonce(
-      network,
-      partialRequest.from
-    )
-
     // Basic transaction construction based on the provided options, with extra data from the chain service
-    const transactionRequest: EIP1559TransactionRequest = {
+    const transactionRequest = {
       from: partialRequest.from,
       to: partialRequest.to,
       value: partialRequest.value ?? 0n,
@@ -250,7 +249,7 @@ export default class ChainService extends BaseService<Events> {
       input: partialRequest.input ?? null,
       type: 2 as const,
       chainID: network.chainID,
-      nonce: resolvedNonce,
+      nonce: partialRequest.nonce,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -262,6 +261,8 @@ export default class ChainService extends BaseService<Events> {
         transactionRequest
       )
     } catch (error) {
+      // Try to identify unpredictable gas errors to bubble that information
+      // out.
       if (error instanceof Error) {
         // Ethers does some heavily loose typing around errors to carry
         // arbitrary info without subclassing Error, so an any cast is needed.
@@ -290,36 +291,57 @@ export default class ChainService extends BaseService<Events> {
     return { transactionRequest, gasEstimationError }
   }
 
-  async resolveEVMNonce(
-    network: EVMNetwork,
-    address: HexString
-  ): Promise<number> {
-    const normalizedAddress = normalizeEVMAddress(address)
-    const knownNextNonce =
-      this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
-        normalizedAddress
-      ]
-
-    if (typeof knownNextNonce !== "undefined") {
-      this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
-        normalizedAddress
-      ] += 1
-      return knownNextNonce
+  /**
+   * Populates the nonce for the passed EIP1559TransactionRequest, provided
+   * that it is not yet populated. This process generates a new nonce based on
+   * the known on-chain nonce state of the service, attempting to ensure that
+   * the nonce will be unique and an increase by 1 over any other confirmed or
+   * pending nonces in the mempool.
+   *
+   * Returns the transaction request with a guaranteed-defined nonce, suitable
+   * for signing by a signer.
+   */
+  async populateEVMTransactionNonce(
+    transactionRequest: EIP1559TransactionRequest
+  ): Promise<EIP1559TransactionRequest & { nonce: number }> {
+    if (typeof transactionRequest.nonce !== "undefined") {
+      // TS undefined checks don't narrow the containing object's type, so we
+      // have to cast `as` here.
+      return transactionRequest as EIP1559TransactionRequest & { nonce: number }
     }
 
+    const { chainID } = transactionRequest
+    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
+    // Lazily look up the network count, if needed. Note that the assumption
+    // here is that all nonces for this address are increasing linearly
+    // and continuously; if the address has a pending transaction floating
+    // around with a nonce that is not an increase by one over previous
+    // transactions, this approach will allocate more nonces that won't mine.
+    // FIXME Double-check the getTransactionCount-based nonce to make sure
+    // FIXME using its precedent would result in a replacement transaction
+    // FIXME error or a nonce reuse error.
     // TODO Deal with multi-network.
-    const networkNonce =
-      await this.pollingProviders.ethereum.getTransactionCount(
-        address,
-        "latest"
-      )
-
-    this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID] ??= {}
-    this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
       normalizedAddress
-    ] = networkNonce
+    ] ??=
+      (await this.pollingProviders.ethereum.getTransactionCount(
+        transactionRequest.from,
+        "latest"
+      )) - 1
 
-    return networkNonce
+    // Allocate a new nonce by incrementing the last seen one.
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+      normalizedAddress
+    ] += 1
+    const knownNextNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    return {
+      ...transactionRequest,
+      nonce: knownNextNonce,
+    }
   }
 
   async getAccountsToTrack(): Promise<AddressNetwork[]> {

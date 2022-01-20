@@ -62,6 +62,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
+import logger from "./lib/logger"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -452,12 +453,21 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
-      async (transaction: EIP1559TransactionRequest) => {
-        const signedTx = await this.keyringService.signTransaction(
-          transaction.from,
-          transaction
-        )
-        this.store.dispatch(signed(signedTx))
+      async (
+        transaction: EIP1559TransactionRequest & { nonce: number | undefined }
+      ) => {
+        const transactionWithNonce =
+          await this.chainService.populateEVMTransactionNonce(transaction)
+
+        try {
+          const signedTx = await this.keyringService.signTransaction(
+            transaction.from,
+            transactionWithNonce
+          )
+          this.store.dispatch(signed(signedTx))
+        } catch (exception) {
+          logger.error("Error signing transaction; releasing nonce", exception)
+        }
       }
     )
 
