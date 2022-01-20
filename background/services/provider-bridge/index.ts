@@ -18,6 +18,7 @@ import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
+import { HexString } from "../../types"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -279,15 +280,23 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
         case "eth_signTransaction":
         case "eth_sendTransaction":
+        case "eth_signTypedData_v4":
           // We are monsters and aren't breaking a method out quite yet.
           // eslint-disable-next-line no-case-declarations
           const transactionRequest = params[0] as EthersTransactionRequest
+
+          // When its signTypedData the params[0] should be the walletAddress
+          // eslint-disable-next-line no-case-declarations
+          const walletAddress = params[0] as HexString
           // eslint-disable-next-line no-case-declarations
           const popupPromise = ProviderBridgeService.showExtensionPopup(
             AllowedQueryParamPage.signTransaction
           )
 
-          if (transactionRequest.from === enablingPermission.accountAddress) {
+          if (
+            transactionRequest.from === enablingPermission.accountAddress ||
+            walletAddress.toLowerCase() === enablingPermission.accountAddress
+          ) {
             return await this.internalEthereumProviderService
               .routeSafeRPCRequest(method, params)
               .finally(async () => {
