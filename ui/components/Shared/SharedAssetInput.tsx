@@ -15,6 +15,7 @@ function SelectAssetMenuContent(
   props: SelectAssetMenuContentProps
 ): ReactElement {
   const { setSelectedAssetAndClose, assets } = props
+  const [searchTerm, setSearchTerm] = useState("")
 
   return (
     <>
@@ -26,21 +27,26 @@ function SelectAssetMenuContent(
             className="search_input"
             placeholder="Search by name or address"
             spellCheck={false}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
           <span className="icon_search" />
         </div>
       </div>
       <div className="divider" />
       <ul>
-        {assets.map((asset) => {
-          return (
-            <SharedAssetItem
-              key={asset.metadata?.coinGeckoID || asset.symbol}
-              asset={asset}
-              onClick={setSelectedAssetAndClose}
-            />
-          )
-        })}
+        {assets
+          .filter((asset) => {
+            return asset.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+          })
+          .map((asset) => {
+            return (
+              <SharedAssetItem
+                key={asset.metadata?.coinGeckoID || asset.symbol}
+                asset={asset}
+                onClick={setSelectedAssetAndClose}
+              />
+            )
+          })}
       </ul>
       <style jsx>
         {`
@@ -136,7 +142,7 @@ interface SharedAssetInputProps {
   label: string
   defaultAsset: Asset
   amount: string
-  maxBalance: number
+  maxBalance: number | boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   onAssetSelect: (token: Asset) => void
@@ -187,7 +193,8 @@ export default function SharedAssetInput(
 
   const getErrorMessage = (givenAmount: string): string | undefined => {
     return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
-      Number(givenAmount) === 0
+      Number(givenAmount) === 0 ||
+      !maxBalance
       ? undefined
       : "Insufficient balance"
   }
@@ -352,7 +359,7 @@ SharedAssetInput.defaultProps = {
   defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  maxBalance: 0,
+  maxBalance: false,
   onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
