@@ -1,6 +1,9 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { Asset } from "@tallyho/tally-background/assets"
+import { formatEther } from "@ethersproject/units"
 import classNames from "classnames"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -142,7 +145,7 @@ interface SharedAssetInputProps {
   label: string
   defaultAsset: Asset
   amount: string
-  maxBalance: number | boolean
+  showMaxBalanceControl: boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   onAssetSelect: (token: Asset) => void
@@ -159,7 +162,7 @@ export default function SharedAssetInput(
     label,
     defaultAsset,
     amount,
-    maxBalance,
+    showMaxBalanceControl,
     isAssetOptionsLocked,
     disableDropdown,
     onAssetSelect,
@@ -169,6 +172,7 @@ export default function SharedAssetInput(
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState(defaultAsset)
+  const [currentBalance, setCurrentBalance] = useState("")
 
   // TODO: Refactor this to track state in a more reasonable way
   useEffect(() => {
@@ -191,17 +195,58 @@ export default function SharedAssetInput(
     [onAssetSelect]
   )
 
+  const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
+
+  const { assetAmounts } = balanceData ?? {
+    assetAmounts: [],
+  }
+
+  const findBalance = useCallback(() => {
+    const balance = formatEther(
+      assetAmounts.find((el) => el.asset.symbol === selectedAsset.symbol)
+        ?.amount || "0"
+    )
+    setCurrentBalance(balance)
+  }, [assetAmounts, selectedAsset.symbol])
+
   const getErrorMessage = (givenAmount: string): string | undefined => {
-    return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
+    return (!isTypeDestination &&
+      Number(currentBalance) >= Number(givenAmount)) ||
       Number(givenAmount) === 0 ||
-      !maxBalance
+      !showMaxBalanceControl
       ? undefined
       : "Insufficient balance"
   }
 
+  const setMaxBalance = () => {
+    if (currentBalance) {
+      onAmountChange(`${currentBalance}`, getErrorMessage(`${currentBalance}`))
+    }
+  }
+
+  useEffect(() => {
+    findBalance()
+  }, [findBalance])
+
   return (
     <label className="label">
-      {label}
+      <div className="label_action_group">
+        {label}
+        {showMaxBalanceControl && (
+          <div className="balance">
+            Balance: {`${currentBalance.substring(0, 8)}\u2026 `}
+            <button
+              type="button"
+              className="max"
+              onClick={setMaxBalance}
+              tabIndex={0}
+            >
+              Max
+            </button>
+          </div>
+        )}
+      </div>
+
       <SharedSlideUpMenu
         isOpen={openAssetMenu}
         close={() => {
@@ -256,16 +301,18 @@ export default function SharedAssetInput(
               min="0"
               value={amount}
               spellCheck={false}
-              onChange={(event) =>
+              onChange={(event) => {
                 onAmountChange(
                   event.target.value,
                   getErrorMessage(event.target.value)
                 )
-              }
+              }}
             />
           </>
         )}
-        <div className="error_message">{getErrorMessage(amount)}</div>
+        <div className="error_message">
+          {showMaxBalanceControl && getErrorMessage(amount)}
+        </div>
       </div>
       <style jsx>
         {`
@@ -278,6 +325,22 @@ export default function SharedAssetInput(
             justify-content: space-between;
             padding: 0px 16px;
             box-sizing: border-box;
+          }
+          .balance {
+            color: var(--green-40);
+            text-align: right;
+            position: relative;
+            font-size: 14px;
+            right: 0;
+          }
+          .max {
+            color: var(--trophy-gold);
+            cursor: pointer;
+          }
+          .label_action_group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
           }
           .asset_input {
             width: 100%;
@@ -312,7 +375,7 @@ export default function SharedAssetInput(
             opacity: 1;
           }
           .input_amount {
-            width: 98px;
+            width: 130px;
             height: 32px;
             color: #ffffff;
             font-size: 22px;
@@ -359,7 +422,7 @@ SharedAssetInput.defaultProps = {
   defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  maxBalance: false,
+  showMaxBalanceControl: false,
   onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick
