@@ -344,6 +344,41 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  /**
+   * Releases the specified nonce for the given network and address. This
+   * updates internal service state to allow that nonce to be reused. In cases
+   * where multiple nonces were seen in a row, this will make internally
+   * available for reuse all intervening nonces.
+   */
+  releaseEVMTransactionNonce(
+    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+  ): void {
+    const { chainID, nonce } = transactionRequest
+    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+    const lastSeenNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    // TODO Currently this assumes that the only place this nonce could have
+    // TODO been used is this service; however, another wallet or service
+    // TODO could have broadcast a transaction with this same nonce, in which
+    // TODO case the nonce release shouldn't take effect! This should be a
+    // TODO relatively rare edge case, but we should handle it at some point.
+    if (nonce === lastSeenNonce) {
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+        normalizedAddress
+      ] -= 1
+    } else if (nonce < lastSeenNonce) {
+      // If the nonce we're releasing is below the latest allocated nonce,
+      // release all intervening nonces. This risks transaction replacement
+      // issues, but ensures that we don't start allocating nonces that will
+      // never mine (because they will all be higher than the
+      // now-released-and-therefore-never-broadcast nonce).
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+        normalizedAddress
+      ] = lastSeenNonce - 1
+    }
+  }
+
   async getAccountsToTrack(): Promise<AddressNetwork[]> {
     return this.db.getAccountsToTrack()
   }

@@ -467,6 +467,7 @@ export default class Main extends BaseService<never> {
           this.store.dispatch(signed(signedTx))
         } catch (exception) {
           logger.error("Error signing transaction; releasing nonce", exception)
+          this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
         }
       }
     )
