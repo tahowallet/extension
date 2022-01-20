@@ -9,6 +9,7 @@ import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
 import dappPermissionReducer from "./dapp-permission"
 import ledgerReducer from "./ledger"
+import signingReducer from "./signing"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
@@ -20,6 +21,7 @@ const mainReducer = combineReducers({
   ui: uiReducer,
   dappPermission: dappPermissionReducer,
   ledger: ledgerReducer,
+  signing: signingReducer,
 })
 
 export default mainReducer
