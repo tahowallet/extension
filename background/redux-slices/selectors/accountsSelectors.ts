@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
 import { AccountType, CompleteAssetAmount } from "../accounts"
-import { selectAssetPricePoint } from "../assets"
+import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
@@ -31,7 +31,7 @@ const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
   return state.account.accountsData[state.ui.selectedAccount.address]
 }
-const getAssetsState = (state: RootState) => state.assets
+export const getAssetsState = (state: RootState): AssetsState => state.assets
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,

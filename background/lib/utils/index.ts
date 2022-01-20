@@ -1,4 +1,4 @@
-import { utils } from "ethers"
+import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { EVMNetwork } from "../../networks"
@@ -108,4 +108,21 @@ export function getEthereumNetwork(): EVMNetwork {
 
 export function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-5)}`
+}
+
+export const getNumericStringValueFromBigNumber = (
+  value: BigNumber,
+  tokenDecimals: number
+): string => {
+  return Number(value.toBigInt() / 10n ** BigInt(tokenDecimals)).toString()
+}
+
+export const numberTo32BytesHex = (value: string, decimals: number): string => {
+  const withDecimals = BigInt(value) * 10n ** BigInt(decimals)
+  const hex = utils.hexlify(withDecimals)
+  return hex
+}
+
+export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
+  return ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
 }
