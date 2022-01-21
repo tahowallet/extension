@@ -4,15 +4,19 @@ import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import Intro from "../../components/Claim/Intro"
 import Referral from "../../components/Claim/Referral"
+import ReferralByUser from "../../components/Claim/ReferralByUser"
 import InfoModal from "../../components/Claim/InfoModal"
 import Delegate from "../../components/Claim/Delegate"
 import Review from "../../components/Claim/Review"
 import ClaimFooter from "../../components/Claim/ClaimFooter"
+import SuccessModalContent from "../../components/Claim/SuccessModalContent"
+import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 
 export default function Eligible(): ReactElement {
   const [account, setAccount] = useState("")
   const [step, setStep] = useState(1)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
+  const [showSuccessStep, setShowSuccessStep] = useState(false)
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
@@ -40,6 +44,17 @@ export default function Eligible(): ReactElement {
       {infoModalVisible ? (
         <InfoModal setModalVisible={setInfoModalVisible} />
       ) : null}
+
+      <SharedSlideUpMenu
+        isOpen={showSuccessStep}
+        close={() => {
+          setShowSuccessStep(false)
+        }}
+        size="large"
+      >
+        <SuccessModalContent />
+      </SharedSlideUpMenu>
+
       <div
         className="background"
         style={{ backgroundPositionX: `${(step - 1) * 100}%` }}
@@ -51,6 +66,7 @@ export default function Eligible(): ReactElement {
         >
           <Intro />
           <Referral />
+          <ReferralByUser />
           <Delegate />
           <Review />
         </div>
