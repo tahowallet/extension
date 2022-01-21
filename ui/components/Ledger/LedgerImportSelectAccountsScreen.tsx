@@ -108,6 +108,24 @@ function LedgerAccountList({
                     {ethBalance !== null && (
                       <div className="balance">{ethBalance}</div>
                     )}
+                    <div className="etherscan-link-container">
+                      <SharedButton
+                        type="tertiaryGray"
+                        size="medium"
+                        icon="external"
+                        iconSize="secondaryMedium"
+                        onClick={() => {
+                          window
+                            .open(
+                              `https://etherscan.io/address/${address}`,
+                              "_blank"
+                            )
+                            ?.focus()
+                        }}
+                      >
+                        {/* No label. FIXME: is this ok for a11y? */}
+                      </SharedButton>
+                    </div>
                   </>
                 )}
               </div>
@@ -235,6 +253,10 @@ function LedgerAccountList({
         .balance {
           flex: 1;
           text-align: right;
+        }
+
+        .etherscan-link-container {
+          margin-left: 0.5rem;
         }
 
         .pagination {
