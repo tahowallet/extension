@@ -649,7 +649,7 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        this.enrichmentService.resolveTransactionAnnotation(
+        this.enrichmentService.enrichTransactionSignature(
           payload,
           2 /* TODO desiredDecimals should be configurable */
         )
