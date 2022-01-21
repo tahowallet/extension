@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
+import SignData from "../pages/SignData"
 import OnboardingSaveSeed from "../pages/Onboarding/OnboardingSaveSeed"
 import OnboardingVerifySeed from "../pages/Onboarding/OnboardingVerifySeed"
 import OnboardingImportMetamask from "../pages/Onboarding/OnboardingImportMetamask"
@@ -65,6 +66,12 @@ const pageList = [
   {
     path: "/signTransaction",
     Component: SignTransaction,
+    hasTabBar: false,
+    hasTopBar: false,
+  },
+  {
+    path: "/signData",
+    Component: SignData,
     hasTabBar: false,
     hasTopBar: false,
   },
