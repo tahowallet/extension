@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from "react"
 import AmountBanner from "./AmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
+import SharedInput from "../Shared/SharedInput"
 
 const delegates = [
   {
@@ -70,7 +71,13 @@ export default function Delegate(): ReactElement {
             })}
           </>
         ) : (
-          <></>
+          <div>
+            <p>
+              Delegate yourself or somebody else. We advice you only do this if
+              the person you delegate plans to be active in DAO votings.
+            </p>
+            <SharedInput label="Delegate with ENS or address" />
+          </div>
         )}
       </div>
       <style jsx>
@@ -85,7 +92,6 @@ export default function Delegate(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
-            text-align: left;
             margin-top: 25px;
             margin-bottom: 11px;
           }
@@ -125,7 +131,6 @@ export default function Delegate(): ReactElement {
             color: var(--green-20);
             font-size: 16px;
             font-weight: 500;
-            text-align: left;
             display: flex;
             flex-direction: column;
           }
@@ -133,7 +138,6 @@ export default function Delegate(): ReactElement {
             color: var(--green-60);
             font-size: 16px;
             font-weight: 500;
-            text-align: left;
           }
           .icon {
             width: 40px;
@@ -142,6 +146,12 @@ export default function Delegate(): ReactElement {
             background-color: #006ae3;
             border-radius: 999px;
             flex-shrink: 0;
+          }
+          p {
+            color: var(--green-40);
+            font-size: 16px;
+            line-height: 24px;
+            margin-bottom: 40px;
           }
         `}
       </style>

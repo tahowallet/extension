@@ -71,7 +71,6 @@ export default function Review(): ReactElement {
             color: var(--green-60);
             font-size: 16px;
             line-height: 24px;
-            text-align: left;
           }
           .option {
             display: flex;

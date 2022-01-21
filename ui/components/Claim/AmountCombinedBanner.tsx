@@ -55,7 +55,7 @@ export default function AmountCombinedBanner(): ReactElement {
             color: #22c480;
           }
           .banner__claimable__currency {
-            color: #667c7a;
+            color: var(--green-60);
           }
         `}
       </style>

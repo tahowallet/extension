@@ -81,7 +81,6 @@ export default function Modal({ setModalVisible }: ModalProps): ReactElement {
           animation-duration: 0.4s;
         }
         .modal__title {
-          font-family: Segment;
           font-size: 18px;
           line-height: 24px;
           text-transform: uppercase;

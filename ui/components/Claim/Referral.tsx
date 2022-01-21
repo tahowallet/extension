@@ -70,7 +70,6 @@ export default function Referral(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
-            text-align: left;
             display: flex;
             align-items: center;
             margin-top: 25px;
@@ -92,7 +91,6 @@ export default function Referral(): ReactElement {
             font-size: 36px;
             font-weight: 500;
             line-height: 42px;
-            text-align: left;
             font-family: Quincy CF;
             margin: 0px 8px;
           }
