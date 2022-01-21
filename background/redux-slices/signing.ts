@@ -9,6 +9,7 @@ export type Events = {
     typedData: EIP712TypedData
     account: HexString
   }
+  signatureRejected: never
 }
 
 export type SigningMethod =
@@ -75,14 +76,28 @@ const signingSlice = createSlice({
       ...state,
       typedDataRequest: payload,
     }),
+    clearSigningState: (state) => ({
+      ...state,
+      typedDataRequest: undefined,
+    }),
   },
 })
 
-export const { signedTypedData, typedDataRequest } = signingSlice.actions
+export const { signedTypedData, typedDataRequest, clearSigningState } =
+  signingSlice.actions
 
 export default signingSlice.reducer
 
 export const selectTypedData = createSelector(
   (state: { signing: SigningState }) => state.signing.typedDataRequest,
   (signTypes) => signTypes
+)
+
+export const rejectDataSignature = createBackgroundAsyncThunk(
+  "signing/reject",
+  async (_, { dispatch }) => {
+    await signingSliceEmitter.emit("signatureRejected")
+    // Provide a clean slate for future transactions.
+    dispatch(signingSlice.actions.clearSigningState())
+  }
 )
