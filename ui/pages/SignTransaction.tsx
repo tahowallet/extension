@@ -14,17 +14,12 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
-import {
-  selectTypedData,
-  signTypedData,
-} from "@tallyho/tally-background/redux-slices/signing"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import SignTransactionNetworkAccountInfoTopBar from "../components/SignTransaction/SignTransactionNetworkAccountInfoTopBar"
-import SignTypedData from "../components/SignTransaction/SignTypedData"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -40,7 +35,6 @@ export enum SignType {
   SignSwap = "sign-swap",
   SignSpend = "sign-spend",
   SignTransfer = "sign-transfer",
-  SignData = "sign-data",
 }
 
 interface SignLocationState {
@@ -66,12 +60,8 @@ export default function SignTransaction({
 
   const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
   const isApproveTx = parsedTx?.name === "approve"
-  const typedDataRequest = useBackgroundSelector(selectTypedData)
 
   const getSignType = () => {
-    if (typedDataRequest) {
-      return SignType.SignData
-    }
     if (isApproveTx) {
       return SignType.SignSpend
     }
@@ -98,9 +88,6 @@ export default function SignTransaction({
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
       return getAccountTotal(state, transactionDetails.from)
-    }
-    if (typeof typedDataRequest !== "undefined") {
-      return getAccountTotal(state, typedDataRequest.account)
     }
     return undefined
   })
@@ -140,8 +127,7 @@ export default function SignTransaction({
   }
 
   if (
-    (typeof transactionDetails === "undefined" &&
-      typeof typedDataRequest === "undefined") ||
+    typeof transactionDetails === "undefined" ||
     typeof signerAccountTotal === "undefined"
   ) {
     // TODO Some sort of unexpected state error if we end up here... Or do we
@@ -156,16 +142,6 @@ export default function SignTransaction({
       confirmButtonText: string
     }
   } = {
-    [SignType.SignData]: {
-      title: `Sign ${typedDataRequest?.typedData.primaryType ?? "Data"}`,
-      component: () =>
-        typedDataRequest ? (
-          <SignTypedData typedData={typedDataRequest.typedData} />
-        ) : (
-          <></>
-        ),
-      confirmButtonText: "Sign",
-    },
     [SignType.SignSwap]: {
       title: "Swap assets",
       component: () => <SignTransactionSwapAssetBlock />,
@@ -173,15 +149,12 @@ export default function SignTransaction({
     },
     [SignType.SignSpend]: {
       title: "Approve asset spend",
-      component: () =>
-        transactionDetails ? (
-          <SignTransactionApproveSpendAssetBlock
-            transactionDetails={transactionDetails}
-            parsedTx={parsedTx}
-          />
-        ) : (
-          <></>
-        ),
+      component: () => (
+        <SignTransactionApproveSpendAssetBlock
+          transactionDetails={transactionDetails}
+          parsedTx={parsedTx}
+        />
+      ),
       confirmButtonText: "Approve",
     },
     [SignType.SignTransfer]: {
@@ -198,12 +171,9 @@ export default function SignTransaction({
     },
     [SignType.Sign]: {
       title: "Sign Transaction",
-      component: () =>
-        transactionDetails ? (
-          <SignTransactionSignBlock transactionDetails={transactionDetails} />
-        ) : (
-          <></>
-        ),
+      component: () => (
+        <SignTransactionSignBlock transactionDetails={transactionDetails} />
+      ),
       confirmButtonText: "Sign",
     },
   }
@@ -217,17 +187,12 @@ export default function SignTransaction({
       dispatch(signTransaction(transactionDetails))
       setIsTransactionSigning(true)
     }
-    if (typedDataRequest !== undefined) {
-      dispatch(signTypedData(typedDataRequest))
-    }
   }
   const networkSettingsSaved = async (networkSetting: NetworkFeeSetting) => {
-    if (transactionDetails) {
-      setGasLimit(networkSetting.gasLimit)
-      dispatch(setFeeType(networkSetting.feeType))
-      dispatch(updateTransactionOptions(transactionDetails))
-      setNetworkSettingsModalOpen(false)
-    }
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    dispatch(updateTransactionOptions(transactionDetails))
+    setNetworkSettingsModalOpen(false)
   }
 
   return (
@@ -239,42 +204,36 @@ export default function SignTransaction({
       <div className="primary_info_card standard_width">
         {signContent[signType].component()}
       </div>
-      {typeof transactionDetails !== "undefined" ? (
-        <>
-          <SharedPanelSwitcher
-            setPanelNumber={setPanelNumber}
-            panelNumber={panelNumber}
-            panelNames={["Details"]}
-          />
-          {panelNumber === 0 ? (
-            <div className="detail_items_wrap standard_width_padded">
-              <SharedSlideUpMenu
-                size="custom"
-                isOpen={networkSettingsModalOpen}
-                close={() => setNetworkSettingsModalOpen(false)}
-                customSize={`${3 * 56 + 320}px`}
-              >
-                <NetworkSettingsChooser
-                  networkSettings={{
-                    estimatedFeesPerGas,
-                    gasLimit,
-                  }}
-                  onNetworkSettingsSave={networkSettingsSaved}
-                  visible={networkSettingsModalOpen}
-                />
-              </SharedSlideUpMenu>
-              <span className="detail_item">
-                Estimated network fee
-                <FeeSettingsButton
-                  onClick={() => setNetworkSettingsModalOpen(true)}
-                />
-              </span>
-            </div>
-          ) : null}{" "}
-        </>
-      ) : (
-        <></>
-      )}
+      <SharedPanelSwitcher
+        setPanelNumber={setPanelNumber}
+        panelNumber={panelNumber}
+        panelNames={["Details"]}
+      />
+      {panelNumber === 0 ? (
+        <div className="detail_items_wrap standard_width_padded">
+          <SharedSlideUpMenu
+            size="custom"
+            isOpen={networkSettingsModalOpen}
+            close={() => setNetworkSettingsModalOpen(false)}
+            customSize={`${3 * 56 + 320}px`}
+          >
+            <NetworkSettingsChooser
+              networkSettings={{
+                estimatedFeesPerGas,
+                gasLimit,
+              }}
+              onNetworkSettingsSave={networkSettingsSaved}
+              visible={networkSettingsModalOpen}
+            />
+          </SharedSlideUpMenu>
+          <span className="detail_item">
+            Estimated network fee
+            <FeeSettingsButton
+              onClick={() => setNetworkSettingsModalOpen(true)}
+            />
+          </span>
+        </div>
+      ) : null}
       <div className="footer_actions">
         <SharedButton
           iconSize="large"
