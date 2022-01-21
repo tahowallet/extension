@@ -706,7 +706,7 @@ export default class Main extends BaseService<never> {
 
         const resolveAndClear = (signature: string) => {
           this.keyringService.emitter.off("signedData", resolveAndClear)
-          transactionConstructionSliceEmitter.off(
+          signingSliceEmitter.off(
             "signatureRejected",
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
@@ -716,18 +716,12 @@ export default class Main extends BaseService<never> {
 
         const rejectAndClear = () => {
           this.keyringService.emitter.off("signedData", resolveAndClear)
-          transactionConstructionSliceEmitter.off(
-            "signatureRejected",
-            rejectAndClear
-          )
+          signingSliceEmitter.off("signatureRejected", rejectAndClear)
           rejecter()
         }
 
         this.keyringService.emitter.on("signedData", resolveAndClear)
-        transactionConstructionSliceEmitter.on(
-          "signatureRejected",
-          rejectAndClear
-        )
+        signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
   }
