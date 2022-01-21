@@ -220,6 +220,7 @@ function LedgerAccountList({
         .address-loading,
         .balance-loading {
           height: 1.5rem;
+          border-radius: 2px;
           background: linear-gradient(
             to right,
             var(--green-80),
