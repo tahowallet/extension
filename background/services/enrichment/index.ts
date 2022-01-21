@@ -157,7 +157,7 @@ export default class EnrichmentService extends BaseService<Events> {
     } else if (
       transaction.input === null ||
       transaction.input === "0x" ||
-      transaction.input === undefined
+      typeof transaction.input === "undefined"
     ) {
       // This is _almost certainly_ not a contract interaction, move on. Note that
       // a simple ETH send to a contract address can still effectively be a
