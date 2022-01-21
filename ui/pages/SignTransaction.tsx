@@ -14,6 +14,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
@@ -56,12 +57,18 @@ export default function SignTransaction({
 
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
-  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
-    signType: SignType.Sign,
+  const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
+  const isApproveTx = parsedTx?.name === "approve"
+  const { assetSymbol, amount, to, value, signType } = location.state ?? {
+    signType: isApproveTx ? SignType.SignSpend : SignType.Sign,
   }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
+  )
+  const signedTransaction = useBackgroundSelector(
+    ({ transactionConstruction }) => transactionConstruction.signedTransaction
   )
 
   const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
@@ -70,10 +77,6 @@ export default function SignTransaction({
     ({ transactionConstruction }) =>
       transactionConstruction.broadcastOnSign ?? false
   )
-  const signedTransaction = useBackgroundSelector(
-    ({ transactionConstruction }) => transactionConstruction.signedTransaction
-  )
-  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const signerAccountTotal = useBackgroundSelector((state) =>
     typeof transactionDetails === "undefined"
@@ -134,7 +137,12 @@ export default function SignTransaction({
     },
     [SignType.SignSpend]: {
       title: "Approve asset spend",
-      component: () => <SignTransactionApproveSpendAssetBlock />,
+      component: () => (
+        <SignTransactionApproveSpendAssetBlock
+          transactionDetails={transactionDetails}
+          parsedTx={parsedTx}
+        />
+      ),
       confirmButtonText: "Approve",
     },
     [SignType.SignTransfer]: {
