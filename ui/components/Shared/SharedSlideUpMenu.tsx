@@ -42,7 +42,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         onClick={close}
         aria-label="Close menu"
       />
-      {children}
+      {isOpen ? children : <></>}
       <style jsx>
         {`
           .slide_up_menu {
