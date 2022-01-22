@@ -6,6 +6,7 @@ import {
   AsyncThunkPayloadCreator,
   createAsyncThunk,
 } from "@reduxjs/toolkit"
+import logger from "../lib/logger"
 
 // Below, we use `any` to deal with the fact that allAliases is a heterogeneous
 // collection of async thunk actions whose payload types have little in common
@@ -119,7 +120,14 @@ export function createBackgroundAsyncThunk<
   // Use reduxtools' createAsyncThunk to build the infrastructure.
   const baseThunkActionCreator = createAsyncThunk(
     typePrefix,
-    payloadCreator,
+    async (...args: Parameters<typeof payloadCreator>) => {
+      try {
+        return await payloadCreator(...args)
+      } catch (error) {
+        logger.error(error)
+        throw error
+      }
+    },
     options
   )
 
