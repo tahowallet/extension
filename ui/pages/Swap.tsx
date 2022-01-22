@@ -13,15 +13,17 @@ import {
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
+  AnyAssetAmount,
   FungibleAsset,
-  isFungibleAsset,
   isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -42,21 +44,33 @@ export default function Swap(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const sellAssets = combinedData.assets
-    .map(({ asset }) => asset)
-    .filter(isFungibleAsset)
+  // TODO Expand these to fungible assets by supporting direct ETH swaps,
+  // TODO then filter by the current chain.
+  const sellAssetAmounts = combinedData.assets.filter<
+    CompleteAssetAmount<
+      SmartContractFungibleAsset,
+      AnyAssetAmount<SmartContractFungibleAsset>
+    >
+  >(
+    (
+      assetAmount
+    ): assetAmount is CompleteAssetAmount<
+      SmartContractFungibleAsset,
+      AnyAssetAmount<SmartContractFungibleAsset>
+    > => isSmartContractFungibleAsset(assetAmount.asset)
+  )
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
     // together.
     const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(isFungibleAsset)
+    return knownAssets.filter(isSmartContractFungibleAsset)
   })
 
   const {
     symbol: locationAssetSymbol,
     contractAddress: locationAssetContractAddress,
   } = location.state ?? {}
-  const locationAsset = sellAssets.find((candidateAsset) => {
+  const locationAsset = sellAssetAmounts.find(({ asset: candidateAsset }) => {
     if (typeof locationAssetContractAddress !== "undefined") {
       return (
         isSmartContractFungibleAsset(candidateAsset) &&
@@ -65,7 +79,7 @@ export default function Swap(): ReactElement {
       )
     }
     return candidateAsset.symbol === locationAssetSymbol
-  })
+  })?.asset
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
@@ -268,7 +282,11 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 amount={sellAmount}
-                assets={sellAssets}
+                assets={sellAssetAmounts.map(({ asset }) => asset)}
+                maxBalance={
+                  sellAssetAmounts.find(({ asset }) => asset === sellAsset)
+                    ?.decimalAmount
+                }
                 defaultAsset={sellAsset}
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
