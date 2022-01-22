@@ -1,4 +1,10 @@
-import React, { ReactElement, useEffect, useState, useRef } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from "react"
 import {
   fetchSwapData,
   clearSwapQuote,
@@ -121,79 +127,99 @@ export default function Swap(): ReactElement {
     history.push("/signTransaction")
   }
 
-  const updateSwapData = async (
-    changeSource: "sell" | "buy",
-    amount: string
-  ): Promise<void> => {
-    // Swap amounts can't update unless both sell and buy assets are specified.
-    if (typeof sellAsset === "undefined" || typeof buyAsset === "undefined") {
-      return
-    }
-
-    const quoteRequest: Parameters<typeof fetchSwapData>[0] = {
-      isFinal: false,
-      assets: { sellAsset, buyAsset },
-      amount:
-        changeSource === "sell"
-          ? { sellAmount: amount }
-          : { buyAmount: amount },
-    }
-
-    // If there's a different quote in progress, reset loading state.
-    if (latestQuoteRequest.current !== quoteRequest) {
-      setBuyAmountLoading(false)
-      setSellAmountLoading(false)
-    }
-
-    if (changeSource === "sell") {
-      setBuyAmountLoading(true)
-    } else {
-      setSellAmountLoading(true)
-    }
-
-    latestQuoteRequest.current = quoteRequest
-    const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-      fetchSwapData(quoteRequest)
-    )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapData>) ?? {
-      quote: undefined,
-      needsApproval: false,
-    }
-
-    // Only proceed if the quote we just got is the same one we were looking for.
-    if (latestQuoteRequest.current === quoteRequest) {
-      if (typeof quote === "undefined") {
-        // If there's no quote, clear loading states and abort.
-        setBuyAmountLoading(false)
-        setSellAmountLoading(false)
-        setNeedsApproval(false)
-        setApprovalTarget(undefined)
-        latestQuoteRequest.current = undefined
-
+  const updateSwapData = useCallback(
+    async (changeSource: "buy" | "sell", amount: string): Promise<void> => {
+      // Swap amounts can't update unless both sell and buy assets are specified.
+      if (typeof sellAsset === "undefined" || typeof buyAsset === "undefined") {
         return
       }
 
-      setNeedsApproval(quoteNeedsApproval)
-      setApprovalTarget(quote.allowanceTarget)
+      const quoteRequest: Parameters<typeof fetchSwapData>[0] = {
+        isFinal: false,
+        assets: { sellAsset, buyAsset },
+        amount:
+          changeSource === "sell"
+            ? { sellAmount: amount }
+            : { buyAmount: amount },
+      }
 
-      if (changeSource === "sell") {
-        setBuyAmount(
-          fixedPointNumberToString({
-            amount: BigInt(quote.buyAmount),
-            decimals: buyAsset.decimals,
-          })
-        )
+      // If there's a different quote in progress, reset loading state.
+      if (latestQuoteRequest.current !== quoteRequest) {
         setBuyAmountLoading(false)
-      } else {
-        setSellAmount(
-          fixedPointNumberToString({
-            amount: BigInt(quote.sellAmount),
-            decimals: sellAsset.decimals,
-          })
-        )
         setSellAmountLoading(false)
       }
-    }
-  }
+
+      if (changeSource === "sell") {
+        setBuyAmountLoading(true)
+      } else {
+        setSellAmountLoading(true)
+      }
+
+      latestQuoteRequest.current = quoteRequest
+      const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
+        fetchSwapData(quoteRequest)
+      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapData>) ?? {
+        quote: undefined,
+        needsApproval: false,
+      }
+
+      // Only proceed if the quote we just got is the same one we were looking for.
+      if (latestQuoteRequest.current === quoteRequest) {
+        if (typeof quote === "undefined") {
+          // If there's no quote, clear states and abort.
+          setBuyAmountLoading(false)
+          setSellAmountLoading(false)
+          setNeedsApproval(false)
+          setApprovalTarget(undefined)
+          latestQuoteRequest.current = undefined
+
+          return
+        }
+
+        setNeedsApproval(quoteNeedsApproval)
+        setApprovalTarget(quote.allowanceTarget)
+
+        if (changeSource === "sell") {
+          setBuyAmount(
+            fixedPointNumberToString({
+              amount: BigInt(quote.buyAmount),
+              decimals: buyAsset.decimals,
+            })
+          )
+          setBuyAmountLoading(false)
+        } else {
+          setSellAmount(
+            fixedPointNumberToString({
+              amount: BigInt(quote.sellAmount),
+              decimals: sellAsset.decimals,
+            })
+          )
+          setSellAmountLoading(false)
+        }
+      }
+    },
+    [buyAsset, dispatch, sellAsset]
+  )
+
+  // The two effects below *only* fire for their respective asset changes.
+  // Changing sell or buy amounts separately triggers calls to updateSwapData,
+  // since updating swap data in turn updates buy and sell amounts depending on
+  // the change and we want to avoid circular dependencies.
+  //
+  // As such, these two effects *must not* fire for amount changes, only for
+  // asset changes.
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    // Assume changing the buy asset means keeping the sell
+    // amount fixed.
+    updateSwapData("sell", sellAmount)
+  }, [buyAsset])
+
+  useEffect(() => {
+    // Assume changing the sell asset means keeping the buy amount fixed.
+    updateSwapData("buy", buyAmount)
+  }, [sellAsset])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   return (
     <>
