@@ -170,7 +170,7 @@ export type AssetTransfer = {
 /**
  * Type guard to check if an AnyAsset is actually a FungibleAsset.
  */
-function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
+export function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
   return "decimals" in asset
 }
 
