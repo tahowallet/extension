@@ -20,7 +20,8 @@ import {
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
-import { useHistory } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -33,11 +34,43 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
+  const location = useLocation<
+    { symbol: string; contractAddress?: string } | undefined
+  >()
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+
+  const sellAssets = combinedData.assets
+    .map(({ asset }) => asset)
+    .filter(isFungibleAsset)
+  const buyAssets = useBackgroundSelector((state) => {
+    // Some type massaging needed to remind TypeScript how these types fit
+    // together.
+    const knownAssets: AnyAsset[] = state.assets
+    return knownAssets.filter(isFungibleAsset)
+  })
+
+  const {
+    symbol: locationAssetSymbol,
+    contractAddress: locationAssetContractAddress,
+  } = location.state ?? {}
+  const locationAsset = sellAssets.find((candidateAsset) => {
+    if (typeof locationAssetContractAddress !== "undefined") {
+      return (
+        isSmartContractFungibleAsset(candidateAsset) &&
+        normalizeEVMAddress(candidateAsset.contractAddress) ===
+          normalizeEVMAddress(locationAssetContractAddress)
+      )
+    }
+    return candidateAsset.symbol === locationAssetSymbol
+  })
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
   const [sellAsset, setSellAsset] = useState<FungibleAsset | undefined>(
-    undefined
+    locationAsset
   )
   const [sellAmount, setSellAmount] = useState("")
   const [buyAsset, setBuyAsset] = useState<FungibleAsset | undefined>(undefined)
@@ -60,20 +93,6 @@ export default function Swap(): ReactElement {
     // Clear any saved quote data when the swap page is opened
     dispatch(clearSwapQuote())
   }, [dispatch])
-
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
-
-  const sellAssets = combinedData.assets
-    .map(({ asset }) => asset)
-    .filter(isFungibleAsset)
-  const buyAssets = useBackgroundSelector((state) => {
-    // Some type massaging needed to remind TypeScript how these types fit
-    // together.
-    const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(isFungibleAsset)
-  })
 
   /* We have to watch the state to determine when the quote is fetched */
   useEffect(() => {
@@ -251,6 +270,7 @@ export default function Swap(): ReactElement {
                 amount={sellAmount}
                 assets={sellAssets}
                 defaultAsset={sellAsset}
+                disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
                 onAssetSelect={setSellAsset}
                 onAmountChange={(newAmount) => {
