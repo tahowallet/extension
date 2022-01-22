@@ -64,7 +64,11 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .map((asset) => {
             return (
               <SharedAssetItem
-                key={asset.metadata?.coinGeckoID || asset.symbol}
+                key={
+                  asset.metadata?.coinGeckoID ??
+                  asset.symbol +
+                    ("contractAddress" in asset ? asset.contractAddress : "")
+                }
                 asset={asset}
                 onClick={setSelectedAssetAndClose}
               />
