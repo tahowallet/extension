@@ -1,4 +1,10 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { Asset } from "@tallyho/tally-background/assets"
 import classNames from "classnames"
 import SharedButton from "./SharedButton"
@@ -16,6 +22,11 @@ function SelectAssetMenuContent(
 ): ReactElement {
   const { setSelectedAssetAndClose, assets } = props
   const [searchTerm, setSearchTerm] = useState("")
+  const searchInput = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    searchInput.current?.focus()
+  }, [searchInput])
 
   return (
     <>
@@ -24,6 +35,7 @@ function SelectAssetMenuContent(
         <div className="search_wrap">
           <input
             type="text"
+            ref={searchInput}
             className="search_input"
             placeholder="Search by name or address"
             spellCheck={false}
