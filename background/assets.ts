@@ -122,8 +122,8 @@ export type AnyAsset =
 /*
  * The primary type representing amounts in fungible asset transactions.
  */
-export type AnyAssetAmount = {
-  asset: AnyAsset
+export type AnyAssetAmount<T extends AnyAsset = AnyAsset> = {
+  asset: T
   amount: bigint
 }
 
