@@ -151,3 +151,17 @@ export function createBackgroundAsyncThunk<
 
   return webextActionCreator
 }
+
+/**
+ * Utility type to extract the fulfillment type of an async thunk. Useful when
+ * wanting to declare something as "the type that this thunk will return once
+ * it completes".
+ */
+export type AsyncThunkFulfillmentType<T> = T extends Pick<
+  // We don't really need the other two inferred values.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  AsyncThunk<infer Returned, infer _1, infer _2>,
+  "fulfilled"
+>
+  ? Returned
+  : never
