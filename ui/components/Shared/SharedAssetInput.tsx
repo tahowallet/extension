@@ -5,20 +5,20 @@ import React, {
   useRef,
   useState,
 } from "react"
-import { Asset } from "@tallyho/tally-background/assets"
+import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
 import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface SelectAssetMenuContentProps {
-  assets: Asset[]
-  setSelectedAssetAndClose: (asset: Asset) => void
+interface SelectAssetMenuContentProps<T extends AnyAsset> {
+  assets: T[]
+  setSelectedAssetAndClose: (asset: T) => void
 }
 
-function SelectAssetMenuContent(
-  props: SelectAssetMenuContentProps
+function SelectAssetMenuContent<T extends AnyAsset>(
+  props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { setSelectedAssetAndClose, assets } = props
   const [searchTerm, setSearchTerm] = useState("")
@@ -148,22 +148,22 @@ SelectedAssetButton.defaultProps = {
   toggleIsAssetMenuOpen: null,
 }
 
-interface SharedAssetInputProps {
+interface SharedAssetInputProps<T extends AnyAsset> {
   isTypeDestination: boolean
-  assets: Asset[]
+  assets: T[]
   label: string
-  defaultAsset: Asset
+  defaultAsset: T
   amount: string
   maxBalance: number | boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
-  onAssetSelect: (token: Asset) => void
+  onAssetSelect: (asset: T) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
 }
 
-export default function SharedAssetInput(
-  props: SharedAssetInputProps
+export default function SharedAssetInput<T extends AnyAsset>(
+  props: SharedAssetInputProps<T>
 ): ReactElement {
   const {
     isTypeDestination,
@@ -194,7 +194,7 @@ export default function SharedAssetInput(
   }, [isAssetOptionsLocked])
 
   const setSelectedAssetAndClose = useCallback(
-    (asset) => {
+    (asset: T) => {
       setSelectedAsset(asset)
       setOpenAssetMenu(false)
       onAssetSelect?.(asset)
