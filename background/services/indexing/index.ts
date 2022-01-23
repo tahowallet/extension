@@ -17,6 +17,7 @@ import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
+  mergeAssets,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
 import { getEthereumNetwork } from "../../lib/utils"
@@ -170,9 +171,11 @@ export default class IndexingService extends BaseService<Events> {
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    return baseAssets
-      .concat(customAssets)
-      .concat(networkAssetsFromLists(getEthereumNetwork(), tokenLists))
+    return mergeAssets(
+      baseAssets,
+      customAssets,
+      networkAssetsFromLists(getEthereumNetwork(), tokenLists)
+    )
   }
 
   /**

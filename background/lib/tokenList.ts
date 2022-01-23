@@ -65,31 +65,40 @@ function tokenListToFungibleAssetsForNetwork(
     })
 }
 
-/*
+/**
  * Merges the given asset lists into a single deduplicated array.
  */
-function mergeAssets<T extends FungibleAsset>(...assetLists: T[][]): T[] {
+export function mergeAssets<T extends FungibleAsset>(
+  ...assetLists: T[][]
+): T[] {
   function tokenReducer(
     seenAssetsBy: {
-      contractAddress: { [contractAddress: string]: SmartContractFungibleAsset }
+      contractAddressAndNetwork: {
+        [contractAddressAndNetwork: string]: SmartContractFungibleAsset
+      }
       symbol: { [symbol: string]: T }
     },
     asset: T
   ) {
     const updatedAssetsBy = {
-      contractAddress: { ...seenAssetsBy.contractAddress },
+      contractAddressAndNetwork: { ...seenAssetsBy.contractAddressAndNetwork },
       symbol: { ...seenAssetsBy.symbol },
     }
 
     if (isSmartContractFungibleAsset(asset)) {
-      const normalizedContractAddress = normalizeEVMAddress(
-        asset.contractAddress
-      )
+      const normalizedContractAddressAndNetwork =
+        `${normalizeEVMAddress(asset.contractAddress)}-${
+          asset.homeNetwork.chainID
+        }` ?? asset.homeNetwork.name
       const existingAsset =
-        updatedAssetsBy.contractAddress[normalizedContractAddress]
+        updatedAssetsBy.contractAddressAndNetwork[
+          normalizedContractAddressAndNetwork
+        ]
 
       if (typeof existingAsset !== "undefined") {
-        updatedAssetsBy.contractAddress[normalizedContractAddress] = {
+        updatedAssetsBy.contractAddressAndNetwork[
+          normalizedContractAddressAndNetwork
+        ] = {
           ...existingAsset,
           metadata: {
             ...existingAsset.metadata,
@@ -101,7 +110,9 @@ function mergeAssets<T extends FungibleAsset>(...assetLists: T[][]): T[] {
           },
         }
       } else {
-        updatedAssetsBy.contractAddress[normalizedContractAddress] = asset
+        updatedAssetsBy.contractAddressAndNetwork[
+          normalizedContractAddressAndNetwork
+        ] = asset
       }
     } else if (asset.symbol in updatedAssetsBy.symbol) {
       const original = updatedAssetsBy.symbol[asset.symbol]
@@ -124,14 +135,14 @@ function mergeAssets<T extends FungibleAsset>(...assetLists: T[][]): T[] {
   }
 
   const mergedAssetsBy = assetLists.flat().reduce(tokenReducer, {
-    contractAddress: {},
+    contractAddressAndNetwork: {},
     symbol: {},
   })
   const mergedAssets = Object.values(mergedAssetsBy.symbol).concat(
     // Because the inputs to the function conform to T[], if T is not a subtype
     // of SmartContractFungibleAsset, this will be an empty array. As such, we
     // can safely do this cast.
-    Object.values(mergedAssetsBy.contractAddress) as unknown as T[]
+    Object.values(mergedAssetsBy.contractAddressAndNetwork) as unknown as T[]
   )
 
   return mergedAssets.sort((a, b) =>
