@@ -108,14 +108,15 @@ function SelectAssetMenuContent<T extends AnyAsset>(
 
 interface SelectedAssetButtonProps {
   asset: Asset
+  isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
-  const { asset, toggleIsAssetMenuOpen } = props
+  const { asset, isDisabled, toggleIsAssetMenuOpen } = props
 
   return (
-    <button type="button" onClick={toggleIsAssetMenuOpen}>
+    <button type="button" disabled={isDisabled} onClick={toggleIsAssetMenuOpen}>
       <div className="asset_icon_wrap">
         <SharedAssetIcon
           logoURL={asset?.metadata?.logoURL}
@@ -134,6 +135,10 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
           font-weight: 500;
           line-height: 24px;
           text-transform: uppercase;
+        }
+        button:disabled {
+          cursor: default;
+          color: var(--green-40);
         }
         .asset_icon_wrap {
           margin-right: 8px;
@@ -156,6 +161,7 @@ interface SharedAssetInputProps<T extends AnyAsset> {
   maxBalance: number | boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
+  isDisabled?: boolean
   onAssetSelect: (asset: T) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
@@ -173,6 +179,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     maxBalance,
     isAssetOptionsLocked,
     disableDropdown,
+    isDisabled,
     onAssetSelect,
     onAmountChange,
     onSendToAddressChange,
@@ -244,7 +251,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             <div>
               {selectedAsset?.symbol ? (
                 <SelectedAssetButton
-                  isDisabled={disableDropdown}
+                  isDisabled={isDisabled || disableDropdown}
                   asset={selectedAsset}
                   toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
                 />
@@ -252,7 +259,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
                 <SharedButton
                   type="secondary"
                   size="medium"
-                  isDisabled={disableDropdown}
+                  isDisabled={isDisabled || disableDropdown}
                   onClick={toggleIsAssetMenuOpen}
                   icon="chevron"
                 >
@@ -267,6 +274,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               step="any"
               placeholder="0.0"
               min="0"
+              disabled={isDisabled}
               value={amount}
               spellCheck={false}
               onChange={(event) =>
@@ -341,6 +349,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
           input[type="number"] {
             -moz-appearance: textfield;
           }
+          .input_amount:disabled {
+            cursor: default;
+            color: var(--green-40);
+          }
           .error_message {
             color: var(--error);
             position: absolute;
@@ -365,6 +377,7 @@ SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isAssetOptionsLocked: false,
   disableDropdown: false,
+  isDisabled: false,
   assets: [{ symbol: "ETH", name: "Example Asset" }],
   defaultAsset: { symbol: "", name: "" },
   label: "",
