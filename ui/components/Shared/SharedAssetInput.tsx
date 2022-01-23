@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react"
 import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -47,7 +48,18 @@ function SelectAssetMenuContent<T extends AnyAsset>(
       <ul>
         {assets
           .filter((asset) => {
-            return asset.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+            return (
+              asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              ("contractAddress" in asset &&
+                searchTerm.startsWith("0x") &&
+                normalizeEVMAddress(asset.contractAddress).includes(
+                  // The replace handles `normalizeEVMAddress`'s
+                  // octet alignment that prefixes a `0` to a partial address
+                  // if it has an uneven number of digits.
+                  normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
+                ) &&
+                asset.contractAddress.length >= searchTerm.length)
+            )
           })
           .map((asset) => {
             return (
