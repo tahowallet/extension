@@ -82,4 +82,7 @@ export const swapQuoteJTD = {
     to: { type: "string" },
     value: { type: "string" },
   },
+  optionalProperties: {
+    from: { type: "string" },
+  },
 }
