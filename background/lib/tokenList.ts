@@ -3,6 +3,7 @@ import { TokenList } from "@uniswap/token-lists"
 import { getEthereumNetwork } from "./utils"
 import { SmartContractFungibleAsset, TokenListAndReference } from "../assets"
 import { isValidUniswapTokenListResponse } from "./validate"
+import { EVMNetwork } from "../networks"
 
 export async function fetchAndValidateTokenList(
   url: string
@@ -30,29 +31,32 @@ export async function fetchAndValidateTokenLists(
     .map((l) => (l as PromiseFulfilledResult<TokenListAndReference>).value)
 }
 
-function tokenListToFungibleAssets(
-  url: string,
-  tokenList: TokenList
+function tokenListToFungibleAssetsForNetwork(
+  network: EVMNetwork,
+  { url: tokenListURL, tokenList }: TokenListAndReference
 ): SmartContractFungibleAsset[] {
-  return tokenList.tokens.map((t) => {
-    return {
-      metadata: {
-        logoURL: t.logoURI,
-        tokenLists: [
-          {
-            url,
-            name: tokenList.name,
-            logoURL: tokenList.logoURI,
-          },
-        ],
-      },
-      name: t.name,
-      symbol: t.symbol,
-      decimals: t.decimals,
-      homeNetwork: getEthereumNetwork(),
-      contractAddress: t.address,
-    }
-  })
+  const networkChainID = Number(network.chainID)
+  const tokenListCitation = {
+    url: tokenListURL,
+    name: tokenList.name,
+    logoURL: tokenList.logoURI,
+  }
+
+  return tokenList.tokens
+    .filter(({ chainId }) => chainId === networkChainID)
+    .map((tokenMetadata) => {
+      return {
+        metadata: {
+          logoURL: tokenMetadata.logoURI,
+          tokenLists: [tokenListCitation],
+        },
+        name: tokenMetadata.name,
+        symbol: tokenMetadata.symbol,
+        decimals: tokenMetadata.decimals,
+        homeNetwork: getEthereumNetwork(),
+        contractAddress: tokenMetadata.address,
+      }
+    })
 }
 
 /*
@@ -61,13 +65,12 @@ function tokenListToFungibleAssets(
  * in.
  */
 export function networkAssetsFromLists(
+  network: EVMNetwork,
   tokenLists: TokenListAndReference[]
 ): SmartContractFungibleAsset[] {
-  const fungibleAssets = tokenLists
-    .map((listAndRef) =>
-      tokenListToFungibleAssets(listAndRef.url, listAndRef.tokenList)
-    )
-    .reduce((a, b) => a.concat(b), [])
+  const fungibleAssets = tokenLists.flatMap((tokenListAndReference) =>
+    tokenListToFungibleAssetsForNetwork(network, tokenListAndReference)
+  )
 
   function tokenReducer(
     acc: { [contractAddress: string]: SmartContractFungibleAsset },

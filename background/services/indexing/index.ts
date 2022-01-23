@@ -169,9 +169,10 @@ export default class IndexingService extends BaseService<Events> {
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
+
     return baseAssets
       .concat(customAssets)
-      .concat(networkAssetsFromLists(tokenLists))
+      .concat(networkAssetsFromLists(getEthereumNetwork(), tokenLists))
   }
 
   /**
