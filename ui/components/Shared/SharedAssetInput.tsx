@@ -6,7 +6,6 @@ import React, {
   useState,
 } from "react"
 import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
-import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
@@ -242,9 +241,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
           </>
         ) : (
           <>
-            <div className={classNames({ disable_click: disableDropdown })}>
+            <div>
               {selectedAsset?.symbol ? (
                 <SelectedAssetButton
+                  isDisabled={disableDropdown}
                   asset={selectedAsset}
                   toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
                 />
@@ -252,6 +252,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
                 <SharedButton
                   type="secondary"
                   size="medium"
+                  isDisabled={disableDropdown}
                   onClick={toggleIsAssetMenuOpen}
                   icon="chevron"
                 >
@@ -353,9 +354,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
             background-color: var(--green-95);
             margin-left: 172px;
             z-index: 1;
-          }
-          .disable_click {
-            pointer-events: none;
           }
         `}
       </style>
