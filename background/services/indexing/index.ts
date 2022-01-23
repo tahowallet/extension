@@ -406,7 +406,12 @@ export default class IndexingService extends BaseService<Events> {
         this.db
           .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
           .catch((err) =>
-            logger.error("Error saving price point", pricePoint, measuredAt)
+            logger.error(
+              "Error saving price point",
+              err,
+              pricePoint,
+              measuredAt
+            )
           )
       })
     } catch (e) {
