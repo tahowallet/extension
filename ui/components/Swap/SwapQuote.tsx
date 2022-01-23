@@ -1,60 +1,52 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { utils } from "ethers"
-import { getProvider } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 
-import { approveAndSwap } from "@tallyho/tally-background/redux-slices/0x-swap"
+import {
+  executeSwap,
+  ZrxQuote,
+} from "@tallyho/tally-background/redux-slices/0x-swap"
 import { useHistory } from "react-router-dom"
+import { FungibleAsset } from "@tallyho/tally-background/assets"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
 import SwapTransactionSettings from "./SwapTransactionSettings"
 import SwapApprovalStep from "./SwapApprovalStep"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch } from "../../hooks"
 
-export default function SwapQoute(): ReactElement {
+type Props = {
+  sellAsset: FungibleAsset
+  buyAsset: FungibleAsset
+  finalQuote: ZrxQuote
+}
+
+export default function SwapQoute({
+  sellAsset,
+  buyAsset,
+  finalQuote,
+}: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
-  const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
-    useBackgroundSelector((state) => {
-      if (state.swap.quote) {
-        return {
-          ...state.swap,
-          sellAmount: utils.formatUnits(
-            state.swap.quote.sellAmount,
-            state.swap.sellAsset?.decimals
-          ),
-          buyAmount: utils.formatUnits(
-            state.swap.quote.buyAmount,
-            state.swap.buyAsset?.decimals
-          ),
-          sources: state.swap.quote.sources.filter((source) => {
-            if (parseFloat(source.proportion) > 0) {
-              return true
-            }
-
-            return false
-          }),
-        }
+  const { sellAmount, buyAmount, sources } = {
+    sellAmount: utils.formatUnits(finalQuote.sellAmount, sellAsset.decimals),
+    buyAmount: utils.formatUnits(finalQuote.buyAmount, buyAsset.decimals),
+    sources: finalQuote.sources.filter((source) => {
+      if (parseFloat(source.proportion) > 0) {
+        return true
       }
 
-      // We should always have a quote by the time we get to this page, but just in case!
-      return {
-        ...state.swap,
-        sources: [],
-      }
-    })
+      return false
+    }),
+  }
 
   const [stepComplete, setStepComplete] = useState(-1)
 
   const history = useHistory()
 
   const handleApproveClick = useCallback(async () => {
-    // Guard against undefined quote type errors
-    if (quote) {
-      dispatch(approveAndSwap(quote))
-      history.push("/signTransaction")
-    }
-  }, [dispatch, history, quote])
+    dispatch(executeSwap(finalQuote))
+    history.push("/signTransaction")
+  }, [dispatch, history, finalQuote])
 
   return (
     <section className="center_horizontal standard_width">
@@ -73,7 +65,7 @@ export default function SwapQoute(): ReactElement {
         />
       </div>
       <span className="label label_right">
-        1 {sellAsset?.symbol} = {quote?.price} {buyAsset?.symbol}
+        1 {sellAsset.symbol} = {finalQuote.price} {buyAsset.symbol}
       </span>
       <div className="settings_wrap">
         <SwapTransactionSettings isSettingsLocked />

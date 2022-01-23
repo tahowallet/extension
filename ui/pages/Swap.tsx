@@ -1,181 +1,251 @@
-import React, { ReactElement, useEffect, useCallback, useState } from "react"
+import React, { ReactElement, useEffect, useState, useRef } from "react"
 import {
-  fetchSwapAssets,
-  fetchSwapPrices,
-  fetchSwapQuote,
-  setSwapTrade,
-  setSwapAmount,
-  selectSwappableAssets,
-  selectSwapPrice,
+  fetchSwapData,
   clearSwapQuote,
+  approveTransfer,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  AnyAsset,
+  FungibleAsset,
+  isFungibleAsset,
+  isSmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
+import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
+import logger from "@tallyho/tally-background/lib/logger"
+import { useHistory } from "react-router-dom"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
-import SwapQoute from "../components/Swap/SwapQuote"
+import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
+
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
-  const { sellAsset, buyAsset, sellAmount, buyAmount, quote } =
-    useBackgroundSelector((state) => state.swap)
+  const [sellAsset, setSellAsset] = useState<FungibleAsset | undefined>(
+    undefined
+  )
+  const [sellAmount, setSellAmount] = useState("")
+  const [buyAsset, setBuyAsset] = useState<FungibleAsset | undefined>(undefined)
+  const [buyAmount, setBuyAmount] = useState("")
+  const [needsApproval, setNeedsApproval] = useState(false)
+  const [approvalTarget, setApprovalTarget] = useState<string | undefined>(
+    undefined
+  )
 
-  // Fetch assets from the 0x API whenever the swap page is loaded
+  const [sellAmountLoading, setSellAmountLoading] = useState(false)
+  const [buyAmountLoading, setBuyAmountLoading] = useState(false)
+
+  const latestQuoteRequest = useRef<
+    Parameters<typeof fetchSwapData>[0] | undefined
+  >(undefined)
+
+  const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
+
   useEffect(() => {
-    dispatch(fetchSwapAssets())
-
-    // Clear any saved quote data when the swap page is closed
-    return () => {
-      dispatch(clearSwapQuote())
-    }
+    // Clear any saved quote data when the swap page is opened
+    dispatch(clearSwapQuote())
   }, [dispatch])
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
 
-  const sellAssets = combinedData.assets.map(({ asset }) => asset)
-  const buyAssets = useBackgroundSelector(selectSwappableAssets)
-  const buyPrice = useBackgroundSelector(selectSwapPrice)
+  const sellAssets = combinedData.assets
+    .map(({ asset }) => asset)
+    .filter(isFungibleAsset)
+  const buyAssets = useBackgroundSelector((state) => {
+    // Some type massaging needed to remind TypeScript how these types fit
+    // together.
+    const knownAssets: AnyAsset[] = state.assets
+    return knownAssets.filter(isFungibleAsset)
+  })
 
-  const getQuote = useCallback(async () => {
-    if (buyAsset && sellAsset) {
-      const quoteOptions = {
-        assets: { sellAsset, buyAsset },
-        amount: { sellAmount, buyAmount },
-      }
-
-      // TODO: Display a loading indicator while fetching the quote
-      dispatch(fetchSwapQuote(quoteOptions))
-    }
-  }, [dispatch, sellAsset, buyAsset, sellAmount, buyAmount])
-
-  // We have to watch the state to determine when the quote is fetched
+  /* We have to watch the state to determine when the quote is fetched */
   useEffect(() => {
-    if (quote) {
+    if (typeof finalQuote !== "undefined") {
       // Now open the asset menu
       setConfirmationMenu(true)
     }
-  }, [quote])
+  }, [finalQuote])
 
-  const fromAssetSelected = useCallback(
-    async (asset) => {
-      dispatch(
-        setSwapTrade({
-          sellAsset: asset,
-        })
+  const getFinalQuote = async () => {
+    // The final quote requires a previous non-final quote having been
+    // requested; this is also guarded at the button (by disabling the button).
+    if (typeof latestQuoteRequest.current === "undefined") {
+      return false
+    }
+
+    dispatch(
+      fetchSwapData({
+        ...latestQuoteRequest.current,
+        isFinal: true,
+      })
+    )
+
+    return true
+  }
+
+  const approveAsset = async () => {
+    if (typeof sellAsset === "undefined") {
+      logger.error("Attempting to approve transfer without a sell asset.")
+      return
+    }
+    if (typeof approvalTarget === "undefined") {
+      logger.error("Attempting to approve transfer without an approval target.")
+      return
+    }
+    if (!isSmartContractFungibleAsset(sellAsset)) {
+      logger.error(
+        "Attempting to approve transfer of a non-contract asset.",
+        sellAsset
       )
+      return
+    }
 
-      await dispatch(fetchSwapPrices(asset))
-    },
+    dispatch(
+      approveTransfer({
+        assetContractAddress: sellAsset.contractAddress,
+        approvalTarget,
+      })
+    )
 
-    [dispatch]
-  )
+    history.push("/signTransaction")
+  }
 
-  const toAssetSelected = useCallback(
-    (asset) => {
-      dispatch(
-        setSwapTrade({
-          buyAsset: asset,
-        })
-      )
-    },
+  const updateSwapData = async (
+    changeSource: "sell" | "buy",
+    amount: string
+  ): Promise<void> => {
+    // Swap amounts can't update unless both sell and buy assets are specified.
+    if (typeof sellAsset === "undefined" || typeof buyAsset === "undefined") {
+      return
+    }
 
-    [dispatch]
-  )
+    const quoteRequest: Parameters<typeof fetchSwapData>[0] = {
+      isFinal: false,
+      assets: { sellAsset, buyAsset },
+      amount:
+        changeSource === "sell"
+          ? { sellAmount: amount }
+          : { buyAmount: amount },
+    }
 
-  const fromAmountChanged = useCallback(
-    (amount) => {
-      const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
-      const floatValue = parseFloat(inputValue)
+    // If there's a different quote in progress, reset loading state.
+    if (latestQuoteRequest.current !== quoteRequest) {
+      setBuyAmountLoading(false)
+      setSellAmountLoading(false)
+    }
 
-      if (Number.isNaN(floatValue)) {
-        dispatch(
-          setSwapAmount({
-            sellAmount: inputValue,
-            buyAmount: "0",
-          })
-        )
-      } else {
-        dispatch(
-          setSwapAmount({
-            sellAmount: inputValue,
-            // TODO: Use a safe math library
-            buyAmount: (floatValue / parseFloat(buyPrice)).toString(),
-          })
-        )
+    if (changeSource === "sell") {
+      setBuyAmountLoading(true)
+    } else {
+      setSellAmountLoading(true)
+    }
+
+    latestQuoteRequest.current = quoteRequest
+    const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
+      fetchSwapData(quoteRequest)
+    )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapData>) ?? {
+      quote: undefined,
+      needsApproval: false,
+    }
+
+    // Only proceed if the quote we just got is the same one we were looking for.
+    if (latestQuoteRequest.current === quoteRequest) {
+      if (typeof quote === "undefined") {
+        // If there's no quote, clear loading states and abort.
+        setBuyAmountLoading(false)
+        setSellAmountLoading(false)
+        setNeedsApproval(false)
+        setApprovalTarget(undefined)
+        latestQuoteRequest.current = undefined
+
+        return
       }
-    },
 
-    [dispatch, buyPrice]
-  )
+      setNeedsApproval(quoteNeedsApproval)
+      setApprovalTarget(quote.allowanceTarget)
 
-  const toAmountChanged = useCallback(
-    (amount) => {
-      const inputValue = amount.replace(/[^0-9.]/g, "") // Allow numbers and decimals only
-      const floatValue = parseFloat(inputValue)
-
-      if (Number.isNaN(floatValue)) {
-        dispatch(
-          setSwapAmount({
-            sellAmount: "0",
-            buyAmount: inputValue,
+      if (changeSource === "sell") {
+        setBuyAmount(
+          fixedPointNumberToString({
+            amount: BigInt(quote.buyAmount),
+            decimals: buyAsset.decimals,
           })
         )
+        setBuyAmountLoading(false)
       } else {
-        dispatch(
-          setSwapAmount({
-            // TODO: Use a safe math library
-            sellAmount: (floatValue * parseFloat(buyPrice)).toString(),
-            buyAmount: inputValue,
+        setSellAmount(
+          fixedPointNumberToString({
+            amount: BigInt(quote.sellAmount),
+            decimals: sellAsset.decimals,
           })
         )
+        setSellAmountLoading(false)
       }
-    },
-
-    [dispatch, buyPrice]
-  )
+    }
+  }
 
   return (
     <>
       <CorePage>
         <SharedSlideUpMenu
-          isOpen={confirmationMenu}
+          isOpen={typeof finalQuote !== "undefined"}
           close={() => {
-            setConfirmationMenu(false)
             dispatch(clearSwapQuote())
           }}
           size="large"
         >
-          <SwapQoute />
+          {typeof sellAsset !== "undefined" &&
+          typeof buyAsset !== "undefined" &&
+          typeof finalQuote !== "undefined" ? (
+            <SwapQuote
+              sellAsset={sellAsset}
+              buyAsset={buyAsset}
+              finalQuote={finalQuote}
+            />
+          ) : (
+            <></>
+          )}
         </SharedSlideUpMenu>
         <div className="standard_width">
           <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
               <SharedAssetInput
+                amount={sellAmount}
                 assets={sellAssets}
                 defaultAsset={sellAsset}
-                onAssetSelect={fromAssetSelected}
-                onAmountChange={fromAmountChanged}
-                amount={sellAmount}
+                isDisabled={sellAmountLoading}
+                onAssetSelect={setSellAsset}
+                onAmountChange={(newAmount) => {
+                  setSellAmount(newAmount)
+                  updateSwapData("sell", newAmount)
+                }}
                 label="Swap from:"
               />
             </div>
             <div className="icon_change" />
             <div className="form_input">
               <SharedAssetInput
+                amount={buyAmount}
                 assets={buyAssets}
                 defaultAsset={buyAsset}
-                onAssetSelect={toAssetSelected}
-                onAmountChange={toAmountChanged}
-                amount={buyAmount}
+                isDisabled={buyAmountLoading}
+                onAssetSelect={setBuyAsset}
+                onAmountChange={(newAmount) => {
+                  setBuyAmount(buyAmount)
+                  updateSwapData("buy", newAmount)
+                }}
                 label="Swap to:"
               />
             </div>
@@ -183,15 +253,35 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              <SharedButton
-                type="primary"
-                size="large"
-                isDisabled={!sellAsset || !buyAsset}
-                onClick={getQuote}
-                showLoadingOnClick={!confirmationMenu}
-              >
-                Get final quote
-              </SharedButton>
+              {needsApproval ? (
+                <SharedButton
+                  type="primary"
+                  size="large"
+                  isDisabled={
+                    typeof latestQuoteRequest.current === "undefined" ||
+                    sellAmountLoading ||
+                    buyAmountLoading
+                  }
+                  onClick={approveAsset}
+                  showLoadingOnClick={!confirmationMenu}
+                >
+                  Approve asset
+                </SharedButton>
+              ) : (
+                <SharedButton
+                  type="primary"
+                  size="large"
+                  isDisabled={
+                    typeof latestQuoteRequest.current === "undefined" ||
+                    sellAmountLoading ||
+                    buyAmountLoading
+                  }
+                  onClick={getFinalQuote}
+                  showLoadingOnClick={!confirmationMenu}
+                >
+                  Get final quote
+                </SharedButton>
+              )}
             </div>
           </div>
         </div>
