@@ -4,11 +4,21 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
 import eip55 from "eip55"
 import { DeviceModelId } from "@ledgerhq/devices"
+import {
+  serialize,
+  UnsignedTransaction,
+  parse as parseRawTransaction,
+} from "@ethersproject/transactions"
+import { SignatureLike } from "ethers/node_modules/@ethersproject/bytes"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import { HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
+import { getOrCreateDB, LedgerDatabase } from "./db"
+import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { ETH } from "../../constants"
+import { getEthereumNetwork } from "../../lib/utils"
 
 enum LedgerType {
   UNKNOWN,
@@ -95,10 +105,10 @@ export default class LedgerService extends BaseService<Events> {
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
       logger.info("LedgerService::create")
-      return new this()
+      return new this(await getOrCreateDB())
     }
 
-  private constructor() {
+  private constructor(private db: LedgerDatabase) {
     super()
     logger.info("LedgerService::constructor")
   }
@@ -157,9 +167,92 @@ export default class LedgerService extends BaseService<Events> {
   ): Promise<SignedEVMTransaction> {
     requireAvailableLedger()
 
-    this.signTransaction = this.signTransaction.bind(this)
+    let transport
 
-    throw new Error("Unimplemented")
+    try {
+      transport = await TransportWebUSB.create()
+
+      const ethersTx =
+        ethersTransactionRequestFromEIP1559TransactionRequest(
+          transactionRequest
+        )
+
+      const serializedTx = serialize(ethersTx as UnsignedTransaction)
+
+      const accountData = await this.db.getAccountByAddress(address)
+      if (!accountData) {
+        throw new Error(
+          "Cannot generate signature without stored derivation path!"
+        )
+      }
+
+      const eth = new Eth(transport)
+      const signature = await eth.signTransaction(
+        accountData.path,
+        serializedTx,
+        null
+      )
+
+      const alteredSig: SignatureLike = {
+        r: signature.r,
+        s: signature.s,
+        v: parseInt(signature.v, 16),
+      }
+
+      const signedTransaction = serialize(
+        ethersTx as UnsignedTransaction,
+        alteredSig
+      )
+      const tx = parseRawTransaction(signedTransaction)
+
+      if (
+        !tx.hash ||
+        !tx.from ||
+        !tx.r ||
+        !tx.s ||
+        typeof tx.v === "undefined"
+      ) {
+        throw new Error("Transaction doesn't appear to have been signed.")
+      }
+
+      if (
+        typeof tx.maxPriorityFeePerGas === "undefined" ||
+        typeof tx.maxFeePerGas === "undefined" ||
+        tx.type !== 2
+      ) {
+        throw new Error("Can only sign EIP-1559 conforming transactions")
+      }
+
+      const signedTx: SignedEVMTransaction = {
+        hash: tx.hash,
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        input: tx.data,
+        value: tx.value.toBigInt(),
+        type: tx.type,
+        gasPrice: null,
+        maxFeePerGas: tx.maxFeePerGas.toBigInt(),
+        maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
+        gasLimit: tx.gasLimit.toBigInt(),
+        r: tx.r,
+        s: tx.s,
+        v: tx.v,
+
+        blockHash: null,
+        blockHeight: null,
+        asset: ETH,
+        network: getEthereumNetwork(),
+      }
+
+      return signedTx
+    } catch (err) {
+      // handle transport open error
+    } finally {
+      if (transport) transport.close()
+    }
+
+    throw new Error("Transaction signing is unsuccessful!")
   }
 
   async signTypedData(
