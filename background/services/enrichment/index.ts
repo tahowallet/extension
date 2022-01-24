@@ -142,7 +142,6 @@ export default class EnrichmentService extends BaseService<Events> {
   async resolveTransactionAnnotation(
     transaction:
       | AnyEVMTransaction
-      // @Reviewer - I notice that we reuse this type in a few places throughout the codebase - should we assign and name it?  If so I am not sure of the best name.
       | (Partial<EIP1559TransactionRequest> & { from: string }),
     desiredDecimals: number
   ): Promise<TransactionAnnotation | undefined> {

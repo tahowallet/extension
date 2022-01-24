@@ -654,9 +654,6 @@ export default class Main extends BaseService<never> {
           2 /* TODO desiredDecimals should be configurable */
         )
 
-        /* @Reviewer - I kept these in here rather than moving them to the event handler for `enrichedEVMTransactionSignatureRequest` because I wasn't
-        sure of the consequences of breaking the async flow of the `transactionSignatureRequest` emitter.  Not sure if this is the best way forward
-        */
         const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
           this.keyringService.emitter.off("signedTx", resolveAndClear)
           transactionConstructionSliceEmitter.off(

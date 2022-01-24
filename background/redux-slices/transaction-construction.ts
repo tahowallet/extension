@@ -13,7 +13,6 @@ import {
   EIP1559TransactionRequest,
   SignedEVMTransaction,
 } from "../networks"
-// @Reviewer is it OK to import a /services file here?
 import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
