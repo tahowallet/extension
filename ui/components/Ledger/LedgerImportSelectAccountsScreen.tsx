@@ -1,5 +1,14 @@
+import {
+  connectLedger,
+  fetchAddress,
+  fetchBalance,
+  LedgerAccountState,
+  resizeAccounts,
+  setPath,
+} from "@tallyho/tally-background/redux-slices/ledger-import"
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSelect from "../Shared/SharedSelect"
 import LedgerContinueButton from "./LedgerContinueButton"
@@ -7,62 +16,63 @@ import LedgerPanelContainer from "./LedgerPanelContainer"
 
 const addressesPerPage = 6
 
-function useFakePageData(pageIndex: number) {
-  const [addresses, setAddresses] = useState<
-    Record<number, string | undefined>
-  >({})
-  const [ethBalances, setEthBalances] = useState<
-    Record<number, string | undefined>
-  >({})
+function usePageData(pageIndex: number) {
+  const { nonce, accounts } = useBackgroundSelector(
+    (state) => state.ledgerImport
+  )
+  const dispatch = useBackgroundDispatch()
+
   const [selectedStates, setSelectedStates] = useState<
     Record<number, boolean | undefined>
   >({})
 
   const indexes: number[] = []
 
-  const firstIndex = pageIndex * addressesPerPage + 1
+  const firstIndex = pageIndex * addressesPerPage
   const lastIndex = (pageIndex + 1) * addressesPerPage
-  for (let i = firstIndex - 1; i < lastIndex; i += 1) {
+  for (let i = firstIndex; i < lastIndex; i += 1) {
     indexes.push(i)
   }
 
   useEffect(() => {
-    let nextIndex = 0
-    let nextBalanceIndex = -1
-    const interval = setInterval(() => {
-      if (Math.random() < 0.5) {
-        setAddresses((oldAddresses) => ({
-          ...oldAddresses,
-          [nextIndex]: `0xa4...D3f5`,
-        }))
-        nextIndex += 1
-      } else if (Math.random() < 0.5) {
-        const amountString = (10 ** (Math.random() * 5 - 2)).toLocaleString(
-          undefined,
-          { maximumFractionDigits: 4, minimumFractionDigits: 4 }
-        )
-        setEthBalances((oldBalances) => ({
-          ...oldBalances,
-          [nextBalanceIndex]: `${amountString} ETH`,
-        }))
-        nextBalanceIndex += 1
-      }
-    }, 500)
-
-    return () => {
-      clearInterval(interval)
+    if (accounts.length < lastIndex) {
+      dispatch(resizeAccounts(lastIndex))
     }
-  }, [])
+  }, [accounts.length, dispatch, lastIndex])
 
-  const items = indexes.map((index) => ({
-    index,
-    address: addresses[index] ?? null,
-    ethBalance: ethBalances[index] ?? null,
-    isSelected: selectedStates[index] ?? false,
-    setSelected: (selected: boolean) => {
-      setSelectedStates((states) => ({ ...states, [index]: selected }))
-    },
-  }))
+  const items = indexes.map((index) => {
+    const account = accounts[index] as LedgerAccountState | undefined
+    return {
+      index,
+      account,
+      address: account?.address ?? null,
+      ethBalance: account?.balance ?? null,
+      isSelected: selectedStates[index] ?? false,
+      setSelected: (selected: boolean) => {
+        setSelectedStates((states) => ({ ...states, [index]: selected }))
+      },
+    }
+  })
+
+  useEffect(() => {
+    const nextUnresolvedAddress = items.find((item) => item.address === null)
+    if (!nextUnresolvedAddress) return
+    const { index, account } = nextUnresolvedAddress
+    if (!account) return
+    const { path, fetchingAddress } = account
+    if (!path || fetchingAddress) return
+    dispatch(fetchAddress({ nonce, index, path }))
+  }, [accounts.length, dispatch, items, lastIndex, nonce])
+
+  useEffect(() => {
+    const nextUnresolvedBalance = items.find((item) => item.ethBalance === null)
+    if (!nextUnresolvedBalance) return
+    const { index, account } = nextUnresolvedBalance
+    if (!account) return
+    const { address, fetchingBalance } = account
+    if (!address || fetchingBalance) return
+    dispatch(fetchBalance({ index, address }))
+  }, [accounts.length, dispatch, items, lastIndex])
 
   const selectedCount = Object.values(selectedStates).filter((x) => x).length
 
@@ -75,7 +85,8 @@ function LedgerAccountList({
   onConnect: () => void
 }): ReactElement {
   const [pageIndex, setPageIndex] = useState(0)
-  const pageData = useFakePageData(pageIndex)
+
+  const pageData = usePageData(pageIndex)
 
   return (
     <>
@@ -103,10 +114,13 @@ function LedgerAccountList({
                 {address === null && <div className="address-loading" />}
                 {address !== null && (
                   <>
-                    <div className="address">{address}</div>
+                    <div className="address" title={address}>
+                      {address.slice(0, 4)}...
+                      {address.slice(address.length - 4)}
+                    </div>
                     {ethBalance === null && <div className="balance-loading" />}
                     {ethBalance !== null && (
-                      <div className="balance">{ethBalance}</div>
+                      <div className="balance">{ethBalance} ETH</div>
                     )}
                     <div className="etherscan-link-container">
                       <SharedButton
@@ -298,29 +312,43 @@ export default function LedgerImportSelectAccountsScreen({
 }: {
   onConnect: () => void
 }): ReactElement {
-  const [derivationPath, setDerivationPath] = useState<string | null>(null)
+  const dispatch = useBackgroundDispatch()
+  const { nonce, connected, parentPath } = useBackgroundSelector(
+    (state) => state.ledgerImport
+  )
+  useEffect(() => {
+    dispatch(connectLedger({ nonce }))
+  }, [dispatch, nonce])
 
   return (
     <>
-      <LedgerPanelContainer
-        indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
-        heading="Select ledger accounts"
-        subHeading="You can select as many as you want"
-      >
-        <div className="derivation-path">
-          <SharedSelect
-            options={[
-              { label: `m'/44'/60'/0'`, value: `m'/44'/60'/0'` },
-              { label: `m'/44'/60'`, value: `m'/44'/60'` },
-            ]}
-            placeholder="Select derivation path"
-            onChange={(value) => {
-              setDerivationPath(value)
-            }}
-          />
-        </div>
-        {derivationPath !== null && <LedgerAccountList onConnect={onConnect} />}
-      </LedgerPanelContainer>
+      {!connected && (
+        <LedgerPanelContainer
+          indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
+          heading="Connecting..."
+        />
+      )}
+      {connected && (
+        <LedgerPanelContainer
+          indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
+          heading="Select ledger accounts"
+          subHeading="You can select as many as you want"
+        >
+          <div className="derivation-path">
+            <SharedSelect
+              options={[
+                { label: `m'/44'/60'/0'`, value: `m'/44'/60'/0'` },
+                { label: `m'/44'/60'`, value: `m'/44'/60'` },
+              ]}
+              placeholder="Select derivation path"
+              onChange={(value) => {
+                dispatch(setPath(value))
+              }}
+            />
+          </div>
+          {parentPath !== null && <LedgerAccountList onConnect={onConnect} />}
+        </LedgerPanelContainer>
+      )}
       <style jsx>{`
         .derivation-path {
           margin: 0.5rem 0;

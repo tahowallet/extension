@@ -1,14 +1,21 @@
-import React, { ReactElement, useState } from "react"
-import LedgerPrepareScreen from "../../components/Ledger/LedgerPrepareScreen"
+import { ledgerImportReset } from "@tallyho/tally-background/redux-slices/ledger-import"
+import React, { ReactElement, useEffect, useState } from "react"
 import LedgerConnectPopupScreen from "../../components/Ledger/LedgerConnectPopupScreen"
-import LedgerImportSelectAccountsScreen from "../../components/Ledger/LedgerImportSelectAccountsScreen"
 import LedgerImportDoneScreen from "../../components/Ledger/LedgerImportDoneScreen"
+import LedgerImportSelectAccountsScreen from "../../components/Ledger/LedgerImportSelectAccountsScreen"
+import LedgerPrepareScreen from "../../components/Ledger/LedgerPrepareScreen"
 import TabContainer from "../../components/Tab/TabContainer"
+import { useBackgroundDispatch } from "../../hooks"
 
 export default function Ledger(): ReactElement {
   const [connecting, setConnecting] = useState(false)
   const [connected, setConnected] = useState(false)
   const [done, setDone] = useState(false)
+
+  const dispatch = useBackgroundDispatch()
+  useEffect(() => {
+    dispatch(ledgerImportReset())
+  }, [dispatch])
 
   return (
     <TabContainer>
