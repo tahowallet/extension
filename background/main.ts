@@ -18,6 +18,7 @@ import {
   ProviderBridgeService,
   ServiceCreatorFunction,
   LedgerService,
+  SigningService,
 } from "./services"
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
@@ -244,6 +245,8 @@ export default class Main extends BaseService<never> {
     )
     const ledgerService = LedgerService.create()
 
+    const signingService = SigningService.create(keyringService, ledgerService)
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -279,7 +282,8 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
-      await ledgerService
+      await ledgerService,
+      await signingService
     )
   }
 
@@ -331,7 +335,12 @@ export default class Main extends BaseService<never> {
     /**
      * A promise TODO
      */
-    private ledgerService: LedgerService
+    private ledgerService: LedgerService,
+
+    /**
+     * A promise TODO
+     */
+    private signingService: SigningService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -366,6 +375,7 @@ export default class Main extends BaseService<never> {
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
       this.ledgerService.startService(),
+      this.signingService.startService(),
     ])
   }
 
@@ -380,6 +390,7 @@ export default class Main extends BaseService<never> {
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
       this.ledgerService.stopService(),
+      this.signingService.stopService(),
     ])
 
     await super.internalStopService()
