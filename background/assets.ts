@@ -122,8 +122,8 @@ export type AnyAsset =
 /*
  * The primary type representing amounts in fungible asset transactions.
  */
-export type AnyAssetAmount = {
-  asset: AnyAsset
+export type AnyAssetAmount<T extends AnyAsset = AnyAsset> = {
+  asset: T
   amount: bigint
 }
 
@@ -170,7 +170,7 @@ export type AssetTransfer = {
 /**
  * Type guard to check if an AnyAsset is actually a FungibleAsset.
  */
-function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
+export function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
   return "decimals" in asset
 }
 
