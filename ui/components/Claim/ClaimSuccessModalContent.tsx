@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import SharedButton from "../Shared/SharedButton"
 
-export default function SuccessModalContent(): ReactElement {
+export default function ClaimSuccessModalContent(): ReactElement {
   return (
     <div className="wrap">
       <div className="header_image" />

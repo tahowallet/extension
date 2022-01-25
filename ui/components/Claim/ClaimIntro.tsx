@@ -1,11 +1,11 @@
 import React, { ReactElement } from "react"
-import AmountBanner from "./AmountBanner"
+import ClaimAmountBanner from "./ClaimAmountBanner"
 
-export default function Intro(): ReactElement {
+export default function ClaimIntro(): ReactElement {
   return (
     <div className="claim standard_width">
       <div className="title">You’re about to claim</div>
-      <AmountBanner />
+      <ClaimAmountBanner />
       <p className="list_title">Here are your next steps:</p>
       <div className="content">
         <ul>

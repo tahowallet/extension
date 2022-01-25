@@ -2,14 +2,14 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
-import Intro from "../../components/Claim/Intro"
-import Referral from "../../components/Claim/Referral"
-import ReferralByUser from "../../components/Claim/ReferralByUser"
-import InfoModal from "../../components/Claim/InfoModal"
-import Delegate from "../../components/Claim/Delegate"
-import Review from "../../components/Claim/Review"
+import ClaimIntro from "../../components/Claim/ClaimIntro"
+import ClaimReferral from "../../components/Claim/ClaimReferral"
+import ClaimReferralByUser from "../../components/Claim/ClaimReferralByUser"
+import ClaimInfoModal from "../../components/Shared/SharedInfoModal"
+import ClaimDelegate from "../../components/Claim/ClaimDelegate"
+import ClaimReview from "../../components/Claim/ClaimReview"
 import ClaimFooter from "../../components/Claim/ClaimFooter"
-import SuccessModalContent from "../../components/Claim/SuccessModalContent"
+import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalContent"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 
 export default function Eligible(): ReactElement {
@@ -38,7 +38,7 @@ export default function Eligible(): ReactElement {
   return (
     <div className="wrap">
       {infoModalVisible ? (
-        <InfoModal setModalVisible={setInfoModalVisible} />
+        <ClaimInfoModal setModalVisible={setInfoModalVisible} />
       ) : null}
 
       <SharedSlideUpMenu
@@ -48,7 +48,7 @@ export default function Eligible(): ReactElement {
         }}
         size="large"
       >
-        <SuccessModalContent />
+        <ClaimSuccessModalContent />
       </SharedSlideUpMenu>
 
       <div
@@ -60,11 +60,11 @@ export default function Eligible(): ReactElement {
           className="steps-container"
           style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
         >
-          <Intro />
-          <Referral />
-          <ReferralByUser />
-          <Delegate />
-          <Review />
+          <ClaimIntro />
+          <ClaimReferral />
+          <ClaimReferralByUser />
+          <ClaimDelegate />
+          <ClaimReview />
         </div>
         <footer>
           <ClaimFooter

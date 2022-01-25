@@ -1,18 +1,15 @@
 import React, { ReactElement } from "react"
 import SharedButton from "../Shared/SharedButton"
-import AmountBanner from "./AmountBanner"
+import AmountBanner from "./ClaimAmountBanner"
+import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
 
-export default function Review(): ReactElement {
+export default function ClaimReview(): ReactElement {
   return (
     <div className="claim standard_width">
       <div className="title">Review claim</div>
       <div className="description_review">You will receive</div>
       <AmountBanner />
-      <div className="description_review">Refered by</div>
-      <div className="content">
-        <div className="icon" />
-        OlympusDAO
-      </div>
+      <ClaimDelegateChoiceProfile name="OlympusDAO" />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
         <div className="icon" />

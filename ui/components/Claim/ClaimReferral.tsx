@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import AmountBanner from "./AmountBanner"
+import ClaimAmountBanner from "./ClaimAmountBanner"
 
 function DAOButton() {
   return (
@@ -41,10 +41,10 @@ function DAOButton() {
   )
 }
 
-export default function Referral(): ReactElement {
+export default function ClaimReferral(): ReactElement {
   return (
     <div className="claim standard_width">
-      <AmountBanner />
+      <ClaimAmountBanner />
       <div className="title">
         Get a bonus of <div className="highlight">463</div> TALLY!
       </div>

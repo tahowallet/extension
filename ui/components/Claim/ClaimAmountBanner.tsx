@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 
-export default function AmountBanner(): ReactElement {
+export default function ClaimAmountBanner(): ReactElement {
   return (
     <div className="wrap">
       <div className="banner">
