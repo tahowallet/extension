@@ -20,7 +20,7 @@ type Props = {
   finalQuote: ZrxQuote
 }
 
-export default function SwapQoute({
+export default function SwapQuote({
   sellAsset,
   buyAsset,
   finalQuote,
@@ -93,7 +93,10 @@ export default function SwapQoute({
             <span className="top_label label">Exchange route</span>
 
             {sources.map((source) => (
-              <div className="exchange_content standard_width">
+              <div
+                className="exchange_content standard_width"
+                key={source.name}
+              >
                 <div className="left">
                   {source.name.includes("Uniswap") && (
                     <span className="icon_uniswap" />
