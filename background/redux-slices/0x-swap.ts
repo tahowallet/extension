@@ -3,10 +3,7 @@ import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import {
-  SmartContractFungibleAsset,
-  isSmartContractFungibleAsset,
-} from "../assets"
+import { SmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
 import { isValidSwapQuoteResponse, ValidatedType } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
@@ -113,9 +110,13 @@ export const fetchSwapData = createBackgroundAsyncThunk(
     const buyToken = assets.buyAsset.contractAddress
 
     // Depending on whether the set amount is buy or sell, request the trade.
+    // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
+    // firm quotes, which the Tally UI calls "final" quotes that the user
+    // intends to fill.
     const tradeField = "buyAmount" in amount ? "buyAmount" : "sellAmount"
     const apiData = await fetchJson(
-      `https://api.0x.org/swap/v1/quote?` +
+      `https://api.0x.org/swap/v1/` +
+        `${isFinal ? "quote" : "price"}?` +
         `sellToken=${sellToken}&` +
         `buyToken=${buyToken}&` +
         `${tradeField}=${tradeAmount}` +
@@ -129,7 +130,6 @@ export const fetchSwapData = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
-      logger.log("Booyak")
       return undefined
     }
 
