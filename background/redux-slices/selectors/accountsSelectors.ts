@@ -207,23 +207,20 @@ export const selectAccountTotalsByCategory = createSelector(
   getAssetsState,
   selectSigningAddresses,
   (accounts, assets, signingAddresses): CategorizedAccountTotals => {
+    // TODO: here
     return Object.entries(accounts.accountsData)
       .map(([address, accountData]) => {
         const shortenedAddress = truncateAddress(address)
 
-        const existingAccountType =
-          accountData === "loading" ? undefined : accountData.accountType
-        const resolvedAccountType =
-          existingAccountType ?? // prefer cached info
-          signingAddresses.includes(address)
-            ? AccountType.Imported // all signing addresses are imported for now
-            : AccountType.ReadOnly
+        const accountType = signingAddresses.includes(address)
+          ? AccountType.Imported // all signing addresses are imported for now
+          : AccountType.ReadOnly
 
         if (accountData === "loading") {
           return {
             address,
             shortenedAddress,
-            accountType: resolvedAccountType,
+            accountType,
           }
         }
 
@@ -258,7 +255,7 @@ export const selectAccountTotalsByCategory = createSelector(
         return {
           address,
           shortenedAddress,
-          accountType: resolvedAccountType,
+          accountType,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(

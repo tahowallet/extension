@@ -33,7 +33,6 @@ const availableDefaultNames = [
 type AccountData = {
   address: HexString
   network: Network
-  accountType: AccountType | undefined
   balances: {
     [assetSymbol: string]: AccountBalance
   }
@@ -109,7 +108,6 @@ function newAccountData(
   return {
     address,
     network,
-    accountType: undefined,
     balances: {},
     ens: {},
     defaultName: defaultAccountName,
