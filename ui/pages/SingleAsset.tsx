@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
-  selectIsCurrentAccountSigner,
+  selectCurrentAccountSigningMethod,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   HIDE_SEND_BUTTON,
@@ -21,8 +21,8 @@ export default function SingleAsset(): ReactElement {
   const location = useLocation<{ symbol: string; contractAddress?: string }>()
   const { symbol, contractAddress } = location.state
 
-  const isCurrentAccountSigner = useBackgroundSelector(
-    selectIsCurrentAccountSigner
+  const currentAccountSigningMethod = useBackgroundSelector(
+    selectCurrentAccountSigningMethod
   )
 
   const filteredActivities = useBackgroundSelector((state) =>
@@ -101,7 +101,7 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {isCurrentAccountSigner ? (
+            {currentAccountSigningMethod ? (
               <>
                 {!HIDE_SEND_BUTTON && symbol === "ETH" && (
                   <SharedButton
