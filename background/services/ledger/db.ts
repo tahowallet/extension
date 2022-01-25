@@ -14,7 +14,7 @@ export class LedgerDatabase extends Dexie {
     super("tally/ledgers")
 
     this.version(1).stores({
-      ledgers: "&address",
+      accounts: "&address",
     })
   }
 
