@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from "react"
-import AmountBanner from "./AmountBanner"
+import ClaimAmountBanner from "./ClaimAmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
@@ -26,12 +26,12 @@ const delegates = [
     address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
   },
 ]
-export default function Delegate(): ReactElement {
+export default function ClaimDelegate(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
     <div>
-      <AmountBanner />
+      <ClaimAmountBanner />
       <div className="claim standard_width">
         <div className="title">Choose a delegate!</div>
         <div className="description">
@@ -39,7 +39,6 @@ export default function Delegate(): ReactElement {
           DAO voting.
         </div>
         <div className="switcher_wrap">
-          {" "}
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
             panelNumber={panelNumber}
