@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork, NameNetwork } from "../accounts"
 import { AnyEVMBlock, Network } from "../networks"
-import { AnyAssetAmount } from "../assets"
+import { AnyAsset, AnyAssetAmount } from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
@@ -17,6 +17,7 @@ import { DomainName, HexString, URI } from "../types"
 export const enum AccountType {
   ReadOnly = "read-only",
   Imported = "imported",
+  Ledger = "ledger",
 }
 
 const availableDefaultNames = [
@@ -33,7 +34,6 @@ const availableDefaultNames = [
 type AccountData = {
   address: HexString
   network: Network
-  accountType: AccountType | undefined
   balances: {
     [assetSymbol: string]: AccountBalance
   }
@@ -66,9 +66,10 @@ export type CombinedAccountData = {
  * An asset amount including localized and numeric main currency and decimal
  * equivalents, where applicable.
  */
-export type CompleteAssetAmount = AnyAssetAmount &
-  AssetMainCurrencyAmount &
-  AssetDecimalAmount
+export type CompleteAssetAmount<
+  E extends AnyAsset = AnyAsset,
+  T extends AnyAssetAmount<E> = AnyAssetAmount<E>
+> = T & AssetMainCurrencyAmount & AssetDecimalAmount
 
 export const initialState = {
   accountsData: {},
@@ -108,7 +109,6 @@ function newAccountData(
   return {
     address,
     network,
-    accountType: undefined,
     balances: {},
     ens: {},
     defaultName: defaultAccountName,

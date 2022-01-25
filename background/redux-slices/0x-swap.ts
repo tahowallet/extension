@@ -1,8 +1,12 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
-import { utils } from "ethers"
+import { BigNumber, ethers, utils } from "ethers"
 import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
 
+import {
+  TransactionRequest,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider"
 import { createBackgroundAsyncThunk } from "./utils"
 import { Asset, FungibleAsset, isSmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
@@ -11,6 +15,8 @@ import {
   isValidSwapPriceResponse,
   isValidSwapQuoteResponse,
 } from "../lib/validate"
+import { getProvider } from "./utils/contract-utils"
+import { ERC20_ABI } from "../lib/erc20"
 
 interface PartialSwapAssets {
   sellAsset?: FungibleAsset
@@ -158,10 +164,87 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     logger.warn(
       "Swap quote API call didn't validate, did the 0x API change?",
       apiData,
-      isValidSwapPriceResponse.errors
+      isValidSwapQuoteResponse.errors
     )
 
     return undefined
+  }
+)
+
+export const approveAndSwap = createBackgroundAsyncThunk(
+  "0x-swap/approveAndSwap",
+  async (quote: ZrxQuote) => {
+    const provider = getProvider()
+    const signer = provider.getSigner()
+
+    // Check if we have to approve the asset we want to swap.
+    const assetContract = new ethers.Contract(
+      quote.sellTokenAddress,
+      ERC20_ABI,
+      signer
+    )
+
+    const pendingSignedRawTransactions: Promise<string>[] = []
+
+    const existingAllowance: BigNumber =
+      await assetContract.callStatic.allowance(
+        await signer.getAddress(),
+        quote.allowanceTarget
+      )
+
+    logger.log("here's our existing allowance!", existingAllowance)
+
+    if (existingAllowance.lt(quote.sellAmount)) {
+      const approvalTransactionData =
+        await assetContract.populateTransaction.approve(
+          quote.allowanceTarget,
+          ethers.constants.MaxUint256.sub(1)
+        )
+
+      logger.log("Populated transaction data", approvalTransactionData)
+
+      pendingSignedRawTransactions.push(
+        signer.signTransaction(approvalTransactionData)
+      )
+    }
+
+    logger.log("send that transaction!", quote)
+
+    pendingSignedRawTransactions.push(
+      signer.signTransaction({
+        // Missing properties used by the normal transaction construction function - from, nonce, gasLimit, maxFeePerGas, maxPriorityFeePerGas
+        // allowanceTarget: quote.allowanceTarget,
+        // buyAmount: quote.buyAmount,
+        // buyTokenAddress: quote.buyTokenAddress,
+        // buyTokenToEthRate: quote.buyTokenToEthRate,
+        chainId: quote.chainId,
+        data: quote.data,
+        // estimatedGas: quote.estimatedGas,
+        // gas: quote.gas,
+        gasPrice: quote.gasPrice,
+        // guaranteedPrice: quote.guaranteedPrice,
+        // minimumProtocolFee: quote.minimumProtocolFee,
+        // price: quote.price,
+        // protocolFee: quote.protocolFee,
+        // sellAmount: quote.sellAmount,
+        // sellTokenAddress: quote.sellTokenAddress,
+        // sellTokenToEthRate: quote.sellTokenToEthRate,
+        to: quote.to,
+        value: quote.value,
+        type: 1 as const,
+      })
+    )
+
+    const signedRawTransactions = await Promise.all(
+      pendingSignedRawTransactions
+    )
+
+    // Send all at once.
+    await Promise.all(
+      signedRawTransactions.map((rawTransaction) =>
+        provider.sendTransaction(rawTransaction)
+      )
+    )
   }
 )
 

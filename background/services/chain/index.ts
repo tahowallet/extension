@@ -5,6 +5,7 @@ import {
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
+import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString } from "../../types"
@@ -36,7 +37,7 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
-import { getEthereumNetwork } from "../../lib/utils"
+import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -110,6 +111,16 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork
     provider: AlchemyWebSocketProvider
   }[]
+
+  /**
+   * For each chain id, track an address's last seen nonce. The tracked nonce
+   * should generally not be allocated to a new transaction, nor should any
+   * nonces that precede it, unless the intent is deliberately to replace an
+   * unconfirmed transaction sharing the same nonce.
+   */
+  private evmChainLastSeenNoncesByNormalizedAddress: {
+    [chainID: string]: { [normalizedAddress: string]: number }
+  } = {}
 
   /**
    * FIFO queues of transaction hashes per network that should be retrieved and cached.
@@ -209,6 +220,163 @@ export default class ChainService extends BaseService<Events> {
         )
         .concat([])
     )
+  }
+
+  /**
+   * Populates the provided partial EIP1559 transaction request with all fields
+   * except the nonce. This leaves the transaction ready for user review, and
+   * the nonce ready to be filled in immediately prior to signing to minimize the
+   * likelihood for nonce reuse.
+   *
+   * Note that if the partial request already has a defined nonce, it is not
+   * cleared.
+   */
+  async populatePartialEVMTransactionRequest(
+    network: EVMNetwork,
+    partialRequest: Partial<EIP1559TransactionRequest> & { from: string }
+  ): Promise<{
+    transactionRequest: EIP1559TransactionRequest
+    gasEstimationError: string | undefined
+  }> {
+    // Basic transaction construction based on the provided options, with extra data from the chain service
+    const transactionRequest = {
+      from: partialRequest.from,
+      to: partialRequest.to,
+      value: partialRequest.value ?? 0n,
+      gasLimit: partialRequest.gasLimit ?? 0n,
+      maxFeePerGas: partialRequest.maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: partialRequest.maxPriorityFeePerGas ?? 0n,
+      input: partialRequest.input ?? null,
+      type: 2 as const,
+      chainID: network.chainID,
+      nonce: partialRequest.nonce,
+    }
+
+    // Always estimate gas to decide whether the transaction will likely fail.
+    let estimatedGasLimit: bigint | undefined
+    let gasEstimationError: string | undefined
+    try {
+      estimatedGasLimit = await this.estimateGasLimit(
+        network,
+        transactionRequest
+      )
+    } catch (error) {
+      // Try to identify unpredictable gas errors to bubble that information
+      // out.
+      if (error instanceof Error) {
+        // Ethers does some heavily loose typing around errors to carry
+        // arbitrary info without subclassing Error, so an any cast is needed.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyError: any = error
+
+        if (
+          "code" in anyError &&
+          anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
+        ) {
+          gasEstimationError = anyError.error ?? "unknown transaction error"
+        }
+      }
+    }
+
+    // We use the estimate as the actual limit only if user did not specify the
+    // gas explicitly or if it was set below the minimum network-allowed value.
+    if (
+      typeof estimatedGasLimit !== "undefined" &&
+      (typeof partialRequest.gasLimit === "undefined" ||
+        partialRequest.gasLimit < 21000n)
+    ) {
+      transactionRequest.gasLimit = estimatedGasLimit
+    }
+
+    return { transactionRequest, gasEstimationError }
+  }
+
+  /**
+   * Populates the nonce for the passed EIP1559TransactionRequest, provided
+   * that it is not yet populated. This process generates a new nonce based on
+   * the known on-chain nonce state of the service, attempting to ensure that
+   * the nonce will be unique and an increase by 1 over any other confirmed or
+   * pending nonces in the mempool.
+   *
+   * Returns the transaction request with a guaranteed-defined nonce, suitable
+   * for signing by a signer.
+   */
+  async populateEVMTransactionNonce(
+    transactionRequest: EIP1559TransactionRequest
+  ): Promise<EIP1559TransactionRequest & { nonce: number }> {
+    if (typeof transactionRequest.nonce !== "undefined") {
+      // TS undefined checks don't narrow the containing object's type, so we
+      // have to cast `as` here.
+      return transactionRequest as EIP1559TransactionRequest & { nonce: number }
+    }
+
+    const { chainID } = transactionRequest
+    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
+    // Lazily look up the network count, if needed. Note that the assumption
+    // here is that all nonces for this address are increasing linearly
+    // and continuously; if the address has a pending transaction floating
+    // around with a nonce that is not an increase by one over previous
+    // transactions, this approach will allocate more nonces that won't mine.
+    // FIXME Double-check the getTransactionCount-based nonce to make sure
+    // FIXME using its precedent would result in a replacement transaction
+    // FIXME error or a nonce reuse error.
+    // TODO Deal with multi-network.
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+      normalizedAddress
+    ] ??=
+      (await this.pollingProviders.ethereum.getTransactionCount(
+        transactionRequest.from,
+        "latest"
+      )) - 1
+
+    // Allocate a new nonce by incrementing the last seen one.
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+      normalizedAddress
+    ] += 1
+    const knownNextNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    return {
+      ...transactionRequest,
+      nonce: knownNextNonce,
+    }
+  }
+
+  /**
+   * Releases the specified nonce for the given network and address. This
+   * updates internal service state to allow that nonce to be reused. In cases
+   * where multiple nonces were seen in a row, this will make internally
+   * available for reuse all intervening nonces.
+   */
+  releaseEVMTransactionNonce(
+    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+  ): void {
+    const { chainID, nonce } = transactionRequest
+    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+    const lastSeenNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    // TODO Currently this assumes that the only place this nonce could have
+    // TODO been used is this service; however, another wallet or service
+    // TODO could have broadcast a transaction with this same nonce, in which
+    // TODO case the nonce release shouldn't take effect! This should be a
+    // TODO relatively rare edge case, but we should handle it at some point.
+    if (nonce === lastSeenNonce) {
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+        normalizedAddress
+      ] -= 1
+    } else if (nonce < lastSeenNonce) {
+      // If the nonce we're releasing is below the latest allocated nonce,
+      // release all intervening nonces. This risks transaction replacement
+      // issues, but ensures that we don't start allocating nonces that will
+      // never mine (because they will all be higher than the
+      // now-released-and-therefore-never-broadcast nonce).
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+        normalizedAddress
+      ] = lastSeenNonce - 1
+    }
   }
 
   async getAccountsToTrack(): Promise<AddressNetwork[]> {
@@ -707,14 +875,33 @@ export default class ChainService extends BaseService<Events> {
         // TODO use proper provider string
         // handle incoming transactions for an account
         try {
-          await this.saveTransaction(
-            transactionFromAlchemyWebsocketTransaction(
-              result,
-              ETH,
-              getEthereumNetwork()
-            ),
-            "alchemy"
+          const transaction = transactionFromAlchemyWebsocketTransaction(
+            result,
+            ETH,
+            getEthereumNetwork()
           )
+
+          const normalizedFromAddress = normalizeEVMAddress(transaction.from)
+
+          // If this is an EVM chain, we're tracking the from address's
+          // nonce, and the pending transaction has a higher nonce, update our
+          // view of it. This helps reduce the number of times when a
+          // transaction submitted outside of this wallet causes this wallet to
+          // produce bad transactions with reused nonces.
+          if (
+            typeof addressNetwork.network.chainID !== "undefined" &&
+            typeof this.evmChainLastSeenNoncesByNormalizedAddress[
+              addressNetwork.network.chainID
+            ]?.[normalizedFromAddress] !== "undefined" &&
+            this.evmChainLastSeenNoncesByNormalizedAddress[
+              addressNetwork.network.chainID
+            ]?.[normalizedFromAddress] <= transaction.nonce
+          ) {
+            this.evmChainLastSeenNoncesByNormalizedAddress[
+              addressNetwork.network.chainID
+            ][normalizedFromAddress] = transaction.nonce + 1
+          }
+          await this.saveTransaction(transaction, "alchemy")
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }
