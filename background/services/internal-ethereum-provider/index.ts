@@ -19,6 +19,10 @@ import {
   ethersTransactionFromSignedTransaction,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
+import {
+  internalProvider,
+  internalProviderPort,
+} from "../../redux-slices/utils/contract-utils"
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -52,31 +56,27 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ) {
     super()
 
-    browser.runtime.onConnect.addListener(async (port) => {
-      if (port.name === INTERNAL_PORT_NAME) {
-        port.onMessage.addListener(async (event) => {
-          logger.log(`internal: request payload: ${JSON.stringify(event)}`)
-          try {
-            const response = {
-              id: event.id,
-              result: await this.routeSafeRPCRequest(
-                event.request.method,
-                event.request.params
-              ),
-            }
-            logger.log("internal response:", response)
+    internalProviderPort.emitter.on("message", async (event) => {
+      logger.log(`internal: request payload: ${JSON.stringify(event)}`)
+      try {
+        const response = {
+          id: event.id,
+          result: await this.routeSafeRPCRequest(
+            event.request.method,
+            event.request.params
+          ),
+        }
+        logger.log("internal response:", response)
 
-            port.postMessage(response)
-          } catch (error) {
-            logger.log("error processing request", event.id, error)
+        internalProviderPort.postResponse(response)
+      } catch (error) {
+        logger.log("error processing request", event.id, error)
 
-            port.postMessage({
-              id: event.id,
-              result: new EIP1193Error(
-                EIP1193_ERROR_CODES.userRejectedRequest
-              ).toJSON(),
-            })
-          }
+        internalProviderPort.postResponse({
+          id: event.id,
+          result: new EIP1193Error(
+            EIP1193_ERROR_CODES.userRejectedRequest
+          ).toJSON(),
         })
       }
     })

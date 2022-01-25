@@ -13,7 +13,6 @@ import {
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -97,7 +96,11 @@ export default function SignTransaction({
       }
 
       // Request broadcast if not dApp...
-      history.push("/singleAsset", { symbol: assetSymbol })
+      if (typeof assetSymbol !== "undefined") {
+        history.push("/singleAsset", { symbol: assetSymbol })
+      } else {
+        history.goBack()
+      }
     }
   }, [
     areKeyringsUnlocked,
@@ -231,7 +234,7 @@ export default function SignTransaction({
         >
           Reject
         </SharedButton>
-        {signerAccountTotal.accountType === AccountType.Imported ? (
+        {signerAccountTotal.signingMethod ? (
           <SharedButton
             type="primary"
             iconSize="large"

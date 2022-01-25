@@ -11,7 +11,7 @@ export const swapAssetsJTD = {
       },
     },
   },
-}
+} as const
 
 export const swapPriceJTD = {
   properties: {
@@ -27,7 +27,7 @@ export const swapPriceJTD = {
     perPage: { type: "uint32" },
     total: { type: "uint32" },
   },
-}
+} as const
 
 export const swapQuoteJTD = {
   properties: {
@@ -53,6 +53,17 @@ export const swapQuoteJTD = {
           takerToken: { type: "string" },
           type: { type: "uint32" },
         },
+        optionalProperties: {
+          fillData: {
+            properties: {
+              router: { type: "string" },
+            },
+            optionalProperties: {
+              uniswapPath: { type: "string" },
+            },
+            additionalProperties: true,
+          },
+        },
       },
     },
     price: { type: "string" },
@@ -71,4 +82,7 @@ export const swapQuoteJTD = {
     to: { type: "string" },
     value: { type: "string" },
   },
-}
+  optionalProperties: {
+    from: { type: "string" },
+  },
+} as const
