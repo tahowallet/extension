@@ -52,8 +52,6 @@ export default function SignTransaction({
 }): ReactElement {
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
-
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
@@ -81,6 +79,10 @@ export default function SignTransaction({
     typeof transactionDetails === "undefined"
       ? undefined
       : getAccountTotal(state, transactionDetails.from)
+  )
+
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(
+    signerAccountTotal?.signingMethod?.type === "keyring"
   )
 
   const [gasLimit, setGasLimit] = useState("")
