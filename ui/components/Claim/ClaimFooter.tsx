@@ -1,5 +1,6 @@
 import React, { Dispatch, ReactElement, SetStateAction } from "react"
 import SharedButton from "../Shared/SharedButton"
+import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
 
 interface ClaimFooterProps {
   step: number
@@ -12,21 +13,23 @@ export default function ClaimFooter({
   setStep,
   advanceStep,
 }: ClaimFooterProps): ReactElement {
-  const buttonText = ["Get started", "Continue", "Continue", "Claim"]
+  const buttonText = [
+    "Get started",
+    "Continue",
+    "Continue",
+    "Continue",
+    "Claim",
+  ]
   return (
     <footer>
       <div className="steps">
-        {new Array(4).fill(null).map((el, index) => {
-          return (
-            <button
-              type="button"
-              aria-label="Change step"
-              onClick={() => setStep(index + 1)}
-              className={step === index + 1 ? "active" : "inactive"}
-            />
-          )
-        })}
+        <SharedProgressIndicator
+          activeStep={step}
+          onProgressStepClicked={() => setStep(step + 1)}
+          numberOfSteps={buttonText.length}
+        />
       </div>
+
       <SharedButton type="primary" size="medium" onClick={advanceStep}>
         {buttonText[step - 1]}
       </SharedButton>
