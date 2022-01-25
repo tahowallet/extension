@@ -9,6 +9,8 @@ import {
   HIDE_SEND_BUTTON,
   HIDE_SWAP,
 } from "@tallyho/tally-background/features/features"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { isSmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -17,7 +19,7 @@ import SharedBackButton from "../components/Shared/SharedBackButton"
 
 export default function SingleAsset(): ReactElement {
   const location = useLocation<{ symbol: string; contractAddress?: string }>()
-  const { symbol } = location.state
+  const { symbol, contractAddress } = location.state
 
   const currentAccountSigningMethod = useBackgroundSelector(
     selectCurrentAccountSigningMethod
@@ -27,8 +29,8 @@ export default function SingleAsset(): ReactElement {
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
       (activity) => {
         if (
-          typeof location.state.contractAddress !== "undefined" &&
-          location.state.contractAddress === activity.to
+          typeof contractAddress !== "undefined" &&
+          contractAddress === activity.to
         ) {
           return true
         }
@@ -58,9 +60,16 @@ export default function SingleAsset(): ReactElement {
         return undefined
       }
 
-      return balances.assetAmounts.find(
-        (assetAmount) => assetAmount.asset.symbol === symbol
-      )
+      return balances.assetAmounts.find(({ asset: candidateAsset }) => {
+        if (typeof contractAddress !== "undefined") {
+          return (
+            isSmartContractFungibleAsset(candidateAsset) &&
+            normalizeEVMAddress(candidateAsset.contractAddress) ===
+              normalizeEVMAddress(contractAddress)
+          )
+        }
+        return candidateAsset.symbol === symbol
+      })
     }) ?? {
       asset: undefined,
       localizedMainCurrencyAmount: undefined,
@@ -72,51 +81,73 @@ export default function SingleAsset(): ReactElement {
       <div className="back_button_wrap standard_width_padded">
         <SharedBackButton />
       </div>
-      <div className="header standard_width_padded">
-        <div className="left">
-          <div className="asset_wrap">
-            <SharedAssetIcon
-              logoURL={asset?.metadata?.logoURL}
-              symbol={asset?.symbol}
-            />
-            <span className="asset_name">{symbol}</span>
+      {typeof asset === "undefined" ? (
+        <></>
+      ) : (
+        <div className="header standard_width_padded">
+          <div className="left">
+            <div className="asset_wrap">
+              <SharedAssetIcon
+                logoURL={asset?.metadata?.logoURL}
+                symbol={asset?.symbol}
+              />
+              <span className="asset_name">{symbol}</span>
+            </div>
+            <div className="balance">{localizedDecimalAmount}</div>
+            {typeof localizedMainCurrencyAmount !== "undefined" ? (
+              <div className="usd_value">${localizedMainCurrencyAmount}</div>
+            ) : (
+              <></>
+            )}
           </div>
-          <div className="balance">{localizedDecimalAmount}</div>
-          {typeof localizedMainCurrencyAmount !== "undefined" ? (
-            <div className="usd_value">${localizedMainCurrencyAmount}</div>
-          ) : (
-            <></>
-          )}
+          <div className="right">
+            {currentAccountSigningMethod ? (
+              <>
+                {!HIDE_SEND_BUTTON && symbol === "ETH" && (
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    icon="send"
+                    linkTo={{
+                      pathname: "/send",
+                      state: {
+                        symbol,
+                        contractAddress:
+                          "contractAddress" in asset
+                            ? asset.contractAddress
+                            : undefined,
+                      },
+                    }}
+                  >
+                    Send
+                  </SharedButton>
+                )}
+                {!HIDE_SWAP && symbol !== "ETH" && (
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    icon="swap"
+                    linkTo={{
+                      pathname: "/swap",
+                      state: {
+                        symbol,
+                        contractAddress:
+                          "contractAddress" in asset
+                            ? asset.contractAddress
+                            : undefined,
+                      },
+                    }}
+                  >
+                    Swap
+                  </SharedButton>
+                )}
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
-        <div className="right">
-          {currentAccountSigningMethod ? (
-            <>
-              {!HIDE_SEND_BUTTON && symbol === "ETH" && (
-                <SharedButton
-                  type="primary"
-                  size="medium"
-                  icon="send"
-                  linkTo={{
-                    pathname: "/send",
-                    state: {
-                      symbol,
-                    },
-                  }}
-                >
-                  Send
-                </SharedButton>
-              )}
-              {!HIDE_SWAP && (
-                <SharedButton type="primary" size="medium" icon="swap">
-                  Swap
-                </SharedButton>
-              )}
-            </>
-          ) : (
-            <></>
-          )}
-        </div>
-      </div>
+      )}
       <div className="sub_info_separator_wrap standard_width_padded">
         <div className="left">Asset is on: Arbitrum</div>
         <div className="right">Move to Ethereum</div>

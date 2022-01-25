@@ -124,7 +124,7 @@ export function createBackgroundAsyncThunk<
       try {
         return await payloadCreator(...args)
       } catch (error) {
-        logger.error(error)
+        logger.error("Async thunk failed", error)
         throw error
       }
     },
