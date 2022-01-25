@@ -55,7 +55,6 @@ export default function OnboardingSaveSeed(): ReactElement {
           </div>
         </>
       )}
-
       <div className="button_group">
         <SharedButton
           type="primary"
