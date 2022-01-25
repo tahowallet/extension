@@ -175,7 +175,11 @@ export default function Swap(): ReactElement {
   const updateSwapData = useCallback(
     async (changeSource: "buy" | "sell", amount: string): Promise<void> => {
       // Swap amounts can't update unless both sell and buy assets are specified.
-      if (typeof sellAsset === "undefined" || typeof buyAsset === "undefined") {
+      if (
+        typeof sellAsset === "undefined" ||
+        typeof buyAsset === "undefined" ||
+        amount.trim() === ""
+      ) {
         return
       }
 
