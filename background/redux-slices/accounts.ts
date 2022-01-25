@@ -17,6 +17,7 @@ import { DomainName, HexString, URI } from "../types"
 export const enum AccountType {
   ReadOnly = "read-only",
   Imported = "imported",
+  Ledger = "ledger",
 }
 
 const availableDefaultNames = [

@@ -15,9 +15,10 @@ import {
   UnitPricePoint,
   unitPricePointForPricePoint,
 } from "../../assets"
-import { selectSigningAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
+import { selectAddressSigningMethods } from "./signingSelectors"
+import { SigningMethod } from "../signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -195,6 +196,7 @@ export type AccountTotal = {
   address: string
   shortenedAddress: string
   accountType: AccountType
+  signingMethod: SigningMethod | null
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
@@ -202,25 +204,37 @@ export type AccountTotal = {
 
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
+const signingMethodTypeToAccountType: Record<
+  SigningMethod["type"],
+  AccountType
+> = {
+  keyring: AccountType.Imported,
+  ledger: AccountType.Ledger,
+}
+
 export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
-  selectSigningAddresses,
-  (accounts, assets, signingAddresses): CategorizedAccountTotals => {
+  selectAddressSigningMethods,
+  (accounts, assets, signingAccounts): CategorizedAccountTotals => {
     // TODO: here
     return Object.entries(accounts.accountsData)
-      .map(([address, accountData]) => {
+      .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
-        const accountType = signingAddresses.includes(address)
-          ? AccountType.Imported // all signing addresses are imported for now
-          : AccountType.ReadOnly
+        const signingMethod = signingAccounts[address] ?? null
+
+        const accountType =
+          signingMethod === null
+            ? AccountType.ReadOnly
+            : signingMethodTypeToAccountType[signingMethod.type]
 
         if (accountData === "loading") {
           return {
             address,
             shortenedAddress,
             accountType,
+            signingMethod,
           }
         }
 
@@ -256,6 +270,7 @@ export const selectAccountTotalsByCategory = createSelector(
           address,
           shortenedAddress,
           accountType,
+          signingMethod,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(
