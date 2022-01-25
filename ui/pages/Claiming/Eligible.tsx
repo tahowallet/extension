@@ -32,11 +32,7 @@ export default function Eligible(): ReactElement {
   }
 
   const advanceStep = () => {
-    // alreadyClaimedAddresses.push(account)
-    // setAlreadyClaimed(true)
     setStep(step + 1)
-    // console.log(claimTally())
-    // await claimTally()
   }
 
   return (
