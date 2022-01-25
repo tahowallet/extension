@@ -1,17 +1,20 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSelector, createSlice } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { FungibleAsset, isSmartContractFungibleAsset } from "../assets"
+import {
+  SmartContractFungibleAsset,
+  isSmartContractFungibleAsset,
+} from "../assets"
 import logger from "../lib/logger"
 import { isValidSwapQuoteResponse, ValidatedType } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 
 interface SwapAssets {
-  sellAsset: FungibleAsset
-  buyAsset: FungibleAsset
+  sellAsset: SmartContractFungibleAsset
+  buyAsset: SmartContractFungibleAsset
 }
 
 type SwapAmount =
@@ -22,107 +25,23 @@ type SwapAmount =
       buyAmount: string
     }
 
+type SwapQuoteRequest = {
+  assets: SwapAssets
+  amount: SwapAmount
+  isFinal: boolean
+}
+
 export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 
 export interface SwapState {
+  latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
+  approvalInProgress?: boolean
 }
 
 export const initialState: SwapState = {
-  finalQuote: undefined,
+  approvalInProgress: false,
 }
-
-export const approveTransfer = createBackgroundAsyncThunk(
-  "0x-swap/approveTransfer",
-  async ({
-    assetContractAddress,
-    approvalTarget,
-  }: {
-    assetContractAddress: string
-    approvalTarget: string
-  }) => {
-    const provider = getProvider()
-    const signer = provider.getSigner()
-
-    const assetContract = new ethers.Contract(
-      assetContractAddress,
-      ERC20_ABI,
-      signer
-    )
-    const approvalTransactionData =
-      await assetContract.populateTransaction.approve(
-        approvalTarget,
-        ethers.constants.MaxUint256.sub(1) // infinite approval :(
-      )
-
-    logger.log("Populated transaction data", approvalTransactionData)
-
-    await signer.sendTransaction(approvalTransactionData)
-  }
-)
-
-export const executeSwap = createBackgroundAsyncThunk(
-  "0x-swap/executeSwap",
-  async (quote: ZrxQuote) => {
-    const provider = getProvider()
-    const signer = provider.getSigner()
-
-    // Check if we have to approve the asset we want to swap.
-    const assetContract = new ethers.Contract(
-      quote.sellTokenAddress,
-      ERC20_ABI,
-      signer
-    )
-    const pendingSignedRawTransactions: Promise<string>[] = []
-
-    const existingAllowance: BigNumber =
-      await assetContract.callStatic.allowance(
-        await signer.getAddress(),
-        quote.allowanceTarget
-      )
-
-    logger.log("here's our existing allowance!", existingAllowance)
-
-    if (existingAllowance.lt(quote.sellAmount)) {
-      const approvalTransactionData =
-        await assetContract.populateTransaction.approve(
-          quote.allowanceTarget,
-          ethers.constants.MaxUint256.sub(1)
-        )
-
-      logger.log("Populated transaction data", approvalTransactionData)
-
-      pendingSignedRawTransactions.push(
-        signer.signTransaction(approvalTransactionData)
-      )
-    }
-
-    logger.log("send that transaction!", quote)
-
-    pendingSignedRawTransactions.push(
-      signer.signTransaction({
-        chainId: quote.chainId,
-        data: quote.data,
-        gasLimit: quote.gas,
-        gasPrice: quote.gasPrice,
-        to: quote.to,
-        value: quote.value,
-        type: 1 as const,
-      })
-    )
-
-    const signedRawTransactions = await Promise.all(
-      pendingSignedRawTransactions
-    )
-
-    // Send all at once.
-    await Promise.all(
-      signedRawTransactions.map((rawTransaction) =>
-        provider.sendTransaction(rawTransaction)
-      )
-    )
-  }
-)
 
 const swapSlice = createSlice({
   name: "0x-swap",
@@ -136,11 +55,37 @@ const swapSlice = createSlice({
       finalQuote,
     }),
 
-    clearSwapQuote: (state) => {
-      return { ...state, finalQuote: undefined }
-    },
+    setLatestQuoteRequest: (
+      state,
+      { payload: quoteRequest }: { payload: SwapQuoteRequest }
+    ) => ({
+      ...state,
+      latestQuoteRequest: quoteRequest,
+    }),
+
+    setApprovalInProgress: (state) => ({
+      ...state,
+      approvalInProgress: true,
+    }),
+
+    clearApprovalInProgress: (state) => ({
+      ...state,
+      approvalInProgress: false,
+    }),
+
+    clearSwapQuote: (state) => ({
+      ...state,
+      finalQuote: undefined,
+      latestQuoteRequest: undefined,
+    }),
   },
 })
+
+const {
+  setLatestQuoteRequest,
+  setApprovalInProgress,
+  clearApprovalInProgress,
+} = swapSlice.actions
 
 export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
@@ -148,15 +93,7 @@ export default swapSlice.reducer
 export const fetchSwapData = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
   async (
-    {
-      assets,
-      amount,
-      isFinal,
-    }: {
-      assets: SwapAssets
-      amount: SwapAmount
-      isFinal: boolean
-    },
+    { assets, amount, isFinal }: SwapQuoteRequest,
     { dispatch }
   ): Promise<{ quote: ZrxQuote; needsApproval: boolean } | undefined> => {
     const provider = getProvider()
@@ -170,13 +107,10 @@ export const fetchSwapData = createBackgroundAsyncThunk(
         : assets.sellAsset.decimals
     )
 
-    // When available, use smart contract addresses.
-    const sellToken = isSmartContractFungibleAsset(assets.sellAsset)
-      ? assets.sellAsset.contractAddress
-      : assets.sellAsset.symbol
-    const buyToken = isSmartContractFungibleAsset(assets.buyAsset)
-      ? assets.buyAsset.contractAddress
-      : assets.buyAsset.symbol
+    // When available, use smart contract addresses. Once non-smart contract
+    // assets are added (e.g., ETH), switch to `.symbol` for those.
+    const sellToken = assets.sellAsset.contractAddress
+    const buyToken = assets.buyAsset.contractAddress
 
     // Depending on whether the set amount is buy or sell, request the trade.
     const tradeField = "buyAmount" in amount ? "buyAmount" : "sellAmount"
@@ -195,6 +129,7 @@ export const fetchSwapData = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
+      logger.log("Booyak")
       return undefined
     }
 
@@ -217,8 +152,82 @@ export const fetchSwapData = createBackgroundAsyncThunk(
 
     if (isFinal) {
       dispatch(setFinalSwapQuote(apiData))
+    } else {
+      dispatch(setLatestQuoteRequest({ assets, amount, isFinal }))
     }
 
     return { quote, needsApproval }
   }
+)
+
+export const approveTransfer = createBackgroundAsyncThunk(
+  "0x-swap/approveTransfer",
+  async (
+    {
+      assetContractAddress,
+      approvalTarget,
+    }: {
+      assetContractAddress: string
+      approvalTarget: string
+    },
+    { dispatch }
+  ) => {
+    const provider = getProvider()
+    const signer = provider.getSigner()
+
+    const assetContract = new ethers.Contract(
+      assetContractAddress,
+      ERC20_ABI,
+      signer
+    )
+    const approvalTransactionData =
+      await assetContract.populateTransaction.approve(
+        approvalTarget,
+        ethers.constants.MaxUint256 // infinite approval :(
+      )
+
+    dispatch(setApprovalInProgress())
+    try {
+      const transactionHash = await signer.sendUncheckedTransaction(
+        approvalTransactionData
+      )
+
+      // Wait for transaction to mine before indicating approval is complete.
+      await provider.waitForTransaction(transactionHash)
+    } catch (error) {
+      logger.error("Approval transaction failed: ", error)
+    }
+    dispatch(clearApprovalInProgress())
+  }
+)
+
+export const executeSwap = createBackgroundAsyncThunk(
+  "0x-swap/executeSwap",
+  async (quote: ZrxQuote, { dispatch }) => {
+    const provider = getProvider()
+    const signer = provider.getSigner()
+
+    // Clear the swap quote, then request signature + broadcast.
+    dispatch(clearSwapQuote())
+
+    await signer.sendTransaction({
+      chainId: quote.chainId,
+      data: quote.data,
+      gasLimit: BigNumber.from(quote.gas),
+      gasPrice: BigNumber.from(quote.gasPrice),
+      to: quote.to,
+      value: BigNumber.from(quote.value),
+      type: 1 as const,
+    })
+  }
+)
+
+export const selectLatestQuoteRequest = createSelector(
+  (state: { swap: SwapState }) => state.swap.latestQuoteRequest,
+  (latestQuoteRequest) => latestQuoteRequest
+)
+
+export const selectIsApprovalInProgress = createSelector(
+  (state: { swap: SwapState }) => state.swap.approvalInProgress,
+  (approvalInProgress) => approvalInProgress
 )

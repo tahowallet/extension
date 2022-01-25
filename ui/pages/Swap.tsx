@@ -9,12 +9,13 @@ import {
   fetchSwapData,
   clearSwapQuote,
   approveTransfer,
+  selectLatestQuoteRequest,
+  selectIsApprovalInProgress,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
   AnyAssetAmount,
-  FungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -83,30 +84,41 @@ export default function Swap(): ReactElement {
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
-  const [sellAsset, setSellAsset] = useState<FungibleAsset | undefined>(
-    locationAsset
+  const savedQuoteRequest = useBackgroundSelector(selectLatestQuoteRequest)
+  const {
+    assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
+    amount: savedSwapAmount,
+  } = savedQuoteRequest ?? {
+    assets: { sellAsset: locationAsset },
+  }
+
+  const [sellAsset, setSellAsset] = useState(savedSellAsset)
+  const [buyAsset, setBuyAsset] = useState(savedBuyAsset)
+  const [sellAmount, setSellAmount] = useState(
+    typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
+      ? savedSwapAmount.sellAmount
+      : ""
   )
-  const [sellAmount, setSellAmount] = useState("")
-  const [buyAsset, setBuyAsset] = useState<FungibleAsset | undefined>(undefined)
-  const [buyAmount, setBuyAmount] = useState("")
+  const [buyAmount, setBuyAmount] = useState(
+    typeof savedSwapAmount !== "undefined" && "buyAmount" in savedSwapAmount
+      ? savedSwapAmount.buyAmount
+      : ""
+  )
   const [needsApproval, setNeedsApproval] = useState(false)
   const [approvalTarget, setApprovalTarget] = useState<string | undefined>(
     undefined
   )
+
+  const isApprovalInProgress = useBackgroundSelector(selectIsApprovalInProgress)
 
   const [sellAmountLoading, setSellAmountLoading] = useState(false)
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
 
   const latestQuoteRequest = useRef<
     Parameters<typeof fetchSwapData>[0] | undefined
-  >(undefined)
+  >(savedQuoteRequest)
 
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
-
-  useEffect(() => {
-    // Clear any saved quote data when the swap page is opened
-    dispatch(clearSwapQuote())
-  }, [dispatch])
 
   /* We have to watch the state to determine when the quote is fetched */
   useEffect(() => {
@@ -206,6 +218,13 @@ export default function Swap(): ReactElement {
           setApprovalTarget(undefined)
           latestQuoteRequest.current = undefined
 
+          // TODO set an error on the buy or sell state.
+          if (changeSource === "sell") {
+            setBuyAmount("")
+          } else {
+            setSellAmount("")
+          }
+
           return
         }
 
@@ -234,25 +253,35 @@ export default function Swap(): ReactElement {
     [buyAsset, dispatch, sellAsset]
   )
 
-  // The two effects below *only* fire for their respective asset changes.
-  // Changing sell or buy amounts separately triggers calls to updateSwapData,
-  // since updating swap data in turn updates buy and sell amounts depending on
-  // the change and we want to avoid circular dependencies.
-  //
-  // As such, these two effects *must not* fire for amount changes, only for
-  // asset changes.
-  /* eslint-disable react-hooks/exhaustive-deps */
-  useEffect(() => {
-    // Assume changing the buy asset means keeping the sell
-    // amount fixed.
+  const updateSellAsset = (asset: SmartContractFungibleAsset) => {
+    setSellAsset(asset)
+    // Updating the sell asset quotes the new sell asset against the existing
+    // buy amount.
+    updateSwapData("buy", buyAmount)
+  }
+  const updateBuyAsset = (asset: SmartContractFungibleAsset) => {
+    setBuyAsset(asset)
+    // Updating the buy asset quotes the new buy asset against the existing
+    // sell amount.
     updateSwapData("sell", sellAmount)
-  }, [buyAsset])
+  }
 
   useEffect(() => {
-    // Assume changing the sell asset means keeping the buy amount fixed.
-    updateSwapData("buy", buyAmount)
-  }, [sellAsset])
-  /* eslint-enable react-hooks/exhaustive-deps */
+    if (typeof savedSwapAmount !== "undefined") {
+      updateSwapData(
+        "sellAmount" in savedSwapAmount ? "sell" : "buy",
+        "sellAmount" in savedSwapAmount
+          ? savedSwapAmount.sellAmount
+          : savedSwapAmount.buyAmount
+      )
+    }
+
+    dispatch(clearSwapQuote())
+    // We only want to run this once, at component load, to make sure the flip of
+    // the quote is set correctly. Further updates will happen through UI
+    // interaction.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <>
@@ -290,7 +319,7 @@ export default function Swap(): ReactElement {
                 defaultAsset={sellAsset}
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
-                onAssetSelect={setSellAsset}
+                onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount) => {
                   setSellAmount(newAmount)
                   updateSwapData("sell", newAmount)
@@ -305,7 +334,7 @@ export default function Swap(): ReactElement {
                 assets={buyAssets}
                 defaultAsset={buyAsset}
                 isDisabled={buyAmountLoading}
-                onAssetSelect={setBuyAsset}
+                onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount) => {
                   setBuyAmount(buyAmount)
                   updateSwapData("buy", newAmount)
@@ -317,35 +346,45 @@ export default function Swap(): ReactElement {
               <SwapTransactionSettings />
             </div>
             <div className="footer standard_width_padded">
-              {needsApproval ? (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  isDisabled={
-                    typeof latestQuoteRequest.current === "undefined" ||
-                    sellAmountLoading ||
-                    buyAmountLoading
-                  }
-                  onClick={approveAsset}
-                  showLoadingOnClick={!confirmationMenu}
-                >
-                  Approve asset
-                </SharedButton>
-              ) : (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  isDisabled={
-                    typeof latestQuoteRequest.current === "undefined" ||
-                    sellAmountLoading ||
-                    buyAmountLoading
-                  }
-                  onClick={getFinalQuote}
-                  showLoadingOnClick={!confirmationMenu}
-                >
-                  Get final quote
-                </SharedButton>
-              )}
+              {
+                // Would welcome an alternative here---this is pretty gnarly.
+                // eslint-disable-next-line no-nested-ternary
+                needsApproval ? (
+                  isApprovalInProgress ? (
+                    <SharedButton type="primary" size="large" isDisabled>
+                      Waiting for approval transaction...
+                    </SharedButton>
+                  ) : (
+                    <SharedButton
+                      type="primary"
+                      size="large"
+                      isDisabled={
+                        typeof latestQuoteRequest.current === "undefined" ||
+                        sellAmountLoading ||
+                        buyAmountLoading
+                      }
+                      onClick={approveAsset}
+                      showLoadingOnClick={!confirmationMenu}
+                    >
+                      Approve asset
+                    </SharedButton>
+                  )
+                ) : (
+                  <SharedButton
+                    type="primary"
+                    size="large"
+                    isDisabled={
+                      typeof latestQuoteRequest.current === "undefined" ||
+                      sellAmountLoading ||
+                      buyAmountLoading
+                    }
+                    onClick={getFinalQuote}
+                    showLoadingOnClick={!confirmationMenu}
+                  >
+                    Get final quote
+                  </SharedButton>
+                )
+              }
             </div>
           </div>
         </div>
