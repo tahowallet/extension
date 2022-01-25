@@ -184,13 +184,15 @@ export const approveAndSwap = createBackgroundAsyncThunk(
       signer
     )
 
-    const pendingTransactionPromises: Promise<TransactionResponse>[] = []
+    const pendingSignedRawTransactions: Promise<string>[] = []
 
     const existingAllowance: BigNumber =
       await assetContract.callStatic.allowance(
         await signer.getAddress(),
         quote.allowanceTarget
       )
+
+    logger.log("here's our existing allowance!", existingAllowance)
 
     if (existingAllowance.lt(quote.sellAmount)) {
       const approvalTransactionData =
@@ -201,16 +203,48 @@ export const approveAndSwap = createBackgroundAsyncThunk(
 
       logger.log("Populated transaction data", approvalTransactionData)
 
-      pendingTransactionPromises.push(
-        signer.sendTransaction(approvalTransactionData)
+      pendingSignedRawTransactions.push(
+        signer.signTransaction(approvalTransactionData)
       )
     }
 
-    pendingTransactionPromises.push(
-      signer.sendTransaction(quote as TransactionRequest)
+    logger.log("send that transaction!", quote)
+
+    pendingSignedRawTransactions.push(
+      signer.signTransaction({
+        // Missing properties used by the normal transaction construction function - from, nonce, gasLimit, maxFeePerGas, maxPriorityFeePerGas
+        // allowanceTarget: quote.allowanceTarget,
+        // buyAmount: quote.buyAmount,
+        // buyTokenAddress: quote.buyTokenAddress,
+        // buyTokenToEthRate: quote.buyTokenToEthRate,
+        chainId: quote.chainId,
+        data: quote.data,
+        // estimatedGas: quote.estimatedGas,
+        // gas: quote.gas,
+        gasPrice: quote.gasPrice,
+        // guaranteedPrice: quote.guaranteedPrice,
+        // minimumProtocolFee: quote.minimumProtocolFee,
+        // price: quote.price,
+        // protocolFee: quote.protocolFee,
+        // sellAmount: quote.sellAmount,
+        // sellTokenAddress: quote.sellTokenAddress,
+        // sellTokenToEthRate: quote.sellTokenToEthRate,
+        to: quote.to,
+        value: quote.value,
+        type: 1 as const,
+      })
     )
 
-    await Promise.all(pendingTransactionPromises)
+    const signedRawTransactions = await Promise.all(
+      pendingSignedRawTransactions
+    )
+
+    // Send all at once.
+    await Promise.all(
+      signedRawTransactions.map((rawTransaction) =>
+        provider.sendTransaction(rawTransaction)
+      )
+    )
   }
 )
 
