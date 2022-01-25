@@ -96,7 +96,11 @@ export default function SignTransaction({
       }
 
       // Request broadcast if not dApp...
-      history.push("/singleAsset", { symbol: assetSymbol })
+      if (typeof assetSymbol !== "undefined") {
+        history.push("/singleAsset", { symbol: assetSymbol })
+      } else {
+        history.goBack()
+      }
     }
   }, [
     areKeyringsUnlocked,
