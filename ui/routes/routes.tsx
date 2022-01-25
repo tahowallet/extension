@@ -7,6 +7,7 @@ import OnboardingImportMetamask from "../pages/Onboarding/OnboardingImportMetama
 import OnboardingViewOnlyWallet from "../pages/Onboarding/OnboardingViewOnlyWallet"
 import OnboardingInfoIntro from "../pages/Onboarding/OnboardingInfoIntro"
 import OnboardingAddWallet from "../pages/Onboarding/OnboardingAddWallet"
+import OnboardingInterstitialCreatePhrase from "../pages/Onboarding/OnboardingInterstitialCreatePhrase"
 import Overview from "../pages/Overview"
 import SingleAsset from "../pages/SingleAsset"
 import Earn from "../pages/Earn"
@@ -118,6 +119,12 @@ const pageList = [
   {
     path: "/onboarding/verifySeed",
     Component: OnboardingVerifySeed,
+    hasTabBar: false,
+    hasTopBar: false,
+  },
+  {
+    path: "/onboarding/onboardingInterstitialCreatePhrase",
+    Component: OnboardingInterstitialCreatePhrase,
     hasTabBar: false,
     hasTopBar: false,
   },
