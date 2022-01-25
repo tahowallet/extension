@@ -6,16 +6,16 @@ export default function ClaimReferBanner(): ReactElement {
     <div className="standard_width">
       <div className="banner">
         <div>
-          <img className="banner__image" src="./images/claim.png" alt="" />
+          <img className="image" src="./images/claim.png" alt="" />
         </div>
-        <div className="banner__claimable">
-          <div className="banner__claimable__woohoo">Wohoo! You can claim</div>
+        <div className="claimable">
+          <div className="claimable_woohoo">Wohoo! You can claim</div>
           <div>
-            <span className="banner__claimable__amount">10,989</span> TALLY
+            <span className="claimable_amount">10,989</span> TALLY
           </div>
         </div>
         <Link to="/claim">
-          <div className="banner__button">{">"}</div>
+          <div className="button">{">"}</div>
         </Link>
       </div>
 
@@ -33,13 +33,13 @@ export default function ClaimReferBanner(): ReactElement {
             justify-content: space-between;
             align-items: center;
           }
-          .banner__image {
+          .image {
             width: 72px;
             position: relative;
             top: -4px;
             left: -10px;
           }
-          .banner__claimable {
+          .claimable {
             display: flex;
             flex-flow: column;
             position: relative;
@@ -48,13 +48,13 @@ export default function ClaimReferBanner(): ReactElement {
             color: var(--green-40);
             font-size: 14px;
           }
-          .banner__claimable__amount {
+          .claimable_amount {
             font-family: Quincy CF;
             font-size: 36px;
             line-height: 38px;
             color: #22c480;
           }
-          .banner__button {
+          .button {
             width: 40px;
             height: 40px;
             background: #d08e39;
