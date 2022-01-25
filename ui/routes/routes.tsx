@@ -112,7 +112,7 @@ const pageList = [
     hasTopBar: true,
   },
   {
-    path: "/dapp-permission",
+    path: "/dappPermission",
     Component: DAppPermissionRequest,
     hasTabBar: false,
     hasTopBar: false,
