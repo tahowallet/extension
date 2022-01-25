@@ -250,11 +250,11 @@ export default class NameService extends BaseService<Events> {
     // TODO handle if it doesn't exist
     const provider = this.chainService.pollingProviders.ethereum
     const resolver = await provider.getResolver(name)
-    if (!sameEVMAddress(await resolver.getAddress(), address)) {
+    if (!sameEVMAddress(await resolver?.getAddress(), address)) {
       return undefined
     }
 
-    const avatar = await resolver.getText("avatar")
+    const avatar = await resolver?.getText("avatar")
 
     if (avatar) {
       if (avatar.match(/^eip155:1\/erc721:/)) {

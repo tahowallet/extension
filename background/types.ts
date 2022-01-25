@@ -1,3 +1,5 @@
+import { TypedDataField } from "@ethersproject/abstract-signer"
+
 /**
  * Named type for strings that should be URIs.
  *
@@ -49,4 +51,18 @@ export enum KeyringTypes {
   mnemonicBIP39S256 = "mnemonic#bip39:256",
   metamaskMnemonic = "mnemonic#metamask",
   singleSECP = "single#secp256k1",
+}
+
+export type EIP712DomainType = {
+  name?: string
+  version?: string
+  chainId?: number
+  verifyingContract?: HexString
+}
+
+export type EIP712TypedData = {
+  domain: EIP712DomainType
+  types: Record<string, TypedDataField[]>
+  message: Record<string, unknown>
+  primaryType: string
 }

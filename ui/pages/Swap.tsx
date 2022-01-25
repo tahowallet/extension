@@ -188,6 +188,7 @@ export default function Swap(): ReactElement {
                 size="large"
                 isDisabled={!sellAsset || !buyAsset}
                 onClick={getQuote}
+                showLoadingOnClick={!confirmationMenu}
               >
                 Get final quote
               </SharedButton>

@@ -1,14 +1,19 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { utils } from "ethers"
+import { getProvider } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 
+import { approveAndSwap } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
 import SwapTransactionSettings from "./SwapTransactionSettings"
 import SwapApprovalStep from "./SwapApprovalStep"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 export default function SwapQoute(): ReactElement {
+  const dispatch = useBackgroundDispatch()
+
   const { sellAsset, buyAsset, sellAmount, buyAmount, quote, sources } =
     useBackgroundSelector((state) => {
       if (state.swap.quote) {
@@ -41,18 +46,15 @@ export default function SwapQoute(): ReactElement {
 
   const [stepComplete, setStepComplete] = useState(-1)
 
-  const handleApproveClick = useCallback(() => {
-    setStepComplete(0)
-    setTimeout(() => {
-      setStepComplete(1)
-    }, 1500)
-    setTimeout(() => {
-      setStepComplete(2)
-    }, 3000)
-    setTimeout(() => {
-      setStepComplete(3)
-    }, 4500)
-  }, [])
+  const history = useHistory()
+
+  const handleApproveClick = useCallback(async () => {
+    // Guard against undefined quote type errors
+    if (quote) {
+      dispatch(approveAndSwap(quote))
+      history.push("/signTransaction")
+    }
+  }, [dispatch, history, quote])
 
   return (
     <section className="center_horizontal standard_width">
@@ -101,7 +103,9 @@ export default function SwapQoute(): ReactElement {
             {sources.map((source) => (
               <div className="exchange_content standard_width">
                 <div className="left">
-                  <span className="icon_uniswap" />
+                  {source.name.includes("Uniswap") && (
+                    <span className="icon_uniswap" />
+                  )}
                   {source.name}
                 </div>
                 <div>{parseFloat(source.proportion) * 100}%</div>
