@@ -19,6 +19,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
+import { sameEVMAddress } from "../../lib/utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -325,7 +326,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
               AllowedQueryParamPage.signTransaction
             )
 
-          if (transactionRequest.from === enablingPermission.accountAddress) {
+          if (
+            sameEVMAddress(
+              transactionRequest.from,
+              enablingPermission.accountAddress
+            )
+          ) {
             return await this.routeSafeRequest(
               method,
               params,
