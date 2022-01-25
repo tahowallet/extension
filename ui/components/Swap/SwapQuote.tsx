@@ -113,7 +113,7 @@ export default function SwapQuote({
               size="large"
               onClick={handleApproveClick}
             >
-              Aprove Assets & Swap
+              Execute Swap
             </SharedButton>
           </div>
         </>
