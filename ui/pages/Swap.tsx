@@ -336,7 +336,7 @@ export default function Swap(): ReactElement {
                 isDisabled={buyAmountLoading}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount) => {
-                  setBuyAmount(buyAmount)
+                  setBuyAmount(newAmount)
                   updateSwapData("buy", newAmount)
                 }}
                 label="Swap to:"
