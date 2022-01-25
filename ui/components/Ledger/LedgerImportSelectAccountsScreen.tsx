@@ -2,6 +2,7 @@ import {
   connectLedger,
   fetchAddress,
   fetchBalance,
+  importLedgerAccounts,
   LedgerAccountState,
   resizeAccounts,
   setPath,
@@ -42,12 +43,13 @@ function usePageData(pageIndex: number) {
 
   const items = indexes.map((index) => {
     const account = accounts[index] as LedgerAccountState | undefined
+    const address = account?.address ?? null
     return {
       index,
       account,
-      address: account?.address ?? null,
+      address,
       ethBalance: account?.balance ?? null,
-      isSelected: selectedStates[index] ?? false,
+      isSelected: (selectedStates[index] ?? false) && address !== null,
       setSelected: (selected: boolean) => {
         setSelectedStates((states) => ({ ...states, [index]: selected }))
       },
@@ -74,9 +76,15 @@ function usePageData(pageIndex: number) {
     dispatch(fetchBalance({ index, address }))
   }, [accounts.length, dispatch, items, lastIndex])
 
-  const selectedCount = Object.values(selectedStates).filter((x) => x).length
+  const selectedAccounts = items.flatMap((item) => {
+    if (!selectedStates[item.index]) return []
+    if (!item.account) return []
+    const { path, address } = item.account
+    if (!address) return []
+    return [{ path, address }]
+  })
 
-  return { firstIndex, lastIndex, items, selectedCount }
+  return { firstIndex, lastIndex, items, selectedAccounts }
 }
 
 function LedgerAccountList({
@@ -87,6 +95,7 @@ function LedgerAccountList({
   const [pageIndex, setPageIndex] = useState(0)
 
   const pageData = usePageData(pageIndex)
+  const dispatch = useBackgroundDispatch()
 
   return (
     <>
@@ -100,6 +109,7 @@ function LedgerAccountList({
                   <input
                     className="checkbox-input"
                     type="checkbox"
+                    disabled={address === null}
                     checked={isSelected}
                     onChange={(event) => {
                       setSelected(event.currentTarget.checked)
@@ -108,6 +118,7 @@ function LedgerAccountList({
                   <div
                     className={classNames("checkbox-box", {
                       selected: isSelected,
+                      disabled: address === null,
                     })}
                   />
                 </label>
@@ -176,8 +187,13 @@ function LedgerAccountList({
         </div>
       </div>
       <LedgerContinueButton
-        isDisabled={pageData.selectedCount === 0}
-        onClick={onConnect}
+        isDisabled={pageData.selectedAccounts.length === 0}
+        onClick={() => {
+          dispatch(
+            importLedgerAccounts({ accounts: pageData.selectedAccounts })
+          )
+          onConnect()
+        }}
       >
         Connect selected
       </LedgerContinueButton>
@@ -212,6 +228,10 @@ function LedgerAccountList({
           border-radius: 2px;
           box-sizing: border-box;
           cursor: pointer;
+        }
+
+        .checkbox-box.disabled {
+          background: var(--green-80);
         }
 
         .checkbox-box:not(.selected) {

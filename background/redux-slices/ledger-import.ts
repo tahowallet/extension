@@ -29,6 +29,10 @@ export type Events = {
     resolve: (balance: string) => void
     reject: (error: Error) => void
   }
+  importLedgerAccounts: Array<{
+    path: string
+    address: string
+  }>
 }
 
 export const emitter = new Emittery<Events>()
@@ -214,5 +218,17 @@ export const fetchBalance = createBackgroundAsyncThunk(
     dispatch(
       ledgerImportSlice.actions.resolveBalance({ index, address, balance })
     )
+  }
+)
+
+export const importLedgerAccounts = createBackgroundAsyncThunk(
+  "ledger-import/importLedgerAccounts",
+  async ({
+    accounts,
+  }: {
+    accounts: Array<{ path: string; address: string }>
+  }) => {
+    // TODO: listen to this event
+    emitter.emit("importLedgerAccounts", accounts)
   }
 )
