@@ -73,7 +73,11 @@ async function generateLedgerId(
 ): Promise<[string, LedgerType]> {
   let extensionDeviceType = LedgerType.UNKNOWN
 
-  switch (transport.deviceModel!.id) {
+  if (!transport.deviceModel) {
+    throw new Error("Missing device model descriptor!")
+  }
+
+  switch (transport.deviceModel.id) {
     case DeviceModelId.nanoS:
       extensionDeviceType = LedgerType.LEDGER_NANO_S
       break
