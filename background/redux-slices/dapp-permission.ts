@@ -32,7 +32,7 @@ export const grantPermission = createBackgroundAsyncThunk(
 
 // Async thunk to bubble the permissionDenyOrRevoke action from  store to emitter.
 export const denyOrRevokePermission = createBackgroundAsyncThunk(
-  "dapp-permissionpermissionDenyOrRevoke",
+  "dapp-permission/permissionDenyOrRevoke",
   async (permission: PermissionRequest) => {
     await emitter.emit("denyOrRevokePermission", permission)
     return permission
