@@ -1,19 +1,15 @@
 import React, { ReactElement } from "react"
 
-export default function AmountCombinedBanner(): ReactElement {
+export default function ClaimAmountCombinedBanner(): ReactElement {
   return (
-    <div className="banner banner-primary-combined">
+    <div className="banner banner_primary">
       <div>
-        <img
-          className="banner__image-combined"
-          src="./images/claim.png"
-          alt=""
-        />
+        <img className="banner_image" src="./images/claim.png" alt="" />
       </div>
-      <div className="banner__claimable-combined">
-        <div className="banner_claimable__title">Claim + Bonus</div>
-        <div className="banner__claimable__amount">10,989</div>
-        <div className="banner__claimable__currency">TALLY</div>
+      <div className="claimable">
+        <div className="title">Claim + Bonus</div>
+        <div className="amount">10,989</div>
+        <div className="currency">TALLY</div>
       </div>
       <style jsx>
         {`
@@ -27,17 +23,17 @@ export default function AmountCombinedBanner(): ReactElement {
             align-items: center;
             padding: 0 24px;
           }
-          .banner-primary-combined {
+          .banner_primary {
             height: 106px;
             margin-top: 20px;
             background-color: var(--hunter-green);
             transition: height 0.2s;
             opacity: 1;
           }
-          .banner__image-combined {
+          .banner_image {
             width: 100px;
           }
-          .banner__claimable-combined {
+          .claimable {
             display: flex;
             align-items: center;
             flex-flow: column;
@@ -45,16 +41,16 @@ export default function AmountCombinedBanner(): ReactElement {
             font-size: 14px;
             padding-right: 32px;
           }
-          .banner_claimable__title {
+          .title {
             color: #99a8a7;
             font-size: 14px;
           }
-          .banner__claimable__amount {
+          .amount {
             font-family: Quincy CF;
             font-size: 36px;
             color: #22c480;
           }
-          .banner__claimable__currency {
+          .currency {
             color: var(--green-60);
           }
         `}
