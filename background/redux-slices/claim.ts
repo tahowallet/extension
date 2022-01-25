@@ -8,12 +8,6 @@ import { getContract } from "./utils/contract-utils"
 
 const newBalanceTree = new BalanceTree(balances)
 
-declare global {
-  interface Window {
-    ethereum: any
-  }
-}
-
 interface ClaimingState {
   status: string
   claimed: {
