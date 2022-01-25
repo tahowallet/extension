@@ -1,44 +1,37 @@
-import React, {
-  Dispatch,
-  KeyboardEvent,
-  ReactElement,
-  SetStateAction,
-} from "react"
+import React, { Dispatch, ReactElement, SetStateAction, useRef } from "react"
+import { useOnClickOutside } from "../../hooks"
+import SharedButton from "./SharedButton"
 
-interface ModalProps {
+interface SharedModalProps {
   setModalVisible: Dispatch<SetStateAction<boolean>>
 }
 
-export default function Modal({ setModalVisible }: ModalProps): ReactElement {
-  const handleEscKey = (e: KeyboardEvent) => {
-    if (e.key === "Esc") {
-      setModalVisible(false)
-    }
-  }
-  return (
-    <div className="modal__wrap">
-      <div
-        className="modal__backdrop"
-        onClick={() => setModalVisible(false)}
-        onKeyDown={(e) => handleEscKey(e)}
-        role="button"
-        aria-label="backdrop"
-        tabIndex={0}
-      />
+export default function SharedInfoModal({
+  setModalVisible,
+}: SharedModalProps): ReactElement {
+  const modalWrapRef = useRef(null)
+  useOnClickOutside(modalWrapRef, () => {
+    setModalVisible(false)
+  })
 
-      <div className="modal__content">
-        <div className="modal__title"> Why Delegate?</div>
-        <div>Read this text and chose your own degenerate.</div>
-        <button
-          className="modal__button"
-          type="button"
-          onClick={() => setModalVisible(false)}
-        >
-          Understood
-        </button>
+  return (
+    <>
+      <div className="backdrop" />
+      <div className="wrap" ref={modalWrapRef}>
+        <div className="content">
+          <div className="title"> Why Delegate?</div>
+          <div>Read this text and chose your own degenerate.</div>
+          <SharedButton
+            type="primary"
+            size="medium"
+            onClick={() => setModalVisible(false)}
+          >
+            Understood
+          </SharedButton>
+        </div>
       </div>
       <style jsx>{`
-        .modal__wrap {
+        .wrap {
           width: 100vw;
           height: 100vh;
           display: flex;
@@ -56,7 +49,7 @@ export default function Modal({ setModalVisible }: ModalProps): ReactElement {
             transform: translateY(0%);
           }
         }
-        .modal__backdrop {
+        .backdrop {
           opacity: 0.7;
           width: 100vw;
           height: 100vh;
@@ -64,7 +57,7 @@ export default function Modal({ setModalVisible }: ModalProps): ReactElement {
           position: absolute;
           z-index: 3;
         }
-        .modal__content {
+        .content {
           width: 70vw;
           height: 70vh;
           padding: 24px;
@@ -80,7 +73,7 @@ export default function Modal({ setModalVisible }: ModalProps): ReactElement {
           animation-name: slideup;
           animation-duration: 0.4s;
         }
-        .modal__title {
+        .title {
           font-size: 18px;
           line-height: 24px;
           text-transform: uppercase;
@@ -88,7 +81,7 @@ export default function Modal({ setModalVisible }: ModalProps): ReactElement {
           align-items: center;
           color: #d64045;
         }
-        .modal__button {
+        .button {
           height: 40px;
           border-radius: 4px;
           background-color: var(--trophy-gold);
@@ -103,6 +96,6 @@ export default function Modal({ setModalVisible }: ModalProps): ReactElement {
           z-index: 2;
         }
       `}</style>
-    </div>
+    </>
   )
 }
