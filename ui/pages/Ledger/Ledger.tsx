@@ -38,7 +38,13 @@ export default function Ledger(): ReactElement {
               // TODO: use result (for multiple devices)?
               await navigator.usb.requestDevice({ filters: [] })
             } catch {
-              // Ignore
+              // Timeout is needed to respond to clicks to,
+              // e.g., "I don't see my device".
+              // Without a timeout, the DOM is updated
+              // before firing clicks outside the popup.
+              await new Promise((resolve) => setTimeout(resolve, 100))
+
+              // Advance anyway for testing. (TODO: do not.)
             }
             setPhase("2-connect")
 
@@ -46,10 +52,7 @@ export default function Ledger(): ReactElement {
               connectLedger()
             )) as unknown as AsyncThunkFulfillmentType<typeof connectLedger>
 
-            /* Allow some time to react to clicks before changing the UI. */
-            setTimeout(() => {
-              setDeviceID(newDeviceID)
-            }, 100)
+            setDeviceID(newDeviceID)
           }}
         />
       )}
