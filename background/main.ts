@@ -73,6 +73,7 @@ import {
   typedDataRequest,
 } from "./redux-slices/signing"
 import { emitter as ledgerSliceEmitter } from "./redux-slices/ledger"
+import { ETHEREUM } from "./constants"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -611,6 +612,24 @@ export default class Main extends BaseService<never> {
   }
 
   async connectLedgerService(): Promise<void> {
+    ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
+      for (let i = 0; i < accounts.length; i += 1) {
+        const { path, address } = accounts[i]
+
+        // eslint-disable-next-line no-await-in-loop
+        await this.ledgerService.saveAddress(path, address)
+
+        const addressNetwork = {
+          address,
+          network: ETHEREUM,
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(address))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      }
+    })
+
     ledgerSliceEmitter.on("fetchAddress", (input) => {
       this.ledgerService
         .deriveAddress(input.path)

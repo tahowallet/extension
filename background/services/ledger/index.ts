@@ -161,6 +161,10 @@ export default class LedgerService extends BaseService<Events> {
     throw new Error("Address derivation is unsuccessful!")
   }
 
+  async saveAddress(path: HexString, address: string): Promise<void> {
+    await this.db.addAccount({ path, address })
+  }
+
   async signTransaction(
     address: HexString,
     transactionRequest: EIP1559TransactionRequest
