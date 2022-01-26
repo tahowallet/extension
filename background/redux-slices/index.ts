@@ -8,7 +8,7 @@ import swapReducer from "./0x-swap"
 import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
 import dappPermissionReducer from "./dapp-permission"
-import ledgerImportReducer from "./ledger-import"
+import ledgerReducer from "./ledger"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
@@ -19,7 +19,7 @@ const mainReducer = combineReducers({
   transactionConstruction: transactionConstructionReducer,
   ui: uiReducer,
   dappPermission: dappPermissionReducer,
-  ledgerImport: ledgerImportReducer,
+  ledger: ledgerReducer,
 })
 
 export default mainReducer

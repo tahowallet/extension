@@ -6,7 +6,7 @@ import {
   LedgerAccountState,
   resizeAccounts,
   setPath,
-} from "@tallyho/tally-background/redux-slices/ledger-import"
+} from "@tallyho/tally-background/redux-slices/ledger"
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -18,9 +18,7 @@ import LedgerPanelContainer from "./LedgerPanelContainer"
 const addressesPerPage = 6
 
 function usePageData(pageIndex: number) {
-  const { nonce, accounts } = useBackgroundSelector(
-    (state) => state.ledgerImport
-  )
+  const { nonce, accounts } = useBackgroundSelector((state) => state.ledger)
   const dispatch = useBackgroundDispatch()
 
   const [selectedStates, setSelectedStates] = useState<
@@ -334,7 +332,7 @@ export default function LedgerImportSelectAccountsScreen({
 }): ReactElement {
   const dispatch = useBackgroundDispatch()
   const { nonce, connected, parentPath } = useBackgroundSelector(
-    (state) => state.ledgerImport
+    (state) => state.ledger
   )
   useEffect(() => {
     dispatch(connectLedger({ nonce }))

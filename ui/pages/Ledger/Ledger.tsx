@@ -1,4 +1,4 @@
-import { ledgerImportReset } from "@tallyho/tally-background/redux-slices/ledger-import"
+import { ledgerReset } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useEffect, useState } from "react"
 import LedgerConnectPopupScreen from "../../components/Ledger/LedgerConnectPopupScreen"
 import LedgerImportDoneScreen from "../../components/Ledger/LedgerImportDoneScreen"
@@ -14,7 +14,7 @@ export default function Ledger(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
   useEffect(() => {
-    dispatch(ledgerImportReset())
+    dispatch(ledgerReset())
   }, [dispatch])
 
   return (

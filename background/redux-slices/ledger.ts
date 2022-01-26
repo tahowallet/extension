@@ -44,11 +44,11 @@ export const initialState: LedgerImportState = {
   accounts: [],
 }
 
-const ledgerImportSlice = createSlice({
-  name: "ledger-import",
+const ledgerSlice = createSlice({
+  name: "ledger",
   initialState,
   reducers: {
-    ledgerImportReset: (immerState) => {
+    ledgerReset: (immerState) => {
       immerState.nonce += 1
       immerState.parentPath = null
       immerState.connected = false
@@ -135,10 +135,9 @@ const ledgerImportSlice = createSlice({
   },
 })
 
-export const { ledgerImportReset, setPath, resizeAccounts } =
-  ledgerImportSlice.actions
+export const { ledgerReset, setPath, resizeAccounts } = ledgerSlice.actions
 
-export default ledgerImportSlice.reducer
+export default ledgerSlice.reducer
 
 async function doConnectFake() {
   await new Promise((resolve) => {
@@ -184,45 +183,41 @@ async function doFetchBalanceFake(address: string) {
 }
 
 export const connectLedger = createBackgroundAsyncThunk(
-  "ledger-import/connectLedger",
+  "ledger/connectLedger",
   async ({ nonce }: { nonce: number }, { dispatch }) => {
     await doConnectFake()
-    dispatch(ledgerImportSlice.actions.setLedgerConnected(nonce))
+    dispatch(ledgerSlice.actions.setLedgerConnected(nonce))
   }
 )
 
 export const fetchAddress = createBackgroundAsyncThunk(
-  "ledger-import/fetchAddress",
+  "ledger/fetchAddress",
   async (
     { nonce, index, path }: { nonce: number; index: number; path: string },
     { dispatch }
   ) => {
-    dispatch(
-      ledgerImportSlice.actions.setFetchingAddress({ nonce, index, path })
-    )
+    dispatch(ledgerSlice.actions.setFetchingAddress({ nonce, index, path }))
     const address = await doFetchAddressFake(path)
     dispatch(
-      ledgerImportSlice.actions.resolveAddress({ nonce, index, path, address })
+      ledgerSlice.actions.resolveAddress({ nonce, index, path, address })
     )
   }
 )
 
 export const fetchBalance = createBackgroundAsyncThunk(
-  "ledger-import/fetchBalance",
+  "ledger/fetchBalance",
   async (
     { index, address }: { index: number; address: string },
     { dispatch }
   ) => {
-    dispatch(ledgerImportSlice.actions.setFetchingBalance({ index, address }))
+    dispatch(ledgerSlice.actions.setFetchingBalance({ index, address }))
     const balance = await doFetchBalanceFake(address)
-    dispatch(
-      ledgerImportSlice.actions.resolveBalance({ index, address, balance })
-    )
+    dispatch(ledgerSlice.actions.resolveBalance({ index, address, balance }))
   }
 )
 
 export const importLedgerAccounts = createBackgroundAsyncThunk(
-  "ledger-import/importLedgerAccounts",
+  "ledger/importLedgerAccounts",
   async ({
     accounts,
   }: {
