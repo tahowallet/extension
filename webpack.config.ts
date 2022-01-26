@@ -25,6 +25,7 @@ const baseConfig: Configuration = {
   stats: "errors-only",
   entry: {
     ui: "./src/ui.ts",
+    "tab-ui": "./src/tab-ui.ts",
     background: "./src/background.ts",
     "background-ui": "./src/background-ui.ts",
     "window-provider": "./src/window-provider.ts",
