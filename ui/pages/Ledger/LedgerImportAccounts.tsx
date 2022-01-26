@@ -8,10 +8,10 @@ import {
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useBackgroundDispatch } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
-import SharedSelect from "../Shared/SharedSelect"
-import LedgerContinueButton from "./LedgerContinueButton"
-import LedgerPanelContainer from "./LedgerPanelContainer"
+import SharedButton from "../../components/Shared/SharedButton"
+import SharedSelect from "../../components/Shared/SharedSelect"
+import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
+import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 
 const addressesPerPage = 6
 
@@ -112,10 +112,10 @@ function LedgerAccountList({
           {pageData.items.map(
             ({ path, address, ethBalance, isSelected, setSelected }) => (
               <div className="item" key={path}>
-                <label className="checkbox-label">
+                <label className="checkbox_label">
                   {/* TODO: Share this implementation of checkbox. */}
                   <input
-                    className="checkbox-input"
+                    className="checkbox_input"
                     type="checkbox"
                     disabled={address === null}
                     checked={isSelected}
@@ -124,24 +124,24 @@ function LedgerAccountList({
                     }}
                   />
                   <div
-                    className={classNames("checkbox-box", {
+                    className={classNames("checkbox_box", {
                       selected: isSelected,
                       disabled: address === null,
                     })}
                   />
                 </label>
-                {address === null && <div className="address-loading" />}
+                {address === null && <div className="address_loading" />}
                 {address !== null && (
                   <>
                     <div className="address" title={address}>
                       {address.slice(0, 4)}...
                       {address.slice(address.length - 4)}
                     </div>
-                    {ethBalance === null && <div className="balance-loading" />}
+                    {ethBalance === null && <div className="balance_loading" />}
                     {ethBalance !== null && (
                       <div className="balance">{ethBalance} ETH</div>
                     )}
-                    <div className="etherscan-link-container">
+                    <div className="etherscan_link_container">
                       <SharedButton
                         type="tertiaryGray"
                         size="medium"
@@ -166,7 +166,7 @@ function LedgerAccountList({
           )}
         </div>
         <div className="pagination">
-          <div className="previous-button">
+          <div className="previous_button">
             <SharedButton
               isDisabled={pageIndex === 0}
               onClick={() => {
@@ -178,10 +178,10 @@ function LedgerAccountList({
               Previous
             </SharedButton>
           </div>
-          <div className="current-page">
+          <div className="current_page">
             {pageData.firstIndex} - {pageData.lastIndex}
           </div>
-          <div className="next-button">
+          <div className="next_button">
             <SharedButton
               onClick={() => {
                 setPageIndex((i) => i + 1)
@@ -220,17 +220,17 @@ function LedgerAccountList({
           padding: 0 0.5rem;
         }
 
-        .checkbox-label {
+        .checkbox_label {
           margin: unset;
           line-height: unset;
           margin-right: 1rem;
         }
 
-        .checkbox-input {
+        .checkbox_input {
           display: none;
         }
 
-        .checkbox-box {
+        .checkbox_box {
           width: 1.25rem;
           height: 1.25rem;
           border-radius: 2px;
@@ -238,19 +238,19 @@ function LedgerAccountList({
           cursor: pointer;
         }
 
-        .checkbox-box.disabled {
+        .checkbox_box.disabled {
           background: var(--green-80);
         }
 
-        .checkbox-box:not(.selected) {
+        .checkbox_box:not(.selected) {
           border: 2px solid var(--green-60);
         }
 
-        .checkbox-box.selected {
+        .checkbox_box.selected {
           background-color: var(--trophy-gold);
         }
 
-        .checkbox-box.selected::before {
+        .checkbox_box.selected::before {
           content: "";
           display: block;
           margin: 0.25rem;
@@ -259,8 +259,8 @@ function LedgerAccountList({
           background: no-repeat center / cover url("/images/checkmark@2x.png");
         }
 
-        .address-loading,
-        .balance-loading {
+        .address_loading,
+        .balance_loading {
           height: 1.5rem;
           border-radius: 2px;
           background: linear-gradient(
@@ -271,12 +271,12 @@ function LedgerAccountList({
           );
         }
 
-        .address-loading {
+        .address_loading {
           flex: 1;
           margin: 0.5rem 0;
         }
 
-        .balance-loading {
+        .balance_loading {
           flex: 0 1 6rem;
           margin: 0.5rem 0;
           margin-left: auto;
@@ -284,9 +284,6 @@ function LedgerAccountList({
 
         .address,
         .balance {
-          font-family: Segment;
-          font-style: normal;
-          font-weight: normal;
           font-size: 16px;
           line-height: 40px;
 
@@ -298,7 +295,7 @@ function LedgerAccountList({
           text-align: right;
         }
 
-        .etherscan-link-container {
+        .etherscan_link_container {
           margin-left: 0.5rem;
         }
 
@@ -309,17 +306,15 @@ function LedgerAccountList({
           margin: 0.5rem 0.5rem 0;
         }
 
-        .previous-button,
-        .current-page,
-        .next-button {
+        .previous_button,
+        .current_page,
+        .next_button {
           display: flex;
           flex: 1 0 0;
         }
 
-        .current-page {
+        .current_page {
           justify-content: center;
-          font-family: Segment;
-          font-style: normal;
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
@@ -327,7 +322,7 @@ function LedgerAccountList({
           color: var(--green-40);
         }
 
-        .next-button {
+        .next_button {
           justify-content: flex-end;
         }
       `}</style>
@@ -335,7 +330,7 @@ function LedgerAccountList({
   )
 }
 
-export default function LedgerImportSelectAccountsScreen({
+export default function LedgerImportAccounts({
   device,
   onConnect,
 }: {
@@ -351,7 +346,7 @@ export default function LedgerImportSelectAccountsScreen({
         heading="Select ledger accounts"
         subHeading="You can select as many as you want"
       >
-        <div className="derivation-path">
+        <div className="derivation_path">
           <SharedSelect
             options={[
               { label: `m'/44'/60'/0'`, value: `m'/44'/60'/0'` },
@@ -372,7 +367,7 @@ export default function LedgerImportSelectAccountsScreen({
         )}
       </LedgerPanelContainer>
       <style jsx>{`
-        .derivation-path {
+        .derivation_path {
           margin: 0.5rem 0;
           padding: 1rem 1.5rem;
           border-radius: 4px;

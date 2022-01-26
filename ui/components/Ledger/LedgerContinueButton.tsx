@@ -26,8 +26,6 @@ export default function LedgerContinueButton({
           margin: 1rem 0;
           padding: 0.5rem 1rem;
           text-align: center;
-          font-family: Segment;
-          font-style: normal;
           font-weight: 600;
           font-size: 16px;
           line-height: 24px;

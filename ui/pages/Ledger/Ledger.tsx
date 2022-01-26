@@ -4,13 +4,13 @@ import {
 } from "@tallyho/tally-background/redux-slices/ledger"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import React, { ReactElement, useEffect, useState } from "react"
-import LedgerConnectPopupScreen from "../../components/Ledger/LedgerConnectPopupScreen"
-import LedgerImportDoneScreen from "../../components/Ledger/LedgerImportDoneScreen"
-import LedgerImportSelectAccountsScreen from "../../components/Ledger/LedgerImportSelectAccountsScreen"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
-import LedgerPrepareScreen from "../../components/Ledger/LedgerPrepareScreen"
 import TabContainer from "../../components/Tab/TabContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import LedgerConnectPopup from "./LedgerConnectPopup"
+import LedgerImportDone from "./LedgerImportDone"
+import LedgerImportAccounts from "./LedgerImportAccounts"
+import LedgerPrepare from "./LedgerPrepare"
 
 export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<
@@ -29,7 +29,7 @@ export default function Ledger(): ReactElement {
   return (
     <TabContainer>
       {phase === "0-prepare" && (
-        <LedgerPrepareScreen
+        <LedgerPrepare
           onContinue={async () => {
             setPhase("1-request")
             try {
@@ -53,7 +53,7 @@ export default function Ledger(): ReactElement {
           }}
         />
       )}
-      {phase === "1-request" && <LedgerConnectPopupScreen />}
+      {phase === "1-request" && <LedgerConnectPopup />}
       {phase === "2-connect" && !device && (
         <LedgerPanelContainer
           indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
@@ -61,7 +61,7 @@ export default function Ledger(): ReactElement {
         />
       )}
       {phase === "2-connect" && device && (
-        <LedgerImportSelectAccountsScreen
+        <LedgerImportAccounts
           device={device}
           onConnect={() => {
             setPhase("3-done")
@@ -69,7 +69,7 @@ export default function Ledger(): ReactElement {
         />
       )}
       {phase === "3-done" && (
-        <LedgerImportDoneScreen
+        <LedgerImportDone
           onClose={() => {
             setPhase("0-prepare")
             setDeviceID(null)

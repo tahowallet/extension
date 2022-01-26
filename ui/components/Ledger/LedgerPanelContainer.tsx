@@ -12,19 +12,17 @@ export default function LedgerPanelContainer({
   children?: React.ReactNode
 }): ReactElement {
   return (
-    <>
-      <div className="panel">
-        <img
-          width="318"
-          height="84"
-          className="indicator"
-          src={indicatorImageSrc}
-          alt=""
-        />
-        {heading && <h1 className="heading">{heading}</h1>}
-        {subHeading && <p className="subheading">{subHeading}</p>}
-        {children}
-      </div>
+    <div className="panel">
+      <img
+        width="318"
+        height="84"
+        className="indicator"
+        src={indicatorImageSrc}
+        alt=""
+      />
+      {heading && <h1 className="heading">{heading}</h1>}
+      {subHeading && <p className="subheading">{subHeading}</p>}
+      {children}
       <style jsx>{`
         .panel {
           display: flex;
@@ -51,13 +49,12 @@ export default function LedgerPanelContainer({
 
         .subheading {
           margin: 0.25rem;
-          font-family: Segment;
           font-size: 16px;
           line-height: 24px;
           text-align: center;
           color: var(--green-40);
         }
       `}</style>
-    </>
+    </div>
   )
 }

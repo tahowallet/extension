@@ -1,28 +1,24 @@
 import React, { ReactElement } from "react"
-import LedgerContinueButton from "./LedgerContinueButton"
-import LedgerPanelContainer from "./LedgerPanelContainer"
+import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
+import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 
-export default function LedgerPrepareScreen({
+export default function LedgerPrepare({
   onContinue,
 }: {
   onContinue: () => void
 }): ReactElement {
   return (
-    <>
-      <LedgerPanelContainer
-        indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-        heading="Before we get started"
-        subHeading="Make sure you take these 2 steps before we start"
-      >
-        <ol className="steps">
-          <li>Plug in Ledger</li>
-          <li>Enter pin to unlock</li>
-          <li>Open Ethereum App</li>
-        </ol>
-        <LedgerContinueButton onClick={onContinue}>
-          Continue
-        </LedgerContinueButton>
-      </LedgerPanelContainer>
+    <LedgerPanelContainer
+      indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
+      heading="Before we get started"
+      subHeading="Make sure you take these 2 steps before we start"
+    >
+      <ol className="steps">
+        <li>Plug in Ledger</li>
+        <li>Enter pin to unlock</li>
+        <li>Open Ethereum App</li>
+      </ol>
+      <LedgerContinueButton onClick={onContinue}>Continue</LedgerContinueButton>
       <style jsx>{`
         .steps {
           list-style: none;
@@ -34,7 +30,6 @@ export default function LedgerPrepareScreen({
         .steps > li {
           display: flex;
           align-items: center;
-          font-family: Segment;
           font-size: 22px;
           font-weight: 500;
           line-height: 32px;
@@ -54,12 +49,11 @@ export default function LedgerPrepareScreen({
           line-height: 2.5rem;
           vertical-align: middle;
           text-align: center;
-          font-family: Segment;
           font-style: normal;
           font-weight: 600;
           font-size: 18px;
         }
       `}</style>
-    </>
+    </LedgerPanelContainer>
   )
 }
