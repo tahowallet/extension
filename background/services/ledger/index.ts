@@ -97,14 +97,17 @@ async function generateLedgerId(
 }
 
 /**
- * The LedgerService is responsible for
+ * The LedgerService is responsible for maintaining the connection
+ * with a Ledger device.
  *
- * The main purpose for this service/layer is
- *
- * The responsibility of this service is 2 fold.
+ * The main purpose for this service is to keep track of all previously
+ * connected Ledgers' derived identifiers and make show an unified interface
+ * to the most common operation (ie. signing)
  * - xxx
  */
 export default class LedgerService extends BaseService<Events> {
+  #currentLedgerId = UnknownLedgerId
+
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
       logger.info("entry")
@@ -119,8 +122,59 @@ export default class LedgerService extends BaseService<Events> {
     logger.info("exit")
   }
 
+  async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
+    logger.info("entry")
+    if (event.device.productId !== 0x4015) {
+      return
+    }
+
+    this.transport = await TransportWebUSB.create()
+
+    const eth = new Eth(this.transport)
+
+    const [id, type] = await generateLedgerId(this.transport, eth)
+
+    const ethVersion = (await eth.getAppConfiguration()).version
+
+    this.emitter.emit("connected", { id, type })
+
+    this.#currentLedgerId = `${type.toString()}_${id}`
+
+    this.emitter.emit("ledgerAdded", {
+      id,
+      type,
+      accountIDs: [idGeneratorPath],
+      metadata: { ethereumVersion: ethVersion },
+    })
+  }
+
+  async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
+    if (event.device.productId !== 0x4015) {
+      return
+    }
+
+    this.emitter.emit("disconnected", {
+      id: this.#currentLedgerId,
+      type: LedgerType.LEDGER_NANO_S,
+    })
+
+    this.#currentLedgerId = UnknownLedgerId
+  }
+
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
+
+    navigator.usb.addEventListener("connect", this.#onUSBConnect)
+    navigator.usb.addEventListener("disconnect", this.#onUSBDisconnect)
+
+    logger.info("exit")
+  }
+
+  protected async internalStopService(): Promise<void> {
+    await super.internalStartService() // Not needed, but better to stick to the patterns
+
+    navigator.usb.removeEventListener("disconnect", this.#onUSBDisconnect)
+    navigator.usb.removeEventListener("connect", this.#onUSBConnect)
 
     logger.info("exit")
   }
@@ -131,26 +185,12 @@ export default class LedgerService extends BaseService<Events> {
     try {
       const eth = new Eth(this.transport)
 
-      const [id, type] = await generateLedgerId(this.transport, eth)
-
       const accountAddress = await deriveAddressOnLedger(accountID, eth)
 
-      const ethVersion = (await eth.getAppConfiguration()).version
-
-      this.emitter.emit("connected", { id, type })
-
-      this.emitter.emit("ledgerAdded", {
-        id,
-        type,
-        accountIDs: [idGeneratorPath, accountID],
-        metadata: { ethereumVersion: ethVersion },
-      })
-
-      this.emitter.emit("ledgerAccountAdded", {
-        id,
-        ledgerID: "",
+      this.emitter.emit("address", {
+        ledgerID: this.#currentLedgerId,
         derivationPath: accountID,
-        addresses: [accountAddress],
+        address: accountAddress,
       })
 
       return accountAddress
