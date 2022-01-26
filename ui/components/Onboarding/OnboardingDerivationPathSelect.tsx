@@ -124,7 +124,6 @@ export default function OnboardingDerivationPathSelect({
         isOpen={modalStep > 0}
         onClose={() => setModalStep((prev) => prev - 1)}
         minHeight={modalStep === 2 ? "463px" : "auto"}
-        closeOnOverlayClick={false}
       >
         {modalStep === 1 && (
           <>
