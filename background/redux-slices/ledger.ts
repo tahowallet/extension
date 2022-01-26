@@ -150,22 +150,9 @@ async function doConnectFake() {
 }
 
 async function doFetchAddressReal(path: string) {
-  // TODO: respond to this event to provide actual data
   return new Promise<string>((resolve, reject) => {
     emitter.emit("fetchAddress", { path, resolve, reject })
   })
-}
-
-async function doFetchAddressFake(path: string) {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
-  })
-
-  return `0x${Array.from({ length: 20 }, () => {
-    const byte = Math.floor(Math.random() * 256)
-    const hex = `0${byte.toString(16)}`
-    return hex.slice(hex.length - 2)
-  }).join("")}`
 }
 
 async function doFetchBalanceReal(address: string) {
@@ -202,7 +189,7 @@ export const fetchAddress = createBackgroundAsyncThunk(
     { dispatch }
   ) => {
     dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
-    const address = await doFetchAddressFake(path)
+    const address = await doFetchAddressReal(path)
     dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
   }
 )

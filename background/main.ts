@@ -72,6 +72,7 @@ import {
   SignTypedDataRequest,
   typedDataRequest,
 } from "./redux-slices/signing"
+import { emitter as ledgerSliceEmitter } from "./redux-slices/ledger"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -404,6 +405,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectLedgerService()
     await this.connectChainService()
   }
 
@@ -606,6 +608,14 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+  }
+
+  async connectLedgerService(): Promise<void> {
+    ledgerSliceEmitter.on("fetchAddress", (input) => {
+      this.ledgerService
+        .deriveAddress(input.path)
+        .then(input.resolve, input.reject)
+    })
   }
 
   async connectKeyringService(): Promise<void> {
