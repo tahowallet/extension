@@ -2,19 +2,12 @@ import React, { ReactElement } from "react"
 import {
   HIDE_ADD_SEED,
   HIDE_CREATE_PHRASE,
+  HIDE_IMPORT_LEDGER,
 } from "@tallyho/tally-background/features/features"
-import { useHistory } from "react-router-dom"
-import { generateNewKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
-import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedButton from "../../components/Shared/SharedButton"
 
 export default function OnboardingStartTheHunt(): ReactElement {
-  const dispatch = useBackgroundDispatch()
-  const history = useHistory()
-
-  useAreKeyringsUnlocked(!HIDE_CREATE_PHRASE && true)
-
   return (
     <section className="start_wrap">
       <div className="top">
@@ -52,6 +45,23 @@ export default function OnboardingStartTheHunt(): ReactElement {
             </SharedButton>
           </li>
         )}
+        {HIDE_IMPORT_LEDGER ? (
+          <></>
+        ) : (
+          <li className="option standard_width">
+            <div className="icon ledger_icon" />
+            <SharedButton
+              type="tertiary"
+              size="medium"
+              onClick={() => {
+                window.open("/tab.html#/ledger", "_blank")?.focus()
+                window.close()
+              }}
+            >
+              Connect to a Ledger
+            </SharedButton>
+          </li>
+        )}
         {HIDE_CREATE_PHRASE ? (
           <></>
         ) : (
@@ -62,10 +72,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
               <SharedButton
                 type="secondary"
                 size="medium"
-                onClick={async () => {
-                  await dispatch(generateNewKeyring())
-                  history.push("/onboarding/saveSeed")
-                }}
+                linkTo="/onboarding/onboardingInterstitialCreatePhrase"
               >
                 Create new wallet
               </SharedButton>
@@ -142,6 +149,10 @@ export default function OnboardingStartTheHunt(): ReactElement {
           }
           .metamask_icon {
             background: url("./images/metamask_icon@2x.png");
+            background-size: cover;
+          }
+          .ledger_icon {
+            background: url("./images/ledger_icon@2x.png");
             background-size: cover;
           }
           .preview_icon {

@@ -174,18 +174,21 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           )}
         </Router>
       </Provider>
-      {isDappPopup && (
-        <style jsx global>
-          {`
-            body {
-              height: 100%;
-            }
-          `}
-        </style>
-      )}
+
       <>
         <style jsx global>
           {`
+            body {
+              width: 384px;
+              height: 594px;
+              scrollbar-width: none;
+            }
+
+            ::-webkit-scrollbar {
+              width: 0px;
+              background: transparent;
+            }
+
             ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
             .tab_bar_wrap {
               position: fixed;
@@ -221,6 +224,15 @@ export default function Popup({ store }: { store: Store }): ReactElement {
           `}
         </style>
       </>
+      {isDappPopup && (
+        <style jsx global>
+          {`
+            body {
+              height: 100%;
+            }
+          `}
+        </style>
+      )}
     </>
   )
 }

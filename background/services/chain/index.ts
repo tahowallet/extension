@@ -38,6 +38,10 @@ import {
   transactionFromEthersTransaction,
 } from "./utils"
 import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import type {
+  EnrichedEIP1559TransactionRequest,
+  EnrichedEVMTransactionSignatureRequest,
+} from "../enrichment"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -233,13 +237,13 @@ export default class ChainService extends BaseService<Events> {
    */
   async populatePartialEVMTransactionRequest(
     network: EVMNetwork,
-    partialRequest: Partial<EIP1559TransactionRequest> & { from: string }
+    partialRequest: EnrichedEVMTransactionSignatureRequest
   ): Promise<{
-    transactionRequest: EIP1559TransactionRequest
+    transactionRequest: EnrichedEIP1559TransactionRequest
     gasEstimationError: string | undefined
   }> {
     // Basic transaction construction based on the provided options, with extra data from the chain service
-    const transactionRequest = {
+    const transactionRequest: EnrichedEIP1559TransactionRequest = {
       from: partialRequest.from,
       to: partialRequest.to,
       value: partialRequest.value ?? 0n,
@@ -250,6 +254,7 @@ export default class ChainService extends BaseService<Events> {
       type: 2 as const,
       chainID: network.chainID,
       nonce: partialRequest.nonce,
+      annotation: partialRequest.annotation,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.

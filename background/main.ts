@@ -62,6 +62,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
+import { EnrichedEIP1559TransactionRequest } from "./services/enrichment"
 import logger from "./lib/logger"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -618,13 +619,23 @@ export default class Main extends BaseService<never> {
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
+    this.enrichmentService.emitter.on(
+      "enrichedEVMTransactionSignatureRequest",
+      async (enrichedEVMTransactionSignatureRequest) => {
+        this.store.dispatch(
+          updateTransactionOptions(enrichedEVMTransactionSignatureRequest)
+        )
+        this.store.dispatch(broadcastOnSign(false))
+      }
+    )
+
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        this.store.dispatch(updateTransactionOptions(payload))
-        // TODO force route?
-
-        this.store.dispatch(broadcastOnSign(false))
+        this.enrichmentService.enrichTransactionSignature(
+          payload,
+          2 /* TODO desiredDecimals should be configurable */
+        )
 
         const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
           this.keyringService.emitter.off("signedTx", resolveAndClear)

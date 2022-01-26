@@ -17,6 +17,7 @@ import { DomainName, HexString, URI } from "../types"
 export const enum AccountType {
   ReadOnly = "read-only",
   Imported = "imported",
+  Ledger = "ledger",
 }
 
 const availableDefaultNames = [
@@ -33,7 +34,6 @@ const availableDefaultNames = [
 type AccountData = {
   address: HexString
   network: Network
-  accountType: AccountType | undefined
   balances: {
     [assetSymbol: string]: AccountBalance
   }
@@ -109,7 +109,6 @@ function newAccountData(
   return {
     address,
     network,
-    accountType: undefined,
     balances: {},
     ens: {},
     defaultName: defaultAccountName,
