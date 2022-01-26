@@ -1,24 +1,19 @@
 name: Bug Report
 description: File a bug report
 title: "Please include an informative title that describes the bug!"
-labels: ["🐛 bug", "👩‍⚕️ triage"]
+labels: ["\U0001F41B bug", "\U0001F469‍⚕️ triage"]
 assignees: ["mr-michael"]
 body:
   - type: markdown
     attributes:
       value: >-
-        Thanks for taking the time to fill out this bug report! Note that bug
-        reports should start [in Discord](https://discord.gg/wn3KDAF5eU). Please
-        file them as issues only when suggested by a moderator so that issues
-        can be kept organized.
+        Thanks for taking the time to fill out this bug report! Note that bug reports should start [in Discord](https://discord.gg/wn3KDAF5eU). Please file them as issues only when suggested by a moderator so that issues can be kept organized.
   - type: input
     id: discord-link
     attributes:
       label: Discord Discussion Link
       description: >-
-        The link to where this issue was discussed in Discord, either the
-        starting message or the moderator message suggesting that an issue be
-        posted.
+        The link to where this issue was discussed in Discord, either the starting message or the moderator message suggesting that an issue be posted.
       placeholder: https://discord.com/channels/.../.../...
     validations:
       required: false
@@ -55,6 +50,7 @@ body:
       label: Version
       description: What version of the extension are you running?
       options:
+        - Community Edition v0.11.0
         - Community Edition v0.10.2
         - Community Edition v0.10.1
         - Community Edition v0.10.0
