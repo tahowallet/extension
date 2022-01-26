@@ -37,6 +37,10 @@ export type Events = {
     path: string
     address: string
   }>
+  connectLedger: {
+    resolve: (address: string) => void
+    reject: (error: Error) => void
+  }
 }
 
 export const emitter = new Emittery<Events>()
@@ -138,15 +142,10 @@ export const { ledgerReset, addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 
-let fakeDeviceNonce = 0
-
-async function doConnectFake() {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
+async function doConnectReal() {
+  return new Promise<string>((resolve, reject) => {
+    emitter.emit("connectLedger", { resolve, reject })
   })
-
-  fakeDeviceNonce += 1
-  return `fake-device-id-${fakeDeviceNonce}`
 }
 
 async function doFetchAddressReal(path: string) {
@@ -176,7 +175,7 @@ async function doFetchBalanceFake(address: string) {
 export const connectLedger = createBackgroundAsyncThunk(
   "ledger/connectLedger",
   async (unused, { dispatch }) => {
-    const deviceID = await doConnectFake()
+    const deviceID = await doConnectReal()
     dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
     return { deviceID }
   }

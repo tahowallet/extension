@@ -635,6 +635,10 @@ export default class Main extends BaseService<never> {
         .deriveAddress(input.path)
         .then(input.resolve, input.reject)
     })
+
+    ledgerSliceEmitter.on("connectLedger", (input) => {
+      this.ledgerService.connectLedger().then(input.resolve, input.reject)
+    })
   }
 
   async connectKeyringService(): Promise<void> {
