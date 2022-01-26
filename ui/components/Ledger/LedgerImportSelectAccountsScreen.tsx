@@ -1,15 +1,13 @@
 import {
-  connectLedger,
+  addLedgerAccount,
   fetchAddress,
   fetchBalance,
   importLedgerAccounts,
-  LedgerAccountState,
-  resizeAccounts,
-  setPath,
+  LedgerDeviceState,
 } from "@tallyho/tally-background/redux-slices/ledger"
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSelect from "../Shared/SharedSelect"
 import LedgerContinueButton from "./LedgerContinueButton"
@@ -17,65 +15,73 @@ import LedgerPanelContainer from "./LedgerPanelContainer"
 
 const addressesPerPage = 6
 
-function usePageData(pageIndex: number) {
-  const { nonce, accounts } = useBackgroundSelector((state) => state.ledger)
+function usePageData({
+  device,
+  pageIndex,
+  parentPath,
+}: {
+  device: LedgerDeviceState
+  parentPath: string
+  pageIndex: number
+}) {
   const dispatch = useBackgroundDispatch()
 
   const [selectedStates, setSelectedStates] = useState<
-    Record<number, boolean | undefined>
+    Record<string, boolean | undefined>
   >({})
 
-  const indexes: number[] = []
+  const paths: string[] = []
 
   const firstIndex = pageIndex * addressesPerPage
   const lastIndex = (pageIndex + 1) * addressesPerPage
   for (let i = firstIndex; i < lastIndex; i += 1) {
-    indexes.push(i)
+    paths.push(`${parentPath}/${i}`)
   }
 
-  useEffect(() => {
-    if (accounts.length < lastIndex) {
-      dispatch(resizeAccounts(lastIndex))
-    }
-  }, [accounts.length, dispatch, lastIndex])
-
-  const items = indexes.map((index) => {
-    const account = accounts[index] as LedgerAccountState | undefined
+  const items = paths.map((path) => {
+    const account = device.accounts[path] ?? null
     const address = account?.address ?? null
     return {
-      index,
+      path,
       account,
       address,
       ethBalance: account?.balance ?? null,
-      isSelected: (selectedStates[index] ?? false) && address !== null,
+      isSelected: (selectedStates[path] ?? false) && address !== null,
       setSelected: (selected: boolean) => {
-        setSelectedStates((states) => ({ ...states, [index]: selected }))
+        setSelectedStates((states) => ({ ...states, [path]: selected }))
       },
     }
   })
 
   useEffect(() => {
+    const nextUnresolvedAccount = items.find((item) => item.account === null)
+    if (!nextUnresolvedAccount) return
+    const { path } = nextUnresolvedAccount
+    dispatch(addLedgerAccount({ deviceID: device.id, path }))
+  }, [device.id, dispatch, items])
+
+  useEffect(() => {
     const nextUnresolvedAddress = items.find((item) => item.address === null)
     if (!nextUnresolvedAddress) return
-    const { index, account } = nextUnresolvedAddress
+    const { account } = nextUnresolvedAddress
     if (!account) return
     const { path, fetchingAddress } = account
     if (!path || fetchingAddress) return
-    dispatch(fetchAddress({ nonce, index, path }))
-  }, [accounts.length, dispatch, items, lastIndex, nonce])
+    dispatch(fetchAddress({ deviceID: device.id, path }))
+  }, [device.id, dispatch, items])
 
   useEffect(() => {
     const nextUnresolvedBalance = items.find((item) => item.ethBalance === null)
     if (!nextUnresolvedBalance) return
-    const { index, account } = nextUnresolvedBalance
+    const { path, account } = nextUnresolvedBalance
     if (!account) return
     const { address, fetchingBalance } = account
     if (!address || fetchingBalance) return
-    dispatch(fetchBalance({ index, address }))
-  }, [accounts.length, dispatch, items, lastIndex])
+    dispatch(fetchBalance({ deviceID: device.id, path, address }))
+  }, [device.id, dispatch, items])
 
   const selectedAccounts = items.flatMap((item) => {
-    if (!selectedStates[item.index]) return []
+    if (!selectedStates[item.path]) return []
     if (!item.account) return []
     const { path, address } = item.account
     if (!address) return []
@@ -86,13 +92,17 @@ function usePageData(pageIndex: number) {
 }
 
 function LedgerAccountList({
+  device,
+  parentPath,
   onConnect,
 }: {
+  device: LedgerDeviceState
+  parentPath: string
   onConnect: () => void
 }): ReactElement {
   const [pageIndex, setPageIndex] = useState(0)
 
-  const pageData = usePageData(pageIndex)
+  const pageData = usePageData({ device, parentPath, pageIndex })
   const dispatch = useBackgroundDispatch()
 
   return (
@@ -100,8 +110,8 @@ function LedgerAccountList({
       <div className="addresses">
         <div className="item-list">
           {pageData.items.map(
-            ({ index, address, ethBalance, isSelected, setSelected }) => (
-              <div className="item" key={index}>
+            ({ path, address, ethBalance, isSelected, setSelected }) => (
+              <div className="item" key={path}>
                 <label className="checkbox-label">
                   {/* TODO: Share this implementation of checkbox. */}
                   <input
@@ -326,47 +336,41 @@ function LedgerAccountList({
 }
 
 export default function LedgerImportSelectAccountsScreen({
+  device,
   onConnect,
 }: {
+  device: LedgerDeviceState
   onConnect: () => void
 }): ReactElement {
-  const dispatch = useBackgroundDispatch()
-  const { nonce, connected, parentPath } = useBackgroundSelector(
-    (state) => state.ledger
-  )
-  useEffect(() => {
-    dispatch(connectLedger({ nonce }))
-  }, [dispatch, nonce])
+  const [parentPath, setParentPath] = useState<string | null>(null)
 
   return (
     <>
-      {!connected && (
-        <LedgerPanelContainer
-          indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-          heading="Connecting..."
-        />
-      )}
-      {connected && (
-        <LedgerPanelContainer
-          indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
-          heading="Select ledger accounts"
-          subHeading="You can select as many as you want"
-        >
-          <div className="derivation-path">
-            <SharedSelect
-              options={[
-                { label: `m'/44'/60'/0'`, value: `m'/44'/60'/0'` },
-                { label: `m'/44'/60'`, value: `m'/44'/60'` },
-              ]}
-              placeholder="Select derivation path"
-              onChange={(value) => {
-                dispatch(setPath(value))
-              }}
-            />
-          </div>
-          {parentPath !== null && <LedgerAccountList onConnect={onConnect} />}
-        </LedgerPanelContainer>
-      )}
+      <LedgerPanelContainer
+        indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
+        heading="Select ledger accounts"
+        subHeading="You can select as many as you want"
+      >
+        <div className="derivation-path">
+          <SharedSelect
+            options={[
+              { label: `m'/44'/60'/0'`, value: `m'/44'/60'/0'` },
+              { label: `m'/44'/60'`, value: `m'/44'/60'` },
+            ]}
+            placeholder="Select derivation path"
+            onChange={(value) => {
+              setParentPath(value)
+            }}
+          />
+        </div>
+        {parentPath !== null && (
+          <LedgerAccountList
+            device={device}
+            parentPath={parentPath}
+            onConnect={onConnect}
+          />
+        )}
+      </LedgerPanelContainer>
       <style jsx>{`
         .derivation-path {
           margin: 0.5rem 0;

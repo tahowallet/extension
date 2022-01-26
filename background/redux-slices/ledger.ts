@@ -10,12 +10,16 @@ export interface LedgerAccountState {
   fetchingBalance: boolean
 }
 
-export type LedgerImportState = {
-  /** Changes when a new ledger is connected */
-  nonce: number
-  connected: boolean
-  parentPath: string | null
-  accounts: LedgerAccountState[]
+export interface LedgerDeviceState {
+  /** First address derived from standard ETH derivation path, used as ID */
+  id: string
+  /** Accounts by path */
+  accounts: Record<string, LedgerAccountState | undefined>
+}
+
+export type LedgerState = {
+  /** Devices by ID */
+  devices: Record<string, LedgerDeviceState | undefined>
 }
 
 export type Events = {
@@ -37,11 +41,8 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
-export const initialState: LedgerImportState = {
-  nonce: 0,
-  connected: false,
-  parentPath: null,
-  accounts: [],
+export const initialState: LedgerState = {
+  devices: {},
 }
 
 const ledgerSlice = createSlice({
@@ -49,100 +50,103 @@ const ledgerSlice = createSlice({
   initialState,
   reducers: {
     ledgerReset: (immerState) => {
-      immerState.nonce += 1
-      immerState.parentPath = null
-      immerState.connected = false
-      immerState.accounts = []
+      immerState.devices = {}
     },
-    setLedgerConnected: (
+    addLedgerDevice: (
       immerState,
-      { payload: nonce }: { payload: number }
+      { payload: deviceID }: { payload: string }
     ) => {
-      if (immerState.nonce !== nonce) return
-      immerState.connected = true
+      if (deviceID in immerState.devices) return
+      immerState.devices[deviceID] = {
+        id: deviceID,
+        accounts: {},
+      }
     },
-    setPath: (immerState, { payload: path }: { payload: string }) => {
-      immerState.parentPath = path
-      immerState.accounts = []
-    },
-    resizeAccounts: (immerState, { payload: length }: { payload: number }) => {
-      while (immerState.accounts.length > length) immerState.accounts.pop()
-      for (let i = immerState.accounts.length; i < length; i += 1) {
-        immerState.accounts.push({
-          path: `${immerState.parentPath}/${i}`,
-          address: null,
-          fetchingAddress: false,
-          balance: null,
-          fetchingBalance: false,
-        })
+    addLedgerAccount: (
+      immerState,
+      {
+        payload: { deviceID, path },
+      }: { payload: { deviceID: string; path: string } }
+    ) => {
+      const device = immerState.devices[deviceID]
+      if (!device) return
+      if (path in device.accounts) return
+      device.accounts[path] = {
+        path,
+        address: null,
+        fetchingAddress: false,
+        balance: null,
+        fetchingBalance: false,
       }
     },
     setFetchingAddress: (
       immerState,
       {
-        payload: { nonce, index, path },
+        payload: { deviceID, path },
       }: {
-        payload: { nonce: number; index: number; path: string }
+        payload: { deviceID: string; path: string }
       }
     ) => {
-      if (immerState.nonce !== nonce) return
-      const account = immerState.accounts[index]
+      const device = immerState.devices[deviceID]
+      if (!device) return
+      const account = device.accounts[path]
       if (!account) return
-      if (account.path !== path) return
       account.fetchingAddress = true
     },
     setFetchingBalance: (
       immerState,
       {
-        payload: { index, address },
-      }: { payload: { index: number; address: string } }
+        payload: { deviceID, path },
+      }: { payload: { deviceID: string; path: string } }
     ) => {
-      const account = immerState.accounts[index]
+      const device = immerState.devices[deviceID]
+      if (!device) return
+      const account = device.accounts[path]
       if (!account) return
-      if (account.address !== address) return
       account.fetchingBalance = true
     },
     resolveAddress: (
       immerState,
       {
-        payload: { nonce, index, path, address },
+        payload: { deviceID, path, address },
       }: {
-        payload: {
-          nonce: number
-          index: number
-          path: string
-          address: string
-        }
+        payload: { deviceID: string; path: string; address: string }
       }
     ) => {
-      if (immerState.nonce !== nonce) return
-      const account = immerState.accounts[index]
+      const device = immerState.devices[deviceID]
+      if (!device) return
+      const account = device.accounts[path]
       if (!account) return
-      if (account.path !== path) return
       if (account.address === null) account.address = address
     },
     resolveBalance: (
       immerState,
       {
-        payload: { index, address, balance },
-      }: { payload: { index: number; address: string; balance: string } }
+        payload: { deviceID, path, balance },
+      }: { payload: { deviceID: string; path: string; balance: string } }
     ) => {
-      const account = immerState.accounts[index]
+      const device = immerState.devices[deviceID]
+      if (!device) return
+      const account = device.accounts[path]
       if (!account) return
-      if (account.address !== address) return
       if (account.balance === null) account.balance = balance
     },
   },
 })
 
-export const { ledgerReset, setPath, resizeAccounts } = ledgerSlice.actions
+export const { ledgerReset, addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
+
+let fakeDeviceNonce = 0
 
 async function doConnectFake() {
   await new Promise((resolve) => {
     setTimeout(resolve, 500)
   })
+
+  fakeDeviceNonce += 1
+  return `fake-device-id-${fakeDeviceNonce}`
 }
 
 async function doFetchAddressReal(path: string) {
@@ -184,35 +188,38 @@ async function doFetchBalanceFake(address: string) {
 
 export const connectLedger = createBackgroundAsyncThunk(
   "ledger/connectLedger",
-  async ({ nonce }: { nonce: number }, { dispatch }) => {
-    await doConnectFake()
-    dispatch(ledgerSlice.actions.setLedgerConnected(nonce))
+  async (unused, { dispatch }) => {
+    const deviceID = await doConnectFake()
+    dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
+    return { deviceID }
   }
 )
 
 export const fetchAddress = createBackgroundAsyncThunk(
   "ledger/fetchAddress",
   async (
-    { nonce, index, path }: { nonce: number; index: number; path: string },
+    { deviceID, path }: { deviceID: string; path: string },
     { dispatch }
   ) => {
-    dispatch(ledgerSlice.actions.setFetchingAddress({ nonce, index, path }))
+    dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
     const address = await doFetchAddressFake(path)
-    dispatch(
-      ledgerSlice.actions.resolveAddress({ nonce, index, path, address })
-    )
+    dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
   }
 )
 
 export const fetchBalance = createBackgroundAsyncThunk(
   "ledger/fetchBalance",
   async (
-    { index, address }: { index: number; address: string },
+    {
+      deviceID,
+      path,
+      address,
+    }: { deviceID: string; path: string; address: string },
     { dispatch }
   ) => {
-    dispatch(ledgerSlice.actions.setFetchingBalance({ index, address }))
+    dispatch(ledgerSlice.actions.setFetchingBalance({ deviceID, path }))
     const balance = await doFetchBalanceFake(address)
-    dispatch(ledgerSlice.actions.resolveBalance({ index, address, balance }))
+    dispatch(ledgerSlice.actions.resolveBalance({ deviceID, path, balance }))
   }
 )
 
