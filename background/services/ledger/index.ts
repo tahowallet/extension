@@ -108,19 +108,19 @@ async function generateLedgerId(
 export default class LedgerService extends BaseService<Events> {
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
-      logger.info("LedgerService::create")
+      logger.info("entry")
       return new this(await getOrCreateDB())
     }
 
   private constructor(private db: LedgerDatabase) {
     super()
-    logger.info("LedgerService::constructor")
+    logger.info("exit")
   }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    logger.info("LedgerService::internalStartService")
+    logger.info("exit")
   }
 
   async deriveAddress(accountID: string): Promise<HexString> {
