@@ -122,9 +122,8 @@ export default class LedgerService extends BaseService<Events> {
     logger.info("exit")
   }
 
-  async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
-    logger.info("entry")
-    if (event.device.productId !== 0x4015) {
+  async onConnection(productId: number): Promise<void> {
+    if (productId !== 0x4015) {
       return
     }
 
@@ -146,6 +145,15 @@ export default class LedgerService extends BaseService<Events> {
       accountIDs: [idGeneratorPath],
       metadata: { ethereumVersion: ethVersion },
     })
+  }
+
+  async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
+    logger.info("entry")
+    if (event.device.productId !== 0x4015) {
+      return
+    }
+
+    this.onConnection(event.device.productId)
   }
 
   async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
@@ -177,6 +185,16 @@ export default class LedgerService extends BaseService<Events> {
     navigator.usb.removeEventListener("connect", this.#onUSBConnect)
 
     logger.info("exit")
+  }
+
+  async connectLedger(): Promise<string> {
+    logger.info("entry")
+
+    const devArray = await navigator.usb.getDevices()
+
+    this.onConnection(devArray[0].productId)
+
+    return this.#currentLedgerId
   }
 
   async deriveAddress(accountID: string): Promise<HexString> {
