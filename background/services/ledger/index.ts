@@ -9,7 +9,6 @@ import {
   UnsignedTransaction,
   parse as parseRawTransaction,
 } from "@ethersproject/transactions"
-import { SignatureLike } from "ethers/node_modules/@ethersproject/bytes"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import { HexString } from "../../types"
 import BaseService from "../base"
@@ -109,10 +108,13 @@ export default class LedgerService extends BaseService<Events> {
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
       logger.info("entry")
-      return new this(await getOrCreateDB())
+      return new this(await getOrCreateDB(), await TransportWebUSB.create())
     }
 
-  private constructor(private db: LedgerDatabase) {
+  private constructor(
+    private db: LedgerDatabase,
+    private transport: Transport
+  ) {
     super()
     logger.info("exit")
   }
@@ -126,14 +128,10 @@ export default class LedgerService extends BaseService<Events> {
   async deriveAddress(accountID: string): Promise<HexString> {
     requireAvailableLedger()
 
-    let transport
-
     try {
-      transport = await TransportWebUSB.create()
+      const eth = new Eth(this.transport)
 
-      const eth = new Eth(transport)
-
-      const [id, type] = await generateLedgerId(transport, eth)
+      const [id, type] = await generateLedgerId(this.transport, eth)
 
       const accountAddress = await deriveAddressOnLedger(accountID, eth)
 
@@ -158,8 +156,6 @@ export default class LedgerService extends BaseService<Events> {
       return accountAddress
     } catch (err) {
       // handle transport open error
-    } finally {
-      if (transport) transport.close()
     }
 
     throw new Error("Address derivation is unsuccessful!")
@@ -171,11 +167,7 @@ export default class LedgerService extends BaseService<Events> {
   ): Promise<SignedEVMTransaction> {
     requireAvailableLedger()
 
-    let transport
-
     try {
-      transport = await TransportWebUSB.create()
-
       const ethersTx =
         ethersTransactionRequestFromEIP1559TransactionRequest(
           transactionRequest
@@ -190,14 +182,14 @@ export default class LedgerService extends BaseService<Events> {
         )
       }
 
-      const eth = new Eth(transport)
+      const eth = new Eth(this.transport)
       const signature = await eth.signTransaction(
         accountData.path,
         serializedTx,
         null
       )
 
-      const alteredSig: SignatureLike = {
+      const alteredSig = {
         r: signature.r,
         s: signature.s,
         v: parseInt(signature.v, 16),
@@ -252,8 +244,6 @@ export default class LedgerService extends BaseService<Events> {
       return signedTx
     } catch (err) {
       // handle transport open error
-    } finally {
-      if (transport) transport.close()
     }
 
     throw new Error("Transaction signing is unsuccessful!")
