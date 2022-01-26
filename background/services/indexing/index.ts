@@ -426,9 +426,14 @@ export default class IndexingService extends BaseService<Events> {
 
     // Filter all assets based on the currently selected network
     const activeAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
+      (t) =>
+        t.symbol === "ETH" ||
+        t.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
+    logger.log("Tracking Assets:")
+
+    logger.log(activeAssetsToTrack)
     try {
       // TODO only uses USD
       const activeAssetsByAddress = activeAssetsToTrack.reduce((agg, t) => {

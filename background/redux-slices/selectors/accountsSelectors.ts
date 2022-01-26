@@ -22,7 +22,8 @@ import { SigningMethod } from "../signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
-const desiredDecimals = 2
+const desiredCurrencyDecimals = 2
+const desiredFungibleAssetDecimals = 5
 // TODO Make this a setting.
 const mainCurrencySymbol = "USD"
 // TODO Make this a setting.
@@ -58,9 +59,9 @@ export const selectAccountAndTimestampedActivities = createSelector(
             enrichAssetAmountWithMainCurrencyValues(
               assetItem,
               assetPricePoint,
-              desiredDecimals
+              desiredCurrencyDecimals
             ),
-            desiredDecimals
+            desiredCurrencyDecimals
           )
 
           if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
@@ -71,7 +72,10 @@ export const selectAccountAndTimestampedActivities = createSelector(
           return enrichedAssetAmount
         }
 
-        return enrichAssetAmountWithDecimalValues(assetItem, desiredDecimals)
+        return enrichAssetAmountWithDecimalValues(
+          assetItem,
+          desiredFungibleAssetDecimals
+        )
       })
       .filter((assetItem) => {
         const isNotDust =
@@ -91,7 +95,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
           ? formatCurrencyAmount(
               mainCurrencySymbol,
               totalMainCurrencyAmount,
-              desiredDecimals
+              desiredCurrencyDecimals
             )
           : undefined,
       },
@@ -151,9 +155,9 @@ export const selectCurrentAccountBalances = createSelector(
             enrichAssetAmountWithMainCurrencyValues(
               assetAmount,
               assetPricePoint,
-              desiredDecimals
+              desiredCurrencyDecimals
             ),
-            desiredDecimals
+            desiredCurrencyDecimals
           )
 
           if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
@@ -164,7 +168,10 @@ export const selectCurrentAccountBalances = createSelector(
           return enrichedAssetAmount
         }
 
-        return enrichAssetAmountWithDecimalValues(assetAmount, desiredDecimals)
+        return enrichAssetAmountWithDecimalValues(
+          assetAmount,
+          desiredFungibleAssetDecimals
+        )
       })
       .filter((assetAmount) => {
         const isNotDust =
@@ -185,7 +192,7 @@ export const selectCurrentAccountBalances = createSelector(
         ? formatCurrencyAmount(
             mainCurrencySymbol,
             totalMainCurrencyAmount,
-            desiredDecimals
+            desiredCurrencyDecimals
           )
         : undefined,
     }
@@ -261,7 +268,7 @@ export const selectAccountTotalsByCategory = createSelector(
 
             return assetAmountToDesiredDecimals(
               convertedAmount,
-              desiredDecimals
+              desiredFungibleAssetDecimals
             )
           })
           .reduce((total, assetBalance) => total + assetBalance, 0)
@@ -276,7 +283,7 @@ export const selectAccountTotalsByCategory = createSelector(
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(
             mainCurrencySymbol,
             totalMainCurrencyAmount,
-            desiredDecimals
+            desiredCurrencyDecimals
           ),
         }
       })
