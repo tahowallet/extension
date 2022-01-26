@@ -202,7 +202,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
-    await this.db.addAccount({ path, address })
+    await this.db.addAccount({ ledgerId: this.#currentLedgerId, path, address })
   }
 
   async signTransaction(

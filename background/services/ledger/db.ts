@@ -3,6 +3,7 @@ import { AddressNetwork } from "../../accounts"
 import { HexString } from "../../types"
 
 export interface LedgerAccount {
+  ledgerId: string
   address: HexString
   path: string
 }
@@ -14,7 +15,7 @@ export class LedgerDatabase extends Dexie {
     super("tally/ledgers")
 
     this.version(1).stores({
-      accounts: "&address",
+      accounts: "&ledgerId,&address",
     })
   }
 
@@ -26,6 +27,10 @@ export class LedgerDatabase extends Dexie {
     return (
       (await this.accounts.where("address").equals(address).first()) ?? null
     )
+  }
+
+  async getAllAccountsByLedgerId(ledgerId: string): Promise<LedgerAccount[]> {
+    return this.accounts.where("ledgerId").equals(ledgerId).toArray()
   }
 }
 
