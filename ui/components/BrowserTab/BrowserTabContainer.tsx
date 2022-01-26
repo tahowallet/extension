@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 
-export default function TabContainer({
+export default function BrowserTabContainer({
   children,
 }: {
   children: React.ReactNode

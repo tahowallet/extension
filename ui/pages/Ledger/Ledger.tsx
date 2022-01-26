@@ -5,7 +5,7 @@ import {
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import React, { ReactElement, useEffect, useState } from "react"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
-import TabContainer from "../../components/Tab/TabContainer"
+import BrowserTabContainer from "../../components/BrowserTab/BrowserTabContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import LedgerConnectPopup from "./LedgerConnectPopup"
 import LedgerImportDone from "./LedgerImportDone"
@@ -27,7 +27,7 @@ export default function Ledger(): ReactElement {
   }, [dispatch])
 
   return (
-    <TabContainer>
+    <BrowserTabContainer>
       {phase === "0-prepare" && (
         <LedgerPrepare
           onContinue={async () => {
@@ -80,6 +80,6 @@ export default function Ledger(): ReactElement {
           }}
         />
       )}
-    </TabContainer>
+    </BrowserTabContainer>
   )
 }
