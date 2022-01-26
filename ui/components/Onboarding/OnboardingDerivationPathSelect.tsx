@@ -1,8 +1,15 @@
 import classNames from "classnames"
-import React, { ReactElement, useEffect, useRef, useState } from "react"
+import React, {
+  KeyboardEventHandler,
+  ReactElement,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useOnClickOutside } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
+import SharedModal from "../Shared/SharedModal"
 
 // TODO make this network specific
 const initialDerivationPaths: { value: string; label: string }[] = [
@@ -45,7 +52,7 @@ export default function OnboardingDerivationPathSelect({
   const [activeIndex, setActiveIndex] = useState<number>(0)
   const [derivationPaths, setDerivationPaths] = useState(initialDerivationPaths)
 
-  const [customModalStep, setCustomModalStep] = useState(0)
+  const [modalStep, setModalStep] = useState(0)
   const [customPath, setCustomPath] = useState(initialCustomPath)
   const [customPathLabel, setCustomPathLabel] = useState("")
 
@@ -59,13 +66,21 @@ export default function OnboardingDerivationPathSelect({
   const showDropdownHandler = () => setIsDropdownOpen(!isDropdownOpen)
   const hideDropdownHandler = () => setIsDropdownOpen(false)
 
-  const selectContainerRef = useRef(null)
+  const selectContainerRef = useRef<HTMLDivElement | null>(null)
+  const coinTypeRef = useRef<HTMLInputElement | null>(null)
 
   useOnClickOutside(selectContainerRef, hideDropdownHandler)
 
   useEffect(() => {
     onChange(currentPath.value)
   }, [currentPath.value, onChange])
+
+  useEffect(() => {
+    if (modalStep === 2 && coinTypeRef.current) {
+      coinTypeRef.current.focus()
+      coinTypeRef.current.select()
+    }
+  }, [modalStep])
 
   const updateSelectedOption = (index: number) => {
     setActiveIndex(index)
@@ -74,7 +89,7 @@ export default function OnboardingDerivationPathSelect({
 
   // TODO Does it make sense to use `useReducer`
   const handleAddCustomPath = () => {
-    setCustomModalStep(0)
+    setModalStep(0)
     updateSelectedOption(derivationPaths.length)
 
     // TODO It might be considered to save the custom path to the local db
@@ -96,83 +111,81 @@ export default function OnboardingDerivationPathSelect({
     })
   }
 
+  const handleKeypressCustomInput: KeyboardEventHandler<HTMLInputElement> = (
+    e
+  ) => {
+    if (e.key === "Enter") setModalStep(1)
+  }
+
   return (
     <>
-      <div
-        className={classNames("modal", {
-          [`open step_${customModalStep}`]: customModalStep > 0,
-        })}
+      <SharedModal
+        header="Add derivation path"
+        isOpen={modalStep > 0}
+        onClose={() => setModalStep((prev) => prev - 1)}
+        minHeight={modalStep === 2 ? "463px" : "auto"}
+        closeOnOverlayClick={false}
       >
-        <div className="modal_overlay" />
-        <div className="modal_content">
-          <button type="button" aria-label="close modal">
-            <button
-              type="button"
-              className="icon_close"
-              onClick={() => {
-                setCustomModalStep((prev) => prev - 1)
-              }}
-              aria-label="close modal"
-            />
-          </button>
-          <div className="modal_body">
-            <h2 className="modal_header">Add custom derivation path</h2>
-            <div className="step_1">
-              <div className="input_wrap">
-                <SharedInput
-                  id="custom_path_label"
-                  label="Label"
-                  onChange={(value) => setCustomPathLabel(value)}
-                  focusedLabelBackgroundColor="var(--green-120)"
-                  value={customPathLabel}
-                />
-              </div>
-              <div className="input_wrap">
-                <SharedInput
-                  id="custom_path_value"
-                  label="Custom path (m/44'/0'/0)"
-                  onFocus={() => setCustomModalStep(2)}
-                  focusedLabelBackgroundColor="var(--green-120)"
-                  value={customPathValue}
-                />
-              </div>
+        {modalStep === 1 && (
+          <>
+            <div className="input_wrap">
+              <SharedInput
+                id="custom_path_label"
+                label="Label"
+                onChange={(value) => setCustomPathLabel(value)}
+                focusedLabelBackgroundColor="var(--green-120)"
+                value={customPathLabel}
+              />
+            </div>
+            <div className="input_wrap">
+              <SharedInput
+                id="custom_path_value"
+                label="Custom path (m/44'/0'/0)"
+                onFocus={() => setModalStep(2)}
+                focusedLabelBackgroundColor="var(--green-120)"
+                value={customPathValue}
+              />
+            </div>
 
-              <SharedButton
-                type="primary"
-                size="medium"
-                onClick={handleAddCustomPath}
-              >
-                Add derivation path
-              </SharedButton>
-            </div>
-            <div className="step_2">
-              <div className="input_wrap custom">
-                <span>m/44&#39;/</span>
-                <input
-                  name="coinType"
-                  className="custom_input"
-                  value={customPath.coinType}
-                  onChange={handleChangeCustomPath}
-                />
-                <span>&#39;/</span>
-                <input
-                  name="account"
-                  className="custom_input"
-                  value={customPath.account}
-                  onChange={handleChangeCustomPath}
-                />
-                <span>&#39;/</span>
-                <input
-                  name="change"
-                  className="custom_input"
-                  value={customPath.change}
-                  onChange={handleChangeCustomPath}
-                />
-              </div>
-            </div>
+            <SharedButton
+              type="primary"
+              size="medium"
+              onClick={handleAddCustomPath}
+            >
+              Add derivation path
+            </SharedButton>
+          </>
+        )}
+        {modalStep === 2 && (
+          <div className="input_wrap custom">
+            <span>m/44&#39;/</span>
+            <input
+              name="coinType"
+              className="custom_input"
+              value={customPath.coinType}
+              onChange={handleChangeCustomPath}
+              ref={coinTypeRef}
+              onKeyPress={handleKeypressCustomInput}
+            />
+            <span>&#39;/</span>
+            <input
+              name="account"
+              className="custom_input"
+              value={customPath.account}
+              onChange={handleChangeCustomPath}
+              onKeyPress={handleKeypressCustomInput}
+            />
+            <span>&#39;/</span>
+            <input
+              name="change"
+              className="custom_input"
+              value={customPath.change}
+              onChange={handleChangeCustomPath}
+              onKeyPress={handleKeypressCustomInput}
+            />
           </div>
-        </div>
-      </div>
+        )}
+      </SharedModal>
       <div
         className={classNames("select", "up", { active: isDropdownOpen })}
         ref={selectContainerRef}
@@ -222,7 +235,7 @@ export default function OnboardingDerivationPathSelect({
             )
           })}
           <li className="custom_option">
-            <button type="button" onClick={() => setCustomModalStep(1)}>
+            <button type="button" onClick={() => setModalStep(1)}>
               Add custom path
             </button>
           </li>
@@ -230,73 +243,6 @@ export default function OnboardingDerivationPathSelect({
       </div>
       <style jsx>
         {`
-          .modal {
-            position: fixed;
-            display: none;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-          }
-          .modal.open {
-            display: flex;
-          }
-          .modal_overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--hunter-green);
-            opacity: 0.7;
-          }
-          .modal_content {
-            position: relative;
-            display: flex;
-            align-items: center;
-            z-index: 1;
-            box-sizing: border-box;
-            width: 312px;
-            background-color: var(--green-120);
-            padding: 24px;
-            box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.14),
-              0px 14px 16px rgba(0, 20, 19, 0.24),
-              0px 10px 12px rgba(0, 20, 19, 0.34);
-            border-radius: 8px;
-            min-height: ${customModalStep === 2 ? "463px" : "auto"};
-            transition: min-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
-          }
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            width: 11px;
-            height: 11px;
-            padding: 2.5px;
-            position: absolute;
-            right: 16px;
-            top: 16px;
-            background-color: var(--green-20);
-            z-index: 1;
-          }
-          .modal_body {
-            min-height: 320px;
-            flex: 1;
-          }
-          .step_1 {
-            display: ${customModalStep === 1 ? "block" : "none"};
-          }
-          .step_2 {
-            display: ${customModalStep === 2 ? "block" : "none"};
-          }
-          .modal_header {
-            color: var(--green-20);
-            font-size: 18px;
-            line-height: 24px;
-            margin-bottom: 24px;
-          }
           .input_wrap {
             margin-bottom: 32px;
           }
