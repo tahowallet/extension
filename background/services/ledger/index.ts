@@ -50,7 +50,7 @@ type Events = ServiceLifecycleEvents & {
 
 const UnknownLedgerId = "unrecognizable"
 
-const idGeneratorPath = "44'/60'/0'/0/0"
+export const idDerviationPath = "44'/60'/0'/0/0"
 
 async function requireAvailableLedger() {
   const devs = await navigator.usb.getDevices()
@@ -91,7 +91,7 @@ async function generateLedgerId(
     return [UnknownLedgerId, extensionDeviceType]
   }
 
-  const address = await deriveAddressOnLedger(idGeneratorPath, eth)
+  const address = await deriveAddressOnLedger(idDerviationPath, eth)
 
   return [address, extensionDeviceType]
 }
@@ -142,7 +142,7 @@ export default class LedgerService extends BaseService<Events> {
     this.emitter.emit("ledgerAdded", {
       id,
       type,
-      accountIDs: [idGeneratorPath],
+      accountIDs: [idDerviationPath],
       metadata: { ethereumVersion: ethVersion },
     })
   }
