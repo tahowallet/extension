@@ -2,15 +2,11 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
 import {
   broadcastSignedTransaction,
-  NetworkFeeSetting,
   rejectTransactionSignature,
-  selectEstimatedFeesPerGas,
   selectIsTransactionLoaded,
   selectIsTransactionSigned,
   selectTransactionData,
-  setFeeType,
   signTransaction,
-  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
@@ -25,10 +21,8 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../hooks"
-import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
-import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
-import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
+import SignTransactionDetailPanel from "../components/SignTransaction/SignTransactionDetailPanel"
 
 export enum SignType {
   Sign = "sign",
@@ -50,8 +44,6 @@ export default function SignTransaction({
 }: {
   location: { key: string; pathname: string; state?: SignLocationState }
 }): ReactElement {
-  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
-    useState(false)
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
@@ -84,9 +76,6 @@ export default function SignTransaction({
   const areKeyringsUnlocked = useAreKeyringsUnlocked(
     signerAccountTotal?.signingMethod?.type === "keyring"
   )
-
-  const [gasLimit, setGasLimit] = useState("")
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
@@ -181,12 +170,6 @@ export default function SignTransaction({
       setIsTransactionSigning(true)
     }
   }
-  const networkSettingsSaved = async (networkSetting: NetworkFeeSetting) => {
-    setGasLimit(networkSetting.gasLimit)
-    dispatch(setFeeType(networkSetting.feeType))
-    dispatch(updateTransactionOptions(transactionDetails))
-    setNetworkSettingsModalOpen(false)
-  }
 
   return (
     <section>
@@ -202,31 +185,7 @@ export default function SignTransaction({
         panelNumber={panelNumber}
         panelNames={["Details"]}
       />
-      {panelNumber === 0 ? (
-        <div className="detail_items_wrap standard_width_padded">
-          <SharedSlideUpMenu
-            size="custom"
-            isOpen={networkSettingsModalOpen}
-            close={() => setNetworkSettingsModalOpen(false)}
-            customSize={`${3 * 56 + 320}px`}
-          >
-            <NetworkSettingsChooser
-              networkSettings={{
-                estimatedFeesPerGas,
-                gasLimit,
-              }}
-              onNetworkSettingsSave={networkSettingsSaved}
-              visible={networkSettingsModalOpen}
-            />
-          </SharedSlideUpMenu>
-          <span className="detail_item">
-            Estimated network fee
-            <FeeSettingsButton
-              onClick={() => setNetworkSettingsModalOpen(true)}
-            />
-          </span>
-        </div>
-      ) : null}
+      {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
       <div className="footer_actions">
         <SharedButton
           iconSize="large"
@@ -290,24 +249,6 @@ export default function SignTransaction({
             justify-content: space-between;
             box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
             background-color: var(--green-95);
-          }
-          .detail_item {
-            width: 100%;
-            color: var(--green-40);
-            font-size: 14px;
-            line-height: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-          .detail_items_wrap {
-            display: flex;
-            margin-top: 21px;
-            flex-direction: column;
-          }
-          .detail_item_right {
-            color: var(--green-20);
-            font-size: 16px;
           }
         `}
       </style>
