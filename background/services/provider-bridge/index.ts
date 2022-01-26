@@ -305,7 +305,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
             AllowedQueryParamPage.signData
           )
           if (
-            walletAddress.toLowerCase() === enablingPermission.accountAddress
+            sameEVMAddress(walletAddress, enablingPermission.accountAddress)
           ) {
             return await this.routeSafeRequest(
               method,
