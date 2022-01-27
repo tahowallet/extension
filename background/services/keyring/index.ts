@@ -427,20 +427,13 @@ export default class KeyringService extends BaseService<Events> {
     // find the keyring using a linear search
     const keyring = await this.#findKeyring(account)
     // When signing we should not include EIP712Domain type
-    const filteredTypes = Object.keys(types)
-      .filter((type) => type !== "EIP712Domain")
-      .reduce((obj, key) => {
-        return {
-          ...obj,
-          [key]: types[key],
-        }
-      }, {})
+    delete types.EIP712Domain
 
     try {
       const signature = await keyring.signTypedData(
         account,
         domain,
-        filteredTypes,
+        types,
         message
       )
       this.emitter.emit("signedData", signature)
