@@ -5,6 +5,9 @@ import balances from "../constants/balances"
 import BalanceTree from "../lib/balance-tree"
 import { createBackgroundAsyncThunk } from "./utils"
 import { getContract } from "./utils/contract-utils"
+import * as DAOs from "../static/DAOs.json"
+import * as delegates from "../static/delegates.json"
+import * as eligibles from "../static/eligibles.json"
 
 const newBalanceTree = new BalanceTree(balances)
 
@@ -14,6 +17,21 @@ interface ClaimingState {
     [address: string]: boolean
   }
   distributor: any
+  delegates: {
+    address: string
+    ensName: string
+    applicationLink: string
+  }[]
+  eligibles: {
+    address: string
+    earnings: string
+    reasons: string
+  }[]
+  DAOs: {
+    address: string
+    name: string
+    logoAsset: string
+  }[]
 }
 
 const findIndexAndBalance = (address: string) => {
@@ -76,6 +94,9 @@ const initialState = {
   status: "idle",
   claimed: {},
   distributor: {},
+  delegates,
+  DAOs,
+  eligibles,
 } as ClaimingState
 
 const claimingSlice = createSlice({
