@@ -216,7 +216,11 @@ export default class LedgerService extends BaseService<Events> {
 
       return accountAddress
     } catch (err) {
-      // handle transport open error
+      logger.error(
+        `Error encountered! ledgerID: ${
+          this.#currentLedgerId
+        } accountID: ${accountID} error: ${err}`
+      )
     }
 
     throw new Error("Address derivation is unsuccessful!")
@@ -308,7 +312,11 @@ export default class LedgerService extends BaseService<Events> {
 
       return signedTx
     } catch (err) {
-      // handle transport open error
+      logger.error(
+        `Error encountered! ledgerID: ${
+          this.#currentLedgerId
+        } address: ${address} transactionRequest: ${transactionRequest} error: ${err}`
+      )
     }
 
     throw new Error("Transaction signing is unsuccessful!")
