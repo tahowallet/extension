@@ -1,10 +1,11 @@
 import React, { ReactElement } from "react"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 
-export default function ClaimIntro(): ReactElement {
+export default function ClaimIntro(props: { eligibility: any }): ReactElement {
+  const { eligibility } = props
   return (
     <div className="claim standard_width">
-      <div className="title">You’re about to claim</div>
+      <div className="title">You’re about to claim {eligibility.earnings}</div>
       <ClaimAmountBanner />
       <p className="list_title">Here are your next steps:</p>
       <div className="content">
