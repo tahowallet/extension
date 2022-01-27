@@ -1,0 +1,32 @@
+[
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Yearn.finance",
+    "logoAsset": "yearn@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "OlympusDao",
+    "logoAsset": "olympusdao@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "AAVE",
+    "logoAsset": "aave@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "ENS",
+    "logoAsset": "ens@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "SushiSwap",
+    "logoAsset": "sushiswap@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Uniswap",
+    "logoAsset": "sushiswap@2x.png"
+  }
+]
