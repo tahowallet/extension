@@ -1,6 +1,5 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { BigNumber } from "ethers"
 import { EIP712TypedData, HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -33,15 +32,6 @@ export type EIP712DomainType = {
   version?: string
   chainId?: number
   verifyingContract?: HexString
-}
-
-export type PermitRequest = {
-  account: HexString
-  liquidityTokenAddress: HexString
-  liquidityAmount: BigNumber
-  nonce: BigNumber
-  deadline: BigNumber
-  spender: HexString
 }
 
 export type SignTypedDataRequest = {
