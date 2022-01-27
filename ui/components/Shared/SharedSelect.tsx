@@ -1,5 +1,12 @@
+import React, {
+  useState,
+  useRef,
+  ReactElement,
+  useEffect,
+  useMemo,
+} from "react"
 import classNames from "classnames"
-import React, { useState, useRef, ReactElement } from "react"
+
 import { useOnClickOutside } from "../../hooks"
 
 type Option = { value: string; label: string }
@@ -7,99 +14,167 @@ type Option = { value: string; label: string }
 type Props = {
   options: Option[] | string[]
   onChange: (value: string) => void
+  defaultIndex?: number
   placeholder?: string
+  label?: string
   placement?: "top" | "bottom"
+  triggerLabel?: string
+  onTrigger?: () => void
+  showValue?: boolean
 }
 
 export default function SharedSelect(props: Props): ReactElement {
-  const { options, placeholder, onChange, placement = "bottom" } = props
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [activeIndex, setActiveIndex] = useState<number>()
+  const {
+    options: initialOptions,
+    onChange,
+    defaultIndex = 0,
+    label,
+    placeholder,
+    placement = "bottom",
+    triggerLabel,
+    onTrigger,
+    showValue,
+  } = props
 
-  const label =
-    activeIndex != null
-      ? (options[activeIndex] as Option)?.label ?? options[activeIndex]
-      : placeholder
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(defaultIndex)
+  const previousdefaultIndex = useRef(defaultIndex)
 
-  const showDropdownHandler = () => setShowDropdown(!showDropdown)
-  const hideDropdownHandler = () => setShowDropdown(false)
+  const showDropdownHandler = () => setIsDropdownOpen(!isDropdownOpen)
+  const hideDropdownHandler = () => setIsDropdownOpen(false)
 
-  const selectContainerRef = useRef(null)
-
+  const selectContainerRef = useRef<HTMLDivElement | null>(null)
   useOnClickOutside(selectContainerRef, hideDropdownHandler)
 
-  const updateSelectedOption = (value: string, index: number) => {
+  const options = useMemo(
+    () =>
+      initialOptions.map((option) =>
+        (option as Option).label
+          ? option
+          : {
+              value: option,
+              label: option,
+            }
+      ) as Option[],
+    [initialOptions]
+  )
+
+  const currentLabel = activeIndex ? options[activeIndex].label : placeholder
+  const currentValue = activeIndex ? options[activeIndex].value : null
+
+  useEffect(() => {
+    if (currentValue) onChange(currentValue)
+  }, [currentValue, onChange])
+
+  useEffect(() => {
+    if (previousdefaultIndex.current !== defaultIndex)
+      setActiveIndex(defaultIndex)
+  }, [defaultIndex])
+
+  const updateSelectedOption = (index: number) => {
     setActiveIndex(index)
-    onChange(value)
-    setShowDropdown(false)
+    setIsDropdownOpen(false)
   }
 
   return (
-    <div
-      className={classNames("select", [placement], { active: showDropdown })}
-      ref={selectContainerRef}
-    >
-      <button
-        type="button"
-        className="button"
-        onClick={showDropdownHandler}
-        onKeyPress={showDropdownHandler}
-        tabIndex={0}
-      >
-        <span>{label ?? placeholder}</span>
-        <span className="icon" />
-      </button>
-      <ul
-        className={classNames("options", {
-          show: showDropdown,
-          hide: !showDropdown,
+    <>
+      <div
+        className={classNames("select", [placement], {
+          active: isDropdownOpen,
         })}
+        ref={selectContainerRef}
       >
-        {options.map((option, index) => {
-          const [optionValue, optionLabel] =
-            typeof option === "string"
-              ? [option, option]
-              : [option.value, option.label]
-
-          return (
-            <li
-              key={optionValue}
-              role="menuitem"
-              tabIndex={index}
-              className={classNames("option", {
-                selected: activeIndex === index,
-              })}
-              onClick={() => updateSelectedOption(optionValue, index)}
-              onKeyDown={() => updateSelectedOption(optionValue, index)}
-            >
-              {optionLabel}
+        {label && <label htmlFor="button">{label}</label>}
+        <button
+          id="button"
+          type="button"
+          className="button"
+          onClick={showDropdownHandler}
+          onKeyPress={showDropdownHandler}
+          tabIndex={0}
+        >
+          <span>
+            {showValue && activeIndex
+              ? `${currentLabel} - ${currentValue}`
+              : `${currentLabel}`}
+          </span>
+          <span className="icon" />
+        </button>
+        <ul
+          className={classNames("options", {
+            show: isDropdownOpen,
+            hide: !isDropdownOpen,
+          })}
+        >
+          {options.map((option, index) => {
+            return (
+              <li
+                key={option.value}
+                role="option"
+                tabIndex={index}
+                className={classNames("option", {
+                  selected: activeIndex === index,
+                })}
+                aria-selected={activeIndex === index}
+                onClick={() => updateSelectedOption(index)}
+                onKeyPress={(e) => {
+                  if (e.key === "enter") {
+                    updateSelectedOption(index)
+                  }
+                }}
+              >
+                <div className="option_content">
+                  <span>{option.label}</span>
+                  <span>{option.value}</span>
+                </div>
+              </li>
+            )
+          })}
+          {triggerLabel && (
+            <li className="custom_option">
+              <button type="button" onClick={onTrigger}>
+                {triggerLabel}
+              </button>
             </li>
-          )
-        })}
-      </ul>
+          )}
+        </ul>
+      </div>
       <style jsx>
         {`
           .select {
             box-sizing: border-box;
             display: inline-block;
             position: relative;
-            width: 332px;
+            width: 320px;
             background-color: transparent;
-            border-width: 2;
-            border-color: var(--green-60);
-            border-style: solid;
-            border-radius: 5px;
+          }
+
+          label {
+            color: var(--green-40);
+            font-size: 12px;
+            display: block;
+            margin-bottom: 4px;
+            margin-top: 0;
+            line-height: 16px;
           }
 
           .button {
+            position: relative;
+            z-index: 1;
             box-sizing: border-box;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 0 16px;
             cursor: pointer;
             width: 100%;
-            color: var(--green-60);
+            height: 40px;
+            color: var(--green-20);
+            border-width: 2;
+            border-color: var(--green-60);
+            border-style: solid;
+            border-radius: 5px;
+            transition: background-color 0.2s ease-in-out;
           }
 
           .button .icon {
@@ -108,7 +183,7 @@ export default function SharedSelect(props: Props): ReactElement {
             width: 15px;
             height: 8px;
             background-color: var(--green-60);
-            transition: transform 0.1s ease-in-out;
+            transition: transform 0.2s ease-in-out;
           }
 
           .select.top .icon,
@@ -116,66 +191,94 @@ export default function SharedSelect(props: Props): ReactElement {
             transform: rotate(180deg);
           }
 
+          .select.bottom .icon,
           .select.active.top .icon {
             transform: rotate(0);
           }
 
-          .options {
-            box-sizing: border-box;
-            width: 332px;
-            position: absolute;
-            left: -2px;
-            z-index: 1;
-            margin: 0;
-            padding: 0;
-            text-align: center;
+          .select.active .icon {
             background-color: var(--hunter-green);
-            border: 2px solid var(--green-60);
-            border-radius: 5px;
-            max-height: 190px;
-            overflow-y: auto;
-            color: var(--green-60);
           }
 
-          .select.top .options {
-            bottom: 50px;
+          .select.active .button {
+            background-color: var(--trophy-gold);
+            border-color: var(--trophy-gold);
+            color: var(--hunter-green);
+            font-weight: 600;
+          }
+
+          .options {
+            position: absolute;
+            left: 2px;
+            box-sizing: border-box;
+            width: 316px;
+            text-align: right;
+            background-color: var(--green-95);
+            border-radius: 5px;
+            overflow-y: auto;
+            color: var(--green-60);
+            box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
+              0px 6px 8px rgba(0, 20, 19, 0.24),
+              0px 2px 4px rgba(0, 20, 19, 0.34);
+            max-height: 0;
+            height: fit-content;
+            opacity: 0;
+            line-height: 1.5;
+            transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
           }
 
           .select.bottom .options {
-            top: 50px;
+            top: 62px;
+          }
+
+          .select.top .options {
+            bottom: 42px;
           }
 
           .options.show {
-            min-height: 50px;
+            max-height: 224px;
+            bottom: 42px;
             opacity: 1;
-            visibility: visible;
-          }
-
-          .options.hide {
-            min-height: 0;
-            opacity: 0;
-            visibility: hidden;
           }
 
           .option {
-            box-sizing: border-box;
             display: flex;
             align-items: center;
+            box-sizing: border-box;
             list-style-type: none;
-            padding: 12px 16px;
+            font-weight: 600;
             cursor: pointer;
+            padding: 0 16px;
+            color: var(--green-20);
           }
 
           .option.selected {
-            background-color: var(--green-95);
+            color: var(--green-60);
           }
 
-          .option:hover {
-            background-color: var(--trophy-gold);
-            color: white;
+          .option:hover:not(.selected) {
+            color: var(--green-40);
+          }
+
+          .option_content {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 16px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--green-80);
+            width: 100%;
+          }
+
+          .custom_option {
+            color: var(--trophy-gold);
+            font-weight: 600;
+            padding: 16px;
+            display: flex;
+            justify-content: flex-end;
+            background-color: var(--green-95);
           }
         `}
       </style>
-    </div>
+    </>
   )
 }
