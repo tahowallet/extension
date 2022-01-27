@@ -46,11 +46,8 @@ export default function SignData({
     }
     return undefined
   })
-
-  if (!areKeyringsUnlocked) {
-    return <></>
-  }
   if (
+    !areKeyringsUnlocked ||
     typeof typedDataRequest === "undefined" ||
     typeof signerAccountTotal === "undefined"
   ) {
