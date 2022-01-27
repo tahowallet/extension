@@ -25,6 +25,8 @@ enum LedgerType {
   LEDGER_NANO_X,
 }
 
+const LedgerTypeStr = Object.values(LedgerType)
+
 const admittedProductIds = [0x1015, 0x4015]
 
 type MetaData = {
@@ -137,9 +139,9 @@ export default class LedgerService extends BaseService<Events> {
 
     const ethVersion = (await eth.getAppConfiguration()).version
 
-    this.emitter.emit("connected", { id, type })
+    this.#currentLedgerId = `${LedgerTypeStr[type]}_${id}`
 
-    this.#currentLedgerId = `${type.toString()}_${id}`
+    this.emitter.emit("connected", { id: this.#currentLedgerId, type })
 
     this.emitter.emit("ledgerAdded", {
       id,
