@@ -295,7 +295,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_requestAccounts":
         case "eth_accounts":
           return [enablingPermission.accountAddress]
-
+        case "eth_signTypedData":
+        case "eth_signTypedData_v1":
+        case "eth_signTypedData_v3":
         case "eth_signTypedData_v4":
           // When its signTypedData the params[0] should be the walletAddress
           // eslint-disable-next-line no-case-declarations
