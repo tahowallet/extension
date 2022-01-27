@@ -4,29 +4,11 @@ import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
-const delegates = [
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-]
-export default function ClaimDelegate(): ReactElement {
+// TODO: replace any
+export default function ClaimDelegate(props: {
+  delegates: any[]
+}): ReactElement {
+  const { delegates } = props
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
