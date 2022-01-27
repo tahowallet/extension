@@ -96,7 +96,7 @@ export default function Eligible(): ReactElement {
             background-image: url("./images/dark_forest@2x.png");
             background-repeat: repeat-x;
             background-position: bottom;
-            height: ${step === 5 ? "557" : "307"}px;
+            height: 307px;
             background-color: var(--green-95);
             box-shadow: 0px -10px 13px 6px var(--green-95);
             transition: all 0.6s cubic-bezier(0.86, 0, 0.07, 1);
