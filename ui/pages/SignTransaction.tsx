@@ -46,8 +46,16 @@ export default function SignTransaction({
 
   const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
   const isApproveTx = parsedTx?.name === "approve"
-  const { assetSymbol, amount, to, value, signType } = location.state ?? {
-    signType: isApproveTx ? SignType.SignSpend : SignType.Sign,
+
+  const getSignType = () => {
+    if (isApproveTx) {
+      return SignType.SignSpend
+    }
+    return SignType.Sign
+  }
+
+  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
+    signType: getSignType(),
   }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -63,11 +71,12 @@ export default function SignTransaction({
       transactionConstruction.broadcastOnSign ?? false
   )
 
-  const signerAccountTotal = useBackgroundSelector((state) =>
-    typeof transactionDetails === "undefined"
-      ? undefined
-      : getAccountTotal(state, transactionDetails.from)
-  )
+  const signerAccountTotal = useBackgroundSelector((state) => {
+    if (typeof transactionDetails !== "undefined") {
+      return getAccountTotal(state, transactionDetails.from)
+    }
+    return undefined
+  })
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(
     signerAccountTotal?.signingMethod?.type === "keyring"
