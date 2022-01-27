@@ -1,11 +1,16 @@
 import React, { ReactElement } from "react"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 
-function DAOButton() {
+function DAOButton(props: {
+  address: string
+  name: string
+  logoAsset: string
+}) {
+  const { address, name, logoAsset } = props
   return (
     <button type="button" className="option">
       <div className="icon" />
-      <div className="name">Yearn.finance</div>
+      <div className="name">{name}</div>
       <div className="radio" />
       <style jsx>{`
         .option {
@@ -41,7 +46,9 @@ function DAOButton() {
   )
 }
 
-export default function ClaimReferral(): ReactElement {
+export default function ClaimReferral(props: { DAOs: any[] }): ReactElement {
+  const { DAOs } = props
+
   return (
     <div className="claim standard_width">
       <ClaimAmountBanner />
@@ -53,8 +60,10 @@ export default function ClaimReferral(): ReactElement {
         TALLY!
       </div>
       <div className="options">
-        {["", "", "", "", "", ""].map(() => {
-          return <DAOButton />
+        {DAOs.map(({ address, name, logoAsset }) => {
+          return (
+            <DAOButton address={address} name={name} logoAsset={logoAsset} />
+          )
         })}
       </div>
       <style jsx>
