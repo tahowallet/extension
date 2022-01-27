@@ -1,5 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
@@ -20,6 +21,19 @@ export default function Eligible(): ReactElement {
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
+
+  const selectedAccountAddress =
+    useBackgroundSelector(selectCurrentAccount).address
+
+  const { delegates, DAOs, eligibility } = useBackgroundSelector((state) => {
+    return {
+      delegates: state.claim.delegates,
+      DAOs: state.claim.DAOs,
+      eligibility: state.claim.eligibles.find(
+        ({ address }) => address === selectedAccountAddress
+      ),
+    }
+  })
 
   useEffect(() => {
     if (Object.keys(accountData)) {
@@ -60,10 +74,10 @@ export default function Eligible(): ReactElement {
           className="steps-container"
           style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
         >
-          <ClaimIntro />
-          <ClaimReferral />
+          <ClaimIntro eligibility={eligibility} />
+          <ClaimReferral DAOs={DAOs} />
           <ClaimReferralByUser />
-          <ClaimDelegate />
+          <ClaimDelegate delegates={delegates} />
           <ClaimReview />
         </div>
         <footer>
