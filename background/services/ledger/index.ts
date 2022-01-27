@@ -57,16 +57,16 @@ const UnknownLedgerId = "unrecognizable"
 export const idDerviationPath = "44'/60'/0'/0/0"
 
 async function requireAvailableLedger() {
-  const devs = await navigator.usb.getDevices()
+  const devices = await navigator.usb.getDevices()
 
-  if (devs.length === 0) {
+  if (devices.length === 0) {
     throw new Error("No available USB devices to use!")
   }
 }
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
-  const a = await eth.getAddress(path)
-  const address = eip55.encode(a.address)
+  const derivedIdentifiers = await eth.getAddress(path)
+  const address = eip55.encode(derivedIdentifiers.address)
   return address
 }
 
