@@ -25,6 +25,8 @@ enum LedgerType {
   LEDGER_NANO_X,
 }
 
+const admittedProductIds = [0x1015, 0x4015]
+
 type MetaData = {
   ethereumVersion: string
 }
@@ -123,7 +125,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async onConnection(productId: number): Promise<void> {
-    if (productId !== 0x4015) {
+    if (!admittedProductIds.includes(productId)) {
       return
     }
 
@@ -149,7 +151,8 @@ export default class LedgerService extends BaseService<Events> {
 
   async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
     logger.info("entry")
-    if (event.device.productId !== 0x4015) {
+
+    if (!admittedProductIds.includes(event.device.productId)) {
       return
     }
 
@@ -157,7 +160,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
-    if (event.device.productId !== 0x4015) {
+    if (!admittedProductIds.includes(event.device.productId)) {
       return
     }
 
