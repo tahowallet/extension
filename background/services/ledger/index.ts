@@ -244,7 +244,9 @@ export default class LedgerService extends BaseService<Events> {
           transactionRequest
         )
 
-      const serializedTx = serialize(ethersTx as UnsignedTransaction)
+      const serializedTx = serialize(ethersTx as UnsignedTransaction).substring(
+        2
+      ) // serialize adds 0x prefix which kills Eth::signTransaction
 
       const accountData = await this.db.getAccountByAddress(address)
       if (!accountData) {
