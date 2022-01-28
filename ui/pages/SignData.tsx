@@ -14,7 +14,7 @@ import {
   useBackgroundDispatch,
   useBackgroundSelector,
 } from "../hooks"
-import { capitalize } from "../utils/formatting"
+import capitalize from "../utils/capitalize"
 
 export enum SignDataType {
   TypedData = "sign-typed-data",

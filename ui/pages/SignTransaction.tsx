@@ -19,6 +19,7 @@ import {
 } from "../hooks"
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
+import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
 
 export enum SignType {
   Sign = "sign",
@@ -148,9 +149,14 @@ export default function SignTransaction({
       return (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
-          title="Swap assets"
-          infoBlock={<SignTransactionSwapAssetBlock />}
-          confirmButtonLabel="Confirm"
+          title="Approve asset spend"
+          infoBlock={
+            <SignTransactionApproveSpendAssetBlock
+              transactionDetails={transactionDetails}
+              parsedTx={parsedTx}
+            />
+          }
+          confirmButtonLabel="Approve"
           handleConfirm={handleConfirm}
           handleReject={handleReject}
         />
