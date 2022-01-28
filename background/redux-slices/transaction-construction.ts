@@ -5,7 +5,7 @@ import {
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
-} from "../constants/networkFees"
+} from "../constants/network-fees"
 
 import {
   BlockEstimate,

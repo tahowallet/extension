@@ -5,7 +5,6 @@ import {
   NetworkFeeTypeChosen,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { formatEther } from "@ethersproject/units"
-import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/networkFees"
 import { selectMainCurrencyUnitPrice } from "@tallyho/tally-background/redux-slices/selectors"
 import React, {
   ReactElement,
@@ -14,6 +13,7 @@ import React, {
   useEffect,
   useState,
 } from "react"
+import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"

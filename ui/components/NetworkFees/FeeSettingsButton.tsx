@@ -3,7 +3,7 @@ import {
   selectEstimatedFeesPerGas,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ESTIMATED_FEE_MULTIPLIERS_BY_TYPE } from "@tallyho/tally-background/constants/networkFees"
+import { ESTIMATED_FEE_MULTIPLIERS_BY_TYPE } from "@tallyho/tally-background/constants/network-fees"
 import {
   truncateDecimalAmount,
   weiToGwei,
