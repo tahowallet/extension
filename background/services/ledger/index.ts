@@ -1,4 +1,3 @@
-import { TypedDataDomain, TypedDataField } from "@ethersproject/abstract-signer"
 import Transport from "@ledgerhq/hw-transport"
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
@@ -9,8 +8,10 @@ import {
   UnsignedTransaction,
   parse as parseRawTransaction,
 } from "@ethersproject/transactions"
+import { TypedDataUtils } from "eth-sig-util"
+import { bufferToHex } from "ethereumjs-util"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
-import { HexString } from "../../types"
+import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
@@ -50,6 +51,7 @@ type Events = ServiceLifecycleEvents & {
   disconnected: { id: string; type: LedgerType }
   address: { ledgerID: string; derivationPath: string; address: HexString }
   signedTransaction: SignedEVMTransaction
+  signedData: string
 }
 
 const UnknownLedgerId = "unrecognizable"
@@ -98,6 +100,21 @@ async function generateLedgerId(
   const address = await deriveAddressOnLedger(idDerviationPath, eth)
 
   return [address, extensionDeviceType]
+}
+
+function signatureToString(signature: {
+  v: number
+  s: string
+  r: string
+}): string {
+  let v: string | number = signature.v - 27
+  v = v.toString(16)
+
+  if (v.length < 2) {
+    v = `0${v}`
+  }
+
+  return `0x${signature.r}${signature.s}${v}`
 }
 
 /**
@@ -317,23 +334,53 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTypedData(
-    address: string,
-    domain: TypedDataDomain,
-    types: Record<string, Array<TypedDataField>>,
-    value: Record<string, unknown>
+    typedData: EIP712TypedData,
+    account: HexString
   ): Promise<string> {
     requireAvailableLedger()
 
-    this.signTypedData = this.signTypedData.bind(this)
+    try {
+      const eth = new Eth(this.transport)
+      const hashedDomain = TypedDataUtils.hashStruct(
+        "EIP712Domain",
+        typedData.domain,
+        typedData.types,
+        true
+      )
+      const hashedMessage = TypedDataUtils.hashStruct(
+        typedData.primaryType,
+        typedData.message,
+        typedData.types,
+        true
+      )
 
-    throw new Error("Unimplemented")
+      const signature = await eth.signEIP712HashedMessage(
+        account,
+        bufferToHex(hashedDomain),
+        bufferToHex(hashedMessage)
+      )
+      this.emitter.emit("signedData", signatureToString(signature))
+      return signatureToString(signature)
+    } catch (error) {
+      throw new Error("Signing data failed")
+    }
+
+    throw new Error("Typed data signing is unsuccessful!")
   }
 
   async signMessage(address: string, message: string): Promise<string> {
     requireAvailableLedger()
 
-    this.signMessage = this.signMessage.bind(this)
+    try {
+      const eth = new Eth(this.transport)
 
-    throw new Error("Unimplemented")
+      const signature = await eth.signPersonalMessage(address, message)
+      this.emitter.emit("signedData", signatureToString(signature))
+      return signatureToString(signature)
+    } catch (error) {
+      throw new Error("Signing data failed")
+    }
+
+    throw new Error("Typed data signing is unsuccessful!")
   }
 }
