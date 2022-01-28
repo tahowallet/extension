@@ -167,7 +167,7 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (preloadedState = {}) =>
+const initializeStore = (preloadedState = {}, main: Main) =>
   configureStore({
     preloadedState,
     reducer: rootReducer,
@@ -177,6 +177,7 @@ const initializeStore = (preloadedState = {}) =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
+        thunk: { extraArgument: { main } },
       })
 
       // It might be tempting to use an array with `...` destructuring, but
@@ -333,7 +334,7 @@ export default class Main extends BaseService<never> {
     })
 
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(savedReduxState)
+    this.store = initializeStore(savedReduxState, this)
 
     wrapStore(this.store, {
       serializer: encodeJSON,
