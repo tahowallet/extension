@@ -49,13 +49,11 @@ const ledgerSlice = createSlice({
   name: "ledger",
   initialState,
   reducers: {
-    ledgerReset: (immerState) => {
-      immerState.devices = {}
-    },
     addLedgerDevice: (
       immerState,
       { payload: deviceID }: { payload: string }
     ) => {
+      /* FIXME: devices/accounts are kept in the state even if not tracked  */
       if (deviceID in immerState.devices) return
       immerState.devices[deviceID] = {
         id: deviceID,
@@ -134,7 +132,7 @@ const ledgerSlice = createSlice({
   },
 })
 
-export const { ledgerReset, addLedgerAccount } = ledgerSlice.actions
+export const { addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 
