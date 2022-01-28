@@ -17,7 +17,7 @@ import React, {
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
-import { capitalize } from "../../utils/formatting"
+import capitalize from "../../utils/capitalize"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
