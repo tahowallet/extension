@@ -144,8 +144,31 @@ export function enrichAssetAmountWithMainCurrencyValues<
  */
 export function enrichAssetAmountWithDecimalValues<T extends AnyAssetAmount>(
   assetAmount: T,
-  desiredDecimals: number
+  defaultDecimals: number,
+  assetPricePoint?: PricePoint
 ): T & AssetDecimalAmount {
+  let decimalPlacesToAdd = 0
+  if (assetPricePoint) {
+    const { unitPrice } = unitPricePointForPricePoint(assetPricePoint) ?? {
+      unitPrice: undefined,
+    }
+
+    if (unitPrice) {
+      const priceInMainCurrency =
+        unitPrice.amount / BigInt(10 ** unitPrice.asset.decimals)
+
+      const integerDigitsInPrice = Math.ceil(
+        Math.log10(Number(priceInMainCurrency))
+      )
+
+      if (integerDigitsInPrice > 2) {
+        decimalPlacesToAdd = integerDigitsInPrice - 2
+      }
+    }
+  }
+
+  const desiredDecimals = defaultDecimals + decimalPlacesToAdd
+
   const decimalAmount = isFungibleAssetAmount(assetAmount)
     ? assetAmountToDesiredDecimals(assetAmount, desiredDecimals)
     : // If the asset is not fungible, the amount should have 0 decimals of
