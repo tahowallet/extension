@@ -114,7 +114,6 @@ export default class LedgerService extends BaseService<Events> {
 
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
-      logger.info("entry")
       return new this(await getOrCreateDB(), await TransportWebUSB.create())
     }
 
@@ -123,7 +122,6 @@ export default class LedgerService extends BaseService<Events> {
     private transport: Transport
   ) {
     super()
-    logger.info("exit")
   }
 
   async onConnection(productId: number): Promise<void> {
@@ -152,8 +150,6 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
-    logger.info("entry")
-
     if (!admittedProductIds.includes(event.device.productId)) {
       return
     }
@@ -179,8 +175,6 @@ export default class LedgerService extends BaseService<Events> {
 
     navigator.usb.addEventListener("connect", this.#onUSBConnect)
     navigator.usb.addEventListener("disconnect", this.#onUSBDisconnect)
-
-    logger.info("exit")
   }
 
   protected async internalStopService(): Promise<void> {
@@ -188,13 +182,9 @@ export default class LedgerService extends BaseService<Events> {
 
     navigator.usb.removeEventListener("disconnect", this.#onUSBDisconnect)
     navigator.usb.removeEventListener("connect", this.#onUSBConnect)
-
-    logger.info("exit")
   }
 
   async connectLedger(): Promise<string> {
-    logger.info("entry")
-
     const devArray = await navigator.usb.getDevices()
 
     this.onConnection(devArray[0].productId)
