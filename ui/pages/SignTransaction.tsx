@@ -78,14 +78,13 @@ export default function SignTransaction({
     return undefined
   })
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(
-    signerAccountTotal?.signingMethod?.type === "keyring"
-  )
+  const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
+  const canSign = useAreKeyringsUnlocked(needsKeyrings) || !needsKeyrings
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   useEffect(() => {
-    if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
+    if (canSign && isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
@@ -98,7 +97,7 @@ export default function SignTransaction({
       }
     }
   }, [
-    areKeyringsUnlocked,
+    canSign,
     isTransactionSigned,
     isTransactionSigning,
     history,
@@ -108,7 +107,7 @@ export default function SignTransaction({
     dispatch,
   ])
 
-  if (!areKeyringsUnlocked) {
+  if (!canSign) {
     return <></>
   }
 
@@ -132,12 +131,16 @@ export default function SignTransaction({
     }
   }
 
+  const isWaitingForHardware =
+    signerAccountTotal?.signingMethod?.type === "ledger" && isTransactionSigning
+
   switch (signType) {
     case SignType.SignSwap:
       return (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Swap assets"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={<SignTransactionSwapAssetBlock />}
           confirmButtonLabel="Confirm"
           handleConfirm={handleConfirm}
@@ -149,6 +152,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Swap assets"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={<SignTransactionSwapAssetBlock />}
           confirmButtonLabel="Confirm"
           handleConfirm={handleConfirm}
@@ -160,6 +164,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Sign Transfer"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionTransferBlock
               token={assetSymbol ?? ""}
@@ -178,6 +183,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Sign Transaction"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionSignBlock transactionDetails={transactionDetails} />
           }
