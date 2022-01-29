@@ -10,20 +10,24 @@ import { FungibleAsset } from "@tallyho/tally-background/assets"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
-import SwapTransactionSettings from "./SwapTransactionSettings"
 import SwapApprovalStep from "./SwapApprovalStep"
+import SwapTransactionSettingsChooser, {
+  SwapTransactionSettings,
+} from "./SwapTransactionSettingsChooser"
 import { useBackgroundDispatch } from "../../hooks"
 
 type Props = {
   sellAsset: FungibleAsset
   buyAsset: FungibleAsset
   finalQuote: ZrxQuote
+  swapTransactionSettings: SwapTransactionSettings
 }
 
 export default function SwapQuote({
   sellAsset,
   buyAsset,
   finalQuote,
+  swapTransactionSettings,
 }: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -68,7 +72,10 @@ export default function SwapQuote({
         1 {sellAsset.symbol} = {finalQuote.price} {buyAsset.symbol}
       </span>
       <div className="settings_wrap">
-        <SwapTransactionSettings isSettingsLocked />
+        <SwapTransactionSettingsChooser
+          isSettingsLocked
+          swapTransactionSettings={swapTransactionSettings}
+        />
       </div>
       {stepComplete > -1 ? (
         <>
