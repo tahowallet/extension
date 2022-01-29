@@ -1,7 +1,7 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import {
   EstimatedFeesPerGas,
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   NetworkFeeTypeChosen,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { formatEther } from "@ethersproject/units"
@@ -23,7 +23,7 @@ interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   gasLimit: string
   setCustomGasLimit: React.Dispatch<SetStateAction<string>>
-  onSelectNetworkSetting: ({ feeType, gasLimit }: NetworkFeeSetting) => void
+  onSelectNetworkSetting: ({ feeType, gasLimit }: NetworkFeeSettings) => void
   selectedFeeType: string
 }
 

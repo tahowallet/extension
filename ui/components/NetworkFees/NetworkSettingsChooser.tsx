@@ -1,9 +1,9 @@
 import {
   EstimatedFeesPerGas,
-  NetworkFeeSetting,
   NetworkFeeTypeChosen,
   selectFeeType,
   selectLastGasEstimatesRefreshTime,
+  NetworkFeeSettings,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"
@@ -15,7 +15,7 @@ interface NetworkSettingsChooserProps {
     estimatedFeesPerGas: EstimatedFeesPerGas | undefined
     gasLimit: string
   }
-  onNetworkSettingsSave: (setting: NetworkFeeSetting) => void
+  onNetworkSettingsSave: (setting: NetworkFeeSettings) => void
   visible: boolean
 }
 

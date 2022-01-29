@@ -7,7 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   broadcastOnSign,
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   selectEstimatedFeesPerGas,
   setFeeType,
   updateTransactionOptions,
@@ -93,7 +93,7 @@ export default function Send(): ReactElement {
     }
   }, [assetSymbol])
 
-  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
+  const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     setGasLimit(networkSetting.gasLimit)
     dispatch(setFeeType(networkSetting.feeType))
     setNetworkSettingsModalOpen(false)

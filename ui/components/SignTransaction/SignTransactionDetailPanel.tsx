@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import {
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
   setFeeType,
@@ -36,7 +36,7 @@ export default function SignTransactionDetailPanel(): ReactElement {
             estimatedFeesPerGas,
             gasLimit,
           }}
-          onNetworkSettingsSave={async (networkSetting: NetworkFeeSetting) => {
+          onNetworkSettingsSave={async (networkSetting: NetworkFeeSettings) => {
             setGasLimit(networkSetting.gasLimit)
             dispatch(setFeeType(networkSetting.feeType))
             dispatch(updateTransactionOptions(transactionDetails))
