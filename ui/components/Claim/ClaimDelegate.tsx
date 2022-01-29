@@ -1,4 +1,7 @@
 import React, { ReactElement, useState } from "react"
+import { setSelectedDelegate } from "@tallyho/tally-background/redux-slices/claim"
+import { useBackgroundDispatch } from "../../hooks"
+
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
@@ -11,6 +14,7 @@ export default function ClaimDelegate(props: {
 }): ReactElement {
   const { delegates, claimAmount } = props
   const [panelNumber, setPanelNumber] = useState(0)
+  const dispatch = useBackgroundDispatch()
 
   return (
     <div>
@@ -29,29 +33,42 @@ export default function ClaimDelegate(props: {
           />
         </div>
         {panelNumber === 0 ? (
-          <>
+          <ul className="delegates">
             {delegates.map((delegate) => {
               return (
-                <div className="delegate">
-                  <input type="radio" name="delegate" className="radio" />
-                  <div className="delegate_details">
-                    <div className="icon" />
-                    <div className="delegate_info">
-                      <div className="name">
-                        {delegate.name}
-                        <span className="count">123 Votes</span>
-                      </div>
-                      <div className="pitch">
-                        <SharedButton type="tertiaryGray" size="small">
-                          See pitch
-                        </SharedButton>
+                <li className="delegate">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dispatch(setSelectedDelegate(delegate))
+                    }}
+                  >
+                    <input type="radio" name="delegate" className="radio" />
+                    <div className="delegate_details">
+                      <div className="icon" />
+                      <div className="delegate_info">
+                        <div className="name">{delegate.ensName}</div>
+                        {/* <span className="count">123 Votes</span> */}
+                        <div className="pitch">
+                          <SharedButton
+                            type="tertiaryGray"
+                            size="small"
+                            onClick={() => {
+                              window
+                                .open(delegate.applicationLink, "_blank")
+                                ?.focus()
+                            }}
+                          >
+                            See pitch
+                          </SharedButton>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </button>
+                </li>
               )
             })}
-          </>
+          </ul>
         ) : (
           <div>
             <p>
@@ -115,6 +132,14 @@ export default function ClaimDelegate(props: {
             font-weight: 500;
             display: flex;
             flex-direction: column;
+            line-height: 32px;
+          }
+          .delegates {
+            background-color: var(--hunter-green);
+            margin-left: -16px;
+            padding: 0px 16px;
+            width: 384px;
+            box-sizing: border-box;
           }
           .count {
             color: var(--green-60);
