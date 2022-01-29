@@ -16,6 +16,7 @@ import {
   NameService,
   PreferenceService,
   ProviderBridgeService,
+  TelemetryService,
   ServiceCreatorFunction,
 } from "./services"
 
@@ -241,6 +242,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+    const telemetryService = TelemetryService.create()
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -276,7 +278,8 @@ export default class Main extends BaseService<never> {
       await keyringService,
       await nameService,
       await internalEthereumProviderService,
-      await providerBridgeService
+      await providerBridgeService,
+      await telemetryService
     )
   }
 
@@ -323,7 +326,12 @@ export default class Main extends BaseService<never> {
      * the communication coming from dApps according to EIP-1193 and some tribal
      * knowledge.
      */
-    private providerBridgeService: ProviderBridgeService
+    private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the telemetry service, which keeps track of extension
+     * storage usage and (eventually) other statistics.
+     */
+    private telemetryService: TelemetryService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -357,6 +365,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.telemetryService.startService(),
     ])
   }
 
@@ -370,6 +379,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.telemetryService.stopService(),
     ])
 
     await super.internalStopService()
