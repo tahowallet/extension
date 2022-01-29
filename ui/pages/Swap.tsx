@@ -6,11 +6,13 @@ import React, {
   useRef,
 } from "react"
 import {
-  fetchSwapData,
+  fetchSwapPrice,
   clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
   selectIsApprovalInProgress,
+  SwapQuoteRequest,
+  fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -114,9 +116,9 @@ export default function Swap(): ReactElement {
   const [sellAmountLoading, setSellAmountLoading] = useState(false)
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
 
-  const latestQuoteRequest = useRef<
-    Parameters<typeof fetchSwapData>[0] | undefined
-  >(savedQuoteRequest)
+  const latestQuoteRequest = useRef<SwapQuoteRequest | undefined>(
+    savedQuoteRequest
+  )
 
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
 
@@ -135,12 +137,7 @@ export default function Swap(): ReactElement {
       return false
     }
 
-    dispatch(
-      fetchSwapData({
-        ...latestQuoteRequest.current,
-        isFinal: true,
-      })
-    )
+    dispatch(fetchSwapQuote(latestQuoteRequest.current))
 
     return true
   }
@@ -173,38 +170,56 @@ export default function Swap(): ReactElement {
   }
 
   const updateSwapData = useCallback(
-    async (changeSource: "buy" | "sell", amount: string): Promise<void> => {
-      if (changeSource === "sell") {
+    async (
+      requestedQuote: "buy" | "sell",
+      amount: string,
+      // Fixed asset in the swap.
+      fixedAsset?: SmartContractFungibleAsset | undefined,
+      quoteAsset?: SmartContractFungibleAsset | undefined
+    ): Promise<void> => {
+      if (requestedQuote === "sell") {
         setBuyAmount("")
       } else {
         setSellAmount("")
       }
 
+      const quoteSellAsset =
+        requestedQuote === "buy"
+          ? fixedAsset ?? sellAsset
+          : quoteAsset ?? sellAsset
+      const quoteBuyAsset =
+        requestedQuote === "sell" && typeof fixedAsset !== "undefined"
+          ? fixedAsset ?? buyAsset
+          : quoteAsset ?? buyAsset
+
       // Swap amounts can't update unless both sell and buy assets are specified.
       if (
-        typeof sellAsset === "undefined" ||
-        typeof buyAsset === "undefined" ||
+        typeof quoteSellAsset === "undefined" ||
+        typeof quoteBuyAsset === "undefined" ||
         amount.trim() === ""
       ) {
         return
       }
 
-      const quoteRequest: Parameters<typeof fetchSwapData>[0] = {
-        isFinal: false,
-        assets: { sellAsset, buyAsset },
+      const quoteRequest: SwapQuoteRequest = {
+        assets: {
+          sellAsset: quoteSellAsset,
+          buyAsset: quoteBuyAsset,
+        },
         amount:
-          changeSource === "sell"
+          requestedQuote === "sell"
             ? { sellAmount: amount }
             : { buyAmount: amount },
       }
 
-      // If there's a different quote in progress, reset loading state.
+      // If there's a different quote in progress, reset all loading states as
+      // we're about to replace it.
       if (latestQuoteRequest.current !== quoteRequest) {
         setBuyAmountLoading(false)
         setSellAmountLoading(false)
       }
 
-      if (changeSource === "sell") {
+      if (requestedQuote === "sell") {
         setBuyAmountLoading(true)
       } else {
         setSellAmountLoading(true)
@@ -212,8 +227,8 @@ export default function Swap(): ReactElement {
 
       latestQuoteRequest.current = quoteRequest
       const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-        fetchSwapData(quoteRequest)
-      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapData>) ?? {
+        fetchSwapPrice(quoteRequest)
+      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
         needsApproval: false,
       }
@@ -236,11 +251,11 @@ export default function Swap(): ReactElement {
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
 
-        if (changeSource === "sell") {
+        if (requestedQuote === "sell") {
           setBuyAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.buyAmount),
-              decimals: buyAsset.decimals,
+              decimals: quoteBuyAsset.decimals,
             })
           )
           setBuyAmountLoading(false)
@@ -248,7 +263,7 @@ export default function Swap(): ReactElement {
           setSellAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.sellAmount),
-              decimals: sellAsset.decimals,
+              decimals: quoteSellAsset.decimals,
             })
           )
           setSellAmountLoading(false)
