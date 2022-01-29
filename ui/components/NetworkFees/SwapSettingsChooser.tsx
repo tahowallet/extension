@@ -69,10 +69,8 @@ export default function SwapSettingsChooser({
           {visible ? (
             <NetworkSettingsSelect
               estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={customGasLimit}
-              setCustomGasLimit={setCustomGasLimit}
-              onSelectNetworkSetting={setSelectedSetting}
-              selectedFeeType={selectedFeeType}
+              networkSettings={selectedSetting}
+              onNetworkSettingsChange={setSelectedSetting}
             />
           ) : (
             <></>

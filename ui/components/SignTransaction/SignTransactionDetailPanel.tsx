@@ -23,6 +23,13 @@ export default function SignTransactionDetailPanel(): ReactElement {
 
   if (transactionDetails === undefined) return <></>
 
+  const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
+    setGasLimit(networkSetting.gasLimit)
+    dispatch(setFeeType(networkSetting.feeType))
+    dispatch(updateTransactionOptions(transactionDetails))
+    setNetworkSettingsModalOpen(false)
+  }
+
   return (
     <div className="detail_items_wrap standard_width_padded">
       <SharedSlideUpMenu
@@ -32,17 +39,8 @@ export default function SignTransactionDetailPanel(): ReactElement {
         customSize={`${3 * 56 + 320}px`}
       >
         <NetworkSettingsChooser
-          networkSettings={{
-            estimatedFeesPerGas,
-            gasLimit,
-          }}
-          onNetworkSettingsSave={async (networkSetting: NetworkFeeSettings) => {
-            setGasLimit(networkSetting.gasLimit)
-            dispatch(setFeeType(networkSetting.feeType))
-            dispatch(updateTransactionOptions(transactionDetails))
-            setNetworkSettingsModalOpen(false)
-          }}
-          visible={networkSettingsModalOpen}
+          estimatedFeesPerGas={estimatedFeesPerGas}
+          onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
       <span className="detail_item">

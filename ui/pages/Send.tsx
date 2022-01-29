@@ -162,12 +162,8 @@ export default function Send(): ReactElement {
             customSize="488px"
           >
             <NetworkSettingsChooser
-              networkSettings={{
-                estimatedFeesPerGas,
-                gasLimit,
-              }}
+              estimatedFeesPerGas={estimatedFeesPerGas}
               onNetworkSettingsSave={networkSettingsSaved}
-              visible={networkSettingsModalOpen}
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
