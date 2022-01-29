@@ -10,7 +10,6 @@ import { FungibleAsset } from "@tallyho/tally-background/assets"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
-import SwapApprovalStep from "./SwapApprovalStep"
 import SwapTransactionSettingsChooser, {
   SwapTransactionSettings,
 } from "./SwapTransactionSettingsChooser"
@@ -42,8 +41,6 @@ export default function SwapQuote({
       return false
     }),
   }
-
-  const [stepComplete, setStepComplete] = useState(-1)
 
   const history = useHistory()
 
@@ -90,54 +87,26 @@ export default function SwapQuote({
           swapTransactionSettings={swapTransactionSettings}
         />
       </div>
-      {stepComplete > -1 ? (
-        <>
-          <ul className="approval_steps">
-            <SwapApprovalStep
-              isDone={stepComplete >= 1}
-              label="Approve to spend ETH"
-            />
-            <SwapApprovalStep
-              isDone={stepComplete >= 2}
-              label="Approve to spend KEEP"
-            />
-            <SwapApprovalStep
-              isDone={stepComplete === 3}
-              label="Swap Approved"
-            />
-          </ul>
-        </>
-      ) : (
-        <>
-          <div className="exchange_section_wrap">
-            <span className="top_label label">Exchange route</span>
+      <div className="exchange_section_wrap">
+        <span className="top_label label">Exchange route</span>
 
-            {sources.map((source) => (
-              <div
-                className="exchange_content standard_width"
-                key={source.name}
-              >
-                <div className="left">
-                  {source.name.includes("Uniswap") && (
-                    <span className="icon_uniswap" />
-                  )}
-                  {source.name}
-                </div>
-                <div>{parseFloat(source.proportion) * 100}%</div>
-              </div>
-            ))}
+        {sources.map((source) => (
+          <div className="exchange_content standard_width" key={source.name}>
+            <div className="left">
+              {source.name.includes("Uniswap") && (
+                <span className="icon_uniswap" />
+              )}
+              {source.name}
+            </div>
+            <div>{parseFloat(source.proportion) * 100}%</div>
           </div>
-          <div className="approve_button center_horizontal">
-            <SharedButton
-              type="primary"
-              size="large"
-              onClick={handleApproveClick}
-            >
-              Execute Swap
-            </SharedButton>
-          </div>
-        </>
-      )}
+        ))}
+      </div>
+      <div className="approve_button center_horizontal">
+        <SharedButton type="primary" size="large" onClick={handleApproveClick}>
+          Execute Swap
+        </SharedButton>
+      </div>
       <style jsx>
         {`
           section {
