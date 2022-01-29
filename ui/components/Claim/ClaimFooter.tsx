@@ -33,12 +33,13 @@ export default function ClaimFooter({
       advanceStep()
     }
   }, [buttonText, step, showSuccess, advanceStep])
+
   return (
     <footer>
       <div className="steps">
         <SharedProgressIndicator
           activeStep={step}
-          onProgressStepClicked={() => setStep(step + 1)}
+          onProgressStepClicked={(s) => setStep(s)}
           numberOfSteps={buttonText.length}
         />
       </div>
