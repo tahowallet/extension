@@ -7,13 +7,14 @@ import SharedInput from "../Shared/SharedInput"
 // TODO: replace any
 export default function ClaimDelegate(props: {
   delegates: any[]
+  claimAmount: number
 }): ReactElement {
-  const { delegates } = props
+  const { delegates, claimAmount } = props
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
     <div>
-      <ClaimAmountBanner />
+      <ClaimAmountBanner amount={claimAmount} />
       <div className="claim standard_width">
         <div className="title">Choose a delegate!</div>
         <div className="description">

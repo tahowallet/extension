@@ -1,6 +1,10 @@
 import React, { ReactElement } from "react"
 
-export default function ClaimAmountBanner(): ReactElement {
+export default function ClaimAmountBanner({
+  amount,
+}: {
+  amount: number
+}): ReactElement {
   return (
     <div className="wrap">
       <div className="banner">
@@ -9,7 +13,7 @@ export default function ClaimAmountBanner(): ReactElement {
         </div>
         <div className="claimable">
           <div className="claimable_currency">Claiming</div>
-          <div className="claimable_amount">10,919</div>
+          <div className="claimable_amount">{amount}</div>
           <div className="claimable_currency symbol">TALLY</div>
         </div>
       </div>

@@ -25,12 +25,14 @@ export default function Eligible(): ReactElement {
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
-  const { delegates, DAOs, eligibility } = useBackgroundSelector((state) => {
+  const { delegates, DAOs, claimAmount } = useBackgroundSelector((state) => {
     return {
       delegates: state.claim.delegates,
       DAOs: state.claim.DAOs,
-      eligibility: state.claim.eligibles.find(
-        ({ address }) => address === selectedAccountAddress
+      claimAmount: Number(
+        state.claim.eligibles.find(
+          ({ address }) => address === selectedAccountAddress
+        )?.earnings
       ),
     }
   })
@@ -74,11 +76,19 @@ export default function Eligible(): ReactElement {
           className="steps-container"
           style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
         >
-          <ClaimIntro eligibility={eligibility} />
-          <ClaimReferral DAOs={DAOs} />
-          <ClaimReferralByUser />
-          <ClaimDelegate delegates={delegates} />
-          <ClaimReview />
+          <ClaimIntro claimAmount={claimAmount} />
+          <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
+          <ClaimReferralByUser claimAmount={claimAmount} />
+          <ClaimDelegate
+            delegates={delegates}
+            claimAmount={Math.floor(claimAmount + claimAmount * 0.05)}
+          />
+          <ClaimReview
+            claimAmount={Math.floor(claimAmount + claimAmount * 0.05)}
+            backToChoose={() => {
+              setStep(step - 1)
+            }}
+          />
         </div>
         <footer>
           <ClaimFooter
