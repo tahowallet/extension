@@ -85,6 +85,9 @@ export default function Eligible(): ReactElement {
             step={step}
             setStep={setStep}
             advanceStep={advanceStep}
+            showSuccess={() => {
+              setShowSuccessStep(true)
+            }}
           />
         </footer>
       </div>

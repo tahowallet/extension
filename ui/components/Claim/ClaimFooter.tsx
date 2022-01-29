@@ -1,4 +1,10 @@
-import React, { Dispatch, ReactElement, SetStateAction } from "react"
+import React, {
+  Dispatch,
+  ReactElement,
+  SetStateAction,
+  useCallback,
+  useMemo,
+} from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
 
@@ -6,20 +12,27 @@ interface ClaimFooterProps {
   step: number
   setStep: Dispatch<SetStateAction<number>>
   advanceStep: () => void
+  showSuccess: () => void
 }
 
 export default function ClaimFooter({
   step,
   setStep,
   advanceStep,
+  showSuccess,
 }: ClaimFooterProps): ReactElement {
-  const buttonText = [
-    "Get started",
-    "Continue",
-    "Continue",
-    "Continue",
-    "Claim",
-  ]
+  const buttonText = useMemo(
+    () => ["Get started", "Continue", "Continue", "Continue", "Claim"],
+    []
+  )
+
+  const handleClick = useCallback(async () => {
+    if (buttonText[step - 1] === "Claim") {
+      showSuccess()
+    } else {
+      advanceStep()
+    }
+  }, [buttonText, step, showSuccess, advanceStep])
   return (
     <footer>
       <div className="steps">
@@ -30,7 +43,7 @@ export default function ClaimFooter({
         />
       </div>
 
-      <SharedButton type="primary" size="medium" onClick={advanceStep}>
+      <SharedButton type="primary" size="medium" onClick={handleClick}>
         {buttonText[step - 1]}
       </SharedButton>
       <style jsx>
