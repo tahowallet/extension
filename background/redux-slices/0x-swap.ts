@@ -80,6 +80,7 @@ const swapSlice = createSlice({
       ...state,
       finalQuote: undefined,
       latestQuoteRequest: undefined,
+      approvalInProgress: false,
     }),
   },
 })
