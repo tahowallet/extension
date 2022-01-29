@@ -48,7 +48,7 @@ export default function ClaimReview(): ReactElement {
             width: 352px;
             height: 64px;
             border-radius: 8px;
-            background-color: var(--hunter-green);
+            background-color: var(--green-95);
             padding: 12px 16px;
             box-sizing: border-box;
             display: flex;

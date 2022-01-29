@@ -11,12 +11,7 @@ export default function ClaimSuccessModalContent(): ReactElement {
         address and the good news with the world! Each time someone uses your
         code, you&apos;ll get 5% of all the TALLY they claim.
       </div>
-      <SharedButton
-        type="primary"
-        size="medium"
-        icon="twitter"
-        iconPosition="left"
-      >
+      <SharedButton type="primary" size="medium">
         Share on twitter
       </SharedButton>
       <style jsx>
