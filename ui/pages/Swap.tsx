@@ -287,26 +287,37 @@ export default function Swap(): ReactElement {
     ]
   )
 
-  const updateSellAsset = (asset: SmartContractFungibleAsset) => {
-    setSellAsset(asset)
-    // Updating the sell asset quotes the new sell asset against the existing
-    // buy amount.
-    updateSwapData("buy", buyAmount)
-  }
-  const updateBuyAsset = (asset: SmartContractFungibleAsset) => {
-    setBuyAsset(asset)
-    // Updating the buy asset quotes the new buy asset against the existing
-    // sell amount.
-    updateSwapData("sell", sellAmount)
-  }
+  const updateSellAsset = useCallback(
+    (asset: SmartContractFungibleAsset) => {
+      setSellAsset(asset)
+      // Updating the sell asset quotes the new sell asset against the existing
+      // buy amount.
+      updateSwapData("buy", buyAmount, asset)
+    },
+    [buyAmount, updateSwapData]
+  )
+  const updateBuyAsset = useCallback(
+    (asset: SmartContractFungibleAsset) => {
+      setBuyAsset(asset)
+      // Updating the buy asset quotes the new buy asset against the existing
+      // sell amount.
+      updateSwapData("sell", sellAmount, asset)
+    },
+    [sellAmount, updateSwapData]
+  )
 
   useEffect(() => {
-    if (typeof savedSwapAmount !== "undefined") {
+    if (
+      typeof savedSwapAmount !== "undefined" &&
+      typeof savedBuyAsset !== "undefined" &&
+      typeof savedSellAsset !== "undefined"
+    ) {
       updateSwapData(
         "sellAmount" in savedSwapAmount ? "sell" : "buy",
         "sellAmount" in savedSwapAmount
           ? savedSwapAmount.sellAmount
-          : savedSwapAmount.buyAmount
+          : savedSwapAmount.buyAmount,
+        "sellAmount" in savedSwapAmount ? savedBuyAsset : savedSellAsset
       )
     }
 
