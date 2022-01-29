@@ -1,14 +1,26 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
+import { setSelectedDAO } from "@tallyho/tally-background/redux-slices/claim"
+import classNames from "classnames"
 import ClaimAmountBanner from "./ClaimAmountBanner"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 function DAOButton(props: {
   address: string
   name: string
   logoAsset: string
+  isActive: boolean
 }) {
-  const { address, name, logoAsset } = props
+  const { address, name, logoAsset, isActive } = props
+  const dispatch = useBackgroundDispatch()
+
   return (
-    <button type="button" className="option">
+    <button
+      type="button"
+      className={classNames("option", { active: isActive })}
+      onClick={() => {
+        dispatch(setSelectedDAO({ address, name, logoAsset }))
+      }}
+    >
       <div className="icon" />
       <div className="name">{name}</div>
       <div className="radio" />
@@ -30,6 +42,8 @@ function DAOButton(props: {
           background-color: #006ae3;
           border-radius: 200px;
           margin-bottom: 8px;
+          background: url("./images/DAOs/${logoAsset}");
+          background-size: cover;
         }
         .radio {
           width: 16px;
@@ -37,9 +51,13 @@ function DAOButton(props: {
           border: 2px solid var(--green-60);
           border-radius: 200px;
           margin-top: 8px;
+          box-sizing: border-box;
         }
         .option:hover {
           background-color: var(--green-80);
+        }
+        .active .radio {
+          border: 5px solid var(--trophy-gold);
         }
       `}</style>
     </button>
@@ -51,13 +69,14 @@ export default function ClaimReferral(props: {
   claimAmount: number
 }): ReactElement {
   const { DAOs, claimAmount } = props
+  const selectedDAO = useBackgroundSelector((state) => {
+    return state.claim.selectedDAO
+  })
 
   return (
     <div className="claim standard_width">
-      <ClaimAmountBanner />
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
-        Get a bonus of <div className="highlight">463</div> TALLY!
         Get a bonus of
         <div className="highlight">{Math.floor(claimAmount * 0.05)}</div> TALLY!
       </div>
@@ -68,7 +87,12 @@ export default function ClaimReferral(props: {
       <div className="options">
         {DAOs.map(({ address, name, logoAsset }) => {
           return (
-            <DAOButton address={address} name={name} logoAsset={logoAsset} />
+            <DAOButton
+              address={address}
+              name={name}
+              logoAsset={logoAsset}
+              isActive={selectedDAO?.name === name}
+            />
           )
         })}
       </div>
