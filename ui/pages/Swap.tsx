@@ -216,6 +216,8 @@ export default function Swap(): ReactElement {
           requestedQuote === "sell"
             ? { sellAmount: amount }
             : { buyAmount: amount },
+        slippageTolerance: swapTransactionSettings.slippageTolerance,
+        gasPrice: swapTransactionSettings.networkSettings.values.maxFeePerGas,
       }
 
       // If there's a different quote in progress, reset all loading states as
@@ -276,7 +278,13 @@ export default function Swap(): ReactElement {
         }
       }
     },
-    [buyAsset, dispatch, sellAsset]
+    [
+      buyAsset,
+      dispatch,
+      sellAsset,
+      swapTransactionSettings.networkSettings.values.maxFeePerGas,
+      swapTransactionSettings.slippageTolerance,
+    ]
   )
 
   const updateSellAsset = (asset: SmartContractFungibleAsset) => {
@@ -303,11 +311,12 @@ export default function Swap(): ReactElement {
     }
 
     dispatch(clearSwapQuote())
-    // We only want to run this once, at component load, to make sure the flip of
-    // the quote is set correctly. Further updates will happen through UI
-    // interaction.
+    // We want to run this in two cases:
+    // - Once at component load, to make sure the flip of the quote is set
+    //   correctly.
+    // - When swap transaction settings change, to update non-swap details.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [swapTransactionSettings])
 
   return (
     <>

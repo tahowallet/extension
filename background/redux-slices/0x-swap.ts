@@ -29,6 +29,8 @@ type SwapAmount =
 export type SwapQuoteRequest = {
   assets: SwapAssets
   amount: SwapAmount
+  slippageTolerance: number
+  gasPrice: bigint
 }
 
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
