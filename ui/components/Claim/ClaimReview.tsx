@@ -2,24 +2,47 @@ import React, { ReactElement } from "react"
 import SharedButton from "../Shared/SharedButton"
 import AmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
+import { useBackgroundSelector } from "../../hooks"
 
-export default function ClaimReview(): ReactElement {
+export default function ClaimReview({
+  claimAmount,
+  backToChoose,
+}: {
+  claimAmount: number
+  backToChoose: () => void
+}): ReactElement {
+  const { selectedDelegate, selectedDAO } = useBackgroundSelector((state) => {
+    return {
+      selectedDelegate: state.claim.selectedDelegate,
+      selectedDAO: state.claim.selectedDAO,
+    }
+  })
+
   return (
     <div className="claim standard_width">
       <div className="title">Review claim</div>
       <div className="description_review">You will receive</div>
-      <AmountBanner />
-      <ClaimDelegateChoiceProfile name="OlympusDAO" />
+      <AmountBanner amount={claimAmount} />
+      <ClaimDelegateChoiceProfile
+        name={selectedDAO?.name || ""}
+        delegate={selectedDAO}
+      />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
         <div className="icon" />
         <div className="option">
           <div className="left">
-            Justin Sun
-            <div className="address">0x328d...8hsf</div>
+            {selectedDelegate?.ensName}
+            <div className="address">
+              {selectedDelegate?.address.slice(0, 12)}...
+            </div>
           </div>
           <div className="right">
-            <SharedButton type="tertiaryGray" size="small">
+            <SharedButton
+              type="tertiaryGray"
+              size="small"
+              onClick={backToChoose}
+            >
               Change
             </SharedButton>
           </div>
