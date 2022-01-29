@@ -2,11 +2,12 @@ import React, { ReactElement } from "react"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
+  delegate?: any
 }): ReactElement {
-  const { name } = props
+  const { name, delegate } = props
   return (
     <div className="wrap">
-      <div className="label">Refered by</div>
+      <div className="label">Bonus by</div>
       <div className="ref_block">
         <div className="icon" />
         {name}
@@ -34,9 +35,11 @@ export default function ClaimDelegateChoiceProfile(props: {
             width: 40px;
             height: 40px;
             border-radius: 150px;
-            background-color: #006ae3;
             margin-right: 13px;
             flex-shrink: 0;
+            background-image: url("./images/DAOs/${delegate?.logoAsset}");
+            background-size: cover;
+            background-color: #006ae3;
           }
         `}
       </style>
