@@ -48,9 +48,22 @@ export default function SwapQuote({
   const history = useHistory()
 
   const handleApproveClick = useCallback(async () => {
-    dispatch(executeSwap(finalQuote))
+    const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
+    dispatch(
+      executeSwap({
+        ...quoteWithoutGasPrice,
+        gasPrice:
+          swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+          gasPrice,
+      })
+    )
     history.push("/signTransaction")
-  }, [dispatch, history, finalQuote])
+  }, [
+    finalQuote,
+    dispatch,
+    swapTransactionSettings.networkSettings.values.maxFeePerGas,
+    history,
+  ])
 
   return (
     <section className="center_horizontal standard_width">
