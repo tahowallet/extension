@@ -27,13 +27,14 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
-import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
+import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
@@ -115,6 +116,11 @@ export default function Swap(): ReactElement {
 
   const [sellAmountLoading, setSellAmountLoading] = useState(false)
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
+
+  const [swapTransactionSettings, setSwapTransactionSettings] = useState({
+    slippageTolerance: 0.01,
+    networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
+  })
 
   const latestQuoteRequest = useRef<SwapQuoteRequest | undefined>(
     savedQuoteRequest
@@ -320,6 +326,7 @@ export default function Swap(): ReactElement {
               sellAsset={sellAsset}
               buyAsset={buyAsset}
               finalQuote={finalQuote}
+              swapTransactionSettings={swapTransactionSettings}
             />
           ) : (
             <></>
@@ -363,7 +370,10 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              <SwapTransactionSettings />
+              <SwapTransactionSettingsChooser
+                swapTransactionSettings={swapTransactionSettings}
+                onSwapTransactionSettingsSave={setSwapTransactionSettings}
+              />
             </div>
             <div className="footer standard_width_padded">
               {
