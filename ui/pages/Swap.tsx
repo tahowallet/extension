@@ -306,6 +306,14 @@ export default function Swap(): ReactElement {
     [sellAmount, updateSwapData]
   )
 
+  const flipSwap = useCallback(() => {
+    setSellAsset(buyAsset)
+    setBuyAsset(sellAsset)
+    setSellAmount(buyAmount)
+
+    updateSwapData("sell", buyAmount, sellAsset, buyAsset)
+  }, [buyAmount, buyAsset, sellAsset, updateSwapData])
+
   useEffect(() => {
     if (
       typeof savedSwapAmount !== "undefined" &&
@@ -374,7 +382,9 @@ export default function Swap(): ReactElement {
                 label="Swap from:"
               />
             </div>
-            <div className="icon_change" />
+            <button className="icon_change" type="button" onClick={flipSwap}>
+              Switch Assets
+            </button>
             <div className="form_input">
               <SharedAssetInput
                 amount={buyAmount}
@@ -480,6 +490,7 @@ export default function Swap(): ReactElement {
             line-height: 16px;
           }
           .icon_change {
+            display: block;
             background: url("./images/change@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 20px;
@@ -492,6 +503,8 @@ export default function Swap(): ReactElement {
             margin-top: -5px;
             margin-bottom: -32px;
             position: relative;
+
+            font-size: 0;
           }
           .settings_wrap {
             margin-top: 16px;
