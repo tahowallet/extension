@@ -67,7 +67,7 @@ export default function Eligible(): ReactElement {
 
       <div
         className="background"
-        style={{ backgroundPositionX: `${(step - 1) * 100}%` }}
+        style={{ backgroundPositionX: `${-384 * (step - 1)}px` }}
       />
       <div className="eligible">
         <div
@@ -113,7 +113,7 @@ export default function Eligible(): ReactElement {
             height: 307px;
             background-color: var(--green-95);
             box-shadow: 0px -10px 13px 6px var(--green-95);
-            transition: all 0.6s cubic-bezier(0.86, 0, 0.07, 1);
+            transition: all 0.7s cubic-bezier(0.86, 0, 0.07, 1);
           }
           .eligible {
             display: flex;
