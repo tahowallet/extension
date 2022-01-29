@@ -219,6 +219,12 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   }
 )
 
+/**
+ * This async thunk prepares and executes an ERC20 `approve` transaction for
+ * the specified contract address and approval target (typically a smart
+ * contract address). It is used to approve an allowanceTarget in a 0x swap
+ * prior to executing the swap.
+ */
 export const approveTransfer = createBackgroundAsyncThunk(
   "0x-swap/approveTransfer",
   async (
@@ -260,6 +266,10 @@ export const approveTransfer = createBackgroundAsyncThunk(
   }
 )
 
+/**
+ * This async thunk prepares and executes a 0x swap transaction based on a
+ * quote.
+ */
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (quote: ZrxQuote, { dispatch }) => {
