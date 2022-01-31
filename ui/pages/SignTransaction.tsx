@@ -80,12 +80,13 @@ export default function SignTransaction({
   })
 
   const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
-  const canSign = useAreKeyringsUnlocked(needsKeyrings) || !needsKeyrings
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
+  const isWaitingForKeyrings = needsKeyrings && !areKeyringsUnlocked
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   useEffect(() => {
-    if (canSign && isTransactionSigned && isTransactionSigning) {
+    if (!isWaitingForKeyrings && isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
@@ -98,7 +99,7 @@ export default function SignTransaction({
       }
     }
   }, [
-    canSign,
+    isWaitingForKeyrings,
     isTransactionSigned,
     isTransactionSigning,
     history,
@@ -108,7 +109,7 @@ export default function SignTransaction({
     dispatch,
   ])
 
-  if (!canSign) {
+  if (isWaitingForKeyrings) {
     return <></>
   }
 
