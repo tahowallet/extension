@@ -131,12 +131,12 @@ export default class LedgerService extends BaseService<Events> {
 
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
-      return new this(await getOrCreateDB(), await TransportWebUSB.create())
+      return new this(await getOrCreateDB(), undefined)
     }
 
   private constructor(
     private db: LedgerDatabase,
-    private transport: Transport
+    private transport: Transport | undefined
   ) {
     super()
   }
@@ -213,6 +213,10 @@ export default class LedgerService extends BaseService<Events> {
     requireAvailableLedger()
 
     try {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
+
       const eth = new Eth(this.transport)
 
       const accountAddress = await deriveAddressOnLedger(accountID, eth)
@@ -246,6 +250,10 @@ export default class LedgerService extends BaseService<Events> {
     requireAvailableLedger()
 
     try {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
+
       const ethersTx =
         ethersTransactionRequestFromEIP1559TransactionRequest(
           transactionRequest
@@ -340,6 +348,10 @@ export default class LedgerService extends BaseService<Events> {
     requireAvailableLedger()
 
     try {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
+
       const eth = new Eth(this.transport)
       const hashedDomain = TypedDataUtils.hashStruct(
         "EIP712Domain",
@@ -372,6 +384,10 @@ export default class LedgerService extends BaseService<Events> {
     requireAvailableLedger()
 
     try {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
+
       const eth = new Eth(this.transport)
 
       const signature = await eth.signPersonalMessage(address, message)
