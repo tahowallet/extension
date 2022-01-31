@@ -1,12 +1,21 @@
 import React, { ReactElement, useState, useRef } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import classNames from "classnames"
+import {
+  setRouteHistoryEntries,
+  Location,
+} from "@tallyho/tally-background/redux-slices/ui"
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
-import { useIsDappPopup } from "../hooks"
+import {
+  useIsDappPopup,
+  useBackgroundDispatch,
+  useBackgroundSelector,
+} from "../hooks"
+
 import setAnimationConditions, {
   animationStyles,
 } from "../utils/pageTransition"
@@ -23,18 +32,6 @@ const pagePreferences = Object.fromEntries(
     { hasTabBar: item.hasTabBar, hasTopBar: item.hasTopBar },
   ])
 )
-
-const initialEntries = JSON.parse(
-  (localStorage.getItem("entries") !== "undefined" &&
-    localStorage.getItem("entries")) ||
-    `["/"]`
-)
-
-interface Location {
-  pathname: string
-  key?: string
-  hash: string
-}
 
 function transformLocation(inputLocation: Location): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -56,12 +53,18 @@ function transformLocation(inputLocation: Location): Location {
   }
 }
 
-export default function Popup({ store }: { store: Store }): ReactElement {
+export function Main(): ReactElement {
+  const dispatch = useBackgroundDispatch()
+
   const isDappPopup = useIsDappPopup()
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
   const [showTabBar, setShowTabBar] = useState(true)
   const renderCount = useRef(0)
+
+  const routeHistoryEntries = useBackgroundSelector((state) => {
+    return state.ui.routeHistoryEntries
+  })
 
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const isNotOnKeyringRelatedPage =
@@ -86,95 +89,87 @@ export default function Popup({ store }: { store: Store }): ReactElement {
         }, [])
         .reverse()
 
-      localStorage.setItem(
-        "entries",
-        JSON.stringify(entries, (key, value) => {
-          return value
-        })
-      )
+      dispatch(setRouteHistoryEntries(entries))
     }
   }
 
   return (
     <>
-      <Provider store={store}>
-        <div className="top_menu_wrap_decoy">
-          <TopMenu />
-        </div>
-        <div className="community_edition_label">Community Edition</div>
-        <Router initialEntries={initialEntries}>
-          <Route
-            render={(routeProps) => {
-              const transformedLocation = transformLocation(routeProps.location)
-              // @ts-expect-error TODO: fix the typing
-              saveHistoryEntries(routeProps?.history?.entries)
+      <div className="top_menu_wrap_decoy">
+        <TopMenu />
+      </div>
+      <div className="community_edition_label">Community Edition</div>
+      <Router initialEntries={routeHistoryEntries}>
+        <Route
+          render={(routeProps) => {
+            const transformedLocation = transformLocation(routeProps.location)
+            // @ts-expect-error TODO: fix the typing
+            saveHistoryEntries(routeProps?.history?.entries)
 
-              const normalizedPathname =
-                transformedLocation.pathname !== "/wallet"
-                  ? transformedLocation.pathname
-                  : "/"
+            const normalizedPathname =
+              transformedLocation.pathname !== "/wallet"
+                ? transformedLocation.pathname
+                : "/"
 
-              setAnimationConditions(
-                routeProps,
-                pagePreferences,
-                setShouldDisplayDecoy,
-                setIsDirectionRight
-              )
-              setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
-              renderCount.current += 1
+            setAnimationConditions(
+              routeProps,
+              pagePreferences,
+              setShouldDisplayDecoy,
+              setIsDirectionRight
+            )
+            setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
+            renderCount.current += 1
 
-              return (
-                <TransitionGroup>
-                  <CSSTransition
-                    timeout={300}
-                    classNames="page-transition"
-                    key={
-                      routeProps.location.pathname.includes("onboarding") ||
-                      routeProps.location.pathname.includes("keyring")
-                        ? ""
-                        : transformedLocation.key
-                    }
-                  >
-                    <div>
-                      <div
-                        className={classNames("top_menu_wrap", {
-                          anti_animation: shouldDisplayDecoy,
-                          hide: !pagePreferences[normalizedPathname].hasTopBar,
-                        })}
-                      >
-                        <TopMenu />
-                      </div>
-                      {/* @ts-expect-error TODO: fix the typing when the feature works */}
-                      <Switch location={transformedLocation}>
-                        {pageList.map(
-                          ({ path, Component, hasTabBar, hasTopBar }) => {
-                            return (
-                              <Route path={path} key={path}>
-                                <CorePage
-                                  hasTabBar={hasTabBar}
-                                  hasTopBar={hasTopBar}
-                                >
-                                  <Component location={transformedLocation} />
-                                </CorePage>
-                              </Route>
-                            )
-                          }
-                        )}
-                      </Switch>
+            return (
+              <TransitionGroup>
+                <CSSTransition
+                  timeout={300}
+                  classNames="page-transition"
+                  key={
+                    routeProps.location.pathname.includes("onboarding") ||
+                    routeProps.location.pathname.includes("keyring")
+                      ? ""
+                      : transformedLocation.key
+                  }
+                >
+                  <div>
+                    <div
+                      className={classNames("top_menu_wrap", {
+                        anti_animation: shouldDisplayDecoy,
+                        hide: !pagePreferences[normalizedPathname].hasTopBar,
+                      })}
+                    >
+                      <TopMenu />
                     </div>
-                  </CSSTransition>
-                </TransitionGroup>
-              )
-            }}
-          />
-          {showTabBar && (
-            <div className="tab_bar_wrap">
-              <TabBar />
-            </div>
-          )}
-        </Router>
-      </Provider>
-
+                    {/* @ts-expect-error TODO: fix the typing when the feature works */}
+                    <Switch location={transformedLocation}>
+                      {pageList.map(
+                        ({ path, Component, hasTabBar, hasTopBar }) => {
+                          return (
+                            <Route path={path} key={path}>
+                              <CorePage
+                                hasTabBar={hasTabBar}
+                                hasTopBar={hasTopBar}
+                              >
+                                <Component location={transformedLocation} />
+                              </CorePage>
+                            </Route>
+                          )
+                        }
+                      )}
+                    </Switch>
+                  </div>
+                </CSSTransition>
+              </TransitionGroup>
+            )
+          }}
+        />
+        {showTabBar && (
+          <div className="tab_bar_wrap">
+            <TabBar />
+          </div>
+        )}
+      </Router>
       <>
         <style jsx global>
           {`
@@ -234,5 +229,13 @@ export default function Popup({ store }: { store: Store }): ReactElement {
         </style>
       )}
     </>
+  )
+}
+
+export default function Popup({ store }: { store: Store }): ReactElement {
+  return (
+    <Provider store={store}>
+      <Main />
+    </Provider>
   )
 }
