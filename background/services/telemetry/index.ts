@@ -19,8 +19,18 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
   }
 
   private constructor() {
-    super({})
+    super({
+      storageUsage: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => TelemetryService.checkStorageUsage(),
+        runAtStart: true,
+      },
+    })
+  }
 
-    logger.log("Hello world!")
+  static checkStorageUsage(): void {
+    logger.log(`Hello world! ${Math.random()}`)
   }
 }
