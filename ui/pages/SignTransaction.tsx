@@ -79,14 +79,14 @@ export default function SignTransaction({
     return undefined
   })
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(
-    signerAccountTotal?.signingMethod?.type === "keyring"
-  )
+  const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
+  const isWaitingForKeyrings = needsKeyrings && !areKeyringsUnlocked
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   useEffect(() => {
-    if (areKeyringsUnlocked && isTransactionSigned && isTransactionSigning) {
+    if (!isWaitingForKeyrings && isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
@@ -99,7 +99,7 @@ export default function SignTransaction({
       }
     }
   }, [
-    areKeyringsUnlocked,
+    isWaitingForKeyrings,
     isTransactionSigned,
     isTransactionSigning,
     history,
@@ -109,7 +109,7 @@ export default function SignTransaction({
     dispatch,
   ])
 
-  if (!areKeyringsUnlocked) {
+  if (isWaitingForKeyrings) {
     return <></>
   }
 
@@ -133,12 +133,16 @@ export default function SignTransaction({
     }
   }
 
+  const isWaitingForHardware =
+    signerAccountTotal?.signingMethod?.type === "ledger" && isTransactionSigning
+
   switch (signType) {
     case SignType.SignSwap:
       return (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Swap assets"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={<SignTransactionSwapAssetBlock />}
           confirmButtonLabel="Confirm"
           handleConfirm={handleConfirm}
@@ -150,6 +154,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Approve asset spend"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionApproveSpendAssetBlock
               transactionDetails={transactionDetails}
@@ -166,6 +171,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Sign Transfer"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionTransferBlock
               token={assetSymbol ?? ""}
@@ -184,6 +190,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Sign Transaction"
+          isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionSignBlock transactionDetails={transactionDetails} />
           }
