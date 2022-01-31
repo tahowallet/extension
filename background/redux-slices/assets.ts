@@ -189,7 +189,7 @@ const assetsSlice = createSlice({
         const index = findClosestAsset(pricedAsset, [
           ...immerState,
         ] as AnyAsset[])
-        if (index) {
+        if (index !== null) {
           // append to longer-running prices
           const prices = prunePrices(
             [...immerState[index].prices].concat([pricePoint])
