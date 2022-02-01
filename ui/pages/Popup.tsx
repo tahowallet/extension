@@ -10,6 +10,7 @@ import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
+import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features/features"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -109,7 +110,10 @@ export function Main(): ReactElement {
                 ? transformedLocation.pathname
                 : "/"
 
-            if (pagePreferences[normalizedPathname].persistOnClose) {
+            if (
+              PERSIST_UI_LOCATION &&
+              pagePreferences[normalizedPathname].persistOnClose
+            ) {
               // @ts-expect-error TODO: fix the typing
               saveHistoryEntries(routeProps?.history?.entries)
             }
