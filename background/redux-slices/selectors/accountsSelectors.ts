@@ -21,7 +21,6 @@ import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
-import logger from "../../lib/logger"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -31,12 +30,15 @@ const mainCurrencySymbol = "USD"
 // TODO Make this a setting.
 const userValueDustThreshold = 2
 
-const getAccountAssetAmountsData = (
+const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   hideDust: boolean
 ): {
-  accountAssetAmounts: CompleteAssetAmount<AnyAsset, AnyAssetAmount<AnyAsset>>[]
+  combinedAssetAmounts: CompleteAssetAmount<
+    AnyAsset,
+    AnyAssetAmount<AnyAsset>
+  >[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Keep a tally of the total user value; undefined if no main currency data
@@ -45,15 +47,13 @@ const getAccountAssetAmountsData = (
 
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
-  const accountAssetAmounts = assetAmounts
+  const combinedAssetAmounts = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
         assetAmount.asset.symbol,
         mainCurrencySymbol
       )
-
-      logger.info("symbol: ", assetAmount.asset.symbol)
 
       if (assetPricePoint) {
         const mainCurrencyEnrichedAssetAmount =
@@ -65,7 +65,7 @@ const getAccountAssetAmountsData = (
 
         // Heuristically add decimal places to high-unit-price assets, `
         // 1 decimal place per order of magnitude in the unit price; e.g.
-        // a if USD is the main currency and the asset unit price is $100,
+        // if USD is the main currency and the asset unit price is $100,
         // 2 decimal points, $1000, 3 decimal points, $10000, 4 decimal
         // points, etc. `desiredDecimals` is treated as the minimum, and
         // order of magnitude is rounded up (e.g. $2000 = >3 orders of
@@ -76,9 +76,6 @@ const getAccountAssetAmountsData = (
           Math.ceil(Math.log10(mainCurrencyEnrichedAssetAmount.unitPrice ?? 0)),
           desiredDecimals
         )
-
-        logger.info("unitPrice: ", mainCurrencyEnrichedAssetAmount.unitPrice)
-        logger.info("decimal value places: ", decimalValuePlaces)
 
         const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
           mainCurrencyEnrichedAssetAmount,
@@ -110,7 +107,7 @@ const getAccountAssetAmountsData = (
       return hideDust ? isNotDust && isPresent : isPresent
     })
 
-  return { accountAssetAmounts, totalMainCurrencyAmount }
+  return { combinedAssetAmounts, totalMainCurrencyAmount }
 }
 
 const getAccountState = (state: RootState) => state.account
@@ -124,12 +121,16 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAssetsState,
   selectHideDust,
   (account, assets, hideDust) => {
-    const { accountAssetAmounts, totalMainCurrencyAmount } =
-      getAccountAssetAmountsData(account.combinedData.assets, assets, hideDust)
+    const { combinedAssetAmounts, totalMainCurrencyAmount } =
+      computeCombinedAssetAmountsData(
+        account.combinedData.assets,
+        assets,
+        hideDust
+      )
 
     return {
       combinedData: {
-        assets: accountAssetAmounts,
+        assets: combinedAssetAmounts,
         totalMainCurrencyValue: totalMainCurrencyAmount
           ? formatCurrencyAmount(
               mainCurrencySymbol,
@@ -179,11 +180,11 @@ export const selectCurrentAccountBalances = createSelector(
       (balance) => balance.assetAmount
     )
 
-    const { accountAssetAmounts, totalMainCurrencyAmount } =
-      getAccountAssetAmountsData(assetAmounts, assets, hideDust)
+    const { combinedAssetAmounts, totalMainCurrencyAmount } =
+      computeCombinedAssetAmountsData(assetAmounts, assets, hideDust)
 
     return {
-      assetAmounts: accountAssetAmounts,
+      assetAmounts: combinedAssetAmounts,
       totalMainCurrencyValue: totalMainCurrencyAmount
         ? formatCurrencyAmount(
             mainCurrencySymbol,
