@@ -36,31 +36,33 @@ export default function ClaimDelegate(props: {
           <ul className="delegates">
             {delegates.map((delegate) => {
               return (
-                <li className="delegate">
+                <li>
                   <button
                     type="button"
                     onClick={() => {
                       dispatch(setSelectedDelegate(delegate))
                     }}
                   >
-                    <input type="radio" name="delegate" className="radio" />
-                    <div className="delegate_details">
-                      <div className="icon" />
-                      <div className="delegate_info">
-                        <div className="name">{delegate.ensName}</div>
-                        {/* <span className="count">123 Votes</span> */}
-                        <div className="pitch">
-                          <SharedButton
-                            type="tertiaryGray"
-                            size="small"
-                            onClick={() => {
-                              window
-                                .open(delegate.applicationLink, "_blank")
-                                ?.focus()
-                            }}
-                          >
-                            See pitch
-                          </SharedButton>
+                    <div className="delegate">
+                      <input type="radio" name="delegate" className="radio" />
+                      <div className="delegate_details">
+                        <div className="icon" />
+                        <div className="delegate_info">
+                          <div className="name">{delegate.ensName}</div>
+                          {/* <span className="count">123 Votes</span> */}
+                          <div className="pitch">
+                            <SharedButton
+                              type="tertiaryGray"
+                              size="small"
+                              onClick={() => {
+                                window
+                                  .open(delegate.applicationLink, "_blank")
+                                  ?.focus()
+                              }}
+                            >
+                              See pitch
+                            </SharedButton>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -122,6 +124,7 @@ export default function ClaimDelegate(props: {
             width: 100%;
             justify-content: space-between;
             margin-left: 12px;
+            width: 275px;
           }
           .radio {
             all: revert;
