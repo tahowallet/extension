@@ -78,7 +78,7 @@ export default function Snackbar(): ReactElement {
             transition: all ${DISMISS_ANIMATION_MS}ms ease;
             opacity: 1;
             transform: translateY(0px);
-            pointer-events: none;
+            user-select: none;
           }
           .hidden {
             opacity: 0;
