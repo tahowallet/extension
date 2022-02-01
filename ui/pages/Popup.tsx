@@ -1,5 +1,7 @@
 import React, { ReactElement, useState, useRef } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import { ErrorBoundary } from "react-error-boundary"
+
 import classNames from "classnames"
 import {
   setRouteHistoryEntries,
@@ -24,6 +26,7 @@ import setAnimationConditions, {
 import TabBar from "../components/TabBar/TabBar"
 import TopMenu from "../components/TopMenu/TopMenu"
 import CorePage from "../components/Core/CorePage"
+import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
 
@@ -158,7 +161,11 @@ export function Main(): ReactElement {
                                 hasTabBar={hasTabBar}
                                 hasTopBar={hasTopBar}
                               >
-                                <Component location={transformedLocation} />
+                                <ErrorBoundary
+                                  FallbackComponent={ErrorFallback}
+                                >
+                                  <Component location={transformedLocation} />
+                                </ErrorBoundary>
                               </CorePage>
                             </Route>
                           )
