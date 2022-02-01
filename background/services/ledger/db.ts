@@ -1,5 +1,4 @@
-import Dexie, { Transaction } from "dexie"
-import { AddressNetwork } from "../../accounts"
+import Dexie from "dexie"
 import { HexString } from "../../types"
 
 export interface LedgerAccount {
@@ -9,10 +8,10 @@ export interface LedgerAccount {
 }
 
 export class LedgerDatabase extends Dexie {
-  private accounts!: Dexie.Table<LedgerAccount, number>
+  private ledger!: Dexie.Table<LedgerAccount, number>
 
   constructor() {
-    super("tally/ledgers")
+    super("tally/ledger")
 
     this.version(1).stores({
       accounts: "&address,ledgerId",
@@ -20,17 +19,15 @@ export class LedgerDatabase extends Dexie {
   }
 
   async addAccount(account: LedgerAccount): Promise<void> {
-    await this.accounts.add(account)
+    await this.ledger.add(account)
   }
 
   async getAccountByAddress(address: HexString): Promise<LedgerAccount | null> {
-    return (
-      (await this.accounts.where("address").equals(address).first()) ?? null
-    )
+    return (await this.ledger.where("address").equals(address).first()) ?? null
   }
 
   async getAllAccountsByLedgerId(ledgerId: string): Promise<LedgerAccount[]> {
-    return this.accounts.where("ledgerId").equals(ledgerId).toArray()
+    return this.ledger.where("ledgerId").equals(ledgerId).toArray()
   }
 }
 
