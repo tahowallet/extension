@@ -812,6 +812,6 @@ export default class Main extends BaseService<never> {
 
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
-    TelemetryService.connectReduxStore(this.store)
+    this.telemetryService.connectReduxStore(this.store)
   }
 }
