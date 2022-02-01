@@ -10,16 +10,19 @@ export interface LedgerAccountState {
   fetchingBalance: boolean
 }
 
+export type LedgerConnectionStatus = "available" | "busy" | "disconnected"
+
 export interface LedgerDeviceState {
   /** First address derived from standard ETH derivation path, used as ID */
   id: string
   /** Accounts by path */
-  accounts: Record<string, LedgerAccountState | undefined>
+  accounts: Record<string, LedgerAccountState>
+  status: LedgerConnectionStatus // FIXME: this should not be persisted
 }
 
 export type LedgerState = {
   /** Devices by ID */
-  devices: Record<string, LedgerDeviceState | undefined>
+  devices: Record<string, LedgerDeviceState>
 }
 
 export type Events = {
@@ -58,6 +61,7 @@ const ledgerSlice = createSlice({
       immerState.devices[deviceID] = {
         id: deviceID,
         accounts: {},
+        status: "disconnected",
       }
     },
     addLedgerAccount: (
