@@ -31,17 +31,18 @@ function EarnCard() {
             width: 160px;
             height: 266px;
             border-radius: 8px;
-            background: linear-gradient(180deg, #284340 0%, #193330 100%);
             flex-shrink: 0;
             display: flex;
+            background: linear-gradient(var(--green-95) 100%, var(--green-95));
             flex-direction: column;
             align-items: center;
             margin-top: 26px;
             margin-bottom: 16px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
           }
           .card:hover {
             box-shadow: 0px 10px 12px 0px #0014138a;
+            background: linear-gradient(180deg, #284340 0%, #193330 100%);
           }
           .tvl {
             font-size: 18px;
@@ -80,7 +81,8 @@ function EarnCard() {
             margin-bottom: 4px;
           }
           .lock {
-            width: 14px;
+            height: 13px;
+            margin-right: 4px;
             display: inline-block;
           }
           .apy_info_label {
@@ -143,7 +145,7 @@ export default function Earn(): ReactElement {
       )}
       {panelNumber === 1 ? (
         <section className="standard_width">
-          <div className="cards_wrap">{Array(4).fill("").map(EarnCard)}</div>
+          <p>Coming soon</p>
         </section>
       ) : (
         <></>
