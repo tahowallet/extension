@@ -9,6 +9,8 @@ import {
   formatCurrencyAmount,
 } from "../utils/asset-utils"
 import {
+  AnyAsset,
+  AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   FungibleAssetAmount,
@@ -19,6 +21,7 @@ import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
+import logger from "../../lib/logger"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -27,6 +30,69 @@ const desiredDecimals = 2
 const mainCurrencySymbol = "USD"
 // TODO Make this a setting.
 const userValueDustThreshold = 2
+
+const getAccountAssetAmountsData = (
+  assetAmounts: AnyAssetAmount<AnyAsset>[],
+  assets: AssetsState,
+  hideDust: boolean
+): {
+  accountAssetAmounts: CompleteAssetAmount<AnyAsset, AnyAssetAmount<AnyAsset>>[]
+  totalMainCurrencyAmount: number | undefined
+} => {
+  // Keep a tally of the total user value; undefined if no main currency data
+  // is available.
+  let totalMainCurrencyAmount: number | undefined
+
+  // Derive account "assets"/assetAmount which include USD values using
+  // data from the assets slice
+  const accountAssetAmounts = assetAmounts
+    .map<CompleteAssetAmount>((assetAmount) => {
+      const assetPricePoint = selectAssetPricePoint(
+        assets,
+        assetAmount.asset.symbol,
+        mainCurrencySymbol
+      )
+
+      logger.info("symbol: ", assetAmount.asset.symbol)
+
+      if (assetPricePoint) {
+        const mainCurrencyEnrichedAssetAmount =
+          enrichAssetAmountWithMainCurrencyValues(
+            assetAmount,
+            assetPricePoint,
+            desiredDecimals
+          )
+
+        const enrichedAssetAmount = enrichAssetAmountWithDecimalValues(
+          mainCurrencyEnrichedAssetAmount,
+          desiredDecimals
+        )
+
+        if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
+          totalMainCurrencyAmount ??= 0 // initialize if needed
+          totalMainCurrencyAmount += enrichedAssetAmount.mainCurrencyAmount
+        }
+
+        return enrichedAssetAmount
+      }
+
+      return enrichAssetAmountWithDecimalValues(assetAmount, desiredDecimals)
+    })
+    .filter((assetAmount) => {
+      const isNotDust =
+        typeof assetAmount.mainCurrencyAmount === "undefined"
+          ? true
+          : assetAmount.mainCurrencyAmount > userValueDustThreshold
+      // TODO Update below to be network responsive
+      const isPresent =
+        assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
+
+      // Hide dust and missing amounts.
+      return hideDust ? isNotDust && isPresent : isPresent
+    })
+
+  return { accountAssetAmounts, totalMainCurrencyAmount }
+}
 
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
@@ -39,59 +105,12 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAssetsState,
   selectHideDust,
   (account, assets, hideDust) => {
-    // Keep a tally of the total user value; undefined if no main currency data
-    // is available.
-    let totalMainCurrencyAmount: number | undefined
-
-    // Derive account "assets"/assetAmount which include USD values using
-    // data from the assets slice
-    const accountAssets = account.combinedData.assets
-      .map<CompleteAssetAmount>((assetItem) => {
-        const assetPricePoint = selectAssetPricePoint(
-          assets,
-          assetItem.asset.symbol,
-          mainCurrencySymbol
-        )
-
-        if (assetPricePoint) {
-          const enrichedAssetAmount = enrichAssetAmountWithDecimalValues(
-            enrichAssetAmountWithMainCurrencyValues(
-              assetItem,
-              assetPricePoint,
-              desiredDecimals
-            ),
-            desiredDecimals,
-            assetPricePoint
-          )
-
-          if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
-            totalMainCurrencyAmount ??= 0 // initialize if needed
-            totalMainCurrencyAmount += enrichedAssetAmount.mainCurrencyAmount
-          }
-
-          return enrichedAssetAmount
-        }
-
-        return enrichAssetAmountWithDecimalValues(
-          assetItem,
-          desiredDecimals,
-          assetPricePoint
-        )
-      })
-      .filter((assetItem) => {
-        const isNotDust =
-          typeof assetItem.mainCurrencyAmount === "undefined"
-            ? true
-            : assetItem.mainCurrencyAmount > userValueDustThreshold
-        const isPresent = assetItem.decimalAmount > 0
-
-        // Hide dust and missing amounts.
-        return hideDust ? isNotDust && isPresent : isPresent
-      })
+    const { accountAssetAmounts, totalMainCurrencyAmount } =
+      getAccountAssetAmountsData(account.combinedData.assets, assets, hideDust)
 
     return {
       combinedData: {
-        assets: accountAssets,
+        assets: accountAssetAmounts,
         totalMainCurrencyValue: totalMainCurrencyAmount
           ? formatCurrencyAmount(
               mainCurrencySymbol,
@@ -137,57 +156,12 @@ export const selectCurrentAccountBalances = createSelector(
       return undefined
     }
 
-    // Keep a tally of the total user value; undefined if no main currency data
-    // is available.
-    let totalMainCurrencyAmount: number | undefined
+    const assetAmounts = Object.values(currentAccount.balances).map(
+      (balance) => balance.assetAmount
+    )
 
-    // Derive account "assets"/assetAmount which include USD values using
-    // data from the assets slice
-    const accountAssetAmounts = Object.values(currentAccount.balances)
-      .map<CompleteAssetAmount>(({ assetAmount }) => {
-        const assetPricePoint = selectAssetPricePoint(
-          assets,
-          assetAmount.asset.symbol,
-          mainCurrencySymbol
-        )
-
-        if (assetPricePoint) {
-          const enrichedAssetAmount = enrichAssetAmountWithDecimalValues(
-            enrichAssetAmountWithMainCurrencyValues(
-              assetAmount,
-              assetPricePoint,
-              desiredDecimals
-            ),
-            desiredDecimals,
-            assetPricePoint
-          )
-
-          if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
-            totalMainCurrencyAmount ??= 0 // initialize if needed
-            totalMainCurrencyAmount += enrichedAssetAmount.mainCurrencyAmount
-          }
-
-          return enrichedAssetAmount
-        }
-
-        return enrichAssetAmountWithDecimalValues(
-          assetAmount,
-          desiredDecimals,
-          assetPricePoint
-        )
-      })
-      .filter((assetAmount) => {
-        const isNotDust =
-          typeof assetAmount.mainCurrencyAmount === "undefined"
-            ? true
-            : assetAmount.mainCurrencyAmount > userValueDustThreshold
-        // TODO Update below to be network responsive
-        const isPresent =
-          assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
-
-        // Hide dust and missing amounts.
-        return hideDust ? isNotDust && isPresent : isPresent
-      })
+    const { accountAssetAmounts, totalMainCurrencyAmount } =
+      getAccountAssetAmountsData(assetAmounts, assets, hideDust)
 
     return {
       assetAmounts: accountAssetAmounts,
