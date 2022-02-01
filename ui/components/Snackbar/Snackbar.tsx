@@ -1,4 +1,10 @@
-import React, { ReactElement, useCallback, useEffect, useRef } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import {
@@ -6,6 +12,7 @@ import {
   clearSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector, useDelayContentChange } from "../../hooks"
+import { TAB_BAR_TAG_CLASS } from "../TabBar/TabBar"
 
 // Number of ms before a snackbar message dismisses; changing the message will
 // extend visibility by this much.
@@ -14,8 +21,14 @@ const DISMISS_MS = 2500
 // dismissed.
 const DISMISS_ANIMATION_MS = 300
 
+// Pixel offset from the bottom where the tabbar is expected to exist if it's
+// visible.
+const TABBAR_OFFSET = 25
+
 export default function Snackbar(): ReactElement {
   const dispatch = useDispatch()
+
+  const [shouldOffsetByTabBar, setShouldOffsetByTabBar] = useState(false)
 
   const snackbarMessage = useBackgroundSelector(selectSnackbarMessage)
   const shouldHide = snackbarMessage.trim() === ""
@@ -39,9 +52,20 @@ export default function Snackbar(): ReactElement {
   useEffect(() => {
     clearSnackbarTimeout()
 
-    snackbarTimeout.current = window.setTimeout(() => {
-      dispatch(clearSnackbarMessage())
-    }, DISMISS_MS)
+    if (snackbarMessage !== "") {
+      snackbarTimeout.current = window.setTimeout(() => {
+        dispatch(clearSnackbarMessage())
+      }, DISMISS_MS)
+    } else {
+      setShouldOffsetByTabBar(
+        document
+          .elementsFromPoint(
+            document.body.clientHeight / 2,
+            document.body.clientHeight - TABBAR_OFFSET
+          )
+          .some((element) => element.matches(`nav.${TAB_BAR_TAG_CLASS}`))
+      )
+    }
   }, [snackbarMessage, clearSnackbarTimeout, dispatch])
 
   useEffect(() => {
@@ -67,7 +91,7 @@ export default function Snackbar(): ReactElement {
             font-size: 16px;
             font-weight: 500;
             position: fixed;
-            bottom: 80px;
+            bottom: ${shouldOffsetByTabBar ? 80 : 30}px;
             z-index: 999999999;
             background: var(--green-120);
             color: var(--green-20);
