@@ -3,14 +3,14 @@ import browser from "webextension-polyfill"
 import { Store as ProxyStore } from "webext-redux"
 import { AnyAction } from "@reduxjs/toolkit"
 
-import Main from "./main"
+import Main, { ReduxStoreType } from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
 
 import { RootState } from "./redux-slices"
 
 export { browser }
 
-export type { RootState }
+export type { ReduxStoreType, RootState }
 
 export type BackgroundDispatch = Main["store"]["dispatch"]
 

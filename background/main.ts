@@ -210,7 +210,7 @@ const initializeStore = (preloadedState = {}) =>
         : [],
   })
 
-type ReduxStoreType = ReturnType<typeof initializeStore>
+export type ReduxStoreType = ReturnType<typeof initializeStore>
 
 // TODO Rename ReduxService or CoordinationService, move to services/, etc.
 export default class Main extends BaseService<never> {
@@ -393,6 +393,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectTelemetryService()
     await this.connectChainService()
   }
 
@@ -807,5 +808,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+  }
+
+  connectTelemetryService(): void {
+    // Pass the redux store to the telemetry service so we can analyze its size
+    TelemetryService.connectReduxStore(this.store)
   }
 }

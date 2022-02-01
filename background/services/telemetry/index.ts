@@ -1,3 +1,4 @@
+import { ReduxStoreType } from "../.."
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import logger from "../../lib/logger"
@@ -8,7 +9,6 @@ import logger from "../../lib/logger"
  * Currently we are only tracking extension storage information and logging
  * it to the console.
  */
-
 export default class TelemetryService extends BaseService<ServiceLifecycleEvents> {
   static create: ServiceCreatorFunction<
     ServiceLifecycleEvents,
@@ -22,7 +22,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     super({
       storageUsage: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 0.1,
         },
         handler: () => TelemetryService.checkStorageUsage(),
         runAtStart: true,
@@ -30,7 +30,12 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     })
   }
 
-  static checkStorageUsage(): void {
-    logger.log(`Hello world! ${Math.random()}`)
+  static connectReduxStore(store: ReduxStoreType): void {
+    const state = store.getState()
+    logger.log("Redux state: ", state)
+  }
+
+  static async checkStorageUsage(): Promise<void> {
+    logger.log(`Extension storage usage: `, await navigator.storage.estimate())
   }
 }
