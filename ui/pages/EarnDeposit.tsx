@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from "react"
-import { Link } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -13,38 +12,61 @@ export default function EarnDeposit(): ReactElement {
     <>
       <section className="primary_info">
         <BackButton />
-        <header>
-          <div className="left side_column">
+        <div className="wrapper">
+          <div className="row">
             <div className="type">VAULT</div>
-            <div className="content">
-              <div>Estimated APR</div>
-              <div>Total value locked</div>
-              <div>Rewards</div>
+            <div className="center">
+              <SharedAssetIcon size="large" />
+              <span className="asset_name">USDT</span>
             </div>
-          </div>
-          <div className="center">
-            <SharedAssetIcon size="large" />
-            <span className="asset_name">USDT</span>
-          </div>
-          <div className="right side_column">
             <div>
-              <Link to="www.onet.pl" target="_blank">
+              <a href="www.onet.pl" target="_blank">
                 <div className="contract">
-                  <div className="name">Contract</div>
+                  <div className="contract_link">Contract</div>
                   <span className="external" />
                 </div>
-              </Link>
-            </div>
-            <div className="content data">
-              <div>250%</div>
-              <div>$20,283,219</div>
-              <div className="rewards">
-                <img className="lock" src="./images/lock@2.png" alt="Locked" />
-                TALLY
-              </div>
+              </a>
             </div>
           </div>
-        </header>
+          <div className="row">
+            <div className="label">Estimated APR</div>
+            <div className="amount">250%</div>
+          </div>
+          <div className="row">
+            <div className="label">Total value locked</div>
+            <div className="amount">$20,283,219</div>
+          </div>
+          <div className="row">
+            <div className="label">Rewards</div>
+            <div className="rewards">
+              <img className="lock" src="./images/lock@2.png" alt="Locked" />
+              TALLY
+            </div>
+          </div>
+        </div>
+        <div className="wrapper">
+          <div className="row">
+            <div className="label">Deposited amount</div>
+            <div className="amount">
+              27,834 <span className="token">Curve ibGBP</span>
+            </div>
+          </div>
+          <div className="divider" />
+          <div className="row">
+            <div className="label">Available rewards</div>
+            <div className="amount">
+              27,834 <span className="token">TALLY</span>
+            </div>
+          </div>
+          <div className="row claim">
+            <img
+              className="receive_icon"
+              src="./images/receive@2x.png"
+              alt=""
+            />
+            Claim rewards
+          </div>
+        </div>
       </section>
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
@@ -56,9 +78,11 @@ export default function EarnDeposit(): ReactElement {
           label="Deposit asset"
           defaultAsset={{ symbol: "ETH", name: "Ether" }}
         />
-        <SharedButton type="primary" size="large">
-          Approve & Deposit
-        </SharedButton>
+        <div className="confirm">
+          <SharedButton type="primary" size="large">
+            Approve
+          </SharedButton>
+        </div>
       </div>
       <style jsx>
         {`
@@ -66,20 +90,39 @@ export default function EarnDeposit(): ReactElement {
             margin-top: 15px;
             width: 90%;
           }
-          .content {
-            padding-top: 48px;
-            font-size: 14px;
-            line-height: 18px;
+          .row {
             display: flex;
-            flex-flow: column;
-            gap: 16px;
-            margin-bottom: 12px;
-            color: var(--green-40);
+            justify-content: space-between;
+            align-items: baseline;
           }
-          .content.data {
-            color: white;
-            align-items: flex-end;
+          .row.claim {
+            justify-content: flex-end;
+            color: var(--trophy-gold);
+            font-weight: bold;
+            cursor: pointer;
+          }
+          .receive_icon {
+            mask-size: 10px 10px;
+            height: 10px;
+            width: 10px;
+            mask-image: url("./images/receive@2x.png");
+            margin-right: 4px;
+            background-color: var(--trophy-gold);
+          }
+          .token {
+            font-size: 14px;
+          }
+          .divider {
+            height: 1px;
+            background-color: #33514e;
+          }
+          .amount {
             font-size: 18px;
+            font-weight: 500;
+          }
+          .label {
+            color: var(--green-40);
+            font-size: 14px;
           }
           .contract {
             display: flex;
@@ -87,7 +130,7 @@ export default function EarnDeposit(): ReactElement {
             gap: 4px;
             justify-content: flex-end;
           }
-          .name {
+          .contract_link {
             text-decoration: none;
             color: var(--green-40);
             font-size: 16px;
@@ -101,15 +144,16 @@ export default function EarnDeposit(): ReactElement {
             height: 12px;
             background-color: var(--green-40);
           }
-          header {
+          .wrapper {
             width: 100%;
             margin: 0 auto;
             display: flex;
-            padding: 0px 16px;
+            flex-flow: column;
             box-sizing: border-box;
-            justify-content: space-between;
-            margin-bottom: 24px;
+            padding: 12px 16px;
+            gap: 12px;
             border: 1px solid #33514e;
+            margin-bottom: 16px;
           }
           .asset_name {
             color: #fff;
@@ -123,8 +167,8 @@ export default function EarnDeposit(): ReactElement {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: -26px;
-            position: absolute;
+            margin-top: -36px;
+            position: relative;
             left: 0px;
             right: 0px;
             pointer-events: none;
@@ -141,15 +185,6 @@ export default function EarnDeposit(): ReactElement {
             line-height: 16px;
             max-width: 40px;
           }
-          .side_column {
-            margin-top: 16px;
-            color: #fff;
-            font-size: 18px;
-            font-weight: 600;
-          }
-          .right {
-            text-align: right;
-          }
           .deposit_wrap {
             margin-top: 20px;
             height: 154px;
@@ -158,8 +193,12 @@ export default function EarnDeposit(): ReactElement {
             align-items: center;
             justify-content: space-between;
           }
+          .confirm {
+            padding: 16px;
+          }
           .lock {
-            width: 16px;
+            height: 13px;
+            padding-right: 4px;
             display: inline-block;
           }
           .rewards {
