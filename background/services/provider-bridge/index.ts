@@ -18,6 +18,8 @@ import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
+import { HexString } from "../../types"
+import { sameEVMAddress } from "../../lib/utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -266,6 +268,23 @@ export default class ProviderBridgeService extends BaseService<Events> {
     return this.db.checkPermission(origin, currentAddress)
   }
 
+  async routeSafeRequest(
+    method: string,
+    params: unknown[],
+    popupPromise: Promise<browser.Windows.Window>
+  ): Promise<unknown> {
+    const response = await this.internalEthereumProviderService
+      .routeSafeRPCRequest(method, params)
+      .finally(async () => {
+        // Close the popup once we're done submitting.
+        const popup = await popupPromise
+        if (typeof popup.id !== "undefined") {
+          browser.windows.remove(popup.id)
+        }
+      })
+    return response
+  }
+
   async routeContentScriptRPCRequest(
     enablingPermission: PermissionRequest,
     method: string,
@@ -276,6 +295,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_requestAccounts":
         case "eth_accounts":
           return [enablingPermission.accountAddress]
+        case "eth_signTypedData":
+        case "eth_signTypedData_v1":
+        case "eth_signTypedData_v3":
+        case "eth_signTypedData_v4":
+          // When its signTypedData the params[0] should be the walletAddress
+          // eslint-disable-next-line no-case-declarations
+          const walletAddress = params[0] as HexString
+          // eslint-disable-next-line no-case-declarations
+          const signDataPopupPromise = ProviderBridgeService.showExtensionPopup(
+            AllowedQueryParamPage.signData
+          )
+          if (
+            sameEVMAddress(walletAddress, enablingPermission.accountAddress)
+          ) {
+            return await this.routeSafeRequest(
+              method,
+              params,
+              signDataPopupPromise
+            )
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
 
         case "eth_signTransaction":
         case "eth_sendTransaction":
@@ -283,20 +323,22 @@ export default class ProviderBridgeService extends BaseService<Events> {
           // eslint-disable-next-line no-case-declarations
           const transactionRequest = params[0] as EthersTransactionRequest
           // eslint-disable-next-line no-case-declarations
-          const popupPromise = ProviderBridgeService.showExtensionPopup(
-            AllowedQueryParamPage.signTransaction
-          )
+          const signTransactionPopupPromise =
+            ProviderBridgeService.showExtensionPopup(
+              AllowedQueryParamPage.signTransaction
+            )
 
-          if (transactionRequest.from === enablingPermission.accountAddress) {
-            return await this.internalEthereumProviderService
-              .routeSafeRPCRequest(method, params)
-              .finally(async () => {
-                // Close the popup once we're done submitting.
-                const popup = await popupPromise
-                if (typeof popup.id !== "undefined") {
-                  browser.windows.remove(popup.id)
-                }
-              })
+          if (
+            sameEVMAddress(
+              transactionRequest.from,
+              enablingPermission.accountAddress
+            )
+          ) {
+            return await this.routeSafeRequest(
+              method,
+              params,
+              signTransactionPopupPromise
+            )
           }
           throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
 

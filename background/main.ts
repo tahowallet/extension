@@ -19,7 +19,7 @@ import {
   ServiceCreatorFunction,
 } from "./services"
 
-import { KeyringTypes } from "./types"
+import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import { AddressNetwork, NameNetwork } from "./accounts"
 
@@ -64,6 +64,12 @@ import {
 } from "./redux-slices/dapp-permission"
 import { EnrichedEIP1559TransactionRequest } from "./services/enrichment"
 import logger from "./lib/logger"
+import {
+  signedTypedData,
+  signingSliceEmitter,
+  SignTypedDataRequest,
+  typedDataRequest,
+} from "./redux-slices/signing"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -472,6 +478,22 @@ export default class Main extends BaseService<never> {
         }
       }
     )
+    signingSliceEmitter.on(
+      "requestSignTypedData",
+      async ({
+        typedData,
+        account,
+      }: {
+        typedData: EIP712TypedData
+        account: HexString
+      }) => {
+        const signedData = await this.keyringService.signTypedData({
+          typedData,
+          account,
+        })
+        this.store.dispatch(signedTypedData(signedData))
+      }
+    )
 
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
@@ -662,6 +684,39 @@ export default class Main extends BaseService<never> {
           "signatureRejected",
           rejectAndClear
         )
+      }
+    )
+    this.internalEthereumProviderService.emitter.on(
+      "signTypedDataRequest",
+      async ({
+        payload,
+        resolver,
+        rejecter,
+      }: {
+        payload: SignTypedDataRequest
+        resolver: (result: string | PromiseLike<string>) => void
+        rejecter: () => void
+      }) => {
+        this.store.dispatch(typedDataRequest(payload))
+
+        const resolveAndClear = (signature: string) => {
+          this.keyringService.emitter.off("signedData", resolveAndClear)
+          signingSliceEmitter.off(
+            "signatureRejected",
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            rejectAndClear
+          )
+          resolver(signature)
+        }
+
+        const rejectAndClear = () => {
+          this.keyringService.emitter.off("signedData", resolveAndClear)
+          signingSliceEmitter.off("signatureRejected", rejectAndClear)
+          rejecter()
+        }
+
+        this.keyringService.emitter.on("signedData", resolveAndClear)
+        signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
   }
