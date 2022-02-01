@@ -2,13 +2,19 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
+import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
+import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
+import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
+import { SigningLedgerState } from "./useSigningLedgerState"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
   infoBlock,
+  signingLedgerState,
   isWaitingForHardware,
   confirmButtonLabel,
   handleConfirm,
@@ -17,11 +23,13 @@ export default function SignTransactionContainer({
   signerAccountTotal: AccountTotal
   title: ReactNode
   infoBlock: ReactNode
+  signingLedgerState: SigningLedgerState | null
   isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
 }): ReactElement {
+  const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
@@ -55,22 +63,54 @@ export default function SignTransactionContainer({
             >
               Reject
             </SharedButton>
-            {signerAccountTotal.signingMethod ? (
-              <SharedButton
-                type="primary"
-                iconSize="large"
-                size="large"
-                onClick={handleConfirm}
-                showLoadingOnClick
-              >
-                {confirmButtonLabel}
-              </SharedButton>
-            ) : (
+            {signerAccountTotal.signingMethod &&
+              (signingLedgerState === "available" ? (
+                <SharedButton
+                  type="primary"
+                  iconSize="large"
+                  size="large"
+                  onClick={handleConfirm}
+                  showLoadingOnClick
+                >
+                  {confirmButtonLabel}
+                </SharedButton>
+              ) : (
+                <SharedButton
+                  type="primary"
+                  iconSize="large"
+                  size="large"
+                  onClick={() => {
+                    setSlideUpOpen(true)
+                  }}
+                >
+                  Connect Ledger
+                </SharedButton>
+              ))}
+            {!signerAccountTotal.signingMethod && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>
         </>
       )}
+      <SharedSlideUpMenu
+        isOpen={isSlideUpOpen && signingLedgerState !== "available"}
+        close={() => {
+          setSlideUpOpen(false)
+        }}
+        showOverlay
+        alwaysRenderChildren
+        size="auto"
+      >
+        {signingLedgerState === "no-ledger-connected" && (
+          <SignTransactionLedgerNotConnected />
+        )}
+        {signingLedgerState === "wrong-ledger-connected" && (
+          <SignTransactionWrongLedgerConnected
+            signerAccountTotal={signerAccountTotal}
+          />
+        )}
+        {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
+      </SharedSlideUpMenu>
       <style jsx>
         {`
           section {

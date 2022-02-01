@@ -20,6 +20,7 @@ import {
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
+import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
 
 export enum SignType {
   Sign = "sign",
@@ -109,6 +110,12 @@ export default function SignTransaction({
     dispatch,
   ])
 
+  const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
+
+  const signingLedgerState = useSigningLedgerState(
+    signerAccountTotal?.signingMethod ?? null
+  )
+
   if (isWaitingForKeyrings) {
     return <></>
   }
@@ -133,8 +140,7 @@ export default function SignTransaction({
     }
   }
 
-  const isWaitingForHardware =
-    signerAccountTotal?.signingMethod?.type === "ledger" && isTransactionSigning
+  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   switch (signType) {
     case SignType.SignSwap:
@@ -142,6 +148,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Swap assets"
+          signingLedgerState={signingLedgerState}
           isWaitingForHardware={isWaitingForHardware}
           infoBlock={<SignTransactionSwapAssetBlock />}
           confirmButtonLabel="Confirm"
@@ -154,6 +161,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Approve asset spend"
+          signingLedgerState={signingLedgerState}
           isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionApproveSpendAssetBlock
@@ -171,6 +179,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Sign Transfer"
+          signingLedgerState={signingLedgerState}
           isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionTransferBlock
@@ -190,6 +199,7 @@ export default function SignTransaction({
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
           title="Sign Transaction"
+          signingLedgerState={signingLedgerState}
           isWaitingForHardware={isWaitingForHardware}
           infoBlock={
             <SignTransactionSignBlock transactionDetails={transactionDetails} />
