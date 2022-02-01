@@ -63,17 +63,36 @@ const getAccountAssetAmountsData = (
             desiredDecimals
           )
 
-        const enrichedAssetAmount = enrichAssetAmountWithDecimalValues(
-          mainCurrencyEnrichedAssetAmount,
+        // Heuristically add decimal places to high-unit-price assets, `
+        // 1 decimal place per order of magnitude in the unit price; e.g.
+        // a if USD is the main currency and the asset unit price is $100,
+        // 2 decimal points, $1000, 3 decimal points, $10000, 4 decimal
+        // points, etc. `desiredDecimals` is treated as the minimum, and
+        // order of magnitude is rounded up (e.g. $2000 = >3 orders of
+        // magnitude, so 4 decimal points).
+        const decimalValuePlaces = Math.max(
+          // Using ?? 0, safely handle cases where no main currency is
+          // available.
+          Math.ceil(Math.log10(mainCurrencyEnrichedAssetAmount.unitPrice ?? 0)),
           desiredDecimals
         )
 
-        if (typeof enrichedAssetAmount.mainCurrencyAmount !== "undefined") {
+        logger.info("unitPrice: ", mainCurrencyEnrichedAssetAmount.unitPrice)
+        logger.info("decimal value places: ", decimalValuePlaces)
+
+        const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
+          mainCurrencyEnrichedAssetAmount,
+          decimalValuePlaces
+        )
+
+        if (
+          typeof fullyEnrichedAssetAmount.mainCurrencyAmount !== "undefined"
+        ) {
           totalMainCurrencyAmount ??= 0 // initialize if needed
-          totalMainCurrencyAmount += enrichedAssetAmount.mainCurrencyAmount
+          totalMainCurrencyAmount += fullyEnrichedAssetAmount.mainCurrencyAmount
         }
 
-        return enrichedAssetAmount
+        return fullyEnrichedAssetAmount
       }
 
       return enrichAssetAmountWithDecimalValues(assetAmount, desiredDecimals)
