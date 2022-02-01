@@ -27,9 +27,9 @@ import CorePage from "../components/Core/CorePage"
 import pageList from "../routes/routes"
 
 const pagePreferences = Object.fromEntries(
-  pageList.map((item) => [
-    item.path,
-    { hasTabBar: item.hasTabBar, hasTopBar: item.hasTopBar },
+  pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
+    path,
+    { hasTabBar, hasTopBar, persistOnClose },
   ])
 )
 
@@ -103,13 +103,16 @@ export function Main(): ReactElement {
         <Route
           render={(routeProps) => {
             const transformedLocation = transformLocation(routeProps.location)
-            // @ts-expect-error TODO: fix the typing
-            saveHistoryEntries(routeProps?.history?.entries)
 
             const normalizedPathname =
               transformedLocation.pathname !== "/wallet"
                 ? transformedLocation.pathname
                 : "/"
+
+            if (pagePreferences[normalizedPathname].persistOnClose) {
+              // @ts-expect-error TODO: fix the typing
+              saveHistoryEntries(routeProps?.history?.entries)
+            }
 
             setAnimationConditions(
               routeProps,
