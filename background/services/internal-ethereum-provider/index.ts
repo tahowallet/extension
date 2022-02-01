@@ -19,6 +19,11 @@ import {
   ethersTransactionFromSignedTransaction,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
+import {
+  internalProvider,
+  internalProviderPort,
+} from "../../redux-slices/utils/contract-utils"
+import { SignTypedDataRequest } from "../../redux-slices/signing"
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -31,6 +36,7 @@ type Events = ServiceLifecycleEvents & {
     Partial<EIP1559TransactionRequest> & { from: string },
     SignedEVMTransaction
   >
+  signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   // connect
   // disconnet
   // account change
@@ -52,31 +58,27 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ) {
     super()
 
-    browser.runtime.onConnect.addListener(async (port) => {
-      if (port.name === INTERNAL_PORT_NAME) {
-        port.onMessage.addListener(async (event) => {
-          logger.log(`internal: request payload: ${JSON.stringify(event)}`)
-          try {
-            const response = {
-              id: event.id,
-              result: await this.routeSafeRPCRequest(
-                event.request.method,
-                event.request.params
-              ),
-            }
-            logger.log("internal response:", response)
+    internalProviderPort.emitter.on("message", async (event) => {
+      logger.log(`internal: request payload: ${JSON.stringify(event)}`)
+      try {
+        const response = {
+          id: event.id,
+          result: await this.routeSafeRPCRequest(
+            event.request.method,
+            event.request.params
+          ),
+        }
+        logger.log("internal response:", response)
 
-            port.postMessage(response)
-          } catch (error) {
-            logger.log("error processing request", event.id, error)
+        internalProviderPort.postResponse(response)
+      } catch (error) {
+        logger.log("error processing request", event.id, error)
 
-            port.postMessage({
-              id: event.id,
-              result: new EIP1193Error(
-                EIP1193_ERROR_CODES.userRejectedRequest
-              ).toJSON(),
-            })
-          }
+        internalProviderPort.postResponse({
+          id: event.id,
+          result: new EIP1193Error(
+            EIP1193_ERROR_CODES.userRejectedRequest
+          ).toJSON(),
         })
       }
     })
@@ -88,7 +90,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ): Promise<unknown> {
     switch (method) {
       // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
-
+      case "eth_signTypedData":
+      case "eth_signTypedData_v1":
+      case "eth_signTypedData_v3":
+      case "eth_signTypedData_v4":
+        return this.signTypedData({
+          account: params[0],
+          typedData: JSON.parse(params[1] as string),
+        } as SignTypedDataRequest)
       case "eth_blockNumber":
       case "eth_call":
       case "eth_chainId":
@@ -167,10 +176,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_hashrate":
       case "eth_mining":
       case "eth_personalSign":
-      case "eth_signTypedData":
-      case "eth_signTypedData_v1":
-      case "eth_signTypedData_v3":
-      case "eth_signTypedData_v4":
       case "eth_submitHashrate":
       case "eth_submitWork":
       case "metamask_accountsChanged":
@@ -202,6 +207,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           ...convertedRequest,
           from,
         },
+        resolver: resolve,
+        rejecter: reject,
+      })
+    })
+  }
+
+  private async signTypedData(params: SignTypedDataRequest) {
+    return new Promise<string>((resolve, reject) => {
+      this.emitter.emit("signTypedDataRequest", {
+        payload: params,
         resolver: resolve,
         rejecter: reject,
       })

@@ -102,6 +102,10 @@ export default function Menu(): ReactElement {
           >
             Give feedback!
           </SharedButton>
+          <div className="version">
+            Version: {process.env.VERSION ?? `<unknown>`} (
+            {process.env.GIT_COMMIT_DATE?.slice(0, "YYYY-MM-DD".length)})
+          </div>
         </div>
       </section>
       <style jsx>
@@ -161,6 +165,11 @@ export default function Menu(): ReactElement {
             width: 252px;
             height: 162px;
             margin: 5px 0px 20px -19px;
+          }
+          .version {
+            margin: 4px 0;
+            color: var(--green-60);
+            font-size: 12px;
           }
         `}
       </style>

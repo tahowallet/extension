@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import { AnyAsset, PricePoint } from "../assets"
+import { normalizeEVMAddress } from "../lib/utils"
 
 type SingleAssetState = AnyAsset & {
   prices: PricePoint[]
@@ -162,7 +163,8 @@ const assetsSlice = createSlice({
                 "homeNetwork" in a &&
                 "contractAddress" in a &&
                 a.homeNetwork.name === asset.homeNetwork.name &&
-                a.contractAddress === asset.contractAddress) ||
+                normalizeEVMAddress(a.contractAddress) ===
+                  normalizeEVMAddress(asset.contractAddress)) ||
               asset.name === a.name
           )
           // if there aren't duplicates, add the asset
@@ -187,7 +189,7 @@ const assetsSlice = createSlice({
         const index = findClosestAsset(pricedAsset, [
           ...immerState,
         ] as AnyAsset[])
-        if (index) {
+        if (index !== null) {
           // append to longer-running prices
           const prices = prunePrices(
             [...immerState[index].prices].concat([pricePoint])

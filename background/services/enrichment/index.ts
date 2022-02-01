@@ -3,7 +3,11 @@ import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
 } from "../../assets"
-import { AnyEVMTransaction, Network } from "../../networks"
+import {
+  AnyEVMTransaction,
+  EIP1559TransactionRequest,
+  Network,
+} from "../../networks"
 import {
   AssetDecimalAmount,
   enrichAssetAmountWithDecimalValues,
@@ -11,7 +15,7 @@ import {
 
 import { HexString, UNIXTime } from "../../types"
 import { ETH } from "../../constants"
-import { ERC20_INTERFACE } from "../../lib/erc20"
+import { parseERC20Tx } from "../../lib/erc20"
 import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
@@ -73,18 +77,18 @@ export type EnrichedEVMTransaction = AnyEVMTransaction & {
   annotation?: TransactionAnnotation
 }
 
-interface Events extends ServiceLifecycleEvents {
-  enrichedEVMTransaction: EnrichedEVMTransaction
+export type EnrichedEVMTransactionSignatureRequest =
+  (Partial<EIP1559TransactionRequest> & { from: string }) & {
+    annotation?: TransactionAnnotation
+  }
+
+export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
+  annotation?: TransactionAnnotation
 }
 
-function parseERC20Tx(input: string) {
-  try {
-    return ERC20_INTERFACE.parseTransaction({
-      data: input,
-    })
-  } catch (err) {
-    return undefined
-  }
+interface Events extends ServiceLifecycleEvents {
+  enrichedEVMTransaction: EnrichedEVMTransaction
+  enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
 }
 
 /**
@@ -136,7 +140,9 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   async resolveTransactionAnnotation(
-    transaction: AnyEVMTransaction,
+    transaction:
+      | AnyEVMTransaction
+      | (Partial<EIP1559TransactionRequest> & { from: string }),
     desiredDecimals: number
   ): Promise<TransactionAnnotation | undefined> {
     let txAnnotation: TransactionAnnotation | undefined
@@ -147,7 +153,11 @@ export default class EnrichmentService extends BaseService<Events> {
         timestamp: Date.now(),
         type: "contract-deployment",
       }
-    } else if (transaction.input === null || transaction.input === "0x") {
+    } else if (
+      transaction.input === null ||
+      transaction.input === "0x" ||
+      typeof transaction.input === "undefined"
+    ) {
       // This is _almost certainly_ not a contract interaction, move on. Note that
       // a simple ETH send to a contract address can still effectively be a
       // contract interaction (because it calls the fallback function on the
@@ -243,6 +253,26 @@ export default class EnrichmentService extends BaseService<Events> {
     }
 
     return txAnnotation
+  }
+
+  async enrichTransactionSignature(
+    transaction: Partial<EIP1559TransactionRequest> & { from: string },
+    desiredDecimals: number
+  ): Promise<EnrichedEVMTransactionSignatureRequest> {
+    const enrichedTxSignatureRequest = {
+      ...transaction,
+      annotation: await this.resolveTransactionAnnotation(
+        transaction,
+        desiredDecimals
+      ),
+    }
+
+    this.emitter.emit(
+      "enrichedEVMTransactionSignatureRequest",
+      enrichedTxSignatureRequest
+    )
+
+    return enrichedTxSignatureRequest
   }
 
   async enrichTransaction(

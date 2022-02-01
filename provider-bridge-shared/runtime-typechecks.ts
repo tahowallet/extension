@@ -63,7 +63,8 @@ export function isPortResponseEvent(arg: unknown): arg is PortResponseEvent {
 
 export const AllowedQueryParamPage = {
   signTransaction: "/signTransaction",
-  dappPermission: "/dapp-permission",
+  dappPermission: "/dappPermission",
+  signData: "/signData",
 } as const
 
 export type AllowedQueryParamPageType =

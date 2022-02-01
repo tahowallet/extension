@@ -1,13 +1,15 @@
 import React, { ReactElement } from "react"
-import { Asset } from "@tallyho/tally-background/assets"
+import { AnyAsset } from "@tallyho/tally-background/assets"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface Props {
-  asset: Asset
-  onClick?: (asset: Asset) => void
+interface Props<T> {
+  asset: T
+  onClick?: (asset: T) => void
 }
 
-export default function SharedAssetItem(props: Props): ReactElement {
+export default function SharedAssetItem<T extends AnyAsset>(
+  props: Props<T>
+): ReactElement {
   const { onClick, asset } = props
 
   function handleClick() {
