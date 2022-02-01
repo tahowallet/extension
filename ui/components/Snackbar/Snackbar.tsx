@@ -57,16 +57,20 @@ export default function Snackbar(): ReactElement {
       <style jsx>
         {`
           .snackbar_wrap {
-            width: 352px;
-            height: 56px;
+            max-width: 352px;
+            width: auto;
+            height: 40px;
+            padding: 0 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 16px;
+            font-weight: 500;
             position: fixed;
-            bottom: 30px;
+            bottom: 80px;
             z-index: 999999999;
             background: var(--green-120);
+            color: var(--green-20);
             box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.14),
               0px 14px 16px rgba(0, 20, 19, 0.24),
               0px 10px 12px rgba(0, 20, 19, 0.34);
