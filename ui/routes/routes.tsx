@@ -20,7 +20,18 @@ import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 
-const pageList = [
+interface PageList {
+  path: string
+  // Tricky to handle all props components are
+  // accepting here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Component: (...args: any[]) => ReactElement
+  hasTabBar: boolean
+  hasTopBar: boolean
+  persistOnClose: boolean
+}
+
+const pageList: PageList[] = [
   {
     path: "/keyring/set-password",
     Component: KeyringSetPassword,
