@@ -1,8 +1,15 @@
 import { TokenList } from "@uniswap/token-lists"
 
-import { getEthereumNetwork } from "./utils"
-import { SmartContractFungibleAsset, TokenListAndReference } from "../assets"
+import { getEthereumNetwork, normalizeEVMAddress } from "./utils"
+import {
+  AssetMetadata,
+  FungibleAsset,
+  isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
+  TokenListAndReference,
+} from "../assets"
 import { isValidUniswapTokenListResponse } from "./validate"
+import { EVMNetwork } from "../networks"
 
 export async function fetchAndValidateTokenList(
   url: string
@@ -30,53 +37,86 @@ export async function fetchAndValidateTokenLists(
     .map((l) => (l as PromiseFulfilledResult<TokenListAndReference>).value)
 }
 
-function tokenListToFungibleAssets(
-  url: string,
-  tokenList: TokenList
+function tokenListToFungibleAssetsForNetwork(
+  network: EVMNetwork,
+  { url: tokenListURL, tokenList }: TokenListAndReference
 ): SmartContractFungibleAsset[] {
-  return tokenList.tokens.map((t) => {
-    return {
-      metadata: {
-        logoURL: t.logoURI,
-        tokenLists: [
-          {
-            url,
-            name: tokenList.name,
-            logoURL: tokenList.logoURI,
-          },
-        ],
-      },
-      name: t.name,
-      symbol: t.symbol,
-      decimals: t.decimals,
-      homeNetwork: getEthereumNetwork(),
-      contractAddress: t.address,
-    }
-  })
+  const networkChainID = Number(network.chainID)
+  const tokenListCitation = {
+    url: tokenListURL,
+    name: tokenList.name,
+    logoURL: tokenList.logoURI,
+  }
+
+  return tokenList.tokens
+    .filter(({ chainId }) => chainId === networkChainID)
+    .map((tokenMetadata) => {
+      return {
+        metadata: {
+          logoURL: tokenMetadata.logoURI,
+          tokenLists: [tokenListCitation],
+        },
+        name: tokenMetadata.name,
+        symbol: tokenMetadata.symbol,
+        decimals: tokenMetadata.decimals,
+        homeNetwork: getEthereumNetwork(),
+        contractAddress: tokenMetadata.address,
+      }
+    })
 }
 
-/*
- * Return all tokens in the provided lists, de-duplicated and structured in our
- * types for easy manipulation, and sorted by the number of lists each appears
- * in.
+/**
+ * Merges the given asset lists into a single deduplicated array.
  */
-export function networkAssetsFromLists(
-  tokenLists: TokenListAndReference[]
-): SmartContractFungibleAsset[] {
-  const fungibleAssets = tokenLists
-    .map((listAndRef) =>
-      tokenListToFungibleAssets(listAndRef.url, listAndRef.tokenList)
-    )
-    .reduce((a, b) => a.concat(b), [])
-
+export function mergeAssets<T extends FungibleAsset>(
+  ...assetLists: T[][]
+): T[] {
   function tokenReducer(
-    acc: { [contractAddress: string]: SmartContractFungibleAsset },
-    asset: SmartContractFungibleAsset
+    seenAssetsBy: {
+      contractAddressAndNetwork: {
+        [contractAddressAndNetwork: string]: SmartContractFungibleAsset
+      }
+      symbol: { [symbol: string]: T }
+    },
+    asset: T
   ) {
-    const newAcc = { ...acc }
-    if (asset.contractAddress in newAcc) {
-      const original = newAcc[asset.contractAddress]
-      newAcc[asset.contractAddress] = {
+    const updatedAssetsBy = {
+      contractAddressAndNetwork: { ...seenAssetsBy.contractAddressAndNetwork },
+      symbol: { ...seenAssetsBy.symbol },
+    }
+
+    if (isSmartContractFungibleAsset(asset)) {
+      const normalizedContractAddressAndNetwork =
+        `${normalizeEVMAddress(asset.contractAddress)}-${
+          asset.homeNetwork.chainID
+        }` ?? asset.homeNetwork.name
+      const existingAsset =
+        updatedAssetsBy.contractAddressAndNetwork[
+          normalizedContractAddressAndNetwork
+        ]
+
+      if (typeof existingAsset !== "undefined") {
+        updatedAssetsBy.contractAddressAndNetwork[
+          normalizedContractAddressAndNetwork
+        ] = {
+          ...existingAsset,
+          metadata: {
+            ...existingAsset.metadata,
+            ...asset.metadata,
+            tokenLists:
+              existingAsset.metadata?.tokenLists?.concat(
+                asset.metadata?.tokenLists ?? []
+              ) ?? [],
+          },
+        }
+      } else {
+        updatedAssetsBy.contractAddressAndNetwork[
+          normalizedContractAddressAndNetwork
+        ] = asset
+      }
+    } else if (asset.symbol in updatedAssetsBy.symbol) {
+      const original = updatedAssetsBy.symbol[asset.symbol]
+      updatedAssetsBy.symbol[asset.symbol] = {
         ...original,
         metadata: {
           ...original.metadata,
@@ -88,19 +128,43 @@ export function networkAssetsFromLists(
         },
       }
     } else {
-      newAcc[asset.contractAddress] = asset
+      updatedAssetsBy.symbol[asset.symbol] = asset
     }
-    return newAcc
+
+    return updatedAssetsBy
   }
 
-  const merged = fungibleAssets.reduce(tokenReducer, {})
-  return Object.entries(merged)
-    .map(([, v]) => v)
-    .slice()
-    .sort((a, b) =>
-      (a.metadata?.tokenLists?.length || 0) >
-      (b.metadata?.tokenLists?.length || 0)
-        ? 1
-        : -1
-    )
+  const mergedAssetsBy = assetLists.flat().reduce(tokenReducer, {
+    contractAddressAndNetwork: {},
+    symbol: {},
+  })
+  const mergedAssets = Object.values(mergedAssetsBy.symbol).concat(
+    // Because the inputs to the function conform to T[], if T is not a subtype
+    // of SmartContractFungibleAsset, this will be an empty array. As such, we
+    // can safely do this cast.
+    Object.values(mergedAssetsBy.contractAddressAndNetwork) as unknown as T[]
+  )
+
+  return mergedAssets.sort((a, b) =>
+    (a.metadata?.tokenLists?.length || 0) >
+    (b.metadata?.tokenLists?.length || 0)
+      ? 1
+      : -1
+  )
+}
+
+/*
+ * Return all tokens in the provided lists, de-duplicated and structured in our
+ * types for easy manipulation, and sorted by the number of lists each appears
+ * in.
+ */
+export function networkAssetsFromLists(
+  network: EVMNetwork,
+  tokenLists: TokenListAndReference[]
+): SmartContractFungibleAsset[] {
+  const fungibleAssets = tokenLists.map((tokenListAndReference) =>
+    tokenListToFungibleAssetsForNetwork(network, tokenListAndReference)
+  )
+
+  return mergeAssets(...fungibleAssets)
 }

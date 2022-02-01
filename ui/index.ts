@@ -1,21 +1,27 @@
-import React from "react"
-import ReactDOM from "react-dom"
 import { newProxyStore } from "@tallyho/tally-background"
-
+import React, { ComponentType } from "react"
+import ReactDOM from "react-dom"
+import { Store } from "webext-redux"
 import Popup from "./pages/Popup"
+import Tab from "./pages/Tab"
 
-/**
- * Attaches the Tally UI to the specified DOM element, eh?
- */
-async function attachToElement(element: Element): Promise<void> {
+export { Popup, Tab }
+
+export async function attachUiToRootElement(
+  component: ComponentType<{ store: Store }>
+): Promise<void> {
+  const rootElement = document.getElementById("tally-root")
+
+  if (!rootElement) {
+    throw new Error(
+      "Failed to find #tally-root element; page structure changed?"
+    )
+  }
+
   const backgroundStore = await newProxyStore()
 
   ReactDOM.render(
-    React.createElement(Popup, { store: backgroundStore }),
-    element
+    React.createElement(component, { store: backgroundStore }),
+    rootElement
   )
-}
-
-export default {
-  attachToElement,
 }

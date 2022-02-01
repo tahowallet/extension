@@ -5,3 +5,4 @@ export const HIDE_SWAP = process.env.HIDE_SWAP === "true"
 export const HIDE_IMPORT_DERIVATION_PATH =
   process.env.HIDE_IMPORT_DERIVATION_PATH === "true"
 export const HIDE_CREATE_PHRASE = process.env.HIDE_CREATE_PHRASE === "true"
+export const HIDE_IMPORT_LEDGER = process.env.HIDE_IMPORT_LEDGER === "true"

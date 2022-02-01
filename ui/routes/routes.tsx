@@ -1,12 +1,14 @@
 import React, { ReactElement } from "react"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
+import SignData from "../pages/SignData"
 import OnboardingSaveSeed from "../pages/Onboarding/OnboardingSaveSeed"
 import OnboardingVerifySeed from "../pages/Onboarding/OnboardingVerifySeed"
 import OnboardingImportMetamask from "../pages/Onboarding/OnboardingImportMetamask"
 import OnboardingViewOnlyWallet from "../pages/Onboarding/OnboardingViewOnlyWallet"
 import OnboardingInfoIntro from "../pages/Onboarding/OnboardingInfoIntro"
 import OnboardingAddWallet from "../pages/Onboarding/OnboardingAddWallet"
+import OnboardingInterstitialCreatePhrase from "../pages/Onboarding/OnboardingInterstitialCreatePhrase"
 import Overview from "../pages/Overview"
 import SingleAsset from "../pages/SingleAsset"
 import Earn from "../pages/Earn"
@@ -68,6 +70,12 @@ const pageList = [
     hasTopBar: false,
   },
   {
+    path: "/signData",
+    Component: SignData,
+    hasTabBar: false,
+    hasTopBar: false,
+  },
+  {
     path: "/overview",
     Component: Overview,
     hasTabBar: true,
@@ -104,7 +112,7 @@ const pageList = [
     hasTopBar: true,
   },
   {
-    path: "/dapp-permission",
+    path: "/dappPermission",
     Component: DAppPermissionRequest,
     hasTabBar: false,
     hasTopBar: false,
@@ -118,6 +126,12 @@ const pageList = [
   {
     path: "/onboarding/verifySeed",
     Component: OnboardingVerifySeed,
+    hasTabBar: false,
+    hasTopBar: false,
+  },
+  {
+    path: "/onboarding/onboardingInterstitialCreatePhrase",
+    Component: OnboardingInterstitialCreatePhrase,
     hasTabBar: false,
     hasTopBar: false,
   },

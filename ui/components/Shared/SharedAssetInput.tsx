@@ -1,20 +1,32 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { Asset } from "@tallyho/tally-background/assets"
-import classNames from "classnames"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
+import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface SelectAssetMenuContentProps {
-  assets: Asset[]
-  setSelectedAssetAndClose: (asset: Asset) => void
+interface SelectAssetMenuContentProps<T extends AnyAsset> {
+  assets: T[]
+  setSelectedAssetAndClose: (asset: T) => void
 }
 
-function SelectAssetMenuContent(
-  props: SelectAssetMenuContentProps
+function SelectAssetMenuContent<T extends AnyAsset>(
+  props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { setSelectedAssetAndClose, assets } = props
+  const [searchTerm, setSearchTerm] = useState("")
+  const searchInput = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    searchInput.current?.focus()
+  }, [searchInput])
 
   return (
     <>
@@ -23,23 +35,45 @@ function SelectAssetMenuContent(
         <div className="search_wrap">
           <input
             type="text"
+            ref={searchInput}
             className="search_input"
             placeholder="Search by name or address"
+            spellCheck={false}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
           <span className="icon_search" />
         </div>
       </div>
       <div className="divider" />
       <ul>
-        {assets.map((asset) => {
-          return (
-            <SharedAssetItem
-              key={asset.metadata?.coinGeckoID || asset.symbol}
-              asset={asset}
-              onClick={setSelectedAssetAndClose}
-            />
-          )
-        })}
+        {assets
+          .filter((asset) => {
+            return (
+              asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              ("contractAddress" in asset &&
+                searchTerm.startsWith("0x") &&
+                normalizeEVMAddress(asset.contractAddress).includes(
+                  // The replace handles `normalizeEVMAddress`'s
+                  // octet alignment that prefixes a `0` to a partial address
+                  // if it has an uneven number of digits.
+                  normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
+                ) &&
+                asset.contractAddress.length >= searchTerm.length)
+            )
+          })
+          .map((asset) => {
+            return (
+              <SharedAssetItem
+                key={
+                  asset.metadata?.coinGeckoID ??
+                  asset.symbol +
+                    ("contractAddress" in asset ? asset.contractAddress : "")
+                }
+                asset={asset}
+                onClick={setSelectedAssetAndClose}
+              />
+            )
+          })}
       </ul>
       <style jsx>
         {`
@@ -90,14 +124,15 @@ function SelectAssetMenuContent(
 
 interface SelectedAssetButtonProps {
   asset: Asset
+  isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
-  const { asset, toggleIsAssetMenuOpen } = props
+  const { asset, isDisabled, toggleIsAssetMenuOpen } = props
 
   return (
-    <button type="button" onClick={toggleIsAssetMenuOpen}>
+    <button type="button" disabled={isDisabled} onClick={toggleIsAssetMenuOpen}>
       <div className="asset_icon_wrap">
         <SharedAssetIcon
           logoURL={asset?.metadata?.logoURL}
@@ -117,6 +152,10 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
           line-height: 24px;
           text-transform: uppercase;
         }
+        button:disabled {
+          cursor: default;
+          color: var(--green-40);
+        }
         .asset_icon_wrap {
           margin-right: 8px;
         }
@@ -129,22 +168,23 @@ SelectedAssetButton.defaultProps = {
   toggleIsAssetMenuOpen: null,
 }
 
-interface SharedAssetInputProps {
+interface SharedAssetInputProps<T extends AnyAsset> {
   isTypeDestination: boolean
-  assets: Asset[]
+  assets: T[]
   label: string
-  defaultAsset: Asset
+  defaultAsset: T
   amount: string
-  maxBalance: number
+  maxBalance: number | boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
-  onAssetSelect: (token: Asset) => void
+  isDisabled?: boolean
+  onAssetSelect: (asset: T) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
   onSendToAddressChange: (value: string) => void
 }
 
-export default function SharedAssetInput(
-  props: SharedAssetInputProps
+export default function SharedAssetInput<T extends AnyAsset>(
+  props: SharedAssetInputProps<T>
 ): ReactElement {
   const {
     isTypeDestination,
@@ -155,6 +195,7 @@ export default function SharedAssetInput(
     maxBalance,
     isAssetOptionsLocked,
     disableDropdown,
+    isDisabled,
     onAssetSelect,
     onAmountChange,
     onSendToAddressChange,
@@ -175,7 +216,7 @@ export default function SharedAssetInput(
   }, [isAssetOptionsLocked])
 
   const setSelectedAssetAndClose = useCallback(
-    (asset) => {
+    (asset: T) => {
       setSelectedAsset(asset)
       setOpenAssetMenu(false)
       onAssetSelect?.(asset)
@@ -186,7 +227,8 @@ export default function SharedAssetInput(
 
   const getErrorMessage = (givenAmount: string): string | undefined => {
     return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
-      Number(givenAmount) === 0
+      Number(givenAmount) === 0 ||
+      !maxBalance
       ? undefined
       : "Insufficient balance"
   }
@@ -214,6 +256,7 @@ export default function SharedAssetInput(
               className="asset_input"
               type="text"
               placeholder="0x..."
+              spellCheck={false}
               onChange={(event) => {
                 onSendToAddressChange(event.target.value)
               }}
@@ -221,9 +264,10 @@ export default function SharedAssetInput(
           </>
         ) : (
           <>
-            <div className={classNames({ disable_click: disableDropdown })}>
+            <div>
               {selectedAsset?.symbol ? (
                 <SelectedAssetButton
+                  isDisabled={isDisabled || disableDropdown}
                   asset={selectedAsset}
                   toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
                 />
@@ -231,6 +275,7 @@ export default function SharedAssetInput(
                 <SharedButton
                   type="secondary"
                   size="medium"
+                  isDisabled={isDisabled || disableDropdown}
                   onClick={toggleIsAssetMenuOpen}
                   icon="chevron"
                 >
@@ -245,7 +290,9 @@ export default function SharedAssetInput(
               step="any"
               placeholder="0.0"
               min="0"
+              disabled={isDisabled}
               value={amount}
+              spellCheck={false}
               onChange={(event) =>
                 onAmountChange(
                   event.target.value,
@@ -318,6 +365,10 @@ export default function SharedAssetInput(
           input[type="number"] {
             -moz-appearance: textfield;
           }
+          .input_amount:disabled {
+            cursor: default;
+            color: var(--green-40);
+          }
           .error_message {
             color: var(--error);
             position: absolute;
@@ -332,9 +383,6 @@ export default function SharedAssetInput(
             margin-left: 172px;
             z-index: 1;
           }
-          .disable_click {
-            pointer-events: none;
-          }
         `}
       </style>
     </label>
@@ -345,11 +393,12 @@ SharedAssetInput.defaultProps = {
   isTypeDestination: false,
   isAssetOptionsLocked: false,
   disableDropdown: false,
+  isDisabled: false,
   assets: [{ symbol: "ETH", name: "Example Asset" }],
   defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  maxBalance: 0,
+  maxBalance: false,
   onAssetSelect: () => {
     // do nothing by default
     // TODO replace this with support for undefined onClick

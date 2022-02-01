@@ -1,19 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { KeyringTypes } from "../types"
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-
-// TODO this is very simple. We'll want to expand to include "capabilities" per
-// keyring, including whether they can add new accounts, whether they can sign
-// transactions, messages, typed data, etc. Including those explicitly means the
-// type string (and frontend) can do way less work.
-type Keyring = {
-  type: KeyringTypes
-  addresses: string[]
-  id?: string | null
-}
+import { Keyring } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]

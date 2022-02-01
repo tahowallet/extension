@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
 import { AccountType, CompleteAssetAmount } from "../accounts"
-import { selectAssetPricePoint } from "../assets"
+import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
@@ -15,9 +15,10 @@ import {
   UnitPricePoint,
   unitPricePointForPricePoint,
 } from "../../assets"
-import { selectSigningAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
+import { selectAddressSigningMethods } from "./signingSelectors"
+import { SigningMethod } from "../signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -31,7 +32,7 @@ const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
   return state.account.accountsData[state.ui.selectedAccount.address]
 }
-const getAssetsState = (state: RootState) => state.assets
+export const getAssetsState = (state: RootState): AssetsState => state.assets
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
@@ -195,6 +196,7 @@ export type AccountTotal = {
   address: string
   shortenedAddress: string
   accountType: AccountType
+  signingMethod: SigningMethod | null
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
@@ -202,28 +204,37 @@ export type AccountTotal = {
 
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
+const signingMethodTypeToAccountType: Record<
+  SigningMethod["type"],
+  AccountType
+> = {
+  keyring: AccountType.Imported,
+  ledger: AccountType.Ledger,
+}
+
 export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
-  selectSigningAddresses,
-  (accounts, assets, signingAddresses): CategorizedAccountTotals => {
+  selectAddressSigningMethods,
+  (accounts, assets, signingAccounts): CategorizedAccountTotals => {
+    // TODO: here
     return Object.entries(accounts.accountsData)
-      .map(([address, accountData]) => {
+      .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
-        const existingAccountType =
-          accountData === "loading" ? undefined : accountData.accountType
-        const resolvedAccountType =
-          existingAccountType ?? // prefer cached info
-          signingAddresses.includes(address)
-            ? AccountType.Imported // all signing addresses are imported for now
-            : AccountType.ReadOnly
+        const signingMethod = signingAccounts[address] ?? null
+
+        const accountType =
+          signingMethod === null
+            ? AccountType.ReadOnly
+            : signingMethodTypeToAccountType[signingMethod.type]
 
         if (accountData === "loading") {
           return {
             address,
             shortenedAddress,
-            accountType: resolvedAccountType,
+            accountType,
+            signingMethod,
           }
         }
 
@@ -258,7 +269,8 @@ export const selectAccountTotalsByCategory = createSelector(
         return {
           address,
           shortenedAddress,
-          accountType: resolvedAccountType,
+          accountType,
+          signingMethod,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(

@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import classNames from "classnames"
-import { selectIsCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
@@ -51,8 +51,8 @@ export default function WalletAccountBalanceControl(
   // TODO When non-imported accounts are supported, generalize this.
   const hasSavedSeed = true
 
-  const isCurrentAccountSigner = useBackgroundSelector(
-    selectIsCurrentAccountSigner
+  const currentAccountSigningMethod = useBackgroundSelector(
+    selectCurrentAccountSigningMethod
   )
 
   const handleClick = useCallback(() => {
@@ -85,7 +85,7 @@ export default function WalletAccountBalanceControl(
             {balance ?? 0}
           </span>
         </span>
-        {isCurrentAccountSigner && !HIDE_SEND_BUTTON ? (
+        {currentAccountSigningMethod && !HIDE_SEND_BUTTON ? (
           <>
             {hasSavedSeed ? (
               <div className="send_receive_button_wrap">
