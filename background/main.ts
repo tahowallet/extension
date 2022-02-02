@@ -426,6 +426,7 @@ export default class Main extends BaseService<never> {
     this.connectEnrichmentService()
     if (!HIDE_IMPORT_LEDGER) {
       this.connectLedgerService()
+      this.connectSigningService()
     }
     await this.connectChainService()
   }
@@ -643,6 +644,16 @@ export default class Main extends BaseService<never> {
           })
         )
       }
+    )
+  }
+
+  async connectSigningService(): Promise<void> {
+    this.keyringService.emitter.on("address", (address) =>
+      this.signingService.addTrackedAddress(address, "keyring")
+    )
+
+    this.ledgerService.emitter.on("address", (obj) =>
+      this.signingService.addTrackedAddress(obj.address, "ledger")
     )
   }
 

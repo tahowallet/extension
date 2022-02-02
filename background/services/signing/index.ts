@@ -110,6 +110,10 @@ export default class SigningService extends BaseService<Events> {
     throw new Error("Impossible to reach")
   }
 
+  addTrackedAddress(address: string, handler: SignerType): void {
+    this.addressHandlers.push({ address, handler })
+  }
+
   async signTypedData(
     address: string,
     domain: TypedDataDomain,
