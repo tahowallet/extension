@@ -156,12 +156,18 @@ export default class LedgerService extends BaseService<Events> {
 
     this.emitter.emit("connected", { id: this.#currentLedgerId, type })
 
-    this.emitter.emit("ledgerAdded", {
-      id: this.#currentLedgerId,
-      type,
-      accountIDs: [idDerviationPath],
-      metadata: { ethereumVersion: ethVersion },
-    })
+    const knownAddresses = await this.db.getAllAccountsByLedgerId(
+      this.#currentLedgerId
+    )
+
+    if (!knownAddresses.length) {
+      this.emitter.emit("ledgerAdded", {
+        id: this.#currentLedgerId,
+        type,
+        accountIDs: [idDerviationPath],
+        metadata: { ethereumVersion: ethVersion },
+      })
+    }
   }
 
   async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
