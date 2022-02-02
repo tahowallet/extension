@@ -28,7 +28,16 @@ enum LedgerType {
 
 const LedgerTypeAsString = Object.values(LedgerType)
 
-const admittedProductIds = [0x1015, 0x4015]
+const LedgerProductDatabase = {
+  LEDGER_NANO_S: { knownPids: [0x1015] },
+  LEDGER_NANO_X: { knownPids: [0x4015] },
+}
+
+const TestedProductId = (productId: number): boolean => {
+  return Object.values(LedgerProductDatabase).some((e) =>
+    e.knownPids.includes(productId)
+  )
+}
 
 type MetaData = {
   ethereumVersion: string
@@ -141,7 +150,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async onConnection(productId: number): Promise<void> {
-    if (!admittedProductIds.includes(productId)) {
+    if (!TestedProductId(productId)) {
       return
     }
 
@@ -166,7 +175,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
-    if (!admittedProductIds.includes(event.device.productId)) {
+    if (!TestedProductId(event.device.productId)) {
       return
     }
 
@@ -174,7 +183,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
-    if (!admittedProductIds.includes(event.device.productId)) {
+    if (!TestedProductId(event.device.productId)) {
       return
     }
 
