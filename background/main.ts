@@ -17,6 +17,8 @@ import {
   PreferenceService,
   ProviderBridgeService,
   ServiceCreatorFunction,
+  LedgerService,
+  SigningService,
 } from "./services"
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
@@ -70,6 +72,9 @@ import {
   SignTypedDataRequest,
   typedDataRequest,
 } from "./redux-slices/signing"
+import { emitter as ledgerSliceEmitter } from "./redux-slices/ledger"
+import { ETHEREUM } from "./constants"
+import { HIDE_IMPORT_LEDGER } from "./features/features"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -241,6 +246,13 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+    const ledgerService = HIDE_IMPORT_LEDGER
+      ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
+      : LedgerService.create()
+
+    const signingService = HIDE_IMPORT_LEDGER
+      ? (Promise.resolve(null) as unknown as Promise<SigningService>)
+      : SigningService.create(keyringService, ledgerService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -276,7 +288,9 @@ export default class Main extends BaseService<never> {
       await keyringService,
       await nameService,
       await internalEthereumProviderService,
-      await providerBridgeService
+      await providerBridgeService,
+      await ledgerService,
+      await signingService
     )
   }
 
@@ -323,7 +337,20 @@ export default class Main extends BaseService<never> {
      * the communication coming from dApps according to EIP-1193 and some tribal
      * knowledge.
      */
-    private providerBridgeService: ProviderBridgeService
+    private providerBridgeService: ProviderBridgeService,
+
+    /**
+     * A promise to the Ledger service, handling the communication
+     * with attached Ledger device according to ledgerjs examples and some
+     * tribal knowledge. ;)
+     */
+    private ledgerService: LedgerService,
+
+    /**
+     * A promise to the signing service which will route operations between the UI
+     * and the exact signing services.
+     */
+    private signingService: SigningService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -348,7 +375,7 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.started().then(async () => this.chainService.started())
 
-    await Promise.all([
+    const servicesToBeStarted = [
       this.preferenceService.startService(),
       this.chainService.startService(),
       this.indexingService.startService(),
@@ -357,11 +384,18 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
-    ])
+    ]
+
+    if (!HIDE_IMPORT_LEDGER) {
+      servicesToBeStarted.push(this.ledgerService.startService())
+      servicesToBeStarted.push(this.signingService.startService())
+    }
+
+    await Promise.all(servicesToBeStarted)
   }
 
   protected async internalStopService(): Promise<void> {
-    await Promise.all([
+    const servicesToBeStopped = [
       this.preferenceService.stopService(),
       this.chainService.stopService(),
       this.indexingService.stopService(),
@@ -370,7 +404,14 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
-    ])
+    ]
+
+    if (!HIDE_IMPORT_LEDGER) {
+      servicesToBeStopped.push(this.ledgerService.stopService())
+      servicesToBeStopped.push(this.signingService.stopService())
+    }
+
+    await Promise.all(servicesToBeStopped)
 
     await super.internalStopService()
   }
@@ -383,6 +424,9 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    if (!HIDE_IMPORT_LEDGER) {
+      this.connectLedgerService()
+    }
     await this.connectChainService()
   }
 
@@ -585,6 +629,36 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+  }
+
+  async connectLedgerService(): Promise<void> {
+    ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
+      for (let i = 0; i < accounts.length; i += 1) {
+        const { path, address } = accounts[i]
+
+        // eslint-disable-next-line no-await-in-loop
+        await this.ledgerService.saveAddress(path, address)
+
+        const addressNetwork = {
+          address,
+          network: ETHEREUM,
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(address))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      }
+    })
+
+    ledgerSliceEmitter.on("fetchAddress", (input) => {
+      this.ledgerService
+        .deriveAddress(input.path)
+        .then(input.resolve, input.reject)
+    })
+
+    ledgerSliceEmitter.on("connectLedger", (input) => {
+      this.ledgerService.connectLedger().then(input.resolve, input.reject)
+    })
   }
 
   async connectKeyringService(): Promise<void> {
