@@ -56,8 +56,6 @@ function TextArea({
           align-self: flex-start;
           height: 20px;
           margin-top: 3px;
-          margin-left: 10px;
-          margin-bottom: -23px;
         }
         label {
           position: absolute;
@@ -254,7 +252,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           margin-bottom: 6px;
         }
         .select_wrapper {
-          margin-top: 15px;
+          margin-top: ${errorMessage ? "4px" : "15px"};
           width: 320px;
         }
       `}</style>
