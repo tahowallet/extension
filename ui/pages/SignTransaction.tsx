@@ -20,6 +20,7 @@ import {
 import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
+import SignTransactionTransferDetail from "../components/SignTransaction/SignTransactionTransferDetail"
 
 export enum SignType {
   Sign = "sign",
@@ -173,12 +174,20 @@ export default function SignTransaction({
           title="Sign Transfer"
           isWaitingForHardware={isWaitingForHardware}
           infoBlock={
-            <SignTransactionTransferBlock
-              token={assetSymbol ?? ""}
-              amount={amount ?? 0}
-              destination={to ?? ""}
-              localizedValue={value ?? ""}
-            />
+            isWaitingForHardware ? (
+              <SignTransactionTransferDetail
+                token={assetSymbol ?? ""}
+                amount={amount ?? 0}
+                destination={to ?? ""}
+              />
+            ) : (
+              <SignTransactionTransferBlock
+                token={assetSymbol ?? ""}
+                amount={amount ?? 0}
+                destination={to ?? ""}
+                localizedValue={value ?? ""}
+              />
+            )
           }
           confirmButtonLabel="Sign"
           handleConfirm={handleConfirm}
