@@ -265,8 +265,11 @@ export default function SharedSelect(props: Props): ReactElement {
             justify-content: space-between;
             padding-top: 16px;
             padding-bottom: 15px;
-            border-bottom: 1px solid var(--green-80);
             width: 100%;
+          }
+
+          .option:not(:last-child) .option_content {
+            border-bottom: 1px solid var(--green-80);
           }
 
           .custom_option {
