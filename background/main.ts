@@ -246,9 +246,13 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
-    const ledgerService = LedgerService.create()
+    const ledgerService = HIDE_IMPORT_LEDGER
+      ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
+      : LedgerService.create()
 
-    const signingService = SigningService.create(keyringService, ledgerService)
+    const signingService = HIDE_IMPORT_LEDGER
+      ? (Promise.resolve(null) as unknown as Promise<SigningService>)
+      : SigningService.create(keyringService, ledgerService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -403,8 +407,8 @@ export default class Main extends BaseService<never> {
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
-      servicesToBeStopped.push(this.ledgerService.startService())
-      servicesToBeStopped.push(this.signingService.startService())
+      servicesToBeStopped.push(this.ledgerService.stopService())
+      servicesToBeStopped.push(this.signingService.stopService())
     }
 
     await Promise.all(servicesToBeStopped)
@@ -420,7 +424,9 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
-    this.connectLedgerService()
+    if (!HIDE_IMPORT_LEDGER) {
+      this.connectLedgerService()
+    }
     await this.connectChainService()
   }
 
