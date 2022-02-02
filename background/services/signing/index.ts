@@ -27,8 +27,8 @@ export default class SigningService extends BaseService<Events> {
   }
 
   private constructor(
-    keyringService: KeyringService,
-    ledgerService: LedgerService
+    private keyringService: KeyringService,
+    private ledgerService: LedgerService
   ) {
     super()
   }
@@ -37,10 +37,20 @@ export default class SigningService extends BaseService<Events> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
   }
 
-  async deriveAddress(accountID: string): Promise<HexString> {
-    this.deriveAddress = this.deriveAddress.bind(this)
+  async deriveAddress(signerID: string): Promise<HexString> {
+    if (signerID.startsWith("ledger-")) {
+      return this.ledgerService.deriveAddress(
+        signerID.substring("ledger-".length)
+      )
+    }
 
-    throw new Error("Unimplemented")
+    if (signerID.startsWith("keyring-")) {
+      return this.keyringService.deriveAddress(
+        signerID.substring("keyring-".length)
+      )
+    }
+
+    throw new Error(`Unknown signerID: ${signerID}`)
   }
 
   async signTransaction(

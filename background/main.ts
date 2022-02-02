@@ -651,8 +651,9 @@ export default class Main extends BaseService<never> {
     })
 
     ledgerSliceEmitter.on("fetchAddress", (input) => {
-      this.ledgerService
-        .deriveAddress(input.path)
+      const signerID = `ledger-${input.path}`
+      this.signingService
+        .deriveAddress(signerID)
         .then(input.resolve, input.reject)
     })
 
@@ -694,7 +695,12 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
-      await this.keyringService.deriveAddress(keyringID)
+      if (HIDE_IMPORT_LEDGER) {
+        await this.keyringService.deriveAddress(keyringID)
+      } else {
+        const signerID = `keyring-${keyringID}`
+        await this.signingService.deriveAddress(signerID)
+      }
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
