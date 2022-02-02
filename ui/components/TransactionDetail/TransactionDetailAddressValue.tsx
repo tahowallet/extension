@@ -2,19 +2,31 @@ import React, { ReactElement } from "react"
 import SharedButton from "../Shared/SharedButton"
 
 export default function TransactionDetailAddressValue({
-  value,
+  address,
 }: {
-  value: string
+  address: string
 }): ReactElement {
   return (
-    <SharedButton
-      type="tertiaryWhite"
-      size="small"
-      icon="external"
-      iconSize="small"
-      iconPosition="right"
-    >
-      {value.slice(0, 7)}...{value.slice(-5)}
-    </SharedButton>
+    <div className="container">
+      <SharedButton
+        type="tertiaryGray"
+        size="small"
+        icon="external"
+        iconSize="small"
+        iconPosition="right"
+        onClick={() => {
+          window
+            .open(`https://etherscan.io/address/${address}`, "_blank")
+            ?.focus()
+        }}
+      >
+        {address.slice(0, 7)}...{address.slice(-5)}
+      </SharedButton>
+      <style jsx>{`
+        .container {
+          margin-right: -12px; /* Undo button right padding (FIXME?) */
+        }
+      `}</style>
+    </div>
   )
 }

@@ -3,6 +3,7 @@ import {
   truncateDecimalAmount,
 } from "@tallyho/tally-background/lib/utils"
 import React, { ReactElement } from "react"
+import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
 import SignTransactionBaseInfoProvider, {
@@ -92,7 +93,7 @@ export default function SignTransactionTransferInfoProvider({
           />
           <TransactionDetailItemShort
             name="To:"
-            value={truncateAddress(destination)}
+            value={<TransactionDetailAddressValue address={destination} />}
           />
         </TransactionDetailContainer>
       }

@@ -16,6 +16,9 @@ import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
+import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
+import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
+import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
@@ -168,7 +171,32 @@ export default function SignTransactionSpendAssetInfoProvider({
           </style>
         </>
       }
-      textualInfoBlock="TODO"
+      textualInfoBlock={
+        <TransactionDetailContainer>
+          <TransactionDetailItemShort name="Type" value="Approve asset spend" />
+          <TransactionDetailItemShort
+            name="Spend limit"
+            value={
+              asset?.symbol ? (
+                `${
+                  infiniteApproval ? "Infinite" : approvalLimit
+                } ${asset?.symbol.toUpperCase()}`
+              ) : (
+                <SharedSkeletonLoader />
+              )
+            }
+          />
+          <TransactionDetailItemShort
+            name="Contract address"
+            value={
+              <TransactionDetailAddressValue
+                address={transactionDetails.to ?? ""}
+              />
+            }
+          />
+          {/* TODO: Add "Interacting with" line (i.e., readable version of `transactionDetails.to`?) */}
+        </TransactionDetailContainer>
+      }
       inner={inner}
     />
   )

@@ -10,6 +10,9 @@ import {
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
+import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
+import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
+import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
@@ -124,7 +127,25 @@ export default function SignTransactionSignInfoProvider({
           </style>
         </div>
       }
-      textualInfoBlock="TODO"
+      textualInfoBlock={
+        <TransactionDetailContainer>
+          <TransactionDetailItemShort name="Type" value="Sign" />
+          <TransactionDetailItemShort
+            name="Spend amount"
+            value={completeTransactionAssetAmount.localizedDecimalAmount}
+          />
+          <TransactionDetailItemShort
+            name="To:"
+            value={
+              transactionDetails.to && (
+                <TransactionDetailAddressValue
+                  address={transactionDetails.to}
+                />
+              )
+            }
+          />
+        </TransactionDetailContainer>
+      }
       confirmButtonLabel="Sign"
       inner={inner}
     />

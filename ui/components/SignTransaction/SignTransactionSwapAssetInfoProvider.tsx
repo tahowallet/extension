@@ -1,5 +1,7 @@
 import React, { ReactElement } from "react"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
+import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
@@ -98,7 +100,13 @@ export default function SignTransactionSwapAssetInfoProvider({
           `}</style>
         </>
       }
-      textualInfoBlock="TODO"
+      textualInfoBlock={
+        <TransactionDetailContainer>
+          <TransactionDetailItemShort name="Type" value="Swap assets" />
+          <TransactionDetailItemShort name="Spend amount" value={<>TODO</>} />
+          {/* TODO */}
+        </TransactionDetailContainer>
+      }
       confirmButtonLabel="Confirm"
       inner={inner}
     />
