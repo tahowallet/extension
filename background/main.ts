@@ -74,6 +74,7 @@ import {
 } from "./redux-slices/signing"
 import { emitter as ledgerSliceEmitter } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
+import { HIDE_IMPORT_LEDGER } from "./features/features"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -335,12 +336,15 @@ export default class Main extends BaseService<never> {
     private providerBridgeService: ProviderBridgeService,
 
     /**
-     * A promise TODO
+     * A promise to the Ledger service, handling the communication
+     * with attached Ledger device according to ledgerjs examples and some
+     * tribal knowledge. ;)
      */
     private ledgerService: LedgerService,
 
     /**
-     * A promise TODO
+     * A promise to the signing service which will route operations between the UI
+     * and the exact signing services.
      */
     private signingService: SigningService
   ) {
@@ -367,7 +371,7 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.started().then(async () => this.chainService.started())
 
-    await Promise.all([
+    const servicesToBeStarted = [
       this.preferenceService.startService(),
       this.chainService.startService(),
       this.indexingService.startService(),
@@ -376,13 +380,18 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
-      this.ledgerService.startService(),
-      this.signingService.startService(),
-    ])
+    ]
+
+    if (!HIDE_IMPORT_LEDGER) {
+      servicesToBeStarted.push(this.ledgerService.startService())
+      servicesToBeStarted.push(this.signingService.startService())
+    }
+
+    await Promise.all(servicesToBeStarted)
   }
 
   protected async internalStopService(): Promise<void> {
-    await Promise.all([
+    const servicesToBeStopped = [
       this.preferenceService.stopService(),
       this.chainService.stopService(),
       this.indexingService.stopService(),
@@ -391,9 +400,14 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
-      this.ledgerService.stopService(),
-      this.signingService.stopService(),
-    ])
+    ]
+
+    if (!HIDE_IMPORT_LEDGER) {
+      servicesToBeStopped.push(this.ledgerService.startService())
+      servicesToBeStopped.push(this.signingService.startService())
+    }
+
+    await Promise.all(servicesToBeStopped)
 
     await super.internalStopService()
   }
