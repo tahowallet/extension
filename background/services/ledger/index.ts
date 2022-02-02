@@ -129,15 +129,14 @@ function signatureToString(signature: {
 export default class LedgerService extends BaseService<Events> {
   #currentLedgerId = UnknownLedgerId
 
+  transport: Transport | undefined = undefined
+
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
-      return new this(await getOrCreateDB(), undefined)
+      return new this(await getOrCreateDB())
     }
 
-  private constructor(
-    private db: LedgerDatabase,
-    private transport: Transport | undefined
-  ) {
+  private constructor(private db: LedgerDatabase) {
     super()
   }
 
