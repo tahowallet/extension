@@ -4,9 +4,15 @@ import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 
 export default function EarnDeposit(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+  const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
+
+  const showWithdrawalModal = () => {
+    setWithdrawalSlideupVisible(true)
+  }
 
   return (
     <>
@@ -59,11 +65,7 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </div>
           <div className="row claim">
-            <img
-              className="receive_icon"
-              src="./images/receive@2x.png"
-              alt=""
-            />
+            <div className="receive_icon" />
             Claim rewards
           </div>
         </div>
@@ -73,27 +75,131 @@ export default function EarnDeposit(): ReactElement {
         panelNumber={panelNumber}
         panelNames={["Deposit", "Withdraw", "Pool Info"]}
       />
-      <div className="deposit_wrap">
-        <SharedAssetInput
-          label="Deposit asset"
-          defaultAsset={{ symbol: "ETH", name: "Ether" }}
-        />
-        <div className="confirm">
-          <SharedButton type="primary" size="large">
-            Approve
-          </SharedButton>
+      {panelNumber === 0 ? (
+        <div className="deposit_wrap">
+          <SharedAssetInput
+            label="Deposit asset"
+            defaultAsset={{ symbol: "ETH", name: "Ether" }}
+          />
+          <div className="confirm">
+            <SharedButton type="primary" size="large">
+              Approve
+            </SharedButton>
+          </div>
         </div>
-      </div>
+      ) : (
+        <></>
+      )}
+      {panelNumber === 1 ? (
+        <div className="standard_width">
+          <ul className="list">
+            <li className="list_item">
+              Withdrawing your deposit will also automatically claim your
+              rewards.
+            </li>
+            <li className="list_item">
+              You can withdraw only the rewards by using the Claim rewards
+              button.
+            </li>
+            <li className="list_item">
+              Deposit can only be withdrawn in full.
+            </li>
+          </ul>
+          <div className="withdraw_button">
+            <SharedButton
+              type="secondary"
+              size="large"
+              onClick={showWithdrawalModal}
+            >
+              Withdraw deposit + rewards
+            </SharedButton>
+          </div>
+          <SharedSlideUpMenu
+            isOpen={withdrawSlideupVisible}
+            close={() => setWithdrawalSlideupVisible(false)}
+            size="custom"
+            customSize="400px"
+          >
+            <div className="container">
+              <div className="title">Withdraw deposit & rewards</div>
+              <div className="withdrawal_info">
+                Are you sure you want to withdraw deposited amount and rewards?
+                <br /> If you only want to claim rewards you can do that by
+                closing this and clicking claim rewards.
+              </div>
+              <div className="wrapper dark">
+                <div className="row">
+                  <div className="label">Deposited amount</div>
+                  <div className="amount">
+                    27,834 <span className="token">Curve ibGBP</span>
+                  </div>
+                </div>
+                <div className="divider" />
+                <div className="row">
+                  <div className="label">Available rewards</div>
+                  <div className="amount">
+                    27,834 <span className="token">TALLY</span>
+                  </div>
+                </div>
+              </div>
+              <div className="row">
+                <SharedButton size="large" type="secondary">
+                  Cancel
+                </SharedButton>{" "}
+                <SharedButton size="large" type="primary">
+                  Confirm Withdraw
+                </SharedButton>
+              </div>
+            </div>
+          </SharedSlideUpMenu>
+        </div>
+      ) : (
+        <></>
+      )}
+      {panelNumber === 2 ? (
+        <div className="standard_width ">
+          <p className="pool_info">
+            This token represents a Curve liquidity pool. Holders earn fees from
+            users trading in the pool, and can also deposit the LP to
+            Curve&apos;s gauges to earn CRV emissions.
+          </p>
+          <p className="pool_info">
+            This pool contains FEI, FRAX, and alUSD, three decentralized
+            dollar-pegged stablecoins.
+          </p>
+        </div>
+      ) : (
+        <></>
+      )}
       <style jsx>
         {`
           .primary_info {
             margin-top: 15px;
             width: 90%;
           }
+          .title {
+            font-size: 18px;
+          }
+          .withdrawal_info {
+            padding: 24px 0;
+            line-height: 24px;
+          }
+          .container {
+            padding: 0 24px;
+          }
           .row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
+          }
+          .pool_info {
+            padding: 0 12px;
+          }
+          .withdraw_button {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+            margin-left: 24px;
           }
           .row.claim {
             justify-content: flex-end;
@@ -102,11 +208,11 @@ export default function EarnDeposit(): ReactElement {
             cursor: pointer;
           }
           .receive_icon {
-            mask-size: 10px 10px;
-            height: 10px;
-            width: 10px;
+            mask-size: 12px 12px;
+            height: 12px;
+            width: 12px;
             mask-image: url("./images/receive@2x.png");
-            margin-right: 4px;
+            margin-right: 8px;
             background-color: var(--trophy-gold);
           }
           .token {
@@ -119,6 +225,17 @@ export default function EarnDeposit(): ReactElement {
           .amount {
             font-size: 18px;
             font-weight: 500;
+          }
+          .list {
+            display: flex;
+            flex-flow: column;
+            margin: 20px 0;
+            padding-left: 40px;
+          }
+          .list_item {
+            display: list-item;
+            line-height: 24px;
+            list-style-type: disc;
           }
           .label {
             color: var(--green-40);
@@ -154,6 +271,9 @@ export default function EarnDeposit(): ReactElement {
             gap: 12px;
             border: 1px solid #33514e;
             margin-bottom: 16px;
+          }
+          .wrapper.dark {
+            background-color: var(--hunter-green);
           }
           .asset_name {
             color: #fff;
