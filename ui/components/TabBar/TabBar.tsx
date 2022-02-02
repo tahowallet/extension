@@ -1,20 +1,15 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 
 import { useLocation } from "react-router-dom"
 import TabBarIcon from "./TabBarIcon"
 import tabs from "../../utils/tabs"
-
-/**
- * Class guaranteed to be on the tab-bar `nav` element.
- */
-export const TAB_BAR_TAG_CLASS = "tab-bar"
 
 export default function TabBar(): ReactElement {
   const location = useLocation()
   const activeTabName = location?.pathname?.split("/")[1] || "wallet"
 
   return (
-    <nav className={TAB_BAR_TAG_CLASS}>
+    <nav>
       {tabs.map((tabName) => {
         return (
           <TabBarIcon
