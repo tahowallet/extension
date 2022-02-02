@@ -338,6 +338,26 @@ export default class Main extends BaseService<never> {
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
+      dispatchResponder: async (
+        dispatchResult: Promise<unknown>,
+        send: (param: { error: string | null; value: unknown | null }) => void
+      ) => {
+        try {
+          send({
+            error: null,
+            value: encodeJSON(await dispatchResult),
+          })
+        } catch (error) {
+          logger.error(
+            "Error awaiting and dispatching redux store result: ",
+            error
+          )
+          send({
+            error: encodeJSON(error),
+            value: null,
+          })
+        }
+      },
     })
 
     this.initializeRedux()
