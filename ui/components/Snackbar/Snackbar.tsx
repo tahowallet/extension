@@ -67,7 +67,7 @@ export default function Snackbar(): ReactElement {
             font-size: 16px;
             font-weight: 500;
             position: fixed;
-            bottom: 80px;
+            bottom: 72px;
             z-index: 999999999;
             background: var(--green-120);
             color: var(--green-20);
