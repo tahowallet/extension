@@ -252,7 +252,7 @@ export default class Main extends BaseService<never> {
 
     const signingService = HIDE_IMPORT_LEDGER
       ? (Promise.resolve(null) as unknown as Promise<SigningService>)
-      : SigningService.create(keyringService, ledgerService)
+      : SigningService.create(keyringService, ledgerService, chainService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -507,18 +507,33 @@ export default class Main extends BaseService<never> {
       async (
         transaction: EIP1559TransactionRequest & { nonce: number | undefined }
       ) => {
-        const transactionWithNonce =
-          await this.chainService.populateEVMTransactionNonce(transaction)
+        if (HIDE_IMPORT_LEDGER) {
+          const transactionWithNonce =
+            await this.chainService.populateEVMTransactionNonce(transaction)
 
-        try {
-          const signedTx = await this.keyringService.signTransaction(
-            transaction.from,
-            transactionWithNonce
-          )
-          this.store.dispatch(signed(signedTx))
-        } catch (exception) {
-          logger.error("Error signing transaction; releasing nonce", exception)
-          this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+          try {
+            const signedTx = await this.keyringService.signTransaction(
+              transaction.from,
+              transactionWithNonce
+            )
+            this.store.dispatch(signed(signedTx))
+          } catch (exception) {
+            logger.error(
+              "Error signing transaction; releasing nonce",
+              exception
+            )
+            this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+          }
+        } else {
+          try {
+            const signedTx = await this.signingService.signTransaction(
+              transaction.from,
+              transaction
+            )
+            this.store.dispatch(signed(signedTx))
+          } catch (exception) {
+            logger.error("Error signing transaction", exception)
+          }
         }
       }
     )

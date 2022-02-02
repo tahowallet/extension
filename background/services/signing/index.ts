@@ -6,8 +6,18 @@ import { HexString } from "../../types"
 import BaseService from "../base"
 // import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import ChainService from "../chain"
+import logger from "../../lib/logger"
 
 type Events = ServiceLifecycleEvents
+
+type SignerType = "keyring" | HardwareSignerType
+type HardwareSignerType = "ledger"
+
+type AddressHandler = {
+  address: string
+  handler: SignerType
+}
 
 /**
  * The SigningService is responsible for
@@ -18,17 +28,24 @@ type Events = ServiceLifecycleEvents
  * - xxx
  */
 export default class SigningService extends BaseService<Events> {
+  addressHandlers: AddressHandler[] = []
+
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
-    [Promise<KeyringService>, Promise<LedgerService>]
-  > = async (keyringService, ledgerService) => {
-    return new this(await keyringService, await ledgerService)
+    [Promise<KeyringService>, Promise<LedgerService>, Promise<ChainService>]
+  > = async (keyringService, ledgerService, chainService) => {
+    return new this(
+      await keyringService,
+      await ledgerService,
+      await chainService
+    )
   }
 
   private constructor(
     private keyringService: KeyringService,
-    private ledgerService: LedgerService
+    private ledgerService: LedgerService,
+    private chainService: ChainService
   ) {
     super()
   }
@@ -57,9 +74,40 @@ export default class SigningService extends BaseService<Events> {
     address: HexString,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<SignedEVMTransaction> {
-    this.signTransaction = this.signTransaction.bind(this)
+    const transactionWithNonce =
+      await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
-    throw new Error("Unimplemented")
+    try {
+      const actualHandler = this.addressHandlers.find(
+        (handlers) => handlers.address === address
+      )
+
+      if (!actualHandler) {
+        throw new Error(`Unregistered address (${address}) found!`)
+      }
+
+      switch (actualHandler.handler) {
+        case "ledger":
+          return await this.ledgerService.signTransaction(
+            transactionRequest.from,
+            transactionWithNonce
+          )
+        case "keyring":
+          return await this.keyringService.signTransaction(
+            transactionRequest.from,
+            transactionWithNonce
+          )
+        default:
+          throw new Error(
+            `Unknown address (${address}) or handler (${actualHandler}) provided!`
+          )
+      }
+    } catch (exception) {
+      logger.error("Error signing transaction; releasing nonce", exception)
+      this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+    }
+
+    throw new Error("Impossible to reach")
   }
 
   async signTypedData(
