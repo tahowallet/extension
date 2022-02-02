@@ -1,0 +1,26 @@
+diff --git a/node_modules/webext-redux/lib/store/Store.js b/node_modules/webext-redux/lib/store/Store.js
+index 8f49d00..389bf9c 100644
+--- a/node_modules/webext-redux/lib/store/Store.js
++++ b/node_modules/webext-redux/lib/store/Store.js
+@@ -97,6 +97,7 @@ function () {
+ 
+       return (_this$port$onMessage = _this.port.onMessage).addListener.apply(_this$port$onMessage, arguments);
+     });
++    this.deserializer = deserializer
+     this.serializedMessageSender = (0, _serialization.withSerializer)(serializer)(function () {
+       var _this$browserAPI$runt;
+ 
+@@ -231,6 +232,13 @@ function () {
+           var error = resp.error,
+               value = resp.value;
+ 
++          if (typeof _this3.deserializer !== "undefined") {
++            try {
++              value = _this3.deserializer(value)
++              // if deserialization fails, assume the value isn't serialized
++            } catch (error) {}
++          }
++
+           if (error) {
+             var bgErr = new Error("".concat(backgroundErrPrefix).concat(error));
+             reject((0, _lodash.default)(bgErr, error));
