@@ -63,17 +63,7 @@ type Events = ServiceLifecycleEvents & {
   signedData: string
 }
 
-const UnknownLedgerId = "unrecognizable"
-
 export const idDerviationPath = "44'/60'/0'/0/0"
-
-async function requireAvailableLedger() {
-  const devices = await navigator.usb.getDevices()
-
-  if (devices.length === 0) {
-    throw new Error("No available USB devices to use!")
-  }
-}
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
@@ -84,7 +74,7 @@ async function deriveAddressOnLedger(path: string, eth: Eth) {
 async function generateLedgerId(
   transport: Transport,
   eth: Eth
-): Promise<[string, LedgerType]> {
+): Promise<[string | undefined, LedgerType]> {
   let extensionDeviceType = LedgerType.UNKNOWN
 
   if (!transport.deviceModel) {
@@ -103,7 +93,7 @@ async function generateLedgerId(
   }
 
   if (extensionDeviceType === LedgerType.UNKNOWN) {
-    return [UnknownLedgerId, extensionDeviceType]
+    return [undefined, extensionDeviceType]
   }
 
   const address = await deriveAddressOnLedger(idDerviationPath, eth)
@@ -136,7 +126,7 @@ function signatureToString(signature: {
  * - xxx
  */
 export default class LedgerService extends BaseService<Events> {
-  #currentLedgerId = UnknownLedgerId
+  #currentLedgerId: string | undefined = undefined
 
   transport: Transport | undefined = undefined
 
@@ -167,7 +157,7 @@ export default class LedgerService extends BaseService<Events> {
     this.emitter.emit("connected", { id: this.#currentLedgerId, type })
 
     this.emitter.emit("ledgerAdded", {
-      id,
+      id: this.#currentLedgerId,
       type,
       accountIDs: [idDerviationPath],
       metadata: { ethereumVersion: ethVersion },
@@ -183,7 +173,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
-    if (!TestedProductId(event.device.productId)) {
+    if (!this.#currentLedgerId) {
       return
     }
 
@@ -192,7 +182,7 @@ export default class LedgerService extends BaseService<Events> {
       type: LedgerType.LEDGER_NANO_S,
     })
 
-    this.#currentLedgerId = UnknownLedgerId
+    this.#currentLedgerId = undefined
   }
 
   protected async internalStartService(): Promise<void> {
@@ -212,17 +202,24 @@ export default class LedgerService extends BaseService<Events> {
   async connectLedger(): Promise<string> {
     const devArray = await navigator.usb.getDevices()
 
+    if (devArray.length === 0) {
+      throw new Error("No paired device when the Ledger is connected!?")
+    }
+
     this.onConnection(devArray[0].productId)
 
-    return this.#currentLedgerId
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.#currentLedgerId!
   }
 
   async deriveAddress(accountID: string): Promise<HexString> {
-    requireAvailableLedger()
-
     try {
       if (!this.transport) {
         throw new Error("Uninitialized transport!")
+      }
+
+      if (!this.#currentLedgerId) {
+        throw new Error("Uninitialized Ledger ID!")
       }
 
       const eth = new Eth(this.transport)
@@ -248,6 +245,10 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
+    if (!this.#currentLedgerId) {
+      throw new Error("No Ledger id is set!")
+    }
+
     await this.db.addAccount({ ledgerId: this.#currentLedgerId, path, address })
   }
 
@@ -255,11 +256,13 @@ export default class LedgerService extends BaseService<Events> {
     address: HexString,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<SignedEVMTransaction> {
-    requireAvailableLedger()
-
     try {
       if (!this.transport) {
         throw new Error("Uninitialized transport!")
+      }
+
+      if (!this.#currentLedgerId) {
+        throw new Error("Uninitialized Ledger ID!")
       }
 
       const ethersTx =
@@ -353,11 +356,13 @@ export default class LedgerService extends BaseService<Events> {
     typedData: EIP712TypedData,
     account: HexString
   ): Promise<string> {
-    requireAvailableLedger()
-
     try {
       if (!this.transport) {
         throw new Error("Uninitialized transport!")
+      }
+
+      if (!this.#currentLedgerId) {
+        throw new Error("Uninitialized Ledger ID!")
       }
 
       const eth = new Eth(this.transport)
@@ -389,11 +394,13 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signMessage(address: string, message: string): Promise<string> {
-    requireAvailableLedger()
-
     try {
       if (!this.transport) {
         throw new Error("Uninitialized transport!")
+      }
+
+      if (!this.#currentLedgerId) {
+        throw new Error("Uninitialized Ledger ID!")
       }
 
       const eth = new Eth(this.transport)
