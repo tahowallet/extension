@@ -18,12 +18,12 @@ export default function EarnDeposit(): ReactElement {
     <>
       <section className="primary_info">
         <BackButton />
-        <div className="wrapper">
-          <div className="row">
+        <ul className="wrapper">
+          <li className="row">
             <div className="type">VAULT</div>
             <div className="center">
               <SharedAssetIcon size="large" />
-              <span className="asset_name">USDT</span>
+              <h1 className="asset_name">USDT</h1>
             </div>
             <div>
               <a href="www.onet.pl" target="_blank">
@@ -33,41 +33,41 @@ export default function EarnDeposit(): ReactElement {
                 </div>
               </a>
             </div>
-          </div>
-          <div className="row">
+          </li>
+          <li className="row">
             <div className="label">Estimated APR</div>
             <div className="amount">250%</div>
-          </div>
-          <div className="row">
+          </li>
+          <li className="row">
             <div className="label">Total value locked</div>
             <div className="amount">$20,283,219</div>
-          </div>
-          <div className="row">
+          </li>
+          <li className="row">
             <div className="label">Rewards</div>
             <div className="rewards">
               <img className="lock" src="./images/lock@2.png" alt="Locked" />
               TALLY
             </div>
-          </div>
-        </div>
+          </li>
+        </ul>
         <div className="wrapper">
-          <div className="row">
+          <li className="row">
             <div className="label">Deposited amount</div>
             <div className="amount">
               27,834 <span className="token">Curve ibGBP</span>
             </div>
-          </div>
+          </li>
           <div className="divider" />
-          <div className="row">
+          <li className="row">
             <div className="label">Available rewards</div>
             <div className="amount">
               27,834 <span className="token">TALLY</span>
             </div>
-          </div>
-          <div className="row claim">
+          </li>
+          <li className="row claim">
             <div className="receive_icon" />
             Claim rewards
-          </div>
+          </li>
         </div>
       </section>
       <SharedPanelSwitcher
@@ -121,35 +121,35 @@ export default function EarnDeposit(): ReactElement {
             customSize="400px"
           >
             <div className="container">
-              <div className="title">Withdraw deposit & rewards</div>
+              <h2 className="withdrawal_title">Withdraw deposit & rewards</h2>
               <div className="withdrawal_info">
                 Are you sure you want to withdraw deposited amount and rewards?
                 <br /> If you only want to claim rewards you can do that by
                 closing this and clicking claim rewards.
               </div>
               <div className="wrapper dark">
-                <div className="row">
+                <li className="row">
                   <div className="label">Deposited amount</div>
                   <div className="amount">
                     27,834 <span className="token">Curve ibGBP</span>
                   </div>
-                </div>
+                </li>
                 <div className="divider" />
-                <div className="row">
+                <li className="row">
                   <div className="label">Available rewards</div>
                   <div className="amount">
                     27,834 <span className="token">TALLY</span>
                   </div>
-                </div>
+                </li>
               </div>
-              <div className="row">
+              <li className="row">
                 <SharedButton size="large" type="secondary">
                   Cancel
                 </SharedButton>{" "}
                 <SharedButton size="large" type="primary">
                   Confirm Withdraw
                 </SharedButton>
-              </div>
+              </li>
             </div>
           </SharedSlideUpMenu>
         </div>
@@ -177,8 +177,9 @@ export default function EarnDeposit(): ReactElement {
             margin-top: 15px;
             width: 90%;
           }
-          .title {
+          .withdrawal_title {
             font-size: 18px;
+            margin: 0;
           }
           .withdrawal_info {
             padding: 24px 0;
@@ -302,7 +303,7 @@ export default function EarnDeposit(): ReactElement {
             background: #0b4789;
             font-size: 12px;
             padding: 0 4px;
-            line-height: 16px;
+            line-height: 17px;
             max-width: 40px;
           }
           .deposit_wrap {
