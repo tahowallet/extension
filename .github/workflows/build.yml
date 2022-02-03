@@ -20,6 +20,7 @@ jobs:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
     - run: yarn install --frozen-lockfile
+    - run: mv .env.defaults .env
     - name: Build artifacts for verification
       if: github.ref != 'refs/heads/main'
       run: yarn build
