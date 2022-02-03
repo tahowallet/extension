@@ -37,6 +37,10 @@ export type Events = {
     path: string
     address: string
   }>
+  connectLedger: {
+    resolve: (address: string) => void
+    reject: (error: Error) => void
+  }
 }
 
 export const emitter = new Emittery<Events>()
@@ -138,34 +142,16 @@ export const { ledgerReset, addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 
-let fakeDeviceNonce = 0
-
-async function doConnectFake() {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
+async function doConnectReal() {
+  return new Promise<string>((resolve, reject) => {
+    emitter.emit("connectLedger", { resolve, reject })
   })
-
-  fakeDeviceNonce += 1
-  return `fake-device-id-${fakeDeviceNonce}`
 }
 
 async function doFetchAddressReal(path: string) {
-  // TODO: respond to this event to provide actual data
   return new Promise<string>((resolve, reject) => {
     emitter.emit("fetchAddress", { path, resolve, reject })
   })
-}
-
-async function doFetchAddressFake(path: string) {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
-  })
-
-  return `0x${Array.from({ length: 20 }, () => {
-    const byte = Math.floor(Math.random() * 256)
-    const hex = `0${byte.toString(16)}`
-    return hex.slice(hex.length - 2)
-  }).join("")}`
 }
 
 async function doFetchBalanceReal(address: string) {
@@ -189,7 +175,7 @@ async function doFetchBalanceFake(address: string) {
 export const connectLedger = createBackgroundAsyncThunk(
   "ledger/connectLedger",
   async (unused, { dispatch }) => {
-    const deviceID = await doConnectFake()
+    const deviceID = await doConnectReal()
     dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
     return { deviceID }
   }
@@ -202,7 +188,7 @@ export const fetchAddress = createBackgroundAsyncThunk(
     { dispatch }
   ) => {
     dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
-    const address = await doFetchAddressFake(path)
+    const address = await doFetchAddressReal(path)
     dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
   }
 )
