@@ -1,5 +1,6 @@
 import classNames from "classnames"
 import React, { ReactElement, useState, useEffect, CSSProperties } from "react"
+import { useDelayContentChange } from "../../hooks"
 
 export type SharedSlideUpMenuSize =
   | "auto"
@@ -7,6 +8,8 @@ export type SharedSlideUpMenuSize =
   | "medium"
   | "large"
   | "custom"
+
+const SLIDE_TRANSITION_MS = 445
 
 interface Props {
   isOpen: boolean
@@ -36,13 +39,14 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     showOverlay,
     alwaysRenderChildren,
   } = props
-  const [forceHide, setForceHide] = useState(true)
 
-  useEffect(() => {
-    if (isOpen) {
-      setForceHide(false)
-    }
-  }, [isOpen])
+  // Continue showing children during the close transition.
+  const visibleChildren = isOpen ? children : <></>
+  const displayChildren = useDelayContentChange(
+    visibleChildren,
+    !isOpen && !alwaysRenderChildren,
+    SLIDE_TRANSITION_MS
+  )
 
   const menuHeight = menuHeights[size] ?? customSize ?? menuHeights.medium
 
@@ -55,7 +59,6 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         className={classNames("slide_up_menu", {
           large: size === "large",
           closed: !isOpen,
-          force_hide: forceHide,
         })}
         style={{ "--menu-height": menuHeight } as CSSProperties}
       >
@@ -65,7 +68,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           onClick={close}
           aria-label="Close menu"
         />
-        {isOpen || alwaysRenderChildren ? children : <></>}
+        {displayChildren}
       </div>
       <style jsx>
         {`
@@ -82,7 +85,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             bottom: 0px;
             z-index: 999;
             transform: translateY(0); /* open by default */
-            transition: transform cubic-bezier(0.19, 1, 0.22, 1) 0.445s;
+            opacity: 1;
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
+              ${SLIDE_TRANSITION_MS}ms;
             padding-top: 24px;
             box-sizing: border-box;
           }
@@ -124,8 +129,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           }
           .slide_up_menu.closed {
             transform: translateY(100%);
-          }
-          .force_hide {
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
+                ${SLIDE_TRANSITION_MS}ms,
+              // Drop opacity all at once at the end.
+              opacity 0ms ${SLIDE_TRANSITION_MS}ms;
             opacity: 0;
             pointer-events: none;
           }

@@ -3,6 +3,7 @@ import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import {
+  isMaxUint256,
   sameEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
@@ -69,7 +70,9 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         recipient: truncateAddress(activity.annotation.spenderAddress),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
-        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
+        assetValue: isMaxUint256(activity.annotation.assetAmount.amount)
+          ? "Infinite"
+          : activity.annotation.assetAmount.localizedDecimalAmount,
       }
       break
     case "asset-swap":
@@ -270,6 +273,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             font-weight: 600;
             line-height: 24px;
             margin-right: 4px;
+            // For Infinite text in token approvals.
+            text-transform: none;
           }
           .price {
             width: 58px;

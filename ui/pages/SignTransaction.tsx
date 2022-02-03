@@ -40,7 +40,7 @@ interface SignLocationState {
 export default function SignTransaction({
   location,
 }: {
-  location: { key: string; pathname: string; state?: SignLocationState }
+  location: { key?: string; pathname: string; state?: SignLocationState }
 }): ReactElement {
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
