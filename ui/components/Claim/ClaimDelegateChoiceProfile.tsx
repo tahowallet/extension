@@ -1,8 +1,9 @@
 import React, { ReactElement } from "react"
+import { Delegate, DAO } from "@tallyho/tally-background/redux-slices/claim"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
-  delegate?: any
+  delegate?: Delegate | DAO | null
 }): ReactElement {
   const { name, delegate } = props
   return (

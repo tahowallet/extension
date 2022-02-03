@@ -7,10 +7,10 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 function DAOButton(props: {
   address: string
   name: string
-  logoAsset: string
+  avatar: string
   isActive: boolean
 }) {
-  const { address, name, logoAsset, isActive } = props
+  const { address, name, avatar, isActive } = props
   const dispatch = useBackgroundDispatch()
 
   return (
@@ -89,12 +89,12 @@ export default function ClaimReferral(props: {
         TALLY!
       </div>
       <div className="options">
-        {DAOs.map(({ address, name, logoAsset }) => {
+        {DAOs.map(({ address, name, avatar }) => {
           return (
             <DAOButton
               address={address}
               name={name}
-              logoAsset={logoAsset}
+              avatar={avatar}
               isActive={selectedDAO?.name === name}
             />
           )

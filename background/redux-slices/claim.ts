@@ -19,16 +19,17 @@ function jsonToArray(json: any) {
     .slice(0, -2)
 }
 
-interface DAO {
+export interface DAO {
   address: string
   name: string
-  logoAsset: string
+  avatar: string
 }
 
-interface Delegate {
+export interface Delegate {
   address: string
   ensName: string
   applicationLink: string
+  avatar?: string
 }
 
 interface ClaimingState {
