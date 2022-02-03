@@ -19,6 +19,11 @@ type AddressHandler = {
   handler: SignerType
 }
 
+type AccountSigner = {
+  type: SignerType
+  accountID: string
+}
+
 /**
  * The SigningService is responsible for
  *
@@ -54,17 +59,13 @@ export default class SigningService extends BaseService<Events> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
   }
 
-  async deriveAddress(signerID: string): Promise<HexString> {
-    if (signerID.startsWith("ledger-")) {
-      return this.ledgerService.deriveAddress(
-        signerID.substring("ledger-".length)
-      )
+  async deriveAddress(signerID: AccountSigner): Promise<HexString> {
+    if (signerID.type === "ledger") {
+      return this.ledgerService.deriveAddress(signerID.accountID)
     }
 
-    if (signerID.startsWith("keyring-")) {
-      return this.keyringService.deriveAddress(
-        signerID.substring("keyring-".length)
-      )
+    if (signerID.type === "keyring") {
+      return this.keyringService.deriveAddress(signerID.accountID)
     }
 
     throw new Error(`Unknown signerID: ${signerID}`)
@@ -102,12 +103,9 @@ export default class SigningService extends BaseService<Events> {
             `Unknown address (${address}) or handler (${actualHandler}) provided!`
           )
       }
-    } catch (exception) {
-      logger.error("Error signing transaction; releasing nonce", exception)
+    } finally {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
     }
-
-    throw new Error("Impossible to reach")
   }
 
   addTrackedAddress(address: string, handler: SignerType): void {
