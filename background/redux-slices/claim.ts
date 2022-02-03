@@ -1,8 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"
-import { BigNumber } from "ethers"
-import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
-// import balances from "../constants/balances"
-import BalanceTree from "../lib/balance-tree"
+import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { truncateAddress } from "../lib/utils"
 // import { getContract } from "./utils/contract-utils"
@@ -51,24 +47,10 @@ interface ClaimingState {
   selectedDelegate: Delegate | null
 }
 
-// const findIndexAndBalance = (address: string) => {
-//   // const index = balances.findIndex((el) => address === el.account)
-//   // const balance = balances[index].amount
-//   return { index, balance }
-// }
-
 const getDistributorContract = async () => {
   // const contractAddress = "0x1234"
   // const distributor = await getContract(contractAddress, DISTRIBUTOR_ABI)
   // return distributor
-}
-
-const getProof = (
-  index: number | BigNumber,
-  account: string,
-  amount: BigNumber
-) => {
-  // newBalanceTree.getProof(index, account, amount)
 }
 
 const claim = createBackgroundAsyncThunk(
