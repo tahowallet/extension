@@ -1,0 +1,40 @@
+diff --git a/node_modules/emittery/index.d.ts b/node_modules/emittery/index.d.ts
+index b087aa1..5f30f7e 100644
+--- a/node_modules/emittery/index.d.ts
++++ b/node_modules/emittery/index.d.ts
+@@ -314,7 +314,7 @@ declare class Emittery<
+ 	*/
+ 	on<Name extends keyof AllEventData>(
+ 		eventName: Name,
+-		listener: (eventData: AllEventData[Name]) => void | Promise<void>
++		listener: (eventData: AllEventData[Name]) => unknown | Promise<unknown>
+ 	): Emittery.UnsubscribeFn;
+ 
+ 	/**
+@@ -464,11 +464,11 @@ declare class Emittery<
+ 
+ 	@returns A promise that resolves when all the event listeners are done. *Done* meaning executed if synchronous or resolved when an async/promise-returning function. You usually wouldn't want to wait for this, but you could for example catch possible errors. If any of the listeners throw/reject, the returned promise will be rejected with the error, but the other listeners will not be affected.
+ 	*/
+-	emit<Name extends DatalessEvents>(eventName: Name): Promise<void>;
++	emit<Name extends DatalessEvents>(eventName: Name): Promise<unknown[]>;
+ 	emit<Name extends keyof EventData>(
+ 		eventName: Name,
+ 		eventData: EventData[Name]
+-	): Promise<void>;
++	): Promise<unknown[]>;
+ 
+ 	/**
+ 	Same as `emit()`, but it waits for each listener to resolve before triggering the next one. This can be useful if your events depend on each other. Although ideally they should not. Prefer `emit()` whenever possible.
+diff --git a/node_modules/emittery/index.js b/node_modules/emittery/index.js
+index cd4a5ae..bf695a3 100644
+--- a/node_modules/emittery/index.js
++++ b/node_modules/emittery/index.js
+@@ -300,7 +300,7 @@ class Emittery {
+ 		const staticAnyListeners = isListenerSymbol(eventName) ? [] : [...anyListeners];
+ 
+ 		await resolvedPromise;
+-		await Promise.all([
++		return await Promise.all([
+ 			...staticListeners.map(async listener => {
+ 				if (listeners.has(listener)) {
+ 					return listener(eventData);

@@ -50,7 +50,17 @@ module.exports = {
     // Don't slap build files for importing devDependencies.
     "import/no-extraneous-dependencies": [
       "error",
-      { devDependencies: ["!+(src/api|ui)/**/*.+(ts|js)"] },
+      {
+        devDependencies: ["!+(src/api|ui)/**/*.+(ts|js)"],
+        packageDir: [
+          "./",
+          "./ui",
+          "./background",
+          "./provider-bridge",
+          "./provider-bridge-shared",
+          "./window-provider",
+        ],
+      },
     ],
     // Add known-safe exceptions to no-param-reassign.
     "no-param-reassign": [
