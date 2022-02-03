@@ -84,7 +84,7 @@ function EstimateRefreshCountdownDivider() {
   const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
 
   const getSecondsTillGasUpdate = useCallback(() => {
-    const now = new Date().getTime()
+    const now = Date.now()
     setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
   }, [gasTime])
 
@@ -135,7 +135,12 @@ export default function NetworkSettingsSelect({
         gasLimit: networkSettings.gasLimit,
       })
     }
-  }, [gasOptions, activeFeeIndex, onNetworkSettingsChange, networkSettings])
+  }, [
+    gasOptions,
+    activeFeeIndex,
+    onNetworkSettingsChange,
+    networkSettings.gasLimit,
+  ])
 
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
