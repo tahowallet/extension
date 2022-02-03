@@ -1,5 +1,6 @@
 import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { TransactionDescription } from "ethers/lib/utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import { SignTransactionInfo } from "./SignTransactionInfoBaseProvider"
@@ -23,6 +24,15 @@ export enum SignType {
   SignTransfer = "sign-transfer",
 }
 
+export function getSignType(
+  parsedTx: TransactionDescription | undefined
+): SignType {
+  if (parsedTx?.name === "approve") {
+    return SignType.SignSpend
+  }
+  return SignType.Sign
+}
+
 /**
  * Creates transaction type-specific UI blocks and provides them to children.
  */
@@ -36,17 +46,9 @@ export default function SignTransactionInfoProvider({
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
-  const isApproveTx = parsedTx?.name === "approve"
-
-  const getSignType = () => {
-    if (isApproveTx) {
-      return SignType.SignSpend
-    }
-    return SignType.Sign
-  }
 
   const { assetSymbol, amount, to, value, signType } = location?.state ?? {
-    signType: getSignType(),
+    signType: getSignType(parsedTx),
   }
 
   if (!transactionDetails) return <></>
