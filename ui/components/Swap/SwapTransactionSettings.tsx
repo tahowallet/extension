@@ -1,5 +1,5 @@
 import {
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   selectEstimatedFeesPerGas,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -33,7 +33,7 @@ export default function SwapTransactionSettings(
 
   // TODO pass proper gas to SwapSettingsChooser to display real fees
 
-  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
+  const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     dispatch(setFeeType(networkSetting.feeType))
     setIsSlideUpMenuOpen(false)
   }

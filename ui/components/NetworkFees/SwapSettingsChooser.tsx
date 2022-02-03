@@ -1,6 +1,6 @@
 import {
   EstimatedFeesPerGas,
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   NetworkFeeTypeChosen,
   selectFeeType,
   selectLastGasEstimatesRefreshTime,
@@ -15,7 +15,7 @@ interface NetworkSettingsChooserProps {
     estimatedFeesPerGas: EstimatedFeesPerGas | undefined
     gasLimit: string
   }
-  onNetworkSettingsSave: (setting: NetworkFeeSetting) => void
+  onNetworkSettingsSave: (setting: NetworkFeeSettings) => void
   visible: boolean
 }
 
@@ -69,10 +69,8 @@ export default function SwapSettingsChooser({
           {visible ? (
             <NetworkSettingsSelect
               estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={customGasLimit}
-              setCustomGasLimit={setCustomGasLimit}
-              onSelectNetworkSetting={setSelectedSetting}
-              selectedFeeType={selectedFeeType}
+              networkSettings={selectedSetting}
+              onNetworkSettingsChange={setSelectedSetting}
             />
           ) : (
             <></>
