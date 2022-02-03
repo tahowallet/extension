@@ -119,10 +119,10 @@ const claimingSlice = createSlice({
   name: "claim",
   initialState,
   reducers: {
-    setSelectedDAO: (immerState, { payload: DAO }) => {
+    selectDAO: (immerState, { payload: DAO }) => {
       immerState.selectedDAO = DAO
     },
-    setSelectedDelegate: (immerState, { payload: delegate }) => {
+    selectDelegate: (immerState, { payload: delegate }) => {
       immerState.selectedDelegate = delegate
     },
   },
@@ -141,6 +141,6 @@ const claimingSlice = createSlice({
   },
 })
 
-export const { setSelectedDAO, setSelectedDelegate } = claimingSlice.actions
+export const { selectDAO, selectDelegate } = claimingSlice.actions
 
 export default claimingSlice.reducer

@@ -18,7 +18,7 @@ function DAOButton(props: {
       type="button"
       className={classNames("option", { active: isActive })}
       onClick={() => {
-        dispatch(setSelectedDAO({ address, name, logoAsset }))
+        dispatch(selectDAO({ address, name, avatar }))
       }}
     >
       <div className="icon" />
