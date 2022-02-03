@@ -16,7 +16,7 @@ type HardwareSignerType = "ledger"
 
 type AddressHandler = {
   address: string
-  handler: SignerType
+  signer: SignerType
 }
 
 type AccountSigner = {
@@ -71,6 +71,29 @@ export default class SigningService extends BaseService<Events> {
     throw new Error(`Unknown signerID: ${signerID}`)
   }
 
+  private async signTransactionWithNonce(
+    signer: SignerType,
+    address: HexString,
+    transactionWithNonce: EIP1559TransactionRequest & { nonce: number }
+  ): Promise<SignedEVMTransaction> {
+    switch (signer) {
+      case "ledger":
+        return this.ledgerService.signTransaction(
+          transactionWithNonce.from,
+          transactionWithNonce
+        )
+      case "keyring":
+        return this.keyringService.signTransaction(
+          transactionWithNonce.from,
+          transactionWithNonce
+        )
+      default:
+        throw new Error(
+          `Unknown address (${address}) or signer (${signer}) provided!`
+        )
+    }
+  }
+
   async signTransaction(
     address: HexString,
     transactionRequest: EIP1559TransactionRequest
@@ -87,29 +110,18 @@ export default class SigningService extends BaseService<Events> {
         throw new Error(`Unregistered address (${address}) found!`)
       }
 
-      switch (actualHandler.handler) {
-        case "ledger":
-          return await this.ledgerService.signTransaction(
-            transactionRequest.from,
-            transactionWithNonce
-          )
-        case "keyring":
-          return await this.keyringService.signTransaction(
-            transactionRequest.from,
-            transactionWithNonce
-          )
-        default:
-          throw new Error(
-            `Unknown address (${address}) or handler (${actualHandler}) provided!`
-          )
-      }
+      return await this.signTransactionWithNonce(
+        actualHandler.signer,
+        address,
+        transactionWithNonce
+      )
     } finally {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
     }
   }
 
   addTrackedAddress(address: string, handler: SignerType): void {
-    this.addressHandlers.push({ address, handler })
+    this.addressHandlers.push({ address, signer: handler })
   }
 
   async signTypedData(

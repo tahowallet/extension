@@ -722,7 +722,7 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
-        path: keyringID,
+        accountID: keyringID,
       })
     })
 
