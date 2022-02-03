@@ -32,7 +32,7 @@ export default function Send(): ReactElement {
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
-  const [currentBalance, setCurrentBalance] = useState("")
+
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
@@ -59,18 +59,7 @@ export default function Send(): ReactElement {
     }
     return 0
   }
-  const findBalance = useCallback(() => {
-    const balance = formatEther(
-      assetAmounts.find((el) => el.asset.symbol === assetSymbol)?.amount || "0"
-    )
-    setCurrentBalance(balance)
-  }, [assetAmounts, assetSymbol])
 
-  const setMaxBalance = () => {
-    if (currentBalance) {
-      setAmount(currentBalance)
-    }
-  }
   const sendTransactionRequest = async () => {
     dispatch(broadcastOnSign(true))
     const transaction = {
@@ -82,10 +71,6 @@ export default function Send(): ReactElement {
     }
     return dispatch(updateTransactionOptions(transaction))
   }
-
-  useEffect(() => {
-    findBalance()
-  }, [findBalance])
 
   useEffect(() => {
     if (assetSymbol) {
@@ -111,18 +96,8 @@ export default function Send(): ReactElement {
         </h1>
         <div className="form">
           <div className="form_input">
-            <div className="balance">
-              Balance: {`${currentBalance.substring(0, 8)}\u2026 `}
-              <button
-                type="button"
-                className="max"
-                onClick={setMaxBalance}
-                tabIndex={0}
-              >
-                Max
-              </button>
-            </div>
             <SharedAssetInput
+              displayBalance
               label="Asset / Amount"
               onAssetSelect={(token) => {
                 setAssetSymbol(token.symbol)
@@ -143,7 +118,6 @@ export default function Send(): ReactElement {
               }}
               defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
               amount={amount}
-              maxBalance={Number(currentBalance)}
               disableDropdown
             />
             <div className="value">${getTotalLocalizedValue()}</div>
@@ -247,18 +221,6 @@ export default function Send(): ReactElement {
           }
           .label {
             margin-bottom: 6px;
-          }
-          .balance {
-            color: var(--green-40);
-            text-align: right;
-            position: relative;
-            font-size: 14px;
-            top: 16px;
-            right: 0;
-          }
-          .max {
-            color: #d08e39;
-            cursor: pointer;
           }
           .value {
             display: flex;

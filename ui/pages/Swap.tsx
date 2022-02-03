@@ -319,6 +319,7 @@ export default function Swap(): ReactElement {
                 defaultAsset={sellAsset}
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
+                displayBalance
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount) => {
                   setSellAmount(newAmount)

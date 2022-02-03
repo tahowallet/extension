@@ -39,6 +39,7 @@ export default function EarnDeposit(): ReactElement {
       <div className="deposit_wrap">
         <SharedAssetInput
           label="Deposit amount"
+          displayBalance
           defaultAsset={{ symbol: "ETH", name: "Ether" }}
         />
         <SharedButton type="primary" size="large">
