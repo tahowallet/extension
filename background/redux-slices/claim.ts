@@ -147,5 +147,23 @@ const claimingSlice = createSlice({
 export const { selectDAO, selectDelegate } = claimingSlice.actions
 
 export default claimingSlice.reducer
+
+export const selectClaim = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) => claimState
+)
+
+export const selectClaimSelections = createSelector(
+  selectClaim,
+  (claimState: ClaimingState) => {
+    return {
+      selectedDelegate: {
+        ...claimState.selectedDelegate,
         truncatedAddress: truncateAddress(
           claimState?.selectedDelegate?.address ?? ""
+        ),
+      },
+      selectedDAO: claimState.selectedDAO,
+    }
+  }
+)

@@ -1,5 +1,8 @@
 import React, { ReactElement, useState } from "react"
-import { setSelectedDAO } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  selectDAO,
+  selectClaimSelections,
+} from "@tallyho/tally-background/redux-slices/claim"
 import classNames from "classnames"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -42,7 +45,7 @@ function DAOButton(props: {
           background-color: #006ae3;
           border-radius: 200px;
           margin-bottom: 8px;
-          background: url("./images/DAOs/${logoAsset}");
+          background: url("./images/DAOs/${avatar}");
           background-size: cover;
         }
         .radio {
@@ -69,10 +72,8 @@ export default function ClaimReferral(props: {
   claimAmount: number
   bonusPercent: number
 }): ReactElement {
-  const selectedDAO = useBackgroundSelector((state) => {
-    return state.claim.selectedDAO
-  })
   const { DAOs, claimAmount, bonusPercent } = props
+  const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
 
   return (
     <div className="claim standard_width">

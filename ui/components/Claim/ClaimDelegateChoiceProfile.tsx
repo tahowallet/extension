@@ -38,7 +38,7 @@ export default function ClaimDelegateChoiceProfile(props: {
             border-radius: 150px;
             margin-right: 13px;
             flex-shrink: 0;
-            background-image: url("./images/DAOs/${delegate?.logoAsset}");
+            background-image: url("./images/DAOs/${delegate?.avatar}");
             background-size: cover;
             background-color: #006ae3;
           }

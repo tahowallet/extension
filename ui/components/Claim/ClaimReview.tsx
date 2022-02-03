@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { selectClaimSelections } from "@tallyho/tally-background/redux-slices/claim"
 import SharedButton from "../Shared/SharedButton"
 import AmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
@@ -11,12 +12,9 @@ export default function ClaimReview({
   claimAmount: number
   backToChoose: () => void
 }): ReactElement {
-  const { selectedDelegate, selectedDAO } = useBackgroundSelector((state) => {
-    return {
-      selectedDelegate: state.claim.selectedDelegate,
-      selectedDAO: state.claim.selectedDAO,
-    }
-  })
+  const { selectedDelegate, selectedDAO } = useBackgroundSelector(
+    selectClaimSelections
+  )
 
   return (
     <div className="claim standard_width">
