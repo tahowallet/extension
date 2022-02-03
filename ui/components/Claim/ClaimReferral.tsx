@@ -67,18 +67,22 @@ function DAOButton(props: {
 export default function ClaimReferral(props: {
   DAOs: any[]
   claimAmount: number
+  bonusPercent: number
 }): ReactElement {
-  const { DAOs, claimAmount } = props
   const selectedDAO = useBackgroundSelector((state) => {
     return state.claim.selectedDAO
   })
+  const { DAOs, claimAmount, bonusPercent } = props
 
   return (
     <div className="claim standard_width">
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
         Get a bonus of
-        <div className="highlight">{Math.floor(claimAmount * 0.05)}</div> TALLY!
+        <div className="highlight">
+          {Math.floor(claimAmount * bonusPercent)}
+        </div>
+        TALLY!
       </div>
       <div className="description">
         Select a Project/DAO to share the bonus with! You each receive 463

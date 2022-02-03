@@ -51,6 +51,11 @@ export default function Eligible(): ReactElement {
     setStep(step + 1)
   }
 
+  const BONUS_PERCENT = 0.05
+
+  const claimAmountWithBonus = Math.floor(
+    claimAmount + claimAmount * BONUS_PERCENT
+  )
   return (
     <div className="wrap">
       {infoModalVisible ? (
@@ -77,14 +82,18 @@ export default function Eligible(): ReactElement {
           style={{ marginLeft: -384 * (step - 1) }}
         >
           <ClaimIntro claimAmount={claimAmount} />
-          <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
+          <ClaimReferral
+            DAOs={DAOs}
+            claimAmount={claimAmount}
+            bonusPercent={BONUS_PERCENT}
+          />
           <ClaimReferralByUser claimAmount={claimAmount} />
           <ClaimDelegate
             delegates={delegates}
-            claimAmount={Math.floor(claimAmount + claimAmount * 0.05)}
+            claimAmount={claimAmountWithBonus}
           />
           <ClaimReview
-            claimAmount={Math.floor(claimAmount + claimAmount * 0.05)}
+            claimAmount={claimAmountWithBonus}
             backToChoose={() => {
               setStep(step - 1)
             }}
