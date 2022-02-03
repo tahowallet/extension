@@ -65,7 +65,7 @@ export default function WalletAccountBalanceControl(
   return (
     <>
       <SharedSlideUpMenu isOpen={openReceiveMenu} close={handleClick}>
-        {Receive()}
+        <Receive />
       </SharedSlideUpMenu>
       <div className="wrap">
         <div
