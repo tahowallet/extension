@@ -24,7 +24,7 @@ export default function ClaimReview({
       <div className="description_review">You will receive</div>
       <AmountBanner amount={claimAmount} />
       <ClaimDelegateChoiceProfile
-        name={selectedDAO?.name || ""}
+        name={selectedDAO?.name ?? ""}
         delegate={selectedDAO}
       />
       <div className="description_review">Chosen delegate</div>

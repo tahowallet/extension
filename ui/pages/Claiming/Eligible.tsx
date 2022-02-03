@@ -56,6 +56,7 @@ export default function Eligible(): ReactElement {
   const claimAmountWithBonus = Math.floor(
     claimAmount + claimAmount * BONUS_PERCENT
   )
+
   return (
     <div className="wrap">
       {infoModalVisible ? (
