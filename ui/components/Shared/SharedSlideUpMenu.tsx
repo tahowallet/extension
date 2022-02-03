@@ -1,5 +1,8 @@
 import classNames from "classnames"
 import React, { ReactElement, useState, useEffect } from "react"
+import { useDelayContentChange } from "../../hooks"
+
+const SLIDE_TRANSITION_MS = 445
 
 interface Props {
   isOpen: boolean
@@ -11,13 +14,14 @@ interface Props {
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {
   const { isOpen, close, size, children, customSize } = props
-  const [forceHide, setForceHide] = useState(true)
 
-  useEffect(() => {
-    if (isOpen) {
-      setForceHide(false)
-    }
-  }, [isOpen])
+  // Continue showing children during the close transition.
+  const visibleChildren = isOpen ? children : <></>
+  const displayChildren = useDelayContentChange(
+    visibleChildren,
+    !isOpen,
+    SLIDE_TRANSITION_MS
+  )
 
   let menuHeight = "536px"
   if (size === "large") {
@@ -33,7 +37,6 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
       className={classNames("slide_up_menu", {
         large: size === "large",
         closed: !isOpen,
-        force_hide: forceHide,
       })}
     >
       <button
@@ -42,7 +45,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         onClick={close}
         aria-label="Close menu"
       />
-      {isOpen ? children : <></>}
+      {displayChildren}
       <style jsx>
         {`
           .slide_up_menu {
@@ -58,7 +61,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             bottom: 0px;
             z-index: 999;
             transform: translateY(0); /* open by default */
-            transition: transform cubic-bezier(0.19, 1, 0.22, 1) 0.445s;
+            opacity: 1;
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
+              ${SLIDE_TRANSITION_MS}ms;
             padding-top: 24px;
             box-sizing: border-box;
           }
@@ -83,8 +88,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           }
           .closed {
             transform: translateY(${menuHeight});
-          }
-          .force_hide {
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
+                ${SLIDE_TRANSITION_MS}ms,
+              // Drop opacity all at once at the end.
+              opacity 0ms ${SLIDE_TRANSITION_MS}ms;
             opacity: 0;
             pointer-events: none;
           }
