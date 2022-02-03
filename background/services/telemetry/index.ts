@@ -2,6 +2,7 @@ import { RootState } from "../../redux-slices"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import logger from "../../lib/logger"
+import { encodeJSON } from "../../lib/utils"
 
 /**
  * The TelemetryService is responsible for tracking usage statistics in Tally.
@@ -27,7 +28,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     super({
       storageUsage: {
         schedule: {
-          periodInMinutes: 0.1,
+          periodInMinutes: 60,
         },
         handler: () => this.checkStorageUsage(),
         runAtStart: true,
@@ -40,11 +41,33 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
   }
 
   async checkStorageUsage(): Promise<void> {
-    logger.log(`Extension storage usage: `, await navigator.storage.estimate())
+    const storageUsage = await navigator.storage.estimate()
+    const output = [
+      "Extension storage quota:",
+      TelemetryService.formatBytes(storageUsage.quota),
+      "\nIndexedDB usage:", // This is supposed to be formatted more nicely, but prettier made me do this
+      TelemetryService.formatBytes(storageUsage.usage),
+    ]
 
     if (this.store) {
       const state = this.store.getState()
-      logger.log("Redux state: ", state)
+      output.push(
+        "\nRedux state:",
+        TelemetryService.formatBytes(encodeJSON(state).length)
+      )
     }
+
+    logger.log(...output)
+  }
+
+  private static formatBytes(bytes: number | undefined) {
+    const magnitude = ["Bytes", "KB", "MB", "GB", "TB"]
+
+    if (bytes) {
+      const order = Math.floor(Math.log(bytes) / Math.log(1024))
+      return `${Math.round(bytes / 1024 ** order)} ${magnitude[order]}`
+    }
+
+    return "0 Bytes"
   }
 }
