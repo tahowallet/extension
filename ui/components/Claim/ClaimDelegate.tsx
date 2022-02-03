@@ -44,8 +44,16 @@ export default function ClaimDelegate(props: {
                     }}
                   >
                     <div className="delegate">
-                      <input type="radio" name="delegate" className="radio" />
-                      <div className="delegate_details">
+                      <input
+                        type="radio"
+                        name="delegate"
+                        id={delegate.ensName}
+                        className="radio"
+                      />
+                      <label
+                        className="delegate_details"
+                        htmlFor={delegate.ensName}
+                      >
                         <div className="icon" />
                         <div className="delegate_info">
                           <div className="name">{delegate.ensName}</div>
@@ -64,7 +72,7 @@ export default function ClaimDelegate(props: {
                             </SharedButton>
                           </div>
                         </div>
-                      </div>
+                      </label>
                     </div>
                   </button>
                 </li>
@@ -115,7 +123,7 @@ export default function ClaimDelegate(props: {
             padding-top: 20px;
           }
           .delegate_details {
-            display: flex;
+            display: contents;
             align-items: center;
             width: 100%;
           }
