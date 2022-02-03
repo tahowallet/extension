@@ -6,13 +6,11 @@ export default function SignTransactionLedgerNotConnected(): ReactElement {
     <SignTransactionSlideUpContentLayout
       title="Connect to Ledger"
       helpMessage="Take the following steps:"
-      steps={
-        <>
-          <li>Plug in Ledger</li>
-          <li>Enter PIN to unlock</li>
-          <li>Open Ethereum app</li>
-        </>
-      }
+      steps={[
+        <>Plug in Ledger</>,
+        <>Enter PIN to unlock</>,
+        <>Open Ethereum app</>,
+      ]}
     />
   )
 }

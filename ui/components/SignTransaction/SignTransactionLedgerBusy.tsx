@@ -6,12 +6,7 @@ export default function SignTransactionLedgerBusy(): ReactElement {
     <SignTransactionSlideUpContentLayout
       title="Ledger is busy"
       helpMessage="Looks like your Ledger has another signature in progress."
-      steps={
-        <>
-          <li>Accept or Reject transaction on device</li>
-          <li>Refresh page</li>
-        </>
-      }
+      steps={[<>Accept or Reject transaction on device</>, <>Refresh page</>]}
     />
   )
 }

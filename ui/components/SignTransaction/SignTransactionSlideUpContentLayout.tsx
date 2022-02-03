@@ -8,15 +8,18 @@ export default function SignTransactionSlideUpContentLayout({
 }: {
   title: ReactNode
   helpMessage: ReactNode
-  /** Must be a sequence of `<li>` elements. */
-  steps: ReactNode
+  steps: ReactNode[]
 }): ReactElement {
   return (
     <div className="container">
       <div className="title">{title}</div>
       <div className="help">
         <div className="message">{helpMessage}</div>
-        <ol className="steps">{steps}</ol>
+        <ol className="steps">
+          {steps.map((step) => (
+            <li>{step}</li>
+          ))}
+        </ol>
       </div>
       <div className="footer_actions">
         <SharedButton
@@ -63,14 +66,14 @@ export default function SignTransactionSlideUpContentLayout({
           list-style: none;
           counter-reset: step;
         }
-        .steps > :global(li) {
+        .steps > li {
           display: flex;
           align-items: center;
           font-size: 18px;
           font-weight: 500;
           line-height: 24px;
         }
-        .steps > :global(li::before) {
+        .steps > li::before {
           content: counter(step);
           counter-increment: step;
           display: inline-block;
@@ -84,7 +87,6 @@ export default function SignTransactionSlideUpContentLayout({
           line-height: 2.5rem;
           vertical-align: middle;
           text-align: center;
-          font-style: normal;
           font-weight: 600;
           font-size: 18px;
         }
