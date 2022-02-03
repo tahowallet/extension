@@ -1,30 +1,25 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
 import {
   EstimatedFeesPerGas,
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   NetworkFeeTypeChosen,
+  selectLastGasEstimatesRefreshTime,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { formatEther } from "@ethersproject/units"
-import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/networkFees"
-import { selectMainCurrencyUnitPrice } from "@tallyho/tally-background/redux-slices/selectors"
-import React, {
-  ReactElement,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from "react"
+import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
+import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
+import { ETH } from "@tallyho/tally-background/constants"
+import { PricePoint } from "@tallyho/tally-background/assets"
+import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
-  gasLimit: string
-  setCustomGasLimit: React.Dispatch<SetStateAction<string>>
-  onSelectNetworkSetting: ({ feeType, gasLimit }: NetworkFeeSetting) => void
-  selectedFeeType: string
+  networkSettings: NetworkFeeSettings
+  onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
 }
 
 type GasOption = {
@@ -39,87 +34,129 @@ type GasOption = {
   maxPriorityFeePerGas: bigint
 }
 
+// Map a BlockEstimate from the backend to a GasOption for the UI.
+const gasOptionFromEstimate = (
+  mainCurrencyPricePoint: PricePoint | undefined,
+  baseFeePerGas: bigint,
+  gasLimit: string,
+  { confidence, price, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
+): GasOption => {
+  const feeOptionData: {
+    [confidence: number]: NetworkFeeTypeChosen
+  } = {
+    70: NetworkFeeTypeChosen.Regular,
+    95: NetworkFeeTypeChosen.Express,
+    99: NetworkFeeTypeChosen.Instant,
+  }
+
+  const feeAssetAmount =
+    typeof mainCurrencyPricePoint !== "undefined"
+      ? enrichAssetAmountWithMainCurrencyValues(
+          {
+            asset: ETH,
+            amount:
+              (maxFeePerGas + maxPriorityFeePerGas) *
+              (gasLimit ? BigInt(gasLimit) : 21000n),
+          },
+          mainCurrencyPricePoint,
+          2
+        )
+      : undefined
+
+  return {
+    confidence: `${confidence}`,
+    type: feeOptionData[confidence],
+    estimatedGwei: weiToGwei(
+      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
+    ).split(".")[0],
+    maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
+    dollarValue: feeAssetAmount?.localizedMainCurrencyAmount ?? "N/A",
+    estimatedFeePerGas:
+      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
+    price,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+  }
+}
+
+function EstimateRefreshCountdownDivider() {
+  const [timeRemaining, setTimeRemaining] = useState(0)
+  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
+
+  const getSecondsTillGasUpdate = useCallback(() => {
+    const now = Date.now()
+    setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
+  }, [gasTime])
+
+  useEffect(() => {
+    getSecondsTillGasUpdate()
+    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
+    return () => {
+      clearTimeout(interval)
+    }
+  })
+
+  return (
+    <div className="divider">
+      <div className="divider-background" />
+      <div
+        className="divider-cover"
+        style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
+      />
+    </div>
+  )
+}
+
 export default function NetworkSettingsSelect({
+  // FIXME Map this to GasOption[] in a selector.
   estimatedFeesPerGas,
-  gasLimit,
-  setCustomGasLimit,
-  onSelectNetworkSetting,
-  selectedFeeType,
+  networkSettings,
+  onNetworkSettingsChange,
 }: NetworkSettingsSelectProps): ReactElement {
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
-  const [currentlySelectedType, setCurrentlySelectedType] =
-    useState(selectedFeeType)
+  const [currentlySelectedType, setCurrentlySelectedType] = useState(
+    networkSettings.feeType
+  )
 
-  const ethUnitPrice = useBackgroundSelector(selectMainCurrencyUnitPrice)
+  const mainCurrencyPricePoint = useBackgroundSelector(
+    selectMainCurrencyPricePoint
+  )
 
   // Select activeFeeIndex to regular option once gasOptions load
   useEffect(() => {
     if (gasOptions.length > 0) {
-      onSelectNetworkSetting({
+      onNetworkSettingsChange({
         feeType: gasOptions[activeFeeIndex].type,
         values: {
           maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
           maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
         },
-        gasLimit,
+        gasLimit: networkSettings.gasLimit,
       })
     }
-  }, [gasOptions, activeFeeIndex, onSelectNetworkSetting, gasLimit])
+  }, [
+    gasOptions,
+    activeFeeIndex,
+    onNetworkSettingsChange,
+    networkSettings.gasLimit,
+  ])
 
   const handleSelectGasOption = (index: number) => {
     setActiveFeeIndex(index)
     setCurrentlySelectedType(gasOptions[index].type)
-    onSelectNetworkSetting({
+    onNetworkSettingsChange({
       feeType: gasOptions[index].type,
       values: {
         maxFeePerGas: gasOptions[index].maxFeePerGas,
         maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
       },
-      gasLimit,
+      gasLimit: networkSettings.gasLimit,
     })
   }
 
   const updateGasOptions = useCallback(() => {
-    const formatBlockEstimate = (option: BlockEstimate) => {
-      const { confidence } = option
-      const baseFee = estimatedFeesPerGas?.baseFeePerGas || 0n
-      const feeOptionData: {
-        type: { [key: number]: NetworkFeeTypeChosen }
-      } = {
-        type: {
-          70: NetworkFeeTypeChosen.Regular,
-          95: NetworkFeeTypeChosen.Express,
-          99: NetworkFeeTypeChosen.Instant,
-        },
-      }
-
-      const ethAmount = formatEther(
-        (option.maxFeePerGas + option.maxPriorityFeePerGas) *
-          (gasLimit ? BigInt(parseInt(gasLimit, 10)) : 21000n)
-      )
-
-      const feeFiatPrice =
-        ethUnitPrice !== undefined
-          ? `${(+ethAmount * ethUnitPrice).toFixed(2)}`
-          : "N/A"
-
-      return {
-        confidence: `${confidence}`,
-        type: feeOptionData.type[confidence],
-        estimatedGwei: weiToGwei(
-          (baseFee * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
-        ).split(".")[0],
-        maxGwei: weiToGwei(option.maxFeePerGas).split(".")[0],
-        dollarValue: feeFiatPrice,
-        price: option.price,
-        estimatedFeePerGas:
-          (baseFee * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
-        maxFeePerGas: option.maxFeePerGas,
-        maxPriorityFeePerGas: option.maxPriorityFeePerGas,
-      }
-    }
-    if (estimatedFeesPerGas) {
+    if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
       if (
         typeof instant !== "undefined" &&
@@ -129,7 +166,12 @@ export default function NetworkSettingsSelect({
         const basePrices = [regular, express, instant]
 
         const updatedGasOptions = basePrices.map((option) =>
-          formatBlockEstimate(option)
+          gasOptionFromEstimate(
+            mainCurrencyPricePoint,
+            estimatedFeesPerGas.baseFeePerGas,
+            networkSettings.gasLimit,
+            option
+          )
         )
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
           (el) => el.type === currentlySelectedType
@@ -141,14 +183,34 @@ export default function NetworkSettingsSelect({
         setActiveFeeIndex(currentlySelectedFeeIndex)
       }
     }
-  }, [estimatedFeesPerGas, gasLimit, ethUnitPrice, currentlySelectedType])
+  }, [
+    estimatedFeesPerGas,
+    mainCurrencyPricePoint,
+    networkSettings.gasLimit,
+    currentlySelectedType,
+  ])
 
   useEffect(() => {
     updateGasOptions()
   }, [updateGasOptions])
 
+  const setGasLimit = (newGasLimit: string) => {
+    // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
+    // FIXME entry as possible. Note that we also need to track when the user
+    // FIXME doesn't change the gas limit as that generally signals preferring
+    // FIXME the wallet's gas estimates.
+    onNetworkSettingsChange({
+      ...networkSettings,
+      gasLimit: newGasLimit,
+    })
+  }
+
   return (
-    <div>
+    <div className="fees standard_width">
+      <div className="title">Network Fees</div>
+
+      <EstimateRefreshCountdownDivider />
+
       {gasOptions.map((option, i) => {
         return (
           <button
@@ -172,8 +234,8 @@ export default function NetworkSettingsSelect({
         <div className="limit">
           <SharedInput
             id="gasLimit"
-            value={gasLimit}
-            onChange={(val) => setCustomGasLimit(val)}
+            value={networkSettings.gasLimit}
+            onChange={setGasLimit}
             defaultValue="21000"
             label="Gas limit"
             type="number"
