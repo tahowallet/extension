@@ -11,7 +11,7 @@ export default function TransactionDetailAddressValue({
       <SharedButton
         type="tertiaryGray"
         size="small"
-        icon="external"
+        icon="external_small"
         iconSize="small"
         iconPosition="right"
         onClick={() => {
