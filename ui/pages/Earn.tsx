@@ -11,7 +11,7 @@ function EarnCard() {
           <SharedAssetIcon size="large" />
         </div>
         <span className="token_name">ETH</span>
-        <span className="apy_info_label">Current APY</span>
+        <span className="apy_info_label">Estimated APR</span>
         <span className="apy_percent">250%</span>
         <div className="divider" />
         <div className="info">
@@ -55,7 +55,6 @@ function EarnCard() {
             gap: 4px;
             justify-content: center;
             align-items: center;
-            text-decoration: none;
             color: white;
           }
           .rewards {
@@ -92,7 +91,7 @@ function EarnCard() {
             margin-bottom: -4px;
           }
           .apy_percent {
-            color: #22c480;
+            color: var(--success);
             font-family: "Quincy CF";
             font-size: 36px;
             font-weight: 500;
@@ -138,7 +137,15 @@ export default function Earn(): ReactElement {
       />
       {panelNumber === 0 ? (
         <section className="standard_width">
-          <div className="cards_wrap">{Array(4).fill("").map(EarnCard)}</div>
+          <ul className="cards_wrap">
+            {Array(4)
+              .fill("")
+              .map(() => (
+                <li>
+                  <EarnCard />
+                </li>
+              ))}
+          </ul>
         </section>
       ) : (
         <></>
