@@ -33,9 +33,7 @@ export default function ClaimReview({
         <div className="option">
           <div className="left">
             {selectedDelegate?.ensName}
-            <div className="address">
-              {selectedDelegate?.address.slice(0, 12)}...
-            </div>
+            <div className="address">{selectedDelegate?.truncatedAddress}</div>
           </div>
           <div className="right">
             <SharedButton

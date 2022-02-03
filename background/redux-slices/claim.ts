@@ -4,6 +4,7 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 // import balances from "../constants/balances"
 import BalanceTree from "../lib/balance-tree"
 import { createBackgroundAsyncThunk } from "./utils"
+import { truncateAddress } from "../lib/utils"
 // import { getContract } from "./utils/contract-utils"
 import * as DAOs from "../static/DAOs.json"
 import * as delegates from "../static/delegates.json"
@@ -30,6 +31,7 @@ export interface Delegate {
   ensName: string
   applicationLink: string
   avatar?: string
+  truncatedAddress?: string
 }
 
 interface ClaimingState {
@@ -145,3 +147,5 @@ const claimingSlice = createSlice({
 export const { selectDAO, selectDelegate } = claimingSlice.actions
 
 export default claimingSlice.reducer
+        truncatedAddress: truncateAddress(
+          claimState?.selectedDelegate?.address ?? ""
