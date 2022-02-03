@@ -41,7 +41,7 @@ export default function SignTransactionInfoProvider({
   location,
 }: {
   children: (info: SignTransactionInfo) => ReactElement
-  location: { key: string; pathname: string; state?: SignLocationState }
+  location: { state?: SignLocationState }
 }): ReactElement {
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 

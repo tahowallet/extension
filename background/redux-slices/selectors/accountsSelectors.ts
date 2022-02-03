@@ -13,8 +13,6 @@ import {
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
-  FungibleAssetAmount,
-  UnitPricePoint,
   unitPricePointForPricePoint,
 } from "../../assets"
 import { selectCurrentAccount } from "./uiSelectors"
@@ -144,26 +142,11 @@ export const selectAccountAndTimestampedActivities = createSelector(
   }
 )
 
-export const selectMainCurrencyUnitPrice = createSelector(
+export const selectMainCurrencyPricePoint = createSelector(
   getAssetsState,
   (assets) => {
-    const pricePoint = selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
-    if (pricePoint) {
-      const {
-        unitPrice,
-      }:
-        | (UnitPricePoint & { unitPrice: FungibleAssetAmount })
-        | { unitPrice: undefined } = unitPricePointForPricePoint(
-        pricePoint
-      ) ?? {
-        unitPrice: undefined,
-      }
-      if (unitPrice) {
-        const decimalValue = assetAmountToDesiredDecimals(unitPrice, 2)
-        return decimalValue
-      }
-    }
-    return undefined
+    // TODO Support multi-network base assets.
+    return selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
   }
 )
 

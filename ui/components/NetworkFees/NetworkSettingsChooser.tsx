@@ -1,88 +1,47 @@
 import {
   EstimatedFeesPerGas,
-  NetworkFeeSetting,
-  NetworkFeeTypeChosen,
-  selectFeeType,
-  selectLastGasEstimatesRefreshTime,
+  NetworkFeeSettings,
+  selectDefaultNetworkFeeSettings,
+  setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { useBackgroundSelector } from "../../hooks"
+import React, { ReactElement, useState } from "react"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 
 interface NetworkSettingsChooserProps {
-  networkSettings: {
-    estimatedFeesPerGas: EstimatedFeesPerGas | undefined
-    gasLimit: string
-  }
-  onNetworkSettingsSave: (setting: NetworkFeeSetting) => void
-  visible: boolean
+  estimatedFeesPerGas: EstimatedFeesPerGas | undefined
+  onNetworkSettingsSave: (setting: NetworkFeeSettings) => void
 }
 
 export default function NetworkSettingsChooser({
-  networkSettings: { estimatedFeesPerGas, gasLimit },
+  estimatedFeesPerGas,
   onNetworkSettingsSave,
-  visible,
 }: NetworkSettingsChooserProps): ReactElement {
-  const [timeRemaining, setTimeRemaining] = useState(0)
-  const [customGasLimit, setCustomGasLimit] = useState(gasLimit)
-  const [selectedSetting, setSelectedSetting] = useState({
-    feeType: NetworkFeeTypeChosen.Regular,
-    gasLimit: "",
-    values: {
-      maxFeePerGas: 0n,
-      maxPriorityFeePerGas: 0n,
-    },
-  })
-  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
+  const [networkSettings, setNetworkSettings] = useState(
+    useBackgroundSelector(selectDefaultNetworkFeeSettings)
+  )
+  const dispatch = useBackgroundDispatch()
 
-  const saveUserGasChoice = () => {
-    onNetworkSettingsSave(selectedSetting)
+  const saveNetworkSettings = () => {
+    dispatch(setFeeType(networkSettings.feeType))
+
+    onNetworkSettingsSave(networkSettings)
   }
-
-  const getSecondsTillGasUpdate = useCallback(() => {
-    const now = new Date().getTime()
-    setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
-  }, [gasTime])
-
-  useEffect(() => {
-    getSecondsTillGasUpdate()
-    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
-    return () => {
-      clearTimeout(interval)
-    }
-  })
 
   return (
     <>
       <div className="wrapper">
-        <div className="fees standard_width">
-          <div className="title">Network Fees</div>
-          <div className="divider">
-            <div className="divider-background" />
-            <div
-              className="divider-cover"
-              style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
-            />
-          </div>
-          {visible ? (
-            <NetworkSettingsSelect
-              estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={customGasLimit}
-              setCustomGasLimit={setCustomGasLimit}
-              onSelectNetworkSetting={setSelectedSetting}
-              selectedFeeType={selectedFeeType}
-            />
-          ) : (
-            <></>
-          )}
-        </div>
+        <NetworkSettingsSelect
+          estimatedFeesPerGas={estimatedFeesPerGas}
+          networkSettings={networkSettings}
+          onNetworkSettingsChange={setNetworkSettings}
+        />
         <div className="confirm">
           <SharedButton
             size="medium"
             type="primary"
-            onClick={saveUserGasChoice}
+            onClick={saveNetworkSettings}
           >
             Save
           </SharedButton>
