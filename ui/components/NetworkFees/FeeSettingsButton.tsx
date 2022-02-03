@@ -1,14 +1,5 @@
 import React, { ReactElement } from "react"
-import {
-  selectEstimatedFeesPerGas,
-  selectFeeType,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ESTIMATED_FEE_MULTIPLIERS_BY_TYPE } from "@tallyho/tally-background/constants/networkFees"
-import {
-  truncateDecimalAmount,
-  weiToGwei,
-} from "@tallyho/tally-background/lib/utils"
-import { useBackgroundSelector } from "../../hooks"
+import FeeSettingsText from "./FeeSettingsText"
 
 interface FeeSettingsButtonProps {
   onClick: () => void
@@ -17,29 +8,9 @@ interface FeeSettingsButtonProps {
 export default function FeeSettingsButton({
   onClick,
 }: FeeSettingsButtonProps): ReactElement {
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
-
-  const estimatedGweiAmount =
-    typeof estimatedFeesPerGas !== "undefined" &&
-    typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(
-          weiToGwei(
-            (estimatedFeesPerGas?.baseFeePerGas *
-              ESTIMATED_FEE_MULTIPLIERS_BY_TYPE[selectedFeeType]) /
-              10n
-          ),
-          0
-        )
-      : ""
-
   return (
     <button className="settings" type="button" onClick={onClick}>
-      <div>
-        {typeof estimatedFeesPerGas !== "undefined"
-          ? `~${estimatedGweiAmount} Gwei`
-          : "Unknown"}
-      </div>
+      <FeeSettingsText />
       <img className="settings_image" src="./images/cog@2x.png" alt="" />
       <style jsx>
         {`
