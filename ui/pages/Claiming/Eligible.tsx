@@ -74,7 +74,7 @@ export default function Eligible(): ReactElement {
       <div className="eligible">
         <div
           className="steps-container"
-          style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
+          style={{ marginLeft: -384 * (step - 1) }}
         >
           <ClaimIntro claimAmount={claimAmount} />
           <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
@@ -136,6 +136,7 @@ export default function Eligible(): ReactElement {
             flex-grow: 1;
             width: 352px;
             margin: 0 auto;
+            overflow-x: hidden;
           }
           footer {
             position: fixed;
