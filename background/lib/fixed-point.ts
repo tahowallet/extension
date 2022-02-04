@@ -170,17 +170,33 @@ export function parseToFixedPointNumber(
   }
 }
 
-export function fixedPointNumberToString({
-  amount,
-  decimals,
-}: FixedPointNumber): string {
+/**
+ * Converts a fixed point number with a bigint amount and a decimals field
+ * indicating the orders of magnitude in `amount` behind the decimal point into
+ * a string in US decimal format (no thousands separators, . for the decimal
+ * separator).
+ *
+ * Note that for UI usage, it is _usually_ a better strategy to use
+ * ``fromFixedPoint`` to convert to a JavaScript number and then use an
+ * Intl.NumberFormat to format the number unless that is not an available
+ * option or precision is critical. This function currently does _not_ respect
+ * localization settings.
+ */
+export function fixedPointNumberToString(
+  { amount, decimals }: FixedPointNumber,
+  trimTrailingZeros = true
+): string {
   const undecimaledAmount = amount.toString()
   const preDecimalLength = undecimaledAmount.length - decimals
 
   const preDecimalCharacters = undecimaledAmount.substring(0, preDecimalLength)
   const postDecimalCharacters = undecimaledAmount.substring(preDecimalLength)
 
-  return `${preDecimalCharacters}.${postDecimalCharacters}`
+  return `${preDecimalCharacters}.${
+    trimTrailingZeros
+      ? postDecimalCharacters.replace(/0*$/, "")
+      : postDecimalCharacters
+  }`
 }
 
 /**
