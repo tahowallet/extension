@@ -528,8 +528,8 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async connectLedger(): Promise<string> {
-    return this.ledgerService.connectLedger()
+  async connectLedger(): Promise<string | null> {
+    return this.ledgerService.refreshConnectedLedger()
   }
 
   async connectChainService(): Promise<void> {

@@ -126,7 +126,7 @@ function signatureToString(signature: {
  * - xxx
  */
 export default class LedgerService extends BaseService<Events> {
-  #currentLedgerId: string | undefined = undefined
+  #currentLedgerId: string | null = null
 
   transport: Transport | undefined = undefined
 
@@ -188,11 +188,13 @@ export default class LedgerService extends BaseService<Events> {
       type: LedgerType.LEDGER_NANO_S,
     })
 
-    this.#currentLedgerId = undefined
+    this.#currentLedgerId = null
   }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
+
+    this.refreshConnectedLedger()
 
     navigator.usb.addEventListener("connect", this.#handleUSBConnect)
     navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
@@ -205,17 +207,14 @@ export default class LedgerService extends BaseService<Events> {
     navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
   }
 
-  async connectLedger(): Promise<string> {
+  async refreshConnectedLedger(): Promise<string | null> {
     const devArray = await navigator.usb.getDevices()
 
-    if (devArray.length === 0) {
-      throw new Error("No paired device when the Ledger is connected!?")
+    if (devArray.length !== 0) {
+      await this.onConnection(devArray[0].productId)
     }
 
-    await this.onConnection(devArray[0].productId)
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.#currentLedgerId!
+    return this.#currentLedgerId
   }
 
   async deriveAddress(accountID: string): Promise<HexString> {

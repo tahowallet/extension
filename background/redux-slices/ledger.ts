@@ -186,9 +186,12 @@ export const connectLedger = createBackgroundAsyncThunk(
   "ledger/connectLedger",
   async (unused, { dispatch, extra: { main } }) => {
     const deviceID = await main.connectLedger()
+    if (!deviceID) {
+      return
+    }
+
     dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
     dispatch(ledgerSlice.actions.setCurrentDevice(deviceID))
-    return { deviceID }
   }
 )
 
