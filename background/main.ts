@@ -16,6 +16,7 @@ import {
   NameService,
   PreferenceService,
   ProviderBridgeService,
+  TelemetryService,
   ServiceCreatorFunction,
   LedgerService,
   SigningService,
@@ -32,7 +33,6 @@ import {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
-  emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
@@ -172,7 +172,7 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (preloadedState = {}) =>
+const initializeStore = (preloadedState = {}, main: Main) =>
   configureStore({
     preloadedState,
     reducer: rootReducer,
@@ -182,6 +182,7 @@ const initializeStore = (preloadedState = {}) =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
+        thunk: { extraArgument: { main } },
       })
 
       // It might be tempting to use an array with `...` destructuring, but
@@ -246,6 +247,9 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+
+    const telemetryService = TelemetryService.create()
+
     const ledgerService = HIDE_IMPORT_LEDGER
       ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
       : LedgerService.create()
@@ -289,6 +293,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
+      await telemetryService,
       await ledgerService,
       await signingService
     )
@@ -338,6 +343,11 @@ export default class Main extends BaseService<never> {
      * knowledge.
      */
     private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the telemetry service, which keeps track of extension
+     * storage usage and (eventually) other statistics.
+     */
+    private telemetryService: TelemetryService,
 
     /**
      * A promise to the Ledger service, handling the communication
@@ -360,7 +370,7 @@ export default class Main extends BaseService<never> {
     })
 
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(savedReduxState)
+    this.store = initializeStore(savedReduxState, this)
 
     wrapStore(this.store, {
       serializer: encodeJSON,
@@ -404,6 +414,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.telemetryService.startService(),
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -424,6 +435,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.telemetryService.stopService(),
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -432,7 +444,6 @@ export default class Main extends BaseService<never> {
     }
 
     await Promise.all(servicesToBeStopped)
-
     await super.internalStopService()
   }
 
@@ -444,11 +455,42 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectTelemetryService()
+
     if (!HIDE_IMPORT_LEDGER) {
       this.connectLedgerService()
       this.connectSigningService()
     }
+
     await this.connectChainService()
+  }
+
+  async addAccount(addressNetwork: AddressNetwork): Promise<void> {
+    await this.chainService.addAccountToTrack(addressNetwork)
+  }
+
+  async addAccountByName(nameNetwork: NameNetwork): Promise<void> {
+    try {
+      const address = await this.nameService.lookUpEthereumAddress(
+        nameNetwork.name
+      )
+
+      if (address) {
+        const addressNetwork = {
+          address,
+          network: nameNetwork.network,
+        }
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(address))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      } else {
+        throw new Error("Name not found")
+      }
+    } catch (error) {
+      throw new Error(
+        `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
+      )
+    }
   }
 
   async connectChainService(): Promise<void> {
@@ -461,36 +503,6 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
-    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
-      await this.chainService.addAccountToTrack(addressNetwork)
-    })
-
-    accountSliceEmitter.on(
-      "addAccountByName",
-      async (nameNetwork: NameNetwork) => {
-        try {
-          const address = await this.nameService.lookUpEthereumAddress(
-            nameNetwork.name
-          )
-
-          if (address) {
-            const addressNetwork = {
-              address,
-              network: nameNetwork.network,
-            }
-            await this.chainService.addAccountToTrack(addressNetwork)
-            this.store.dispatch(loadAccount(address))
-            this.store.dispatch(setNewSelectedAccount(addressNetwork))
-          } else {
-            throw new Error("Name not found")
-          }
-        } catch (error) {
-          throw new Error(
-            `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
-          )
-        }
-      }
-    )
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       const { transactionRequest: populatedRequest, gasEstimationError } =
@@ -920,5 +932,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+  }
+
+  connectTelemetryService(): void {
+    // Pass the redux store to the telemetry service so we can analyze its size
+    this.telemetryService.connectReduxStore(this.store)
   }
 }
