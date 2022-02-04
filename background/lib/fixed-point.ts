@@ -1,3 +1,5 @@
+import logger from "./logger"
+
 /**
  * A fixed point number carrying an amount and the number of decimals it
  * represents.
@@ -138,15 +140,33 @@ export function toFixedPointNumber(
  */
 export function parseToFixedPointNumber(
   floatingPointString: string
-): FixedPointNumber {
-  const noThousands = floatingPointString.replace(
-    /^[^0-9]*([0-9,]+)\.([0-9]+)$/,
-    "$1.$2"
-  )
-  const [whole, decimals] = noThousands.split(".")
-  return {
-    amount: BigInt(whole + decimals),
-    decimals: decimals.length,
+): FixedPointNumber | undefined {
+  if (!floatingPointString.match(/^[^0-9]*([0-9,]+)(?:\.([0-9]+))?$/)) {
+    return undefined
+  }
+
+  const [whole, decimals, ...extra] = floatingPointString.split(".")
+
+  // Only one `.` supported.
+  if (extra.length > 0) {
+    return undefined
+  }
+
+  const noThousandsSeparatorWhole = whole.replace(",", "")
+  const setDecimals = decimals ?? ""
+
+  try {
+    return {
+      amount: BigInt([noThousandsSeparatorWhole, setDecimals].join("")),
+      decimals: setDecimals.length,
+    }
+  } catch (error) {
+    // FIXME should be debug once logger.debug lands
+    logger.info(
+      `Error parsing ${floatingPointString} to fixed-point number:`,
+      error
+    )
+    return undefined
   }
 }
 
