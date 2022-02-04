@@ -84,6 +84,16 @@ const ledgerSlice = createSlice({
       if (!(deviceID in immerState.devices)) return
       immerState.currentDeviceID = deviceID
     },
+    setDeviceConnectionStatus: (
+      immerState,
+      {
+        payload: { deviceID, status },
+      }: { payload: { deviceID: string; status: LedgerConnectionStatus } }
+    ) => {
+      const device = immerState.devices[deviceID]
+      if (!device) return
+      device.status = status
+    },
     addLedgerAccount: (
       immerState,
       {
@@ -156,7 +166,8 @@ const ledgerSlice = createSlice({
   },
 })
 
-export const { resetLedgerState, addLedgerAccount } = ledgerSlice.actions
+export const { resetLedgerState, setDeviceConnectionStatus, addLedgerAccount } =
+  ledgerSlice.actions
 
 export default ledgerSlice.reducer
 

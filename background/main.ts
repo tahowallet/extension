@@ -74,7 +74,10 @@ import {
   SignTypedDataRequest,
   typedDataRequest,
 } from "./redux-slices/signing"
-import { resetLedgerState } from "./redux-slices/ledger"
+import {
+  resetLedgerState,
+  setDeviceConnectionStatus,
+} from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
 
@@ -720,6 +723,18 @@ export default class Main extends BaseService<never> {
 
   async connectLedgerService(): Promise<void> {
     this.store.dispatch(resetLedgerState())
+
+    this.ledgerService.emitter.on("connected", ({ id }) => {
+      this.store.dispatch(
+        setDeviceConnectionStatus({ deviceID: id, status: "available" })
+      )
+    })
+
+    this.ledgerService.emitter.on("disconnected", ({ id }) => {
+      this.store.dispatch(
+        setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
+      )
+    })
   }
 
   async connectKeyringService(): Promise<void> {
