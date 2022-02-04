@@ -1,7 +1,9 @@
 import React, { ReactElement, useState } from "react"
-import { selectDelegate } from "@tallyho/tally-background/redux-slices/claim"
 import {
   chooseDelegate,
+  Delegate,
+} from "@tallyho/tally-background/redux-slices/claim"
+
 import { useBackgroundDispatch } from "../../hooks"
 
 import ClaimAmountBanner from "./ClaimAmountBanner"
@@ -11,7 +13,7 @@ import SharedInput from "../Shared/SharedInput"
 
 // TODO: replace any
 export default function ClaimDelegate(props: {
-  delegates: any[]
+  delegates: Delegate[]
   claimAmount: number
 }): ReactElement {
   const { delegates, claimAmount } = props

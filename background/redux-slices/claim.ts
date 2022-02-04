@@ -22,6 +22,12 @@ export interface Delegate {
   truncatedAddress?: string
 }
 
+export interface Eligibles {
+  address: string
+  earnings: BigInt
+  reasons: string
+}
+
 interface ClaimingState {
   status: string
   claimed: {
@@ -29,11 +35,7 @@ interface ClaimingState {
   }
   distributor: any
   delegates: Delegate[]
-  eligibles: {
-    address: string
-    earnings: string
-    reasons: string
-  }[]
+  eligibles: Eligibles[]
   DAOs: DAO[]
   selectedDAO: DAO | null
   selectedDelegate: Delegate | null

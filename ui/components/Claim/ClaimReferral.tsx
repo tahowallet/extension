@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from "react"
 import {
   chooseDAO,
   selectClaimSelections,
+  DAO,
 } from "@tallyho/tally-background/redux-slices/claim"
 import classNames from "classnames"
 import ClaimAmountBanner from "./ClaimAmountBanner"
@@ -68,7 +69,7 @@ function DAOButton(props: {
 }
 
 export default function ClaimReferral(props: {
-  DAOs: any[]
+  DAOs: DAO[]
   claimAmount: number
   bonusPercent: number
 }): ReactElement {
