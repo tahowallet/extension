@@ -7,6 +7,10 @@ import {
   createAsyncThunk,
 } from "@reduxjs/toolkit"
 import logger from "../lib/logger"
+// FIXME: this utility file should not depend on actual services.
+// Creating a properly typed version of `createBackgroundAsyncThunk`
+// elsewhere has proven quite hard, so we are hardwiring typing here.
+import type Main from "../main"
 
 // Below, we use `any` to deal with the fact that allAliases is a heterogeneous
 // collection of async thunk actions whose payload types have little in common
@@ -104,7 +108,7 @@ export function createBackgroundAsyncThunk<
   TypePrefix extends string,
   Returned,
   ThunkArg = void,
-  ThunkApiConfig = Record<string, unknown>
+  ThunkApiConfig = { extra: { main: Main } }
 >(
   typePrefix: TypePrefix,
   payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, ThunkApiConfig>,

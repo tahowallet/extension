@@ -33,7 +33,6 @@ import {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
-  emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
@@ -173,7 +172,7 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (preloadedState = {}) =>
+const initializeStore = (preloadedState = {}, main: Main) =>
   configureStore({
     preloadedState,
     reducer: rootReducer,
@@ -183,6 +182,7 @@ const initializeStore = (preloadedState = {}) =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
+        thunk: { extraArgument: { main } },
       })
 
       // It might be tempting to use an array with `...` destructuring, but
@@ -370,7 +370,7 @@ export default class Main extends BaseService<never> {
     })
 
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(savedReduxState)
+    this.store = initializeStore(savedReduxState, this)
 
     wrapStore(this.store, {
       serializer: encodeJSON,
@@ -465,6 +465,34 @@ export default class Main extends BaseService<never> {
     await this.connectChainService()
   }
 
+  async addAccount(addressNetwork: AddressNetwork): Promise<void> {
+    await this.chainService.addAccountToTrack(addressNetwork)
+  }
+
+  async addAccountByName(nameNetwork: NameNetwork): Promise<void> {
+    try {
+      const address = await this.nameService.lookUpEthereumAddress(
+        nameNetwork.name
+      )
+
+      if (address) {
+        const addressNetwork = {
+          address,
+          network: nameNetwork.network,
+        }
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(address))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      } else {
+        throw new Error("Name not found")
+      }
+    } catch (error) {
+      throw new Error(
+        `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
+      )
+    }
+  }
+
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
     this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
@@ -475,36 +503,6 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
-    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
-      await this.chainService.addAccountToTrack(addressNetwork)
-    })
-
-    accountSliceEmitter.on(
-      "addAccountByName",
-      async (nameNetwork: NameNetwork) => {
-        try {
-          const address = await this.nameService.lookUpEthereumAddress(
-            nameNetwork.name
-          )
-
-          if (address) {
-            const addressNetwork = {
-              address,
-              network: nameNetwork.network,
-            }
-            await this.chainService.addAccountToTrack(addressNetwork)
-            this.store.dispatch(loadAccount(address))
-            this.store.dispatch(setNewSelectedAccount(addressNetwork))
-          } else {
-            throw new Error("Name not found")
-          }
-        } catch (error) {
-          throw new Error(
-            `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
-          )
-        }
-      }
-    )
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       const { transactionRequest: populatedRequest, gasEstimationError } =
