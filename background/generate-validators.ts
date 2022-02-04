@@ -5,11 +5,7 @@ import { writeFileSync } from "fs"
 import path from "path"
 import { schema } from "@uniswap/token-lists"
 
-import {
-  swapAssetsJTD,
-  swapPriceJTD,
-  swapQuoteJTD,
-} from "./lib/validate/0x-swap"
+import { swapPriceJTD, swapQuoteJTD } from "./lib/validate/0x-swap"
 import {
   alchemyGetAssetTransfersJTD,
   alchemyTokenBalanceJTD,
@@ -26,7 +22,6 @@ const ajvJTD = new AjvJTD({
   .addSchema(alchemyGetAssetTransfersJTD, "isValidAlchemyAssetTransferResponse")
   .addSchema(alchemyTokenBalanceJTD, "isValidAlchemyTokenBalanceResponse")
   .addSchema(alchemyTokenMetadataJTD, "isValidAlchemyTokenMetadataResponse")
-  .addSchema(swapAssetsJTD, "isValidSwapAssetsResponse")
   .addSchema(swapPriceJTD, "isValidSwapPriceResponse")
   .addSchema(swapQuoteJTD, "isValidSwapQuoteResponse")
 
