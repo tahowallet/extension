@@ -14,7 +14,7 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
   return (
     <nav>
       <ul>
-        {panelNames.slice(0, 2).map((name, index) => {
+        {panelNames.slice(0, 3).map((name, index) => {
           return (
             <li key={name}>
               <button
@@ -38,6 +38,9 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
             display: block;
             height: 31px;
             border-bottom: 1px solid var(--green-120);
+          }
+          button {
+            color: var(--green-40);
           }
           ul {
             display: flex;
