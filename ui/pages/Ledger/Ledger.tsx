@@ -1,9 +1,6 @@
-import {
-  connectLedger,
-  ledgerReset,
-} from "@tallyho/tally-background/redux-slices/ledger"
+import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 import BrowserTabContainer from "../../components/BrowserTab/BrowserTabContainer"
@@ -23,9 +20,6 @@ export default function Ledger(): ReactElement {
   const device = deviceID === null ? null : devices[deviceID] ?? null
 
   const dispatch = useBackgroundDispatch()
-  useEffect(() => {
-    dispatch(ledgerReset())
-  }, [dispatch])
 
   return (
     <BrowserTabContainer>
@@ -78,7 +72,6 @@ export default function Ledger(): ReactElement {
           onClose={() => {
             setPhase("0-prepare")
             setDeviceID(null)
-            dispatch(ledgerReset())
           }}
         />
       )}
