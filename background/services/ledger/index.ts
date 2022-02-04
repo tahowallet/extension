@@ -19,6 +19,7 @@ import { getOrCreateDB, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
 import { getEthereumNetwork } from "../../lib/utils"
+import { SigningMethod } from "../../redux-slices/signing"
 
 enum LedgerType {
   UNKNOWN,
@@ -258,8 +259,9 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    address: HexString,
-    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+    transactionRequest: EIP1559TransactionRequest & { nonce: number },
+    deviceID: string,
+    path: string
   ): Promise<SignedEVMTransaction> {
     try {
       if (!this.transport) {
@@ -279,19 +281,24 @@ export default class LedgerService extends BaseService<Events> {
         2
       ) // serialize adds 0x prefix which kills Eth::signTransaction
 
-      const accountData = await this.db.getAccountByAddress(address)
-      if (!accountData) {
-        throw new Error(
-          "Cannot generate signature without stored derivation path!"
-        )
+      const accountData = await this.db.getAccountByAddress(
+        transactionRequest.from
+      )
+
+      if (
+        !accountData ||
+        path !== accountData.path ||
+        deviceID !== accountData.ledgerId
+      ) {
+        throw new Error("Signing method mismatch!")
+      }
+
+      if (deviceID !== this.#currentLedgerId) {
+        throw new Error("Cannot sign on wrong device attached!")
       }
 
       const eth = new Eth(this.transport)
-      const signature = await eth.signTransaction(
-        accountData.path,
-        serializedTx,
-        null
-      )
+      const signature = await eth.signTransaction(path, serializedTx, null)
 
       const alteredSig = {
         r: signature.r,
@@ -350,7 +357,7 @@ export default class LedgerService extends BaseService<Events> {
       logger.error(
         `Error encountered! ledgerID: ${
           this.#currentLedgerId
-        } address: ${address} transactionRequest: ${transactionRequest} error: ${err}`
+        } transactionRequest: ${transactionRequest} error: ${err}`
       )
     }
 

@@ -8,6 +8,7 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
+import { SigningMethod } from "../../redux-slices/signing"
 
 type Events = ServiceLifecycleEvents
 
@@ -72,15 +73,15 @@ export default class SigningService extends BaseService<Events> {
   }
 
   private async signTransactionWithNonce(
-    signer: SignerType,
-    address: HexString,
-    transactionWithNonce: EIP1559TransactionRequest & { nonce: number }
+    transactionWithNonce: EIP1559TransactionRequest & { nonce: number },
+    signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
-    switch (signer) {
+    switch (signingMethod.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
-          transactionWithNonce.from,
-          transactionWithNonce
+          transactionWithNonce,
+          signingMethod.deviceID,
+          signingMethod.path
         )
       case "keyring":
         return this.keyringService.signTransaction(
@@ -88,32 +89,21 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce
         )
       default:
-        throw new Error(
-          `Unknown address (${address}) or signer (${signer}) provided!`
-        )
+        throw new Error(`Unreachable!`)
     }
   }
 
   async signTransaction(
-    address: HexString,
-    transactionRequest: EIP1559TransactionRequest
+    transactionRequest: EIP1559TransactionRequest,
+    signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
     try {
-      const actualHandler = this.addressHandlers.find(
-        (handlers) => handlers.address === address
-      )
-
-      if (!actualHandler) {
-        throw new Error(`Unregistered address (${address}) found!`)
-      }
-
       return await this.signTransactionWithNonce(
-        actualHandler.signer,
-        address,
-        transactionWithNonce
+        transactionWithNonce,
+        signingMethod
       )
     } finally {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)

@@ -17,6 +17,7 @@ import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../services/enrichment"
+import { SigningMethod } from "./signing"
 
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -70,9 +71,14 @@ export const initialState: TransactionConstruction = {
   lastGasEstimatesRefreshed: Date.now(),
 }
 
+export interface SignatureRequest {
+  transaction: EIP1559TransactionRequest
+  method: SigningMethod
+}
+
 export type Events = {
   updateOptions: EnrichedEVMTransactionSignatureRequest
-  requestSignature: EIP1559TransactionRequest
+  requestSignature: SignatureRequest
   signatureRejected: never
   broadcastSignedTransaction: SignedEVMTransaction
 }
@@ -89,8 +95,8 @@ export const updateTransactionOptions = createBackgroundAsyncThunk(
 
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
-  async (transaction: EIP1559TransactionRequest) => {
-    await emitter.emit("requestSignature", transaction)
+  async (request: SignatureRequest) => {
+    await emitter.emit("requestSignature", request)
   }
 )
 

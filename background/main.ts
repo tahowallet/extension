@@ -585,9 +585,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
-      async (
-        transaction: EIP1559TransactionRequest & { nonce: number | undefined }
-      ) => {
+      async ({ transaction, method }) => {
         if (HIDE_IMPORT_LEDGER) {
           const transactionWithNonce =
             await this.chainService.populateEVMTransactionNonce(transaction)
@@ -608,8 +606,8 @@ export default class Main extends BaseService<never> {
         } else {
           try {
             const signedTx = await this.signingService.signTransaction(
-              transaction.from,
-              transaction
+              transaction,
+              method
             )
             this.store.dispatch(signed(signedTx))
           } catch (exception) {
