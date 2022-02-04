@@ -6,11 +6,13 @@ import React, {
   useRef,
 } from "react"
 import {
-  fetchSwapData,
+  fetchSwapPrice,
   clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
   selectIsApprovalInProgress,
+  SwapQuoteRequest,
+  fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -25,13 +27,14 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
-import SwapTransactionSettings from "../components/Swap/SwapTransactionSettings"
+import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function Swap(): ReactElement {
@@ -114,9 +117,14 @@ export default function Swap(): ReactElement {
   const [sellAmountLoading, setSellAmountLoading] = useState(false)
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
 
-  const latestQuoteRequest = useRef<
-    Parameters<typeof fetchSwapData>[0] | undefined
-  >(savedQuoteRequest)
+  const [swapTransactionSettings, setSwapTransactionSettings] = useState({
+    slippageTolerance: 0.01,
+    networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
+  })
+
+  const latestQuoteRequest = useRef<SwapQuoteRequest | undefined>(
+    savedQuoteRequest
+  )
 
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
 
@@ -135,12 +143,7 @@ export default function Swap(): ReactElement {
       return false
     }
 
-    dispatch(
-      fetchSwapData({
-        ...latestQuoteRequest.current,
-        isFinal: true,
-      })
-    )
+    dispatch(fetchSwapQuote(latestQuoteRequest.current))
 
     return true
   }
@@ -173,28 +176,58 @@ export default function Swap(): ReactElement {
   }
 
   const updateSwapData = useCallback(
-    async (changeSource: "buy" | "sell", amount: string): Promise<void> => {
+    async (
+      requestedQuote: "buy" | "sell",
+      amount: string,
+      // Fixed asset in the swap.
+      fixedAsset?: SmartContractFungibleAsset | undefined,
+      quoteAsset?: SmartContractFungibleAsset | undefined
+    ): Promise<void> => {
+      if (requestedQuote === "sell") {
+        setBuyAmount("")
+      } else {
+        setSellAmount("")
+      }
+
+      const quoteSellAsset =
+        requestedQuote === "buy"
+          ? fixedAsset ?? sellAsset
+          : quoteAsset ?? sellAsset
+      const quoteBuyAsset =
+        requestedQuote === "sell" && typeof fixedAsset !== "undefined"
+          ? fixedAsset ?? buyAsset
+          : quoteAsset ?? buyAsset
+
       // Swap amounts can't update unless both sell and buy assets are specified.
-      if (typeof sellAsset === "undefined" || typeof buyAsset === "undefined") {
+      if (
+        typeof quoteSellAsset === "undefined" ||
+        typeof quoteBuyAsset === "undefined" ||
+        amount.trim() === ""
+      ) {
         return
       }
 
-      const quoteRequest: Parameters<typeof fetchSwapData>[0] = {
-        isFinal: false,
-        assets: { sellAsset, buyAsset },
+      const quoteRequest: SwapQuoteRequest = {
+        assets: {
+          sellAsset: quoteSellAsset,
+          buyAsset: quoteBuyAsset,
+        },
         amount:
-          changeSource === "sell"
+          requestedQuote === "sell"
             ? { sellAmount: amount }
             : { buyAmount: amount },
+        slippageTolerance: swapTransactionSettings.slippageTolerance,
+        gasPrice: swapTransactionSettings.networkSettings.values.maxFeePerGas,
       }
 
-      // If there's a different quote in progress, reset loading state.
+      // If there's a different quote in progress, reset all loading states as
+      // we're about to replace it.
       if (latestQuoteRequest.current !== quoteRequest) {
         setBuyAmountLoading(false)
         setSellAmountLoading(false)
       }
 
-      if (changeSource === "sell") {
+      if (requestedQuote === "sell") {
         setBuyAmountLoading(true)
       } else {
         setSellAmountLoading(true)
@@ -202,8 +235,8 @@ export default function Swap(): ReactElement {
 
       latestQuoteRequest.current = quoteRequest
       const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-        fetchSwapData(quoteRequest)
-      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapData>) ?? {
+        fetchSwapPrice(quoteRequest)
+      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
         needsApproval: false,
       }
@@ -219,11 +252,6 @@ export default function Swap(): ReactElement {
           latestQuoteRequest.current = undefined
 
           // TODO set an error on the buy or sell state.
-          if (changeSource === "sell") {
-            setBuyAmount("")
-          } else {
-            setSellAmount("")
-          }
 
           return
         }
@@ -231,11 +259,11 @@ export default function Swap(): ReactElement {
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
 
-        if (changeSource === "sell") {
+        if (requestedQuote === "sell") {
           setBuyAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.buyAmount),
-              decimals: buyAsset.decimals,
+              decimals: quoteBuyAsset.decimals,
             })
           )
           setBuyAmountLoading(false)
@@ -243,45 +271,71 @@ export default function Swap(): ReactElement {
           setSellAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.sellAmount),
-              decimals: sellAsset.decimals,
+              decimals: quoteSellAsset.decimals,
             })
           )
           setSellAmountLoading(false)
         }
       }
     },
-    [buyAsset, dispatch, sellAsset]
+    [
+      buyAsset,
+      dispatch,
+      sellAsset,
+      swapTransactionSettings.networkSettings.values.maxFeePerGas,
+      swapTransactionSettings.slippageTolerance,
+    ]
   )
 
-  const updateSellAsset = (asset: SmartContractFungibleAsset) => {
-    setSellAsset(asset)
-    // Updating the sell asset quotes the new sell asset against the existing
-    // buy amount.
-    updateSwapData("buy", buyAmount)
-  }
-  const updateBuyAsset = (asset: SmartContractFungibleAsset) => {
-    setBuyAsset(asset)
-    // Updating the buy asset quotes the new buy asset against the existing
-    // sell amount.
-    updateSwapData("sell", sellAmount)
-  }
+  const updateSellAsset = useCallback(
+    (asset: SmartContractFungibleAsset) => {
+      setSellAsset(asset)
+      // Updating the sell asset quotes the new sell asset against the existing
+      // buy amount.
+      updateSwapData("buy", buyAmount, asset)
+    },
+    [buyAmount, updateSwapData]
+  )
+  const updateBuyAsset = useCallback(
+    (asset: SmartContractFungibleAsset) => {
+      setBuyAsset(asset)
+      // Updating the buy asset quotes the new buy asset against the existing
+      // sell amount.
+      updateSwapData("sell", sellAmount, asset)
+    },
+    [sellAmount, updateSwapData]
+  )
+
+  const flipSwap = useCallback(() => {
+    setSellAsset(buyAsset)
+    setBuyAsset(sellAsset)
+    setSellAmount(buyAmount)
+
+    updateSwapData("sell", buyAmount, sellAsset, buyAsset)
+  }, [buyAmount, buyAsset, sellAsset, updateSwapData])
 
   useEffect(() => {
-    if (typeof savedSwapAmount !== "undefined") {
+    if (
+      typeof savedSwapAmount !== "undefined" &&
+      typeof savedBuyAsset !== "undefined" &&
+      typeof savedSellAsset !== "undefined"
+    ) {
       updateSwapData(
         "sellAmount" in savedSwapAmount ? "sell" : "buy",
         "sellAmount" in savedSwapAmount
           ? savedSwapAmount.sellAmount
-          : savedSwapAmount.buyAmount
+          : savedSwapAmount.buyAmount,
+        "sellAmount" in savedSwapAmount ? savedBuyAsset : savedSellAsset
       )
     }
 
     dispatch(clearSwapQuote())
-    // We only want to run this once, at component load, to make sure the flip of
-    // the quote is set correctly. Further updates will happen through UI
-    // interaction.
+    // We want to run this in two cases:
+    // - Once at component load, to make sure the flip of the quote is set
+    //   correctly.
+    // - When swap transaction settings change, to update non-swap details.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [swapTransactionSettings])
 
   return (
     <>
@@ -300,6 +354,7 @@ export default function Swap(): ReactElement {
               sellAsset={sellAsset}
               buyAsset={buyAsset}
               finalQuote={finalQuote}
+              swapTransactionSettings={swapTransactionSettings}
             />
           ) : (
             <></>
@@ -327,7 +382,9 @@ export default function Swap(): ReactElement {
                 label="Swap from:"
               />
             </div>
-            <div className="icon_change" />
+            <button className="icon_change" type="button" onClick={flipSwap}>
+              Switch Assets
+            </button>
             <div className="form_input">
               <SharedAssetInput
                 amount={buyAmount}
@@ -336,14 +393,17 @@ export default function Swap(): ReactElement {
                 isDisabled={buyAmountLoading}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount) => {
-                  setBuyAmount(buyAmount)
+                  setBuyAmount(newAmount)
                   updateSwapData("buy", newAmount)
                 }}
                 label="Swap to:"
               />
             </div>
             <div className="settings_wrap">
-              <SwapTransactionSettings />
+              <SwapTransactionSettingsChooser
+                swapTransactionSettings={swapTransactionSettings}
+                onSwapTransactionSettingsSave={setSwapTransactionSettings}
+              />
             </div>
             <div className="footer standard_width_padded">
               {
@@ -430,6 +490,7 @@ export default function Swap(): ReactElement {
             line-height: 16px;
           }
           .icon_change {
+            display: block;
             background: url("./images/change@2x.png") center no-repeat;
             background-size: 20px 20px;
             width: 20px;
@@ -442,6 +503,8 @@ export default function Swap(): ReactElement {
             margin-top: -5px;
             margin-bottom: -32px;
             position: relative;
+
+            font-size: 0;
           }
           .settings_wrap {
             margin-top: 16px;

@@ -9,6 +9,7 @@ export default function SignTransactionContainer({
   signerAccountTotal,
   title,
   infoBlock,
+  isWaitingForHardware,
   confirmButtonLabel,
   handleConfirm,
   handleReject,
@@ -16,6 +17,7 @@ export default function SignTransactionContainer({
   signerAccountTotal: AccountTotal
   title: ReactNode
   infoBlock: ReactNode
+  isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
@@ -27,37 +29,48 @@ export default function SignTransactionContainer({
       <SignTransactionNetworkAccountInfoTopBar
         accountTotal={signerAccountTotal}
       />
-      <h1 className="serif_header title">{title}</h1>
+      <h1 className="serif_header title">
+        {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
+      </h1>
       <div className="primary_info_card standard_width">{infoBlock}</div>
-      <SharedPanelSwitcher
-        setPanelNumber={setPanelNumber}
-        panelNumber={panelNumber}
-        panelNames={["Details"]}
-      />
-      {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
-      <div className="footer_actions">
-        <SharedButton
-          iconSize="large"
-          size="large"
-          type="secondary"
-          onClick={handleReject}
-        >
-          Reject
-        </SharedButton>
-        {signerAccountTotal.signingMethod ? (
-          <SharedButton
-            type="primary"
-            iconSize="large"
-            size="large"
-            onClick={handleConfirm}
-            showLoadingOnClick
-          >
-            {confirmButtonLabel}
-          </SharedButton>
-        ) : (
-          <span className="no-signing">Read-only accounts cannot sign</span>
-        )}
-      </div>
+      {isWaitingForHardware ? (
+        <div className="cannot_reject_warning">
+          <span className="block_icon" />
+          Tx can only be Rejected from Ledger
+        </div>
+      ) : (
+        <>
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={["Details"]}
+          />
+          {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
+          <div className="footer_actions">
+            <SharedButton
+              iconSize="large"
+              size="large"
+              type="secondary"
+              onClick={handleReject}
+            >
+              Reject
+            </SharedButton>
+            {signerAccountTotal.signingMethod ? (
+              <SharedButton
+                type="primary"
+                iconSize="large"
+                size="large"
+                onClick={handleConfirm}
+                showLoadingOnClick
+              >
+                {confirmButtonLabel}
+              </SharedButton>
+            ) : (
+              <span className="no-signing">Read-only accounts cannot sign</span>
+            )}
+          </div>
+        </>
+      )}
       <style jsx>
         {`
           section {
@@ -98,6 +111,24 @@ export default function SignTransactionContainer({
             justify-content: space-between;
             box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
             background-color: var(--green-95);
+          }
+          .cannot_reject_warning {
+            position: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            bottom: 0;
+            padding: 16px;
+            color: var(--error);
+            font-weight: 600;
+            font-size: 18px;
+          }
+          .block_icon {
+            width: 24px;
+            height: 24px;
+            margin: 8px;
+            background: no-repeat center / cover
+              url("./images/block_icon@2x.png");
           }
         `}
       </style>
