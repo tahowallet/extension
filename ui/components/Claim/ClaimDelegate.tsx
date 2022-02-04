@@ -1,5 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import { selectDelegate } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  chooseDelegate,
 import { useBackgroundDispatch } from "../../hooks"
 
 import ClaimAmountBanner from "./ClaimAmountBanner"
@@ -40,7 +42,7 @@ export default function ClaimDelegate(props: {
                   <button
                     type="button"
                     onClick={() => {
-                      dispatch(selectDelegate(delegate))
+                      dispatch(chooseDelegate(delegate))
                     }}
                   >
                     <div className="delegate">

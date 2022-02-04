@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import {
-  selectDAO,
+  chooseDAO,
   selectClaimSelections,
 } from "@tallyho/tally-background/redux-slices/claim"
 import classNames from "classnames"
@@ -21,7 +21,7 @@ function DAOButton(props: {
       type="button"
       className={classNames("option", { active: isActive })}
       onClick={() => {
-        dispatch(selectDAO({ address, name, avatar }))
+        dispatch(chooseDAO({ address, name, avatar }))
       }}
     >
       <div className="icon" />
