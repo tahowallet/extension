@@ -51,6 +51,8 @@ export default function Send(): ReactElement {
     assetAmounts: [],
   }
 
+  // FIXME Rework this to use selectAssetPricePoint and
+  // FIXME convertAssetAmountViaPricePoint.
   const getTotalLocalizedValue = () => {
     const pricePerUnit = assetAmounts.find(
       (el) => el.asset.symbol === assetSymbol
