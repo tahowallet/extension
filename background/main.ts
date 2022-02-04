@@ -74,7 +74,10 @@ import {
   SignTypedDataRequest,
   typedDataRequest,
 } from "./redux-slices/signing"
-import { emitter as ledgerSliceEmitter } from "./redux-slices/ledger"
+import {
+  emitter as ledgerSliceEmitter,
+  resetLedgerState,
+} from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
 
@@ -685,6 +688,8 @@ export default class Main extends BaseService<never> {
   }
 
   async connectLedgerService(): Promise<void> {
+    this.store.dispatch(resetLedgerState())
+
     ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
       for (let i = 0; i < accounts.length; i += 1) {
         const { path, address } = accounts[i]

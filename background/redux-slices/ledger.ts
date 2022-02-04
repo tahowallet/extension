@@ -56,6 +56,15 @@ const ledgerSlice = createSlice({
   name: "ledger",
   initialState,
   reducers: {
+    resetLedgerState: (immerState) => {
+      Object.values(immerState.devices).forEach((device) => {
+        device.status = "disconnected" // eslint-disable-line no-param-reassign
+        Object.values(device.accounts).forEach((account) => {
+          account.fetchingAddress = false // eslint-disable-line no-param-reassign
+          account.fetchingBalance = false // eslint-disable-line no-param-reassign
+        })
+      })
+    },
     addLedgerDevice: (
       immerState,
       { payload: deviceID }: { payload: string }
@@ -140,7 +149,7 @@ const ledgerSlice = createSlice({
   },
 })
 
-export const { addLedgerAccount } = ledgerSlice.actions
+export const { resetLedgerState, addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 
