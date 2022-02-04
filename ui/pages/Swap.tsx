@@ -371,9 +371,11 @@ export default function Swap(): ReactElement {
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
                 onAssetSelect={updateSellAsset}
-                onAmountChange={(newAmount) => {
-                  setSellAmount(newAmount)
-                  updateSwapData("sell", newAmount)
+                onAmountChange={(newAmount, error) => {
+                  if (typeof error === "undefined") {
+                    setSellAmount(newAmount)
+                    updateSwapData("sell", newAmount)
+                  }
                 }}
                 label="Swap from:"
               />
@@ -390,9 +392,11 @@ export default function Swap(): ReactElement {
                 isDisabled={buyAmountLoading}
                 showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
-                onAmountChange={(newAmount) => {
-                  setBuyAmount(newAmount)
-                  updateSwapData("buy", newAmount)
+                onAmountChange={(newAmount, error) => {
+                  if (typeof error === "undefined") {
+                    setBuyAmount(buyAmount)
+                    updateSwapData("buy", newAmount)
+                  }
                 }}
                 label="Swap to:"
               />
