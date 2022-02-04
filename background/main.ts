@@ -16,6 +16,7 @@ import {
   NameService,
   PreferenceService,
   ProviderBridgeService,
+  TelemetryService,
   ServiceCreatorFunction,
   LedgerService,
   SigningService,
@@ -246,6 +247,9 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+
+    const telemetryService = TelemetryService.create()
+
     const ledgerService = HIDE_IMPORT_LEDGER
       ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
       : LedgerService.create()
@@ -289,6 +293,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
+      await telemetryService,
       await ledgerService,
       await signingService
     )
@@ -338,6 +343,11 @@ export default class Main extends BaseService<never> {
      * knowledge.
      */
     private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the telemetry service, which keeps track of extension
+     * storage usage and (eventually) other statistics.
+     */
+    private telemetryService: TelemetryService,
 
     /**
      * A promise to the Ledger service, handling the communication
@@ -404,6 +414,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.telemetryService.startService(),
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -424,6 +435,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.telemetryService.stopService(),
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -432,7 +444,6 @@ export default class Main extends BaseService<never> {
     }
 
     await Promise.all(servicesToBeStopped)
-
     await super.internalStopService()
   }
 
@@ -444,10 +455,13 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectTelemetryService()
+
     if (!HIDE_IMPORT_LEDGER) {
       this.connectLedgerService()
       this.connectSigningService()
     }
+
     await this.connectChainService()
   }
 
@@ -920,5 +934,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+  }
+
+  connectTelemetryService(): void {
+    // Pass the redux store to the telemetry service so we can analyze its size
+    this.telemetryService.connectReduxStore(this.store)
   }
 }
