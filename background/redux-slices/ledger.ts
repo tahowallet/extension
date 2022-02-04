@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit"
-import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export interface LedgerAccountState {
@@ -45,8 +44,6 @@ export type Events = {
     reject: (error: Error) => void
   }
 }
-
-export const emitter = new Emittery<Events>()
 
 export const initialState: LedgerState = {
   devices: {},
@@ -153,25 +150,6 @@ export const { resetLedgerState, addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 
-async function doConnectReal() {
-  return new Promise<string>((resolve, reject) => {
-    emitter.emit("connectLedger", { resolve, reject })
-  })
-}
-
-async function doFetchAddressReal(path: string) {
-  return new Promise<string>((resolve, reject) => {
-    emitter.emit("fetchAddress", { path, resolve, reject })
-  })
-}
-
-async function doFetchBalanceReal(address: string) {
-  // TODO: respond to this event to provide actual data
-  return new Promise<string>((resolve, reject) => {
-    emitter.emit("fetchBalance", { address, resolve, reject })
-  })
-}
-
 async function doFetchBalanceFake(address: string) {
   await new Promise((resolve) => {
     setTimeout(resolve, 700)
@@ -185,8 +163,8 @@ async function doFetchBalanceFake(address: string) {
 
 export const connectLedger = createBackgroundAsyncThunk(
   "ledger/connectLedger",
-  async (unused, { dispatch }) => {
-    const deviceID = await doConnectReal()
+  async (unused, { dispatch, extra: { main } }) => {
+    const deviceID = await main.connectLedger()
     dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
     return { deviceID }
   }
@@ -196,10 +174,10 @@ export const fetchAddress = createBackgroundAsyncThunk(
   "ledger/fetchAddress",
   async (
     { deviceID, path }: { deviceID: string; path: string },
-    { dispatch }
+    { dispatch, extra: { main } }
   ) => {
     dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
-    const address = await doFetchAddressReal(path)
+    const address = await main.deriveLedgerAddress(path) // FIXME: deviceID is ignored
     dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
   }
 )
@@ -222,12 +200,14 @@ export const fetchBalance = createBackgroundAsyncThunk(
 
 export const importLedgerAccounts = createBackgroundAsyncThunk(
   "ledger/importLedgerAccounts",
-  async ({
-    accounts,
-  }: {
-    accounts: Array<{ path: string; address: string }>
-  }) => {
-    // TODO: listen to this event
-    emitter.emit("importLedgerAccounts", accounts)
+  async (
+    {
+      accounts,
+    }: {
+      accounts: Array<{ path: string; address: string }>
+    },
+    { extra: { main } }
+  ) => {
+    await main.importLedgerAccounts(accounts)
   }
 )

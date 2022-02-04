@@ -74,10 +74,7 @@ import {
   SignTypedDataRequest,
   typedDataRequest,
 } from "./redux-slices/signing"
-import {
-  emitter as ledgerSliceEmitter,
-  resetLedgerState,
-} from "./redux-slices/ledger"
+import { resetLedgerState } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
 
@@ -498,6 +495,40 @@ export default class Main extends BaseService<never> {
     }
   }
 
+  async importLedgerAccounts(
+    accounts: Array<{
+      path: string
+      address: string
+    }>
+  ): Promise<void> {
+    for (let i = 0; i < accounts.length; i += 1) {
+      const { path, address } = accounts[i]
+
+      // eslint-disable-next-line no-await-in-loop
+      await this.ledgerService.saveAddress(path, address)
+
+      const addressNetwork = {
+        address,
+        network: ETHEREUM,
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await this.chainService.addAccountToTrack(addressNetwork)
+      this.store.dispatch(loadAccount(address))
+      this.store.dispatch(setNewSelectedAccount(addressNetwork))
+    }
+  }
+
+  async deriveLedgerAddress(path: string): Promise<string> {
+    return this.signingService.deriveAddress({
+      type: "ledger",
+      accountID: path,
+    })
+  }
+
+  async connectLedger(): Promise<string> {
+    return this.ledgerService.connectLedger()
+  }
+
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
     this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
@@ -689,34 +720,6 @@ export default class Main extends BaseService<never> {
 
   async connectLedgerService(): Promise<void> {
     this.store.dispatch(resetLedgerState())
-
-    ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
-      for (let i = 0; i < accounts.length; i += 1) {
-        const { path, address } = accounts[i]
-
-        // eslint-disable-next-line no-await-in-loop
-        await this.ledgerService.saveAddress(path, address)
-
-        const addressNetwork = {
-          address,
-          network: ETHEREUM,
-        }
-        // eslint-disable-next-line no-await-in-loop
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(address))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
-      }
-    })
-
-    ledgerSliceEmitter.on("fetchAddress", (input) => {
-      this.signingService
-        .deriveAddress({ type: "ledger", accountID: input.path })
-        .then(input.resolve, input.reject)
-    })
-
-    ledgerSliceEmitter.on("connectLedger", (input) => {
-      this.ledgerService.connectLedger().then(input.resolve, input.reject)
-    })
   }
 
   async connectKeyringService(): Promise<void> {
