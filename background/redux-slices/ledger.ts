@@ -74,7 +74,7 @@ const ledgerSlice = createSlice({
       immerState.devices[deviceID] = {
         id: deviceID,
         accounts: {},
-        status: "disconnected",
+        status: "available",
       }
     },
     setCurrentDevice: (
