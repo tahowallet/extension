@@ -1,6 +1,11 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  toFixedPointNumber,
+  multiplyByFloat,
+  convertFixedPointNumber,
+} from "@tallyho/tally-background/lib/fixed-point"
 import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
@@ -25,15 +30,13 @@ export default function Eligible(): ReactElement {
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
-  const { delegates, DAOs, claimAmount } = useBackgroundSelector((state) => {
+  const { delegates, DAOs, claimAmountHex } = useBackgroundSelector((state) => {
     return {
       delegates: state.claim.delegates,
       DAOs: state.claim.DAOs,
-      claimAmount: Number(
-        state.claim.eligibles.find(
-          ({ address }) => address === selectedAccountAddress
-        )?.earnings
-      ),
+      claimAmountHex: state.claim.eligibles.find(
+        ({ address }) => address === selectedAccountAddress
+      )?.earnings,
     }
   })
 
@@ -53,8 +56,19 @@ export default function Eligible(): ReactElement {
 
   const BONUS_PERCENT = 0.05
 
-  const claimAmountWithBonus = Math.floor(
-    claimAmount + claimAmount * BONUS_PERCENT
+  const fixedPointClaimEarnings = toFixedPointNumber(Number(claimAmountHex), 18)
+  const fixedPointClaimEarningsWithBonus = {
+    amount:
+      fixedPointClaimEarnings.amount +
+      multiplyByFloat(fixedPointClaimEarnings, BONUS_PERCENT),
+    decimals: fixedPointClaimEarnings.decimals,
+  }
+
+  const claimAmount = Number(
+    convertFixedPointNumber(fixedPointClaimEarnings, 0).amount
+  )
+  const claimAmountWithBonus = Number(
+    convertFixedPointNumber(fixedPointClaimEarningsWithBonus, 0).amount
   )
 
   return (
@@ -86,7 +100,7 @@ export default function Eligible(): ReactElement {
           <ClaimReferral
             DAOs={DAOs}
             claimAmount={claimAmount}
-            bonusPercent={BONUS_PERCENT}
+            claimAmountWithBonus={claimAmountWithBonus}
           />
           <ClaimReferralByUser claimAmount={claimAmount} />
           <ClaimDelegate
