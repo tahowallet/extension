@@ -24,6 +24,7 @@ import {
   internalProviderPort,
 } from "../../redux-slices/utils/contract-utils"
 import { SignTypedDataRequest } from "../../redux-slices/signing"
+import { getEthereumNetwork } from "../../lib/utils"
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -98,9 +99,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           account: params[0],
           typedData: JSON.parse(params[1] as string),
         } as SignTypedDataRequest)
+      case "eth_chainId":
+        return getEthereumNetwork().chainID
+
       case "eth_blockNumber":
       case "eth_call":
-      case "eth_chainId":
       case "eth_estimateGas":
       case "eth_feeHistory":
       case "eth_gasPrice":
