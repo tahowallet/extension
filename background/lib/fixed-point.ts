@@ -141,7 +141,7 @@ export function toFixedPointNumber(
 export function parseToFixedPointNumber(
   floatingPointString: string
 ): FixedPointNumber | undefined {
-  if (!floatingPointString.match(/^[^0-9]*([0-9,]+)(?:\.([0-9]+))?$/)) {
+  if (!floatingPointString.match(/^[^0-9]*([0-9,]+)(?:\.([0-9]*))?$/)) {
     return undefined
   }
 
