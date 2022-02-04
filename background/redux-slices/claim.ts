@@ -90,6 +90,8 @@ const initialState = {
   delegates,
   DAOs,
   eligibles: eligibles.map((item): Eligibles => {
+    return { ...item, earnings: BigInt(item.earnings) }
+  }),
 } as ClaimingState
 
 const claimingSlice = createSlice({
