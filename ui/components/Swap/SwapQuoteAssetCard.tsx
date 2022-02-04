@@ -21,7 +21,9 @@ export default function SwapQuoteAssetCard(
         logoURL={asset?.metadata?.logoURL}
         symbol={asset?.symbol}
       />
-      <div className="amount">{amount}</div>
+      <div className="amount" title={amount}>
+        {amount}
+      </div>
       <div className="asset_name">{asset?.symbol}</div>
       <style jsx>
         {`

@@ -256,7 +256,7 @@ export default class Main extends BaseService<never> {
 
     const signingService = HIDE_IMPORT_LEDGER
       ? (Promise.resolve(null) as unknown as Promise<SigningService>)
-      : SigningService.create(keyringService, ledgerService)
+      : SigningService.create(keyringService, ledgerService, chainService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -375,6 +375,26 @@ export default class Main extends BaseService<never> {
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
+      dispatchResponder: async (
+        dispatchResult: Promise<unknown>,
+        send: (param: { error: string | null; value: unknown | null }) => void
+      ) => {
+        try {
+          send({
+            error: null,
+            value: encodeJSON(await dispatchResult),
+          })
+        } catch (error) {
+          logger.error(
+            "Error awaiting and dispatching redux store result: ",
+            error
+          )
+          send({
+            error: encodeJSON(error),
+            value: null,
+          })
+        }
+      },
     })
 
     this.initializeRedux()
@@ -439,6 +459,7 @@ export default class Main extends BaseService<never> {
 
     if (!HIDE_IMPORT_LEDGER) {
       this.connectLedgerService()
+      this.connectSigningService()
     }
 
     await this.connectChainService()
@@ -521,18 +542,33 @@ export default class Main extends BaseService<never> {
       async (
         transaction: EIP1559TransactionRequest & { nonce: number | undefined }
       ) => {
-        const transactionWithNonce =
-          await this.chainService.populateEVMTransactionNonce(transaction)
+        if (HIDE_IMPORT_LEDGER) {
+          const transactionWithNonce =
+            await this.chainService.populateEVMTransactionNonce(transaction)
 
-        try {
-          const signedTx = await this.keyringService.signTransaction(
-            transaction.from,
-            transactionWithNonce
-          )
-          this.store.dispatch(signed(signedTx))
-        } catch (exception) {
-          logger.error("Error signing transaction; releasing nonce", exception)
-          this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+          try {
+            const signedTx = await this.keyringService.signTransaction(
+              transaction.from,
+              transactionWithNonce
+            )
+            this.store.dispatch(signed(signedTx))
+          } catch (exception) {
+            logger.error(
+              "Error signing transaction; releasing nonce",
+              exception
+            )
+            this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+          }
+        } else {
+          try {
+            const signedTx = await this.signingService.signTransaction(
+              transaction.from,
+              transaction
+            )
+            this.store.dispatch(signed(signedTx))
+          } catch (exception) {
+            logger.error("Error signing transaction", exception)
+          }
         }
       }
     )
@@ -645,6 +681,16 @@ export default class Main extends BaseService<never> {
     )
   }
 
+  async connectSigningService(): Promise<void> {
+    this.keyringService.emitter.on("address", (address) =>
+      this.signingService.addTrackedAddress(address, "keyring")
+    )
+
+    this.ledgerService.emitter.on("address", ({ address }) =>
+      this.signingService.addTrackedAddress(address, "ledger")
+    )
+  }
+
   async connectLedgerService(): Promise<void> {
     ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
       for (let i = 0; i < accounts.length; i += 1) {
@@ -665,8 +711,8 @@ export default class Main extends BaseService<never> {
     })
 
     ledgerSliceEmitter.on("fetchAddress", (input) => {
-      this.ledgerService
-        .deriveAddress(input.path)
+      this.signingService
+        .deriveAddress({ type: "ledger", accountID: input.path })
         .then(input.resolve, input.reject)
     })
 
@@ -708,7 +754,10 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
-      await this.keyringService.deriveAddress(keyringID)
+      await this.signingService.deriveAddress({
+        type: "keyring",
+        accountID: keyringID,
+      })
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {

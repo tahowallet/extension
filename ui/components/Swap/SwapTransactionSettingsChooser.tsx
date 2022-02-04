@@ -1,40 +1,57 @@
 import {
-  NetworkFeeSetting,
+  NetworkFeeSettings,
+  selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
 import React, { ReactElement, useState } from "react"
-import { useDispatch } from "react-redux"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
-import { useBackgroundSelector } from "../../hooks"
-import SwapSettingsChooser from "../NetworkFees/SwapSettingsChooser"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
+import FeeSettingsText from "../NetworkFees/FeeSettingsText"
+
+export type SwapTransactionSettings = {
+  slippageTolerance: number
+  networkSettings: NetworkFeeSettings
+}
 
 interface SwapTransactionSettingsProps {
   isSettingsLocked?: boolean
+  swapTransactionSettings: SwapTransactionSettings
+  onSwapTransactionSettingsSave?: (setting: SwapTransactionSettings) => void
 }
 
-export default function SwapTransactionSettings(
-  props: SwapTransactionSettingsProps
-): ReactElement {
-  const { isSettingsLocked } = props
+export default function SwapTransactionSettingsChooser({
+  isSettingsLocked,
+  swapTransactionSettings,
+  onSwapTransactionSettingsSave,
+}: SwapTransactionSettingsProps): ReactElement {
+  const dispatch = useBackgroundDispatch()
+
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const [networkSettings, setNetworkSettings] = useState(
+    useBackgroundSelector(selectDefaultNetworkFeeSettings)
+  )
 
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
-  const [gasLimit, setGasLimit] = useState("")
-  const dispatch = useDispatch()
 
-  function openSettings() {
+  const openSettings = () => {
     if (!isSettingsLocked) {
       setIsSlideUpMenuOpen(true)
     }
   }
 
-  // TODO pass proper gas to SwapSettingsChooser to display real fees
+  const saveSettings = () => {
+    dispatch(setFeeType(networkSettings.feeType))
 
-  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
-    dispatch(setFeeType(networkSetting.feeType))
+    onSwapTransactionSettingsSave?.({
+      ...swapTransactionSettings,
+      slippageTolerance: 0.01,
+      networkSettings,
+    })
+
     setIsSlideUpMenuOpen(false)
   }
 
@@ -59,18 +76,22 @@ export default function SwapTransactionSettings(
                 </SharedButton>
               </div>
               <div className="row row_fee">
-                <span className="settings_label settings_label_fee">
-                  Transaction Fee/Speed
-                </span>
-
-                <SwapSettingsChooser
-                  networkSettings={{
-                    estimatedFeesPerGas,
-                    gasLimit,
-                  }}
-                  onNetworkSettingsSave={networkSettingsSaved}
-                  visible={isSlideUpMenuOpen}
+                <NetworkSettingsSelect
+                  estimatedFeesPerGas={estimatedFeesPerGas}
+                  networkSettings={networkSettings}
+                  onNetworkSettingsChange={setNetworkSettings}
                 />
+              </div>
+              <div className="row">
+                <div className="confirm">
+                  <SharedButton
+                    size="medium"
+                    type="primary"
+                    onClick={saveSettings}
+                  >
+                    Save
+                  </SharedButton>
+                </div>
               </div>
             </div>
           </SharedSlideUpMenu>
@@ -86,11 +107,13 @@ export default function SwapTransactionSettings(
       <div className="labels_wrap standard_width">
         <span className="label">
           Slippage tolerance
-          <div className="info">1%</div>
+          <div className="info">
+            {swapTransactionSettings.slippageTolerance * 100}%
+          </div>
         </span>
         <span className="label">
-          Network Fee/Speed
-          <div className="info">{"$24 / Fast <1min"}</div>
+          Estimated network fee
+          <FeeSettingsText />
         </span>
       </div>
       <style jsx>
