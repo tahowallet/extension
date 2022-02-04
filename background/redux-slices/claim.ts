@@ -2,19 +2,11 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { truncateAddress } from "../lib/utils"
 // import { getContract } from "./utils/contract-utils"
-import * as DAOs from "../static/DAOs.json"
-import * as delegates from "../static/delegates.json"
-import * as eligibles from "../static/eligibles.json"
+import DAOs from "../static/DAOs.json"
+import delegates from "../static/delegates.json"
+import eligibles from "../static/eligibles.json"
 
 // const newBalanceTree = new BalanceTree(balances)
-
-function jsonToArray(json: any) {
-  return Object.keys(json)
-    .map((key: string) => {
-      return json[key]
-    })
-    .slice(0, -2)
-}
 
 export interface DAO {
   address: string
@@ -95,9 +87,9 @@ const initialState = {
   distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
-  delegates: jsonToArray(delegates),
-  DAOs: jsonToArray(DAOs),
-  eligibles: jsonToArray(eligibles),
+  delegates,
+  DAOs,
+  eligibles: eligibles.map((item): Eligibles => {
 } as ClaimingState
 
 const claimingSlice = createSlice({
