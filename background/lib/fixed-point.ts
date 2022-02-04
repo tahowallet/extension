@@ -202,11 +202,16 @@ export function fixedPointNumberToString(
     "0".repeat(Math.max(-preDecimalLength, 0)) +
     undecimaledAmount.substring(preDecimalLength)
 
-  return `${preDecimalCharacters}.${
-    trimTrailingZeros
-      ? postDecimalCharacters.replace(/0*$/, "")
-      : postDecimalCharacters
-  }`
+  const trimmedPostDecimalCharacters = trimTrailingZeros
+    ? postDecimalCharacters.replace(/0*$/, "")
+    : postDecimalCharacters
+
+  const decimalString =
+    trimmedPostDecimalCharacters.length > 0
+      ? `.${trimmedPostDecimalCharacters}`
+      : ""
+
+  return `${preDecimalCharacters}${decimalString}`
 }
 
 /**
