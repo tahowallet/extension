@@ -1,5 +1,4 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
-import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
@@ -14,7 +13,10 @@ export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<
     "0-prepare" | "1-request" | "2-connect" | "3-done"
   >("0-prepare")
-  const [deviceID, setDeviceID] = useState<string | null>(null)
+  const deviceID = useBackgroundSelector(
+    (state) => state.ledger.currentDeviceID
+  )
+  const [connecting, setConnecting] = useState(false)
 
   const devices = useBackgroundSelector((state) => state.ledger.devices)
   const device = deviceID === null ? null : devices[deviceID] ?? null
@@ -44,19 +46,27 @@ export default function Ledger(): ReactElement {
             }
             setPhase("2-connect")
 
-            const { deviceID: newDeviceID } = (await dispatch(
-              connectLedger()
-            )) as unknown as AsyncThunkFulfillmentType<typeof connectLedger>
-
-            setDeviceID(newDeviceID)
+            setConnecting(true)
+            try {
+              await dispatch(connectLedger())
+            } finally {
+              setConnecting(false)
+            }
           }}
         />
       )}
       {phase === "1-request" && <LedgerConnectPopup />}
-      {phase === "2-connect" && !device && (
+      {phase === "2-connect" && !device && connecting && (
         <LedgerPanelContainer
           indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
           heading="Connecting..."
+        />
+      )}
+      {phase === "2-connect" && !device && !connecting && (
+        /* FIXME: no UI spec for this */
+        <LedgerPanelContainer
+          indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
+          heading="Error during connection, reload the page"
         />
       )}
       {phase === "2-connect" && device && (
@@ -71,7 +81,6 @@ export default function Ledger(): ReactElement {
         <LedgerImportDone
           onClose={() => {
             setPhase("0-prepare")
-            setDeviceID(null)
           }}
         />
       )}

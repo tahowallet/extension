@@ -20,6 +20,7 @@ export interface LedgerDeviceState {
 }
 
 export type LedgerState = {
+  currentDeviceID: string | null
   /** Devices by ID */
   devices: Record<string, LedgerDeviceState>
 }
@@ -46,6 +47,7 @@ export type Events = {
 }
 
 export const initialState: LedgerState = {
+  currentDeviceID: null,
   devices: {},
 }
 
@@ -54,6 +56,7 @@ const ledgerSlice = createSlice({
   initialState,
   reducers: {
     resetLedgerState: (immerState) => {
+      immerState.currentDeviceID = null
       Object.values(immerState.devices).forEach((device) => {
         device.status = "disconnected" // eslint-disable-line no-param-reassign
         Object.values(device.accounts).forEach((account) => {
@@ -73,6 +76,13 @@ const ledgerSlice = createSlice({
         accounts: {},
         status: "disconnected",
       }
+    },
+    setCurrentDevice: (
+      immerState,
+      { payload: deviceID }: { payload: string }
+    ) => {
+      if (!(deviceID in immerState.devices)) return
+      immerState.currentDeviceID = deviceID
     },
     addLedgerAccount: (
       immerState,
@@ -166,6 +176,7 @@ export const connectLedger = createBackgroundAsyncThunk(
   async (unused, { dispatch, extra: { main } }) => {
     const deviceID = await main.connectLedger()
     dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
+    dispatch(ledgerSlice.actions.setCurrentDevice(deviceID))
     return { deviceID }
   }
 )
