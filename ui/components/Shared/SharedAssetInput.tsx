@@ -169,7 +169,6 @@ SelectedAssetButton.defaultProps = {
 }
 
 interface SharedAssetInputProps<T extends AnyAsset> {
-  isTypeDestination: boolean
   assets: T[]
   label: string
   defaultAsset: T
@@ -180,14 +179,12 @@ interface SharedAssetInputProps<T extends AnyAsset> {
   isDisabled?: boolean
   onAssetSelect: (asset: T) => void
   onAmountChange: (value: string, errorMessage: string | undefined) => void
-  onSendToAddressChange: (value: string) => void
 }
 
 export default function SharedAssetInput<T extends AnyAsset>(
   props: SharedAssetInputProps<T>
 ): ReactElement {
   const {
-    isTypeDestination,
     assets,
     label,
     defaultAsset,
@@ -198,7 +195,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
     isDisabled,
     onAssetSelect,
     onAmountChange,
-    onSendToAddressChange,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
@@ -250,58 +246,42 @@ export default function SharedAssetInput<T extends AnyAsset>(
         )}
       </SharedSlideUpMenu>
       <div className="asset_wrap standard_width">
-        {isTypeDestination ? (
-          <>
-            <input
-              className="asset_input"
-              type="text"
-              placeholder="0x..."
-              spellCheck={false}
-              onChange={(event) => {
-                onSendToAddressChange(event.target.value)
-              }}
+        <div>
+          {selectedAsset?.symbol ? (
+            <SelectedAssetButton
+              isDisabled={isDisabled || disableDropdown}
+              asset={selectedAsset}
+              toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
             />
-          </>
-        ) : (
-          <>
-            <div>
-              {selectedAsset?.symbol ? (
-                <SelectedAssetButton
-                  isDisabled={isDisabled || disableDropdown}
-                  asset={selectedAsset}
-                  toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
-                />
-              ) : (
-                <SharedButton
-                  type="secondary"
-                  size="medium"
-                  isDisabled={isDisabled || disableDropdown}
-                  onClick={toggleIsAssetMenuOpen}
-                  icon="chevron"
-                >
-                  Select token
-                </SharedButton>
-              )}
-            </div>
+          ) : (
+            <SharedButton
+              type="secondary"
+              size="medium"
+              isDisabled={isDisabled || disableDropdown}
+              onClick={toggleIsAssetMenuOpen}
+              icon="chevron"
+            >
+              Select token
+            </SharedButton>
+          )}
+        </div>
 
-            <input
-              className="input_amount"
-              type="number"
-              step="any"
-              placeholder="0.0"
-              min="0"
-              disabled={isDisabled}
-              value={amount}
-              spellCheck={false}
-              onChange={(event) =>
-                onAmountChange(
-                  event.target.value,
-                  getErrorMessage(event.target.value)
-                )
-              }
-            />
-          </>
-        )}
+        <input
+          className="input_amount"
+          type="number"
+          step="any"
+          placeholder="0.0"
+          min="0"
+          disabled={isDisabled}
+          value={amount}
+          spellCheck={false}
+          onChange={(event) =>
+            onAmountChange(
+              event.target.value,
+              getErrorMessage(event.target.value)
+            )
+          }
+        />
         <div className="error_message">{getErrorMessage(amount)}</div>
       </div>
       <style jsx>
@@ -390,7 +370,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
 }
 
 SharedAssetInput.defaultProps = {
-  isTypeDestination: false,
   isAssetOptionsLocked: false,
   disableDropdown: false,
   isDisabled: false,
@@ -404,5 +383,4 @@ SharedAssetInput.defaultProps = {
     // TODO replace this with support for undefined onClick
   },
   onAmountChange: () => {},
-  onSendToAddressChange: () => {},
 }

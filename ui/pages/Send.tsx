@@ -22,6 +22,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { SignType } from "./SignTransaction"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
+import SharedInput from "../components/Shared/SharedInput"
 
 export default function Send(): ReactElement {
   const location = useLocation<{ symbol: string }>()
@@ -148,11 +149,14 @@ export default function Send(): ReactElement {
             />
             <div className="value">${getTotalLocalizedValue()}</div>
           </div>
-          <div className="form_input">
-            <SharedAssetInput
-              isTypeDestination
-              label="Send To:"
-              onSendToAddressChange={setDestinationAddress}
+          <div className="form_input send_to_field">
+            <label htmlFor="send_address">Send To:</label>
+            <input
+              id="send_address"
+              type="text"
+              placeholder="0x..."
+              spellCheck={false}
+              onChange={(event) => setDestinationAddress(event.target.value)}
             />
           </div>
           <SharedSlideUpMenu
@@ -265,6 +269,31 @@ export default function Send(): ReactElement {
             color: var(--green-60);
             font-size: 12px;
             line-height: 16px;
+          }
+          div.send_to_field {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+          }
+          div.send_to_field label {
+            color: var(--green-40);
+            text-align: right;
+            font-size: 14px;
+          }
+          input#send_address {
+            box-sizing: border-box;
+            height: 72px;
+            width: 100%;
+
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 72px;
+            color: #fff;
+
+            border-radius: 4px;
+            background-color: var(--green-95);
+            padding: 0px 16px;
           }
           .send_footer {
             display: flex;
