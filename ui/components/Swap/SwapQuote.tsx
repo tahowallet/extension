@@ -10,20 +10,23 @@ import { FungibleAsset } from "@tallyho/tally-background/assets"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
-import SwapTransactionSettings from "./SwapTransactionSettings"
-import SwapApprovalStep from "./SwapApprovalStep"
+import SwapTransactionSettingsChooser, {
+  SwapTransactionSettings,
+} from "./SwapTransactionSettingsChooser"
 import { useBackgroundDispatch } from "../../hooks"
 
 type Props = {
   sellAsset: FungibleAsset
   buyAsset: FungibleAsset
   finalQuote: ZrxQuote
+  swapTransactionSettings: SwapTransactionSettings
 }
 
 export default function SwapQuote({
   sellAsset,
   buyAsset,
   finalQuote,
+  swapTransactionSettings,
 }: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -39,14 +42,25 @@ export default function SwapQuote({
     }),
   }
 
-  const [stepComplete, setStepComplete] = useState(-1)
-
   const history = useHistory()
 
   const handleApproveClick = useCallback(async () => {
-    dispatch(executeSwap(finalQuote))
+    const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
+    dispatch(
+      executeSwap({
+        ...quoteWithoutGasPrice,
+        gasPrice:
+          swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+          gasPrice,
+      })
+    )
     history.push("/signTransaction")
-  }, [dispatch, history, finalQuote])
+  }, [
+    finalQuote,
+    dispatch,
+    swapTransactionSettings.networkSettings.values.maxFeePerGas,
+    history,
+  ])
 
   return (
     <section className="center_horizontal standard_width">
@@ -68,56 +82,31 @@ export default function SwapQuote({
         1 {sellAsset.symbol} = {finalQuote.price} {buyAsset.symbol}
       </span>
       <div className="settings_wrap">
-        <SwapTransactionSettings isSettingsLocked />
+        <SwapTransactionSettingsChooser
+          isSettingsLocked
+          swapTransactionSettings={swapTransactionSettings}
+        />
       </div>
-      {stepComplete > -1 ? (
-        <>
-          <ul className="approval_steps">
-            <SwapApprovalStep
-              isDone={stepComplete >= 1}
-              label="Approve to spend ETH"
-            />
-            <SwapApprovalStep
-              isDone={stepComplete >= 2}
-              label="Approve to spend KEEP"
-            />
-            <SwapApprovalStep
-              isDone={stepComplete === 3}
-              label="Swap Approved"
-            />
-          </ul>
-        </>
-      ) : (
-        <>
-          <div className="exchange_section_wrap">
-            <span className="top_label label">Exchange route</span>
+      <div className="exchange_section_wrap">
+        <span className="top_label label">Exchange route</span>
 
-            {sources.map((source) => (
-              <div
-                className="exchange_content standard_width"
-                key={source.name}
-              >
-                <div className="left">
-                  {source.name.includes("Uniswap") && (
-                    <span className="icon_uniswap" />
-                  )}
-                  {source.name}
-                </div>
-                <div>{parseFloat(source.proportion) * 100}%</div>
-              </div>
-            ))}
+        {sources.map((source) => (
+          <div className="exchange_content standard_width" key={source.name}>
+            <div className="left">
+              {source.name.includes("Uniswap") && (
+                <span className="icon_uniswap" />
+              )}
+              {source.name}
+            </div>
+            <div>{parseFloat(source.proportion) * 100}%</div>
           </div>
-          <div className="approve_button center_horizontal">
-            <SharedButton
-              type="primary"
-              size="large"
-              onClick={handleApproveClick}
-            >
-              Execute Swap
-            </SharedButton>
-          </div>
-        </>
-      )}
+        ))}
+      </div>
+      <div className="approve_button center_horizontal">
+        <SharedButton type="primary" size="large" onClick={handleApproveClick}>
+          Execute Swap
+        </SharedButton>
+      </div>
       <style jsx>
         {`
           section {

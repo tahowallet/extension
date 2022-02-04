@@ -1,11 +1,11 @@
 import React, { ReactElement, useState } from "react"
 import {
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
-  setFeeType,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import logger from "@tallyho/tally-background/lib/logger"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -16,12 +16,34 @@ export default function SignTransactionDetailPanel(): ReactElement {
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
 
-  const [gasLimit, setGasLimit] = useState("")
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   if (transactionDetails === undefined) return <></>
+
+  const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
+    let updatedGasLimit = transactionDetails.gasLimit
+    try {
+      updatedGasLimit = BigInt(networkSetting.gasLimit)
+    } catch (error) {
+      logger.error(
+        "Tried to set non-integer gas limit",
+        networkSetting.gasLimit,
+        "; keeping original",
+        updatedGasLimit
+      )
+    }
+
+    dispatch(
+      updateTransactionOptions({
+        ...transactionDetails,
+        gasLimit: updatedGasLimit,
+      })
+    )
+
+    setNetworkSettingsModalOpen(false)
+  }
 
   return (
     <div className="detail_items_wrap standard_width_padded">
@@ -32,17 +54,8 @@ export default function SignTransactionDetailPanel(): ReactElement {
         customSize={`${3 * 56 + 320}px`}
       >
         <NetworkSettingsChooser
-          networkSettings={{
-            estimatedFeesPerGas,
-            gasLimit,
-          }}
-          onNetworkSettingsSave={async (networkSetting: NetworkFeeSetting) => {
-            setGasLimit(networkSetting.gasLimit)
-            dispatch(setFeeType(networkSetting.feeType))
-            dispatch(updateTransactionOptions(transactionDetails))
-            setNetworkSettingsModalOpen(false)
-          }}
-          visible={networkSettingsModalOpen}
+          estimatedFeesPerGas={estimatedFeesPerGas}
+          onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
       <span className="detail_item">

@@ -1,6 +1,6 @@
 import {
   EstimatedFeesPerGas,
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   NetworkFeeTypeChosen,
   selectFeeType,
   selectLastGasEstimatesRefreshTime,
@@ -15,7 +15,7 @@ interface NetworkSettingsChooserProps {
     estimatedFeesPerGas: EstimatedFeesPerGas | undefined
     gasLimit: string
   }
-  onNetworkSettingsSave: (setting: NetworkFeeSetting) => void
+  onNetworkSettingsSave: (setting: NetworkFeeSettings) => void
   visible: boolean
 }
 
@@ -24,10 +24,11 @@ export default function SwapSettingsChooser({
   onNetworkSettingsSave,
   visible,
 }: NetworkSettingsChooserProps): ReactElement {
+  const selectedFeeType = useBackgroundSelector(selectFeeType)
+
   const [timeRemaining, setTimeRemaining] = useState(0)
-  const [customGasLimit, setCustomGasLimit] = useState(gasLimit)
   const [selectedSetting, setSelectedSetting] = useState({
-    feeType: NetworkFeeTypeChosen.Regular,
+    feeType: selectedFeeType,
     gasLimit: "",
     values: {
       maxFeePerGas: 0n,
@@ -36,7 +37,6 @@ export default function SwapSettingsChooser({
   })
 
   const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
 
   const saveUserGasChoice = () => {
     onNetworkSettingsSave(selectedSetting)
@@ -69,10 +69,8 @@ export default function SwapSettingsChooser({
           {visible ? (
             <NetworkSettingsSelect
               estimatedFeesPerGas={estimatedFeesPerGas}
-              gasLimit={customGasLimit}
-              setCustomGasLimit={setCustomGasLimit}
-              onSelectNetworkSetting={setSelectedSetting}
-              selectedFeeType={selectedFeeType}
+              networkSettings={selectedSetting}
+              onNetworkSettingsChange={setSelectedSetting}
             />
           ) : (
             <></>

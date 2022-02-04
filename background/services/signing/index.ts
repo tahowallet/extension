@@ -6,8 +6,23 @@ import { HexString } from "../../types"
 import BaseService from "../base"
 // import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import ChainService from "../chain"
+import logger from "../../lib/logger"
 
 type Events = ServiceLifecycleEvents
+
+type SignerType = "keyring" | HardwareSignerType
+type HardwareSignerType = "ledger"
+
+type AddressHandler = {
+  address: string
+  signer: SignerType
+}
+
+type AccountSigner = {
+  type: SignerType
+  accountID: string
+}
 
 /**
  * The SigningService is responsible for
@@ -18,17 +33,24 @@ type Events = ServiceLifecycleEvents
  * - xxx
  */
 export default class SigningService extends BaseService<Events> {
+  addressHandlers: AddressHandler[] = []
+
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
-    [Promise<KeyringService>, Promise<LedgerService>]
-  > = async (keyringService, ledgerService) => {
-    return new this(await keyringService, await ledgerService)
+    [Promise<KeyringService>, Promise<LedgerService>, Promise<ChainService>]
+  > = async (keyringService, ledgerService, chainService) => {
+    return new this(
+      await keyringService,
+      await ledgerService,
+      await chainService
+    )
   }
 
   private constructor(
-    keyringService: KeyringService,
-    ledgerService: LedgerService
+    private keyringService: KeyringService,
+    private ledgerService: LedgerService,
+    private chainService: ChainService
   ) {
     super()
   }
@@ -37,19 +59,69 @@ export default class SigningService extends BaseService<Events> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
   }
 
-  async deriveAddress(accountID: string): Promise<HexString> {
-    this.deriveAddress = this.deriveAddress.bind(this)
+  async deriveAddress(signerID: AccountSigner): Promise<HexString> {
+    if (signerID.type === "ledger") {
+      return this.ledgerService.deriveAddress(signerID.accountID)
+    }
 
-    throw new Error("Unimplemented")
+    if (signerID.type === "keyring") {
+      return this.keyringService.deriveAddress(signerID.accountID)
+    }
+
+    throw new Error(`Unknown signerID: ${signerID}`)
+  }
+
+  private async signTransactionWithNonce(
+    signer: SignerType,
+    address: HexString,
+    transactionWithNonce: EIP1559TransactionRequest & { nonce: number }
+  ): Promise<SignedEVMTransaction> {
+    switch (signer) {
+      case "ledger":
+        return this.ledgerService.signTransaction(
+          transactionWithNonce.from,
+          transactionWithNonce
+        )
+      case "keyring":
+        return this.keyringService.signTransaction(
+          transactionWithNonce.from,
+          transactionWithNonce
+        )
+      default:
+        throw new Error(
+          `Unknown address (${address}) or signer (${signer}) provided!`
+        )
+    }
   }
 
   async signTransaction(
     address: HexString,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<SignedEVMTransaction> {
-    this.signTransaction = this.signTransaction.bind(this)
+    const transactionWithNonce =
+      await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
-    throw new Error("Unimplemented")
+    try {
+      const actualHandler = this.addressHandlers.find(
+        (handlers) => handlers.address === address
+      )
+
+      if (!actualHandler) {
+        throw new Error(`Unregistered address (${address}) found!`)
+      }
+
+      return await this.signTransactionWithNonce(
+        actualHandler.signer,
+        address,
+        transactionWithNonce
+      )
+    } finally {
+      this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+    }
+  }
+
+  addTrackedAddress(address: string, handler: SignerType): void {
+    this.addressHandlers.push({ address, signer: handler })
   }
 
   async signTypedData(
