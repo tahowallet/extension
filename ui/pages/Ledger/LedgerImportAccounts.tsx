@@ -9,9 +9,9 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
-import SharedSelect from "../../components/Shared/SharedSelect"
 import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
+import OnboardingDerivationPathSelectAlt from "../../components/Onboarding/OnboardingDerivationPathSelect"
 
 const addressesPerPage = 6
 
@@ -347,12 +347,7 @@ export default function LedgerImportAccounts({
         subHeading="You can select as many as you want"
       >
         <div className="derivation_path">
-          <SharedSelect
-            options={[
-              { label: `m'/44'/60'/0'`, value: `m'/44'/60'/0'` },
-              { label: `m'/44'/60'`, value: `m'/44'/60'` },
-            ]}
-            placeholder="Select derivation path"
+          <OnboardingDerivationPathSelectAlt
             onChange={(value) => {
               setParentPath(value)
             }}
