@@ -189,8 +189,18 @@ export function fixedPointNumberToString(
   const undecimaledAmount = amount.toString()
   const preDecimalLength = undecimaledAmount.length - decimals
 
-  const preDecimalCharacters = undecimaledAmount.substring(0, preDecimalLength)
-  const postDecimalCharacters = undecimaledAmount.substring(preDecimalLength)
+  const preDecimalCharacters =
+    preDecimalLength > 0
+      ? undecimaledAmount.substring(0, preDecimalLength)
+      : "0"
+  const postDecimalCharacters =
+    // The pre-decimal length is negative if the number is less than 1/10th of
+    // a whole number; in these cases, we have to prefix 0s as the string
+    // representation of the bigint won't have them. For example, the bigint
+    // 5000 with decimals 5 represents 0.05000, but in this case
+    // undecimaledAmount will just be "5000".
+    "0".repeat(Math.max(-preDecimalLength, 0)) +
+    undecimaledAmount.substring(preDecimalLength)
 
   return `${preDecimalCharacters}.${
     trimTrailingZeros
