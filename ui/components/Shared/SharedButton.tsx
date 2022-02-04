@@ -6,6 +6,7 @@ import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 interface Props {
   children: React.ReactNode
+  id?: string
   type:
     | "primary"
     | "secondary"
@@ -27,6 +28,7 @@ interface Props {
 
 export default function SharedButton(props: Props): ReactElement {
   const {
+    id,
     children,
     type,
     size,
@@ -68,6 +70,7 @@ export default function SharedButton(props: Props): ReactElement {
 
   return (
     <button
+      id={id}
       type={isFormSubmit ? "submit" : "button"}
       className={classNames(
         { large: size === "large" },
