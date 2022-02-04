@@ -366,11 +366,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 amount={sellAmount}
-                assets={sellAssetAmounts.map(({ asset }) => asset)}
-                maxBalance={
-                  sellAssetAmounts.find(({ asset }) => asset === sellAsset)
-                    ?.decimalAmount
-                }
+                assetsAndAmounts={sellAssetAmounts}
                 defaultAsset={sellAsset}
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
@@ -388,9 +384,11 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 amount={buyAmount}
-                assets={buyAssets}
+                // FIXME Merge master asset list with account balances.
+                assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 defaultAsset={buyAsset}
                 isDisabled={buyAmountLoading}
+                showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount) => {
                   setBuyAmount(newAmount)
