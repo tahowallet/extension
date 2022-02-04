@@ -1,11 +1,32 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
+import {
+  chooseDAO,
+  selectClaimSelections,
+  DAO,
+} from "@tallyho/tally-background/redux-slices/claim"
+import classNames from "classnames"
 import ClaimAmountBanner from "./ClaimAmountBanner"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
-function DAOButton() {
+function DAOButton(props: {
+  address: string
+  name: string
+  avatar: string
+  isActive: boolean
+}) {
+  const { address, name, avatar, isActive } = props
+  const dispatch = useBackgroundDispatch()
+
   return (
-    <button type="button" className="option">
+    <button
+      type="button"
+      className={classNames("option", { active: isActive })}
+      onClick={() => {
+        dispatch(chooseDAO({ address, name, avatar }))
+      }}
+    >
       <div className="icon" />
-      <div className="name">Yearn.finance</div>
+      <div className="name">{name}</div>
       <div className="radio" />
       <style jsx>{`
         .option {
@@ -25,6 +46,8 @@ function DAOButton() {
           background-color: #006ae3;
           border-radius: 200px;
           margin-bottom: 8px;
+          background: url("./images/DAOs/${avatar}");
+          background-size: cover;
         }
         .radio {
           width: 16px;
@@ -32,29 +55,49 @@ function DAOButton() {
           border: 2px solid var(--green-60);
           border-radius: 200px;
           margin-top: 8px;
+          box-sizing: border-box;
         }
         .option:hover {
           background-color: var(--green-80);
+        }
+        .active .radio {
+          border: 5px solid var(--trophy-gold);
         }
       `}</style>
     </button>
   )
 }
 
-export default function ClaimReferral(): ReactElement {
+export default function ClaimReferral(props: {
+  DAOs: DAO[]
+  claimAmount: number
+  claimAmountWithBonus: number
+}): ReactElement {
+  const { DAOs, claimAmount, claimAmountWithBonus } = props
+  const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
+
   return (
     <div className="claim standard_width">
-      <ClaimAmountBanner />
+      <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
-        Get a bonus of <div className="highlight">463</div> TALLY!
+        Get a bonus of
+        <div className="highlight">{Math.floor(claimAmountWithBonus)}</div>
+        TALLY!
       </div>
       <div className="description">
         Select a Project/DAO to share the bonus with! You each receive 463
         TALLY!
       </div>
       <div className="options">
-        {["", "", "", "", "", ""].map(() => {
-          return <DAOButton />
+        {DAOs.map(({ address, name, avatar }) => {
+          return (
+            <DAOButton
+              address={address}
+              name={name}
+              avatar={avatar}
+              isActive={selectedDAO?.name === name}
+            />
+          )
         })}
       </div>
       <style jsx>

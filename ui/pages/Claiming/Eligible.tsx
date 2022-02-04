@@ -1,5 +1,11 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  toFixedPointNumber,
+  multiplyByFloat,
+  convertFixedPointNumber,
+} from "@tallyho/tally-background/lib/fixed-point"
 import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
@@ -21,6 +27,19 @@ export default function Eligible(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
+  const selectedAccountAddress =
+    useBackgroundSelector(selectCurrentAccount).address
+
+  const { delegates, DAOs, claimAmountHex } = useBackgroundSelector((state) => {
+    return {
+      delegates: state.claim.delegates,
+      DAOs: state.claim.DAOs,
+      claimAmountHex: state.claim.eligibles.find(
+        ({ address }) => address === selectedAccountAddress
+      )?.earnings,
+    }
+  })
+
   useEffect(() => {
     if (Object.keys(accountData)) {
       setAccount(Object.keys(accountData)[0])
@@ -34,6 +53,23 @@ export default function Eligible(): ReactElement {
   const advanceStep = () => {
     setStep(step + 1)
   }
+
+  const BONUS_PERCENT = 0.05
+
+  const fixedPointClaimEarnings = toFixedPointNumber(Number(claimAmountHex), 18)
+  const fixedPointClaimEarningsWithBonus = {
+    amount:
+      fixedPointClaimEarnings.amount +
+      multiplyByFloat(fixedPointClaimEarnings, BONUS_PERCENT),
+    decimals: fixedPointClaimEarnings.decimals,
+  }
+
+  const claimAmount = Number(
+    convertFixedPointNumber(fixedPointClaimEarnings, 0).amount
+  )
+  const claimAmountWithBonus = Number(
+    convertFixedPointNumber(fixedPointClaimEarningsWithBonus, 0).amount
+  )
 
   return (
     <div className="wrap">
@@ -53,24 +89,39 @@ export default function Eligible(): ReactElement {
 
       <div
         className="background"
-        style={{ backgroundPositionX: `${(step - 1) * 100}%` }}
+        style={{ backgroundPositionX: `${-384 * (step - 1)}px` }}
       />
       <div className="eligible">
         <div
           className="steps-container"
-          style={{ transform: `translateX(${-384 * (step - 1)}px)` }}
+          style={{ marginLeft: -384 * (step - 1) }}
         >
-          <ClaimIntro />
-          <ClaimReferral />
-          <ClaimReferralByUser />
-          <ClaimDelegate />
-          <ClaimReview />
+          <ClaimIntro claimAmount={claimAmount} />
+          <ClaimReferral
+            DAOs={DAOs}
+            claimAmount={claimAmount}
+            claimAmountWithBonus={claimAmountWithBonus}
+          />
+          <ClaimReferralByUser claimAmount={claimAmount} />
+          <ClaimDelegate
+            delegates={delegates}
+            claimAmount={claimAmountWithBonus}
+          />
+          <ClaimReview
+            claimAmount={claimAmountWithBonus}
+            backToChoose={() => {
+              setStep(step - 1)
+            }}
+          />
         </div>
         <footer>
           <ClaimFooter
             step={step}
             setStep={setStep}
             advanceStep={advanceStep}
+            showSuccess={() => {
+              setShowSuccessStep(true)
+            }}
           />
         </footer>
       </div>
@@ -96,10 +147,10 @@ export default function Eligible(): ReactElement {
             background-image: url("./images/dark_forest@2x.png");
             background-repeat: repeat-x;
             background-position: bottom;
-            height: ${step === 5 ? "557" : "307"}px;
+            height: 307px;
             background-color: var(--green-95);
             box-shadow: 0px -10px 13px 6px var(--green-95);
-            transition: all 0.6s cubic-bezier(0.86, 0, 0.07, 1);
+            transition: all 0.7s cubic-bezier(0.86, 0, 0.07, 1);
           }
           .eligible {
             display: flex;
@@ -109,6 +160,7 @@ export default function Eligible(): ReactElement {
             flex-grow: 1;
             width: 352px;
             margin: 0 auto;
+            overflow-x: hidden;
           }
           footer {
             position: fixed;

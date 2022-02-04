@@ -1,37 +1,28 @@
 import React, { ReactElement, useState } from "react"
+import {
+  chooseDelegate,
+  Delegate,
+} from "@tallyho/tally-background/redux-slices/claim"
+
+import { useBackgroundDispatch } from "../../hooks"
+
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
-const delegates = [
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-  {
-    image: "./images/uniswap@2x.png",
-    name: "Justin Sun",
-    address: "0x0b8A87B2eBa3339cE6234e13F52b28677c8E123D",
-  },
-]
-export default function ClaimDelegate(): ReactElement {
+// TODO: replace any
+export default function ClaimDelegate(props: {
+  delegates: Delegate[]
+  claimAmount: number
+}): ReactElement {
+  const { delegates, claimAmount } = props
   const [panelNumber, setPanelNumber] = useState(0)
+  const dispatch = useBackgroundDispatch()
 
   return (
     <div>
-      <ClaimAmountBanner />
+      <ClaimAmountBanner amount={claimAmount} />
       <div className="claim standard_width">
         <div className="title">Choose a delegate!</div>
         <div className="description">
@@ -46,29 +37,52 @@ export default function ClaimDelegate(): ReactElement {
           />
         </div>
         {panelNumber === 0 ? (
-          <>
+          <ul className="delegates">
             {delegates.map((delegate) => {
               return (
-                <div className="delegate">
-                  <input type="radio" name="delegate" className="radio" />
-                  <div className="delegate_details">
-                    <div className="icon" />
-                    <div className="delegate_info">
-                      <div className="name">
-                        {delegate.name}
-                        <span className="count">123 Votes</span>
-                      </div>
-                      <div className="pitch">
-                        <SharedButton type="tertiaryGray" size="small">
-                          See pitch
-                        </SharedButton>
-                      </div>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dispatch(chooseDelegate(delegate))
+                    }}
+                  >
+                    <div className="delegate">
+                      <input
+                        type="radio"
+                        name="delegate"
+                        id={delegate.ensName}
+                        className="radio"
+                      />
+                      <label
+                        className="delegate_details"
+                        htmlFor={delegate.ensName}
+                      >
+                        <div className="icon" />
+                        <div className="delegate_info">
+                          <div className="name">{delegate.ensName}</div>
+                          {/* <span className="count">123 Votes</span> */}
+                          <div className="pitch">
+                            <SharedButton
+                              type="tertiaryGray"
+                              size="small"
+                              onClick={() => {
+                                window
+                                  .open(delegate.applicationLink, "_blank")
+                                  ?.focus()
+                              }}
+                            >
+                              See pitch
+                            </SharedButton>
+                          </div>
+                        </div>
+                      </label>
                     </div>
-                  </div>
-                </div>
+                  </button>
+                </li>
               )
             })}
-          </>
+          </ul>
         ) : (
           <div>
             <p>
@@ -113,7 +127,7 @@ export default function ClaimDelegate(): ReactElement {
             padding-top: 20px;
           }
           .delegate_details {
-            display: flex;
+            display: contents;
             align-items: center;
             width: 100%;
           }
@@ -122,6 +136,7 @@ export default function ClaimDelegate(): ReactElement {
             width: 100%;
             justify-content: space-between;
             margin-left: 12px;
+            width: 275px;
           }
           .radio {
             all: revert;
@@ -132,6 +147,14 @@ export default function ClaimDelegate(): ReactElement {
             font-weight: 500;
             display: flex;
             flex-direction: column;
+            line-height: 32px;
+          }
+          .delegates {
+            background-color: var(--hunter-green);
+            margin-left: -16px;
+            padding: 0px 16px;
+            width: 384px;
+            box-sizing: border-box;
           }
           .count {
             color: var(--green-60);

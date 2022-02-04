@@ -1,0 +1,32 @@
+[
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Yearn.finance",
+    "avatar": "yearn@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "OlympusDao",
+    "avatar": "olympusdao@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "AAVE",
+    "avatar": "aave@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "ENS",
+    "avatar": "ens@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "SushiSwap",
+    "avatar": "sushiswap@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Uniswap",
+    "avatar": "uniswap@2x.png"
+  }
+]

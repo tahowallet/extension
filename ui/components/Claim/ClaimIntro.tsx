@@ -1,11 +1,15 @@
 import React, { ReactElement } from "react"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 
-export default function ClaimIntro(): ReactElement {
+export default function ClaimIntro(props: {
+  claimAmount: number
+}): ReactElement {
+  const { claimAmount } = props
+
   return (
     <div className="claim standard_width">
       <div className="title">You’re about to claim</div>
-      <ClaimAmountBanner />
+      <ClaimAmountBanner amount={claimAmount} />
       <p className="list_title">Here are your next steps:</p>
       <div className="content">
         <ul>

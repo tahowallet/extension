@@ -2,12 +2,17 @@ import React, { ReactElement } from "react"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
 
-export default function ClaimReferralByUser(): ReactElement {
+export default function ClaimReferralByUser({
+  claimAmount,
+}: {
+  claimAmount: number
+}): ReactElement {
   return (
     <div className="wrap standard_width">
-      <ClaimAmountBanner />
+      <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
-        Get a bonus of <div className="highlight">463</div> TALLY!
+        Get a bonus of
+        <div className="highlight">{Math.floor(claimAmount * 0.05)}</div> TALLY!
       </div>
       <div className="description">
         You were refered by somebody, and to reward that you each get 463 TALLY

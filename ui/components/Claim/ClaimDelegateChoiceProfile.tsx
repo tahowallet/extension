@@ -1,9 +1,11 @@
 import React, { ReactElement } from "react"
+import { Delegate, DAO } from "@tallyho/tally-background/redux-slices/claim"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
+  delegate?: Delegate | DAO | null
 }): ReactElement {
-  const { name } = props
+  const { name, delegate } = props
   return (
     <div className="wrap">
       <div className="label">Refered by</div>
@@ -34,9 +36,11 @@ export default function ClaimDelegateChoiceProfile(props: {
             width: 40px;
             height: 40px;
             border-radius: 150px;
-            background-color: #006ae3;
             margin-right: 13px;
             flex-shrink: 0;
+            background-image: url("./images/DAOs/${delegate?.avatar}");
+            background-size: cover;
+            background-color: #006ae3;
           }
         `}
       </style>
