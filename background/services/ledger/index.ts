@@ -212,7 +212,7 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("No paired device when the Ledger is connected!?")
     }
 
-    this.onConnection(devArray[0].productId)
+    await this.onConnection(devArray[0].productId)
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.#currentLedgerId!
