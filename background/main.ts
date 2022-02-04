@@ -16,6 +16,7 @@ import {
   NameService,
   PreferenceService,
   ProviderBridgeService,
+  TelemetryService,
   ServiceCreatorFunction,
   LedgerService,
   SigningService,
@@ -32,7 +33,6 @@ import {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
-  emitter as accountSliceEmitter,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
@@ -172,7 +172,7 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (preloadedState = {}) =>
+const initializeStore = (preloadedState = {}, main: Main) =>
   configureStore({
     preloadedState,
     reducer: rootReducer,
@@ -182,6 +182,7 @@ const initializeStore = (preloadedState = {}) =>
           isSerializable: (value: unknown) =>
             isPlain(value) || typeof value === "bigint",
         },
+        thunk: { extraArgument: { main } },
       })
 
       // It might be tempting to use an array with `...` destructuring, but
@@ -246,13 +247,16 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+
+    const telemetryService = TelemetryService.create()
+
     const ledgerService = HIDE_IMPORT_LEDGER
       ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
       : LedgerService.create()
 
     const signingService = HIDE_IMPORT_LEDGER
       ? (Promise.resolve(null) as unknown as Promise<SigningService>)
-      : SigningService.create(keyringService, ledgerService)
+      : SigningService.create(keyringService, ledgerService, chainService)
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -289,6 +293,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
+      await telemetryService,
       await ledgerService,
       await signingService
     )
@@ -338,6 +343,11 @@ export default class Main extends BaseService<never> {
      * knowledge.
      */
     private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the telemetry service, which keeps track of extension
+     * storage usage and (eventually) other statistics.
+     */
+    private telemetryService: TelemetryService,
 
     /**
      * A promise to the Ledger service, handling the communication
@@ -360,11 +370,31 @@ export default class Main extends BaseService<never> {
     })
 
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(savedReduxState)
+    this.store = initializeStore(savedReduxState, this)
 
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
+      dispatchResponder: async (
+        dispatchResult: Promise<unknown>,
+        send: (param: { error: string | null; value: unknown | null }) => void
+      ) => {
+        try {
+          send({
+            error: null,
+            value: encodeJSON(await dispatchResult),
+          })
+        } catch (error) {
+          logger.error(
+            "Error awaiting and dispatching redux store result: ",
+            error
+          )
+          send({
+            error: encodeJSON(error),
+            value: null,
+          })
+        }
+      },
     })
 
     this.initializeRedux()
@@ -384,6 +414,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.telemetryService.startService(),
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -404,6 +435,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.telemetryService.stopService(),
     ]
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -412,7 +444,6 @@ export default class Main extends BaseService<never> {
     }
 
     await Promise.all(servicesToBeStopped)
-
     await super.internalStopService()
   }
 
@@ -424,10 +455,42 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectTelemetryService()
+
     if (!HIDE_IMPORT_LEDGER) {
       this.connectLedgerService()
+      this.connectSigningService()
     }
+
     await this.connectChainService()
+  }
+
+  async addAccount(addressNetwork: AddressNetwork): Promise<void> {
+    await this.chainService.addAccountToTrack(addressNetwork)
+  }
+
+  async addAccountByName(nameNetwork: NameNetwork): Promise<void> {
+    try {
+      const address = await this.nameService.lookUpEthereumAddress(
+        nameNetwork.name
+      )
+
+      if (address) {
+        const addressNetwork = {
+          address,
+          network: nameNetwork.network,
+        }
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(address))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      } else {
+        throw new Error("Name not found")
+      }
+    } catch (error) {
+      throw new Error(
+        `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
+      )
+    }
   }
 
   async connectChainService(): Promise<void> {
@@ -440,36 +503,6 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
-    accountSliceEmitter.on("addAccount", async (addressNetwork) => {
-      await this.chainService.addAccountToTrack(addressNetwork)
-    })
-
-    accountSliceEmitter.on(
-      "addAccountByName",
-      async (nameNetwork: NameNetwork) => {
-        try {
-          const address = await this.nameService.lookUpEthereumAddress(
-            nameNetwork.name
-          )
-
-          if (address) {
-            const addressNetwork = {
-              address,
-              network: nameNetwork.network,
-            }
-            await this.chainService.addAccountToTrack(addressNetwork)
-            this.store.dispatch(loadAccount(address))
-            this.store.dispatch(setNewSelectedAccount(addressNetwork))
-          } else {
-            throw new Error("Name not found")
-          }
-        } catch (error) {
-          throw new Error(
-            `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
-          )
-        }
-      }
-    )
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       const { transactionRequest: populatedRequest, gasEstimationError } =
@@ -507,18 +540,33 @@ export default class Main extends BaseService<never> {
       async (
         transaction: EIP1559TransactionRequest & { nonce: number | undefined }
       ) => {
-        const transactionWithNonce =
-          await this.chainService.populateEVMTransactionNonce(transaction)
+        if (HIDE_IMPORT_LEDGER) {
+          const transactionWithNonce =
+            await this.chainService.populateEVMTransactionNonce(transaction)
 
-        try {
-          const signedTx = await this.keyringService.signTransaction(
-            transaction.from,
-            transactionWithNonce
-          )
-          this.store.dispatch(signed(signedTx))
-        } catch (exception) {
-          logger.error("Error signing transaction; releasing nonce", exception)
-          this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+          try {
+            const signedTx = await this.keyringService.signTransaction(
+              transaction.from,
+              transactionWithNonce
+            )
+            this.store.dispatch(signed(signedTx))
+          } catch (exception) {
+            logger.error(
+              "Error signing transaction; releasing nonce",
+              exception
+            )
+            this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+          }
+        } else {
+          try {
+            const signedTx = await this.signingService.signTransaction(
+              transaction.from,
+              transaction
+            )
+            this.store.dispatch(signed(signedTx))
+          } catch (exception) {
+            logger.error("Error signing transaction", exception)
+          }
         }
       }
     )
@@ -631,6 +679,16 @@ export default class Main extends BaseService<never> {
     )
   }
 
+  async connectSigningService(): Promise<void> {
+    this.keyringService.emitter.on("address", (address) =>
+      this.signingService.addTrackedAddress(address, "keyring")
+    )
+
+    this.ledgerService.emitter.on("address", ({ address }) =>
+      this.signingService.addTrackedAddress(address, "ledger")
+    )
+  }
+
   async connectLedgerService(): Promise<void> {
     ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
       for (let i = 0; i < accounts.length; i += 1) {
@@ -651,8 +709,8 @@ export default class Main extends BaseService<never> {
     })
 
     ledgerSliceEmitter.on("fetchAddress", (input) => {
-      this.ledgerService
-        .deriveAddress(input.path)
+      this.signingService
+        .deriveAddress({ type: "ledger", accountID: input.path })
         .then(input.resolve, input.reject)
     })
 
@@ -694,7 +752,10 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
-      await this.keyringService.deriveAddress(keyringID)
+      await this.signingService.deriveAddress({
+        type: "keyring",
+        accountID: keyringID,
+      })
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
@@ -871,5 +932,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+  }
+
+  connectTelemetryService(): void {
+    // Pass the redux store to the telemetry service so we can analyze its size
+    this.telemetryService.connectReduxStore(this.store)
   }
 }
