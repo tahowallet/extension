@@ -170,7 +170,7 @@ export default class LedgerService extends BaseService<Events> {
     }
   }
 
-  async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
+  #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
     if (!TestedProductId(event.device.productId)) {
       return
     }
@@ -178,7 +178,7 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
+  #handleUSBDisconnect = async (event: USBConnectionEvent): Promise<void> => {
     if (!this.#currentLedgerId) {
       return
     }
@@ -194,15 +194,15 @@ export default class LedgerService extends BaseService<Events> {
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.addEventListener("connect", this.#onUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#onUSBDisconnect)
+    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
+    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
   }
 
   protected async internalStopService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.removeEventListener("disconnect", this.#onUSBDisconnect)
-    navigator.usb.removeEventListener("connect", this.#onUSBConnect)
+    navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
+    navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
   }
 
   async connectLedger(): Promise<string> {
