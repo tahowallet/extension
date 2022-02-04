@@ -4,7 +4,7 @@ import { BigNumber, ethers } from "ethers"
 import { HOUR } from "../constants"
 import { ERC20_ABI } from "../lib/erc20"
 import { getEthereumNetwork } from "../lib/utils"
-import { VAULT_ABI } from "../lib/vault"
+import VAULT_ABI from "../lib/vault"
 import { EIP712TypedData, HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {

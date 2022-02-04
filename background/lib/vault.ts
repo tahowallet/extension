@@ -1,5 +1,4 @@
-// eslint-disable-next-line import/prefer-default-export
-export const VAULT_ABI = [
+const VAULT_ABI = [
   {
     inputs: [
       {
@@ -992,3 +991,5 @@ export const VAULT_ABI = [
     type: "function",
   },
 ]
+
+export default VAULT_ABI
