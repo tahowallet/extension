@@ -6,7 +6,6 @@ import classNames from "classnames"
 import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
-import SharedCheckbox from "../../components/Shared/SharedCheckbox"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
@@ -26,16 +25,19 @@ function TextArea({
   return (
     <>
       <textarea
+        id="recovery_phrase"
+        placeholder=" "
         className={classNames("wrap center_horizontal", {
           error: errorMessage,
         })}
         onChange={(event) => onChange(event.target.value)}
         value={value}
       />
+      <label htmlFor="recovery_phrase">Paste recovery phrase</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>{`
         textarea {
-          width: 332px;
+          width: 320px;
           height: 97px;
           border-radius: 4px;
           border: 2px solid var(--green-60);
@@ -54,8 +56,30 @@ function TextArea({
           align-self: flex-start;
           height: 20px;
           margin-top: 3px;
-          margin-left: 10px;
-          margin-bottom: -23px;
+        }
+        label {
+          position: absolute;
+          pointer-events: none;
+          display: flex;
+          width: fit-content;
+          margin-left: 16px;
+          transform: translateY(-80px);
+          background-color: var(--hunter-green);
+          border-radius: 5px;
+          box-sizing: border-box;
+          color: var(--green-40);
+          transition: font-size 0.2s ease, transform 0.2s ease,
+            font-weight 0.2s ease, padding 0.2s ease;
+        }
+        textarea:focus ~ label,
+        textarea:not(:placeholder-shown) ~ label {
+          transform: translateY(-103px) translateX(-5px);
+          font-size: 12px;
+          font-weight: 500;
+          padding: 0px 6px;
+        }
+        .error ~ label {
+          color: var(--error);
         }
       `}</style>
     </>
@@ -73,8 +97,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
-  const [isChecked, setIsChecked] = useState(false)
-  const [path, setPath] = useState<string>()
+  const [path, setPath] = useState<string>("m/44'/60'/0'/0")
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
@@ -103,10 +126,6 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     }
   }, [dispatch, recoveryPhrase, path])
 
-  useEffect(() => {
-    if (!isChecked) setPath(undefined)
-  }, [isChecked])
-
   if (!areKeyringsUnlocked) return <></>
 
   return (
@@ -125,29 +144,21 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             <div className="metamask_onboarding_image" />
             <h1 className="serif_header">Import account</h1>
             <div className="info">
-              Enter or copy & paste the 12-word recovery phrase from your
-              MetaMask account.
+              Copy paste or write down your MetaMask secret recovery phrase.
             </div>
-            <TextArea
-              value={recoveryPhrase}
-              onChange={(value) => {
-                // Clear error message on change
-                setErrorMessage("")
-                setRecoveryPhrase(value)
-              }}
-              errorMessage={errorMessage}
-            />
+            <div>
+              <TextArea
+                value={recoveryPhrase}
+                onChange={(value) => {
+                  // Clear error message on change
+                  setErrorMessage("")
+                  setRecoveryPhrase(value)
+                }}
+                errorMessage={errorMessage}
+              />
+            </div>
 
             {!HIDE_IMPORT_DERIVATION_PATH && (
-              <div className="checkbox_wrapper">
-                <SharedCheckbox
-                  label="Custom derivation"
-                  checked={isChecked}
-                  onChange={() => setIsChecked(!isChecked)}
-                />
-              </div>
-            )}
-            {!HIDE_IMPORT_DERIVATION_PATH && isChecked && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
               </div>
@@ -155,13 +166,23 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           </div>
           <div className="portion bottom">
             <SharedButton
-              size="medium"
+              size={HIDE_IMPORT_DERIVATION_PATH ? "medium" : "large"}
               type="primary"
               isDisabled={isImporting}
               onClick={importWallet}
             >
               Import account
             </SharedButton>
+            {!HIDE_IMPORT_DERIVATION_PATH && (
+              <button
+                className="help_button"
+                type="button"
+                // TODO External link or information modal?
+                onClick={() => {}}
+              >
+                How do I find the recovery phrase?
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -191,36 +212,48 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           align-items: center;
         }
         .bottom {
-          height: 90px;
           justify-content: space-between;
           flex-direction: column;
-          margin-bottom: 24px;
-          margin-top: 35px;
+          margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
+          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
         }
         .metamask_onboarding_image {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: ${HIDE_IMPORT_DERIVATION_PATH ? "205.3px" : "154px"};
-          height: ${HIDE_IMPORT_DERIVATION_PATH ? "193px" : "144.75"};
-          margin-top: 27px;
-          margin-bottom: 13px;
+          width: ${HIDE_IMPORT_DERIVATION_PATH ? "205.3px" : "155px"};
+          height: ${HIDE_IMPORT_DERIVATION_PATH ? "193px" : "145.71"};
+          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "27px" : "23.5px"};
+          margin-bottom: 15px;
         }
+        .serif_header {
+          font-size: 36px;
+          line-height: 42px;
+          margin-bottom: 8px;
+        }
+
         .info {
-          width: 320px;
           height: 43px;
-          color: var(--green-60);
-          font-size: 16px;
-          font-weight: 500;
-          line-height: 24px;
+          margin-bottom: 18px;
+        }
+        .info,
+        .help_button {
+          width: 320px;
           text-align: center;
-          margin-bottom: 32px;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--green-60);
+          font-weight: 500;
+        }
+        .help_button {
+          margin-top: 16px;
         }
         .checkbox_wrapper {
           margin-top: 6px;
           margin-bottom: 6px;
         }
         .select_wrapper {
-          width: 332px;
+          margin-top: ${errorMessage ? "4px" : "15px"};
+          width: 320px;
         }
       `}</style>
     </section>

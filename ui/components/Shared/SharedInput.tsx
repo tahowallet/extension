@@ -10,6 +10,7 @@ interface Props {
   type: "password" | "text" | "number"
   value?: string | number | undefined
   onChange?: (value: string) => void
+  onFocus?: () => void
   errorMessage?: string
 }
 
@@ -21,6 +22,7 @@ export default function SharedInput(props: Props): ReactElement {
     focusedLabelBackgroundColor,
     type,
     onChange,
+    onFocus,
     value,
     errorMessage,
   } = props
@@ -40,6 +42,7 @@ export default function SharedInput(props: Props): ReactElement {
         value={value}
         spellCheck={false}
         onChange={(event) => onChange?.(event.target.value)}
+        onFocus={onFocus}
         className={classNames({
           error: errorMessage,
         })}
