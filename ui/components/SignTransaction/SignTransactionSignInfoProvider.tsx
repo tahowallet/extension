@@ -39,11 +39,6 @@ export default function SignTransactionSignInfoProvider({
     annotation = transactionDetails.annotation
   }
 
-  console.log({
-    annotation,
-    transactionDetails,
-  })
-
   const completeTransactionAssetAmount:
     | (AnyAssetAmount & AssetDecimalAmount)
     | CompleteAssetAmount =

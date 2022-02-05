@@ -589,7 +589,6 @@ export async function parseUniswapTx(
       return undefined
     }
   } catch (err) {
-    console.log(err)
     return undefined
   }
   return undefined

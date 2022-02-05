@@ -243,24 +243,28 @@ export default class EnrichmentService extends BaseService<Events> {
         }
       } else {
         // Fall back on a standard contract interaction.
-        const uniswapTx = await parseUniswapTx(transaction.input)
 
-        if (uniswapTx) {
-          txAnnotation = {
-            type: "contract-interaction",
-            timestamp: Date.now(),
-            transactionLogoURL,
-            assetAmount: uniswapTx.amount,
+        // If we are interacting with Uniswap
+        if (transaction.to === "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45") {
+          const uniswapTx = await parseUniswapTx(transaction.input)
+
+          if (uniswapTx) {
+            txAnnotation = {
+              type: "contract-interaction",
+              timestamp: Date.now(),
+              transactionLogoURL,
+              assetAmount: uniswapTx.amount,
+            }
+            return txAnnotation
           }
-        } else {
-          txAnnotation = {
-            timestamp: Date.now(),
-            type: "contract-interaction",
-            // Include the logo URL if we resolve it even if the interaction is
-            // non-specific; the UI can choose to use it or not, but if we know the
-            // address has an associated logo it's worth passing on.
-            transactionLogoURL,
-          }
+        }
+        txAnnotation = {
+          timestamp: Date.now(),
+          type: "contract-interaction",
+          // Include the logo URL if we resolve it even if the interaction is
+          // non-specific; the UI can choose to use it or not, but if we know the
+          // address has an associated logo it's worth passing on.
+          transactionLogoURL,
         }
       }
     }
