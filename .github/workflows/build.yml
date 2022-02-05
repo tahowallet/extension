@@ -24,8 +24,8 @@ jobs:
       if: github.ref != 'refs/heads/main'
       run: yarn build
       env:
-        ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || "oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K" }}
-        BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || "f60816ff-da02-463f-87a6-67a09c6d53fa" }}
+        ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
+        BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
     - name: Upload build on PRs
       if: github.ref != 'refs/heads/main'
       uses: actions/upload-artifact@v2
