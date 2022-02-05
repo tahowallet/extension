@@ -923,6 +923,12 @@ export default class ChainService extends BaseService<Events> {
             ][normalizedFromAddress] = transaction.nonce + 1
           }
           await this.saveTransaction(transaction, "alchemy")
+
+          // Wait for confirmation/receipt information.
+          this.subscribeToTransactionConfirmation(
+            getEthereumNetwork(),
+            transaction
+          )
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }
