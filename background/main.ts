@@ -58,6 +58,7 @@ import {
   updateTransactionOptions,
   broadcastOnSign,
   clearTransactionState,
+  selectDefaultNetworkFeeSettings,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -506,10 +507,19 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      const {
+        values: { maxFeePerGas, maxPriorityFeePerGas },
+      } = selectDefaultNetworkFeeSettings(this.store.getState())
+
       const { transactionRequest: populatedRequest, gasEstimationError } =
         await this.chainService.populatePartialEVMTransactionRequest(
           getEthereumNetwork(),
-          options
+          {
+            ...options,
+            maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+            maxPriorityFeePerGas:
+              options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+          }
         )
 
       if (typeof gasEstimationError === "undefined") {
