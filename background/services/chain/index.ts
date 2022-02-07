@@ -42,6 +42,10 @@ import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../enrichment"
+import {
+  convertFixedPointNumber,
+  multiplyFixedPointNumbers,
+} from "../../lib/fixed-point"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -290,7 +294,17 @@ export default class ChainService extends BaseService<Events> {
       (typeof partialRequest.gasLimit === "undefined" ||
         partialRequest.gasLimit < 21000n)
     ) {
-      transactionRequest.gasLimit = estimatedGasLimit
+      transactionRequest.gasLimit = multiplyFixedPointNumbers(
+        convertFixedPointNumber(
+          {
+            amount: estimatedGasLimit * 100n,
+            decimals: 0,
+          },
+          2
+        ),
+        { amount: 1n, decimals: 2 }, // 0.01 = 10%
+        0
+      ).amount
     }
 
     return { transactionRequest, gasEstimationError }
