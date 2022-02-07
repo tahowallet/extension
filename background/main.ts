@@ -777,7 +777,6 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(
           updateTransactionOptions(enrichedEVMTransactionSignatureRequest)
         )
-        this.store.dispatch(broadcastOnSign(false))
       }
     )
 
@@ -785,6 +784,7 @@ export default class Main extends BaseService<never> {
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
         this.store.dispatch(clearTransactionState())
+        this.store.dispatch(broadcastOnSign(false))
         this.enrichmentService.enrichTransactionSignature(
           payload,
           2 /* TODO desiredDecimals should be configurable */
