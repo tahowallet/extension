@@ -57,6 +57,7 @@ import {
   signed,
   updateTransactionOptions,
   broadcastOnSign,
+  clearTransactionState,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -789,6 +790,7 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
+        this.store.dispatch(clearTransactionState())
         this.enrichmentService.enrichTransactionSignature(
           payload,
           2 /* TODO desiredDecimals should be configurable */

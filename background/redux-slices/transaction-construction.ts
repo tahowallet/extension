@@ -224,6 +224,7 @@ const transactionSlice = createSlice({
 
 export const {
   transactionRequest,
+  clearTransactionState,
   transactionLikelyFails,
   broadcastOnSign,
   signed,
