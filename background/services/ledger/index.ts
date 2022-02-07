@@ -300,16 +300,11 @@ export default class LedgerService extends BaseService<Events> {
       const eth = new Eth(this.transport)
       const signature = await eth.signTransaction(path, serializedTx, null)
 
-      const alteredSig = {
-        r: signature.r,
-        s: signature.s,
+      const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
+        r: `0x${signature.r}`,
+        s: `0x${signature.s}`,
         v: parseInt(signature.v, 16),
-      }
-
-      const signedTransaction = serialize(
-        ethersTx as UnsignedTransaction,
-        alteredSig
-      )
+      })
       const tx = parseRawTransaction(signedTransaction)
 
       if (
