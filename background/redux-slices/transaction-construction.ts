@@ -30,6 +30,7 @@ const enum TransactionConstructionStatus {
 export type NetworkFeeSettings = {
   feeType: NetworkFeeTypeChosen
   gasLimit: string
+  suggestedGasLimit: bigint | undefined
   values: {
     maxFeePerGas: bigint
     maxPriorityFeePerGas: bigint
@@ -254,10 +255,12 @@ export const selectDefaultNetworkFeeSettings = createSelector(
       transactionConstruction.estimatedFeesPerGas?.[
         transactionConstruction.feeTypeSelected
       ],
+    suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
   }),
-  ({ feeType, selectedFeesPerGas }) => ({
+  ({ feeType, selectedFeesPerGas, suggestedGasLimit }) => ({
     feeType,
     gasLimit: "",
+    suggestedGasLimit,
     values: {
       maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
       maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
