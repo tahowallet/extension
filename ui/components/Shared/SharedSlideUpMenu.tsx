@@ -41,10 +41,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
   } = props
 
   // Continue showing children during the close transition.
-  const visibleChildren = isOpen ? children : <></>
+  const visibleChildren = isOpen || alwaysRenderChildren ? children : <></>
   const displayChildren = useDelayContentChange(
     visibleChildren,
-    !isOpen && !alwaysRenderChildren,
+    !isOpen,
     SLIDE_TRANSITION_MS
   )
 

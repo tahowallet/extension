@@ -366,18 +366,16 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 amount={sellAmount}
-                assets={sellAssetAmounts.map(({ asset }) => asset)}
-                maxBalance={
-                  sellAssetAmounts.find(({ asset }) => asset === sellAsset)
-                    ?.decimalAmount
-                }
+                assetsAndAmounts={sellAssetAmounts}
                 defaultAsset={sellAsset}
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
                 onAssetSelect={updateSellAsset}
-                onAmountChange={(newAmount) => {
-                  setSellAmount(newAmount)
-                  updateSwapData("sell", newAmount)
+                onAmountChange={(newAmount, error) => {
+                  if (typeof error === "undefined") {
+                    setSellAmount(newAmount)
+                    updateSwapData("sell", newAmount)
+                  }
                 }}
                 label="Swap from:"
               />
@@ -388,13 +386,17 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput
                 amount={buyAmount}
-                assets={buyAssets}
+                // FIXME Merge master asset list with account balances.
+                assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 defaultAsset={buyAsset}
                 isDisabled={buyAmountLoading}
+                showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
-                onAmountChange={(newAmount) => {
-                  setBuyAmount(newAmount)
-                  updateSwapData("buy", newAmount)
+                onAmountChange={(newAmount, error) => {
+                  if (typeof error === "undefined") {
+                    setBuyAmount(buyAmount)
+                    updateSwapData("buy", newAmount)
+                  }
                 }}
                 label="Swap to:"
               />
