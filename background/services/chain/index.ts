@@ -37,7 +37,11 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import {
+  getEthereumNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
@@ -818,14 +822,12 @@ export default class ChainService extends BaseService<Events> {
 
       const forAccounts = accounts
         .filter(
-          (addressNetwork) =>
-            finalTransaction.from.toLowerCase() ===
-              addressNetwork.address.toLowerCase() ||
-            finalTransaction.to?.toLowerCase() ===
-              addressNetwork.address.toLowerCase()
+          ({ address }) =>
+            sameEVMAddress(finalTransaction.from, address) ||
+            sameEVMAddress(finalTransaction.to, address)
         )
-        .map((addressNetwork) => {
-          return addressNetwork.address.toLowerCase()
+        .map(({ address }) => {
+          return normalizeEVMAddress(address)
         })
 
       // emit in a separate try so outside services still get the tx
