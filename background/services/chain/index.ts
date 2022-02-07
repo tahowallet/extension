@@ -564,7 +564,17 @@ export default class ChainService extends BaseService<Events> {
     )
     try {
       await Promise.all([
-        this.pollingProviders.ethereum.sendTransaction(serialized),
+        this.pollingProviders.ethereum
+          .sendTransaction(serialized)
+          .catch((error) => {
+            // Failure to broadcast needs to be registered.
+            this.saveTransaction(
+              { ...transaction, status: 0, error: error.toString() },
+              "alchemy"
+            )
+
+            return Promise.reject(error)
+          }),
         this.subscribeToTransactionConfirmation(
           transaction.network,
           transaction
@@ -572,7 +582,8 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
-      logger.error(`Error broadcasting transaction ${transaction}`, error)
+      logger.error("Error broadcasting transaction", transaction, error)
+
       throw error
     }
   }
