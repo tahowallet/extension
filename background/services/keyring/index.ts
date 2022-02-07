@@ -16,6 +16,7 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { HIDE_IMPORT_LEDGER } from "../../features/features"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
@@ -404,7 +405,9 @@ export default class KeyringService extends BaseService<Events> {
       asset: ETH,
       network: getEthereumNetwork(),
     }
-    this.emitter.emit("signedTx", signedTx)
+    if (HIDE_IMPORT_LEDGER) {
+      this.emitter.emit("signedTx", signedTx)
+    }
     return signedTx
   }
   /**

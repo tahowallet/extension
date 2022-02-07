@@ -10,7 +10,9 @@ import ChainService from "../chain"
 import logger from "../../lib/logger"
 import { SigningMethod } from "../../redux-slices/signing"
 
-type Events = ServiceLifecycleEvents
+type Events = ServiceLifecycleEvents & {
+  signedTx: SignedEVMTransaction
+}
 
 type SignerType = "keyring" | HardwareSignerType
 type HardwareSignerType = "ledger"
@@ -101,10 +103,14 @@ export default class SigningService extends BaseService<Events> {
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
     try {
-      return await this.signTransactionWithNonce(
+      const signedTx = await this.signTransactionWithNonce(
         transactionWithNonce,
         signingMethod
       )
+
+      this.emitter.emit("signedTx", signedTx)
+
+      return signedTx
     } finally {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
     }

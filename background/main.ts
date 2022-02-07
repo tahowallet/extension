@@ -812,7 +812,11 @@ export default class Main extends BaseService<never> {
         )
 
         const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
-          this.keyringService.emitter.off("signedTx", resolveAndClear)
+          if (HIDE_IMPORT_LEDGER) {
+            this.keyringService.emitter.off("signedTx", resolveAndClear)
+          } else {
+            this.signingService.emitter.off("signedTx", resolveAndClear)
+          }
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
             // Ye olde mutual dependency.
@@ -823,7 +827,11 @@ export default class Main extends BaseService<never> {
         }
 
         const rejectAndClear = () => {
-          this.keyringService.emitter.off("signedTx", resolveAndClear)
+          if (HIDE_IMPORT_LEDGER) {
+            this.keyringService.emitter.off("signedTx", resolveAndClear)
+          } else {
+            this.signingService.emitter.off("signedTx", resolveAndClear)
+          }
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
             rejectAndClear
@@ -831,7 +839,11 @@ export default class Main extends BaseService<never> {
           rejecter()
         }
 
-        this.keyringService.emitter.on("signedTx", resolveAndClear)
+        if (HIDE_IMPORT_LEDGER) {
+          this.keyringService.emitter.on("signedTx", resolveAndClear)
+        } else {
+          this.signingService.emitter.on("signedTx", resolveAndClear)
+        }
         transactionConstructionSliceEmitter.on(
           "signatureRejected",
           rejectAndClear
