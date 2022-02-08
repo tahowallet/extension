@@ -123,11 +123,12 @@ export default function SignTransaction({
           signingLedgerState={signingLedgerState}
           title={title}
           isWaitingForHardware={isWaitingForHardware}
-          infoBlock={isWaitingForHardware ? textualInfoBlock : infoBlock}
           confirmButtonLabel={confirmButtonLabel}
           handleConfirm={handleConfirm}
           handleReject={handleReject}
-        />
+        >
+          {isWaitingForHardware ? textualInfoBlock : infoBlock}
+        </SignTransactionContainer>
       )}
     </SignTransactionInfoProvider>
   )
