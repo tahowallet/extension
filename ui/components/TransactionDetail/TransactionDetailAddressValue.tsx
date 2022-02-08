@@ -1,3 +1,4 @@
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import React, { ReactElement } from "react"
 import SharedButton from "../Shared/SharedButton"
 
@@ -20,7 +21,7 @@ export default function TransactionDetailAddressValue({
             ?.focus()
         }}
       >
-        {address.slice(0, 7)}...{address.slice(-5)}
+        {truncateAddress(address)}
       </SharedButton>
       <style jsx>{`
         .container {
