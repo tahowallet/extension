@@ -1,10 +1,12 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
+import { Eligible } from "../services/claim/types"
+
 import { createBackgroundAsyncThunk } from "./utils"
 import { truncateAddress } from "../lib/utils"
+
 // import { getContract } from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
 import delegates from "../static/delegates.json"
-import eligibles from "../static/eligibles.json"
 
 // const newBalanceTree = new BalanceTree(balances)
 
@@ -22,12 +24,6 @@ export interface Delegate {
   truncatedAddress?: string
 }
 
-export interface Eligibles {
-  address: string
-  earnings: BigInt
-  reasons: string
-}
-
 interface ClaimingState {
   status: string
   claimed: {
@@ -35,7 +31,7 @@ interface ClaimingState {
   }
   distributor: any
   delegates: Delegate[]
-  eligibles: Eligibles[]
+  eligibles: Eligible[] | null
   DAOs: DAO[]
   selectedDAO: DAO | null
   selectedDelegate: Delegate | null
@@ -89,11 +85,9 @@ const initialState = {
   distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
+  eligibles: null,
   delegates,
   DAOs,
-  eligibles: eligibles.map((item): Eligibles => {
-    return { ...item, earnings: BigInt(item.earnings) }
-  }),
 } as ClaimingState
 
 const claimingSlice = createSlice({
@@ -105,6 +99,9 @@ const claimingSlice = createSlice({
     },
     chooseDelegate: (immerState, { payload: delegate }) => {
       immerState.selectedDelegate = delegate
+    },
+    setEligibles: (immerState, { payload: eligibles }) => {
+      immerState.eligibles = eligibles
     },
   },
   extraReducers: (builder) => {
@@ -122,7 +119,7 @@ const claimingSlice = createSlice({
   },
 })
 
-export const { chooseDAO, chooseDelegate } = claimingSlice.actions
+export const { chooseDAO, chooseDelegate, setEligibles } = claimingSlice.actions
 
 export default claimingSlice.reducer
 
