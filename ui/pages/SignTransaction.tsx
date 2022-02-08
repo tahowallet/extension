@@ -7,6 +7,7 @@ import {
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
+  TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -43,6 +44,11 @@ export default function SignTransaction({
   const shouldBroadcastOnSign = useBackgroundSelector(
     ({ transactionConstruction }) =>
       transactionConstruction.broadcastOnSign ?? false
+  )
+
+  const isTransactionMissingOrRejected = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.status === TransactionConstructionStatus.Idle
   )
 
   const signerAccountTotal = useBackgroundSelector((state) => {
@@ -83,6 +89,12 @@ export default function SignTransaction({
     signedTransaction,
   ])
 
+  useEffect(() => {
+    if (isTransactionMissingOrRejected) {
+      history.goBack()
+    }
+  }, [history, isTransactionMissingOrRejected])
+
   const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
 
   const signingLedgerState = useSigningLedgerState(
@@ -106,7 +118,6 @@ export default function SignTransaction({
 
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
-    history.goBack()
   }
   const handleConfirm = async () => {
     if (isTransactionDataReady && transactionDetails) {

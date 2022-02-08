@@ -253,9 +253,8 @@ export default class LedgerService extends BaseService<Events> {
           this.#currentLedgerId
         } accountID: ${accountID} error: ${err}`
       )
+      throw err
     }
-
-    throw new Error("Address derivation is unsuccessful!")
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
@@ -362,71 +361,59 @@ export default class LedgerService extends BaseService<Events> {
           this.#currentLedgerId
         } transactionRequest: ${transactionRequest} error: ${err}`
       )
-    }
 
-    throw new Error("Transaction signing is unsuccessful!")
+      throw err
+    }
   }
 
   async signTypedData(
     typedData: EIP712TypedData,
     account: HexString
   ): Promise<string> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
-      }
-
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
-
-      const eth = new Eth(this.transport)
-      const hashedDomain = TypedDataUtils.hashStruct(
-        "EIP712Domain",
-        typedData.domain,
-        typedData.types,
-        true
-      )
-      const hashedMessage = TypedDataUtils.hashStruct(
-        typedData.primaryType,
-        typedData.message,
-        typedData.types,
-        true
-      )
-
-      const signature = await eth.signEIP712HashedMessage(
-        account,
-        bufferToHex(hashedDomain),
-        bufferToHex(hashedMessage)
-      )
-      this.emitter.emit("signedData", signatureToString(signature))
-      return signatureToString(signature)
-    } catch (error) {
-      throw new Error("Signing data failed")
+    if (!this.transport) {
+      throw new Error("Uninitialized transport!")
     }
 
-    throw new Error("Typed data signing is unsuccessful!")
+    if (!this.#currentLedgerId) {
+      throw new Error("Uninitialized Ledger ID!")
+    }
+
+    const eth = new Eth(this.transport)
+    const hashedDomain = TypedDataUtils.hashStruct(
+      "EIP712Domain",
+      typedData.domain,
+      typedData.types,
+      true
+    )
+    const hashedMessage = TypedDataUtils.hashStruct(
+      typedData.primaryType,
+      typedData.message,
+      typedData.types,
+      true
+    )
+
+    const signature = await eth.signEIP712HashedMessage(
+      account,
+      bufferToHex(hashedDomain),
+      bufferToHex(hashedMessage)
+    )
+    this.emitter.emit("signedData", signatureToString(signature))
+    return signatureToString(signature)
   }
 
   async signMessage(address: string, message: string): Promise<string> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
-      }
-
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
-
-      const eth = new Eth(this.transport)
-
-      const signature = await eth.signPersonalMessage(address, message)
-      this.emitter.emit("signedData", signatureToString(signature))
-      return signatureToString(signature)
-    } catch (error) {
-      throw new Error("Signing data failed")
+    if (!this.transport) {
+      throw new Error("Uninitialized transport!")
     }
 
-    throw new Error("Typed data signing is unsuccessful!")
+    if (!this.#currentLedgerId) {
+      throw new Error("Uninitialized Ledger ID!")
+    }
+
+    const eth = new Eth(this.transport)
+
+    const signature = await eth.signPersonalMessage(address, message)
+    this.emitter.emit("signedData", signatureToString(signature))
+    return signatureToString(signature)
   }
 }

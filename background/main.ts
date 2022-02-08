@@ -80,6 +80,7 @@ import {
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
+import { SignatureResponse } from "./services/signing"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -612,6 +613,7 @@ export default class Main extends BaseService<never> {
             this.store.dispatch(signed(signedTx))
           } catch (exception) {
             logger.error("Error signing transaction", exception)
+            this.store.dispatch(clearTransactionState())
           }
         }
       }
@@ -811,38 +813,48 @@ export default class Main extends BaseService<never> {
           2 /* TODO desiredDecimals should be configurable */
         )
 
-        const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
+        const clear = () => {
           if (HIDE_IMPORT_LEDGER) {
+            // Ye olde mutual dependency.
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             this.keyringService.emitter.off("signedTx", resolveAndClear)
           } else {
-            this.signingService.emitter.off("signedTx", resolveAndClear)
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.signingService.emitter.off("signingResponse", handleAndClear)
           }
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
-            // Ye olde mutual dependency.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
+        }
+
+        const handleAndClear = (response: SignatureResponse) => {
+          clear()
+          switch (response.type) {
+            case "success":
+              resolver(response.signedTx)
+              break
+            default:
+              rejecter()
+              break
+          }
+        }
+
+        const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
+          clear()
           resolver(signedTransaction)
         }
 
         const rejectAndClear = () => {
-          if (HIDE_IMPORT_LEDGER) {
-            this.keyringService.emitter.off("signedTx", resolveAndClear)
-          } else {
-            this.signingService.emitter.off("signedTx", resolveAndClear)
-          }
-          transactionConstructionSliceEmitter.off(
-            "signatureRejected",
-            rejectAndClear
-          )
+          clear()
           rejecter()
         }
 
         if (HIDE_IMPORT_LEDGER) {
           this.keyringService.emitter.on("signedTx", resolveAndClear)
         } else {
-          this.signingService.emitter.on("signedTx", resolveAndClear)
+          this.signingService.emitter.on("signingResponse", handleAndClear)
         }
         transactionConstructionSliceEmitter.on(
           "signatureRejected",

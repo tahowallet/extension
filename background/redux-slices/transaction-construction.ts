@@ -21,7 +21,7 @@ import { SigningMethod } from "./signing"
 
 import { createBackgroundAsyncThunk } from "./utils"
 
-const enum TransactionConstructionStatus {
+export const enum TransactionConstructionStatus {
   Idle = "idle",
   Pending = "pending",
   Loaded = "loaded",
@@ -237,6 +237,7 @@ export const {
   signed,
   setFeeType,
   estimatedFeesPerGas,
+  clearTransactionState,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
