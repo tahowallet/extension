@@ -1,5 +1,5 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider"
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
 import { HOUR } from "../constants"
 import { ERC20_ABI } from "../lib/erc20"
@@ -13,12 +13,18 @@ import {
   getSignerAddress,
 } from "./utils/contract-utils"
 
+export type ApprovalTargetAllowance = {
+  contractAddress: HexString
+  allowance: string
+}
+
 export type EarnState = {
   signature: {
     r: string
     s: string
     v: number
   }
+  approvalTargetAllowances: ApprovalTargetAllowance[]
 }
 
 export const initialState: EarnState = {
@@ -27,6 +33,7 @@ export const initialState: EarnState = {
     s: "",
     v: 0,
   },
+  approvalTargetAllowances: [],
 }
 
 export type EIP712DomainType = {
@@ -52,21 +59,27 @@ export type SignTypedDataRequest = {
 
 // once testnet contracts are deployed we should replace this
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+  "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45" // currently: swap router
 
 export const vaultDeposit = createBackgroundAsyncThunk(
   "signing/vaultAndDeposit",
-  async ({
-    vaultContractAddress,
-    amount,
-  }: {
-    tokenContractAddress: HexString
-    vaultContractAddress: HexString
-    amount: BigInt
-  }) => {
+  async (
+    {
+      vaultContractAddress,
+      amount,
+    }: {
+      tokenContractAddress: HexString
+      vaultContractAddress: HexString
+      amount: BigInt
+    },
+    { getState }
+  ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
     const signerAddress = await getSignerAddress()
+
+    const state = getState()
+    const { earn } = state as { earn: EarnState }
 
     const vaultContract = await getContract(vaultContractAddress, VAULT_ABI)
 
@@ -77,11 +90,10 @@ export const vaultDeposit = createBackgroundAsyncThunk(
         signerAddress,
         amount,
         (await provider.getBlock(provider.getBlockNumber())).timestamp +
-          3 * HOUR
-
-        // r
-        // s
-        // v
+          3 * HOUR,
+        earn.signature.r,
+        earn.signature.s,
+        earn.signature.v
       )
     signer.sendTransaction(depositTransactionData)
   }
@@ -146,17 +158,33 @@ const earnSlice = createSlice({
         v,
       },
     }),
+    saveAllowance: (
+      state,
+      {
+        payload,
+      }: { payload: { contractAddress: HexString; allowance: string } }
+    ) => {
+      const { contractAddress, allowance } = payload
+      return {
+        ...state,
+        approvalTargetAllowances: [
+          ...state.approvalTargetAllowances,
+          { contractAddress, allowance },
+        ],
+      }
+    },
   },
 })
 
-export const { saveSignature } = earnSlice.actions
+export const { saveSignature, saveAllowance } = earnSlice.actions
 
 export default earnSlice.reducer
 
 export const approveApprovalTarget = createBackgroundAsyncThunk(
   "earn/approveApprovalTarget",
   async (
-    tokenContractAddress: HexString
+    tokenContractAddress: HexString,
+    { dispatch }
   ): Promise<TransactionResponse | undefined> => {
     const provider = getProvider()
     const signer = provider.getSigner()
@@ -181,7 +209,7 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
           s: tx.s,
           v: tx.v,
         }
-        earnSlice.actions.saveSignature(signature)
+        dispatch(earnSlice.actions.saveSignature(signature))
       }
       return tx
     } catch (error) {
@@ -190,15 +218,50 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
   }
 )
 
+export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
+  "earn/checkApprovalTargetApproval",
+  async (tokenContractAddress: HexString, { getState, dispatch }) => {
+    const currentState = getState()
+    const { earn } = currentState as { earn: EarnState }
+    const assetContract = await getContract(tokenContractAddress, ERC20_ABI)
+    const signerAddress = await getSignerAddress()
+
+    const knownAllowanceIndex = earn.approvalTargetAllowances.findIndex(
+      (allowance: ApprovalTargetAllowance) =>
+        allowance.contractAddress === tokenContractAddress
+    )
+    if (knownAllowanceIndex === -1) {
+      try {
+        const allowance: BigNumber = await assetContract.functions.allowance(
+          signerAddress,
+          APPROVAL_TARGET_CONTRACT_ADDRESS
+        )
+        dispatch(
+          earnSlice.actions.saveAllowance({
+            contractAddress: tokenContractAddress,
+            allowance: allowance.toString(),
+          })
+        )
+      } catch (err) {
+        return undefined
+      }
+    }
+    return earn.approvalTargetAllowances[knownAllowanceIndex]
+  }
+)
+
 export const permitVaultDeposit = createBackgroundAsyncThunk(
   "earn/permitVaultDeposit",
-  async ({
-    vaultContractAddress,
-    amount,
-  }: {
-    vaultContractAddress: HexString
-    amount: BigInt
-  }) => {
+  async (
+    {
+      vaultContractAddress,
+      amount,
+    }: {
+      vaultContractAddress: HexString
+      amount: BigInt
+    },
+    { dispatch }
+  ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
     const signerAddress = await getSignerAddress()
@@ -250,6 +313,10 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const splitSignature = ethers.utils.splitSignature(tx)
     const { r, s, v } = splitSignature
 
-    earnSlice.actions.saveSignature({ r, s, v })
+    dispatch(earnSlice.actions.saveSignature({ r, s, v }))
   }
+)
+export const selectApprovalTargetApprovals = createSelector(
+  (state: { earn: EarnState }) => state.earn.approvalTargetAllowances,
+  (approvals) => approvals
 )
