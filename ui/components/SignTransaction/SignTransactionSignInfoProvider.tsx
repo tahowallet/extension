@@ -12,7 +12,7 @@ import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
-import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
+import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
@@ -129,12 +129,12 @@ export default function SignTransactionSignInfoProvider({
       }
       textualInfoBlock={
         <TransactionDetailContainer>
-          <TransactionDetailItemShort name="Type" value="Sign" />
-          <TransactionDetailItemShort
+          <TransactionDetailItem name="Type" value="Sign" />
+          <TransactionDetailItem
             name="Spend amount"
             value={completeTransactionAssetAmount.localizedDecimalAmount}
           />
-          <TransactionDetailItemShort
+          <TransactionDetailItem
             name="To:"
             value={
               transactionDetails.to && (

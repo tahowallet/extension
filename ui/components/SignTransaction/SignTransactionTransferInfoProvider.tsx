@@ -5,7 +5,7 @@ import {
 import React, { ReactElement } from "react"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
-import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
+import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
@@ -82,8 +82,8 @@ export default function SignTransactionTransferInfoProvider({
       }
       textualInfoBlock={
         <TransactionDetailContainer>
-          <TransactionDetailItemShort name="Type" value="Send Asset" />
-          <TransactionDetailItemShort
+          <TransactionDetailItem name="Type" value="Send Asset" />
+          <TransactionDetailItem
             name="Spend amount"
             value={
               <>
@@ -91,7 +91,7 @@ export default function SignTransactionTransferInfoProvider({
               </>
             }
           />
-          <TransactionDetailItemShort
+          <TransactionDetailItem
             name="To:"
             value={<TransactionDetailAddressValue address={destination} />}
           />

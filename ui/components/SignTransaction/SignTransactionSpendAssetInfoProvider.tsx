@@ -18,7 +18,7 @@ import SharedInput from "../Shared/SharedInput"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
-import TransactionDetailItemShort from "../TransactionDetail/TransactionDetailItemShort"
+import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
@@ -173,8 +173,8 @@ export default function SignTransactionSpendAssetInfoProvider({
       }
       textualInfoBlock={
         <TransactionDetailContainer>
-          <TransactionDetailItemShort name="Type" value="Approve asset spend" />
-          <TransactionDetailItemShort
+          <TransactionDetailItem name="Type" value="Approve asset spend" />
+          <TransactionDetailItem
             name="Spend limit"
             value={
               asset?.symbol ? (
@@ -186,7 +186,7 @@ export default function SignTransactionSpendAssetInfoProvider({
               )
             }
           />
-          <TransactionDetailItemShort
+          <TransactionDetailItem
             name="Contract address"
             value={
               <TransactionDetailAddressValue
