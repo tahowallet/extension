@@ -17,11 +17,13 @@ import {
   PreferenceService,
   ProviderBridgeService,
   ServiceCreatorFunction,
+  ClaimService,
 } from "./services"
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import { AddressNetwork, NameNetwork } from "./accounts"
+import { Eligible } from "./services/claim/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -34,6 +36,7 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import { setEligibles } from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -241,6 +244,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+    const claimService = ClaimService.create()
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -276,7 +280,8 @@ export default class Main extends BaseService<never> {
       await keyringService,
       await nameService,
       await internalEthereumProviderService,
-      await providerBridgeService
+      await providerBridgeService,
+      await claimService
     )
   }
 
@@ -323,7 +328,12 @@ export default class Main extends BaseService<never> {
      * the communication coming from dApps according to EIP-1193 and some tribal
      * knowledge.
      */
-    private providerBridgeService: ProviderBridgeService
+    private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the claim service, which saves the eligibility data
+     * for efficient storage and retrieval.
+     */
+    private claimService: ClaimService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -357,6 +367,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.claimService.startService(),
     ])
   }
 
@@ -370,6 +381,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.claimService.stopService(),
     ])
 
     await super.internalStopService()
@@ -383,7 +395,8 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
-    await this.connectChainService()
+    this.connectChainService()
+    this.connectClaimService()
   }
 
   async connectChainService(): Promise<void> {
@@ -795,6 +808,15 @@ export default class Main extends BaseService<never> {
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
+      }
+    )
+  }
+
+  async connectClaimService(): Promise<void> {
+    this.claimService.emitter.on(
+      "initializeEligibles",
+      async (eligibles: Eligible[]) => {
+        await this.store.dispatch(setEligibles(eligibles))
       }
     )
   }
