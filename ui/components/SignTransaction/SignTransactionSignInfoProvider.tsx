@@ -115,7 +115,7 @@ export default function SignTransactionSignInfoProvider({
                 flex-direction: column;
                 align-items: center;
               }
-              .send-to {
+              .send_to {
                 font-size: 16px;
               }
               .main_currency_value {

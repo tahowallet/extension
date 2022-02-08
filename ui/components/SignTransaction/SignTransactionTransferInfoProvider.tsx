@@ -73,7 +73,7 @@ export default function SignTransactionTransferInfoProvider({
                 flex-direction: column;
                 align-items: center;
               }
-              .send-to {
+              .send_to {
                 font-size: 16px;
               }
             `}
