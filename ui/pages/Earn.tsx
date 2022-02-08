@@ -1,16 +1,31 @@
+import { AnyAsset } from "@tallyho/tally-background/assets"
+import { HexString } from "@tallyho/tally-background/types"
+
 import React, { ReactElement, useState } from "react"
 import { Link } from "react-router-dom"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 
-function EarnCard() {
+type EarnCardProps = {
+  asset: (AnyAsset & { contractAddress: HexString }) | undefined
+}
+
+function EarnCard({ asset }: EarnCardProps) {
   return (
-    <Link to="/earn/deposit" className="earn">
+    <Link
+      to={{
+        pathname: "/earn/deposit",
+        state: {
+          asset,
+        },
+      }}
+      className="earn"
+    >
       <div className="card">
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" />
+          <SharedAssetIcon size="large" symbol={asset?.symbol} />
         </div>
-        <span className="token_name">ETH</span>
+        <span className="token_name">{asset?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
         <span className="apy_percent">250%</span>
         <div className="divider" />
@@ -119,6 +134,20 @@ function EarnCard() {
 
 export default function Earn(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+
+  const assets = [
+    {
+      name: "Dai Token",
+      symbol: "DAI",
+      contractAddress: "0x6b175474e89094c44da98b954eedeac495271d0f",
+    } as AnyAsset & { contractAddress: HexString },
+    {
+      name: "Keep",
+      symbol: "KEEP",
+      contractAddress: "0x85eee30c52b0b379b046fb0f85f4f3dc3009afec",
+    } as AnyAsset & { contractAddress: HexString },
+  ]
+
   return (
     <>
       <header>
@@ -138,13 +167,11 @@ export default function Earn(): ReactElement {
       {panelNumber === 0 ? (
         <section className="standard_width">
           <ul className="cards_wrap">
-            {Array(4)
-              .fill("")
-              .map(() => (
-                <li>
-                  <EarnCard />
-                </li>
-              ))}
+            {assets.map((asset) => (
+              <li>
+                <EarnCard asset={asset} />
+              </li>
+            ))}
           </ul>
         </section>
       ) : (
