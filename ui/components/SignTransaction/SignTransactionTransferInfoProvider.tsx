@@ -3,6 +3,7 @@ import {
   truncateDecimalAmount,
 } from "@tallyho/tally-background/lib/utils"
 import React, { ReactElement } from "react"
+import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
@@ -81,7 +82,14 @@ export default function SignTransactionTransferInfoProvider({
         </div>
       }
       textualInfoBlock={
-        <TransactionDetailContainer>
+        <TransactionDetailContainer
+          footer={
+            <TransactionDetailItem
+              name="Estimated network fee"
+              value={<FeeSettingsText />}
+            />
+          }
+        >
           <TransactionDetailItem name="Type" value="Send Asset" />
           <TransactionDetailItem
             name="Spend amount"

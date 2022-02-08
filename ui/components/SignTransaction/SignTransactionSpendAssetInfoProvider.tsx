@@ -12,6 +12,7 @@ import {
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
+import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
@@ -172,7 +173,14 @@ export default function SignTransactionSpendAssetInfoProvider({
         </>
       }
       textualInfoBlock={
-        <TransactionDetailContainer>
+        <TransactionDetailContainer
+          footer={
+            <TransactionDetailItem
+              name="Estimated network fee"
+              value={<FeeSettingsText />}
+            />
+          }
+        >
           <TransactionDetailItem name="Type" value="Approve asset spend" />
           <TransactionDetailItem
             name="Spend limit"
