@@ -65,10 +65,18 @@ export default function Send(): ReactElement {
   }
 
   const sendTransactionRequest = async () => {
+    let from = currentAccount.address
+    let to = destinationAddress
+
+    if (currentAccount.network.checksum === "EIP-1191") {
+      from = currentAccount.address.toLowerCase()
+      to = destinationAddress.toLowerCase()
+    }
+
     dispatch(broadcastOnSign(true))
     const transaction = {
-      from: currentAccount.address,
-      to: destinationAddress,
+      from,
+      to,
       // eslint-disable-next-line no-underscore-dangle
       value: BigInt(utils.parseEther(amount?.toString())._hex),
       gasLimit: BigInt(gasLimit),
