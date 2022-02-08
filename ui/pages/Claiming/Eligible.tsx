@@ -34,7 +34,7 @@ export default function Eligible(): ReactElement {
     return {
       delegates: state.claim.delegates,
       DAOs: state.claim.DAOs,
-      claimAmountHex: state.claim.eligibles.find(
+      claimAmountHex: state.claim.eligibles?.find(
         ({ address }) => address === selectedAccountAddress
       )?.earnings,
     }
