@@ -31,7 +31,7 @@ interface ClaimingState {
   }
   distributor: any
   delegates: Delegate[]
-  eligibles: Eligible[] | null
+  eligibility: Eligible | null
   DAOs: DAO[]
   selectedDAO: DAO | null
   selectedDelegate: Delegate | null
@@ -85,7 +85,7 @@ const initialState = {
   distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
-  eligibles: null,
+  eligibility: null,
   delegates,
   DAOs,
 } as ClaimingState
@@ -100,8 +100,8 @@ const claimingSlice = createSlice({
     chooseDelegate: (immerState, { payload: delegate }) => {
       immerState.selectedDelegate = delegate
     },
-    setEligibles: (immerState, { payload: eligibles }) => {
-      immerState.eligibles = eligibles
+    setEligibility: (immerState, { payload: eligibility }) => {
+      immerState.eligibility = eligibility
     },
   },
   extraReducers: (builder) => {
@@ -119,7 +119,8 @@ const claimingSlice = createSlice({
   },
 })
 
-export const { chooseDAO, chooseDelegate, setEligibles } = claimingSlice.actions
+export const { chooseDAO, chooseDelegate, setEligibility } =
+  claimingSlice.actions
 
 export default claimingSlice.reducer
 

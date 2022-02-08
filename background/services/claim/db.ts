@@ -22,14 +22,14 @@ export class ClaimDatabase extends Dexie {
     })
   }
 
-  async getClaim(): Promise<Eligible[]> {
+  async getClaim(address: string): Promise<Eligible> {
     // Replace this with logic for user selected address
     const result = await this.claim.get({
-      ":id": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+      ":id": address,
     })
 
     // TODO: Clean up this type
-    return [result] as unknown as Eligible[]
+    return result as unknown as Eligible
   }
 }
 

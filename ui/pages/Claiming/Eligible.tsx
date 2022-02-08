@@ -34,9 +34,8 @@ export default function Eligible(): ReactElement {
     return {
       delegates: state.claim.delegates,
       DAOs: state.claim.DAOs,
-      claimAmountHex: state.claim.eligibles?.find(
-        ({ address }) => address === selectedAccountAddress
-      )?.earnings,
+      claimAmountHex:
+        state.claim?.eligibility && state.claim?.eligibility.earnings,
     }
   })
 
@@ -55,8 +54,10 @@ export default function Eligible(): ReactElement {
   }
 
   const BONUS_PERCENT = 0.05
+  if (!claimAmountHex) return <></>
 
   const fixedPointClaimEarnings = toFixedPointNumber(Number(claimAmountHex), 18)
+
   const fixedPointClaimEarningsWithBonus = {
     amount:
       fixedPointClaimEarnings.amount +

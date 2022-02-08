@@ -36,7 +36,7 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
-import { setEligibles } from "./redux-slices/claim"
+import { setEligibility } from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -792,6 +792,7 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
+      await this.claimService.getEligibility(addressNetwork.address)
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
@@ -814,9 +815,9 @@ export default class Main extends BaseService<never> {
 
   async connectClaimService(): Promise<void> {
     this.claimService.emitter.on(
-      "initializeEligibles",
-      async (eligibles: Eligible[]) => {
-        await this.store.dispatch(setEligibles(eligibles))
+      "newEligibility",
+      async (eligibility: Eligible) => {
+        await this.store.dispatch(setEligibility(eligibility))
       }
     )
   }

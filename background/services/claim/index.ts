@@ -4,7 +4,7 @@ import { getOrCreateDB, ClaimDatabase } from "./db"
 import BaseService from "../base"
 
 interface Events extends ServiceLifecycleEvents {
-  initializeEligibles: Eligible[]
+  newEligibility: Eligible
 }
 
 /*
@@ -25,8 +25,6 @@ export default class ClaimService extends BaseService<Events> {
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService()
-
-    this.emitter.emit("initializeEligibles", await this.getEligibles())
   }
 
   protected async internalStopService(): Promise<void> {
@@ -35,8 +33,9 @@ export default class ClaimService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  async getEligibles(): Promise<Eligible[]> {
-    const claim = await this.db.getClaim()
+  async getEligibility(address: string): Promise<Eligible> {
+    const claim = await this.db.getClaim(address)
+    this.emitter.emit("newEligibility", claim)
     return claim
   }
 }
