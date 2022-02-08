@@ -131,6 +131,8 @@ export default class LedgerService extends BaseService<Events> {
 
   transport: Transport | undefined = undefined
 
+  #lastOperationPromise = Promise.resolve()
+
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
       return new this(await getOrCreateDB())
@@ -140,41 +142,57 @@ export default class LedgerService extends BaseService<Events> {
     super()
   }
 
-  async onConnection(productId: number): Promise<void> {
-    if (!TestedProductId(productId)) {
-      return
-    }
-
-    this.transport = await TransportWebUSB.create()
-
-    const eth = new Eth(this.transport)
-
-    const [id, type] = await generateLedgerId(this.transport, eth)
-
-    if (!id) {
-      throw new Error("Can't derive meaningful identification address!")
-    }
-
-    const ethVersion = (await eth.getAppConfiguration()).version
-
-    const normalizedID = normalizeEVMAddress(id)
-
-    this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
-
-    this.emitter.emit("connected", { id: this.#currentLedgerId, type })
-
-    const knownAddresses = await this.db.getAllAccountsByLedgerId(
-      this.#currentLedgerId
+  private runSerialized<T>(operation: () => Promise<T>) {
+    const oldOperationPromise = this.#lastOperationPromise
+    const newOperationPromise = oldOperationPromise.then(async () =>
+      operation()
     )
 
-    if (!knownAddresses.length) {
-      this.emitter.emit("ledgerAdded", {
-        id: this.#currentLedgerId,
-        type,
-        accountIDs: [idDerviationPath],
-        metadata: { ethereumVersion: ethVersion },
-      })
-    }
+    this.#lastOperationPromise = newOperationPromise.then(
+      () => {},
+      () => {}
+    )
+
+    return newOperationPromise
+  }
+
+  async onConnection(productId: number): Promise<void> {
+    return this.runSerialized(async () => {
+      if (!TestedProductId(productId)) {
+        return
+      }
+
+      this.transport = await TransportWebUSB.create()
+
+      const eth = new Eth(this.transport)
+
+      const [id, type] = await generateLedgerId(this.transport, eth)
+
+      if (!id) {
+        throw new Error("Can't derive meaningful identification address!")
+      }
+
+      const ethVersion = (await eth.getAppConfiguration()).version
+
+      const normalizedID = normalizeEVMAddress(id)
+
+      this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+
+      this.emitter.emit("connected", { id: this.#currentLedgerId, type })
+
+      const knownAddresses = await this.db.getAllAccountsByLedgerId(
+        this.#currentLedgerId
+      )
+
+      if (!knownAddresses.length) {
+        this.emitter.emit("ledgerAdded", {
+          id: this.#currentLedgerId,
+          type,
+          accountIDs: [idDerviationPath],
+          metadata: { ethereumVersion: ethVersion },
+        })
+      }
+    })
   }
 
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
@@ -225,36 +243,38 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async deriveAddress(accountID: string): Promise<HexString> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
+    return this.runSerialized(async () => {
+      try {
+        if (!this.transport) {
+          throw new Error("Uninitialized transport!")
+        }
+
+        if (!this.#currentLedgerId) {
+          throw new Error("Uninitialized Ledger ID!")
+        }
+
+        const eth = new Eth(this.transport)
+
+        const accountAddress = normalizeEVMAddress(
+          await deriveAddressOnLedger(accountID, eth)
+        )
+
+        this.emitter.emit("address", {
+          ledgerID: this.#currentLedgerId,
+          derivationPath: accountID,
+          address: accountAddress,
+        })
+
+        return accountAddress
+      } catch (err) {
+        logger.error(
+          `Error encountered! ledgerID: ${
+            this.#currentLedgerId
+          } accountID: ${accountID} error: ${err}`
+        )
+        throw err
       }
-
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
-
-      const eth = new Eth(this.transport)
-
-      const accountAddress = normalizeEVMAddress(
-        await deriveAddressOnLedger(accountID, eth)
-      )
-
-      this.emitter.emit("address", {
-        ledgerID: this.#currentLedgerId,
-        derivationPath: accountID,
-        address: accountAddress,
-      })
-
-      return accountAddress
-    } catch (err) {
-      logger.error(
-        `Error encountered! ledgerID: ${
-          this.#currentLedgerId
-        } accountID: ${accountID} error: ${err}`
-      )
-      throw err
-    }
+    })
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
@@ -270,100 +290,102 @@ export default class LedgerService extends BaseService<Events> {
     deviceID: string,
     path: string
   ): Promise<SignedEVMTransaction> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
-      }
+    return this.runSerialized(async () => {
+      try {
+        if (!this.transport) {
+          throw new Error("Uninitialized transport!")
+        }
 
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
+        if (!this.#currentLedgerId) {
+          throw new Error("Uninitialized Ledger ID!")
+        }
 
-      const ethersTx =
-        ethersTransactionRequestFromEIP1559TransactionRequest(
-          transactionRequest
+        const ethersTx =
+          ethersTransactionRequestFromEIP1559TransactionRequest(
+            transactionRequest
+          )
+
+        const serializedTx = serialize(
+          ethersTx as UnsignedTransaction
+        ).substring(2) // serialize adds 0x prefix which kills Eth::signTransaction
+
+        const accountData = await this.db.getAccountByAddress(
+          transactionRequest.from
         )
 
-      const serializedTx = serialize(ethersTx as UnsignedTransaction).substring(
-        2
-      ) // serialize adds 0x prefix which kills Eth::signTransaction
+        if (
+          !accountData ||
+          path !== accountData.path ||
+          deviceID !== accountData.ledgerId
+        ) {
+          throw new Error("Signing method mismatch!")
+        }
 
-      const accountData = await this.db.getAccountByAddress(
-        transactionRequest.from
-      )
+        if (deviceID !== this.#currentLedgerId) {
+          throw new Error("Cannot sign on wrong device attached!")
+        }
 
-      if (
-        !accountData ||
-        path !== accountData.path ||
-        deviceID !== accountData.ledgerId
-      ) {
-        throw new Error("Signing method mismatch!")
+        const eth = new Eth(this.transport)
+        const signature = await eth.signTransaction(path, serializedTx, null)
+
+        const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
+          r: `0x${signature.r}`,
+          s: `0x${signature.s}`,
+          v: parseInt(signature.v, 16),
+        })
+        const tx = parseRawTransaction(signedTransaction)
+
+        if (
+          !tx.hash ||
+          !tx.from ||
+          !tx.r ||
+          !tx.s ||
+          typeof tx.v === "undefined"
+        ) {
+          throw new Error("Transaction doesn't appear to have been signed.")
+        }
+
+        if (
+          typeof tx.maxPriorityFeePerGas === "undefined" ||
+          typeof tx.maxFeePerGas === "undefined" ||
+          tx.type !== 2
+        ) {
+          throw new Error("Can only sign EIP-1559 conforming transactions")
+        }
+
+        const signedTx: SignedEVMTransaction = {
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          nonce: tx.nonce,
+          input: tx.data,
+          value: tx.value.toBigInt(),
+          type: tx.type,
+          gasPrice: null,
+          maxFeePerGas: tx.maxFeePerGas.toBigInt(),
+          maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
+          gasLimit: tx.gasLimit.toBigInt(),
+          r: tx.r,
+          s: tx.s,
+          v: tx.v,
+
+          blockHash: null,
+          blockHeight: null,
+          asset: ETH,
+          network: getEthereumNetwork(),
+        }
+
+        return signedTx
+      } catch (err) {
+        logger.error(
+          `Error encountered! ledgerID: ${
+            this.#currentLedgerId
+          } transactionRequest: ${transactionRequest} error: ${err}`
+        )
+
+        throw err
       }
-
-      if (deviceID !== this.#currentLedgerId) {
-        throw new Error("Cannot sign on wrong device attached!")
-      }
-
-      const eth = new Eth(this.transport)
-      const signature = await eth.signTransaction(path, serializedTx, null)
-
-      const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
-        r: `0x${signature.r}`,
-        s: `0x${signature.s}`,
-        v: parseInt(signature.v, 16),
-      })
-      const tx = parseRawTransaction(signedTransaction)
-
-      if (
-        !tx.hash ||
-        !tx.from ||
-        !tx.r ||
-        !tx.s ||
-        typeof tx.v === "undefined"
-      ) {
-        throw new Error("Transaction doesn't appear to have been signed.")
-      }
-
-      if (
-        typeof tx.maxPriorityFeePerGas === "undefined" ||
-        typeof tx.maxFeePerGas === "undefined" ||
-        tx.type !== 2
-      ) {
-        throw new Error("Can only sign EIP-1559 conforming transactions")
-      }
-
-      const signedTx: SignedEVMTransaction = {
-        hash: tx.hash,
-        from: tx.from,
-        to: tx.to,
-        nonce: tx.nonce,
-        input: tx.data,
-        value: tx.value.toBigInt(),
-        type: tx.type,
-        gasPrice: null,
-        maxFeePerGas: tx.maxFeePerGas.toBigInt(),
-        maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
-        gasLimit: tx.gasLimit.toBigInt(),
-        r: tx.r,
-        s: tx.s,
-        v: tx.v,
-
-        blockHash: null,
-        blockHeight: null,
-        asset: ETH,
-        network: getEthereumNetwork(),
-      }
-
-      return signedTx
-    } catch (err) {
-      logger.error(
-        `Error encountered! ledgerID: ${
-          this.#currentLedgerId
-        } transactionRequest: ${transactionRequest} error: ${err}`
-      )
-
-      throw err
-    }
+    })
   }
 
   async signTypedData(
