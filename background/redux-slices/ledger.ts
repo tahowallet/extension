@@ -10,16 +10,19 @@ export interface LedgerAccountState {
   fetchingBalance: boolean
 }
 
+export type LedgerConnectionStatus = "available" | "busy" | "disconnected"
+
 export interface LedgerDeviceState {
   /** First address derived from standard ETH derivation path, used as ID */
   id: string
   /** Accounts by path */
-  accounts: Record<string, LedgerAccountState | undefined>
+  accounts: Record<string, LedgerAccountState>
+  status: LedgerConnectionStatus // FIXME: this should not be persisted
 }
 
 export type LedgerState = {
   /** Devices by ID */
-  devices: Record<string, LedgerDeviceState | undefined>
+  devices: Record<string, LedgerDeviceState>
 }
 
 export type Events = {
@@ -53,17 +56,16 @@ const ledgerSlice = createSlice({
   name: "ledger",
   initialState,
   reducers: {
-    ledgerReset: (immerState) => {
-      immerState.devices = {}
-    },
     addLedgerDevice: (
       immerState,
       { payload: deviceID }: { payload: string }
     ) => {
+      /* FIXME: devices/accounts are kept in the state even if not tracked  */
       if (deviceID in immerState.devices) return
       immerState.devices[deviceID] = {
         id: deviceID,
         accounts: {},
+        status: "disconnected",
       }
     },
     addLedgerAccount: (
@@ -138,7 +140,7 @@ const ledgerSlice = createSlice({
   },
 })
 
-export const { ledgerReset, addLedgerAccount } = ledgerSlice.actions
+export const { addLedgerAccount } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 

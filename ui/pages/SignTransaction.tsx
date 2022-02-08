@@ -18,6 +18,7 @@ import SignTransactionContainer from "../components/SignTransaction/SignTransact
 import SignTransactionInfoProvider, {
   SignLocationState,
 } from "../components/SignTransaction/SignTransactionInfoProvider"
+import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
 
 export { SignType } from "../components/SignTransaction/SignTransactionInfoProvider"
 
@@ -82,6 +83,12 @@ export default function SignTransaction({
     signedTransaction,
   ])
 
+  const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
+
+  const signingLedgerState = useSigningLedgerState(
+    signerAccountTotal?.signingMethod ?? null
+  )
+
   if (isWaitingForKeyrings) {
     return <></>
   }
@@ -106,14 +113,14 @@ export default function SignTransaction({
     }
   }
 
-  const isWaitingForHardware =
-    signerAccountTotal?.signingMethod?.type === "ledger" && isTransactionSigning
+  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   return (
     <SignTransactionInfoProvider location={location}>
       {({ title, infoBlock, textualInfoBlock, confirmButtonLabel }) => (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
+          signingLedgerState={signingLedgerState}
           title={title}
           isWaitingForHardware={isWaitingForHardware}
           infoBlock={isWaitingForHardware ? textualInfoBlock : infoBlock}

@@ -260,7 +260,7 @@ export default class LedgerService extends BaseService<Events> {
 
   async signTransaction(
     address: HexString,
-    transactionRequest: EIP1559TransactionRequest
+    transactionRequest: EIP1559TransactionRequest & { nonce: number }
   ): Promise<SignedEVMTransaction> {
     try {
       if (!this.transport) {

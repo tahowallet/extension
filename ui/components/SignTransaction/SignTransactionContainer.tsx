@@ -2,13 +2,19 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
+import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
+import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
+import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
+import { SigningLedgerState } from "./useSigningLedgerState"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
   infoBlock,
+  signingLedgerState,
   isWaitingForHardware,
   confirmButtonLabel,
   handleConfirm,
@@ -17,11 +23,13 @@ export default function SignTransactionContainer({
   signerAccountTotal: AccountTotal
   title: ReactNode
   infoBlock: ReactNode
+  signingLedgerState: SigningLedgerState | null
   isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
 }): ReactElement {
+  const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
@@ -71,6 +79,25 @@ export default function SignTransactionContainer({
           </div>
         </>
       )}
+      <SharedSlideUpMenu
+        isOpen={isSlideUpOpen && signingLedgerState !== "available"}
+        close={() => {
+          setSlideUpOpen(false)
+        }}
+        showOverlay
+        alwaysRenderChildren
+        size="auto"
+      >
+        {signingLedgerState === "no-ledger-connected" && (
+          <SignTransactionLedgerNotConnected />
+        )}
+        {signingLedgerState === "wrong-ledger-connected" && (
+          <SignTransactionWrongLedgerConnected
+            signerAccountTotal={signerAccountTotal}
+          />
+        )}
+        {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
+      </SharedSlideUpMenu>
       <style jsx>
         {`
           section {
