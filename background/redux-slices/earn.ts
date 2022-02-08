@@ -317,6 +317,11 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
   }
 )
 export const selectApprovalTargetApprovals = createSelector(
-  (state: { earn: EarnState }) => state.earn.approvalTargetAllowances,
+  (state: { earn?: EarnState | undefined }) => {
+    if (state.earn) {
+      return state.earn.approvalTargetAllowances
+    }
+    return undefined
+  },
   (approvals) => approvals
 )
