@@ -18,7 +18,7 @@ import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
-import { getEthereumNetwork } from "../../lib/utils"
+import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
 import { SigningMethod } from "../../redux-slices/signing"
 
 enum LedgerType {
@@ -151,9 +151,15 @@ export default class LedgerService extends BaseService<Events> {
 
     const [id, type] = await generateLedgerId(this.transport, eth)
 
+    if (!id) {
+      throw new Error("Can't derive meaningful identification address!")
+    }
+
     const ethVersion = (await eth.getAppConfiguration()).version
 
-    this.#currentLedgerId = `${LedgerTypeAsString[type]}_${id}`
+    const normalizedID = normalizeEVMAddress(id)
+
+    this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
 
     this.emitter.emit("connected", { id: this.#currentLedgerId, type })
 
@@ -230,7 +236,9 @@ export default class LedgerService extends BaseService<Events> {
 
       const eth = new Eth(this.transport)
 
-      const accountAddress = await deriveAddressOnLedger(accountID, eth)
+      const accountAddress = normalizeEVMAddress(
+        await deriveAddressOnLedger(accountID, eth)
+      )
 
       this.emitter.emit("address", {
         ledgerID: this.#currentLedgerId,
