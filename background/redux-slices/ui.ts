@@ -157,3 +157,8 @@ export const selectDefaultWallet = createSelector(
   selectSettings,
   (settings) => settings?.defaultWallet
 )
+
+export const selectAccountNetwork = createSelector(
+  selectUI,
+  (ui) => ui.selectedAccount.network
+)

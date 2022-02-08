@@ -1,5 +1,7 @@
 import { HexString, UNIXTime } from "./types"
 
+export type NetworkChecksum = "EIP-55" | "EIP-1191"
+
 /**
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
@@ -22,6 +24,7 @@ export type Network = {
   baseAsset: NetworkBaseAsset
   family: NetworkFamily
   chainID?: string
+  checksum?: NetworkChecksum
 }
 
 /**

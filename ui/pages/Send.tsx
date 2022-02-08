@@ -1,5 +1,4 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { isAddress } from "@ethersproject/address"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -13,6 +12,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
 import { useLocation } from "react-router-dom"
+import { selectAccountNetwork } from "@tallyho/tally-background/redux-slices/ui"
+import { isValidAddress } from "@tallyho/tally-background/lib/utils"
 import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
@@ -33,10 +34,13 @@ export default function Send(): ReactElement {
   const [amount, setAmount] = useState("")
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
+  const [addressWarning, setAddressWarning] = useState<string | null>(null)
+  const [addressError, setAddressError] = useState<string | null>(null)
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const selectedNetwork = useBackgroundSelector(selectAccountNetwork)
 
   const dispatch = useBackgroundDispatch()
 
@@ -77,6 +81,27 @@ export default function Send(): ReactElement {
       setSelectedCount(1)
     }
   }, [assetSymbol])
+
+  useEffect(() => {
+    if (
+      destinationAddress.match(/^(0x)?[0-9A-F]{40}$/) ||
+      destinationAddress.match(/^(0x)?[0-9a-f]{40}$/)
+    ) {
+      setAddressError(null)
+      return setAddressWarning("Address is not mixed-case")
+    }
+
+    if (
+      destinationAddress !== "" &&
+      !isValidAddress(destinationAddress, selectedNetwork)
+    ) {
+      setAddressWarning(null)
+      return setAddressError("Bad checksum address")
+    }
+
+    setAddressError(null)
+    return setAddressWarning(null)
+  }, [destinationAddress, selectedNetwork])
 
   const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     setGasLimit(networkSetting.gasLimit)
@@ -122,9 +147,15 @@ export default function Send(): ReactElement {
               id="send_address"
               type="text"
               placeholder="0x..."
-              spellCheck={false}
+              spellCheck={!addressError}
               onChange={(event) => setDestinationAddress(event.target.value)}
             />
+            {addressError && (
+              <div className="error_message">{addressError}</div>
+            )}
+            {addressWarning && (
+              <div className="warning_message">{addressWarning}</div>
+            )}
           </div>
           <SharedSlideUpMenu
             size="custom"
@@ -151,7 +182,7 @@ export default function Send(): ReactElement {
               isDisabled={
                 selectedCount <= 0 ||
                 Number(amount) === 0 ||
-                !isAddress(destinationAddress) ||
+                !!addressError ||
                 hasError
               }
               linkTo={{
@@ -230,6 +261,7 @@ export default function Send(): ReactElement {
             flex-direction: column;
             align-items: flex-start;
             justify-content: space-between;
+            position: relative;
           }
           div.send_to_field label {
             color: var(--green-40);
@@ -249,6 +281,21 @@ export default function Send(): ReactElement {
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 0px 16px;
+          }
+          .error_message,
+          .warning_message {
+            font-weight: 500;
+            position: absolute;
+            left: 16px;
+            bottom: 3px;
+            font-size: 14px;
+            line-height: 20px;
+          }
+          .error_message {
+            color: var(--error);
+          }
+          .warning_message {
+            color: var(--trophy-gold);
           }
           .send_footer {
             display: flex;
