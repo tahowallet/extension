@@ -19,12 +19,14 @@ export type ApprovalTargetAllowance = {
 }
 
 export type EarnState = {
-  signature: {
-    r: string
-    s: string
-    v: number
-  }
+  signature: Signature
   approvalTargetAllowances: ApprovalTargetAllowance[]
+}
+
+export type Signature = {
+  r: string
+  s: string
+  v: number
 }
 
 export const initialState: EarnState = {
@@ -149,14 +151,10 @@ const earnSlice = createSlice({
   reducers: {
     saveSignature: (
       state,
-      { payload: { r, s, v } }: { payload: { r: string; s: string; v: number } }
+      { payload: { r, s, v } }: { payload: Signature }
     ) => ({
       ...state,
-      signature: {
-        r,
-        s,
-        v,
-      },
+      signature: { r, s, v },
     }),
     saveAllowance: (
       state,
@@ -199,17 +197,14 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
     try {
       const tx = await signer.sendTransaction(approvalTransactionData)
       await tx.wait()
+
+      const { r, s, v } = tx
       if (
-        typeof tx.r !== "undefined" &&
-        typeof tx.v !== "undefined" &&
-        typeof tx.s !== "undefined"
+        typeof r !== "undefined" &&
+        typeof v !== "undefined" &&
+        typeof s !== "undefined"
       ) {
-        const signature = {
-          r: tx.r,
-          s: tx.s,
-          v: tx.v,
-        }
-        dispatch(earnSlice.actions.saveSignature(signature))
+        dispatch(earnSlice.actions.saveSignature({ r, s, v }))
       }
       return tx
     } catch (error) {
