@@ -1,3 +1,4 @@
+// The below ABI was generated from HuntingGround.sol (https://github.com/tallycash/contracts/blob/main/contracts/hunting-grounds/HuntingGround.sol) with the use of hardhat
 const VAULT_ABI = [
   {
     inputs: [
