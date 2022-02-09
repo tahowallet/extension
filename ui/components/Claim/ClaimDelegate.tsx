@@ -130,6 +130,7 @@ export default function ClaimDelegate(props: {
             display: contents;
             align-items: center;
             width: 100%;
+            cursor: pointer;
           }
           .delegate_info {
             display: flex;
@@ -140,6 +141,7 @@ export default function ClaimDelegate(props: {
           }
           .radio {
             all: revert;
+            cursor: pointer;
           }
           .name {
             color: var(--green-20);
