@@ -1,5 +1,5 @@
 import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
-import { swapAssetsJTD, swapPriceJTD, swapQuoteJTD } from "./0x-swap"
+import { swapPriceJTD, swapQuoteJTD } from "./0x-swap"
 import {
   alchemyGetAssetTransfersJTD,
   alchemyTokenBalanceJTD,
@@ -19,10 +19,6 @@ export const isValidAlchemyTokenMetadataResponse: ValidateFunction<
   JTDDataType<typeof alchemyTokenMetadataJTD>
 >
 export const isValidMetadata: ValidateFunction<JTDDataType<typeof metadataJTD>>
-
-export const isValidSwapAssetsResponse: ValidateFunction<
-  JTDDataType<typeof swapAssetsJTD>
->
 
 export const isValidSwapPriceResponse: ValidateFunction<
   JTDDataType<typeof swapPriceJTD>

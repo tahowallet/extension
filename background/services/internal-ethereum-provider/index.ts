@@ -1,11 +1,9 @@
-import browser from "webextension-polyfill"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
 
 import {
   EIP1193Error,
   EIP1193_ERROR_CODES,
-  INTERNAL_PORT_NAME,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
@@ -19,11 +17,25 @@ import {
   ethersTransactionFromSignedTransaction,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
-import {
-  internalProvider,
-  internalProviderPort,
-} from "../../redux-slices/utils/contract-utils"
+import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
 import { SignTypedDataRequest } from "../../redux-slices/signing"
+import { getEthereumNetwork } from "../../lib/utils"
+
+// A type representing the transaction requests that come in over JSON-RPC
+// requests like eth_sendTransaction and eth_signTransaction. These are very
+// similar in structure to the Ethers internal TransactionRequest object, but
+// have some subtle-yet-critical differences. Chief among these is the presence
+// of `gas` instead of `gasLimit` and the _possibility_ of using `input` instead
+// of `data`.
+//
+// Note that `input` is the newer and more correct field to expect contract call
+// data in, but older clients may provide `data` instead. Ethers transmits `data`
+// rather than `input` when used as a JSON-RPC client, and expects it as the
+// `EthersTransactionRequest` field for that info.
+type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
+  gas?: string
+  input?: string
+}
 
 type DAppRequestEvent<T, E> = {
   payload: T
@@ -98,9 +110,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           account: params[0],
           typedData: JSON.parse(params[1] as string),
         } as SignTypedDataRequest)
+      case "eth_chainId":
+        return getEthereumNetwork().chainID
+
       case "eth_blockNumber":
       case "eth_call":
-      case "eth_chainId":
       case "eth_estimateGas":
       case "eth_feeHistory":
       case "eth_gasPrice":
@@ -145,23 +159,24 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return [address]
       }
       case "eth_sendTransaction":
-        return this.signTransaction(params[0] as EthersTransactionRequest).then(
-          async (signed) => {
-            await this.chainService.broadcastSignedTransaction(signed)
-            return signed.hash
-          }
-        )
+        return this.signTransaction(
+          params[0] as JsonRpcTransactionRequest
+        ).then(async (signed) => {
+          await this.chainService.broadcastSignedTransaction(signed)
+          return signed.hash
+        })
       case "eth_signTransaction":
-        return this.signTransaction(params[0] as EthersTransactionRequest).then(
-          (signedTransaction) =>
-            serializeEthersTransaction(
-              ethersTransactionFromSignedTransaction(signedTransaction),
-              {
-                r: signedTransaction.r,
-                s: signedTransaction.s,
-                v: signedTransaction.v,
-              }
-            )
+        return this.signTransaction(
+          params[0] as JsonRpcTransactionRequest
+        ).then((signedTransaction) =>
+          serializeEthersTransaction(
+            ethersTransactionFromSignedTransaction(signedTransaction),
+            {
+              r: signedTransaction.r,
+              s: signedTransaction.s,
+              v: signedTransaction.v,
+            }
+          )
         )
       case "eth_sign": // --- important wallet methods ---
       case "metamask_getProviderState": // --- important MM only methods ---
@@ -193,9 +208,17 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     }
   }
 
-  private async signTransaction(transactionRequest: EthersTransactionRequest) {
+  private async signTransaction(transactionRequest: JsonRpcTransactionRequest) {
     const { from, ...convertedRequest } =
-      eip1559TransactionRequestFromEthersTransactionRequest(transactionRequest)
+      eip1559TransactionRequestFromEthersTransactionRequest({
+        // Convert input -> data if necessary; if transactionRequest uses data
+        // directly, it will be overwritten below. If someone sends both and
+        // they differ, may devops199 have mercy on their soul (but we will
+        // prefer the explicit `data` rather than the copied `input`).
+        data: transactionRequest.input,
+        ...transactionRequest,
+        gasLimit: transactionRequest.gas, // convert gas -> gasLimit
+      })
 
     if (typeof from === "undefined") {
       throw new Error("Transactions must have a from address for signing.")

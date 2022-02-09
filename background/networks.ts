@@ -176,6 +176,17 @@ export type ConfirmedEVMTransaction = EVMTransaction & {
 }
 
 /**
+ * An EVM transaction that failed to be confirmed. Includes information about
+ * the error if available.
+ */
+export type FailedConfirmationEVMTransaction = EVMTransaction & {
+  status: 0
+  error?: string
+  blockHash: null
+  blockHeight: null
+}
+
+/**
  * An almost-signed EVM transaction, meaning a transaction that knows about the
  * signature fields but may not have them all populated yet.
  */
@@ -210,6 +221,7 @@ export type AnyEVMTransaction =
   | ConfirmedEVMTransaction
   | AlmostSignedEVMTransaction
   | SignedEVMTransaction
+  | FailedConfirmationEVMTransaction
 
 /**
  * The estimated gas prices for including a transaction in the next block.

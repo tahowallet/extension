@@ -87,7 +87,10 @@ export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
 }
 
 interface Events extends ServiceLifecycleEvents {
-  enrichedEVMTransaction: EnrichedEVMTransaction
+  enrichedEVMTransaction: {
+    transaction: EnrichedEVMTransaction
+    forAccounts: string[]
+  }
   enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
 }
 
@@ -131,12 +134,18 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   private async connectChainServiceEvents(): Promise<void> {
-    this.chainService.emitter.on("transaction", async ({ transaction }) => {
-      this.enrichTransaction(
-        transaction,
-        2 /* TODO desiredDecimals should be configurable */
-      )
-    })
+    this.chainService.emitter.on(
+      "transaction",
+      async ({ transaction, forAccounts }) => {
+        this.emitter.emit("enrichedEVMTransaction", {
+          transaction: await this.enrichTransaction(
+            transaction,
+            2 /* TODO desiredDecimals should be configurable */
+          ),
+          forAccounts,
+        })
+      }
+    )
   }
 
   async resolveTransactionAnnotation(
@@ -286,8 +295,6 @@ export default class EnrichmentService extends BaseService<Events> {
         desiredDecimals
       ),
     }
-
-    this.emitter.emit("enrichedEVMTransaction", enrichedTx)
 
     return enrichedTx
   }
