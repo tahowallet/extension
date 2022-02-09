@@ -9,7 +9,7 @@ export default function ClaimAmountBanner({
     <div className="wrap">
       <div className="banner">
         <div>
-          <img src="./images/claim.png" alt="" />
+          <img src="./images/claim@2x.png" alt="" />
         </div>
         <div className="claimable">
           <div className="claimable_currency">Claiming</div>
@@ -38,9 +38,11 @@ export default function ClaimAmountBanner({
             background-color: var(--hunter-green);
           }
           img {
-            width: 90px;
+            width: 89px;
+            height: 69.9px;
             position: relative;
             top: -4px;
+            margin-left: -3px;
           }
           .claimable_amount {
             font-family: Quincy CF;
