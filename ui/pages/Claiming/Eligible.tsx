@@ -26,6 +26,9 @@ export default function Eligible(): ReactElement {
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
+  const hasAccounts = useBackgroundSelector(
+    (state) => Object.keys(state.account.accountsData).length > 0
+  )
 
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
@@ -44,6 +47,10 @@ export default function Eligible(): ReactElement {
       setAccount(Object.keys(accountData)[0])
     }
   }, [accountData])
+
+  if (!hasAccounts) {
+    return <Redirect to="/onboarding/infoIntro" />
+  }
 
   if (Object.keys(accountData).length === 0) {
     return <Redirect to="/overview" />
