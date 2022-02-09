@@ -547,6 +547,12 @@ export default class Main extends BaseService<never> {
     return this.ledgerService.refreshConnectedLedger()
   }
 
+  async getAccountEthBalanceUncached(address: string): Promise<bigint> {
+    const amountBigNumber =
+      await this.chainService.pollingProviders.ethereum.getBalance(address)
+    return amountBigNumber.toBigInt()
+  }
+
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
     this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
