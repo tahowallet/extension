@@ -39,6 +39,7 @@ function DAOButton(props: {
           justify-content: center;
           align-items: center;
           flex-direction: column;
+          box-shadow: var(--shadow);
         }
         .icon {
           width: 48px;
