@@ -150,7 +150,7 @@ export default function Eligible(): ReactElement {
             background-position: bottom;
             height: 307px;
             background-color: var(--green-95);
-            box-shadow: 0px -10px 13px 6px var(--green-95);
+            box-shadow: 0px -22px 8px 0px var(--green-95);
             transition: all 0.7s cubic-bezier(0.86, 0, 0.07, 1);
           }
           .eligible {
@@ -159,13 +159,20 @@ export default function Eligible(): ReactElement {
             align-items: center;
             justify-content: space-between;
             flex-grow: 1;
-            width: 352px;
+            width: 100%;
+            padding: 0px 16px;
             margin: 0 auto;
             overflow-x: hidden;
+            box-sizing: border-box;
+            padding-top: 7px;
           }
           footer {
             position: fixed;
             bottom: 0px;
+            left: 0px;
+            right: 0px;
+            background-color: var(--hunter-green);
+            padding-top: 15px;
           }
         `}
       </style>
