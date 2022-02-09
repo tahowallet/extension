@@ -57,6 +57,8 @@ import {
   signed,
   updateTransactionOptions,
   broadcastOnSign,
+  clearTransactionState,
+  selectDefaultNetworkFeeSettings,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -505,10 +507,19 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      const {
+        values: { maxFeePerGas, maxPriorityFeePerGas },
+      } = selectDefaultNetworkFeeSettings(this.store.getState())
+
       const { transactionRequest: populatedRequest, gasEstimationError } =
         await this.chainService.populatePartialEVMTransactionRequest(
           getEthereumNetwork(),
-          options
+          {
+            ...options,
+            maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+            maxPriorityFeePerGas:
+              options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+          }
         )
 
       if (typeof gasEstimationError === "undefined") {
@@ -603,16 +614,8 @@ export default class Main extends BaseService<never> {
 
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
-    this.chainService.emitter.on("transaction", async ({ transaction }) => {
-      const forAccounts: string[] = [transaction.to, transaction.from].filter(
-        Boolean
-      ) as string[]
-      this.store.dispatch(
-        activityEncountered({
-          forAccounts,
-          transaction,
-        })
-      )
+    this.chainService.emitter.on("transaction", async (transactionInfo) => {
+      this.store.dispatch(activityEncountered(transactionInfo))
     })
   }
 
@@ -665,16 +668,8 @@ export default class Main extends BaseService<never> {
   async connectEnrichmentService(): Promise<void> {
     this.enrichmentService.emitter.on(
       "enrichedEVMTransaction",
-      async (transaction) => {
-        const forAccounts: string[] = [transaction.to, transaction.from].filter(
-          Boolean
-        ) as string[]
-        this.store.dispatch(
-          activityEncountered({
-            forAccounts,
-            transaction,
-          })
-        )
+      async (transactionData) => {
+        this.store.dispatch(activityEncountered(transactionData))
       }
     )
   }
@@ -782,13 +777,14 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(
           updateTransactionOptions(enrichedEVMTransactionSignatureRequest)
         )
-        this.store.dispatch(broadcastOnSign(false))
       }
     )
 
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
+        this.store.dispatch(clearTransactionState())
+        this.store.dispatch(broadcastOnSign(false))
         this.enrichmentService.enrichTransactionSignature(
           payload,
           2 /* TODO desiredDecimals should be configurable */

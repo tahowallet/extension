@@ -113,7 +113,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             ) : (
               <></>
             )}
-            {activity.blockHash === null ? (
+            {!("status" in activity) && activity.blockHash === null ? (
               <div className="pending">Pending...</div>
             ) : (
               <></>
