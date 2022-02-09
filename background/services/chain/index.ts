@@ -306,7 +306,7 @@ export default class ChainService extends BaseService<Events> {
           },
           2
         ),
-        { amount: 1n, decimals: 2 }, // 0.01 = 10%
+        { amount: 110n, decimals: 2 }, // 1.1 = 110%
         0
       ).amount
     }
