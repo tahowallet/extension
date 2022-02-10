@@ -66,7 +66,6 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
-import { EnrichedEIP1559TransactionRequest } from "./services/enrichment"
 import logger from "./lib/logger"
 import {
   signedTypedData,
@@ -74,9 +73,13 @@ import {
   SignTypedDataRequest,
   typedDataRequest,
 } from "./redux-slices/signing"
-import { emitter as ledgerSliceEmitter } from "./redux-slices/ledger"
+import {
+  resetLedgerState,
+  setDeviceConnectionStatus,
+} from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
+import { SignatureResponse } from "./services/signing"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -495,6 +498,40 @@ export default class Main extends BaseService<never> {
     }
   }
 
+  async importLedgerAccounts(
+    accounts: Array<{
+      path: string
+      address: string
+    }>
+  ): Promise<void> {
+    for (let i = 0; i < accounts.length; i += 1) {
+      const { path, address } = accounts[i]
+
+      // eslint-disable-next-line no-await-in-loop
+      await this.ledgerService.saveAddress(path, address)
+
+      const addressNetwork = {
+        address,
+        network: ETHEREUM,
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await this.chainService.addAccountToTrack(addressNetwork)
+      this.store.dispatch(loadAccount(address))
+      this.store.dispatch(setNewSelectedAccount(addressNetwork))
+    }
+  }
+
+  async deriveLedgerAddress(path: string): Promise<string> {
+    return this.signingService.deriveAddress({
+      type: "ledger",
+      accountID: path,
+    })
+  }
+
+  async connectLedger(): Promise<string | null> {
+    return this.ledgerService.refreshConnectedLedger()
+  }
+
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
     this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
@@ -548,9 +585,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
-      async (
-        transaction: EIP1559TransactionRequest & { nonce: number | undefined }
-      ) => {
+      async ({ transaction, method }) => {
         if (HIDE_IMPORT_LEDGER) {
           const transactionWithNonce =
             await this.chainService.populateEVMTransactionNonce(transaction)
@@ -571,12 +606,13 @@ export default class Main extends BaseService<never> {
         } else {
           try {
             const signedTx = await this.signingService.signTransaction(
-              transaction.from,
-              transaction
+              transaction,
+              method
             )
             this.store.dispatch(signed(signedTx))
           } catch (exception) {
             logger.error("Error signing transaction", exception)
+            this.store.dispatch(clearTransactionState())
           }
         }
       }
@@ -685,32 +721,18 @@ export default class Main extends BaseService<never> {
   }
 
   async connectLedgerService(): Promise<void> {
-    ledgerSliceEmitter.on("importLedgerAccounts", async (accounts) => {
-      for (let i = 0; i < accounts.length; i += 1) {
-        const { path, address } = accounts[i]
+    this.store.dispatch(resetLedgerState())
 
-        // eslint-disable-next-line no-await-in-loop
-        await this.ledgerService.saveAddress(path, address)
-
-        const addressNetwork = {
-          address,
-          network: ETHEREUM,
-        }
-        // eslint-disable-next-line no-await-in-loop
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(address))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
-      }
+    this.ledgerService.emitter.on("connected", ({ id }) => {
+      this.store.dispatch(
+        setDeviceConnectionStatus({ deviceID: id, status: "available" })
+      )
     })
 
-    ledgerSliceEmitter.on("fetchAddress", (input) => {
-      this.signingService
-        .deriveAddress({ type: "ledger", accountID: input.path })
-        .then(input.resolve, input.reject)
-    })
-
-    ledgerSliceEmitter.on("connectLedger", (input) => {
-      this.ledgerService.connectLedger().then(input.resolve, input.reject)
+    this.ledgerService.emitter.on("disconnected", ({ id }) => {
+      this.store.dispatch(
+        setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
+      )
     })
   }
 
@@ -790,27 +812,49 @@ export default class Main extends BaseService<never> {
           2 /* TODO desiredDecimals should be configurable */
         )
 
-        const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
-          this.keyringService.emitter.off("signedTx", resolveAndClear)
+        const clear = () => {
+          if (HIDE_IMPORT_LEDGER) {
+            // Ye olde mutual dependency.
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.keyringService.emitter.off("signedTx", resolveAndClear)
+          } else {
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.signingService.emitter.off("signingResponse", handleAndClear)
+          }
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
-            // Ye olde mutual dependency.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
+        }
+
+        const handleAndClear = (response: SignatureResponse) => {
+          clear()
+          switch (response.type) {
+            case "success":
+              resolver(response.signedTx)
+              break
+            default:
+              rejecter()
+              break
+          }
+        }
+
+        const resolveAndClear = (signedTransaction: SignedEVMTransaction) => {
+          clear()
           resolver(signedTransaction)
         }
 
         const rejectAndClear = () => {
-          this.keyringService.emitter.off("signedTx", resolveAndClear)
-          transactionConstructionSliceEmitter.off(
-            "signatureRejected",
-            rejectAndClear
-          )
+          clear()
           rejecter()
         }
 
-        this.keyringService.emitter.on("signedTx", resolveAndClear)
+        if (HIDE_IMPORT_LEDGER) {
+          this.keyringService.emitter.on("signedTx", resolveAndClear)
+        } else {
+          this.signingService.emitter.on("signingResponse", handleAndClear)
+        }
         transactionConstructionSliceEmitter.on(
           "signatureRejected",
           rejectAndClear

@@ -2,14 +2,22 @@ import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { SigningMethod } from "../signing"
 import { selectKeyringSigningAddresses } from "./keyringsSelectors"
+import { selectLedgerSigningMethodEntries } from "./ledgerSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 
 export const selectAddressSigningMethods = createSelector(
   selectKeyringSigningAddresses,
-  (signingAddresses) =>
-    Object.fromEntries(
-      signingAddresses.map((address) => [address, { type: "keyring" }])
-    ) as Record<string, SigningMethod | undefined>
+  selectLedgerSigningMethodEntries,
+  (signingAddresses, ledgerSigningMethodEntries) =>
+    Object.fromEntries([
+      ...ledgerSigningMethodEntries,
+      // Give priority to keyring over Ledger, if an address is signable by both.
+      // TODO: check this is the intended behavior
+      ...signingAddresses.map((address): [string, SigningMethod] => [
+        address,
+        { type: "keyring" },
+      ]),
+    ])
 )
 
 export const selectCurrentAccountSigningMethod = createSelector(
