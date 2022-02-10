@@ -7,35 +7,21 @@ import {
   selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
+  TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
-import SignTransactionSwapAssetBlock from "../components/SignTransaction/SignTransactionSwapAssetBlock"
-import SignTransactionSignBlock from "../components/SignTransaction/SignTransactionSignBlock"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../hooks"
-import SignTransactionTransferBlock from "../components/SignTransaction/SignTransactionTransferBlock"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
-import SignTransactionApproveSpendAssetBlock from "../components/SignTransaction/SignTransactionApproveSpendAssetBlock"
+import SignTransactionInfoProvider, {
+  SignLocationState,
+} from "../components/SignTransaction/SignTransactionInfoProvider"
 import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
 
-export enum SignType {
-  Sign = "sign",
-  SignSwap = "sign-swap",
-  SignSpend = "sign-spend",
-  SignTransfer = "sign-transfer",
-}
-
-interface SignLocationState {
-  assetSymbol: string
-  amount: number
-  signType: SignType
-  to: string
-  value: string | number
-}
+export { SignType } from "../components/SignTransaction/SignTransactionInfoProvider"
 
 export default function SignTransaction({
   location,
@@ -46,19 +32,6 @@ export default function SignTransaction({
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
-  const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
-  const isApproveTx = parsedTx?.name === "approve"
-
-  const getSignType = () => {
-    if (isApproveTx) {
-      return SignType.SignSpend
-    }
-    return SignType.Sign
-  }
-
-  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
-    signType: getSignType(),
-  }
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
@@ -71,6 +44,11 @@ export default function SignTransaction({
   const shouldBroadcastOnSign = useBackgroundSelector(
     ({ transactionConstruction }) =>
       transactionConstruction.broadcastOnSign ?? false
+  )
+
+  const isTransactionMissingOrRejected = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.status === TransactionConstructionStatus.Idle
   )
 
   const signerAccountTotal = useBackgroundSelector((state) => {
@@ -92,6 +70,7 @@ export default function SignTransaction({
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
 
+      const assetSymbol = location.state?.assetSymbol
       // Request broadcast if not dApp...
       if (typeof assetSymbol !== "undefined") {
         history.push("/singleAsset", { symbol: assetSymbol })
@@ -100,15 +79,21 @@ export default function SignTransaction({
       }
     }
   }, [
-    isWaitingForKeyrings,
+    dispatch,
+    history,
     isTransactionSigned,
     isTransactionSigning,
-    history,
-    assetSymbol,
+    isWaitingForKeyrings,
+    location.state?.assetSymbol,
     shouldBroadcastOnSign,
     signedTransaction,
-    dispatch,
   ])
+
+  useEffect(() => {
+    if (isTransactionMissingOrRejected) {
+      history.goBack()
+    }
+  }, [history, isTransactionMissingOrRejected])
 
   const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
 
@@ -120,9 +105,11 @@ export default function SignTransaction({
     return <></>
   }
 
+  const signingMethod = signerAccountTotal?.signingMethod ?? null
   if (
     typeof transactionDetails === "undefined" ||
-    typeof signerAccountTotal === "undefined"
+    typeof signerAccountTotal === "undefined" ||
+    signingMethod === null
   ) {
     // TODO Some sort of unexpected state error if we end up here... Or do we
     // go back in history? That won't work for dApp popovers though.
@@ -131,85 +118,36 @@ export default function SignTransaction({
 
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
-    history.goBack()
   }
   const handleConfirm = async () => {
     if (isTransactionDataReady && transactionDetails) {
-      dispatch(signTransaction(transactionDetails))
+      dispatch(
+        signTransaction({
+          transaction: transactionDetails,
+          method: signingMethod,
+        })
+      )
       setIsTransactionSigning(true)
     }
   }
 
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
-  switch (signType) {
-    case SignType.SignSwap:
-      return (
+  return (
+    <SignTransactionInfoProvider location={location}>
+      {({ title, infoBlock, textualInfoBlock, confirmButtonLabel }) => (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
-          title="Swap assets"
           signingLedgerState={signingLedgerState}
+          title={title}
           isWaitingForHardware={isWaitingForHardware}
-          infoBlock={<SignTransactionSwapAssetBlock />}
-          confirmButtonLabel="Confirm"
+          confirmButtonLabel={confirmButtonLabel}
           handleConfirm={handleConfirm}
           handleReject={handleReject}
-        />
-      )
-    case SignType.SignSpend:
-      return (
-        <SignTransactionContainer
-          signerAccountTotal={signerAccountTotal}
-          title="Approve asset spend"
-          signingLedgerState={signingLedgerState}
-          isWaitingForHardware={isWaitingForHardware}
-          infoBlock={
-            <SignTransactionApproveSpendAssetBlock
-              transactionDetails={transactionDetails}
-              parsedTx={parsedTx}
-            />
-          }
-          confirmButtonLabel="Approve"
-          handleConfirm={handleConfirm}
-          handleReject={handleReject}
-        />
-      )
-    case SignType.SignTransfer:
-      return (
-        <SignTransactionContainer
-          signerAccountTotal={signerAccountTotal}
-          title="Sign Transfer"
-          signingLedgerState={signingLedgerState}
-          isWaitingForHardware={isWaitingForHardware}
-          infoBlock={
-            <SignTransactionTransferBlock
-              token={assetSymbol ?? ""}
-              amount={amount ?? 0}
-              destination={to ?? ""}
-              localizedValue={value ?? ""}
-            />
-          }
-          confirmButtonLabel="Sign"
-          handleConfirm={handleConfirm}
-          handleReject={handleReject}
-        />
-      )
-    case SignType.Sign:
-      return (
-        <SignTransactionContainer
-          signerAccountTotal={signerAccountTotal}
-          title="Sign Transaction"
-          signingLedgerState={signingLedgerState}
-          isWaitingForHardware={isWaitingForHardware}
-          infoBlock={
-            <SignTransactionSignBlock transactionDetails={transactionDetails} />
-          }
-          confirmButtonLabel="Sign"
-          handleConfirm={handleConfirm}
-          handleReject={handleReject}
-        />
-      )
-    default:
-      return <></>
-  }
+        >
+          {isWaitingForHardware ? textualInfoBlock : infoBlock}
+        </SignTransactionContainer>
+      )}
+    </SignTransactionInfoProvider>
+  )
 }

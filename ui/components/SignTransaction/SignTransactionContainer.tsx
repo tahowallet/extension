@@ -13,7 +13,7 @@ import { SigningLedgerState } from "./useSigningLedgerState"
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
-  infoBlock,
+  children,
   signingLedgerState,
   isWaitingForHardware,
   confirmButtonLabel,
@@ -22,7 +22,7 @@ export default function SignTransactionContainer({
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
-  infoBlock: ReactNode
+  children: ReactNode
   signingLedgerState: SigningLedgerState | null
   isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
@@ -40,7 +40,7 @@ export default function SignTransactionContainer({
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
-      <div className="primary_info_card standard_width">{infoBlock}</div>
+      <div className="primary_info_card standard_width">{children}</div>
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />

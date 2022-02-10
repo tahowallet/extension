@@ -1,6 +1,7 @@
 import { combineReducers } from "redux"
 
 import { HIDE_EARN_PAGE } from "../features/features"
+import { HIDE_IMPORT_LEDGER } from "../features/features"
 
 import accountsReducer from "./accounts"
 import assetsReducer from "./assets"
@@ -23,7 +24,7 @@ const mainReducer = combineReducers({
   transactionConstruction: transactionConstructionReducer,
   ui: uiReducer,
   dappPermission: dappPermissionReducer,
-  ledger: ledgerReducer,
+  ...(HIDE_IMPORT_LEDGER ? {} : { ledger: ledgerReducer }),
   signing: signingReducer,
   ...(HIDE_EARN_PAGE ? {} : { earn: earnReducer }),
 })
