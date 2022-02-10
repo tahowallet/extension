@@ -8,7 +8,7 @@ import { utils } from "ethers"
 import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
-import { HexString } from "../../types"
+import { HexString, UNIXTime } from "../../types"
 import { AccountBalance, AddressNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
@@ -50,6 +50,7 @@ import {
   convertFixedPointNumber,
   multiplyFixedPointNumbers,
 } from "../../lib/fixed-point"
+import { HOUR } from "../../constants"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -77,6 +78,12 @@ const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 // The number of asset transfer lookups that will be done per account to rebuild
 // historic activity.
 const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
+
+// The number of milliseconds after a request to look up a transaction was
+// first seen to continue looking in case the transaction fails to be found
+// for either internal (request failure) or external (transaction dropped from
+// mempool) reasons.
+const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressNetwork
@@ -135,9 +142,13 @@ export default class ChainService extends BaseService<Events> {
   } = {}
 
   /**
-   * FIFO queues of transaction hashes per network that should be retrieved and cached.
+   * FIFO queues of transaction hashes per network that should be retrieved and
+   * cached, alongside information about when that hash request was first seen
+   * for expiration purposes.
    */
-  private transactionsToRetrieve: { [networkName: string]: HexString[] }
+  private transactionsToRetrieve: {
+    [networkName: string]: { hash: HexString; firstSeen: UNIXTime }[]
+  }
 
   static create: ServiceCreatorFunction<
     Events,
@@ -520,16 +531,21 @@ export default class ChainService extends BaseService<Events> {
    *
    * @param network The network on which the transaction has been broadcast.
    * @param txHash The tx hash identifier of the transaction we want to retrieve.
-   *
+   * @param firstSeen The timestamp at which the queued transaction was first
+   *        seen; used to treat transactions as dropped after a certain amount
+   *        of time.
    */
   async queueTransactionHashToRetrieve(
     network: EVMNetwork,
-    txHash: HexString
+    txHash: HexString,
+    firstSeen: UNIXTime
   ): Promise<void> {
     // TODO make proper use of the network
-    const seen = new Set(this.transactionsToRetrieve.ethereum)
+    const seen = new Set(
+      this.transactionsToRetrieve.ethereum.map(({ hash }) => hash)
+    )
     if (!seen.has(txHash)) {
-      this.transactionsToRetrieve.ethereum.push(txHash)
+      this.transactionsToRetrieve.ethereum.push({ hash: txHash, firstSeen })
     }
   }
 
@@ -733,9 +749,11 @@ export default class ChainService extends BaseService<Events> {
       assetTransfers,
     })
 
+    const firstSeen = Date.now()
+    const network = getEthereumNetwork()
     /// send all found tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(getEthereumNetwork(), a.txHash)
+      this.queueTransactionHashToRetrieve(network, a.txHash, firstSeen)
     )
   }
 
@@ -758,7 +776,8 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    toHandle.forEach(async (hash) => {
+    const ethereumNetwork = getEthereumNetwork()
+    toHandle.forEach(async ({ hash, firstSeen }) => {
       try {
         // TODO make this multi network
         const result = await this.pollingProviders.ethereum.getTransaction(hash)
@@ -766,7 +785,7 @@ export default class ChainService extends BaseService<Events> {
         const transaction = transactionFromEthersTransaction(
           result,
           ETH,
-          getEthereumNetwork()
+          ethereumNetwork
         )
 
         // TODO make this provider specific
@@ -785,7 +804,32 @@ export default class ChainService extends BaseService<Events> {
         }
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
-        this.queueTransactionHashToRetrieve(getEthereumNetwork(), hash)
+        if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
+          this.queueTransactionHashToRetrieve(ethereumNetwork, hash, firstSeen)
+        } else {
+          logger.warn(
+            `Transaction ${hash} is too old to keep looking for it; treating ` +
+              "it as expired."
+          )
+
+          this.db
+            .getTransaction(ethereumNetwork, hash)
+            .then((existingTransaction) => {
+              if (existingTransaction !== null) {
+                logger.debug(
+                  "Found existing transaction for expired lookup; marking as " +
+                    "failed if no other status exists."
+                )
+                this.saveTransaction(
+                  // Don't override an already-persisted successful status with
+                  // an expiration-based failed status, but do set status to
+                  // failure if no transaction was seen.
+                  { status: 0, ...existingTransaction },
+                  "local"
+                )
+              }
+            })
+        }
       }
     })
   }
