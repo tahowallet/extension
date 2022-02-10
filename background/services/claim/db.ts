@@ -15,9 +15,7 @@ export class ClaimDatabase extends Dexie {
     this.on("populate", (tx: Transaction) => {
       tx.table("claim").bulkAdd(
         DEFAULT_CLAIM.eligibles,
-        DEFAULT_CLAIM.eligibles.map((item) => {
-          return item.address
-        })
+        DEFAULT_CLAIM.eligibles.map((item) => item.address)
       )
     })
   }
