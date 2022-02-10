@@ -7,9 +7,11 @@ interface Props {
   label: string
   focusedLabelBackgroundColor: string
   defaultValue?: string
+  placeholder?: string
   type: "password" | "text" | "number"
   value?: string | number | undefined
   onChange?: (value: string) => void
+  onFocus?: () => void
   errorMessage?: string
 }
 
@@ -18,9 +20,11 @@ export default function SharedInput(props: Props): ReactElement {
     id,
     label,
     defaultValue,
+    placeholder,
     focusedLabelBackgroundColor,
     type,
     onChange,
+    onFocus,
     value,
     errorMessage,
   } = props
@@ -36,10 +40,15 @@ export default function SharedInput(props: Props): ReactElement {
       <input
         id={id}
         type={type}
-        placeholder=" "
+        placeholder={
+          typeof placeholder === "undefined" || placeholder === ""
+            ? " "
+            : placeholder
+        }
         value={value}
         spellCheck={false}
         onChange={(event) => onChange?.(event.target.value)}
+        onFocus={onFocus}
         className={classNames({
           error: errorMessage,
         })}
@@ -92,7 +101,8 @@ export default function SharedInput(props: Props): ReactElement {
               font-weight 0.2s ease, padding 0.2s ease;
           }
           input:focus ~ label,
-          input:not(:placeholder-shown) ~ label {
+          input:not(:placeholder-shown) ~ label,
+          input:not([placeholder=" "]) ~ label {
             transform: translateY(-57px) translateX(-5px);
             font-size: 12px;
             font-weight: 500;

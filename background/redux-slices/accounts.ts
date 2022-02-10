@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit"
-import Emittery from "emittery"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork, NameNetwork } from "../accounts"
 import { AnyEVMBlock, Network } from "../networks"
@@ -255,13 +254,6 @@ export const {
 
 export default accountSlice.reducer
 
-export type Events = {
-  addAccount: AddressNetwork
-  addAccountByName: NameNetwork
-}
-
-export const emitter = new Emittery<Events>()
-
 /**
  * Async thunk whose dispatch promise will return when the account has been
  * added.
@@ -272,14 +264,14 @@ export const emitter = new Emittery<Events>()
  */
 export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
-  async (addressNetwork: AddressNetwork, { dispatch }) => {
+  async (addressNetwork: AddressNetwork, { dispatch, extra: { main } }) => {
     const normalizedAddressNetwork = {
       address: addressNetwork.address.toLowerCase(),
       network: addressNetwork.network,
     }
 
     dispatch(loadAccount(normalizedAddressNetwork.address))
-    await emitter.emit("addAccount", normalizedAddressNetwork)
+    await main.addAccount(normalizedAddressNetwork)
   }
 )
 
@@ -289,7 +281,7 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
  */
 export const addAccountByName = createBackgroundAsyncThunk(
   "account/addAccountByName",
-  async (nameNetwork: NameNetwork) => {
-    await emitter.emit("addAccountByName", nameNetwork)
+  async (nameNetwork: NameNetwork, { extra: { main } }) => {
+    await main.addAccountByName(nameNetwork)
   }
 )

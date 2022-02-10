@@ -25,6 +25,7 @@ body:
       options:
         - Firefox
         - Chrome
+        - Brave
         - Opera (unsupported)
         - Safari (unsupported)
         - Microsoft Edge (unsupported)

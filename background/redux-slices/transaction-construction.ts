@@ -5,7 +5,7 @@ import {
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
-} from "../constants/networkFees"
+} from "../constants/network-fees"
 
 import {
   BlockEstimate,
@@ -27,9 +27,10 @@ const enum TransactionConstructionStatus {
   Signed = "signed",
 }
 
-export type NetworkFeeSetting = {
+export type NetworkFeeSettings = {
   feeType: NetworkFeeTypeChosen
   gasLimit: string
+  suggestedGasLimit: bigint | undefined
   values: {
     maxFeePerGas: bigint
     maxPriorityFeePerGas: bigint
@@ -224,6 +225,7 @@ const transactionSlice = createSlice({
 
 export const {
   transactionRequest,
+  clearTransactionState,
   transactionLikelyFails,
   broadcastOnSign,
   signed,
@@ -240,6 +242,30 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
     // Provide a clean slate for future transactions.
     dispatch(transactionSlice.actions.clearTransactionState())
   }
+)
+
+export const selectDefaultNetworkFeeSettings = createSelector(
+  ({
+    transactionConstruction,
+  }: {
+    transactionConstruction: TransactionConstruction
+  }) => ({
+    feeType: transactionConstruction.feeTypeSelected,
+    selectedFeesPerGas:
+      transactionConstruction.estimatedFeesPerGas?.[
+        transactionConstruction.feeTypeSelected
+      ],
+    suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
+  }),
+  ({ feeType, selectedFeesPerGas, suggestedGasLimit }) => ({
+    feeType,
+    gasLimit: "",
+    suggestedGasLimit,
+    values: {
+      maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
+    },
+  })
 )
 
 export const selectEstimatedFeesPerGas = createSelector(

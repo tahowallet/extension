@@ -2,13 +2,19 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
+import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
+import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
+import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
+import { SigningLedgerState } from "./useSigningLedgerState"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
-  infoBlock,
+  children,
+  signingLedgerState,
   isWaitingForHardware,
   confirmButtonLabel,
   handleConfirm,
@@ -16,12 +22,14 @@ export default function SignTransactionContainer({
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
-  infoBlock: ReactNode
+  children: ReactNode
+  signingLedgerState: SigningLedgerState | null
   isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
 }): ReactElement {
+  const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
@@ -32,7 +40,7 @@ export default function SignTransactionContainer({
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
-      <div className="primary_info_card standard_width">{infoBlock}</div>
+      <div className="primary_info_card standard_width">{children}</div>
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
@@ -71,6 +79,25 @@ export default function SignTransactionContainer({
           </div>
         </>
       )}
+      <SharedSlideUpMenu
+        isOpen={isSlideUpOpen && signingLedgerState !== "available"}
+        close={() => {
+          setSlideUpOpen(false)
+        }}
+        showOverlay
+        alwaysRenderChildren
+        size="auto"
+      >
+        {signingLedgerState === "no-ledger-connected" && (
+          <SignTransactionLedgerNotConnected />
+        )}
+        {signingLedgerState === "wrong-ledger-connected" && (
+          <SignTransactionWrongLedgerConnected
+            signerAccountTotal={signerAccountTotal}
+          />
+        )}
+        {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
+      </SharedSlideUpMenu>
       <style jsx>
         {`
           section {

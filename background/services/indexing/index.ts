@@ -20,7 +20,7 @@ import {
   mergeAssets,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { getEthereumNetwork } from "../../lib/utils"
+import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -217,8 +217,7 @@ export default class IndexingService extends BaseService<Events> {
           if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
             this.addTokenToTrackByContract(
               addressNetwork,
-              fungibleAsset.contractAddress,
-              fungibleAsset.decimals
+              fungibleAsset.contractAddress
             )
           }
         })
@@ -259,27 +258,32 @@ export default class IndexingService extends BaseService<Events> {
       }
     )
 
-    this.chainService.emitter.on("transaction", async ({ transaction }) => {
-      if (
-        "status" in transaction &&
-        transaction.status === 1 &&
-        transaction.blockHeight >
-          (await this.chainService.getBlockHeight(transaction.network)) -
-            FAST_TOKEN_REFRESH_BLOCK_RANGE
-      ) {
-        this.scheduledTokenRefresh = true
-      }
-      if (
-        "status" in transaction &&
-        (transaction.status === 1 || transaction.status === 0)
-      ) {
-        const addressNetwork = {
-          address: transaction.from.toLowerCase(),
-          network: getEthereumNetwork(),
+    this.chainService.emitter.on(
+      "transaction",
+      async ({ transaction, forAccounts }) => {
+        if (
+          "status" in transaction &&
+          transaction.status === 1 &&
+          transaction.blockHeight >
+            (await this.chainService.getBlockHeight(transaction.network)) -
+              FAST_TOKEN_REFRESH_BLOCK_RANGE
+        ) {
+          this.scheduledTokenRefresh = true
         }
-        await this.chainService.getLatestBaseAccountBalance(addressNetwork)
+        if (
+          "status" in transaction &&
+          (transaction.status === 1 || transaction.status === 0)
+        ) {
+          forAccounts.forEach((accountAddress) => {
+            const addressNetwork = {
+              address: normalizeEVMAddress(accountAddress),
+              network: getEthereumNetwork(),
+            }
+            this.chainService.getLatestBaseAccountBalance(addressNetwork)
+          })
+        }
       }
-    })
+    )
   }
 
   /**
@@ -351,8 +355,7 @@ export default class IndexingService extends BaseService<Events> {
    */
   private async addTokenToTrackByContract(
     addressNetwork: AddressNetwork,
-    contractAddress: string,
-    decimals?: number
+    contractAddress: string
   ): Promise<void> {
     const knownAssets = await this.getCachedAssets()
     const found = knownAssets.find(
@@ -426,7 +429,9 @@ export default class IndexingService extends BaseService<Events> {
 
     // Filter all assets based on the currently selected network
     const activeAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
+      (asset) =>
+        asset.symbol === "ETH" ||
+        asset.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
     try {
@@ -525,7 +530,7 @@ export default class IndexingService extends BaseService<Events> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const activeAssetsToTrack = assetsToTrack.filter(
-      (t) => t.homeNetwork.chainID === getEthereumNetwork().chainID
+      (asset) => asset.homeNetwork.chainID === getEthereumNetwork().chainID
     )
 
     // wait on balances being written to the db, don't wait on event emission

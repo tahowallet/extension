@@ -1,16 +1,37 @@
 import React, { ReactElement } from "react"
-import { AnyAsset } from "@tallyho/tally-background/assets"
+import { AnyAsset, AnyAssetAmount } from "@tallyho/tally-background/assets"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface Props<T> {
-  asset: T
+export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
+  | {
+      asset: T
+    }
+  | {
+      asset: T
+      amount: bigint
+      localizedDecimalAmount: string
+    }
+
+export function hasAmounts<T extends AnyAsset>(
+  assetWithOptionalAmount: AnyAssetWithOptionalAmount<T>
+): assetWithOptionalAmount is AnyAssetAmount<T> & {
+  localizedDecimalAmount: string
+} {
+  // The types on AnyAssetWithOptionalAmount ensures that if amount exists, so
+  // does localizedDecimalAmount.
+  return "amount" in assetWithOptionalAmount
+}
+
+interface Props<T extends AnyAsset> {
+  assetAndAmount: AnyAssetWithOptionalAmount<T>
   onClick?: (asset: T) => void
 }
 
 export default function SharedAssetItem<T extends AnyAsset>(
   props: Props<T>
 ): ReactElement {
-  const { onClick, asset } = props
+  const { onClick, assetAndAmount } = props
+  const { asset } = assetAndAmount
 
   function handleClick() {
     onClick?.(asset)
@@ -31,12 +52,26 @@ export default function SharedAssetItem<T extends AnyAsset>(
               <div className="token_subtitle">{asset.name}</div>
             </div>
           </div>
+
+          {hasAmounts(assetAndAmount) ? (
+            <div className="amount">
+              {assetAndAmount.localizedDecimalAmount}
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
       </button>
       <style jsx>
         {`
           .left {
             display: flex;
+          }
+          .list_item {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
           }
           .left_content {
             display: flex;
@@ -48,9 +83,9 @@ export default function SharedAssetItem<T extends AnyAsset>(
           .token_group {
             display: flex;
             align-items: center;
+            box-sizing: border-box;
             width: 100%;
-            padding: 7.5px 0px;
-            padding-left: 24px;
+            padding: 7.5px 24px;
           }
           .token_group:hover {
             background-color: var(--hunter-green);
@@ -84,9 +119,6 @@ export default function SharedAssetItem<T extends AnyAsset>(
             width: 18px;
             height: 29px;
           }
-          .left {
-            display: flex;
-          }
           .symbol {
             color: #fff;
             font-size: 16px;
@@ -99,11 +131,4 @@ export default function SharedAssetItem<T extends AnyAsset>(
       </style>
     </li>
   )
-}
-
-SharedAssetItem.defaultProps = {
-  asset: {
-    symbol: "ETH",
-    name: "Ethereum",
-  },
 }
