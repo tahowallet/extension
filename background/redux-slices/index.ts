@@ -1,7 +1,6 @@
 import { combineReducers } from "redux"
 
-import { HIDE_EARN_PAGE } from "../features/features"
-import { HIDE_IMPORT_LEDGER } from "../features/features"
+import { HIDE_EARN_PAGE, HIDE_IMPORT_LEDGER } from "../features/features"
 
 import accountsReducer from "./accounts"
 import assetsReducer from "./assets"
