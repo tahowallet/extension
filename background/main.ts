@@ -66,7 +66,6 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
 } from "./redux-slices/dapp-permission"
-import { EnrichedEIP1559TransactionRequest } from "./services/enrichment"
 import logger from "./lib/logger"
 import {
   signedTypedData,

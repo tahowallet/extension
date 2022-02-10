@@ -237,7 +237,6 @@ export const {
   signed,
   setFeeType,
   estimatedFeesPerGas,
-  clearTransactionState,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
