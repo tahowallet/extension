@@ -173,56 +173,57 @@ export default function AccountsNotificationPanelAccounts({
     accountTypes.push(AccountType.Ledger)
   }
 
-  const accountSwitcher = accountTypes
-    .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
-    .map((accountType) => {
-      // Known-non-null due to above filter.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const accountTypeTotals = accountTotals[accountType]!
-
-      return (
-        <section key={accountType}>
-          <WalletTypeHeader
-            accountType={accountType}
-            onClickAddAddress={
-              accountType === "imported"
-                ? () => {
-                    if (firstKeyringId) {
-                      dispatch(deriveAddress(firstKeyringId))
-                    }
-                  }
-                : undefined
-            }
-          />
-          <ul>
-            {accountTypeTotals.map((accountTotal) => {
-              const lowerCaseAddress = accountTotal.address.toLocaleLowerCase()
-              return (
-                <li key={lowerCaseAddress}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateCurrentAccount(lowerCaseAddress)
-                    }}
-                  >
-                    <SharedPanelAccountItem
-                      key={lowerCaseAddress}
-                      accountTotal={accountTotal}
-                      isSelected={lowerCaseAddress === selectedAccountAddress}
-                      hideMenu
-                    />
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )
-    })
-
   return (
     <div className="switcher_wrap">
-      {accountSwitcher}
+      {accountTypes
+        .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
+        .map((accountType) => {
+          // Known-non-null due to above filter.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const accountTypeTotals = accountTotals[accountType]!
+
+          return (
+            <section key={accountType}>
+              <WalletTypeHeader
+                accountType={accountType}
+                onClickAddAddress={
+                  accountType === "imported"
+                    ? () => {
+                        if (firstKeyringId) {
+                          dispatch(deriveAddress(firstKeyringId))
+                        }
+                      }
+                    : undefined
+                }
+              />
+              <ul>
+                {accountTypeTotals.map((accountTotal) => {
+                  const lowerCaseAddress =
+                    accountTotal.address.toLocaleLowerCase()
+                  return (
+                    <li key={lowerCaseAddress}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateCurrentAccount(lowerCaseAddress)
+                        }}
+                      >
+                        <SharedPanelAccountItem
+                          key={lowerCaseAddress}
+                          accountTotal={accountTotal}
+                          isSelected={
+                            lowerCaseAddress === selectedAccountAddress
+                          }
+                          hideMenu
+                        />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )
+        })}
       <footer>
         <SharedButton
           type="tertiary"
