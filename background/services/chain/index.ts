@@ -229,19 +229,31 @@ export default class ChainService extends BaseService<Events> {
       this.subscribeToNewHeads(getEthereumNetwork()),
     ])
 
+    const network = getEthereumNetwork()
+
     Promise.all(
       accounts
-        .map(
+        .flatMap((an) => [
           // subscribe to all account transactions
-          (an) => this.subscribeToAccountTransactions(an)
-        )
-        .concat(
+          this.subscribeToAccountTransactions(an),
           // do a base-asset balance check for every account
-          accounts.map(async (an) => {
-            await this.getLatestBaseAccountBalance(an)
-          })
+          this.getLatestBaseAccountBalance(an).then(() => {}),
+        ])
+        .concat(
+          // Schedule any stored unconfirmed transactions for
+          // retrieval---either to confirm they no longer exist, or to
+          // read/monitor their status.
+          this.db
+            .getNetworkPendingTransactions(network)
+            .then((pendingTransactions) => {
+              pendingTransactions.forEach(({ hash, firstSeen }) => {
+                logger.debug(
+                  `Queuing pending transaction ${hash} for status lookup.`
+                )
+                this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+              })
+            })
         )
-        .concat([])
     )
   }
 
