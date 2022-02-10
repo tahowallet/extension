@@ -23,7 +23,7 @@ import {
 } from "./services"
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
+import { SignedEVMTransaction } from "./networks"
 import { AddressNetwork, NameNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
@@ -56,9 +56,9 @@ import {
   transactionRequest,
   signed,
   updateTransactionOptions,
-  broadcastOnSign,
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
+  TransactionConstructionStatus,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -480,7 +480,9 @@ export default class Main extends BaseService<never> {
 
     // FIXME Should no longer be necessary once transaction queueing enters the
     // FIXME picture.
-    this.store.dispatch(clearTransactionState())
+    this.store.dispatch(
+      clearTransactionState(TransactionConstructionStatus.Idle)
+    )
   }
 
   async addAccount(addressNetwork: AddressNetwork): Promise<void> {
@@ -625,7 +627,9 @@ export default class Main extends BaseService<never> {
             this.store.dispatch(signed(signedTx))
           } catch (exception) {
             logger.error("Error signing transaction", exception)
-            this.store.dispatch(clearTransactionState())
+            this.store.dispatch(
+              clearTransactionState(TransactionConstructionStatus.Idle)
+            )
           }
         }
       }
@@ -818,7 +822,9 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        this.store.dispatch(clearTransactionState())
+        this.store.dispatch(
+          clearTransactionState(TransactionConstructionStatus.Pending)
+        )
         this.enrichmentService.enrichTransactionSignature(
           payload,
           2 /* TODO desiredDecimals should be configurable */
