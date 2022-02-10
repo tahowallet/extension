@@ -474,6 +474,10 @@ export default class Main extends BaseService<never> {
     }
 
     await this.connectChainService()
+
+    // FIXME Should no longer be necessary once transaction queueing enters the
+    // FIXME picture.
+    this.store.dispatch(clearTransactionState())
   }
 
   async addAccount(addressNetwork: AddressNetwork): Promise<void> {
