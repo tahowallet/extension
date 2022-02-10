@@ -18,6 +18,7 @@ type NetworkBaseAsset = {
  * Represents a cryptocurrency network; these can potentially be L1 or L2.
  */
 export type Network = {
+  // Considered a primary key; two Networks should never share a name.
   name: string
   baseAsset: NetworkBaseAsset
   family: NetworkFamily

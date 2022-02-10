@@ -140,6 +140,23 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  /**
+   * Looks up and returns all pending transactions for the given network.
+   */
+  async getNetworkPendingTransactions(
+    network: Network
+  ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
+    return this.chainTransactions
+      .where("network.name")
+      .equals(network.name)
+      .filter(
+        (transaction) =>
+          !("status" in transaction) &&
+          (transaction.blockHash === null || transaction.blockHeight === null)
+      )
+      .toArray()
+  }
+
   async getBlock(
     network: Network,
     blockHash: string
