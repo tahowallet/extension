@@ -44,5 +44,13 @@ export const getContract = async (
   abi: ContractInterface
 ): Promise<Contract> => {
   const provider = getProvider()
-  return new ethers.Contract(address, abi, provider)
+  const signer = provider.getSigner()
+  return new ethers.Contract(address, abi, signer)
+}
+
+export const getSignerAddress = async (): Promise<string> => {
+  const provider = getProvider()
+  const signer = provider.getSigner()
+  const signerAddress = await signer.getAddress()
+  return signerAddress
 }
