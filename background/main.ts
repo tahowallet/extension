@@ -98,7 +98,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 2
+const REDUX_STATE_VERSION = 3
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -127,6 +127,15 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       ?.addressNetwork
     delete (newState as OldState)?.ui?.currentAccount
     newState.selectedAccount = addressNetwork as BroadAddressNetwork
+    return newState
+  },
+  3: (prevState: Record<string, unknown>) => {
+    const { assets, ...newState } = prevState
+
+    // Clear assets collection; these should be immediately repopulated by the
+    // IndexingService in startService.
+    newState.assets = []
+
     return newState
   },
 }
