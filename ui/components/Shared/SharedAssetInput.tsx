@@ -423,7 +423,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             opacity: 1;
           }
           .input_amount {
-            width: 98px;
+            max-width: 125px;
             height: 32px;
             color: #ffffff;
             font-size: 22px;
