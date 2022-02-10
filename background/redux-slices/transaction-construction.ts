@@ -139,7 +139,11 @@ const transactionSlice = createSlice({
     clearTransactionState: (state) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
-      status: TransactionConstructionStatus.Idle,
+      status:
+        // If the transaction state is already pending, maintain that state.
+        state.status === TransactionConstructionStatus.Pending
+          ? TransactionConstructionStatus.Pending
+          : TransactionConstructionStatus.Idle,
       feeTypeSelected: NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
