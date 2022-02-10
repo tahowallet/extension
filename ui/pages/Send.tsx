@@ -1,13 +1,12 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { isAddress } from "@ethersproject/address"
-import { formatEther } from "@ethersproject/units"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   broadcastOnSign,
-  NetworkFeeSetting,
+  NetworkFeeSettings,
   selectEstimatedFeesPerGas,
   setFeeType,
   updateTransactionOptions,
@@ -32,7 +31,6 @@ export default function Send(): ReactElement {
   const [selectedCount, setSelectedCount] = useState(0)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
-  const [currentBalance, setCurrentBalance] = useState("")
   const [gasLimit, setGasLimit] = useState("")
   const [hasError, setHasError] = useState(false)
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
@@ -50,6 +48,8 @@ export default function Send(): ReactElement {
     assetAmounts: [],
   }
 
+  // FIXME Rework this to use selectAssetPricePoint and
+  // FIXME convertAssetAmountViaPricePoint.
   const getTotalLocalizedValue = () => {
     const pricePerUnit = assetAmounts.find(
       (el) => el.asset.symbol === assetSymbol
@@ -59,18 +59,7 @@ export default function Send(): ReactElement {
     }
     return 0
   }
-  const findBalance = useCallback(() => {
-    const balance = formatEther(
-      assetAmounts.find((el) => el.asset.symbol === assetSymbol)?.amount || "0"
-    )
-    setCurrentBalance(balance)
-  }, [assetAmounts, assetSymbol])
 
-  const setMaxBalance = () => {
-    if (currentBalance) {
-      setAmount(currentBalance)
-    }
-  }
   const sendTransactionRequest = async () => {
     dispatch(broadcastOnSign(true))
     const transaction = {
@@ -84,16 +73,12 @@ export default function Send(): ReactElement {
   }
 
   useEffect(() => {
-    findBalance()
-  }, [findBalance])
-
-  useEffect(() => {
     if (assetSymbol) {
       setSelectedCount(1)
     }
   }, [assetSymbol])
 
-  const networkSettingsSaved = (networkSetting: NetworkFeeSetting) => {
+  const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     setGasLimit(networkSetting.gasLimit)
     dispatch(setFeeType(networkSetting.feeType))
     setNetworkSettingsModalOpen(false)
@@ -111,28 +96,12 @@ export default function Send(): ReactElement {
         </h1>
         <div className="form">
           <div className="form_input">
-            <div className="balance">
-              Balance: {`${currentBalance.substring(0, 8)}\u2026 `}
-              <button
-                type="button"
-                className="max"
-                onClick={setMaxBalance}
-                tabIndex={0}
-              >
-                Max
-              </button>
-            </div>
             <SharedAssetInput
               label="Asset / Amount"
               onAssetSelect={(token) => {
                 setAssetSymbol(token.symbol)
               }}
-              assets={assetAmounts.map((asset) => {
-                return {
-                  symbol: asset.asset.symbol,
-                  name: asset.asset.name,
-                }
-              })}
+              assetsAndAmounts={assetAmounts}
               onAmountChange={(value, errorMessage) => {
                 setAmount(value)
                 if (errorMessage) {
@@ -143,16 +112,18 @@ export default function Send(): ReactElement {
               }}
               defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
               amount={amount}
-              maxBalance={Number(currentBalance)}
               disableDropdown
             />
             <div className="value">${getTotalLocalizedValue()}</div>
           </div>
-          <div className="form_input">
-            <SharedAssetInput
-              isTypeDestination
-              label="Send To:"
-              onSendToAddressChange={setDestinationAddress}
+          <div className="form_input send_to_field">
+            <label htmlFor="send_address">Send To:</label>
+            <input
+              id="send_address"
+              type="text"
+              placeholder="0x..."
+              spellCheck={false}
+              onChange={(event) => setDestinationAddress(event.target.value)}
             />
           </div>
           <SharedSlideUpMenu
@@ -162,12 +133,8 @@ export default function Send(): ReactElement {
             customSize="488px"
           >
             <NetworkSettingsChooser
-              networkSettings={{
-                estimatedFeesPerGas,
-                gasLimit,
-              }}
+              estimatedFeesPerGas={estimatedFeesPerGas}
               onNetworkSettingsSave={networkSettingsSaved}
-              visible={networkSettingsModalOpen}
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
@@ -248,18 +215,6 @@ export default function Send(): ReactElement {
           .label {
             margin-bottom: 6px;
           }
-          .balance {
-            color: var(--green-40);
-            text-align: right;
-            position: relative;
-            font-size: 14px;
-            top: 16px;
-            right: 0;
-          }
-          .max {
-            color: #d08e39;
-            cursor: pointer;
-          }
           .value {
             display: flex;
             justify-content: flex-end;
@@ -269,6 +224,31 @@ export default function Send(): ReactElement {
             color: var(--green-60);
             font-size: 12px;
             line-height: 16px;
+          }
+          div.send_to_field {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+          }
+          div.send_to_field label {
+            color: var(--green-40);
+            text-align: right;
+            font-size: 14px;
+          }
+          input#send_address {
+            box-sizing: border-box;
+            height: 72px;
+            width: 100%;
+
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 72px;
+            color: #fff;
+
+            border-radius: 4px;
+            background-color: var(--green-95);
+            padding: 0px 16px;
           }
           .send_footer {
             display: flex;

@@ -7,14 +7,24 @@ import React, {
 } from "react"
 import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import {
+  convertFixedPointNumber,
+  fixedPointNumberToString,
+  parseToFixedPointNumber,
+} from "@tallyho/tally-background/lib/fixed-point"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
-import SharedAssetItem from "./SharedAssetItem"
+import SharedAssetItem, {
+  AnyAssetWithOptionalAmount,
+  hasAmounts,
+} from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
-interface SelectAssetMenuContentProps<T extends AnyAsset> {
-  assets: T[]
-  setSelectedAssetAndClose: (asset: T) => void
+interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
+  assets: AnyAssetWithOptionalAmount<AssetType>[]
+  setSelectedAssetAndClose: (
+    asset: AnyAssetWithOptionalAmount<AssetType>
+  ) => void
 }
 
 function SelectAssetMenuContent<T extends AnyAsset>(
@@ -47,7 +57,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
       <div className="divider" />
       <ul>
         {assets
-          .filter((asset) => {
+          .filter(({ asset }) => {
             return (
               asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
               ("contractAddress" in asset &&
@@ -61,7 +71,8 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                 asset.contractAddress.length >= searchTerm.length)
             )
           })
-          .map((asset) => {
+          .map((assetWithOptionalAmount) => {
+            const { asset } = assetWithOptionalAmount
             return (
               <SharedAssetItem
                 key={
@@ -69,8 +80,10 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                   asset.symbol +
                     ("contractAddress" in asset ? asset.contractAddress : "")
                 }
-                asset={asset}
-                onClick={setSelectedAssetAndClose}
+                assetAndAmount={assetWithOptionalAmount}
+                onClick={() =>
+                  setSelectedAssetAndClose(assetWithOptionalAmount)
+                }
               />
             )
           })}
@@ -141,7 +154,6 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
       </div>
 
       {asset?.symbol}
-
       <style jsx>{`
         button {
           display: flex;
@@ -168,46 +180,52 @@ SelectedAssetButton.defaultProps = {
   toggleIsAssetMenuOpen: null,
 }
 
-interface SharedAssetInputProps<T extends AnyAsset> {
-  isTypeDestination: boolean
-  assets: T[]
+interface SharedAssetInputProps<AssetType extends AnyAsset> {
+  assetsAndAmounts: AnyAssetWithOptionalAmount<AssetType>[]
   label: string
-  defaultAsset: T
+  defaultAsset: AssetType
   amount: string
-  maxBalance: number | boolean
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
+  showMaxButton: boolean
   isDisabled?: boolean
-  onAssetSelect: (asset: T) => void
-  onAmountChange: (value: string, errorMessage: string | undefined) => void
-  onSendToAddressChange: (value: string) => void
+  onAssetSelect?: (asset: AssetType) => void
+  onAmountChange?: (value: string, errorMessage: string | undefined) => void
+}
+
+function isSameAsset(asset1: Asset, asset2: Asset) {
+  return asset1.symbol === asset2.symbol // FIXME Once asset similarity logic is extracted, reuse.
+}
+
+function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
+  asset: T,
+  assetsToSearch: AnyAssetWithOptionalAmount<T>[]
+) {
+  return assetsToSearch.find(({ asset: listAsset }) =>
+    isSameAsset(asset, listAsset)
+  )
 }
 
 export default function SharedAssetInput<T extends AnyAsset>(
   props: SharedAssetInputProps<T>
 ): ReactElement {
   const {
-    isTypeDestination,
-    assets,
+    assetsAndAmounts,
     label,
     defaultAsset,
     amount,
-    maxBalance,
     isAssetOptionsLocked,
     disableDropdown,
+    showMaxButton,
     isDisabled,
     onAssetSelect,
     onAmountChange,
-    onSendToAddressChange,
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState(defaultAsset)
-
-  // TODO: Refactor this to track state in a more reasonable way
-  useEffect(() => {
-    setSelectedAsset(defaultAsset)
-  }, [defaultAsset])
+  const [selectedAsset, setSelectedAsset] = useState<
+    AnyAssetWithOptionalAmount<T> | undefined
+  >(assetWithOptionalAmountFromAsset(defaultAsset, assetsAndAmounts))
 
   const toggleIsAssetMenuOpen = useCallback(() => {
     if (!isAssetOptionsLocked) {
@@ -216,96 +234,161 @@ export default function SharedAssetInput<T extends AnyAsset>(
   }, [isAssetOptionsLocked])
 
   const setSelectedAssetAndClose = useCallback(
-    (asset: T) => {
-      setSelectedAsset(asset)
+    (assetWithOptionalAmount: AnyAssetWithOptionalAmount<T>) => {
+      setSelectedAsset(assetWithOptionalAmount)
       setOpenAssetMenu(false)
-      onAssetSelect?.(asset)
+      onAssetSelect?.(assetWithOptionalAmount.asset)
     },
 
     [onAssetSelect]
   )
 
   const getErrorMessage = (givenAmount: string): string | undefined => {
-    return (!isTypeDestination && maxBalance >= Number(givenAmount)) ||
-      Number(givenAmount) === 0 ||
-      !maxBalance
-      ? undefined
-      : "Insufficient balance"
+    if (
+      givenAmount.trim() === "" ||
+      typeof selectedAsset === "undefined" ||
+      !hasAmounts(selectedAsset) ||
+      !("decimals" in selectedAsset.asset)
+    ) {
+      return undefined
+    }
+
+    const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
+    if (typeof parsedGivenAmount === "undefined") {
+      return "Invalid amount"
+    }
+
+    const decimalMatched = convertFixedPointNumber(
+      parsedGivenAmount,
+      selectedAsset.asset.decimals
+    )
+    if (decimalMatched.amount > selectedAsset.amount) {
+      return "Insufficient balance"
+    }
+
+    return undefined
+  }
+
+  const setMaxBalance = () => {
+    if (typeof selectedAsset === "undefined" || !hasAmounts(selectedAsset)) {
+      return
+    }
+
+    const fixedPointAmount = {
+      amount: selectedAsset.amount,
+      decimals:
+        "decimals" in selectedAsset.asset ? selectedAsset.asset.decimals : 0,
+    }
+    const fixedPointString = fixedPointNumberToString(fixedPointAmount)
+
+    onAmountChange?.(fixedPointString, getErrorMessage(fixedPointString))
   }
 
   return (
-    <label className="label">
-      {label}
+    <>
+      <label
+        className="label"
+        htmlFor={
+          typeof selectedAsset === "undefined"
+            ? "asset_selector"
+            : "asset_amount_input"
+        }
+      >
+        {label}
+      </label>
+
+      {typeof selectedAsset !== "undefined" && hasAmounts(selectedAsset) ? (
+        <div className="amount_controls">
+          <span className="available">
+            Balance: {selectedAsset.localizedDecimalAmount}
+          </span>
+          {showMaxButton ? (
+            <button type="button" className="max" onClick={setMaxBalance}>
+              Max
+            </button>
+          ) : (
+            <></>
+          )}
+        </div>
+      ) : (
+        <></>
+      )}
+
       <SharedSlideUpMenu
         isOpen={openAssetMenu}
         close={() => {
           setOpenAssetMenu(false)
         }}
       >
-        {assets && (
+        {assetsAndAmounts && (
           <SelectAssetMenuContent
-            assets={assets}
+            assets={assetsAndAmounts}
             setSelectedAssetAndClose={setSelectedAssetAndClose}
           />
         )}
       </SharedSlideUpMenu>
       <div className="asset_wrap standard_width">
-        {isTypeDestination ? (
-          <>
-            <input
-              className="asset_input"
-              type="text"
-              placeholder="0x..."
-              spellCheck={false}
-              onChange={(event) => {
-                onSendToAddressChange(event.target.value)
-              }}
+        <div>
+          {selectedAsset?.asset.symbol ? (
+            <SelectedAssetButton
+              isDisabled={isDisabled || disableDropdown}
+              asset={selectedAsset.asset}
+              toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
             />
-          </>
-        ) : (
-          <>
-            <div>
-              {selectedAsset?.symbol ? (
-                <SelectedAssetButton
-                  isDisabled={isDisabled || disableDropdown}
-                  asset={selectedAsset}
-                  toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
-                />
-              ) : (
-                <SharedButton
-                  type="secondary"
-                  size="medium"
-                  isDisabled={isDisabled || disableDropdown}
-                  onClick={toggleIsAssetMenuOpen}
-                  icon="chevron"
-                >
-                  Select token
-                </SharedButton>
-              )}
-            </div>
+          ) : (
+            <SharedButton
+              id="asset_selector"
+              type="secondary"
+              size="medium"
+              isDisabled={isDisabled || disableDropdown}
+              onClick={toggleIsAssetMenuOpen}
+              icon="chevron"
+            >
+              Select token
+            </SharedButton>
+          )}
+        </div>
 
-            <input
-              className="input_amount"
-              type="number"
-              step="any"
-              placeholder="0.0"
-              min="0"
-              disabled={isDisabled}
-              value={amount}
-              spellCheck={false}
-              onChange={(event) =>
-                onAmountChange(
-                  event.target.value,
-                  getErrorMessage(event.target.value)
-                )
-              }
-            />
-          </>
-        )}
+        <input
+          id="asset_amount_input"
+          className="input_amount"
+          type="number"
+          step="any"
+          placeholder="0.0"
+          min="0"
+          disabled={isDisabled}
+          value={amount}
+          spellCheck={false}
+          onChange={(event) =>
+            onAmountChange?.(
+              event.target.value,
+              getErrorMessage(event.target.value)
+            )
+          }
+        />
         <div className="error_message">{getErrorMessage(amount)}</div>
       </div>
       <style jsx>
         {`
+          label,
+          .amount_controls {
+            font-weight: 500;
+          }
+          .amount_controls {
+            line-height: 27px;
+            // align with label top + offset by border radius right
+            margin: -27px 4px 0 0;
+
+            color: var(--green-40);
+            text-align: right;
+            position: relative;
+            font-size: 14px;
+          }
+          .max {
+            margin-left: 8px; // space to balance
+            color: #d08e39;
+            cursor: pointer;
+          }
           .asset_wrap {
             height: 72px;
             border-radius: 4px;
@@ -327,22 +410,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .asset_input::placeholder {
             color: var(--green-40);
             opacity: 1;
-          }
-          .paste_button {
-            height: 24px;
-            color: var(--trophy-gold);
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 24px;
-            text-align: center;
-            display: flex;
-          }
-          .icon_paste {
-            background: url("./images/paste@2x.png");
-            background-size: 24px 24px;
-            width: 24px;
-            height: 24px;
-            margin-left: 8px;
           }
           .input_amount::placeholder {
             color: var(--green-40);
@@ -385,24 +452,17 @@ export default function SharedAssetInput<T extends AnyAsset>(
           }
         `}
       </style>
-    </label>
+    </>
   )
 }
 
 SharedAssetInput.defaultProps = {
-  isTypeDestination: false,
   isAssetOptionsLocked: false,
   disableDropdown: false,
   isDisabled: false,
-  assets: [{ symbol: "ETH", name: "Example Asset" }],
+  showMaxButton: true,
+  assetsAndAmounts: [],
   defaultAsset: { symbol: "", name: "" },
   label: "",
   amount: "0.0",
-  maxBalance: false,
-  onAssetSelect: () => {
-    // do nothing by default
-    // TODO replace this with support for undefined onClick
-  },
-  onAmountChange: () => {},
-  onSendToAddressChange: () => {},
 }

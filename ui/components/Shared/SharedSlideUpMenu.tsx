@@ -1,53 +1,80 @@
 import classNames from "classnames"
-import React, { ReactElement, useState, useEffect } from "react"
+import React, { ReactElement, useState, useEffect, CSSProperties } from "react"
+import { useDelayContentChange } from "../../hooks"
+
+export type SharedSlideUpMenuSize =
+  | "auto"
+  | "small"
+  | "medium"
+  | "large"
+  | "custom"
+
+const SLIDE_TRANSITION_MS = 445
 
 interface Props {
   isOpen: boolean
   close: () => void
   children: React.ReactNode
   customSize?: string
-  size: "small" | "medium" | "large" | "custom"
+  size: SharedSlideUpMenuSize
+  showOverlay?: boolean
+  alwaysRenderChildren?: boolean
+}
+
+const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
+  auto: "auto",
+  small: "268px",
+  medium: "536px",
+  large: "600px",
+  custom: null,
 }
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {
-  const { isOpen, close, size, children, customSize } = props
-  const [forceHide, setForceHide] = useState(true)
+  const {
+    isOpen,
+    close,
+    size,
+    children,
+    customSize,
+    showOverlay,
+    alwaysRenderChildren,
+  } = props
 
-  useEffect(() => {
-    if (isOpen) {
-      setForceHide(false)
-    }
-  }, [isOpen])
+  // Continue showing children during the close transition.
+  const visibleChildren = isOpen || alwaysRenderChildren ? children : <></>
+  const displayChildren = useDelayContentChange(
+    visibleChildren,
+    !isOpen,
+    SLIDE_TRANSITION_MS
+  )
 
-  let menuHeight = "536px"
-  if (size === "large") {
-    menuHeight = "600px"
-  } else if (size === "small") {
-    menuHeight = "268px"
-  } else if (size === "custom") {
-    menuHeight = customSize || "600px"
-  }
+  const menuHeight = menuHeights[size] ?? customSize ?? menuHeights.medium
 
   return (
-    <div
-      className={classNames("slide_up_menu", {
-        large: size === "large",
-        closed: !isOpen,
-        force_hide: forceHide,
-      })}
-    >
-      <button
-        type="button"
-        className="icon_close"
-        onClick={close}
-        aria-label="Close menu"
-      />
-      {isOpen ? children : <></>}
+    <>
+      {showOverlay && (
+        <div className={classNames("overlay", { closed: !isOpen })} />
+      )}
+      <div
+        className={classNames("slide_up_menu", {
+          large: size === "large",
+          closed: !isOpen,
+        })}
+        style={{ "--menu-height": menuHeight } as CSSProperties}
+      >
+        <button
+          type="button"
+          className="icon_close"
+          onClick={close}
+          aria-label="Close menu"
+        />
+        {displayChildren}
+      </div>
       <style jsx>
         {`
           .slide_up_menu {
             width: 100%;
-            height: ${menuHeight};
+            height: var(--menu-height);
             overflow-y: auto;
             overflow-x: hidden;
             border-radius: 16px;
@@ -58,9 +85,28 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             bottom: 0px;
             z-index: 999;
             transform: translateY(0); /* open by default */
-            transition: transform cubic-bezier(0.19, 1, 0.22, 1) 0.445s;
+            opacity: 1;
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
+              ${SLIDE_TRANSITION_MS}ms;
             padding-top: 24px;
             box-sizing: border-box;
+          }
+          .overlay {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: 0;
+            z-index: 998;
+            background: var(--hunter-green);
+            opacity: 0.8;
+            transition: opacity cubic-bezier(0.19, 1, 0.22, 1) 0.445s,
+              visiblity 0.445s;
+          }
+          .overlay.closed {
+            opacity: 0;
+            visiblity: hidden;
+            pointer-events: none;
           }
           .icon_close {
             mask-image: url("./images/close.svg");
@@ -81,16 +127,18 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           .large {
             background-color: var(--hunter-green);
           }
-          .closed {
-            transform: translateY(${menuHeight});
-          }
-          .force_hide {
+          .slide_up_menu.closed {
+            transform: translateY(100%);
+            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
+                ${SLIDE_TRANSITION_MS}ms,
+              // Drop opacity all at once at the end.
+              opacity 0ms ${SLIDE_TRANSITION_MS}ms;
             opacity: 0;
             pointer-events: none;
           }
         `}
       </style>
-    </div>
+    </>
   )
 }
 

@@ -37,11 +37,19 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import {
+  getEthereumNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../enrichment"
+import {
+  convertFixedPointNumber,
+  multiplyFixedPointNumbers,
+} from "../../lib/fixed-point"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -290,7 +298,17 @@ export default class ChainService extends BaseService<Events> {
       (typeof partialRequest.gasLimit === "undefined" ||
         partialRequest.gasLimit < 21000n)
     ) {
-      transactionRequest.gasLimit = estimatedGasLimit
+      transactionRequest.gasLimit = multiplyFixedPointNumbers(
+        convertFixedPointNumber(
+          {
+            amount: estimatedGasLimit * 100n,
+            decimals: 0,
+          },
+          2
+        ),
+        { amount: 110n, decimals: 2 }, // 1.1 = 110%
+        0
+      ).amount
     }
 
     return { transactionRequest, gasEstimationError }
@@ -546,7 +564,17 @@ export default class ChainService extends BaseService<Events> {
     )
     try {
       await Promise.all([
-        this.pollingProviders.ethereum.sendTransaction(serialized),
+        this.pollingProviders.ethereum
+          .sendTransaction(serialized)
+          .catch((error) => {
+            // Failure to broadcast needs to be registered.
+            this.saveTransaction(
+              { ...transaction, status: 0, error: error.toString() },
+              "alchemy"
+            )
+
+            return Promise.reject(error)
+          }),
         this.subscribeToTransactionConfirmation(
           transaction.network,
           transaction
@@ -554,7 +582,8 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
-      logger.error(`Error broadcasting transaction ${transaction}`, error)
+      logger.error("Error broadcasting transaction", transaction, error)
+
       throw error
     }
   }
@@ -804,14 +833,12 @@ export default class ChainService extends BaseService<Events> {
 
       const forAccounts = accounts
         .filter(
-          (addressNetwork) =>
-            finalTransaction.from.toLowerCase() ===
-              addressNetwork.address.toLowerCase() ||
-            finalTransaction.to?.toLowerCase() ===
-              addressNetwork.address.toLowerCase()
+          ({ address }) =>
+            sameEVMAddress(finalTransaction.from, address) ||
+            sameEVMAddress(finalTransaction.to, address)
         )
-        .map((addressNetwork) => {
-          return addressNetwork.address.toLowerCase()
+        .map(({ address }) => {
+          return normalizeEVMAddress(address)
         })
 
       // emit in a separate try so outside services still get the tx
@@ -907,6 +934,12 @@ export default class ChainService extends BaseService<Events> {
             ][normalizedFromAddress] = transaction.nonce + 1
           }
           await this.saveTransaction(transaction, "alchemy")
+
+          // Wait for confirmation/receipt information.
+          this.subscribeToTransactionConfirmation(
+            getEthereumNetwork(),
+            transaction
+          )
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }

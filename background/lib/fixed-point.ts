@@ -1,3 +1,5 @@
+import logger from "./logger"
+
 /**
  * A fixed point number carrying an amount and the number of decimals it
  * represents.
@@ -138,29 +140,78 @@ export function toFixedPointNumber(
  */
 export function parseToFixedPointNumber(
   floatingPointString: string
-): FixedPointNumber {
-  const noThousands = floatingPointString.replace(
-    /^[^0-9]*([0-9,]+)\.([0-9]+)$/,
-    "$1.$2"
-  )
-  const [whole, decimals] = noThousands.split(".")
-  return {
-    amount: BigInt(whole + decimals),
-    decimals: decimals.length,
+): FixedPointNumber | undefined {
+  if (!floatingPointString.match(/^[^0-9]*([0-9,]+)(?:\.([0-9]*))?$/)) {
+    return undefined
+  }
+
+  const [whole, decimals, ...extra] = floatingPointString.split(".")
+
+  // Only one `.` supported.
+  if (extra.length > 0) {
+    return undefined
+  }
+
+  const noThousandsSeparatorWhole = whole.replace(",", "")
+  const setDecimals = decimals ?? ""
+
+  try {
+    return {
+      amount: BigInt([noThousandsSeparatorWhole, setDecimals].join("")),
+      decimals: setDecimals.length,
+    }
+  } catch (error) {
+    // FIXME should be debug once logger.debug lands
+    logger.debug(
+      `Error parsing ${floatingPointString} to fixed-point number:`,
+      error
+    )
+    return undefined
   }
 }
 
-export function fixedPointNumberToString({
-  amount,
-  decimals,
-}: FixedPointNumber): string {
+/**
+ * Converts a fixed point number with a bigint amount and a decimals field
+ * indicating the orders of magnitude in `amount` behind the decimal point into
+ * a string in US decimal format (no thousands separators, . for the decimal
+ * separator).
+ *
+ * Note that for UI usage, it is _usually_ a better strategy to use
+ * ``fromFixedPoint`` to convert to a JavaScript number and then use an
+ * Intl.NumberFormat to format the number unless that is not an available
+ * option or precision is critical. This function currently does _not_ respect
+ * localization settings.
+ */
+export function fixedPointNumberToString(
+  { amount, decimals }: FixedPointNumber,
+  trimTrailingZeros = true
+): string {
   const undecimaledAmount = amount.toString()
   const preDecimalLength = undecimaledAmount.length - decimals
 
-  const preDecimalCharacters = undecimaledAmount.substring(0, preDecimalLength)
-  const postDecimalCharacters = undecimaledAmount.substring(preDecimalLength)
+  const preDecimalCharacters =
+    preDecimalLength > 0
+      ? undecimaledAmount.substring(0, preDecimalLength)
+      : "0"
+  const postDecimalCharacters =
+    // The pre-decimal length is negative if the number is less than 1/10th of
+    // a whole number; in these cases, we have to prefix 0s as the string
+    // representation of the bigint won't have them. For example, the bigint
+    // 5000 with decimals 5 represents 0.05000, but in this case
+    // undecimaledAmount will just be "5000".
+    "0".repeat(Math.max(-preDecimalLength, 0)) +
+    undecimaledAmount.substring(preDecimalLength)
 
-  return `${preDecimalCharacters}.${postDecimalCharacters}`
+  const trimmedPostDecimalCharacters = trimTrailingZeros
+    ? postDecimalCharacters.replace(/0*$/, "")
+    : postDecimalCharacters
+
+  const decimalString =
+    trimmedPostDecimalCharacters.length > 0
+      ? `.${trimmedPostDecimalCharacters}`
+      : ""
+
+  return `${preDecimalCharacters}${decimalString}`
 }
 
 /**

@@ -13,7 +13,7 @@ export type Events = {
 
 export type SigningMethod =
   | { type: "keyring" }
-  | { type: "ledger"; path: string }
+  | { type: "ledger"; deviceID: string; path: string }
 
 export const signingSliceEmitter = new Emittery<Events>()
 

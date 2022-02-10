@@ -9,12 +9,19 @@ const defaultSettings = {
   defaultWallet: false,
 }
 
+export interface Location {
+  pathname: string
+  key?: string
+  hash: string
+}
+
 export type UIState = {
   selectedAccount: AddressNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   settings: { hideDust: boolean; defaultWallet: boolean }
   snackbarMessage: string
+  routeHistoryEntries?: Partial<Location>[]
 }
 
 export type Events = {
@@ -86,6 +93,13 @@ const uiSlice = createSlice({
         defaultWallet,
       },
     }),
+    setRouteHistoryEntries: (
+      state,
+      { payload: routeHistoryEntries }: { payload: Partial<Location>[] }
+    ) => ({
+      ...state,
+      routeHistoryEntries,
+    }),
   },
 })
 
@@ -97,6 +111,7 @@ export const {
   setSnackbarMessage,
   setDefaultWallet,
   clearSnackbarMessage,
+  setRouteHistoryEntries,
 } = uiSlice.actions
 
 export default uiSlice.reducer
