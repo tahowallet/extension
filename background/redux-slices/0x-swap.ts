@@ -97,6 +97,8 @@ const {
 export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
 
+export const SWAP_FEE = 0.005
+
 // Use gated features if there is an API key available in the build.
 const zeroXApiBase =
   typeof process.env.ZEROX_API_KEY !== "undefined" &&
@@ -110,7 +112,7 @@ const gatedParameters =
         affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
         feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
         includedSources: "RFQT",
-        buyTokenPercentageFee: 0.005,
+        buyTokenPercentageFee: SWAP_FEE,
       }
     : {}
 const gatedHeaders: { [header: string]: string } =
