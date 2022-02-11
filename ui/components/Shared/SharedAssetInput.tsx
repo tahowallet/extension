@@ -27,12 +27,82 @@ interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
   ) => void
 }
 
+// Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
+// the current locale.
+function assetAlphabeticSorter<
+  AssetType extends AnyAsset,
+  T extends AnyAssetWithOptionalAmount<AssetType>
+>({ asset: { symbol } }: T, { asset: { symbol: symbol2 } }: T) {
+  return symbol.localeCompare(symbol2)
+}
+
+// Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
+// the current locale, but bubbles to the top any assets that match the passed
+// `searchTerm` at the start of the symbol. Matches are case-insensitive for
+// sorting purposes.
+//
+// For example, if a set of assets [DAAD, AD, AB, AC, AA] is passed, and the
+// search term is empty, the list will be [DAAD, AA, AB, AC, AD]. If the search
+// term is instead AA, the list will be [AA, DAAD, AB, AC, AD]. Note that this
+// function performs no filtering against the search term, the search term is
+// purely used to sort start-anchored symbol matches in front of all other
+// assets.
+function assetAlphabeticSorterWithFilter<
+  AssetType extends AnyAsset,
+  T extends AnyAssetWithOptionalAmount<AssetType>
+>(searchTerm: string): (asset1: T, asset2: T) => number {
+  const startingSearchTermRegExp = new RegExp(`^${searchTerm}.*$`, "i")
+
+  return (
+    { asset: { symbol: symbol1 } }: T,
+    { asset: { symbol: symbol2 } }: T
+  ) => {
+    const searchTermStartMatch1 = startingSearchTermRegExp.test(symbol1)
+    const searchTermStartMatch2 = startingSearchTermRegExp.test(symbol2)
+
+    // If either search term matches at the start and the other doesn't, the
+    // one that matches at the start is greater.
+    if (searchTermStartMatch1 && !searchTermStartMatch2) {
+      return -1
+    }
+    if (!searchTermStartMatch1 && searchTermStartMatch2) {
+      return 1
+    }
+
+    return symbol1.localeCompare(symbol2)
+  }
+}
+
 function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { setSelectedAssetAndClose, assets } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
+
+  const filteredAssets =
+    searchTerm.trim() === ""
+      ? assets
+      : assets.filter(({ asset }) => {
+          return (
+            asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ("contractAddress" in asset &&
+              searchTerm.startsWith("0x") &&
+              normalizeEVMAddress(asset.contractAddress).includes(
+                // The replace handles `normalizeEVMAddress`'s
+                // octet alignment that prefixes a `0` to a partial address
+                // if it has an uneven number of digits.
+                normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
+              ) &&
+              asset.contractAddress.length >= searchTerm.length)
+          )
+        })
+
+  const sortedFilteredAssets = filteredAssets.sort(
+    searchTerm.trim() === ""
+      ? assetAlphabeticSorter
+      : assetAlphabeticSorterWithFilter(searchTerm.trim())
+  )
 
   useEffect(() => {
     searchInput.current?.focus()
@@ -56,37 +126,20 @@ function SelectAssetMenuContent<T extends AnyAsset>(
       </div>
       <div className="divider" />
       <ul>
-        {assets
-          .filter(({ asset }) => {
-            return (
-              asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              ("contractAddress" in asset &&
-                searchTerm.startsWith("0x") &&
-                normalizeEVMAddress(asset.contractAddress).includes(
-                  // The replace handles `normalizeEVMAddress`'s
-                  // octet alignment that prefixes a `0` to a partial address
-                  // if it has an uneven number of digits.
-                  normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
-                ) &&
-                asset.contractAddress.length >= searchTerm.length)
-            )
-          })
-          .map((assetWithOptionalAmount) => {
-            const { asset } = assetWithOptionalAmount
-            return (
-              <SharedAssetItem
-                key={
-                  asset.metadata?.coinGeckoID ??
-                  asset.symbol +
-                    ("contractAddress" in asset ? asset.contractAddress : "")
-                }
-                assetAndAmount={assetWithOptionalAmount}
-                onClick={() =>
-                  setSelectedAssetAndClose(assetWithOptionalAmount)
-                }
-              />
-            )
-          })}
+        {sortedFilteredAssets.map((assetWithOptionalAmount) => {
+          const { asset } = assetWithOptionalAmount
+          return (
+            <SharedAssetItem
+              key={
+                asset.metadata?.coinGeckoID ??
+                asset.symbol +
+                  ("contractAddress" in asset ? asset.contractAddress : "")
+              }
+              assetAndAmount={assetWithOptionalAmount}
+              onClick={() => setSelectedAssetAndClose(assetWithOptionalAmount)}
+            />
+          )
+        })}
       </ul>
       <style jsx>
         {`
