@@ -125,6 +125,7 @@ export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
   "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
 > & {
+  chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
 }
 
