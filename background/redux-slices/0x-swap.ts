@@ -12,6 +12,7 @@ import {
 } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
+import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset
@@ -96,6 +97,30 @@ const {
 export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
 
+// Use gated features if there is an API key available in the build.
+const zeroXApiBase =
+  typeof process.env.ZEROX_API_KEY !== "undefined" &&
+  process.env.ZEROX_API_KEY.trim() !== ""
+    ? "gated.api.0x.org"
+    : "api.0x.org"
+const gatedParameters =
+  typeof process.env.ZEROX_API_KEY !== "undefined" &&
+  process.env.ZEROX_API_KEY.trim() !== ""
+    ? {
+        affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
+        feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
+        includedSources: "RFQT",
+        buyTokenPercentageFee: 0.005,
+      }
+    : {}
+const gatedHeaders: { [header: string]: string } =
+  typeof process.env.ZEROX_API_KEY !== "undefined" &&
+  process.env.ZEROX_API_KEY.trim() !== ""
+    ? {
+        "0x-api-key": process.env.ZEROX_API_KEY,
+      }
+    : {}
+
 // Helper to build a URL to the 0x API for a given swap quote request. Usable
 // for both /price and /quote endpoints, returns a URL instance that can be
 // stringified or otherwise massaged.
@@ -104,7 +129,7 @@ function build0xUrlFromSwapRequest(
   { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
   additionalParameters?: Record<string, string>
 ): URL {
-  const requestUrl = new URL(`https://api.0x.org/swap/v1${requestPath}`)
+  const requestUrl = new URL(`https://${zeroXApiBase}/swap/v1${requestPath}`)
   const tradeAmount = utils.parseUnits(
     "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
     "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals
@@ -127,6 +152,7 @@ function build0xUrlFromSwapRequest(
     gasPrice: gasPrice.toString(),
     slippagePercentage: slippageTolerance.toString(),
     [tradeField]: tradeAmount.toString(),
+    ...gatedParameters,
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
     requestUrl.searchParams.set(parameter, value)
@@ -153,7 +179,10 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
       takerAddress: tradeAddress,
     })
 
-    const apiData = await fetchJson(requestUrl.toString())
+    const apiData = await fetchJson({
+      url: requestUrl.toString(),
+      headers: gatedHeaders,
+    })
 
     if (!isValidSwapQuoteResponse(apiData)) {
       logger.warn(
@@ -185,7 +214,10 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest)
 
-    const apiData = await fetchJson(requestUrl.toString())
+    const apiData = await fetchJson({
+      url: requestUrl.toString(),
+      headers: gatedHeaders,
+    })
 
     if (!isValidSwapPriceResponse(apiData)) {
       logger.warn(
