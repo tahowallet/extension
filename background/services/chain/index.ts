@@ -360,23 +360,25 @@ export default class ChainService extends BaseService<Events> {
     const { chainID } = transactionRequest
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
 
-    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
-    // Lazily look up the network count, if needed. Note that the assumption
-    // here is that all nonces for this address are increasing linearly
-    // and continuously; if the address has a pending transaction floating
-    // around with a nonce that is not an increase by one over previous
-    // transactions, this approach will allocate more nonces that won't mine.
-    // FIXME Double-check the getTransactionCount-based nonce to make sure
-    // FIXME using its precedent would result in a replacement transaction
-    // FIXME error or a nonce reuse error.
-    // TODO Deal with multi-network.
-    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-      normalizedAddress
-    ] ??=
+    const chainNonce =
       (await this.pollingProviders.ethereum.getTransactionCount(
         transactionRequest.from,
         "latest"
       )) - 1
+    const existingNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
+        normalizedAddress
+      ] ?? chainNonce
+
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
+    // Use the network count, if needed. Note that the assumption here is that
+    // all nonces for this address are increasing linearly and continuously; if
+    // the address has a pending transaction floating around with a nonce that
+    // is not an increase by one over previous transactions, this approach will
+    // allocate more nonces that won't mine.
+    // TODO Deal with multi-network.
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress] =
+      Math.max(existingNonce, chainNonce)
 
     // Allocate a new nonce by incrementing the last seen one.
     this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
