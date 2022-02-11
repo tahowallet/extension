@@ -214,7 +214,12 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     quoteRequest: SwapQuoteRequest,
     { dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
-    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest)
+    const signer = getProvider().getSigner()
+    const tradeAddress = await signer.getAddress()
+
+    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
+      takerAddress: tradeAddress,
+    })
 
     const apiData = await fetchJson({
       url: requestUrl.toString(),
@@ -232,7 +237,6 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     }
 
     const quote = apiData
-    const signer = getProvider().getSigner()
 
     // Check if we have to approve the asset we want to swap.
     const assetContract = new ethers.Contract(
