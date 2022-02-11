@@ -39,11 +39,11 @@ export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
-  approvalInProgress?: boolean
+  inProgressApprovalContract?: string
 }
 
 export const initialState: SwapState = {
-  approvalInProgress: false,
+  inProgressApprovalContract: undefined,
 }
 
 const swapSlice = createSlice({
@@ -66,29 +66,31 @@ const swapSlice = createSlice({
       latestQuoteRequest: quoteRequest,
     }),
 
-    setApprovalInProgress: (state) => ({
+    setInProgressApprovalContract: (
+      state,
+      { payload: approvingContractAddress }: { payload: string }
+    ) => ({
       ...state,
-      approvalInProgress: true,
+      inProgressApprovalContract: approvingContractAddress,
     }),
 
-    clearApprovalInProgress: (state) => ({
+    clearInProgressApprovalContract: (state) => ({
       ...state,
-      approvalInProgress: false,
+      inProgressApprovalContract: undefined,
     }),
 
     clearSwapQuote: (state) => ({
       ...state,
       finalQuote: undefined,
       latestQuoteRequest: undefined,
-      approvalInProgress: false,
     }),
   },
 })
 
 const {
   setLatestQuoteRequest,
-  setApprovalInProgress,
-  clearApprovalInProgress,
+  setInProgressApprovalContract: setApprovalInProgress,
+  clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
 
 export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
@@ -237,31 +239,35 @@ export const approveTransfer = createBackgroundAsyncThunk(
     },
     { dispatch }
   ) => {
-    const provider = getProvider()
-    const signer = provider.getSigner()
+    dispatch(setApprovalInProgress(assetContractAddress))
 
-    const assetContract = new ethers.Contract(
-      assetContractAddress,
-      ERC20_ABI,
-      signer
-    )
-    const approvalTransactionData =
-      await assetContract.populateTransaction.approve(
-        approvalTarget,
-        ethers.constants.MaxUint256 // infinite approval :(
-      )
-
-    dispatch(setApprovalInProgress())
     try {
+      const provider = getProvider()
+      const signer = provider.getSigner()
+
+      const assetContract = new ethers.Contract(
+        assetContractAddress,
+        ERC20_ABI,
+        signer
+      )
+      const approvalTransactionData =
+        await assetContract.populateTransaction.approve(
+          approvalTarget,
+          ethers.constants.MaxUint256 // infinite approval :(
+        )
+
+      logger.debug("Issuing approval transaction", approvalTransactionData)
       const transactionHash = await signer.sendUncheckedTransaction(
         approvalTransactionData
       )
 
       // Wait for transaction to mine before indicating approval is complete.
-      await provider.waitForTransaction(transactionHash)
+      const receipt = await provider.waitForTransaction(transactionHash)
+      logger.debug("Approval transaction mined", receipt)
     } catch (error) {
       logger.error("Approval transaction failed: ", error)
     }
+
     dispatch(clearApprovalInProgress())
   }
 )
@@ -296,7 +302,7 @@ export const selectLatestQuoteRequest = createSelector(
   (latestQuoteRequest) => latestQuoteRequest
 )
 
-export const selectIsApprovalInProgress = createSelector(
-  (state: { swap: SwapState }) => state.swap.approvalInProgress,
+export const selectInProgressApprovalContract = createSelector(
+  (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
 )
