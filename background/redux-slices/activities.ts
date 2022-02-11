@@ -12,7 +12,19 @@ const desiredDecimals = 2 /* TODO Make desired decimals configurable? */
 const activitiesAdapter = createEntityAdapter<ActivityItem>({
   selectId: (activityItem) => activityItem.hash,
   sortComparer: (a, b) => {
-    // null means pending, pending is always sorted above everything.
+    if (
+      (a.blockHeight === null ||
+        b.blockHeight === null ||
+        a.blockHeight === b.blockHeight) &&
+      a.network.name === b.network.name
+    ) {
+      // Sort by nonce if a block height is missing or equal between two
+      // transactions, as long as the two activities are on the same network;
+      // otherwise, sort as before.
+      return b.nonce - a.nonce
+    }
+    // null means pending or dropped, these are always sorted above everything
+    // if networks don't match.
     if (a.blockHeight === null && b.blockHeight === null) {
       return 0
     }
