@@ -992,7 +992,7 @@ export default class ChainService extends BaseService<Events> {
           ) {
             this.evmChainLastSeenNoncesByNormalizedAddress[
               addressNetwork.network.chainID
-            ][normalizedFromAddress] = transaction.nonce + 1
+            ][normalizedFromAddress] = transaction.nonce
           }
           await this.saveTransaction(transaction, "alchemy")
 
