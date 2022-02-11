@@ -377,6 +377,15 @@ export default class ChainService extends BaseService<Events> {
     const knownNextNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
 
+    logger.debug(
+      "Got chain nonce",
+      chainNonce,
+      "existing nonce",
+      existingNonce,
+      "using",
+      knownNextNonce
+    )
+
     return {
       ...transactionRequest,
       nonce: knownNextNonce,
@@ -599,6 +608,11 @@ export default class ChainService extends BaseService<Events> {
         this.pollingProviders.ethereum
           .sendTransaction(serialized)
           .catch((error) => {
+            logger.debug(
+              "Broadcast error caught, saving failed status and releasing nonce...",
+              transaction,
+              error
+            )
             // Failure to broadcast needs to be registered.
             this.saveTransaction(
               { ...transaction, status: 0, error: error.toString() },
