@@ -9,21 +9,18 @@ export class ClaimDatabase extends Dexie {
     super("tally/claim")
 
     this.version(1).stores({
-      claim: ",eligibles",
+      claim: "&address",
     })
 
     this.on("populate", (tx: Transaction) => {
-      tx.table("claim").bulkAdd(
-        DEFAULT_CLAIM.eligibles,
-        DEFAULT_CLAIM.eligibles.map((item) => item.address)
-      )
+      tx.table("claim").bulkAdd(DEFAULT_CLAIM.eligibles)
     })
   }
 
   async getClaim(address: string): Promise<Eligible> {
     // Replace this with logic for user selected address
     const result = await this.claim.get({
-      ":id": address,
+      address,
     })
 
     // TODO: Clean up this type
