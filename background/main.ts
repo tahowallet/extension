@@ -18,6 +18,7 @@ import {
   ProviderBridgeService,
   TelemetryService,
   ServiceCreatorFunction,
+  ClaimService,
   LedgerService,
   SigningService,
 } from "./services"
@@ -25,6 +26,7 @@ import {
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "./networks"
 import { AddressNetwork, NameNetwork } from "./accounts"
+import { Eligible } from "./services/claim/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -36,6 +38,7 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import { setEligibility } from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -249,6 +252,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+    const claimService = ClaimService.create()
 
     const telemetryService = TelemetryService.create()
 
@@ -295,6 +299,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
+      await claimService,
       await telemetryService,
       await ledgerService,
       await signingService
@@ -345,6 +350,11 @@ export default class Main extends BaseService<never> {
      * knowledge.
      */
     private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the claim service, which saves the eligibility data
+     * for efficient storage and retrieval.
+     */
+    private claimService: ClaimService,
     /**
      * A promise to the telemetry service, which keeps track of extension
      * storage usage and (eventually) other statistics.
@@ -416,6 +426,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.claimService.startService(),
       this.telemetryService.startService(),
     ]
 
@@ -437,6 +448,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.claimService.stopService(),
       this.telemetryService.stopService(),
     ]
 
@@ -457,6 +469,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectClaimService()
     this.connectTelemetryService()
 
     if (!HIDE_IMPORT_LEDGER) {
@@ -910,6 +923,7 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
+      await this.claimService.getEligibility(addressNetwork.address)
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
@@ -926,6 +940,15 @@ export default class Main extends BaseService<never> {
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
+      }
+    )
+  }
+
+  async connectClaimService(): Promise<void> {
+    this.claimService.emitter.on(
+      "newEligibility",
+      async (eligibility: Eligible) => {
+        await this.store.dispatch(setEligibility(eligibility))
       }
     )
   }

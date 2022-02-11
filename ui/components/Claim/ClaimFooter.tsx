@@ -56,6 +56,7 @@ export default function ClaimFooter({
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin: 0 auto;
             margin-bottom: 16px;
           }
           .steps {
