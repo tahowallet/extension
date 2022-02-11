@@ -168,7 +168,7 @@ export default function EarnDeposit(): ReactElement {
                 setHasError(false)
               }
             }}
-            defaultAsset={asset}
+            selectedAsset={asset}
             amount={amount}
             disableDropdown
           />

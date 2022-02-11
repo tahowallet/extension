@@ -136,10 +136,13 @@ const transactionSlice = createSlice({
       },
       transactionLikelyFails,
     }),
-    clearTransactionState: (state) => ({
+    clearTransactionState: (
+      state,
+      { payload }: { payload: TransactionConstructionStatus }
+    ) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
-      status: TransactionConstructionStatus.Idle,
+      status: payload,
       feeTypeSelected: NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
@@ -248,7 +251,11 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
   async (_, { dispatch }) => {
     await emitter.emit("signatureRejected")
     // Provide a clean slate for future transactions.
-    dispatch(transactionSlice.actions.clearTransactionState())
+    dispatch(
+      transactionSlice.actions.clearTransactionState(
+        TransactionConstructionStatus.Idle
+      )
+    )
   }
 )
 

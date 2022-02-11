@@ -37,6 +37,32 @@ import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
+// FIXME Unify once asset similarity code is unified.
+function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
+  if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
+    return false
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) &&
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return (
+      normalizeEVMAddress(asset1.contractAddress) ===
+      normalizeEVMAddress(asset2.contractAddress)
+    )
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) ||
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return false
+  }
+
+  return asset1.symbol === asset2.symbol
+}
+
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
@@ -50,7 +76,7 @@ export default function Swap(): ReactElement {
 
   // TODO Expand these to fungible assets by supporting direct ETH swaps,
   // TODO then filter by the current chain.
-  const sellAssetAmounts = combinedData.assets.filter<
+  const ownedSellAssetAmounts = combinedData.assets.filter<
     CompleteAssetAmount<
       SmartContractFungibleAsset,
       AnyAssetAmount<SmartContractFungibleAsset>
@@ -74,16 +100,18 @@ export default function Swap(): ReactElement {
     symbol: locationAssetSymbol,
     contractAddress: locationAssetContractAddress,
   } = location.state ?? {}
-  const locationAsset = sellAssetAmounts.find(({ asset: candidateAsset }) => {
-    if (typeof locationAssetContractAddress !== "undefined") {
-      return (
-        isSmartContractFungibleAsset(candidateAsset) &&
-        normalizeEVMAddress(candidateAsset.contractAddress) ===
-          normalizeEVMAddress(locationAssetContractAddress)
-      )
+  const locationAsset = ownedSellAssetAmounts.find(
+    ({ asset: candidateAsset }) => {
+      if (typeof locationAssetContractAddress !== "undefined") {
+        return (
+          isSmartContractFungibleAsset(candidateAsset) &&
+          normalizeEVMAddress(candidateAsset.contractAddress) ===
+            normalizeEVMAddress(locationAssetContractAddress)
+        )
+      }
+      return candidateAsset.symbol === locationAssetSymbol
     }
-    return candidateAsset.symbol === locationAssetSymbol
-  })?.asset
+  )?.asset
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
@@ -111,6 +139,41 @@ export default function Swap(): ReactElement {
   const [approvalTarget, setApprovalTarget] = useState<string | undefined>(
     undefined
   )
+
+  const sellAssetAmounts = ownedSellAssetAmounts.some(
+    ({ asset }) =>
+      typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+  )
+    ? ownedSellAssetAmounts
+    : ownedSellAssetAmounts.concat(
+        typeof sellAsset === "undefined"
+          ? []
+          : [
+              {
+                asset: sellAsset,
+                amount: 0n,
+                decimalAmount: 0,
+                localizedDecimalAmount: "0",
+              },
+            ]
+      )
+
+  useEffect(() => {
+    if (typeof sellAsset !== "undefined") {
+      const isSelectedSellAssetInSellAssets = sellAssetAmounts.some(
+        ({ asset }) => isSameAsset(asset, sellAsset)
+      )
+
+      if (!isSelectedSellAssetInSellAssets) {
+        sellAssetAmounts.push({
+          asset: sellAsset,
+          amount: 0n,
+          decimalAmount: 0,
+          localizedDecimalAmount: "0",
+        })
+      }
+    }
+  }, [sellAsset, sellAssetAmounts])
 
   const isApprovalInProgress = useBackgroundSelector(selectIsApprovalInProgress)
 
@@ -367,13 +430,13 @@ export default function Swap(): ReactElement {
               <SharedAssetInput
                 amount={sellAmount}
                 assetsAndAmounts={sellAssetAmounts}
-                defaultAsset={sellAsset}
+                selectedAsset={sellAsset}
                 disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
+                  setSellAmount(newAmount)
                   if (typeof error === "undefined") {
-                    setSellAmount(newAmount)
                     updateSwapData("sell", newAmount)
                   }
                 }}
@@ -388,13 +451,13 @@ export default function Swap(): ReactElement {
                 amount={buyAmount}
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
-                defaultAsset={buyAsset}
+                selectedAsset={buyAsset}
                 isDisabled={buyAmountLoading}
                 showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
+                  setBuyAmount(buyAmount)
                   if (typeof error === "undefined") {
-                    setBuyAmount(buyAmount)
                     updateSwapData("buy", newAmount)
                   }
                 }}
