@@ -10,7 +10,7 @@ import {
   clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
-  selectIsApprovalInProgress,
+  selectInProgressApprovalContract,
   SwapQuoteRequest,
   fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
@@ -27,7 +27,11 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  clearTransactionState,
+  selectDefaultNetworkFeeSettings,
+  TransactionConstructionStatus,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -175,7 +179,12 @@ export default function Swap(): ReactElement {
     }
   }, [sellAsset, sellAssetAmounts])
 
-  const isApprovalInProgress = useBackgroundSelector(selectIsApprovalInProgress)
+  const inProgressApprovalContract = useBackgroundSelector(
+    selectInProgressApprovalContract
+  )
+  const isApprovalInProgress =
+    normalizeEVMAddress(inProgressApprovalContract || "0x") ===
+    normalizeEVMAddress(sellAsset?.contractAddress || "0x")
 
   const [sellAmountLoading, setSellAmountLoading] = useState(false)
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
@@ -227,6 +236,10 @@ export default function Swap(): ReactElement {
       )
       return
     }
+
+    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
+    // FIXME proper transaction queueing is in effect.
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
 
     dispatch(
       approveTransfer({
@@ -390,15 +403,17 @@ export default function Swap(): ReactElement {
           : savedSwapAmount.buyAmount,
         "sellAmount" in savedSwapAmount ? savedBuyAsset : savedSellAsset
       )
+    } else {
+      dispatch(clearSwapQuote())
     }
-
-    dispatch(clearSwapQuote())
-    // We want to run this in two cases:
+    // We want to run this in three cases:
     // - Once at component load, to make sure the flip of the quote is set
     //   correctly.
     // - When swap transaction settings change, to update non-swap details.
+    // - When approval-in-progress status changes, to update the approval
+    //   status in the UI.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swapTransactionSettings])
+  }, [swapTransactionSettings, isApprovalInProgress])
 
   return (
     <>

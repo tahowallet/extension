@@ -18,6 +18,7 @@ import {
   Network,
   SignedEVMTransaction,
   BlockPrices,
+  LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -321,17 +322,7 @@ export default class ChainService extends BaseService<Events> {
       (typeof partialRequest.gasLimit === "undefined" ||
         partialRequest.gasLimit < 21000n)
     ) {
-      transactionRequest.gasLimit = multiplyFixedPointNumbers(
-        convertFixedPointNumber(
-          {
-            amount: estimatedGasLimit * 100n,
-            decimals: 0,
-          },
-          2
-        ),
-        { amount: 110n, decimals: 2 }, // 1.1 = 110%
-        0
-      ).amount
+      transactionRequest.gasLimit = estimatedGasLimit
     }
 
     return { transactionRequest, gasEstimationError }
@@ -359,23 +350,25 @@ export default class ChainService extends BaseService<Events> {
     const { chainID } = transactionRequest
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
 
-    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
-    // Lazily look up the network count, if needed. Note that the assumption
-    // here is that all nonces for this address are increasing linearly
-    // and continuously; if the address has a pending transaction floating
-    // around with a nonce that is not an increase by one over previous
-    // transactions, this approach will allocate more nonces that won't mine.
-    // FIXME Double-check the getTransactionCount-based nonce to make sure
-    // FIXME using its precedent would result in a replacement transaction
-    // FIXME error or a nonce reuse error.
-    // TODO Deal with multi-network.
-    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-      normalizedAddress
-    ] ??=
+    const chainNonce =
       (await this.pollingProviders.ethereum.getTransactionCount(
         transactionRequest.from,
         "latest"
       )) - 1
+    const existingNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
+        normalizedAddress
+      ] ?? chainNonce
+
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
+    // Use the network count, if needed. Note that the assumption here is that
+    // all nonces for this address are increasing linearly and continuously; if
+    // the address has a pending transaction floating around with a nonce that
+    // is not an increase by one over previous transactions, this approach will
+    // allocate more nonces that won't mine.
+    // TODO Deal with multi-network.
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress] =
+      Math.max(existingNonce, chainNonce)
 
     // Allocate a new nonce by incrementing the last seen one.
     this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
@@ -383,6 +376,15 @@ export default class ChainService extends BaseService<Events> {
     ] += 1
     const knownNextNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    logger.debug(
+      "Got chain nonce",
+      chainNonce,
+      "existing nonce",
+      existingNonce,
+      "using",
+      knownNextNonce
+    )
 
     return {
       ...transactionRequest,
@@ -397,9 +399,19 @@ export default class ChainService extends BaseService<Events> {
    * available for reuse all intervening nonces.
    */
   releaseEVMTransactionNonce(
-    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+    transactionRequest:
+      | (EIP1559TransactionRequest & {
+          nonce: number
+        })
+      | (LegacyEVMTransactionRequest & { nonce: number })
+      | SignedEVMTransaction
   ): void {
-    const { chainID, nonce } = transactionRequest
+    const { nonce } = transactionRequest
+    const chainID =
+      "chainID" in transactionRequest
+        ? transactionRequest.chainID
+        : transactionRequest.network.chainID
+
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
     const lastSeenNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
@@ -562,7 +574,8 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Estimate the gas needed to make a transaction.
+   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
+   * the base estimate returned by the provider.
    */
   async estimateGasLimit(
     network: EVMNetwork,
@@ -595,11 +608,17 @@ export default class ChainService extends BaseService<Events> {
         this.pollingProviders.ethereum
           .sendTransaction(serialized)
           .catch((error) => {
+            logger.debug(
+              "Broadcast error caught, saving failed status and releasing nonce...",
+              transaction,
+              error
+            )
             // Failure to broadcast needs to be registered.
             this.saveTransaction(
               { ...transaction, status: 0, error: error.toString() },
               "alchemy"
             )
+            this.releaseEVMTransactionNonce(transaction)
 
             return Promise.reject(error)
           }),
@@ -987,7 +1006,7 @@ export default class ChainService extends BaseService<Events> {
           ) {
             this.evmChainLastSeenNoncesByNormalizedAddress[
               addressNetwork.network.chainID
-            ][normalizedFromAddress] = transaction.nonce + 1
+            ][normalizedFromAddress] = transaction.nonce
           }
           await this.saveTransaction(transaction, "alchemy")
 

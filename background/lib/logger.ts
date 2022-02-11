@@ -58,7 +58,7 @@ const styles: LogStyles = {
 
 function genericLogger(level: LogLevel, input: unknown[]) {
   console.group(
-    `%c ${styles[level].icon} Tally ${level}`,
+    `%c ${styles[level].icon} Tally ${level} @ ${new Date().toISOString()}`,
     styles[level].css.join(";")
   )
 
