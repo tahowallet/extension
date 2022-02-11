@@ -322,17 +322,7 @@ export default class ChainService extends BaseService<Events> {
       (typeof partialRequest.gasLimit === "undefined" ||
         partialRequest.gasLimit < 21000n)
     ) {
-      transactionRequest.gasLimit = multiplyFixedPointNumbers(
-        convertFixedPointNumber(
-          {
-            amount: estimatedGasLimit * 100n,
-            decimals: 0,
-          },
-          2
-        ),
-        { amount: 110n, decimals: 2 }, // 1.1 = 110%
-        0
-      ).amount
+      transactionRequest.gasLimit = estimatedGasLimit
     }
 
     return { transactionRequest, gasEstimationError }
@@ -575,7 +565,8 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Estimate the gas needed to make a transaction.
+   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
+   * the base estimate returned by the provider.
    */
   async estimateGasLimit(
     network: EVMNetwork,
