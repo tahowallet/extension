@@ -111,7 +111,7 @@ const gatedParameters =
     ? {
         affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
         feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
-        includedSources: "RFQT",
+        // includedSources: "RFQT", FIXME This seems to limit available liquidity considerably
         buyTokenPercentageFee: SWAP_FEE,
       }
     : {}
