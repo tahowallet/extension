@@ -31,6 +31,7 @@ export default function ClaimDelegateChoiceProfile(props: {
             box-sizing: border-box;
             display: flex;
             align-items: center;
+            box-shadow: var(--shadow);
           }
           .icon {
             width: 40px;

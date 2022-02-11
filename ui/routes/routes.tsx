@@ -19,6 +19,7 @@ import Swap from "../pages/Swap"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
+import Eligible from "../pages/Claiming/Eligible"
 
 interface PageList {
   path: string
@@ -167,8 +168,8 @@ const pageList: PageList[] = [
   },
   {
     path: "/",
-    Component: Wallet,
-    hasTabBar: true,
+    Component: Eligible,
+    hasTabBar: false,
     hasTopBar: true,
     persistOnClose: true,
   },
