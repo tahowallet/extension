@@ -1,5 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
+import { ETH } from "../constants"
 import { createBackgroundAsyncThunk } from "./utils"
+import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
 export interface LedgerAccountState {
   path: string
@@ -171,17 +173,6 @@ export const { resetLedgerState, setDeviceConnectionStatus, addLedgerAccount } =
 
 export default ledgerSlice.reducer
 
-async function doFetchBalanceFake(address: string) {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 700)
-  })
-
-  return (10 ** (Math.random() * 5 - 2)).toLocaleString(undefined, {
-    maximumFractionDigits: 4,
-    minimumFractionDigits: 4,
-  })
-}
-
 export const connectLedger = createBackgroundAsyncThunk(
   "ledger/connectLedger",
   async (unused, { dispatch, extra: { main } }) => {
@@ -215,10 +206,15 @@ export const fetchBalance = createBackgroundAsyncThunk(
       path,
       address,
     }: { deviceID: string; path: string; address: string },
-    { dispatch }
+    { dispatch, extra: { main } }
   ) => {
     dispatch(ledgerSlice.actions.setFetchingBalance({ deviceID, path }))
-    const balance = await doFetchBalanceFake(address)
+    const amount = await main.getAccountEthBalanceUncached(address)
+    const decimalDigits = 3
+    const balance = enrichAssetAmountWithDecimalValues(
+      { amount, asset: ETH },
+      decimalDigits
+    ).localizedDecimalAmount
     dispatch(ledgerSlice.actions.resolveBalance({ deviceID, path, balance }))
   }
 )
