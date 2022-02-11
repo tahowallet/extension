@@ -121,4 +121,9 @@ export const keysMap: UIAdaptationMap<ActivityItem> = {
     transformer: (val) => val?.toString(),
     detailTransformer: (val) => val?.toString(),
   },
+  nonce: {
+    readableName: "Nonce",
+    transformer: (val) => val?.toString(),
+    detailTransformer: (val) => val?.toString(),
+  },
 }
