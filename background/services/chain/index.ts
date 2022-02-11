@@ -18,6 +18,7 @@ import {
   Network,
   SignedEVMTransaction,
   BlockPrices,
+  LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -397,9 +398,19 @@ export default class ChainService extends BaseService<Events> {
    * available for reuse all intervening nonces.
    */
   releaseEVMTransactionNonce(
-    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+    transactionRequest:
+      | (EIP1559TransactionRequest & {
+          nonce: number
+        })
+      | (LegacyEVMTransactionRequest & { nonce: number })
+      | SignedEVMTransaction
   ): void {
-    const { chainID, nonce } = transactionRequest
+    const { nonce } = transactionRequest
+    const chainID =
+      "chainID" in transactionRequest
+        ? transactionRequest.chainID
+        : transactionRequest.network.chainID
+
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
     const lastSeenNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
@@ -600,6 +611,7 @@ export default class ChainService extends BaseService<Events> {
               { ...transaction, status: 0, error: error.toString() },
               "alchemy"
             )
+            this.releaseEVMTransactionNonce(transaction)
 
             return Promise.reject(error)
           }),
