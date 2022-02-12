@@ -28,11 +28,19 @@ Tally will be
 
 Try this.
 
+In some Linux distributions such as Ubuntu 20.04, you need to explicitly
+tell npm where your `python3` executable is located:
+
+```sh
+$ npm config set python /usr/bin/python3
+```
+
 ```sh
 $ nvm use
+$ nvm install
 $ npm install -g yarn # if you don't have yarn globally installed
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
-               # scrypt node-gyp failures prevent the install from completing
+               # script node-gyp failures prevent the install from completing
 $ yarn start # start a continuous webpack build that will auto-update with changes
 ```
 
@@ -114,6 +122,13 @@ install:
 Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
 by running `pre-commit install`. The macOS setup script does this for you.
+
+### Commit signing
+
+Commits on the Tally repository are all required to be signed.
+No PR will be merged if it has unsigned commits. See the
+[GitHub documentation on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
+to get it set up.
 
 ### Releasing a version
 
