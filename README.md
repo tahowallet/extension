@@ -113,7 +113,7 @@ install:
 
 Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
-by running `pre-commit --install`. The macOS setup script does this for you.
+by running `pre-commit install`. The macOS setup script does this for you.
 
 ### Releasing a version
 
