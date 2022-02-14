@@ -1,8 +1,8 @@
 import logger from "../../lib/logger"
 
 import { HexString } from "../../types"
-import { AccountBalance, AddressNetwork } from "../../accounts"
 import { EVMNetwork } from "../../networks"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
   CoinGeckoAsset,
@@ -263,10 +263,10 @@ export default class IndexingService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async (addressNetwork) => {
+      async (addressOnNetwork) => {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
-        const balances = await this.retrieveTokenBalances(addressNetwork)
+        const balances = await this.retrieveTokenBalances(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
         await this.handlePriceAlarm()
@@ -289,7 +289,7 @@ export default class IndexingService extends BaseService<Events> {
           )
 
         await this.retrieveTokenBalances(
-          addressNetwork,
+          addressOnNetwork,
           otherActiveAssets.map((a) => a.contractAddress)
         )
       }
@@ -332,7 +332,7 @@ export default class IndexingService extends BaseService<Events> {
    * @param contractAddresses
    */
   private async retrieveTokenBalances(
-    addressNetwork: AddressNetwork,
+    addressNetwork: AddressOnNetwork,
     contractAddresses?: HexString[]
   ): ReturnType<typeof getTokenBalances> {
     const balances = await getTokenBalances(
@@ -383,7 +383,7 @@ export default class IndexingService extends BaseService<Events> {
    * If the asset has already been cached, use that. Otherwise, infer asset
    * details from the contract and outside services.
    *
-   * @param addressNetwork the account and network on which this asset should
+   * @param addressOnNetwork the account and network on which this asset should
    *        be tracked
    * @param contractAddress the address of the token contract on this network
    * @param decimals optionally include the number of decimals tracked by a
@@ -391,15 +391,16 @@ export default class IndexingService extends BaseService<Events> {
    *        metadata.
    */
   private async addTokenToTrackByContract(
-    addressNetwork: AddressNetwork,
+    addressOnNetwork: AddressOnNetwork,
     contractAddress: string
   ): Promise<void> {
     const knownAssets = await this.getCachedAssets()
+    const { network } = addressOnNetwork
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
         "homeNetwork" in asset &&
-        asset.homeNetwork.name === addressNetwork.network.name &&
+        asset.homeNetwork.name === network.name &&
         "contractAddress" in asset &&
         asset.contractAddress === contractAddress
     )
@@ -407,7 +408,7 @@ export default class IndexingService extends BaseService<Events> {
       this.addAssetToTrack(found as SmartContractFungibleAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
-        addressNetwork.network,
+        network,
         contractAddress
       )
       if (!customAsset) {

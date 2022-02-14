@@ -38,7 +38,7 @@ export type AccountBalance = {
 /**
  * An address on a particular network. That's it. That's the comment.
  */
-export type AddressNetwork = {
+export type AddressOnNetwork = {
   address: HexString
   network: EVMNetwork
 }
@@ -46,7 +46,7 @@ export type AddressNetwork = {
 /**
  * A domain name, with a particular network.
  */
-export type NameNetwork = {
+export type NameOnNetwork = {
   name: string
   network: EVMNetwork
 }

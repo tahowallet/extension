@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { AddressNetwork } from "../accounts"
 import { getEthereumNetwork } from "../lib/utils"
+import { AddressOnNetwork } from "../accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const defaultSettings = {
@@ -16,7 +16,7 @@ export interface Location {
 }
 
 export type UIState = {
-  selectedAccount: AddressNetwork
+  selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   settings: { hideDust: boolean; defaultWallet: boolean }
@@ -27,7 +27,7 @@ export type UIState = {
 export type Events = {
   snackbarMessage: string
   newDefaultWalletValue: boolean
-  newSelectedAccount: AddressNetwork
+  newSelectedAccount: AddressOnNetwork
 }
 
 export const emitter = new Emittery<Events>()
@@ -129,7 +129,7 @@ export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
 // TBD @Antonio: It would be good to have a consistent naming strategy
 export const setNewSelectedAccount = createBackgroundAsyncThunk(
   "ui/setNewCurrentAddressValue",
-  async (addressNetwork: AddressNetwork, { dispatch }) => {
+  async (addressNetwork: AddressOnNetwork, { dispatch }) => {
     await emitter.emit("newSelectedAccount", addressNetwork)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))

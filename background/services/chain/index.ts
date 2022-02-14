@@ -9,7 +9,7 @@ import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
-import { AccountBalance, AddressNetwork } from "../../accounts"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
@@ -87,10 +87,10 @@ const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
-  newAccountToTrack: AddressNetwork
+  newAccountToTrack: AddressOnNetwork
   accountBalance: AccountBalance
   assetTransfers: {
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
     assetTransfers: AssetTransfer[]
   }
   block: AnyEVMBlock
@@ -437,12 +437,12 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async getAccountsToTrack(): Promise<AddressNetwork[]> {
+  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.db.getAccountsToTrack()
   }
 
   async getLatestBaseAccountBalance(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<AccountBalance> {
     // TODO look up provider network properly
     const balance = await this.pollingProviders.ethereum.getBalance(
@@ -463,7 +463,7 @@ export default class ChainService extends BaseService<Events> {
     return accountBalance
   }
 
-  async addAccountToTrack(addressNetwork: AddressNetwork): Promise<void> {
+  async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
     this.getLatestBaseAccountBalance(addressNetwork)
@@ -663,7 +663,7 @@ export default class ChainService extends BaseService<Events> {
    * @param addressNetwork the address and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
@@ -723,7 +723,7 @@ export default class ChainService extends BaseService<Events> {
    * @param addressNetwork The account whose asset transfers are being loaded.
    */
   private async loadHistoricAssetTransfers(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const oldest = await this.db.getOldestAccountAssetTransferLookup(
       addressNetwork
@@ -757,7 +757,7 @@ export default class ChainService extends BaseService<Events> {
    * @param addressNetwork the address and network whose asset transfers we need
    */
   private async loadAssetTransfers(
-    addressNetwork: AddressNetwork,
+    addressNetwork: AddressOnNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
@@ -934,7 +934,7 @@ export default class ChainService extends BaseService<Events> {
    * Looks up whether any of the passed address/network pairs are being tracked.
    */
   async isTrackingAddressesOnNetworks(
-    ...addressesOnNetworks: AddressNetwork[]
+    ...addressesOnNetworks: AddressOnNetwork[]
   ): Promise<boolean> {
     const accounts = await this.getAccountsToTrack()
 
@@ -984,7 +984,7 @@ export default class ChainService extends BaseService<Events> {
    * @param addressNetwork The network and address to watch.
    */
   private async subscribeToAccountTransactions(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
