@@ -20,7 +20,6 @@ import {
   mergeAssets,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { normalizeEVMAddress } from "../../lib/utils"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
