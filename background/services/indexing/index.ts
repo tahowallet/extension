@@ -20,7 +20,7 @@ import {
   mergeAssets,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress } from "../../lib/utils"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -474,7 +474,7 @@ export default class IndexingService extends BaseService<Events> {
     const activeAssetsToTrack = assetsToTrack.filter(
       (asset) =>
         asset.symbol === "ETH" ||
-        asset.homeNetwork.chainID === getEthereumNetwork().chainID
+        asset.homeNetwork.chainID === this.chainService.ethereumNetwork.chainID
     )
 
     try {
@@ -576,7 +576,8 @@ export default class IndexingService extends BaseService<Events> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const activeAssetsToTrack = assetsToTrack.filter(
-      (asset) => asset.homeNetwork.chainID === getEthereumNetwork().chainID
+      (asset) =>
+        asset.homeNetwork.chainID === this.chainService.ethereumNetwork.chainID
     )
 
     // wait on balances being written to the db, don't wait on event emission

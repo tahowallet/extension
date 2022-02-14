@@ -4,7 +4,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
+import { decodeJSON, encodeJSON } from "./lib/utils"
 
 import {
   BaseService,
@@ -571,7 +571,7 @@ export default class Main extends BaseService<never> {
 
       const { transactionRequest: populatedRequest, gasEstimationError } =
         await this.chainService.populatePartialEVMTransactionRequest(
-          getEthereumNetwork(),
+          this.chainService.ethereumNetwork,
           {
             ...options,
             maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
@@ -778,7 +778,7 @@ export default class Main extends BaseService<never> {
       this.chainService.addAccountToTrack({
         address,
         // TODO support other networks
-        network: getEthereumNetwork(),
+        network: this.chainService.ethereumNetwork,
       })
     })
 
