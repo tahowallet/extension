@@ -11,7 +11,7 @@ export default function LedgerPrepare({
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
       heading="Before we get started"
-      subHeading="Make sure you take these 2 steps before we start"
+      subHeading="Make sure you take these 3 steps before we start"
     >
       <ol className="steps">
         <li>Plug in Ledger</li>
