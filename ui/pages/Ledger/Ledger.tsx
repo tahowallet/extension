@@ -29,6 +29,7 @@ export default function Ledger(): ReactElement {
         <LedgerPrepare
           onContinue={async () => {
             setPhase("1-request")
+            let rejected = false
             try {
               // Open popup for testing
               // TODO: use result (for multiple devices)?
@@ -42,15 +43,17 @@ export default function Ledger(): ReactElement {
               // before firing clicks outside the popup.
               await new Promise((resolve) => setTimeout(resolve, 100))
 
-              // Advance anyway for testing. (TODO: do not.)
+              rejected = true
             }
             setPhase("2-connect")
 
-            setConnecting(true)
-            try {
-              await dispatch(connectLedger())
-            } finally {
-              setConnecting(false)
+            if (!rejected) {
+              setConnecting(true)
+              try {
+                await dispatch(connectLedger())
+              } finally {
+                setConnecting(false)
+              }
             }
           }}
         />
