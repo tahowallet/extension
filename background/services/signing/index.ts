@@ -2,7 +2,11 @@ import { TypedDataDomain, TypedDataField } from "@ethersproject/abstract-signer"
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService from "../keyring"
 import LedgerService from "../ledger"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import {
+  EIP1559TransactionRequest,
+  EVMNetwork,
+  SignedEVMTransaction,
+} from "../../networks"
 import { HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -84,19 +88,21 @@ export default class SigningService extends BaseService<Events> {
   }
 
   private async signTransactionWithNonce(
+    network: EVMNetwork,
     transactionWithNonce: EIP1559TransactionRequest & { nonce: number },
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
     switch (signingMethod.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
+          network,
           transactionWithNonce,
           signingMethod.deviceID,
           signingMethod.path
         )
       case "keyring":
         return this.keyringService.signTransaction(
-          transactionWithNonce.from,
+          { address: transactionWithNonce.from, network },
           transactionWithNonce
         )
       default:
@@ -105,6 +111,7 @@ export default class SigningService extends BaseService<Events> {
   }
 
   async signTransaction(
+    network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest,
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
@@ -113,6 +120,7 @@ export default class SigningService extends BaseService<Events> {
 
     try {
       const signedTx = await this.signTransactionWithNonce(
+        network,
         transactionWithNonce,
         signingMethod
       )
