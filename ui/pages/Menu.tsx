@@ -104,7 +104,10 @@ export default function Menu(): ReactElement {
           </SharedButton>
           <div className="version">
             Version: {process.env.VERSION ?? `<unknown>`} (
-            {process.env.GIT_COMMIT_DATE?.slice(0, "YYYY-MM-DD".length)})
+            {new Date(
+              process.env.GIT_COMMIT_DATE ?? "invalid date"
+            ).toLocaleDateString(undefined, { dateStyle: "medium" })}
+            )
           </div>
         </div>
       </section>
