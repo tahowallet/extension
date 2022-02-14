@@ -83,7 +83,7 @@ export default function Ledger(): ReactElement {
       {phase === "3-done" && (
         <LedgerImportDone
           onClose={() => {
-            setPhase("0-prepare")
+            window.close()
           }}
         />
       )}
