@@ -764,7 +764,7 @@ export default class ChainService extends BaseService<Events> {
     // TODO only works on Ethereum today
     const assetTransfers = await getAssetTransfers(
       this.pollingProviders.ethereum,
-      addressOnNetwork.address,
+      addressOnNetwork,
       Number(startBlock),
       Number(endBlock)
     )

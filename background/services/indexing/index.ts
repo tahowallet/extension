@@ -415,7 +415,10 @@ export default class IndexingService extends BaseService<Events> {
         const provider = this.chainService.pollingProviders.ethereum
         // pull metadata from Alchemy
         customAsset =
-          (await getTokenMetadata(provider, contractAddress)) || undefined
+          (await getTokenMetadata(provider, {
+            address: contractAddress,
+            network,
+          })) || undefined
 
         if (customAsset) {
           await this.db.addCustomAsset(customAsset)
@@ -574,12 +577,12 @@ export default class IndexingService extends BaseService<Events> {
     await Promise.allSettled(
       (
         await this.chainService.getAccountsToTrack()
-      ).map(async ({ address: account }) => {
+      ).map(async (addressOnNetwork) => {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
           this.chainService.pollingProviders.ethereum,
           activeAssetsToTrack,
-          account
+          addressOnNetwork
         )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
         await this.db.addBalances(balances)
