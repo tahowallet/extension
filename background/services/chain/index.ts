@@ -490,7 +490,7 @@ export default class ChainService extends BaseService<Events> {
    * @param blockHash the hash of the block we're interested in
    */
   async getBlockData(
-    network: Network,
+    network: EVMNetwork,
     blockHash: string
   ): Promise<AnyEVMBlock> {
     // TODO make this multi network

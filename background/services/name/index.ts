@@ -1,5 +1,5 @@
 import { DomainName, HexString, UNIXTime } from "../../types"
-import { Network } from "../../networks"
+import { EVMNetwork } from "../../networks"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
 import { getTokenMetadata } from "../../lib/erc721"
@@ -180,7 +180,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpName(
     address: HexString,
-    network: Network,
+    network: EVMNetwork,
     checkCache = true
   ): Promise<DomainName | undefined> {
     // TODO ENS lookups should work on a few testnets as well
@@ -237,7 +237,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpAvatar(
     address: HexString,
-    network: Network
+    network: EVMNetwork
   ): Promise<URL | undefined> {
     // TODO ENS lookups should work on a few testnets as well
     if (network.chainID !== "1") {
