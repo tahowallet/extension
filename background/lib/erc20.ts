@@ -9,7 +9,7 @@ import {
 } from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
-import { AccountBalance } from "../accounts"
+import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"
 import { HexString } from "../types"
@@ -91,7 +91,7 @@ export async function getBalance(
 export async function getBalances(
   provider: AlchemyProvider,
   tokens: SmartContractFungibleAsset[],
-  address: string
+  { address, network }: AddressOnNetwork
 ): Promise<AccountBalance[]> {
   if (tokens.length === 0) {
     return [] as AccountBalance[]
@@ -116,16 +116,17 @@ export async function getBalances(
       acc: AccountBalance[],
       tokenDetail: { contractAddress: string; amount: bigint }
     ) => {
-      const accountBalance = {
+      const accountBalance: AccountBalance = {
         assetAmount: {
           amount: tokenDetail.amount,
           asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
         },
         address,
-        network: getEthereumNetwork(), // TODO track networks outside of .env file
+        network,
         retrievedAt: Date.now(),
         dataSource: "alchemy",
-      } as AccountBalance
+      }
+
       return acc.concat([accountBalance])
     },
     []
@@ -201,18 +202,20 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
 }
 
 export const getERC20TokenMetadata = async (
-  address: string
+  addressOnNetwork: AddressOnNetwork
 ): Promise<SmartContractFungibleAsset | null> => {
   try {
-    const tokenMetadata = await getTokenMetadata(alchemyProvider, address)
+    const tokenMetadata = await getTokenMetadata(
+      alchemyProvider,
+      addressOnNetwork
+    )
     return tokenMetadata
   } catch (err) {
-    logger.warn("Couldn't find token with specified address", address)
+    logger.warn("Couldn't find token with specified address", addressOnNetwork)
   }
   return null
 }
 
 // TODO get token balances of a many token contracts for a particular account the slow way, cache
-// TODO get price data from 0xAPI
 // TODO export a function that can take a tx and return any involved ERC-20s using traces
 // TODO export a function that can simulate an unsigned transaction and return the token balance changes

@@ -4,6 +4,7 @@ import {
   getERC20TokenMetadata,
 } from "@tallyho/tally-background/lib/erc20"
 import {
+  getEthereumNetwork,
   getNumericStringValueFromBigNumber,
   isMaxUint256,
   numberTo32BytesHex,
@@ -36,9 +37,10 @@ export default function SignTransactionSpendAssetInfoProvider({
 
   useEffect(() => {
     const getTokenData = async () => {
-      const tokenMetadata = await getERC20TokenMetadata(
-        transactionDetails.to || ""
-      )
+      const tokenMetadata = await getERC20TokenMetadata({
+        address: transactionDetails.to || "",
+        network: getEthereumNetwork(),
+      })
       setAsset(tokenMetadata)
     }
     getTokenData()
