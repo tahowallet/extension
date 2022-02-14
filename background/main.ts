@@ -24,7 +24,7 @@ import {
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
-import { AddressNetwork, NameNetwork } from "./accounts"
+import { AddressOnNetwork, NameOnNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
@@ -485,11 +485,11 @@ export default class Main extends BaseService<never> {
     )
   }
 
-  async addAccount(addressNetwork: AddressNetwork): Promise<void> {
+  async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  async addAccountByName(nameNetwork: NameNetwork): Promise<void> {
+  async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(
         nameNetwork.name
@@ -964,7 +964,7 @@ export default class Main extends BaseService<never> {
 
     this.preferenceService.emitter.on(
       "initializeSelectedAccount",
-      async (dbAddressNetwork: AddressNetwork) => {
+      async (dbAddressNetwork: AddressOnNetwork) => {
         if (dbAddressNetwork) {
           // TBD: naming the normal reducer and async thunks
           // Initialize redux from the db
