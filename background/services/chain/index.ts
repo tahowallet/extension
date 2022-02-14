@@ -443,6 +443,8 @@ export default class ChainService extends BaseService<Events> {
   async getLatestBaseAccountBalance(
     addressNetwork: AddressOnNetwork
   ): Promise<AccountBalance> {
+    this.checkNetwork(addressNetwork.network)
+
     // TODO look up provider network properly
     const balance = await this.pollingProviders.ethereum.getBalance(
       addressNetwork.address
@@ -656,6 +658,20 @@ export default class ChainService extends BaseService<Events> {
    * **************** */
 
   /**
+   * Ensure the given network is supported; otherwise, log and throw.
+   */
+  private checkNetwork(network: EVMNetwork): void {
+    if (network.name !== this.ethereumNetwork.name) {
+      logger.error(
+        "Request received for operation on unsupported network",
+        network,
+        "expected",
+        this.ethereumNetwork
+      )
+    }
+  }
+
+  /**
    * Load recent asset transfers from an account on a particular network. Backs
    * off exponentially (in block range, not in time) on failure.
    *
@@ -760,6 +776,8 @@ export default class ChainService extends BaseService<Events> {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
+    this.checkNetwork(addressOnNetwork.network)
+
     // TODO only works on Ethereum today
     const assetTransfers = await getAssetTransfers(
       this.pollingProviders.ethereum,
@@ -988,6 +1006,8 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
     // eslint-disable-next-line no-underscore-dangle
@@ -1050,6 +1070,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO make proper use of the network
     this.websocketProviders.ethereum.once(
       transaction.hash,
@@ -1072,6 +1094,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO make proper use of the network
     const receipt = await this.pollingProviders.ethereum.getTransactionReceipt(
       transaction.hash
