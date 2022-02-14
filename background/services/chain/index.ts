@@ -448,16 +448,16 @@ export default class ChainService extends BaseService<Events> {
     const balance = await this.pollingProviders.ethereum.getBalance(
       addressNetwork.address
     )
-    const accountBalance = {
+    const accountBalance: AccountBalance = {
       address: addressNetwork.address,
       assetAmount: {
         asset: ETH,
         amount: balance.toBigInt(),
       },
-      network: getEthereumNetwork(),
+      network: addressNetwork.network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
-    } as AccountBalance
+    }
     this.emitter.emit("accountBalance", accountBalance)
     await this.db.addBalance(accountBalance)
     return accountBalance
@@ -534,7 +534,7 @@ export default class ChainService extends BaseService<Events> {
     const newTransaction = transactionFromEthersTransaction(
       gethResult,
       ETH,
-      getEthereumNetwork()
+      network
     )
 
     if (!newTransaction.blockHash && !newTransaction.blockHeight) {
@@ -754,37 +754,40 @@ export default class ChainService extends BaseService<Events> {
    * particular block range. Emit events for any transfers found, and look up
    * any related transactions and blocks.
    *
-   * @param addressNetwork the address and network whose asset transfers we need
+   * @param addressOnNetwork the address and network whose asset transfers we need
    */
   private async loadAssetTransfers(
-    addressNetwork: AddressOnNetwork,
+    addressOnNetwork: AddressOnNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
     // TODO only works on Ethereum today
     const assetTransfers = await getAssetTransfers(
       this.pollingProviders.ethereum,
-      addressNetwork.address,
+      addressOnNetwork.address,
       Number(startBlock),
       Number(endBlock)
     )
 
     await this.db.recordAccountAssetTransferLookup(
-      addressNetwork,
+      addressOnNetwork,
       startBlock,
       endBlock
     )
 
     this.emitter.emit("assetTransfers", {
-      addressNetwork,
+      addressNetwork: addressOnNetwork,
       assetTransfers,
     })
 
     const firstSeen = Date.now()
-    const network = getEthereumNetwork()
     /// send all found tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(network, a.txHash, firstSeen)
+      this.queueTransactionHashToRetrieve(
+        addressOnNetwork.network,
+        a.txHash,
+        firstSeen
+      )
     )
   }
 
@@ -981,20 +984,18 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Watch logs for an account's transactions on a particular network.
    *
-   * @param addressNetwork The network and address to watch.
+   * @param addressOnNetwork The network and address to watch.
    */
-  private async subscribeToAccountTransactions(
-    addressNetwork: AddressOnNetwork
-  ): Promise<void> {
+  private async subscribeToAccountTransactions({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
     // eslint-disable-next-line no-underscore-dangle
     await provider._subscribe(
       "filteredNewFullPendingTransactionsSubscriptionID",
-      [
-        "alchemy_filteredNewFullPendingTransactions",
-        { address: addressNetwork.address },
-      ],
+      ["alchemy_filteredNewFullPendingTransactions", { address }],
       async (result: unknown) => {
         // TODO use proper provider string
         // handle incoming transactions for an account
@@ -1002,7 +1003,7 @@ export default class ChainService extends BaseService<Events> {
           const transaction = transactionFromAlchemyWebsocketTransaction(
             result,
             ETH,
-            getEthereumNetwork()
+            network
           )
 
           const normalizedFromAddress = normalizeEVMAddress(transaction.from)
@@ -1013,32 +1014,29 @@ export default class ChainService extends BaseService<Events> {
           // transaction submitted outside of this wallet causes this wallet to
           // produce bad transactions with reused nonces.
           if (
-            typeof addressNetwork.network.chainID !== "undefined" &&
+            typeof network.chainID !== "undefined" &&
             typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
+              network.chainID
             ]?.[normalizedFromAddress] !== "undefined" &&
-            this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
-            ]?.[normalizedFromAddress] <= transaction.nonce
+            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+              normalizedFromAddress
+            ] <= transaction.nonce
           ) {
-            this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
-            ][normalizedFromAddress] = transaction.nonce
+            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+              normalizedFromAddress
+            ] = transaction.nonce
           }
           await this.saveTransaction(transaction, "alchemy")
 
           // Wait for confirmation/receipt information.
-          this.subscribeToTransactionConfirmation(
-            getEthereumNetwork(),
-            transaction
-          )
+          this.subscribeToTransactionConfirmation(network, transaction)
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }
       }
     )
     this.subscribedAccounts.push({
-      account: addressNetwork.address,
+      account: address,
       provider,
     })
   }
