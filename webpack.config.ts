@@ -15,7 +15,12 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import { GitRevisionPlugin } from "git-revision-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 
-const supportedBrowsers = ["firefox", "brave", "opera", "chrome"]
+const supportedBrowsers = ["firefox", "brave", "opera", "chrome"] as const
+const featureSets = [null, "experimental"] as const
+
+const variants = featureSets.flatMap((features) =>
+  supportedBrowsers.map((browser) => ({ browser, features }))
+)
 
 const gitRevisionPlugin = new GitRevisionPlugin()
 
@@ -112,11 +117,9 @@ const baseConfig: Configuration = {
   },
 }
 
-// Configuration adjustments for specific build modes, customized by browser.
-const modeConfigs: {
-  [mode: string]: (browser: string) => Partial<Configuration>
-} = {
-  development: () => ({
+// Configuration adjustments for specific build modes.
+const modeConfigs: Record<string, Partial<Configuration>> = {
+  development: {
     plugins: [
       new LiveReloadPlugin({}),
       new CopyPlugin({
@@ -140,55 +143,34 @@ const modeConfigs: {
         }),
       ],
     },
-  }),
-  production: (browser) => ({
-    plugins: [
-      new WebExtensionArchivePlugin({
-        filename: browser,
-      }),
-    ],
-    optimization: {
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            mangle: browser === "firefox",
-            compress: browser === "firefox",
-            output:
-              browser === "firefox"
-                ? undefined
-                : {
-                    beautify: true,
-                    indent_level: 2, // eslint-disable-line camelcase
-                  },
-          },
-        }),
-      ],
-    },
-  }),
+  },
 }
 
-// One config per supported browser, adjusted by mode.
+type MultiConfiguration = webpack.Configuration[] & { parallelism?: number }
+
+const multiCompilerParallelism = 4 // Reduce parallelism to limit memory usage
+
+// One config per supported browser and feature set, adjusted by mode.
 export default (
   _: unknown,
   { mode }: WebpackOptionsNormalized
-): webpack.Configuration[] =>
-  supportedBrowsers.map((browser) => {
-    const distPath = path.join(__dirname, "dist", browser)
+): MultiConfiguration => {
+  const configurations: MultiConfiguration = variants.map((variant) => {
+    const { browser, features } = variant
+    const name = [browser, features].filter((x) => x !== null).join("-")
+    const distPath = path.join(__dirname, "dist", name)
 
-    // Try to find a build mode config adjustment and call it with the browser.
-    const modeSpecificAdjuster =
-      typeof mode !== "undefined" ? modeConfigs[mode] : undefined
-    const modeSpecificAdjustment =
-      typeof modeSpecificAdjuster !== "undefined"
-        ? modeSpecificAdjuster(browser)
-        : {}
+    const featuresSuffix = features === null ? `` : `.${features}`
 
-    return webpackMerge(baseConfig, modeSpecificAdjustment, {
-      name: browser,
+    const variantConfig: Partial<Configuration> = {
+      name,
       output: {
         path: distPath,
       },
       plugins: [
+        new Dotenv({
+          path: `.env.features${featuresSuffix}`,
+        }),
         // Handle manifest adjustments. Adjustments are looked up and merged:
         //  - by mode (`manifest.<mode>.json`)
         //  - by browser (`manifest.<browser>.json`)
@@ -227,5 +209,45 @@ export default (
           // FIXME webpack version.
         }) as unknown as WebpackPluginInstance,
       ],
-    })
+    }
+
+    // Configuration adjustments for specific build modes and variant.
+    const variantModeConfigs: Record<string, Partial<Configuration>> = {
+      production: {
+        plugins: [
+          new WebExtensionArchivePlugin({
+            filename: name,
+          }),
+        ],
+        optimization: {
+          minimizer: [
+            new TerserPlugin({
+              terserOptions: {
+                mangle: browser === "firefox",
+                compress: browser === "firefox",
+                output:
+                  browser === "firefox"
+                    ? undefined
+                    : {
+                        beautify: true,
+                        indent_level: 2, // eslint-disable-line camelcase
+                      },
+              },
+            }),
+          ],
+        },
+      },
+    }
+
+    return webpackMerge(
+      baseConfig,
+      modeConfigs[mode ?? "none"] ?? {},
+      variantConfig,
+      variantModeConfigs[mode ?? "none"] ?? {}
+    )
   })
+
+  configurations.parallelism = multiCompilerParallelism
+
+  return configurations
+}
