@@ -150,9 +150,11 @@ export function enrichTransactionWithReceipt(
   receipt: EthersTransactionReceipt
 ): ConfirmedEVMTransaction {
   const gasUsed = receipt.gasUsed.toBigInt()
+
   return {
     ...transaction,
     gasUsed,
+    gasPrice: receipt.effectiveGasPrice.toBigInt(),
     status:
       receipt.status ??
       // Pre-Byzantium transactions require a guesswork approach or an
