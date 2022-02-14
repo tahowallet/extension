@@ -47,10 +47,6 @@ import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../enrichment"
-import {
-  convertFixedPointNumber,
-  multiplyFixedPointNumbers,
-} from "../../lib/fixed-point"
 import { HOUR } from "../../constants"
 
 // We can't use destructuring because webpack has to replace all instances of
@@ -159,6 +155,8 @@ export default class ChainService extends BaseService<Events> {
     return new this(await getOrCreateDB(), await preferenceService)
   }
 
+  ethereumNetwork: EVMNetwork
+
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService
@@ -194,16 +192,18 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
+    this.ethereumNetwork = getEthereumNetwork()
+
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        getNetwork(Number(getEthereumNetwork().chainID)),
+        getNetwork(Number(this.ethereumNetwork.chainID)),
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        getNetwork(Number(getEthereumNetwork().chainID)),
+        getNetwork(Number(this.ethereumNetwork.chainID)),
         ALCHEMY_KEY
       ),
     }
@@ -217,6 +217,7 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
     const ethProvider = this.pollingProviders.ethereum
+    const network = this.ethereumNetwork
 
     // FIXME Should we await or drop Promise.all on the below two?
     Promise.all([
@@ -227,10 +228,8 @@ export default class ChainService extends BaseService<Events> {
         await this.db.addBlock(block)
       }),
 
-      this.subscribeToNewHeads(getEthereumNetwork()),
+      this.subscribeToNewHeads(network),
     ])
-
-    const network = getEthereumNetwork()
 
     Promise.all(
       accounts
@@ -810,7 +809,8 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    const ethereumNetwork = getEthereumNetwork()
+    const network = this.ethereumNetwork
+
     toHandle.forEach(async ({ hash, firstSeen }) => {
       try {
         // TODO make this multi network
@@ -819,7 +819,7 @@ export default class ChainService extends BaseService<Events> {
         const transaction = transactionFromEthersTransaction(
           result,
           ETH,
-          ethereumNetwork
+          network
         )
 
         // TODO make this provider specific
@@ -839,30 +839,28 @@ export default class ChainService extends BaseService<Events> {
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
         if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-          this.queueTransactionHashToRetrieve(ethereumNetwork, hash, firstSeen)
+          this.queueTransactionHashToRetrieve(network, hash, firstSeen)
         } else {
           logger.warn(
             `Transaction ${hash} is too old to keep looking for it; treating ` +
               "it as expired."
           )
 
-          this.db
-            .getTransaction(ethereumNetwork, hash)
-            .then((existingTransaction) => {
-              if (existingTransaction !== null) {
-                logger.debug(
-                  "Found existing transaction for expired lookup; marking as " +
-                    "failed if no other status exists."
-                )
-                this.saveTransaction(
-                  // Don't override an already-persisted successful status with
-                  // an expiration-based failed status, but do set status to
-                  // failure if no transaction was seen.
-                  { status: 0, ...existingTransaction },
-                  "local"
-                )
-              }
-            })
+          this.db.getTransaction(network, hash).then((existingTransaction) => {
+            if (existingTransaction !== null) {
+              logger.debug(
+                "Found existing transaction for expired lookup; marking as " +
+                  "failed if no other status exists."
+              )
+              this.saveTransaction(
+                // Don't override an already-persisted successful status with
+                // an expiration-based failed status, but do set status to
+                // failure if no transaction was seen.
+                { status: 0, ...existingTransaction },
+                "local"
+              )
+            }
+          })
         }
       }
     })
