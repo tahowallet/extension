@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: "--max-old-space-size=8192"
     steps:
     - uses: actions/checkout@v2
     - name: Read .nvmrc
