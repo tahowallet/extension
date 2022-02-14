@@ -284,7 +284,7 @@ export default class IndexingService extends BaseService<Events> {
           .filter(isSmartContractFungibleAsset)
           .filter(
             (a) =>
-              a.homeNetwork.chainID === getEthereumNetwork().chainID &&
+              a.homeNetwork.chainID === addressOnNetwork.network.chainID &&
               !checkedContractAddresses.has(a.contractAddress)
           )
 
@@ -312,11 +312,10 @@ export default class IndexingService extends BaseService<Events> {
           (transaction.status === 1 || transaction.status === 0)
         ) {
           forAccounts.forEach((accountAddress) => {
-            const addressNetwork = {
-              address: normalizeEVMAddress(accountAddress),
-              network: getEthereumNetwork(),
-            }
-            this.chainService.getLatestBaseAccountBalance(addressNetwork)
+            this.chainService.getLatestBaseAccountBalance({
+              address: accountAddress,
+              network: transaction.network,
+            })
           })
         }
       }

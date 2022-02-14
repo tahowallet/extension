@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { getEthereumNetwork } from "../lib/utils"
 import { AddressOnNetwork } from "../accounts"
+import { ETHEREUM } from "../constants"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const defaultSettings = {
@@ -36,7 +36,7 @@ export const initialState: UIState = {
   showingActivityDetailID: null,
   selectedAccount: {
     address: "",
-    network: getEthereumNetwork(),
+    network: ETHEREUM,
   },
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
