@@ -792,10 +792,14 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
-      await this.signingService.deriveAddress({
-        type: "keyring",
-        accountID: keyringID,
-      })
+      if (HIDE_IMPORT_LEDGER) {
+        await this.keyringService.deriveAddress(keyringID)
+      } else {
+        await this.signingService.deriveAddress({
+          type: "keyring",
+          accountID: keyringID,
+        })
+      }
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
