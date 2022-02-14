@@ -613,7 +613,10 @@ export default class Main extends BaseService<never> {
 
           try {
             const signedTx = await this.keyringService.signTransaction(
-              transaction.from,
+              {
+                address: transaction.from,
+                network: this.chainService.ethereumNetwork,
+              },
               transactionWithNonce
             )
             this.store.dispatch(signed(signedTx))
@@ -627,6 +630,7 @@ export default class Main extends BaseService<never> {
         } else {
           try {
             const signedTx = await this.signingService.signTransaction(
+              this.chainService.ethereumNetwork,
               transaction,
               method
             )
