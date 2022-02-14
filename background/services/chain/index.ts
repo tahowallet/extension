@@ -224,7 +224,7 @@ export default class ChainService extends BaseService<Events> {
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
-        const block = blockFromEthersBlock(result)
+        const block = blockFromEthersBlock(network, result)
         await this.db.addBlock(block)
       }),
 
@@ -501,7 +501,7 @@ export default class ChainService extends BaseService<Events> {
     // Looking for new block
     const resultBlock = await this.pollingProviders.ethereum.getBlock(blockHash)
 
-    const block = blockFromEthersBlock(resultBlock)
+    const block = blockFromEthersBlock(network, resultBlock)
 
     await this.db.addBlock(block)
     this.emitter.emit("block", block)
@@ -963,7 +963,7 @@ export default class ChainService extends BaseService<Events> {
       ["newHeads"],
       async (result: unknown) => {
         // add new head to database
-        const block = blockFromWebsocketBlock(result)
+        const block = blockFromWebsocketBlock(network, result)
         await this.db.addBlock(block)
         // emit the new block, don't wait to settle
         this.emitter.emit("block", block)

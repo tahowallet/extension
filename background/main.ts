@@ -839,6 +839,7 @@ export default class Main extends BaseService<never> {
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
         this.enrichmentService.enrichTransactionSignature(
+          this.chainService.ethereumNetwork,
           payload,
           2 /* TODO desiredDecimals should be configurable */
         )

@@ -112,7 +112,10 @@ export default class IndexingService extends BaseService<Events> {
     this.connectChainServiceEvents()
 
     // on launch, push any assets we have cached
-    this.emitter.emit("assets", await this.getCachedAssets())
+    this.emitter.emit(
+      "assets",
+      await this.getCachedAssets(this.chainService.ethereumNetwork)
+    )
 
     // ... and kick off token list fetching
     await this.fetchAndCacheTokenLists()
@@ -163,11 +166,9 @@ export default class IndexingService extends BaseService<Events> {
    * @returns An array of assets, including base assets that are "built in" to
    *          the codebase. Fiat currencies are not included.
    */
-  async getCachedAssets(): Promise<AnyAsset[]> {
+  async getCachedAssets(network: EVMNetwork): Promise<AnyAsset[]> {
     const baseAssets = [BTC, ETH]
-    const customAssets = await this.db.getCustomAssetsByNetwork(
-      getEthereumNetwork()
-    )
+    const customAssets = await this.db.getCustomAssetsByNetwork(network)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
@@ -175,7 +176,7 @@ export default class IndexingService extends BaseService<Events> {
     return mergeAssets(
       baseAssets,
       customAssets,
-      networkAssetsFromLists(getEthereumNetwork(), tokenLists)
+      networkAssetsFromLists(network, tokenLists)
     )
   }
 
@@ -190,7 +191,7 @@ export default class IndexingService extends BaseService<Events> {
     network: EVMNetwork,
     contractAddress: HexString
   ): Promise<SmartContractFungibleAsset> {
-    const knownAssets = await this.getCachedAssets()
+    const knownAssets = await this.getCachedAssets(network)
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
@@ -279,7 +280,9 @@ export default class IndexingService extends BaseService<Events> {
         const checkedContractAddresses = new Set(
           balances.map((b) => b.contractAddress).filter(Boolean)
         )
-        const cachedAssets = await this.getCachedAssets()
+        const cachedAssets = await this.getCachedAssets(
+          addressOnNetwork.network
+        )
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
           .filter(
@@ -393,8 +396,8 @@ export default class IndexingService extends BaseService<Events> {
     addressOnNetwork: AddressOnNetwork,
     contractAddress: string
   ): Promise<void> {
-    const knownAssets = await this.getCachedAssets()
     const { network } = addressOnNetwork
+    const knownAssets = await this.getCachedAssets(network)
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
@@ -547,7 +550,10 @@ export default class IndexingService extends BaseService<Events> {
             )
           }
         }
-        this.emitter.emit("assets", await this.getCachedAssets())
+        this.emitter.emit(
+          "assets",
+          await this.getCachedAssets(this.chainService.ethereumNetwork)
+        )
       })
     )
 
