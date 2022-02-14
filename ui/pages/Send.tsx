@@ -110,7 +110,7 @@ export default function Send(): ReactElement {
                   setHasError(false)
                 }
               }}
-              defaultAsset={{ symbol: assetSymbol, name: assetSymbol }}
+              selectedAsset={{ symbol: assetSymbol, name: assetSymbol }}
               amount={amount}
               disableDropdown
             />

@@ -1,29 +1,103 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
+import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  approveApprovalTarget,
+  checkApprovalTargetApproval,
+  permitVaultDeposit,
+  selectApprovalTargetApprovals,
+} from "@tallyho/tally-background/redux-slices/earn"
+
+import { AnyAsset } from "@tallyho/tally-background/assets"
+import { HexString } from "@tallyho/tally-background/types"
+import { useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
+
 import SharedButton from "../components/Shared/SharedButton"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function EarnDeposit(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+  const [amount, setAmount] = useState("")
+  const [hasError, setHasError] = useState(false)
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
+  const [isApproved, setIsApproved] = useState(false)
+  const [deposited, setDeposited] = useState(false)
+  const [availableRewards, setAvailableRewards] = useState("21,832")
+
+  const dispatch = useBackgroundDispatch()
+
+  const { asset } = useLocation().state as {
+    asset: AnyAsset & { contractAddress: HexString }
+  }
 
   const showWithdrawalModal = () => {
     setWithdrawalSlideupVisible(true)
   }
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+
+  // We currently assume that the approval held by ApprovalTarget is infinite and users wont decrease it themselves.
+  const approvals = useBackgroundSelector(selectApprovalTargetApprovals)
+
+  const isTokenApproved = () => {
+    if (!isApproved) {
+      const allowanceIndex = approvals?.findIndex(
+        (approval) => approval.contractAddress === asset.contractAddress
+      )
+      if (allowanceIndex !== -1) {
+        setIsApproved(true)
+      }
+    }
+  }
+
+  isTokenApproved()
+
+  const approve = () => {
+    dispatch(approveApprovalTarget(asset.contractAddress))
+  }
+
+  const enable = () => {
+    dispatch(
+      permitVaultDeposit({
+        vaultContractAddress: asset.contractAddress,
+        amount: 2000n,
+      })
+    )
+  }
+
+  const deposit = () => {
+    setDeposited(true)
+  }
+
+  const withdraw = () => {
+    setDeposited(false)
+    setWithdrawalSlideupVisible(false)
+  }
+
+  const claimRewards = () => {
+    setAvailableRewards("0")
+  }
+
+  useEffect(() => {
+    dispatch(checkApprovalTargetApproval(asset.contractAddress))
+  }, [dispatch, asset.contractAddress])
 
   return (
     <>
       <section className="primary_info">
         <BackButton />
         <ul className="wrapper">
-          <li className="row">
+          <li className="row header">
             <div className="type">VAULT</div>
             <div className="center">
-              <SharedAssetIcon size="large" />
-              <h1 className="asset_name">USDT</h1>
+              <SharedAssetIcon size="large" symbol={asset.symbol} />
+              <h1 className="asset_name">{asset.symbol}</h1>
             </div>
             <div>
               <a href="www.onet.pl" target="_blank">
@@ -50,25 +124,31 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </li>
         </ul>
-        <div className="wrapper">
-          <li className="row">
-            <div className="label">Deposited amount</div>
-            <div className="amount">
-              27,834 <span className="token">Curve ibGBP</span>
-            </div>
-          </li>
-          <div className="divider" />
-          <li className="row">
-            <div className="label">Available rewards</div>
-            <div className="amount">
-              27,834 <span className="token">TALLY</span>
-            </div>
-          </li>
-          <li className="row claim">
-            <div className="receive_icon" />
-            Claim rewards
-          </li>
-        </div>
+        {deposited ? (
+          <div className="wrapper">
+            <li className="row">
+              <div className="label">Deposited amount</div>
+              <div className="amount">
+                27,834 <span className="token">{asset.symbol}</span>
+              </div>
+            </li>
+            <div className="divider" />
+            <li className="row">
+              <div className="label">Available rewards</div>
+              <div className="amount">
+                {availableRewards} <span className="token">TALLY</span>
+              </div>
+            </li>
+            <li className="row claim">
+              <button className="row" onClick={claimRewards} type="button">
+                <div className="receive_icon" />
+                Claim rewards
+              </button>
+            </li>
+          </div>
+        ) : (
+          <></>
+        )}
       </section>
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
@@ -78,13 +158,36 @@ export default function EarnDeposit(): ReactElement {
       {panelNumber === 0 ? (
         <div className="deposit_wrap">
           <SharedAssetInput
+            assetsAndAmounts={combinedData.assets}
             label="Deposit asset"
-            defaultAsset={{ symbol: "ETH", name: "Ether" }}
+            onAmountChange={(value, errorMessage) => {
+              setAmount(value)
+              if (errorMessage) {
+                setHasError(true)
+              } else {
+                setHasError(false)
+              }
+            }}
+            selectedAsset={asset}
+            amount={amount}
+            disableDropdown
           />
           <div className="confirm">
-            <SharedButton type="primary" size="large">
-              Approve
-            </SharedButton>
+            {!isApproved ? (
+              <SharedButton
+                type="primary"
+                size="large"
+                isDisabled={hasError}
+                linkTo={!isApproved ? "/signTransaction" : "/signData"}
+                onClick={!isApproved ? approve : enable}
+              >
+                {!isApproved ? "Approve" : "Enable"}
+              </SharedButton>
+            ) : (
+              <SharedButton type="primary" size="large" onClick={deposit}>
+                {!deposited ? "Deposit" : "Deposit more"}
+              </SharedButton>
+            )}
           </div>
         </div>
       ) : (
@@ -138,15 +241,19 @@ export default function EarnDeposit(): ReactElement {
                 <li className="row">
                   <div className="label">Available rewards</div>
                   <div className="amount">
-                    27,834 <span className="token">TALLY</span>
+                    {availableRewards} <span className="token">TALLY</span>
                   </div>
                 </li>
               </div>
               <li className="row">
-                <SharedButton size="large" type="secondary">
+                <SharedButton
+                  size="large"
+                  type="secondary"
+                  onClick={() => setWithdrawalSlideupVisible(false)}
+                >
                   Cancel
                 </SharedButton>{" "}
-                <SharedButton size="large" type="primary">
+                <SharedButton size="large" type="primary" onClick={withdraw}>
                   Confirm Withdraw
                 </SharedButton>
               </li>
@@ -189,9 +296,13 @@ export default function EarnDeposit(): ReactElement {
             padding: 0 24px;
           }
           .row {
+            position: relative;
             display: flex;
             justify-content: space-between;
             align-items: baseline;
+          }
+          .header {
+            padding-bottom: 48px;
           }
           .pool_info {
             padding: 0 12px;
@@ -288,8 +399,8 @@ export default function EarnDeposit(): ReactElement {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: -36px;
-            position: relative;
+            position: absolute;
+            top: -36px;
             left: 0px;
             right: 0px;
             pointer-events: none;
@@ -309,13 +420,12 @@ export default function EarnDeposit(): ReactElement {
           .deposit_wrap {
             margin-top: 20px;
             height: 154px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
           }
           .confirm {
             padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           .lock {
             height: 13px;

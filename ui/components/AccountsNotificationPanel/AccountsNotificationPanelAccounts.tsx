@@ -8,6 +8,7 @@ import {
 import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
 import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
 import {
@@ -166,9 +167,15 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
+  const accountTypes = [AccountType.Imported, AccountType.ReadOnly]
+
+  if (!HIDE_IMPORT_LEDGER) {
+    accountTypes.push(AccountType.Ledger)
+  }
+
   return (
     <div className="switcher_wrap">
-      {[AccountType.Imported, AccountType.ReadOnly]
+      {accountTypes
         .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
         .map((accountType) => {
           // Known-non-null due to above filter.

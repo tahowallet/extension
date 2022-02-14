@@ -6,6 +6,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
 import React, { ReactElement, useState } from "react"
+import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -115,11 +116,14 @@ export default function SwapTransactionSettingsChooser({
           Estimated network fee
           <FeeSettingsText />
         </span>
+        <span className="label">
+          Tally fee for the DAO
+          <div className="info">{SWAP_FEE * 100}%</div>
+        </span>
       </div>
       <style jsx>
         {`
           .labels_wrap {
-            height: 72px;
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 16px;

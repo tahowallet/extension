@@ -17,10 +17,11 @@ import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../services/enrichment"
+import { SigningMethod } from "./signing"
 
 import { createBackgroundAsyncThunk } from "./utils"
 
-const enum TransactionConstructionStatus {
+export const enum TransactionConstructionStatus {
   Idle = "idle",
   Pending = "pending",
   Loaded = "loaded",
@@ -70,9 +71,14 @@ export const initialState: TransactionConstruction = {
   lastGasEstimatesRefreshed: Date.now(),
 }
 
+export interface SignatureRequest {
+  transaction: EIP1559TransactionRequest
+  method: SigningMethod
+}
+
 export type Events = {
   updateOptions: EnrichedEVMTransactionSignatureRequest
-  requestSignature: EIP1559TransactionRequest
+  requestSignature: SignatureRequest
   signatureRejected: never
   broadcastSignedTransaction: SignedEVMTransaction
 }
@@ -89,8 +95,8 @@ export const updateTransactionOptions = createBackgroundAsyncThunk(
 
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
-  async (transaction: EIP1559TransactionRequest) => {
-    await emitter.emit("requestSignature", transaction)
+  async (request: SignatureRequest) => {
+    await emitter.emit("requestSignature", request)
   }
 )
 
@@ -130,11 +136,16 @@ const transactionSlice = createSlice({
       },
       transactionLikelyFails,
     }),
-    clearTransactionState: (state) => ({
+    clearTransactionState: (
+      state,
+      { payload }: { payload: TransactionConstructionStatus }
+    ) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
-      status: TransactionConstructionStatus.Idle,
+      status: payload,
       feeTypeSelected: NetworkFeeTypeChosen.Regular,
+      broadcastOnSign: false,
+      signedTransaction: undefined,
     }),
     setFeeType: (
       state,
@@ -240,7 +251,11 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
   async (_, { dispatch }) => {
     await emitter.emit("signatureRejected")
     // Provide a clean slate for future transactions.
-    dispatch(transactionSlice.actions.clearTransactionState())
+    dispatch(
+      transactionSlice.actions.clearTransactionState(
+        TransactionConstructionStatus.Idle
+      )
+    )
   }
 )
 

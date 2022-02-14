@@ -1,15 +1,27 @@
 import { TypedDataDomain, TypedDataField } from "@ethersproject/abstract-signer"
+import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService from "../keyring"
 import LedgerService from "../ledger"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import { HexString } from "../../types"
 import BaseService from "../base"
-// import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import logger from "../../lib/logger"
+import { SigningMethod } from "../../redux-slices/signing"
 
-type Events = ServiceLifecycleEvents
+export type SignatureResponse =
+  | {
+      type: "success"
+      signedTx: SignedEVMTransaction
+    }
+  | {
+      type: "error"
+      reason: "userRejected" | "genericError"
+    }
+
+type Events = ServiceLifecycleEvents & {
+  signingResponse: SignatureResponse
+}
 
 type SignerType = "keyring" | HardwareSignerType
 type HardwareSignerType = "ledger"
@@ -72,15 +84,15 @@ export default class SigningService extends BaseService<Events> {
   }
 
   private async signTransactionWithNonce(
-    signer: SignerType,
-    address: HexString,
-    transactionWithNonce: EIP1559TransactionRequest & { nonce: number }
+    transactionWithNonce: EIP1559TransactionRequest & { nonce: number },
+    signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
-    switch (signer) {
+    switch (signingMethod.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
-          transactionWithNonce.from,
-          transactionWithNonce
+          transactionWithNonce,
+          signingMethod.deviceID,
+          signingMethod.path
         )
       case "keyring":
         return this.keyringService.signTransaction(
@@ -88,33 +100,50 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce
         )
       default:
-        throw new Error(
-          `Unknown address (${address}) or signer (${signer}) provided!`
-        )
+        throw new Error(`Unreachable!`)
     }
   }
 
   async signTransaction(
-    address: HexString,
-    transactionRequest: EIP1559TransactionRequest
+    transactionRequest: EIP1559TransactionRequest,
+    signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
     try {
-      const actualHandler = this.addressHandlers.find(
-        (handlers) => handlers.address === address
+      const signedTx = await this.signTransactionWithNonce(
+        transactionWithNonce,
+        signingMethod
       )
 
-      if (!actualHandler) {
-        throw new Error(`Unregistered address (${address}) found!`)
+      this.emitter.emit("signingResponse", {
+        type: "success",
+        signedTx,
+      })
+
+      return signedTx
+    } catch (err) {
+      if (err instanceof TransportStatusError) {
+        const transportError = err as Error & { statusCode: number }
+        switch (transportError.statusCode) {
+          case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
+            this.emitter.emit("signingResponse", {
+              type: "error",
+              reason: "userRejected",
+            })
+            throw err
+          default:
+            break
+        }
       }
 
-      return await this.signTransactionWithNonce(
-        actualHandler.signer,
-        address,
-        transactionWithNonce
-      )
+      this.emitter.emit("signingResponse", {
+        type: "error",
+        reason: "genericError",
+      })
+
+      throw err
     } finally {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
     }

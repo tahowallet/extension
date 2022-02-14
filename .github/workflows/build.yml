@@ -38,6 +38,7 @@ jobs:
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
+        ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
     - name: Upload build on main
       if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v2
