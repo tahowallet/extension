@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers"
 import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
@@ -6,7 +7,7 @@ import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
 import { ETH } from "../../constants"
-import { parseERC20Tx } from "../../lib/erc20"
+import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
@@ -195,6 +196,46 @@ export default class EnrichmentService extends BaseService<Events> {
           // address has an associated logo it's worth passing on.
           transactionLogoURL,
         }
+      }
+    }
+
+    // Look up logs and resolve subannotations, if available.
+    if ("logs" in transaction && typeof transaction.logs !== "undefined") {
+      const assets = await this.indexingService.getCachedAssets()
+
+      const subannotations = parseLogsForERC20Transfers(
+        transaction.logs
+      ).flatMap<TransactionAnnotation>(
+        ({ contractAddress, amount, senderAddress, recipientAddress }) => {
+          // See if the address matches a fungible asset.
+          const matchingFungibleAsset = assets.find(
+            (asset): asset is SmartContractFungibleAsset =>
+              isSmartContractFungibleAsset(asset) &&
+              sameEVMAddress(asset.contractAddress, contractAddress)
+          )
+
+          return typeof matchingFungibleAsset !== "undefined"
+            ? [
+                {
+                  type: "asset-transfer",
+                  assetAmount: enrichAssetAmountWithDecimalValues(
+                    {
+                      asset: matchingFungibleAsset,
+                      amount,
+                    },
+                    desiredDecimals
+                  ),
+                  senderAddress,
+                  recipientAddress,
+                  timestamp: resolvedTime,
+                },
+              ]
+            : []
+        }
+      )
+
+      if (subannotations.length > 0) {
+        txAnnotation.subannotations = subannotations
       }
     }
 
