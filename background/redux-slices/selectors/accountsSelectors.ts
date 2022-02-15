@@ -199,6 +199,25 @@ const signingMethodTypeToAccountType: Record<
   ledger: AccountType.Ledger,
 }
 
+const getAccountType = (
+  address: string,
+  signingMethod: SigningMethod,
+  addressSources: {
+    [address: string]: "import" | "newSeed"
+  }
+): AccountType => {
+  if (signingMethod == null) {
+    return AccountType.ReadOnly
+  }
+  if (signingMethodTypeToAccountType[signingMethod.type] === "ledger") {
+    return AccountType.Ledger
+  }
+  if (addressSources[address] === "import") {
+    return AccountType.Imported
+  }
+  return AccountType.NewSeed
+}
+
 export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
@@ -217,18 +236,11 @@ export const selectAccountTotalsByCategory = createSelector(
 
         const signingMethod = signingAccounts[address] ?? null
 
-        let accountType: AccountType
-        if (signingMethod == null) {
-          accountType = AccountType.ReadOnly
-        } else if (
-          signingMethodTypeToAccountType[signingMethod.type] === "ledger"
-        ) {
-          accountType = AccountType.Ledger
-        } else if (addressSources[address] === "import") {
-          accountType = AccountType.Imported
-        } else {
-          accountType = AccountType.NewSeed
-        }
+        const accountType = getAccountType(
+          address,
+          signingMethod,
+          addressSources
+        )
 
         if (accountData === "loading") {
           return {
