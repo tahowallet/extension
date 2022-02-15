@@ -1,33 +1,63 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { ethers, logger } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
-import { TransactionDescription } from "ethers/lib/utils"
+import {
+  EventFragment,
+  Fragment,
+  FunctionFragment,
+  TransactionDescription,
+} from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
 import { AccountBalance } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 
-export const ERC20_ABI = [
-  "function allowance(address owner, address spender) view returns (uint256)",
-  "function approve(address spender, uint256 value) returns (bool)",
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)",
-  "function name() view returns (string)",
-  "function symbol() view returns (string)",
-  "function totalSupply() view returns (uint256)",
-  "function transfer(address to, uint amount) returns (bool)",
-  "function transferFrom(address from, address to, uint amount) returns (bool)",
-  "event Transfer(address indexed from, address indexed to, uint amount)",
-  "event Approval(address indexed owner, address indexed spender, uint amount)",
-]
+const ERC20_FUNCTIONS = {
+  allowance: FunctionFragment.from(
+    "allowance(address owner, address spender) view returns (uint256)"
+  ),
+  approve: FunctionFragment.from(
+    "approve(address spender, uint256 value) returns (bool)"
+  ),
+  balanceOf: FunctionFragment.from(
+    "balanceOf(address owner) view returns (uint256)"
+  ),
+  decimals: FunctionFragment.from("decimals() view returns (uint8)"),
+  name: FunctionFragment.from("name() view returns (string)"),
+  symbol: FunctionFragment.from("symbol() view returns (string)"),
+  totalSupply: FunctionFragment.from("totalSupply() view returns (uint256)"),
+  transfer: FunctionFragment.from(
+    "transfer(address to, uint amount) returns (bool)"
+  ),
+  transferFrom: FunctionFragment.from(
+    "transferFrom(address from, address to, uint amount) returns (bool)"
+  ),
+}
+
+const ERC20_EVENTS = {
+  Transfer: EventFragment.from(
+    "Transfer(address indexed from, address indexed to, uint amount)"
+  ),
+  Approval: EventFragment.from(
+    "Approval(address indexed owner, address indexed spender, uint amount)"
+  ),
+}
+
+export const ERC20_ABI = Object.values<Fragment>(ERC20_FUNCTIONS).concat(
+  Object.values(ERC20_EVENTS)
+)
 
 export const ERC20_INTERFACE = new ethers.utils.Interface(ERC20_ABI)
 
-export const ERC2612_ABI = ERC20_ABI.concat([
-  "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
-  "function nonces(address owner) view returns (uint256)",
-  "function DOMAIN_SEPARATOR() view returns (bytes32)",
-])
+export const ERC2612_FUNCTIONS = {
+  permit: FunctionFragment.from(
+    "permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)"
+  ),
+  nonces: FunctionFragment.from("nonces(address owner) view returns (uint256)"),
+  DOMAIN: FunctionFragment.from("DOMAIN_SEPARATOR() view returns (bytes32)"),
+}
+
+export const ERC2612_ABI = ERC20_ABI.concat(Object.values(ERC2612_FUNCTIONS))
 
 export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
 
