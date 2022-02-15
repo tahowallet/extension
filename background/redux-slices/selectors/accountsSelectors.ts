@@ -18,7 +18,8 @@ import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
-import { selectAddressSources } from "./keyringsSelectors"
+import { selectKeyringsByAddresses } from "./keyringsSelectors"
+import { Keyring } from "../../services/keyring"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -203,7 +204,7 @@ const getAccountType = (
   address: string,
   signingMethod: SigningMethod,
   addressSources: {
-    [address: string]: "import" | "newSeed"
+    [address: string]: Keyring
   }
 ): AccountType => {
   if (signingMethod == null) {
@@ -212,7 +213,7 @@ const getAccountType = (
   if (signingMethodTypeToAccountType[signingMethod.type] === "ledger") {
     return AccountType.Ledger
   }
-  if (addressSources[address] === "import") {
+  if (addressSources[address].source === "import") {
     return AccountType.Imported
   }
   return AccountType.NewSeed
@@ -222,12 +223,12 @@ export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectAddressSigningMethods,
-  selectAddressSources,
+  selectKeyringsByAddresses,
   (
     accounts,
     assets,
     signingAccounts,
-    addressSources
+    keyringsByAddresses
   ): CategorizedAccountTotals => {
     // TODO: here
     return Object.entries(accounts.accountsData)
@@ -239,7 +240,7 @@ export const selectAccountTotalsByCategory = createSelector(
         const accountType = getAccountType(
           address,
           signingMethod,
-          addressSources
+          keyringsByAddresses
         )
 
         if (accountData === "loading") {

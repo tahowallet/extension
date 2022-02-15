@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
+import { Keyring } from "../../services/keyring"
 
 export const selectKeyringStatus = createSelector(
   (state: RootState) => state.keyrings.status,
@@ -11,16 +12,16 @@ export const selectKeyringSigningAddresses = createSelector(
   (keyrings) => keyrings.flatMap((keyring) => keyring.addresses)
 )
 
-export const selectAddressSources = createSelector(
+export const selectKeyringsByAddresses = createSelector(
   (state: RootState) => state.keyrings.keyrings,
   (
     keyrings
   ): {
-    [address: string]: "import" | "newSeed"
+    [keyringId: string]: Keyring
   } =>
     Object.fromEntries(
       keyrings.flatMap((keyring) =>
-        keyring.addresses.map((address) => [address, keyring.source])
+        keyring.addresses.map((address) => [address, keyring])
       )
     )
 )
