@@ -13,12 +13,12 @@ import {
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
-  unitPricePointForPricePoint,
 } from "../../assets"
 import { selectCurrentAccount } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
+import { selectAddressSources } from "./keyringsSelectors"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -203,7 +203,13 @@ export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectAddressSigningMethods,
-  (accounts, assets, signingAccounts): CategorizedAccountTotals => {
+  selectAddressSources,
+  (
+    accounts,
+    assets,
+    signingAccounts,
+    addressSources
+  ): CategorizedAccountTotals => {
     // TODO: here
     return Object.entries(accounts.accountsData)
       .map(([address, accountData]): AccountTotal => {
@@ -211,10 +217,18 @@ export const selectAccountTotalsByCategory = createSelector(
 
         const signingMethod = signingAccounts[address] ?? null
 
-        const accountType =
-          signingMethod === null
-            ? AccountType.ReadOnly
-            : signingMethodTypeToAccountType[signingMethod.type]
+        let accountType: AccountType
+        if (signingMethod == null) {
+          accountType = AccountType.ReadOnly
+        } else if (
+          signingMethodTypeToAccountType[signingMethod.type] === "ledger"
+        ) {
+          accountType = AccountType.Ledger
+        } else if (addressSources[address] === "import") {
+          accountType = AccountType.Imported
+        } else {
+          accountType = AccountType.NewSeed
+        }
 
         if (accountData === "loading") {
           return {

@@ -24,6 +24,7 @@ export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 export type Keyring = {
   type: KeyringTypes
   id: string | null
+  source: "import" | "newSeed"
   addresses: string[]
 }
 
@@ -285,8 +286,8 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
 
     const newKeyring = path
-      ? new HDKeyring({ mnemonic, path })
-      : new HDKeyring({ mnemonic })
+      ? new HDKeyring({ mnemonic, path, source })
+      : new HDKeyring({ mnemonic, source })
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
@@ -310,6 +311,7 @@ export default class KeyringService extends BaseService<Events> {
       // imported as well as their strength
       type: KeyringTypes.mnemonicBIP39S256,
       addresses: [...kr.getAddressesSync()],
+      source: kr.source,
       id: kr.id,
     }))
   }
