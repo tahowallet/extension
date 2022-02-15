@@ -91,10 +91,12 @@ export default class EnrichmentService extends BaseService<Events> {
   ): Promise<TransactionAnnotation | undefined> {
     let txAnnotation: TransactionAnnotation | undefined
 
+    const resolvedTime = Date.now()
+
     if (typeof transaction.to === "undefined") {
       // A missing recipient means a contract deployment.
       txAnnotation = {
-        timestamp: Date.now(),
+        timestamp: resolvedTime,
         type: "contract-deployment",
       }
     } else if (
@@ -111,7 +113,7 @@ export default class EnrichmentService extends BaseService<Events> {
       // over the 21k required to send ETH is a more complex contract interaction
       if (transaction.value) {
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "asset-transfer",
           senderAddress: transaction.from,
           recipientAddress: transaction.to, // TODO ingest address
@@ -126,7 +128,7 @@ export default class EnrichmentService extends BaseService<Events> {
       } else {
         // Fall back on a standard contract interaction.
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "contract-interaction",
         }
       }
@@ -152,7 +154,7 @@ export default class EnrichmentService extends BaseService<Events> {
       ) {
         // We have an ERC-20 transfer
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "asset-transfer",
           transactionLogoURL,
           senderAddress: erc20Tx.args.from ?? transaction.to,
@@ -171,7 +173,7 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx.name === "approve"
       ) {
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "asset-approval",
           transactionLogoURL,
           spenderAddress: erc20Tx.args.spender, // TODO ingest address
@@ -186,7 +188,7 @@ export default class EnrichmentService extends BaseService<Events> {
       } else {
         // Fall back on a standard contract interaction.
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "contract-interaction",
           // Include the logo URL if we resolve it even if the interaction is
           // non-specific; the UI can choose to use it or not, but if we know the
