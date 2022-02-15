@@ -26,6 +26,7 @@ import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
 import BaseService from "../base"
+import { EnrichedEVMTransaction } from "../enrichment/types"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -204,6 +205,42 @@ export default class IndexingService extends BaseService<Events> {
   /* *****************
    * PRIVATE METHODS *
    ******************* */
+
+  async notifyEnrichedTransaction(
+    enrichedEVMTransaction: EnrichedEVMTransaction
+  ): Promise<void> {
+    const jointAnnotations =
+      typeof enrichedEVMTransaction.annotation === "undefined"
+        ? []
+        : [
+            enrichedEVMTransaction.annotation,
+            ...(enrichedEVMTransaction.annotation.subannotations ?? []),
+          ]
+
+    jointAnnotations.forEach((annotation) => {
+      // Note asset transfers of smart contract assets to or from an
+      // address we're tracking, and ensure we're tracking that asset +
+      // that we do a balance check soon.
+      if (
+        typeof annotation !== "undefined" &&
+        annotation.type === "asset-transfer" &&
+        isSmartContractFungibleAsset(annotation.assetAmount.asset) &&
+        this.chainService.isTrackingAddressesOnNetworks(
+          {
+            address: annotation.senderAddress,
+            network: enrichedEVMTransaction.network,
+          },
+          {
+            address: annotation.recipientAddress,
+            network: enrichedEVMTransaction.network,
+          }
+        )
+      ) {
+        this.addAssetToTrack(annotation.assetAmount.asset)
+        this.scheduledTokenRefresh = true
+      }
+    })
+  }
 
   private async connectChainServiceEvents(): Promise<void> {
     // listen for assetTransfers, and if we find them, track those tokens
