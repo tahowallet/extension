@@ -191,7 +191,7 @@ export default function AccountsNotificationPanelAccounts({
         .map((accountType) => {
           // Known-non-null due to above filter.
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const accountTypeTotals = accountTotals[accountType]!.reduce(
+          const accountTotalsByType = accountTotals[accountType]!.reduce(
             (acc, accountTypeTotal) => {
               if (accountTypeTotal.keyringId) {
                 acc[accountTypeTotal.keyringId] ??= []
@@ -204,25 +204,29 @@ export default function AccountsNotificationPanelAccounts({
             {} as { [keyringId: string]: AccountTotal[] }
           )
 
-          return Object.values(accountTypeTotals).map(
-            (accountTypeTotal, idx) => {
+          return Object.values(accountTotalsByType).map(
+            (accountTotalsByKeyringId, idx) => {
               return (
                 <section key={accountType}>
                   <WalletTypeHeader
                     accountType={accountType}
                     walletNumber={idx + 1}
                     onClickAddAddress={
-                      accountType === "imported"
+                      accountType === "imported" || accountType === "newSeed"
                         ? () => {
-                            if (firstKeyringId) {
-                              dispatch(deriveAddress(firstKeyringId))
+                            if (accountTotalsByKeyringId[0].keyringId) {
+                              dispatch(
+                                deriveAddress(
+                                  accountTotalsByKeyringId[0].keyringId
+                                )
+                              )
                             }
                           }
                         : undefined
                     }
                   />
                   <ul>
-                    {accountTypeTotal.map((accountTotal) => {
+                    {accountTotalsByKeyringId.map((accountTotal) => {
                       const lowerCaseAddress =
                         accountTotal.address.toLocaleLowerCase()
                       return (
