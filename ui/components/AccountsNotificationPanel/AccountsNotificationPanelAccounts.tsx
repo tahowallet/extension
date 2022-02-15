@@ -33,7 +33,7 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
   [AccountType.NewSeed]: {
     title: "Tally",
-    icon: "./images/tally_reward@2x.png", // FIXMI: Get a different icon here
+    icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
   },
   [AccountType.Ledger]: {
     title: "Full access via Ledger", // FIXME: check copy against UI specs
