@@ -277,7 +277,11 @@ export default class KeyringService extends BaseService<Events> {
    * @param mnemonic - a seed phrase
    * @returns The string ID of the new keyring.
    */
-  async importKeyring(mnemonic: string, path?: string): Promise<string> {
+  async importKeyring(
+    mnemonic: string,
+    source: "import" | "newSeed" = "import", // @TODO take out default =import
+    path?: string
+  ): Promise<string> {
     this.requireUnlocked()
 
     const newKeyring = path

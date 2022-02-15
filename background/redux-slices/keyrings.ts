@@ -27,19 +27,22 @@ export type Events = {
   unlockKeyrings: string
   generateNewKeyring: never
   deriveAddress: string
-  importKeyring: { mnemonic: string; path?: string }
+  importKeyring: ImportKeyring
 }
 
 export const emitter = new Emittery<Events>()
 
+interface ImportKeyring {
+  mnemonic: string
+  source: "newSeed" | "import"
+  path?: string
+}
+
 // Async thunk to bubble the importKeyring action from  store to emitter.
 export const importKeyring = createBackgroundAsyncThunk(
   "keyrings/importKeyring",
-  async (
-    { mnemonic, path }: { mnemonic: string; path?: string },
-    { getState, dispatch }
-  ) => {
-    await emitter.emit("importKeyring", { mnemonic, path })
+  async ({ mnemonic, source, path }: ImportKeyring, { getState, dispatch }) => {
+    await emitter.emit("importKeyring", { mnemonic, path, source })
 
     const { keyrings, ui } = getState() as {
       keyrings: KeyringsState

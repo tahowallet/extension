@@ -19,7 +19,9 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
           size="medium"
           type="primary"
           onClick={async () => {
-            await dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
+            await dispatch(
+              importKeyring({ mnemonic: mnemonic.join(" "), source: "newSeed" })
+            )
             history.push("/")
           }}
         >
