@@ -1,5 +1,5 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
-import { ethers, logger } from "ethers"
+import { BigNumber, ethers, logger } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import {
   EventFragment,
@@ -11,6 +11,8 @@ import { getTokenBalances, getTokenMetadata } from "./alchemy"
 import { getEthereumNetwork } from "./utils"
 import { AccountBalance } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
+import { EVMLog } from "../networks"
+import { HexString } from "../types"
 
 const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -140,6 +142,62 @@ export function parseERC20Tx(
   } catch (err) {
     return undefined
   }
+}
+
+/**
+ * Information bundle from an ostensible ERC20 transfer log using Tally types.
+ */
+export type ERC20TransferLog = {
+  contractAddress: string
+  amount: bigint
+  senderAddress: HexString
+  recipientAddress: HexString
+}
+
+/**
+ * Parses the given list of EVM logs, returning information on any contained
+ * ERC20 transfers.
+ *
+ * Note that the returned data should only be considered valid if the logs are
+ * from a known asset address; this function does not check the asset address,
+ * it only tries to blindly parse each log as if it were an ERC20 Transfer
+ * event.
+ *
+ * @param logs An arbitrary list of EVMLogs, some of which may represent ERC20
+ *        `Transfer` events.
+ * @return Information on any logs that were parsable as ERC20 `Transfer`
+ *         events. This does _not_ mean they are guaranteed to be ERC20
+ *         `Transfer` events, simply that they can be parsed as such.
+ */
+export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
+  return logs
+    .map(({ contractAddress, data, topics }) => {
+      try {
+        const decoded = ERC20_INTERFACE.decodeEventLog(
+          ERC20_EVENTS.Transfer,
+          data,
+          topics
+        )
+
+        if (
+          typeof decoded.to === "undefined" ||
+          typeof decoded.from === "undefined" ||
+          typeof decoded.amount === "undefined"
+        ) {
+          return undefined
+        }
+
+        return {
+          contractAddress,
+          amount: (decoded.amount as BigNumber).toBigInt(),
+          senderAddress: decoded.from,
+          recipientAddress: decoded.to,
+        }
+      } catch (_) {
+        return undefined
+      }
+    })
+    .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
 }
 
 export const getERC20TokenMetadata = async (
