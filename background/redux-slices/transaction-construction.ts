@@ -143,7 +143,7 @@ const transactionSlice = createSlice({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
       status: payload,
-      feeTypeSelected: NetworkFeeTypeChosen.Regular,
+      feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
     }),
