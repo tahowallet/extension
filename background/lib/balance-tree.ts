@@ -4,10 +4,12 @@ import MerkleTree from "./merkle-tree"
 export default class BalanceTree {
   private readonly tree: MerkleTree
 
-  constructor(balances: { account: string; amount: BigNumber }[]) {
+  constructor(
+    balances: { address: string; earnings: string; reasons: string }[]
+  ) {
     this.tree = new MerkleTree(
-      balances.map(({ account, amount }, index) => {
-        return BalanceTree.toNode(index, account, amount)
+      balances.map(({ address, earnings }, index) => {
+        return BalanceTree.toNode(index, address, BigNumber.from(earnings))
       })
     )
   }
@@ -49,12 +51,24 @@ export default class BalanceTree {
     return this.tree.getHexRoot()
   }
 
+  public getRoot(): Buffer {
+    return this.tree.getRoot()
+  }
+
   // returns the hex bytes32 values of the proof
-  public getProof(
+  public getHexProof(
     index: number | BigNumber,
     account: string,
     amount: BigNumber
   ): string[] {
     return this.tree.getHexProof(BalanceTree.toNode(index, account, amount))
+  }
+
+  public getProof(
+    index: number | BigNumber,
+    account: string,
+    amount: BigNumber
+  ): Buffer[] {
+    return this.tree.getProof(BalanceTree.toNode(index, account, amount))
   }
 }
