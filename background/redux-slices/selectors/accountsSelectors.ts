@@ -184,6 +184,7 @@ export type AccountTotal = {
   address: string
   shortenedAddress: string
   accountType: AccountType
+  keyringId: string | null
   signingMethod: SigningMethod | null
   name?: string
   avatarURL?: string
@@ -236,6 +237,7 @@ export const selectAccountTotalsByCategory = createSelector(
         const shortenedAddress = truncateAddress(address)
 
         const signingMethod = signingAccounts[address] ?? null
+        const keyringId = keyringsByAddresses[address].id
 
         const accountType = getAccountType(
           address,
@@ -248,6 +250,7 @@ export const selectAccountTotalsByCategory = createSelector(
             address,
             shortenedAddress,
             accountType,
+            keyringId,
             signingMethod,
           }
         }
@@ -284,6 +287,7 @@ export const selectAccountTotalsByCategory = createSelector(
           address,
           shortenedAddress,
           accountType,
+          keyringId,
           signingMethod,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
