@@ -280,7 +280,7 @@ export default class KeyringService extends BaseService<Events> {
    */
   async importKeyring(
     mnemonic: string,
-    source: "import" | "newSeed" = "import", // @TODO take out default =import
+    source: "import" | "newSeed",
     path?: string
   ): Promise<string> {
     this.requireUnlocked()

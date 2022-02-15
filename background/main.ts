@@ -170,7 +170,6 @@ function migrateReduxState(
 
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
-  ;(window as any).store = store
   const state = store.getState()
 
   if (process.env.WRITE_REDUX_CACHE === "true") {

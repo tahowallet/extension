@@ -94,7 +94,7 @@ describe("KeyringService when uninitialized", () => {
   describe("and locked", () => {
     it("won't import or create accounts", async () => {
       await expect(
-        service.importKeyring(validMnemonics.metamask[0])
+        service.importKeyring(validMnemonics.metamask[0], "import")
       ).rejects.toThrow("KeyringService must be unlocked.")
 
       await Promise.all(
@@ -121,7 +121,7 @@ describe("KeyringService when uninitialized", () => {
     it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
       async (mnemonic) => {
-        return expect(service.importKeyring(mnemonic)).resolves
+        return expect(service.importKeyring(mnemonic, "import")).resolves
       }
     )
 
@@ -182,7 +182,7 @@ describe("KeyringService when initialized", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "))
+    await service.importKeyring(mnemonic.join(" "), "import")
   })
 
   it("will return keyring IDs and addresses", async () => {
@@ -308,7 +308,7 @@ describe("KeyringService when saving keyrings", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "))
+    await service.importKeyring(mnemonic.join(" "), "import")
 
     expect(localStorageCalls.shift()).toMatchObject({
       tallyVaults: expect.objectContaining({
@@ -409,7 +409,7 @@ describe("Keyring service when autolocking", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "))
+    await service.importKeyring(mnemonic.join(" "), "import")
   })
 
   it("will autolock after the keyring idle time but not sooner", async () => {
@@ -447,7 +447,7 @@ describe("Keyring service when autolocking", () => {
     {
       action: "importing a keyring",
       call: async () => {
-        await service.importKeyring(validMnemonics.metamask[0])
+        await service.importKeyring(validMnemonics.metamask[0], "import")
       },
     },
     {
