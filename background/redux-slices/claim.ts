@@ -1,14 +1,18 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
+import { BigNumber } from "ethers"
 import { Eligible } from "../services/claim/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { truncateAddress } from "../lib/utils"
 
-// import { getContract } from "./utils/contract-utils"
+import { getContract } from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
 import delegates from "../static/delegates.json"
+import { HexString } from "../types"
+import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
-// const newBalanceTree = new BalanceTree(balances)
+import BalanceTree from "../lib/balance-tree"
+import eligibles from "../static/eligibles.json"
 
 export interface DAO {
   address: string
@@ -27,9 +31,9 @@ export interface Delegate {
 interface ClaimingState {
   status: string
   claimed: {
-    [address: string]: boolean
+    [address: HexString]: boolean
   }
-  distributor: any
+  distributor: HexString
   delegates: Delegate[]
   eligibility: Eligible | null
   DAOs: DAO[]
@@ -37,45 +41,105 @@ interface ClaimingState {
   selectedDelegate: Delegate | null
 }
 
-const getDistributorContract = async () => {
-  // const contractAddress = "0x1234"
-  // const distributor = await getContract(contractAddress, DISTRIBUTOR_ABI)
-  // return distributor
+const newBalanceTree = new BalanceTree(eligibles)
+
+const findIndexAndBalance = (address: string) => {
+  const index = eligibles.findIndex((el) => address === el.address)
+  const balance = eligibles[index].earnings
+  return { index, balance }
 }
 
-const claim = createBackgroundAsyncThunk(
+const getDistributorContract = async () => {
+  const distributorContractAddress = "0x123" // Change distributor address here
+  const distributor = await getContract(
+    distributorContractAddress,
+    DISTRIBUTOR_ABI
+  )
+  return distributor
+}
+
+const getProof = (
+  index: number | BigNumber,
+  account: string,
+  amount: BigNumber
+) => {
+  return newBalanceTree.getProof(index, account, amount)
+}
+
+const verifyProof = (
+  index: number,
+  account: HexString,
+  balance: HexString,
+  merkleProof: Buffer[]
+) => {
+  const root = newBalanceTree.getRoot()
+  const exists = BalanceTree.verifyProof(
+    index,
+    account,
+    BigNumber.from(balance),
+    merkleProof,
+    root
+  )
+  return exists
+}
+
+export const claimRewards = createBackgroundAsyncThunk(
   "claim/distributorClaim",
   async (
     {
       account,
       referralCode,
+      delegate,
     }: {
       account: string
       referralCode?: string
+      delegate?: HexString
     },
     { getState }
-  ) => {
-    // const state: any = getState()
-    // if (state.claimed[account]) {
-    //   throw new Error("already claimed")
-    // }
-    // const { index, balance } = await findIndexAndBalance(account)
-    // const proof = getProof(index, account, balance)
-    // const distributor = await getDistributorContract()
-    // if (!referralCode) {
-    //   const tx = await distributor.claim(index, account, balance, proof)
-    //   const receipt = await tx.wait()
-    //   return receipt
-    // }
-    // const tx = await distributor.claimWithCommunityCode(
-    //   index,
-    //   account,
-    //   balance,
-    //   proof,
-    //   referralCode
-    // )
-    // const receipt = await tx.wait()
-    // return receipt
+  ): Promise<string> => {
+    const state = getState()
+    const { claim } = state as { claim: ClaimingState }
+
+    if (claim.claimed[account]) {
+      throw new Error("already claimed")
+    }
+
+    const { index, balance } = await findIndexAndBalance(account)
+
+    const merkleProof = getProof(index, account, BigNumber.from(balance))
+
+    // the below line is used to verify if a merkleProof is in the merkle tree
+    // const validMerkleProof = verifyProof(index, account, balance, merkleProof)
+
+    const distributorContract = await getDistributorContract()
+
+    try {
+      if (!referralCode && !delegate) {
+        const tx = await distributorContract.claim(
+          index,
+          account,
+          balance,
+          merkleProof
+        )
+        const receipt = await tx.wait()
+        return receipt
+      }
+
+      // TODO Where do we get the { nonce, expiry, r, s, v }, do we sig TypedData?
+      const tx = await distributorContract.voteWithFriends(
+        index,
+        account,
+        balance,
+        merkleProof,
+        referralCode,
+        delegate
+        // { nonce, expiry, r, s, v }
+      )
+      await tx.wait()
+      return account
+    } catch {
+      return Promise.reject()
+    }
   }
 )
 
@@ -105,15 +169,17 @@ const claimingSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(claim.pending, (immerState) => {
+    builder.addCase(claimRewards.pending, (immerState) => {
       immerState.status = "loading"
     })
-    builder.addCase(claim.fulfilled, (immerState, { payload }) => {
-      const address: any = { payload }
-      immerState.status = "success"
-      immerState.claimed[address] = true
-    })
-    builder.addCase(claim.rejected, (immerState) => {
+    builder.addCase(
+      claimRewards.fulfilled,
+      (immerState, { payload }: { payload: string }) => {
+        immerState.status = "success"
+        immerState.claimed[payload] = true
+      }
+    )
+    builder.addCase(claimRewards.rejected, (immerState) => {
       immerState.status = "rejected"
     })
   },
