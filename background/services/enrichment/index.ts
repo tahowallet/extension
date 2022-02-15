@@ -1,19 +1,10 @@
 import {
-  AnyAssetAmount,
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
 } from "../../assets"
-import {
-  AnyEVMTransaction,
-  EIP1559TransactionRequest,
-  Network,
-} from "../../networks"
-import {
-  AssetDecimalAmount,
-  enrichAssetAmountWithDecimalValues,
-} from "../../redux-slices/utils/asset-utils"
+import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
+import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
-import { HexString, UNIXTime } from "../../types"
 import { ETH } from "../../constants"
 import { parseERC20Tx } from "../../lib/erc20"
 import { sameEVMAddress } from "../../lib/utils"
@@ -22,69 +13,13 @@ import ChainService from "../chain"
 import IndexingService from "../indexing"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
+import {
+  EnrichedEVMTransaction,
+  EnrichedEVMTransactionSignatureRequest,
+  TransactionAnnotation,
+} from "./types"
 
-export type BaseTransactionAnnotation = {
-  // a URL to an image representing the transaction interaction, if applicable.
-  transactionLogoURL?: string | undefined
-  // when the transaction was annotated. Including this means consumers can more
-  // easily upsert annotations
-  timestamp: UNIXTime
-}
-
-export type ContractDeployment = BaseTransactionAnnotation & {
-  type: "contract-deployment"
-}
-
-export type ContractInteraction = BaseTransactionAnnotation & {
-  type: "contract-interaction"
-}
-
-export type AssetApproval = BaseTransactionAnnotation & {
-  type: "asset-approval"
-  assetAmount: AnyAssetAmount & AssetDecimalAmount
-  spenderAddress: HexString
-}
-
-export type AssetTransfer = BaseTransactionAnnotation & {
-  type: "asset-transfer"
-  assetAmount: AnyAssetAmount & AssetDecimalAmount
-  recipientAddress: HexString
-  senderAddress: HexString
-}
-
-export type AssetSwap = BaseTransactionAnnotation & {
-  type: "asset-swap"
-  fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
-  toAssetAmount: AnyAssetAmount & AssetDecimalAmount
-}
-
-export type TransactionAnnotation =
-  | ContractDeployment
-  | ContractInteraction
-  | AssetApproval
-  | AssetTransfer
-  | AssetSwap
-  | undefined
-
-export type ResolvedTransactionAnnotation = {
-  contractInfo: TransactionAnnotation
-  address: HexString
-  network: Network
-  resolvedAt: UNIXTime
-}
-
-export type EnrichedEVMTransaction = AnyEVMTransaction & {
-  annotation?: TransactionAnnotation
-}
-
-export type EnrichedEVMTransactionSignatureRequest =
-  (Partial<EIP1559TransactionRequest> & { from: string }) & {
-    annotation?: TransactionAnnotation
-  }
-
-export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
-  annotation?: TransactionAnnotation
-}
+export * from "./types"
 
 interface Events extends ServiceLifecycleEvents {
   enrichedEVMTransaction: {
