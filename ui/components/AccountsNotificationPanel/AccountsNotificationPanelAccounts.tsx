@@ -172,9 +172,9 @@ export default function AccountsNotificationPanelAccounts({
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
   const accountTypes = [
+    AccountType.NewSeed,
     AccountType.Imported,
     AccountType.ReadOnly,
-    AccountType.NewSeed,
   ]
 
   if (!HIDE_IMPORT_LEDGER) {
