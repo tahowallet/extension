@@ -116,8 +116,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
   const importWallet = useCallback(async () => {
     const trimmedRecoveryPhrase = recoveryPhrase.trim()
-    if (trimmedRecoveryPhrase.split(" ").length !== 12) {
-      setErrorMessage("Must be a 12-word recovery phrase")
+    const splitTrimmedRecoveryPhrase = trimmedRecoveryPhrase.split(" ")
+    if (
+      splitTrimmedRecoveryPhrase.length !== 12 &&
+      splitTrimmedRecoveryPhrase.length !== 24
+    ) {
+      setErrorMessage("Must be a 12 or 24 word recovery phrase")
     } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(importKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
