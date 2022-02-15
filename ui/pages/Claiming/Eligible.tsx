@@ -1,6 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   toFixedPointNumber,
   multiplyByFloat,
@@ -19,7 +18,6 @@ import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalCo
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 
 export default function Eligible(): ReactElement {
-  const [account, setAccount] = useState("")
   const [step, setStep] = useState(1)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
@@ -30,9 +28,6 @@ export default function Eligible(): ReactElement {
     (state) => Object.keys(state.account.accountsData).length > 0
   )
 
-  const selectedAccountAddress =
-    useBackgroundSelector(selectCurrentAccount).address
-
   const { delegates, DAOs, claimAmountHex } = useBackgroundSelector((state) => {
     return {
       delegates: state.claim.delegates,
@@ -40,12 +35,6 @@ export default function Eligible(): ReactElement {
       claimAmountHex: state.claim?.eligibility?.earnings,
     }
   })
-
-  useEffect(() => {
-    if (Object.keys(accountData)) {
-      setAccount(Object.keys(accountData)[0])
-    }
-  }, [accountData])
 
   if (!hasAccounts) {
     return <Redirect to="/onboarding/infoIntro" />
