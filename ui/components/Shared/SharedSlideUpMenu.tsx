@@ -32,9 +32,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
   const { isOpen, close, size, children, customSize, alwaysRenderChildren } =
     props
 
-  const ref = useRef(null)
+  const slideUpMenuRef = useRef(null)
 
-  useOnClickOutside(ref, close)
+  useOnClickOutside(slideUpMenuRef, close)
 
   // Continue showing children during the close transition.
   const visibleChildren = isOpen || alwaysRenderChildren ? children : <></>
@@ -55,7 +55,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           closed: !isOpen,
         })}
         style={{ "--menu-height": menuHeight } as CSSProperties}
-        ref={isOpen ? ref : null}
+        ref={isOpen ? slideUpMenuRef : null}
       >
         <button
           type="button"
