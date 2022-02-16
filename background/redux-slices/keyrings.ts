@@ -7,6 +7,7 @@ import { Keyring } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]
+  keyringSources: { [keyringId: string]: "import" | "newSeed" }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -17,6 +18,7 @@ type KeyringsState = {
 
 export const initialState: KeyringsState = {
   keyrings: [],
+  keyringSources: {},
   importing: false,
   status: "uninitialized",
   keyringToVerify: null,
@@ -67,6 +69,18 @@ const keyringsSlice = createSlice({
   reducers: {
     keyringLocked: (state) => ({ ...state, status: "locked" }),
     keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
+    updateKeyringSources: (
+      state,
+      {
+        payload: { keyringId, source },
+      }: { payload: { keyringId: string; source: "import" | "newSeed" } }
+    ) => ({
+      ...state,
+      keyringSources: {
+        ...state.keyringSources,
+        [keyringId]: source,
+      },
+    }),
     updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
       // When the keyrings are locked, we receive updateKeyrings with an empty
       // list as the keyring service clears the in-memory keyrings. For UI
@@ -106,6 +120,7 @@ const keyringsSlice = createSlice({
 
 export const {
   updateKeyrings,
+  updateKeyringSources,
   keyringLocked,
   keyringUnlocked,
   setKeyringToVerify,

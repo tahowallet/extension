@@ -37,7 +37,7 @@
     "@ledgerhq/hw-app-eth": "^6.23.0",
     "@ledgerhq/hw-transport": "^6.20.0",
     "@ledgerhq/hw-transport-webusb": "^6.20.0",
-    "@tallyho/hd-keyring": "file:../../../tally/hd-keyring",
+    "@tallyho/hd-keyring": "^0.3.3",
     "@tallyho/provider-bridge-shared": "0.0.1",
     "@tallyho/window-provider": "0.0.1",
     "@types/w3c-web-usb": "^1.0.5",

@@ -150,10 +150,6 @@ export default function AccountsNotificationPanelAccounts({
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
-  const firstKeyringId = useBackgroundSelector((state) => {
-    return state.keyrings.keyrings[0]?.id
-  })
-
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
     dispatch(

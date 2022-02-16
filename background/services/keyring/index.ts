@@ -24,7 +24,6 @@ export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 export type Keyring = {
   type: KeyringTypes
   id: string | null
-  source: "import" | "newSeed"
   addresses: string[]
 }
 
@@ -35,6 +34,10 @@ interface Events extends ServiceLifecycleEvents {
   // TODO message was signed
   signedTx: SignedEVMTransaction
   signedData: string
+  keyringSource: {
+    keyringId: string
+    source: "import" | "newSeed"
+  }
 }
 
 /*
@@ -286,14 +289,15 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
 
     const newKeyring = path
-      ? new HDKeyring({ mnemonic, path, source })
-      : new HDKeyring({ mnemonic, source })
+      ? new HDKeyring({ mnemonic, path })
+      : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
     this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
+    this.emitKeyringSource(newKeyring.id, source)
 
     return newKeyring.id
   }
@@ -311,7 +315,6 @@ export default class KeyringService extends BaseService<Events> {
       // imported as well as their strength
       type: KeyringTypes.mnemonicBIP39S256,
       addresses: [...kr.getAddressesSync()],
-      source: kr.source,
       id: kr.id,
     }))
   }
@@ -458,6 +461,13 @@ export default class KeyringService extends BaseService<Events> {
   private emitKeyrings() {
     const keyrings = this.getKeyrings()
     this.emitter.emit("keyrings", keyrings)
+  }
+
+  private emitKeyringSource(keyringId: string, source: "import" | "newSeed") {
+    this.emitter.emit("keyringSource", {
+      keyringId,
+      source,
+    })
   }
 
   /**
