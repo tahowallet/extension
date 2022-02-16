@@ -60,7 +60,7 @@ function WalletTypeHeader({
       <header className="wallet_title">
         <h2 className="left">
           <div className="icon" />
-          {title} {walletNumber}
+          {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
         </h2>
         {onClickAddAddress ? (
           <div className="right">
@@ -194,6 +194,9 @@ export default function AccountsNotificationPanelAccounts({
                 // Known-non-null due to above ??=
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 acc[accountTypeTotal.keyringId].push(accountTypeTotal)
+              } else {
+                acc.readOnly ??= []
+                acc.readOnly.push(accountTypeTotal)
               }
               return acc
             },

@@ -242,7 +242,7 @@ export const selectAccountTotalsByCategory = createSelector(
         const shortenedAddress = truncateAddress(address)
 
         const signingMethod = signingAccounts[address] ?? null
-        const keyringId = keyringsByAddresses[address].id
+        const keyringId = keyringsByAddresses[address]?.id
 
         const accountType = getAccountType(
           address,
