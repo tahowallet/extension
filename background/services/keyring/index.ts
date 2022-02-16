@@ -131,7 +131,7 @@ export default class KeyringService extends BaseService<Events> {
     password: string,
     ignoreExistingVaults = false
   ): Promise<boolean> {
-    if (this.locked() === false) {
+    if (!this.locked()) {
       throw new Error("KeyringService is already unlocked!")
     }
 
