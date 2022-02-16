@@ -299,6 +299,8 @@ export default class KeyringService extends BaseService<Events> {
    * used outside the extension.
    */
   getKeyrings(): Keyring[] {
+    this.requireUnlocked()
+
     return this.#keyrings.map((kr) => ({
       // TODO this type is meanlingless from the library's perspective.
       // Reconsider, or explicitly track which keyrings have been generated vs
@@ -449,8 +451,12 @@ export default class KeyringService extends BaseService<Events> {
   // //////////////////
 
   private emitKeyrings() {
-    const keyrings = this.getKeyrings()
-    this.emitter.emit("keyrings", keyrings)
+    if (this.locked()) {
+      this.emitter.emit("keyrings", [])
+    } else {
+      const keyrings = this.getKeyrings()
+      this.emitter.emit("keyrings", keyrings)
+    }
   }
 
   /**
