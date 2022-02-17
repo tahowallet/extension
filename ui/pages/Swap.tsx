@@ -25,7 +25,7 @@ import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slice
 import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { SmartContractFungibleCompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { CompleteSmartContractFungibleAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
@@ -77,14 +77,13 @@ export default function Swap(): ReactElement {
 
   // TODO Expand these to fungible assets by supporting direct ETH swaps,
   // TODO then filter by the current chain.
-  let ownedSellAssetAmounts: SmartContractFungibleCompleteAssetAmount[] = []
 
-  if (typeof accountBalances !== "undefined") {
-    ownedSellAssetAmounts = accountBalances.assetAmounts.filter(
-      (assetAmount): assetAmount is SmartContractFungibleCompleteAssetAmount =>
+  const ownedSellAssetAmounts =
+    accountBalances?.assetAmounts.filter(
+      (assetAmount): assetAmount is CompleteSmartContractFungibleAssetAmount =>
         isSmartContractFungibleAsset(assetAmount.asset)
-    )
-  }
+    ) ?? []
+
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
     // together.
