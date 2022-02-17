@@ -14,6 +14,7 @@ module.exports = {
     "plugin:@typescript-eslint/recommended",
     "plugin:prettier/recommended",
   ],
+  plugins: ["no-only-tests"],
   globals: {
     document: "readonly",
     window: "readonly",
@@ -52,6 +53,8 @@ module.exports = {
       "error",
       { devDependencies: ["!+(src/api|ui)/**/*.+(ts|js)"] },
     ],
+    // dissalow it.only, assert.only, etc..
+    "no-only-tests/no-only-tests": ["error"],
     // Add known-safe exceptions to no-param-reassign.
     "no-param-reassign": [
       airbnbNoParamReassignRules[0],

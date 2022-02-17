@@ -1,6 +1,6 @@
+import React, { ReactElement, CSSProperties, useRef } from "react"
 import classNames from "classnames"
-import React, { ReactElement, useState, useEffect, CSSProperties } from "react"
-import { useDelayContentChange } from "../../hooks"
+import { useDelayContentChange, useOnClickOutside } from "../../hooks"
 
 export type SharedSlideUpMenuSize =
   | "auto"
@@ -17,7 +17,6 @@ interface Props {
   children: React.ReactNode
   customSize?: string
   size: SharedSlideUpMenuSize
-  showOverlay?: boolean
   alwaysRenderChildren?: boolean
 }
 
@@ -30,15 +29,12 @@ const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
 }
 
 export default function SharedSlideUpMenu(props: Props): ReactElement {
-  const {
-    isOpen,
-    close,
-    size,
-    children,
-    customSize,
-    showOverlay,
-    alwaysRenderChildren,
-  } = props
+  const { isOpen, close, size, children, customSize, alwaysRenderChildren } =
+    props
+
+  const slideUpMenuRef = useRef(null)
+
+  useOnClickOutside(slideUpMenuRef, close)
 
   // Continue showing children during the close transition.
   const visibleChildren = isOpen || alwaysRenderChildren ? children : <></>
@@ -52,15 +48,14 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
 
   return (
     <>
-      {showOverlay && (
-        <div className={classNames("overlay", { closed: !isOpen })} />
-      )}
+      <div className={classNames("overlay", { closed: !isOpen })} />
       <div
         className={classNames("slide_up_menu", {
           large: size === "large",
           closed: !isOpen,
         })}
         style={{ "--menu-height": menuHeight } as CSSProperties}
+        ref={isOpen ? slideUpMenuRef : null}
       >
         <button
           type="button"
@@ -97,9 +92,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             right: 0;
             bottom: 0;
             top: 0;
+            cursor: pointer;
             z-index: 998;
-            background: var(--hunter-green);
-            opacity: 0.8;
+            background: var(--green-120);
+            opacity: 0.7;
             transition: opacity cubic-bezier(0.19, 1, 0.22, 1) 0.445s,
               visiblity 0.445s;
           }
