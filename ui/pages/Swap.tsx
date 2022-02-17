@@ -14,10 +14,9 @@ import {
   SwapQuoteRequest,
   fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
-  AnyAssetAmount,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -26,7 +25,7 @@ import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slice
 import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { CompleteSmartContractFungibleAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
@@ -74,25 +73,17 @@ export default function Swap(): ReactElement {
     { symbol: string; contractAddress?: string } | undefined
   >()
 
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
+  const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
   // TODO Expand these to fungible assets by supporting direct ETH swaps,
   // TODO then filter by the current chain.
-  const ownedSellAssetAmounts = combinedData.assets.filter<
-    CompleteAssetAmount<
-      SmartContractFungibleAsset,
-      AnyAssetAmount<SmartContractFungibleAsset>
-    >
-  >(
-    (
-      assetAmount
-    ): assetAmount is CompleteAssetAmount<
-      SmartContractFungibleAsset,
-      AnyAssetAmount<SmartContractFungibleAsset>
-    > => isSmartContractFungibleAsset(assetAmount.asset)
-  )
+
+  const ownedSellAssetAmounts =
+    accountBalances?.assetAmounts.filter(
+      (assetAmount): assetAmount is CompleteSmartContractFungibleAssetAmount =>
+        isSmartContractFungibleAsset(assetAmount.asset)
+    ) ?? []
+
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
     // together.

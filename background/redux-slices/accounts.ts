@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressNetwork, NameNetwork } from "../accounts"
 import { AnyEVMBlock, Network } from "../networks"
-import { AnyAsset, AnyAssetAmount } from "../assets"
+import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
@@ -69,6 +69,11 @@ export type CompleteAssetAmount<
   E extends AnyAsset = AnyAsset,
   T extends AnyAssetAmount<E> = AnyAssetAmount<E>
 > = T & AssetMainCurrencyAmount & AssetDecimalAmount
+
+export type CompleteSmartContractFungibleAssetAmount = CompleteAssetAmount<
+  SmartContractFungibleAsset,
+  AnyAssetAmount<SmartContractFungibleAsset>
+>
 
 export const initialState = {
   accountsData: {},
