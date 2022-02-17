@@ -70,7 +70,7 @@ export type CompleteAssetAmount<
   T extends AnyAssetAmount<E> = AnyAssetAmount<E>
 > = T & AssetMainCurrencyAmount & AssetDecimalAmount
 
-export type SmartContractFungibleCompleteAssetAmount = CompleteAssetAmount<
+export type CompleteSmartContractFungibleAssetAmount = CompleteAssetAmount<
   SmartContractFungibleAsset,
   AnyAssetAmount<SmartContractFungibleAsset>
 >
