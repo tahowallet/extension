@@ -28,19 +28,12 @@ Tally will be
 
 Try this.
 
-In some Linux distributions such as Ubuntu 20.04, you need to explicitly
-tell npm where your `python3` executable is located:
-
-```sh
-$ npm config set python /usr/bin/python3
-```
-
 ```sh
 $ nvm use
 $ nvm install
 $ npm install -g yarn # if you don't have yarn globally installed
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
-               # script node-gyp failures prevent the install from completing
+               # scrypt node-gyp failures prevent the install from completing
 $ yarn start # start a continuous webpack build that will auto-update with changes
 ```
 
@@ -63,6 +56,16 @@ to only rebuild the Firefox extension on change:
 $ yarn start --config-name firefox
 # On change, rebuild the firefox and brave extensions but not others.
 $ yarn start --config-name firefox --config-name brave
+```
+
+### Note for some Linux distributions
+
+In some Linux distributions such as Ubuntu 20.04, you need to explicitly
+tell npm where your `python3` executable is located before running the above
+commands successfully:
+
+```sh
+$ npm config set python /usr/bin/python3
 ```
 
 ## Package Structure, Build Structure, and Threat Model
