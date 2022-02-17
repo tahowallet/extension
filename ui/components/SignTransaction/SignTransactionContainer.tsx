@@ -84,7 +84,6 @@ export default function SignTransactionContainer({
         close={() => {
           setSlideUpOpen(false)
         }}
-        showOverlay
         alwaysRenderChildren
         size="auto"
       >

@@ -88,6 +88,7 @@ export default class KeyringService extends BaseService<Events> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
     // it is. Don't emit if there are no keyrings to unlock.
+    await super.internalStartService()
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
     }
@@ -130,7 +131,7 @@ export default class KeyringService extends BaseService<Events> {
     password: string,
     ignoreExistingVaults = false
   ): Promise<boolean> {
-    if (this.#cachedKey) {
+    if (!this.locked()) {
       throw new Error("KeyringService is already unlocked!")
     }
 
@@ -231,7 +232,7 @@ export default class KeyringService extends BaseService<Events> {
   // Throw if the keyring is not unlocked; if it is, update the last keyring
   // activity timestamp.
   private requireUnlocked(): void {
-    if (!this.#cachedKey) {
+    if (this.locked()) {
       throw new Error("KeyringService must be unlocked.")
     }
 
@@ -450,8 +451,12 @@ export default class KeyringService extends BaseService<Events> {
   // //////////////////
 
   private emitKeyrings() {
-    const keyrings = this.getKeyrings()
-    this.emitter.emit("keyrings", keyrings)
+    if (this.locked()) {
+      this.emitter.emit("keyrings", [])
+    } else {
+      const keyrings = this.getKeyrings()
+      this.emitter.emit("keyrings", keyrings)
+    }
   }
 
   /**
