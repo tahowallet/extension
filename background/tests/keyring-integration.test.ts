@@ -196,7 +196,7 @@ describe("KeyringService when initialized", () => {
     })
   })
 
-  it.only("will derive a new address", async () => {
+  it("will derive a new address", async () => {
     const [
       {
         id,
@@ -334,7 +334,7 @@ describe("KeyringService when saving keyrings", () => {
     })
   })
 
-  it.only("loads encrypted data at instantiation time", async () => {
+  it("loads encrypted data at instantiation time", async () => {
     localStorage = {
       tallyVaults: {
         version: 1,
