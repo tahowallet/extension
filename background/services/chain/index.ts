@@ -935,7 +935,7 @@ export default class ChainService extends BaseService<Events> {
    * Looks up whether any of the passed address/network pairs are being tracked.
    */
   async isTrackingAddressesOnNetworks(
-    ...addressesOnNetworks: AddressNetwork[]
+    ...addressesOnNetworks: AddressOnNetwork[]
   ): Promise<boolean> {
     const accounts = await this.getAccountsToTrack()
 
