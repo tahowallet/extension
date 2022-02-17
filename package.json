@@ -78,6 +78,7 @@
     "dotenv-defaults": "^2.0.2",
     "dotenv-webpack": "^7.0.3",
     "eslint": "^7.28.0",
+    "eslint-plugin-no-only-tests": "^2.6.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-airbnb-typescript": "^14.0.0",
