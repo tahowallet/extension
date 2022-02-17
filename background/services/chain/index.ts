@@ -181,7 +181,7 @@ export default class ChainService extends BaseService<Events> {
         runAtStart: true,
       },
       blockPrices: {
-        runAtStart: false,
+        runAtStart: true,
         schedule: {
           periodInMinutes:
             Number(process.env.GAS_PRICE_POLLING_FREQUENCY ?? "120") / 60,
