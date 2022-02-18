@@ -580,17 +580,25 @@ export default class Main extends BaseService<never> {
           }
         )
 
+      const { annotation } =
+        await this.enrichmentService.enrichTransactionSignature(
+          this.chainService.ethereumNetwork,
+          populatedRequest,
+          2 /* TODO desiredDecimals should be configurable */
+        )
+      const enrichedPopulatedRequest = { ...populatedRequest, annotation }
+
       if (typeof gasEstimationError === "undefined") {
         this.store.dispatch(
           transactionRequest({
-            transactionRequest: populatedRequest,
+            transactionRequest: enrichedPopulatedRequest,
             transactionLikelyFails: false,
           })
         )
       } else {
         this.store.dispatch(
           transactionRequest({
-            transactionRequest: populatedRequest,
+            transactionRequest: enrichedPopulatedRequest,
             transactionLikelyFails: true,
           })
         )
@@ -827,26 +835,13 @@ export default class Main extends BaseService<never> {
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
-    this.enrichmentService.emitter.on(
-      "enrichedEVMTransactionSignatureRequest",
-      async (enrichedEVMTransactionSignatureRequest) => {
-        this.store.dispatch(
-          updateTransactionOptions(enrichedEVMTransactionSignatureRequest)
-        )
-      }
-    )
-
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
-        this.enrichmentService.enrichTransactionSignature(
-          this.chainService.ethereumNetwork,
-          payload,
-          2 /* TODO desiredDecimals should be configurable */
-        )
+        this.store.dispatch(updateTransactionOptions(payload))
 
         const clear = () => {
           if (HIDE_IMPORT_LEDGER) {
