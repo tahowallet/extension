@@ -116,7 +116,7 @@ export default class EnrichmentService extends BaseService<Events> {
       // categorizing activities.
       // TODO We can do more here by checking how much gas was spent. Anything
       // over the 21k required to send ETH is a more complex contract interaction
-      if (transaction.value) {
+      if (typeof transaction.value !== "undefined") {
         txAnnotation = {
           timestamp: resolvedTime,
           type: "asset-transfer",
@@ -124,7 +124,7 @@ export default class EnrichmentService extends BaseService<Events> {
           recipientAddress: transaction.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
-              asset: ETH,
+              asset: network.baseAsset,
               amount: transaction.value,
             },
             desiredDecimals
