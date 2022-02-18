@@ -7,6 +7,7 @@ import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
+  heuristicDesiredDecimalsForUnitPrice,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -59,23 +60,12 @@ const computeCombinedAssetAmountsData = (
             desiredDecimals
           )
 
-        // Heuristically add decimal places to high-unit-price assets, `
-        // 1 decimal place per order of magnitude in the unit price; e.g.
-        // if USD is the main currency and the asset unit price is $100,
-        // 2 decimal points, $1000, 3 decimal points, $10000, 4 decimal
-        // points, etc. `desiredDecimals` is treated as the minimum, and
-        // order of magnitude is rounded up (e.g. $2000 = >3 orders of
-        // magnitude, so 4 decimal points).
-        const decimalValuePlaces = Math.max(
-          // Using ?? 0, safely handle cases where no main currency is
-          // available.
-          Math.ceil(Math.log10(mainCurrencyEnrichedAssetAmount.unitPrice ?? 0)),
-          desiredDecimals
-        )
-
         const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
           mainCurrencyEnrichedAssetAmount,
-          decimalValuePlaces
+          heuristicDesiredDecimalsForUnitPrice(
+            desiredDecimals,
+            mainCurrencyEnrichedAssetAmount.unitPrice
+          )
         )
 
         if (

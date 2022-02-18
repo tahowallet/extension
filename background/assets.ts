@@ -148,8 +148,8 @@ export type PricePoint = {
  * In almost all cases, PricePoint should be preferred. UnitPricePoint should
  * only be used when the details of the other side of a price pair are unknown.
  */
-export type UnitPricePoint = {
-  unitPrice: AnyAssetAmount
+export type UnitPricePoint<T extends AnyAsset> = {
+  unitPrice: AnyAssetAmount<T>
   time: UNIXTime
 }
 
@@ -283,7 +283,7 @@ export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
  */
 export function unitPricePointForPricePoint(
   assetPricePoint: PricePoint
-): (UnitPricePoint & { unitPrice: FungibleAssetAmount }) | undefined {
+): UnitPricePoint<FungibleAsset> | undefined {
   const sourceAsset = assetPricePoint.pair[0]
 
   const unitPrice = convertAssetAmountViaPricePoint(
