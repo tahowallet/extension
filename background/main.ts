@@ -513,6 +513,12 @@ export default class Main extends BaseService<never> {
     }
   }
 
+  async resolveDomainAddress(
+    nameNetwork: NameOnNetwork
+  ): Promise<string | undefined> {
+    return this.nameService.lookUpEthereumAddress(nameNetwork.name)
+  }
+
   async importLedgerAccounts(
     accounts: Array<{
       path: string
@@ -740,9 +746,6 @@ export default class Main extends BaseService<never> {
     this.enrichmentService.emitter.on(
       "enrichedEVMTransaction",
       async (transactionData) => {
-        this.indexingService.notifyEnrichedTransaction(
-          transactionData.transaction
-        )
         this.store.dispatch(activityEncountered(transactionData))
       }
     )

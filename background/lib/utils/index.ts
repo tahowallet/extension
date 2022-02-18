@@ -131,3 +131,30 @@ export const numberTo32BytesHex = (value: string, decimals: number): string => {
 export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
   return ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
 }
+
+export const checkIfStringIsValidDomainName = (s: string): boolean => {
+  const trimmedString = s.trim()
+  let validDomain = false
+
+  // Any valid domain name will have a period as part of the string
+  if (trimmedString.lastIndexOf(".") > 0) {
+    const domainExtension = trimmedString.slice(trimmedString.lastIndexOf("."))
+    const supportedDomains = [
+      ".crypto",
+      ".coin",
+      ".wallet",
+      ".bitcoin",
+      ".888",
+      ".nft",
+      ".dao",
+      ".zil",
+      ".x",
+      ".eth",
+    ]
+
+    if (supportedDomains.includes(domainExtension)) {
+      validDomain = true
+    }
+  }
+  return validDomain
+}

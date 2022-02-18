@@ -1,10 +1,11 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { isAddress } from "@ethersproject/address"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import {
   broadcastOnSign,
   NetworkFeeSettings,
@@ -22,6 +23,12 @@ import {
   convertFixedPointNumber,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
+import {
+  resolveDomainAddress,
+  setResolvedAddress,
+} from "@tallyho/tally-background/redux-slices/resolve-domain-address"
+import selectResolvedDomainAddress from "@tallyho/tally-background/redux-slices/selectors/resolvedDomainSelectors"
+import { checkIfStringIsValidDomainName } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
@@ -42,12 +49,46 @@ export default function Send(): ReactElement {
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
 
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
-
   const dispatch = useBackgroundDispatch()
+
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const resolvedAddress = useBackgroundSelector(selectResolvedDomainAddress)
+
+  // On changing the input text, resolve the domain name if entered
+  const handleAddressInputChange = useCallback(
+    (value: string) => {
+      const trimmedAddress = value.trim()
+      if (checkIfStringIsValidDomainName(trimmedAddress)) {
+        const nameNetwork = {
+          name: trimmedAddress,
+          network: ETHEREUM,
+        }
+        // try to resolve the domain
+        dispatch(resolveDomainAddress(nameNetwork))
+      } else if (isAddress(trimmedAddress)) {
+        setDestinationAddress(trimmedAddress)
+      } else {
+        setHasError(true)
+      }
+    },
+    [dispatch]
+  )
+
+  useEffect(() => {
+    if (resolvedAddress.address) {
+      if (isAddress(resolvedAddress.address)) {
+        // Set the destination address
+        setDestinationAddress(resolvedAddress.address)
+        // Clear the error flag
+        setHasError(false)
+        // Reset the resolved address to an empty string
+        dispatch(setResolvedAddress(""))
+      }
+    }
+  }, [dispatch, resolvedAddress.address])
 
   const fungibleAssetAmounts =
     // Only look at fungible assets.
@@ -143,7 +184,7 @@ export default function Send(): ReactElement {
               type="text"
               placeholder="0x..."
               spellCheck={false}
-              onChange={(event) => setDestinationAddress(event.target.value)}
+              onChange={(event) => handleAddressInputChange(event.target.value)}
             />
           </div>
           <SharedSlideUpMenu

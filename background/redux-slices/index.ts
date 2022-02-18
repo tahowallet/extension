@@ -11,6 +11,7 @@ import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
 import dappPermissionReducer from "./dapp-permission"
 import ledgerReducer from "./ledger"
+import resolveDomainAddressReducer from "./resolve-domain-address"
 import signingReducer from "./signing"
 import earnReducer from "./earn"
 
@@ -19,6 +20,7 @@ const mainReducer = combineReducers({
   assets: assetsReducer,
   activities: activitiesReducer,
   keyrings: keyringsReducer,
+  resolvedDomainAddress: resolveDomainAddressReducer,
   swap: swapReducer,
   transactionConstruction: transactionConstructionReducer,
   ui: uiReducer,
