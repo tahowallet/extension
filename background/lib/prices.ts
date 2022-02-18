@@ -4,6 +4,7 @@ import {
   AnyAsset,
   CoinGeckoAsset,
   FiatCurrency,
+  FungibleAsset,
   PricePoint,
   UnitPricePoint,
 } from "../assets"
@@ -99,7 +100,9 @@ export async function getPrices(
 export async function getEthereumTokenPrices(
   tokenAddresses: string[],
   fiatCurrency: FiatCurrency
-): Promise<{ [contractAddress: string]: UnitPricePoint }> {
+): Promise<{
+  [contractAddress: string]: UnitPricePoint<FungibleAsset>
+}> {
   const fiatSymbol = fiatCurrency.symbol
 
   // TODO cover failed schema validation and http & network errors
@@ -109,7 +112,7 @@ export async function getEthereumTokenPrices(
   const json = await fetchJson(url)
 
   const prices: {
-    [index: string]: UnitPricePoint
+    [index: string]: UnitPricePoint<FungibleAsset>
   } = {}
   // TODO Improve typing with Ajv validation.
   Object.entries(
