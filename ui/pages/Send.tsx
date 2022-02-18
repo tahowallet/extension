@@ -3,6 +3,7 @@ import { isAddress } from "@ethersproject/address"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
+  selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   broadcastOnSign,
@@ -39,10 +40,9 @@ export default function Send(): ReactElement {
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const dispatch = useBackgroundDispatch()
-
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
-
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
   const { assetAmounts } = balanceData ?? {
     assetAmounts: [],
