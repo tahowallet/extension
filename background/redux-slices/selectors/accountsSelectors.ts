@@ -13,9 +13,8 @@ import {
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
-  unitPricePointForPricePoint,
 } from "../../assets"
-import { selectCurrentAccount } from "./uiSelectors"
+import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
@@ -24,13 +23,12 @@ import { SigningMethod } from "../signing"
 // TODO decimals? Maybe it's configurable?
 const desiredDecimals = 2
 // TODO Make this a setting.
-const mainCurrencySymbol = "USD"
-// TODO Make this a setting.
 const userValueDustThreshold = 2
 
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
+  mainCurrencySymbol: string,
   hideDust: boolean
 ): {
   combinedAssetAmounts: CompleteAssetAmount<
@@ -118,11 +116,13 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
   selectHideDust,
-  (account, assets, hideDust) => {
+  selectMainCurrencySymbol,
+  (account, assets, hideDust, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
+        mainCurrencySymbol,
         hideDust
       )
 
@@ -144,7 +144,8 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
 export const selectMainCurrencyPricePoint = createSelector(
   getAssetsState,
-  (assets) => {
+  (state) => selectMainCurrencySymbol(state),
+  (assets, mainCurrencySymbol) => {
     // TODO Support multi-network base assets.
     return selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
   }
@@ -154,7 +155,8 @@ export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
   selectHideDust,
-  (currentAccount, assets, hideDust) => {
+  selectMainCurrencySymbol,
+  (currentAccount, assets, hideDust, mainCurrencySymbol) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -164,7 +166,12 @@ export const selectCurrentAccountBalances = createSelector(
     )
 
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
-      computeCombinedAssetAmountsData(assetAmounts, assets, hideDust)
+      computeCombinedAssetAmountsData(
+        assetAmounts,
+        assets,
+        mainCurrencySymbol,
+        hideDust
+      )
 
     return {
       assetAmounts: combinedAssetAmounts,
@@ -203,7 +210,13 @@ export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectAddressSigningMethods,
-  (accounts, assets, signingAccounts): CategorizedAccountTotals => {
+  selectMainCurrencySymbol,
+  (
+    accounts,
+    assets,
+    signingAccounts,
+    mainCurrencySymbol
+  ): CategorizedAccountTotals => {
     // TODO: here
     return Object.entries(accounts.accountsData)
       .map(([address, accountData]): AccountTotal => {

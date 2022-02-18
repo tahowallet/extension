@@ -2,7 +2,8 @@ import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { ActivityItem } from "../activities"
 
-const mainCurrencySymbol = "USD"
+// FIXME Make this configurable.
+const hardcodedMainCurrencySymbol = "USD"
 
 export const selectShowingActivityDetail = createSelector(
   (state: RootState) => state.activities,
@@ -46,8 +47,15 @@ export const selectCurrentAddressNetwork = createSelector(
   (selectedAccount) => selectedAccount
 )
 
+export const selectMainCurrencySymbol = createSelector(
+  () => null,
+  () => hardcodedMainCurrencySymbol
+)
+
 export const selectMainCurrency = createSelector(
   (state: RootState) => state.ui,
   (state: RootState) => state.assets,
-  (_, assets) => assets.find((asset) => asset.symbol === mainCurrencySymbol)
+  (state: RootState) => selectMainCurrencySymbol(state),
+  (_, assets, mainCurrencySymbol) =>
+    assets.find((asset) => asset.symbol === mainCurrencySymbol)
 )
