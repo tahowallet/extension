@@ -76,7 +76,7 @@ export function formatCurrencyAmount(
  *        main currency will be given by the price point.
  * @param assetPricePoint The price of the asset in `assetAmount` in terms of
  *        the main currency. The main currency should be second in the price
- *        point pair.
+ *        point pair. If undefined, the main currency data will not be populated.
  * @param desiredDecimals The number of floating point decimals to keep when
  *        converting from fixed point to floating point. Also the number of
  *        decimals rendered in the localized form.
@@ -95,7 +95,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
   T extends AnyAssetAmount
 >(
   assetAmount: T,
-  assetPricePoint: PricePoint,
+  assetPricePoint: PricePoint | undefined,
   desiredDecimals: number
 ): T & AssetMainCurrencyAmount {
   const convertedAssetAmount = convertAssetAmountViaPricePoint(
