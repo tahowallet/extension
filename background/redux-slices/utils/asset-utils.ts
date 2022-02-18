@@ -5,7 +5,10 @@ import {
   unitPricePointForPricePoint,
   isFungibleAssetAmount,
   PricePoint,
+  FungibleAsset,
+  UnitPricePoint,
 } from "../../assets"
+import { fromFixedPointNumber } from "../../lib/fixed-point"
 
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
@@ -162,4 +165,46 @@ export function enrichAssetAmountWithDecimalValues<T extends AnyAssetAmount>(
       maximumFractionDigits: desiredDecimals,
     }),
   }
+}
+
+/**
+ * Heuristically determine the number of decimal places to use for an asset
+ * with a given given unitPrice.
+ *
+ * Heuristically add decimal places to high-unit-price assets, 1 decimal place
+ * per order of magnitude in the unit price. For example, if USD is the main
+ * currency and the asset unit price is $100, 2 decimal points, if $1000, 3
+ * decimal points, if $10000, 4 decimal points, etc.
+ *
+ * Note that order of magnitude is rounded up (e.g. a $1000 unit price is 3
+ * orders of magnitude and gets 3 decimal points, while $2000 is treated as
+ * greater than 3 orders of magnitude, so it gets 4 decimal points).
+ *
+ * @param minimumDesiredDecimals The minimum number of decimals to return; for
+ *        unit prices whose magnitude would heuristically land on fewer decimals,
+ *        force the number to this minimum.
+ * @param unitPrice The unit price as a decimal number.
+ */
+export function heuristicDesiredDecimalsForUnitPrice(
+  minimumDesiredDecimals: number,
+  unitPrice: UnitPricePoint<FungibleAsset> | number | undefined
+): number {
+  const numericUnitPrice =
+    typeof unitPrice === "undefined" || typeof unitPrice === "number"
+      ? unitPrice
+      : fromFixedPointNumber(
+          {
+            amount: unitPrice.unitPrice.amount,
+            decimals: unitPrice.unitPrice.asset.decimals,
+          },
+          10
+        )
+
+  return Math.max(
+    // If no unit price is provided, just assume 0, which will use the minimum
+    // desired decimals. Supporting this makes it easier for callers to
+    // special-case unit prices that could not be resolved.
+    Math.ceil(Math.log10(numericUnitPrice ?? 0)),
+    minimumDesiredDecimals
+  )
 }
