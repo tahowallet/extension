@@ -61,19 +61,21 @@ export type CombinedAccountData = {
   assets: AnyAssetAmount[]
 }
 
-/**
- * An asset amount including localized and numeric main currency and decimal
- * equivalents, where applicable.
- */
-export type CompleteAssetAmount<
+// Utility type, wrapped in CompleteAssetAmount<T>.
+type InternalCompleteAssetAmount<
   E extends AnyAsset = AnyAsset,
   T extends AnyAssetAmount<E> = AnyAssetAmount<E>
 > = T & AssetMainCurrencyAmount & AssetDecimalAmount
 
-export type CompleteSmartContractFungibleAssetAmount = CompleteAssetAmount<
-  SmartContractFungibleAsset,
-  AnyAssetAmount<SmartContractFungibleAsset>
->
+/**
+ * An asset amount including localized and numeric main currency and decimal
+ * equivalents, where applicable.
+ */
+export type CompleteAssetAmount<T extends AnyAsset = AnyAsset> =
+  InternalCompleteAssetAmount<T, AnyAssetAmount<T>>
+
+export type CompleteSmartContractFungibleAssetAmount =
+  CompleteAssetAmount<SmartContractFungibleAsset>
 
 export const initialState = {
   accountsData: {},

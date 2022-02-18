@@ -32,10 +32,7 @@ const computeCombinedAssetAmountsData = (
   mainCurrencySymbol: string,
   hideDust: boolean
 ): {
-  combinedAssetAmounts: CompleteAssetAmount<
-    AnyAsset,
-    AnyAssetAmount<AnyAsset>
-  >[]
+  combinedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Keep a tally of the total user value; undefined if no main currency data
