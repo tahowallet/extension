@@ -14,7 +14,7 @@ import { SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"
 import { HexString } from "../types"
 
-const ERC20_FUNCTIONS = {
+export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
     "allowance(address owner, address spender) view returns (uint256)"
   ),
