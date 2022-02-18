@@ -49,33 +49,27 @@ const computeCombinedAssetAmountsData = (
         mainCurrencySymbol
       )
 
-      if (assetPricePoint) {
-        const mainCurrencyEnrichedAssetAmount =
-          enrichAssetAmountWithMainCurrencyValues(
-            assetAmount,
-            assetPricePoint,
-            desiredDecimals
-          )
-
-        const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
-          mainCurrencyEnrichedAssetAmount,
-          heuristicDesiredDecimalsForUnitPrice(
-            desiredDecimals,
-            mainCurrencyEnrichedAssetAmount.unitPrice
-          )
+      const mainCurrencyEnrichedAssetAmount =
+        enrichAssetAmountWithMainCurrencyValues(
+          assetAmount,
+          assetPricePoint,
+          desiredDecimals
         )
 
-        if (
-          typeof fullyEnrichedAssetAmount.mainCurrencyAmount !== "undefined"
-        ) {
-          totalMainCurrencyAmount ??= 0 // initialize if needed
-          totalMainCurrencyAmount += fullyEnrichedAssetAmount.mainCurrencyAmount
-        }
+      const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
+        mainCurrencyEnrichedAssetAmount,
+        heuristicDesiredDecimalsForUnitPrice(
+          desiredDecimals,
+          mainCurrencyEnrichedAssetAmount.unitPrice
+        )
+      )
 
-        return fullyEnrichedAssetAmount
+      if (typeof fullyEnrichedAssetAmount.mainCurrencyAmount !== "undefined") {
+        totalMainCurrencyAmount ??= 0 // initialize if needed
+        totalMainCurrencyAmount += fullyEnrichedAssetAmount.mainCurrencyAmount
       }
 
-      return enrichAssetAmountWithDecimalValues(assetAmount, desiredDecimals)
+      return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
       const isNotDust =
