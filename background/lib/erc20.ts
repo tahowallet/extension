@@ -1,6 +1,5 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { BigNumber, ethers, logger } from "ethers"
-import { getNetwork } from "@ethersproject/networks"
 import {
   EventFragment,
   Fragment,
@@ -8,7 +7,6 @@ import {
   TransactionDescription,
 } from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
-import { getEthereumNetwork } from "./utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"
@@ -62,13 +60,6 @@ export const ERC2612_FUNCTIONS = {
 export const ERC2612_ABI = ERC20_ABI.concat(Object.values(ERC2612_FUNCTIONS))
 
 export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
-
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
-
-const alchemyProvider = new AlchemyProvider(
-  getNetwork(Number(getEthereumNetwork().chainID)),
-  ALCHEMY_KEY
-)
 
 /*
  * Get an account's balance from an ERC20-compliant contract.
@@ -199,21 +190,6 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
       }
     })
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
-}
-
-export const getERC20TokenMetadata = async (
-  addressOnNetwork: AddressOnNetwork
-): Promise<SmartContractFungibleAsset | null> => {
-  try {
-    const tokenMetadata = await getTokenMetadata(
-      alchemyProvider,
-      addressOnNetwork
-    )
-    return tokenMetadata
-  } catch (err) {
-    logger.warn("Couldn't find token with specified address", addressOnNetwork)
-  }
-  return null
 }
 
 // TODO get token balances of a many token contracts for a particular account the slow way, cache
