@@ -6,6 +6,7 @@ import classNames from "classnames"
 import {
   setRouteHistoryEntries,
   Location,
+  setUiVisibility,
 } from "@tallyho/tally-background/redux-slices/ui"
 
 import { Store } from "webext-redux"
@@ -95,6 +96,11 @@ export function Main(): ReactElement {
 
       dispatch(setRouteHistoryEntries(entries))
     }
+  }
+
+  if (renderCount.current === 1) {
+    window.addEventListener("blur", () => dispatch(setUiVisibility(false)))
+    window.addEventListener("focus", () => dispatch(setUiVisibility(true)))
   }
 
   return (

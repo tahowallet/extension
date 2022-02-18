@@ -28,6 +28,7 @@ export type Events = {
   snackbarMessage: string
   newDefaultWalletValue: boolean
   newSelectedAccount: AddressOnNetwork
+  setUiVisibility: boolean
 }
 
 export const emitter = new Emittery<Events>()
@@ -133,6 +134,13 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     await emitter.emit("newSelectedAccount", addressNetwork)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
+  }
+)
+
+export const setUiVisibility = createBackgroundAsyncThunk(
+  "ui/setUiVisibility",
+  async (visible: boolean) => {
+    await emitter.emit("setUiVisibility", visible)
   }
 )
 
