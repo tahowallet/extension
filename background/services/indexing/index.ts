@@ -20,7 +20,11 @@ import {
   mergeAssets,
   networkAssetsFromLists,
 } from "../../lib/tokenList"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import {
+  getEthereumNetwork,
+  normalizeEVMAddress,
+  normalizeEVMAddressList,
+} from "../../lib/utils"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -196,7 +200,8 @@ export default class IndexingService extends BaseService<Events> {
         "homeNetwork" in asset &&
         "contractAddress" in asset &&
         asset.homeNetwork.name === network.name &&
-        asset.contractAddress === contractAddress
+        normalizeEVMAddress(asset.contractAddress) ===
+          normalizeEVMAddress(contractAddress)
     )
     return found as SmartContractFungibleAsset
   }
@@ -217,7 +222,7 @@ export default class IndexingService extends BaseService<Events> {
           if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
             this.addTokenToTrackByContract(
               addressNetwork,
-              fungibleAsset.contractAddress
+              normalizeEVMAddress(fungibleAsset.contractAddress)
             )
           }
         })
@@ -300,8 +305,10 @@ export default class IndexingService extends BaseService<Events> {
   ): ReturnType<typeof getTokenBalances> {
     const balances = await getTokenBalances(
       this.chainService.pollingProviders.ethereum,
-      addressNetwork.address,
-      contractAddresses || undefined
+      normalizeEVMAddress(addressNetwork.address),
+      contractAddresses != null
+        ? normalizeEVMAddressList(contractAddresses)
+        : contractAddresses
     )
 
     // look up all assets and set balances
@@ -355,7 +362,7 @@ export default class IndexingService extends BaseService<Events> {
    */
   private async addTokenToTrackByContract(
     addressNetwork: AddressNetwork,
-    contractAddress: string
+    contractAddress: HexString
   ): Promise<void> {
     const knownAssets = await this.getCachedAssets()
     const found = knownAssets.find(
@@ -364,21 +371,25 @@ export default class IndexingService extends BaseService<Events> {
         "homeNetwork" in asset &&
         asset.homeNetwork.name === addressNetwork.network.name &&
         "contractAddress" in asset &&
-        asset.contractAddress === contractAddress
+        normalizeEVMAddress(asset.contractAddress) ===
+          normalizeEVMAddress(contractAddress)
     )
     if (found) {
       this.addAssetToTrack(found as SmartContractFungibleAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         addressNetwork.network,
-        contractAddress
+        normalizeEVMAddress(contractAddress)
       )
       if (!customAsset) {
         // TODO hardcoded to Ethereum
         const provider = this.chainService.pollingProviders.ethereum
         // pull metadata from Alchemy
         customAsset =
-          (await getTokenMetadata(provider, contractAddress)) || undefined
+          (await getTokenMetadata(
+            provider,
+            normalizeEVMAddress(contractAddress)
+          )) || undefined
 
         if (customAsset) {
           await this.db.addCustomAsset(customAsset)

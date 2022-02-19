@@ -3,7 +3,7 @@ import { ethers, logger } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import { TransactionDescription } from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
-import { getEthereumNetwork } from "./utils"
+import { getEthereumNetwork, normalizeEVMAddress } from "./utils"
 import { AccountBalance } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 
@@ -67,8 +67,8 @@ export async function getBalances(
 
   const tokenBalances = await getTokenBalances(
     provider,
-    address,
-    tokens.map((t) => t.contractAddress)
+    normalizeEVMAddress(address),
+    tokens.map((t) => normalizeEVMAddress(t.contractAddress))
   )
 
   const assetByAddress = tokens.reduce<{

@@ -8,6 +8,10 @@ export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
 }
 
+export function normalizeEVMAddressList(addresses: string[]): HexString[] {
+  return addresses.map((addr) => normalizeEVMAddress(addr))
+}
+
 export function truncateDecimalAmount(
   value: number | string,
   decimalLength: number
