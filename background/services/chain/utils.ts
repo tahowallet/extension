@@ -155,6 +155,11 @@ export function enrichTransactionWithReceipt(
     ...transaction,
     gasUsed,
     gasPrice: receipt.effectiveGasPrice.toBigInt(),
+    logs: receipt.logs.map(({ address, data, topics }) => ({
+      contractAddress: address,
+      data,
+      topics,
+    })),
     status:
       receipt.status ??
       // Pre-Byzantium transactions require a guesswork approach or an

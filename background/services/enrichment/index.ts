@@ -1,90 +1,26 @@
+import { BigNumber } from "ethers"
 import {
-  AnyAssetAmount,
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
 } from "../../assets"
-import {
-  AnyEVMTransaction,
-  EIP1559TransactionRequest,
-  Network,
-} from "../../networks"
-import {
-  AssetDecimalAmount,
-  enrichAssetAmountWithDecimalValues,
-} from "../../redux-slices/utils/asset-utils"
+import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
+import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
-import { HexString, UNIXTime } from "../../types"
 import { ETH } from "../../constants"
-import { parseERC20Tx } from "../../lib/erc20"
+import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
+import {
+  EnrichedEVMTransaction,
+  EnrichedEVMTransactionSignatureRequest,
+  TransactionAnnotation,
+} from "./types"
 
-export type BaseTransactionAnnotation = {
-  // a URL to an image representing the transaction interaction, if applicable.
-  transactionLogoURL?: string | undefined
-  // when the transaction was annotated. Including this means consumers can more
-  // easily upsert annotations
-  timestamp: UNIXTime
-}
-
-export type ContractDeployment = BaseTransactionAnnotation & {
-  type: "contract-deployment"
-}
-
-export type ContractInteraction = BaseTransactionAnnotation & {
-  type: "contract-interaction"
-}
-
-export type AssetApproval = BaseTransactionAnnotation & {
-  type: "asset-approval"
-  assetAmount: AnyAssetAmount & AssetDecimalAmount
-  spenderAddress: HexString
-}
-
-export type AssetTransfer = BaseTransactionAnnotation & {
-  type: "asset-transfer"
-  assetAmount: AnyAssetAmount & AssetDecimalAmount
-  recipientAddress: HexString
-  senderAddress: HexString
-}
-
-export type AssetSwap = BaseTransactionAnnotation & {
-  type: "asset-swap"
-  fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
-  toAssetAmount: AnyAssetAmount & AssetDecimalAmount
-}
-
-export type TransactionAnnotation =
-  | ContractDeployment
-  | ContractInteraction
-  | AssetApproval
-  | AssetTransfer
-  | AssetSwap
-  | undefined
-
-export type ResolvedTransactionAnnotation = {
-  contractInfo: TransactionAnnotation
-  address: HexString
-  network: Network
-  resolvedAt: UNIXTime
-}
-
-export type EnrichedEVMTransaction = AnyEVMTransaction & {
-  annotation?: TransactionAnnotation
-}
-
-export type EnrichedEVMTransactionSignatureRequest =
-  (Partial<EIP1559TransactionRequest> & { from: string }) & {
-    annotation?: TransactionAnnotation
-  }
-
-export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
-  annotation?: TransactionAnnotation
-}
+export * from "./types"
 
 interface Events extends ServiceLifecycleEvents {
   enrichedEVMTransaction: {
@@ -156,10 +92,12 @@ export default class EnrichmentService extends BaseService<Events> {
   ): Promise<TransactionAnnotation | undefined> {
     let txAnnotation: TransactionAnnotation | undefined
 
+    const resolvedTime = Date.now()
+
     if (typeof transaction.to === "undefined") {
       // A missing recipient means a contract deployment.
       txAnnotation = {
-        timestamp: Date.now(),
+        timestamp: resolvedTime,
         type: "contract-deployment",
       }
     } else if (
@@ -176,7 +114,7 @@ export default class EnrichmentService extends BaseService<Events> {
       // over the 21k required to send ETH is a more complex contract interaction
       if (transaction.value) {
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "asset-transfer",
           senderAddress: transaction.from,
           recipientAddress: transaction.to, // TODO ingest address
@@ -191,7 +129,7 @@ export default class EnrichmentService extends BaseService<Events> {
       } else {
         // Fall back on a standard contract interaction.
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "contract-interaction",
         }
       }
@@ -217,7 +155,7 @@ export default class EnrichmentService extends BaseService<Events> {
       ) {
         // We have an ERC-20 transfer
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "asset-transfer",
           transactionLogoURL,
           senderAddress: erc20Tx.args.from ?? transaction.to,
@@ -236,7 +174,7 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx.name === "approve"
       ) {
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "asset-approval",
           transactionLogoURL,
           spenderAddress: erc20Tx.args.spender, // TODO ingest address
@@ -251,13 +189,53 @@ export default class EnrichmentService extends BaseService<Events> {
       } else {
         // Fall back on a standard contract interaction.
         txAnnotation = {
-          timestamp: Date.now(),
+          timestamp: resolvedTime,
           type: "contract-interaction",
           // Include the logo URL if we resolve it even if the interaction is
           // non-specific; the UI can choose to use it or not, but if we know the
           // address has an associated logo it's worth passing on.
           transactionLogoURL,
         }
+      }
+    }
+
+    // Look up logs and resolve subannotations, if available.
+    if ("logs" in transaction && typeof transaction.logs !== "undefined") {
+      const assets = await this.indexingService.getCachedAssets()
+
+      const subannotations = parseLogsForERC20Transfers(
+        transaction.logs
+      ).flatMap<TransactionAnnotation>(
+        ({ contractAddress, amount, senderAddress, recipientAddress }) => {
+          // See if the address matches a fungible asset.
+          const matchingFungibleAsset = assets.find(
+            (asset): asset is SmartContractFungibleAsset =>
+              isSmartContractFungibleAsset(asset) &&
+              sameEVMAddress(asset.contractAddress, contractAddress)
+          )
+
+          return typeof matchingFungibleAsset !== "undefined"
+            ? [
+                {
+                  type: "asset-transfer",
+                  assetAmount: enrichAssetAmountWithDecimalValues(
+                    {
+                      asset: matchingFungibleAsset,
+                      amount,
+                    },
+                    desiredDecimals
+                  ),
+                  senderAddress,
+                  recipientAddress,
+                  timestamp: resolvedTime,
+                },
+              ]
+            : []
+        }
+      )
+
+      if (subannotations.length > 0) {
+        txAnnotation.subannotations = subannotations
       }
     }
 

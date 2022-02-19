@@ -931,6 +931,23 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
+   * Looks up whether any of the passed address/network pairs are being tracked.
+   */
+  async isTrackingAddressesOnNetworks(
+    ...addressesOnNetworks: AddressNetwork[]
+  ): Promise<boolean> {
+    const accounts = await this.getAccountsToTrack()
+
+    return addressesOnNetworks.some(({ address, network }) =>
+      accounts.some(
+        ({ address: trackedAddress, network: trackedNetwork }) =>
+          sameEVMAddress(trackedAddress, address) &&
+          network.name === trackedNetwork.name
+      )
+    )
+  }
+
+  /**
    * Watch a network for new blocks, saving each to the database and emitting an
    * event. Re-orgs are currently ignored.
    *
