@@ -39,7 +39,7 @@ export function sameEVMAddress(
   if (typeof address1 === "undefined" || typeof address2 === "undefined") {
     return false
   }
-  return normalizeHexAddress(address1) === normalizeHexAddress(address2)
+  return normalizeEVMAddress(address1) === normalizeEVMAddress(address2)
 }
 
 export function gweiToWei(value: number | bigint): bigint {
