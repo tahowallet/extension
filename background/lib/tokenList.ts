@@ -2,7 +2,6 @@ import { TokenList } from "@uniswap/token-lists"
 
 import { getEthereumNetwork, normalizeEVMAddress } from "./utils"
 import {
-  AssetMetadata,
   FungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
@@ -60,7 +59,7 @@ function tokenListToFungibleAssetsForNetwork(
         symbol: tokenMetadata.symbol,
         decimals: tokenMetadata.decimals,
         homeNetwork: getEthereumNetwork(),
-        contractAddress: tokenMetadata.address,
+        contractAddress: normalizeEVMAddress(tokenMetadata.address),
       }
     })
 }

@@ -116,7 +116,10 @@ export const getERC20TokenMetadata = async (
   address: string
 ): Promise<SmartContractFungibleAsset | null> => {
   try {
-    const tokenMetadata = await getTokenMetadata(alchemyProvider, address)
+    const tokenMetadata = await getTokenMetadata(
+      alchemyProvider,
+      normalizeEVMAddress(address)
+    )
     return tokenMetadata
   } catch (err) {
     logger.warn("Couldn't find token with specified address", address)

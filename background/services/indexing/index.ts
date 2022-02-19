@@ -156,7 +156,11 @@ export default class IndexingService extends BaseService<Events> {
     network: Network,
     asset: FungibleAsset
   ): Promise<AccountBalance | null> {
-    return this.db.getLatestAccountBalance(account, network, asset)
+    return this.db.getLatestAccountBalance(
+      normalizeEVMAddress(account),
+      network,
+      asset
+    )
   }
 
   /**
@@ -258,7 +262,7 @@ export default class IndexingService extends BaseService<Events> {
 
         await this.retrieveTokenBalances(
           addressNetwork,
-          otherActiveAssets.map((a) => a.contractAddress)
+          otherActiveAssets.map((a) => normalizeEVMAddress(a.contractAddress))
         )
       }
     )
@@ -451,7 +455,7 @@ export default class IndexingService extends BaseService<Events> {
         const newAgg = {
           ...agg,
         }
-        newAgg[t.contractAddress.toLowerCase()] = t
+        newAgg[normalizeEVMAddress(t.contractAddress)] = t
         return newAgg
       }, {} as { [address: string]: SmartContractFungibleAsset })
       const measuredAt = Date.now()
@@ -461,7 +465,8 @@ export default class IndexingService extends BaseService<Events> {
       )
       Object.entries(activeAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
-          const asset = activeAssetsByAddress[contractAddress.toLowerCase()]
+          const asset =
+            activeAssetsByAddress[normalizeEVMAddress(contractAddress)]
           if (asset) {
             // TODO look up fiat currency
             const pricePoint = {
@@ -553,7 +558,7 @@ export default class IndexingService extends BaseService<Events> {
         const balances = await getAssetBalances(
           this.chainService.pollingProviders.ethereum,
           activeAssetsToTrack,
-          account
+          normalizeEVMAddress(account)
         )
         balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
         await this.db.addBalances(balances)

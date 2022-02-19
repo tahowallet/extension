@@ -12,6 +12,11 @@ export function normalizeEVMAddressList(addresses: string[]): HexString[] {
   return addresses.map((addr) => normalizeEVMAddress(addr))
 }
 
+export function convertToHexAndNormalize(hexableValue: number): HexString {
+  const hexString = utils.hexValue(hexableValue)
+  return normalizeEVMAddress(hexString)
+}
+
 export function truncateDecimalAmount(
   value: number | string,
   decimalLength: number

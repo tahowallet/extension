@@ -2,7 +2,7 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
 } from "@ethersproject/providers"
-import { BigNumber, utils } from "ethers"
+import { BigNumber } from "ethers"
 
 import logger from "./logger"
 import { HexString } from "../types"
@@ -12,7 +12,11 @@ import {
   SmartContractFungibleAsset,
 } from "../assets"
 import { ETH } from "../constants"
-import { getEthereumNetwork } from "./utils"
+import {
+  convertToHexAndNormalize,
+  getEthereumNetwork,
+  normalizeEVMAddress,
+} from "./utils"
 import { AnyEVMTransaction, EVMNetwork } from "../networks"
 import {
   isValidAlchemyAssetTransferResponse,
@@ -40,8 +44,9 @@ export async function getAssetTransfers(
   toBlock?: number
 ): Promise<AssetTransfer[]> {
   const params = {
-    fromBlock: utils.hexValue(fromBlock),
-    toBlock: toBlock === undefined ? "latest" : utils.hexValue(toBlock),
+    fromBlock: convertToHexAndNormalize(fromBlock),
+    toBlock:
+      toBlock === undefined ? "latest" : convertToHexAndNormalize(toBlock),
     // excludeZeroValue: false,
   }
 
@@ -50,13 +55,13 @@ export async function getAssetTransfers(
     provider.send("alchemy_getAssetTransfers", [
       {
         ...params,
-        fromAddress: account,
+        fromAddress: normalizeEVMAddress(account),
       },
     ]),
     provider.send("alchemy_getAssetTransfers", [
       {
         ...params,
-        toAddress: account,
+        toAddress: normalizeEVMAddress(account),
       },
     ]),
   ])
