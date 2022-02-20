@@ -236,11 +236,11 @@ export default class IndexingService extends BaseService<Events> {
         isSmartContractFungibleAsset(annotation.assetAmount.asset) &&
         this.chainService.isTrackingAddressesOnNetworks(
           {
-            address: annotation.senderAddress,
+            address: normalizeEVMAddress(annotation.senderAddress),
             network: enrichedEVMTransaction.network,
           },
           {
-            address: annotation.recipientAddress,
+            address: normalizeEVMAddress(annotation.recipientAddress),
             network: enrichedEVMTransaction.network,
           }
         )
@@ -286,7 +286,9 @@ export default class IndexingService extends BaseService<Events> {
         // Note that we'll want to move this to a queuing system that can be
         // easily rate-limited eventually.
         const checkedContractAddresses = new Set(
-          balances.map((b) => b.contractAddress).filter(Boolean)
+          balances
+            .map((b) => normalizeEVMAddress(b.contractAddress))
+            .filter(Boolean)
         )
         const cachedAssets = await this.getCachedAssets()
         const otherActiveAssets = cachedAssets
@@ -294,7 +296,9 @@ export default class IndexingService extends BaseService<Events> {
           .filter(
             (a) =>
               a.homeNetwork.chainID === getEthereumNetwork().chainID &&
-              !checkedContractAddresses.has(a.contractAddress)
+              !checkedContractAddresses.has(
+                normalizeEVMAddress(a.contractAddress)
+              )
           )
 
         await this.retrieveTokenBalances(
@@ -357,7 +361,7 @@ export default class IndexingService extends BaseService<Events> {
       balances.map(async (b) => {
         const knownAsset = await this.getKnownSmartContractAsset(
           addressNetwork.network,
-          b.contractAddress
+          normalizeEVMAddress(b.contractAddress)
         )
         if (knownAsset) {
           const accountBalance = {
@@ -377,7 +381,7 @@ export default class IndexingService extends BaseService<Events> {
         } else if (b.amount > 0) {
           await this.addTokenToTrackByContract(
             addressNetwork,
-            b.contractAddress
+            normalizeEVMAddress(b.contractAddress)
           )
           // TODO we're losing balance information here, consider an
           // addTokenAndBalanceToTrackByContract method
@@ -502,8 +506,8 @@ export default class IndexingService extends BaseService<Events> {
       )
       Object.entries(activeAssetPrices).forEach(
         ([contractAddress, unitPricePoint]) => {
-          const asset =
-            activeAssetsByAddress[normalizeEVMAddress(contractAddress)]
+          const normalizedContractAddress = normalizeEVMAddress(contractAddress)
+          const asset = activeAssetsByAddress[normalizedContractAddress]
           if (asset) {
             // TODO look up fiat currency
             const pricePoint = {
@@ -532,7 +536,7 @@ export default class IndexingService extends BaseService<Events> {
           } else {
             logger.warn(
               "Discarding price from unknown asset",
-              contractAddress,
+              normalizedContractAddress,
               unitPricePoint
             )
           }
