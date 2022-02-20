@@ -1,6 +1,5 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
 import { BigNumber, ethers, logger } from "ethers"
-import { getNetwork } from "@ethersproject/networks"
 import {
   EventFragment,
   Fragment,
@@ -8,13 +7,12 @@ import {
   TransactionDescription,
 } from "ethers/lib/utils"
 import { getTokenBalances, getTokenMetadata } from "./alchemy"
-import { getEthereumNetwork } from "./utils"
-import { AccountBalance } from "../accounts"
+import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"
 import { HexString } from "../types"
 
-const ERC20_FUNCTIONS = {
+export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
     "allowance(address owner, address spender) view returns (uint256)"
   ),
@@ -63,13 +61,6 @@ export const ERC2612_ABI = ERC20_ABI.concat(Object.values(ERC2612_FUNCTIONS))
 
 export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
 
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
-
-const alchemyProvider = new AlchemyProvider(
-  getNetwork(Number(getEthereumNetwork().chainID)),
-  ALCHEMY_KEY
-)
-
 /*
  * Get an account's balance from an ERC20-compliant contract.
  */
@@ -91,7 +82,7 @@ export async function getBalance(
 export async function getBalances(
   provider: AlchemyProvider,
   tokens: SmartContractFungibleAsset[],
-  address: string
+  { address, network }: AddressOnNetwork
 ): Promise<AccountBalance[]> {
   if (tokens.length === 0) {
     return [] as AccountBalance[]
@@ -116,16 +107,17 @@ export async function getBalances(
       acc: AccountBalance[],
       tokenDetail: { contractAddress: string; amount: bigint }
     ) => {
-      const accountBalance = {
+      const accountBalance: AccountBalance = {
         assetAmount: {
           amount: tokenDetail.amount,
           asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
         },
         address,
-        network: getEthereumNetwork(), // TODO track networks outside of .env file
+        network,
         retrievedAt: Date.now(),
         dataSource: "alchemy",
-      } as AccountBalance
+      }
+
       return acc.concat([accountBalance])
     },
     []
@@ -200,19 +192,6 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
 }
 
-export const getERC20TokenMetadata = async (
-  address: string
-): Promise<SmartContractFungibleAsset | null> => {
-  try {
-    const tokenMetadata = await getTokenMetadata(alchemyProvider, address)
-    return tokenMetadata
-  } catch (err) {
-    logger.warn("Couldn't find token with specified address", address)
-  }
-  return null
-}
-
 // TODO get token balances of a many token contracts for a particular account the slow way, cache
-// TODO get price data from 0xAPI
 // TODO export a function that can take a tx and return any involved ERC-20s using traces
 // TODO export a function that can simulate an unsigned transaction and return the token balance changes

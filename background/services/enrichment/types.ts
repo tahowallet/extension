@@ -1,5 +1,5 @@
 import { Network } from "@ethersproject/networks"
-import { AnyAssetAmount } from "../../assets"
+import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
@@ -33,7 +33,7 @@ export type ContractInteraction = BaseTransactionAnnotation & {
 
 export type AssetApproval = BaseTransactionAnnotation & {
   type: "asset-approval"
-  assetAmount: AnyAssetAmount & AssetDecimalAmount
+  assetAmount: AnyAssetAmount<SmartContractFungibleAsset> & AssetDecimalAmount
   spenderAddress: HexString
 }
 

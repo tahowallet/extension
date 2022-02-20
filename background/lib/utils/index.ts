@@ -24,10 +24,15 @@ export function truncateDecimalAmount(
 }
 
 export function sameEVMAddress(
-  address1: string | Buffer | undefined,
-  address2: string | Buffer | undefined
+  address1: string | Buffer | undefined | null,
+  address2: string | Buffer | undefined | null
 ): boolean {
-  if (typeof address1 === "undefined" || typeof address2 === "undefined") {
+  if (
+    typeof address1 === "undefined" ||
+    typeof address2 === "undefined" ||
+    address1 === null ||
+    address2 === null
+  ) {
     return false
   }
   return normalizeHexAddress(address1) === normalizeHexAddress(address2)

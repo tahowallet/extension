@@ -2,7 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
-import { normalizeEVMAddress, getEthereumNetwork } from "../../lib/utils"
+import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -17,6 +17,7 @@ import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { HIDE_IMPORT_LEDGER } from "../../features/features"
+import { AddressOnNetwork } from "../../accounts"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
@@ -356,10 +357,12 @@ export default class KeyringService extends BaseService<Events> {
    * @param txRequest -
    */
   async signTransaction(
-    account: HexString,
+    addressOnNetwork: AddressOnNetwork,
     txRequest: EIP1559TransactionRequest & { nonce: number }
   ): Promise<SignedEVMTransaction> {
     this.requireUnlocked()
+
+    const { address: account, network } = addressOnNetwork
 
     // find the keyring using a linear search
     const keyring = await this.#findKeyring(account)
@@ -404,7 +407,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network: getEthereumNetwork(),
+      network,
     }
     if (HIDE_IMPORT_LEDGER) {
       this.emitter.emit("signedTx", signedTx)

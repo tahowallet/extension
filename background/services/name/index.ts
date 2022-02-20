@@ -1,5 +1,5 @@
 import { DomainName, HexString, UNIXTime } from "../../types"
-import { Network } from "../../networks"
+import { EVMNetwork } from "../../networks"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
 import { getTokenMetadata } from "../../lib/erc721"
@@ -8,7 +8,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
-import { AddressNetwork } from "../../accounts"
+import { AddressOnNetwork } from "../../accounts"
 import { SECOND } from "../../constants"
 
 type ResolvedAddressRecord = {
@@ -16,14 +16,14 @@ type ResolvedAddressRecord = {
     name: DomainName
   }
   resolved: {
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   }
   system: "ENS" | "UNS"
 }
 
 type ResolvedNameRecord = {
   from: {
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   }
   resolved: {
     name: DomainName
@@ -34,7 +34,7 @@ type ResolvedNameRecord = {
 
 type ResolvedAvatarRecord = {
   from: {
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   }
   resolved: {
     avatar: URL
@@ -180,7 +180,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpName(
     address: HexString,
-    network: Network,
+    network: EVMNetwork,
     checkCache = true
   ): Promise<DomainName | undefined> {
     // TODO ENS lookups should work on a few testnets as well
@@ -237,7 +237,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpAvatar(
     address: HexString,
-    network: Network
+    network: EVMNetwork
   ): Promise<URL | undefined> {
     // TODO ENS lookups should work on a few testnets as well
     if (network.chainID !== "1") {

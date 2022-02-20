@@ -10,7 +10,11 @@ import {
 } from "@ethersproject/transactions"
 import { TypedDataUtils } from "eth-sig-util"
 import { bufferToHex } from "ethereumjs-util"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import {
+  EIP1559TransactionRequest,
+  EVMNetwork,
+  SignedEVMTransaction,
+} from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -18,8 +22,7 @@ import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
-import { SigningMethod } from "../../redux-slices/signing"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 enum LedgerType {
   UNKNOWN,
@@ -286,6 +289,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
+    network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest & { nonce: number },
     deviceID: string,
     path: string
@@ -372,7 +376,7 @@ export default class LedgerService extends BaseService<Events> {
           blockHash: null,
           blockHeight: null,
           asset: ETH,
-          network: getEthereumNetwork(),
+          network,
         }
 
         return signedTx

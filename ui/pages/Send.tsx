@@ -1,8 +1,9 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { isAddress } from "@ethersproject/address"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
+  selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   broadcastOnSign,
@@ -12,23 +13,28 @@ import {
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { utils } from "ethers"
-import { useLocation } from "react-router-dom"
+import {
+  FungibleAsset,
+  isFungibleAssetAmount,
+} from "@tallyho/tally-background/assets"
+import { ETH } from "@tallyho/tally-background/constants"
+import {
+  convertFixedPointNumber,
+  parseToFixedPointNumber,
+} from "@tallyho/tally-background/lib/fixed-point"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import { SignType } from "./SignTransaction"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export default function Send(): ReactElement {
-  const location = useLocation<{ symbol: string }>()
-
-  const [assetSymbol, setAssetSymbol] = useState(
-    location?.state?.symbol || "ETH"
-  )
-  const [selectedCount, setSelectedCount] = useState(0)
+  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(ETH)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [gasLimit, setGasLimit] = useState("")
@@ -39,26 +45,46 @@ export default function Send(): ReactElement {
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const dispatch = useBackgroundDispatch()
-
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
-
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
-  const { assetAmounts } = balanceData ?? {
-    assetAmounts: [],
-  }
+  const fungibleAssetAmounts =
+    // Only look at fungible assets.
+    balanceData?.assetAmounts?.filter(
+      (assetAmount): assetAmount is CompleteAssetAmount<FungibleAsset> =>
+        isFungibleAssetAmount(assetAmount)
+    )
+  const assetPricePoint = useBackgroundSelector((state) =>
+    selectAssetPricePoint(
+      state.assets,
+      selectedAsset.symbol,
+      mainCurrencySymbol
+    )
+  )
 
-  // FIXME Rework this to use selectAssetPricePoint and
-  // FIXME convertAssetAmountViaPricePoint.
-  const getTotalLocalizedValue = () => {
-    const pricePerUnit = assetAmounts.find(
-      (el) => el.asset.symbol === assetSymbol
-    )?.unitPrice
-    if (pricePerUnit) {
-      return (Number(amount) * pricePerUnit).toFixed(2)
+  const assetAmountFromForm = () => {
+    const fixedPointAmount = parseToFixedPointNumber(amount.toString())
+    if (typeof fixedPointAmount === "undefined") {
+      return undefined
     }
-    return 0
+
+    const decimalMatched = convertFixedPointNumber(
+      fixedPointAmount,
+      selectedAsset.decimals
+    )
+
+    return enrichAssetAmountWithMainCurrencyValues(
+      {
+        asset: selectedAsset,
+        amount: decimalMatched.amount,
+      },
+      assetPricePoint,
+      2
+    )
   }
+
+  const assetAmount = assetAmountFromForm()
 
   const sendTransactionRequest = async () => {
     dispatch(broadcastOnSign(true))
@@ -71,12 +97,6 @@ export default function Send(): ReactElement {
     }
     return dispatch(updateTransactionOptions(transaction))
   }
-
-  useEffect(() => {
-    if (assetSymbol) {
-      setSelectedCount(1)
-    }
-  }, [assetSymbol])
 
   const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     setGasLimit(networkSetting.gasLimit)
@@ -98,10 +118,8 @@ export default function Send(): ReactElement {
           <div className="form_input">
             <SharedAssetInput
               label="Asset / Amount"
-              onAssetSelect={(token) => {
-                setAssetSymbol(token.symbol)
-              }}
-              assetsAndAmounts={assetAmounts}
+              onAssetSelect={setSelectedAsset}
+              assetsAndAmounts={fungibleAssetAmounts}
               onAmountChange={(value, errorMessage) => {
                 setAmount(value)
                 if (errorMessage) {
@@ -110,11 +128,13 @@ export default function Send(): ReactElement {
                   setHasError(false)
                 }
               }}
-              selectedAsset={{ symbol: assetSymbol, name: assetSymbol }}
+              selectedAsset={selectedAsset}
               amount={amount}
               disableDropdown
             />
-            <div className="value">${getTotalLocalizedValue()}</div>
+            <div className="value">
+              ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+            </div>
           </div>
           <div className="form_input send_to_field">
             <label htmlFor="send_address">Send To:</label>
@@ -149,7 +169,6 @@ export default function Send(): ReactElement {
               type="primary"
               size="large"
               isDisabled={
-                selectedCount <= 0 ||
                 Number(amount) === 0 ||
                 !isAddress(destinationAddress) ||
                 hasError
@@ -157,11 +176,10 @@ export default function Send(): ReactElement {
               linkTo={{
                 pathname: "/signTransaction",
                 state: {
-                  assetSymbol,
-                  amount,
-                  to: destinationAddress,
-                  signType: SignType.SignTransfer,
-                  value: getTotalLocalizedValue(),
+                  redirectTo: {
+                    path: "/singleAsset",
+                    state: { symbol: selectedAsset.symbol },
+                  },
                 },
               }}
               onClick={sendTransactionRequest}

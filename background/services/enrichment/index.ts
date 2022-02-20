@@ -1,9 +1,12 @@
-import { BigNumber } from "ethers"
 import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
 } from "../../assets"
-import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
+import {
+  AnyEVMTransaction,
+  EIP1559TransactionRequest,
+  EVMNetwork,
+} from "../../networks"
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
 import { ETH } from "../../constants"
@@ -85,6 +88,7 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   async resolveTransactionAnnotation(
+    network: EVMNetwork,
     transaction:
       | AnyEVMTransaction
       | (Partial<EIP1559TransactionRequest> & { from: string }),
@@ -112,7 +116,7 @@ export default class EnrichmentService extends BaseService<Events> {
       // categorizing activities.
       // TODO We can do more here by checking how much gas was spent. Anything
       // over the 21k required to send ETH is a more complex contract interaction
-      if (transaction.value) {
+      if (typeof transaction.value !== "undefined") {
         txAnnotation = {
           timestamp: resolvedTime,
           type: "asset-transfer",
@@ -120,7 +124,7 @@ export default class EnrichmentService extends BaseService<Events> {
           recipientAddress: transaction.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
-              asset: ETH,
+              asset: network.baseAsset,
               amount: transaction.value,
             },
             desiredDecimals
@@ -134,7 +138,7 @@ export default class EnrichmentService extends BaseService<Events> {
         }
       }
     } else {
-      const assets = await this.indexingService.getCachedAssets()
+      const assets = await this.indexingService.getCachedAssets(network)
 
       // See if the address matches a fungible asset.
       const matchingFungibleAsset = assets.find(
@@ -201,7 +205,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
     // Look up logs and resolve subannotations, if available.
     if ("logs" in transaction && typeof transaction.logs !== "undefined") {
-      const assets = await this.indexingService.getCachedAssets()
+      const assets = await this.indexingService.getCachedAssets(network)
 
       const subannotations = parseLogsForERC20Transfers(
         transaction.logs
@@ -243,12 +247,14 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   async enrichTransactionSignature(
+    network: EVMNetwork,
     transaction: Partial<EIP1559TransactionRequest> & { from: string },
     desiredDecimals: number
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {
       ...transaction,
       annotation: await this.resolveTransactionAnnotation(
+        network,
         transaction,
         desiredDecimals
       ),
@@ -269,6 +275,7 @@ export default class EnrichmentService extends BaseService<Events> {
     const enrichedTx = {
       ...transaction,
       annotation: await this.resolveTransactionAnnotation(
+        transaction.network,
         transaction,
         desiredDecimals
       ),

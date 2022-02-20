@@ -3,7 +3,6 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
 import { HOUR } from "../constants"
 import { ERC20_ABI } from "../lib/erc20"
-import { getEthereumNetwork } from "../lib/utils"
 import VAULT_ABI from "../lib/vault"
 import { EIP712TypedData, HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -260,6 +259,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const provider = getProvider()
     const signer = provider.getSigner()
     const signerAddress = await getSignerAddress()
+    const chainID = await signer.getChainId()
 
     const types = {
       Message: [
@@ -289,7 +289,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
       name: "Spend assets with ApprovalTarget",
       version: "1",
       verifyingContract: vaultContractAddress,
-      chainId: Number(getEthereumNetwork().chainID),
+      chainId: chainID,
     }
     const message = {
       owner: signerAddress,
