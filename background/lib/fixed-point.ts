@@ -162,7 +162,7 @@ export function parseToFixedPointNumber(
     }
   } catch (error) {
     // FIXME should be debug once logger.debug lands
-    logger.info(
+    logger.debug(
       `Error parsing ${floatingPointString} to fixed-point number:`,
       error
     )

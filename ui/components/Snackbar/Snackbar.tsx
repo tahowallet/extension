@@ -81,6 +81,11 @@ export default function Snackbar(): ReactElement {
             user-select: none;
           }
           .hidden {
+            // Take up no space, and let pointer events through just in case. No
+            // hidden snackbar should get in the way of a user's actions.
+            padding: 0;
+            pointer-events: none;
+
             opacity: 0;
             transform: translateY(10px);
           }

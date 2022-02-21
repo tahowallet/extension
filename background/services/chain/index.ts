@@ -8,8 +8,8 @@ import { utils } from "ethers"
 import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
-import { HexString } from "../../types"
-import { AccountBalance, AddressNetwork } from "../../accounts"
+import { HexString, UNIXTime } from "../../types"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
@@ -18,6 +18,7 @@ import {
   Network,
   SignedEVMTransaction,
   BlockPrices,
+  LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -37,11 +38,16 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import {
+  getEthereumNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../enrichment"
+import { HOUR } from "../../constants"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -70,11 +76,17 @@ const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 // historic activity.
 const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
+// The number of milliseconds after a request to look up a transaction was
+// first seen to continue looking in case the transaction fails to be found
+// for either internal (request failure) or external (transaction dropped from
+// mempool) reasons.
+const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
+
 interface Events extends ServiceLifecycleEvents {
-  newAccountToTrack: AddressNetwork
+  newAccountToTrack: AddressOnNetwork
   accountBalance: AccountBalance
   assetTransfers: {
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
     assetTransfers: AssetTransfer[]
   }
   block: AnyEVMBlock
@@ -127,9 +139,13 @@ export default class ChainService extends BaseService<Events> {
   } = {}
 
   /**
-   * FIFO queues of transaction hashes per network that should be retrieved and cached.
+   * FIFO queues of transaction hashes per network that should be retrieved and
+   * cached, alongside information about when that hash request was first seen
+   * for expiration purposes.
    */
-  private transactionsToRetrieve: { [networkName: string]: HexString[] }
+  private transactionsToRetrieve: {
+    [networkName: string]: { hash: HexString; firstSeen: UNIXTime }[]
+  }
 
   static create: ServiceCreatorFunction<
     Events,
@@ -138,6 +154,8 @@ export default class ChainService extends BaseService<Events> {
   > = async (preferenceService) => {
     return new this(await getOrCreateDB(), await preferenceService)
   }
+
+  ethereumNetwork: EVMNetwork
 
   private constructor(
     private db: ChainDatabase,
@@ -174,16 +192,18 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
+    this.ethereumNetwork = getEthereumNetwork()
+
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        getNetwork(Number(getEthereumNetwork().chainID)),
+        getNetwork(Number(this.ethereumNetwork.chainID)),
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        getNetwork(Number(getEthereumNetwork().chainID)),
+        getNetwork(Number(this.ethereumNetwork.chainID)),
         ALCHEMY_KEY
       ),
     }
@@ -197,32 +217,43 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
     const ethProvider = this.pollingProviders.ethereum
+    const network = this.ethereumNetwork
 
     // FIXME Should we await or drop Promise.all on the below two?
     Promise.all([
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
-        const block = blockFromEthersBlock(result)
+        const block = blockFromEthersBlock(network, result)
         await this.db.addBlock(block)
       }),
 
-      this.subscribeToNewHeads(getEthereumNetwork()),
+      this.subscribeToNewHeads(network),
     ])
 
     Promise.all(
       accounts
-        .map(
+        .flatMap((an) => [
           // subscribe to all account transactions
-          (an) => this.subscribeToAccountTransactions(an)
-        )
-        .concat(
+          this.subscribeToAccountTransactions(an),
           // do a base-asset balance check for every account
-          accounts.map(async (an) => {
-            await this.getLatestBaseAccountBalance(an)
-          })
+          this.getLatestBaseAccountBalance(an).then(() => {}),
+        ])
+        .concat(
+          // Schedule any stored unconfirmed transactions for
+          // retrieval---either to confirm they no longer exist, or to
+          // read/monitor their status.
+          this.db
+            .getNetworkPendingTransactions(network)
+            .then((pendingTransactions) => {
+              pendingTransactions.forEach(({ hash, firstSeen }) => {
+                logger.debug(
+                  `Queuing pending transaction ${hash} for status lookup.`
+                )
+                this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+              })
+            })
         )
-        .concat([])
     )
   }
 
@@ -318,23 +349,25 @@ export default class ChainService extends BaseService<Events> {
     const { chainID } = transactionRequest
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
 
-    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
-    // Lazily look up the network count, if needed. Note that the assumption
-    // here is that all nonces for this address are increasing linearly
-    // and continuously; if the address has a pending transaction floating
-    // around with a nonce that is not an increase by one over previous
-    // transactions, this approach will allocate more nonces that won't mine.
-    // FIXME Double-check the getTransactionCount-based nonce to make sure
-    // FIXME using its precedent would result in a replacement transaction
-    // FIXME error or a nonce reuse error.
-    // TODO Deal with multi-network.
-    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-      normalizedAddress
-    ] ??=
+    const chainNonce =
       (await this.pollingProviders.ethereum.getTransactionCount(
         transactionRequest.from,
         "latest"
       )) - 1
+    const existingNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
+        normalizedAddress
+      ] ?? chainNonce
+
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
+    // Use the network count, if needed. Note that the assumption here is that
+    // all nonces for this address are increasing linearly and continuously; if
+    // the address has a pending transaction floating around with a nonce that
+    // is not an increase by one over previous transactions, this approach will
+    // allocate more nonces that won't mine.
+    // TODO Deal with multi-network.
+    this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress] =
+      Math.max(existingNonce, chainNonce)
 
     // Allocate a new nonce by incrementing the last seen one.
     this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
@@ -342,6 +375,15 @@ export default class ChainService extends BaseService<Events> {
     ] += 1
     const knownNextNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    logger.debug(
+      "Got chain nonce",
+      chainNonce,
+      "existing nonce",
+      existingNonce,
+      "using",
+      knownNextNonce
+    )
 
     return {
       ...transactionRequest,
@@ -356,9 +398,19 @@ export default class ChainService extends BaseService<Events> {
    * available for reuse all intervening nonces.
    */
   releaseEVMTransactionNonce(
-    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+    transactionRequest:
+      | (EIP1559TransactionRequest & {
+          nonce: number
+        })
+      | (LegacyEVMTransactionRequest & { nonce: number })
+      | SignedEVMTransaction
   ): void {
-    const { chainID, nonce } = transactionRequest
+    const { nonce } = transactionRequest
+    const chainID =
+      "chainID" in transactionRequest
+        ? transactionRequest.chainID
+        : transactionRequest.network.chainID
+
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
     const lastSeenNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
@@ -384,33 +436,35 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async getAccountsToTrack(): Promise<AddressNetwork[]> {
+  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.db.getAccountsToTrack()
   }
 
   async getLatestBaseAccountBalance(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<AccountBalance> {
+    this.checkNetwork(addressNetwork.network)
+
     // TODO look up provider network properly
     const balance = await this.pollingProviders.ethereum.getBalance(
       addressNetwork.address
     )
-    const accountBalance = {
+    const accountBalance: AccountBalance = {
       address: addressNetwork.address,
       assetAmount: {
         asset: ETH,
         amount: balance.toBigInt(),
       },
-      network: getEthereumNetwork(),
+      network: addressNetwork.network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
-    } as AccountBalance
+    }
     this.emitter.emit("accountBalance", accountBalance)
     await this.db.addBalance(accountBalance)
     return accountBalance
   }
 
-  async addAccountToTrack(addressNetwork: AddressNetwork): Promise<void> {
+  async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
     this.getLatestBaseAccountBalance(addressNetwork)
@@ -437,7 +491,7 @@ export default class ChainService extends BaseService<Events> {
    * @param blockHash the hash of the block we're interested in
    */
   async getBlockData(
-    network: Network,
+    network: EVMNetwork,
     blockHash: string
   ): Promise<AnyEVMBlock> {
     // TODO make this multi network
@@ -449,7 +503,7 @@ export default class ChainService extends BaseService<Events> {
     // Looking for new block
     const resultBlock = await this.pollingProviders.ethereum.getBlock(blockHash)
 
-    const block = blockFromEthersBlock(resultBlock)
+    const block = blockFromEthersBlock(network, resultBlock)
 
     await this.db.addBlock(block)
     this.emitter.emit("block", block)
@@ -481,7 +535,7 @@ export default class ChainService extends BaseService<Events> {
     const newTransaction = transactionFromEthersTransaction(
       gethResult,
       ETH,
-      getEthereumNetwork()
+      network
     )
 
     if (!newTransaction.blockHash && !newTransaction.blockHeight) {
@@ -502,21 +556,27 @@ export default class ChainService extends BaseService<Events> {
    *
    * @param network The network on which the transaction has been broadcast.
    * @param txHash The tx hash identifier of the transaction we want to retrieve.
-   *
+   * @param firstSeen The timestamp at which the queued transaction was first
+   *        seen; used to treat transactions as dropped after a certain amount
+   *        of time.
    */
   async queueTransactionHashToRetrieve(
     network: EVMNetwork,
-    txHash: HexString
+    txHash: HexString,
+    firstSeen: UNIXTime
   ): Promise<void> {
     // TODO make proper use of the network
-    const seen = new Set(this.transactionsToRetrieve.ethereum)
+    const seen = new Set(
+      this.transactionsToRetrieve.ethereum.map(({ hash }) => hash)
+    )
     if (!seen.has(txHash)) {
-      this.transactionsToRetrieve.ethereum.push(txHash)
+      this.transactionsToRetrieve.ethereum.push({ hash: txHash, firstSeen })
     }
   }
 
   /**
-   * Estimate the gas needed to make a transaction.
+   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
+   * the base estimate returned by the provider.
    */
   async estimateGasLimit(
     network: EVMNetwork,
@@ -546,7 +606,23 @@ export default class ChainService extends BaseService<Events> {
     )
     try {
       await Promise.all([
-        this.pollingProviders.ethereum.sendTransaction(serialized),
+        this.pollingProviders.ethereum
+          .sendTransaction(serialized)
+          .catch((error) => {
+            logger.debug(
+              "Broadcast error caught, saving failed status and releasing nonce...",
+              transaction,
+              error
+            )
+            // Failure to broadcast needs to be registered.
+            this.saveTransaction(
+              { ...transaction, status: 0, error: error.toString() },
+              "alchemy"
+            )
+            this.releaseEVMTransactionNonce(transaction)
+
+            return Promise.reject(error)
+          }),
         this.subscribeToTransactionConfirmation(
           transaction.network,
           transaction
@@ -554,7 +630,8 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
-      logger.error(`Error broadcasting transaction ${transaction}`, error)
+      logger.error("Error broadcasting transaction", transaction, error)
+
       throw error
     }
   }
@@ -581,13 +658,27 @@ export default class ChainService extends BaseService<Events> {
    * **************** */
 
   /**
+   * Ensure the given network is supported; otherwise, log and throw.
+   */
+  private checkNetwork(network: EVMNetwork): void {
+    if (network.name !== this.ethereumNetwork.name) {
+      logger.error(
+        "Request received for operation on unsupported network",
+        network,
+        "expected",
+        this.ethereumNetwork
+      )
+    }
+  }
+
+  /**
    * Load recent asset transfers from an account on a particular network. Backs
    * off exponentially (in block range, not in time) on failure.
    *
    * @param addressNetwork the address and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
@@ -647,7 +738,7 @@ export default class ChainService extends BaseService<Events> {
    * @param addressNetwork The account whose asset transfers are being loaded.
    */
   private async loadHistoricAssetTransfers(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const oldest = await this.db.getOldestAccountAssetTransferLookup(
       addressNetwork
@@ -678,35 +769,42 @@ export default class ChainService extends BaseService<Events> {
    * particular block range. Emit events for any transfers found, and look up
    * any related transactions and blocks.
    *
-   * @param addressNetwork the address and network whose asset transfers we need
+   * @param addressOnNetwork the address and network whose asset transfers we need
    */
   private async loadAssetTransfers(
-    addressNetwork: AddressNetwork,
+    addressOnNetwork: AddressOnNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
+    this.checkNetwork(addressOnNetwork.network)
+
     // TODO only works on Ethereum today
     const assetTransfers = await getAssetTransfers(
       this.pollingProviders.ethereum,
-      addressNetwork.address,
+      addressOnNetwork,
       Number(startBlock),
       Number(endBlock)
     )
 
     await this.db.recordAccountAssetTransferLookup(
-      addressNetwork,
+      addressOnNetwork,
       startBlock,
       endBlock
     )
 
     this.emitter.emit("assetTransfers", {
-      addressNetwork,
+      addressNetwork: addressOnNetwork,
       assetTransfers,
     })
 
+    const firstSeen = Date.now()
     /// send all found tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(getEthereumNetwork(), a.txHash)
+      this.queueTransactionHashToRetrieve(
+        addressOnNetwork.network,
+        a.txHash,
+        firstSeen
+      )
     )
   }
 
@@ -729,7 +827,9 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    toHandle.forEach(async (hash) => {
+    const network = this.ethereumNetwork
+
+    toHandle.forEach(async ({ hash, firstSeen }) => {
       try {
         // TODO make this multi network
         const result = await this.pollingProviders.ethereum.getTransaction(hash)
@@ -737,7 +837,7 @@ export default class ChainService extends BaseService<Events> {
         const transaction = transactionFromEthersTransaction(
           result,
           ETH,
-          getEthereumNetwork()
+          network
         )
 
         // TODO make this provider specific
@@ -756,7 +856,30 @@ export default class ChainService extends BaseService<Events> {
         }
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
-        this.queueTransactionHashToRetrieve(getEthereumNetwork(), hash)
+        if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
+          this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+        } else {
+          logger.warn(
+            `Transaction ${hash} is too old to keep looking for it; treating ` +
+              "it as expired."
+          )
+
+          this.db.getTransaction(network, hash).then((existingTransaction) => {
+            if (existingTransaction !== null) {
+              logger.debug(
+                "Found existing transaction for expired lookup; marking as " +
+                  "failed if no other status exists."
+              )
+              this.saveTransaction(
+                // Don't override an already-persisted successful status with
+                // an expiration-based failed status, but do set status to
+                // failure if no transaction was seen.
+                { status: 0, ...existingTransaction },
+                "local"
+              )
+            }
+          })
+        }
       }
     })
   }
@@ -804,14 +927,12 @@ export default class ChainService extends BaseService<Events> {
 
       const forAccounts = accounts
         .filter(
-          (addressNetwork) =>
-            finalTransaction.from.toLowerCase() ===
-              addressNetwork.address.toLowerCase() ||
-            finalTransaction.to?.toLowerCase() ===
-              addressNetwork.address.toLowerCase()
+          ({ address }) =>
+            sameEVMAddress(finalTransaction.from, address) ||
+            sameEVMAddress(finalTransaction.to, address)
         )
-        .map((addressNetwork) => {
-          return addressNetwork.address.toLowerCase()
+        .map(({ address }) => {
+          return normalizeEVMAddress(address)
         })
 
       // emit in a separate try so outside services still get the tx
@@ -829,6 +950,23 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
+   * Looks up whether any of the passed address/network pairs are being tracked.
+   */
+  async isTrackingAddressesOnNetworks(
+    ...addressesOnNetworks: AddressOnNetwork[]
+  ): Promise<boolean> {
+    const accounts = await this.getAccountsToTrack()
+
+    return addressesOnNetworks.some(({ address, network }) =>
+      accounts.some(
+        ({ address: trackedAddress, network: trackedNetwork }) =>
+          sameEVMAddress(trackedAddress, address) &&
+          network.name === trackedNetwork.name
+      )
+    )
+  }
+
+  /**
    * Watch a network for new blocks, saving each to the database and emitting an
    * event. Re-orgs are currently ignored.
    *
@@ -843,7 +981,7 @@ export default class ChainService extends BaseService<Events> {
       ["newHeads"],
       async (result: unknown) => {
         // add new head to database
-        const block = blockFromWebsocketBlock(result)
+        const block = blockFromWebsocketBlock(network, result)
         await this.db.addBlock(block)
         // emit the new block, don't wait to settle
         this.emitter.emit("block", block)
@@ -862,20 +1000,20 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Watch logs for an account's transactions on a particular network.
    *
-   * @param addressNetwork The network and address to watch.
+   * @param addressOnNetwork The network and address to watch.
    */
-  private async subscribeToAccountTransactions(
-    addressNetwork: AddressNetwork
-  ): Promise<void> {
+  private async subscribeToAccountTransactions({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
     // eslint-disable-next-line no-underscore-dangle
     await provider._subscribe(
       "filteredNewFullPendingTransactionsSubscriptionID",
-      [
-        "alchemy_filteredNewFullPendingTransactions",
-        { address: addressNetwork.address },
-      ],
+      ["alchemy_filteredNewFullPendingTransactions", { address }],
       async (result: unknown) => {
         // TODO use proper provider string
         // handle incoming transactions for an account
@@ -883,7 +1021,7 @@ export default class ChainService extends BaseService<Events> {
           const transaction = transactionFromAlchemyWebsocketTransaction(
             result,
             ETH,
-            getEthereumNetwork()
+            network
           )
 
           const normalizedFromAddress = normalizeEVMAddress(transaction.from)
@@ -894,26 +1032,29 @@ export default class ChainService extends BaseService<Events> {
           // transaction submitted outside of this wallet causes this wallet to
           // produce bad transactions with reused nonces.
           if (
-            typeof addressNetwork.network.chainID !== "undefined" &&
+            typeof network.chainID !== "undefined" &&
             typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
+              network.chainID
             ]?.[normalizedFromAddress] !== "undefined" &&
-            this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
-            ]?.[normalizedFromAddress] <= transaction.nonce
+            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+              normalizedFromAddress
+            ] <= transaction.nonce
           ) {
-            this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
-            ][normalizedFromAddress] = transaction.nonce + 1
+            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+              normalizedFromAddress
+            ] = transaction.nonce
           }
           await this.saveTransaction(transaction, "alchemy")
+
+          // Wait for confirmation/receipt information.
+          this.subscribeToTransactionConfirmation(network, transaction)
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }
       }
     )
     this.subscribedAccounts.push({
-      account: addressNetwork.address,
+      account: address,
       provider,
     })
   }
@@ -929,6 +1070,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO make proper use of the network
     this.websocketProviders.ethereum.once(
       transaction.hash,
@@ -951,6 +1094,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO make proper use of the network
     const receipt = await this.pollingProviders.ethereum.getTransactionReceipt(
       transaction.hash

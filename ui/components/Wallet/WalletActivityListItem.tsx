@@ -108,13 +108,22 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               className={classNames("activity_icon", renderDetails.iconClass)}
             />
             {renderDetails.label}
-            {"status" in activity && activity.status !== 1 ? (
-              <div className="failed">Failed</div>
+            {"status" in activity &&
+            activity.blockHash !== null &&
+            activity.status !== 1 ? (
+              <div className="status failed">Failed</div>
             ) : (
               <></>
             )}
-            {activity.blockHash === null ? (
-              <div className="pending">Pending...</div>
+            {"status" in activity &&
+            activity.blockHash === null &&
+            activity.status === 0 ? (
+              <div className="status dropped">Dropped</div>
+            ) : (
+              <></>
+            )}
+            {!("status" in activity) && activity.blockHash === null ? (
+              <div className="status pending">Pending...</div>
             ) : (
               <></>
             )}
@@ -202,19 +211,19 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background: url("./images/activity_contract_interaction@2x.png");
             background-size: cover;
           }
-          .pending:before {
-            content: "•";
-            margin: 0 3px;
-          }
-          .pending {
-            color: var(--attention);
-          }
-          .failed:before {
+          .status:before {
             content: "•";
             margin: 0 3px;
           }
           .failed {
             color: var(--error);
+          }
+          .pending {
+            color: var(--attention);
+          }
+          .dropped {
+            color: var(--green-20);
+          }
           }
           .top {
             height: 16px;

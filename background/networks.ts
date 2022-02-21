@@ -20,6 +20,7 @@ type NetworkBaseAsset = {
  * Represents a cryptocurrency network; these can potentially be L1 or L2.
  */
 export type Network = {
+  // Considered a primary key; two Networks should never share a name.
   name: string
   baseAsset: NetworkBaseAsset
   family: NetworkFamily
@@ -127,6 +128,7 @@ export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
   "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
 > & {
+  chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
 }
 
@@ -167,6 +169,16 @@ export type EIP1559TransactionRequest = Pick<
 }
 
 /**
+ * EVM log metadata, including the contract address that generated the log, the
+ * full log data, and the indexed log topics.
+ */
+export type EVMLog = {
+  contractAddress: HexString
+  data: HexString
+  topics: HexString[]
+}
+
+/**
  * A confirmed EVM transaction that has been included in a block. Includes
  * information about the gas actually used to execute the transaction, as well
  * as the block hash and block height at which the transaction was included.
@@ -176,6 +188,18 @@ export type ConfirmedEVMTransaction = EVMTransaction & {
   status: number
   blockHash: string
   blockHeight: number
+  logs: EVMLog[] | undefined
+}
+
+/**
+ * An EVM transaction that failed to be confirmed. Includes information about
+ * the error if available.
+ */
+export type FailedConfirmationEVMTransaction = EVMTransaction & {
+  status: 0
+  error?: string
+  blockHash: null
+  blockHeight: null
 }
 
 /**
@@ -213,6 +237,7 @@ export type AnyEVMTransaction =
   | ConfirmedEVMTransaction
   | AlmostSignedEVMTransaction
   | SignedEVMTransaction
+  | FailedConfirmationEVMTransaction
 
 /**
  * The estimated gas prices for including a transaction in the next block.

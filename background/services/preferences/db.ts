@@ -1,7 +1,7 @@
 import Dexie, { Transaction } from "dexie"
 
 import { FiatCurrency } from "../../assets"
-import { AddressNetwork } from "../../accounts"
+import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES from "./defaults"
 
@@ -14,7 +14,7 @@ export interface Preferences {
   currency: FiatCurrency
   defaultWallet: boolean
   currentAddress?: string
-  selectedAccount: AddressNetwork
+  selectedAccount: AddressOnNetwork
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -104,7 +104,7 @@ export class PreferenceDatabase extends Dexie {
     await this.preferences.toCollection().modify({ defaultWallet })
   }
 
-  async setSelectedAccount(addressNetwork: AddressNetwork): Promise<void> {
+  async setSelectedAccount(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.preferences
       .toCollection()
       .modify({ selectedAccount: addressNetwork })

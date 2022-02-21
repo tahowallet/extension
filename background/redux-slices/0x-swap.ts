@@ -12,6 +12,7 @@ import {
 } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
+import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset
@@ -39,11 +40,11 @@ export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
-  approvalInProgress?: boolean
+  inProgressApprovalContract?: string
 }
 
 export const initialState: SwapState = {
-  approvalInProgress: false,
+  inProgressApprovalContract: undefined,
 }
 
 const swapSlice = createSlice({
@@ -66,33 +67,60 @@ const swapSlice = createSlice({
       latestQuoteRequest: quoteRequest,
     }),
 
-    setApprovalInProgress: (state) => ({
+    setInProgressApprovalContract: (
+      state,
+      { payload: approvingContractAddress }: { payload: string }
+    ) => ({
       ...state,
-      approvalInProgress: true,
+      inProgressApprovalContract: approvingContractAddress,
     }),
 
-    clearApprovalInProgress: (state) => ({
+    clearInProgressApprovalContract: (state) => ({
       ...state,
-      approvalInProgress: false,
+      inProgressApprovalContract: undefined,
     }),
 
     clearSwapQuote: (state) => ({
       ...state,
       finalQuote: undefined,
       latestQuoteRequest: undefined,
-      approvalInProgress: false,
     }),
   },
 })
 
 const {
   setLatestQuoteRequest,
-  setApprovalInProgress,
-  clearApprovalInProgress,
+  setInProgressApprovalContract: setApprovalInProgress,
+  clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
 
 export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
+
+export const SWAP_FEE = 0.005
+
+// Use gated features if there is an API key available in the build.
+const zeroXApiBase =
+  typeof process.env.ZEROX_API_KEY !== "undefined" &&
+  process.env.ZEROX_API_KEY.trim() !== ""
+    ? "gated.api.0x.org"
+    : "api.0x.org"
+const gatedParameters =
+  typeof process.env.ZEROX_API_KEY !== "undefined" &&
+  process.env.ZEROX_API_KEY.trim() !== ""
+    ? {
+        affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
+        feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
+        buyTokenPercentageFee: SWAP_FEE,
+      }
+    : {}
+const gatedHeaders: { [header: string]: string } =
+  typeof process.env.ZEROX_API_KEY !== "undefined" &&
+  process.env.ZEROX_API_KEY.trim() !== ""
+    ? {
+        "0x-api-key": process.env.ZEROX_API_KEY,
+      }
+    : {}
 
 // Helper to build a URL to the 0x API for a given swap quote request. Usable
 // for both /price and /quote endpoints, returns a URL instance that can be
@@ -102,7 +130,7 @@ function build0xUrlFromSwapRequest(
   { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
   additionalParameters?: Record<string, string>
 ): URL {
-  const requestUrl = new URL(`https://api.0x.org/swap/v1${requestPath}`)
+  const requestUrl = new URL(`https://${zeroXApiBase}/swap/v1${requestPath}`)
   const tradeAmount = utils.parseUnits(
     "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
     "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals
@@ -125,6 +153,7 @@ function build0xUrlFromSwapRequest(
     gasPrice: gasPrice.toString(),
     slippagePercentage: slippageTolerance.toString(),
     [tradeField]: tradeAmount.toString(),
+    ...gatedParameters,
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
     requestUrl.searchParams.set(parameter, value)
@@ -151,7 +180,10 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
       takerAddress: tradeAddress,
     })
 
-    const apiData = await fetchJson(requestUrl.toString())
+    const apiData = await fetchJson({
+      url: requestUrl.toString(),
+      headers: gatedHeaders,
+    })
 
     if (!isValidSwapQuoteResponse(apiData)) {
       logger.warn(
@@ -181,9 +213,17 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     quoteRequest: SwapQuoteRequest,
     { dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
-    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest)
+    const signer = getProvider().getSigner()
+    const tradeAddress = await signer.getAddress()
 
-    const apiData = await fetchJson(requestUrl.toString())
+    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
+      takerAddress: tradeAddress,
+    })
+
+    const apiData = await fetchJson({
+      url: requestUrl.toString(),
+      headers: gatedHeaders,
+    })
 
     if (!isValidSwapPriceResponse(apiData)) {
       logger.warn(
@@ -196,7 +236,6 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     }
 
     const quote = apiData
-    const signer = getProvider().getSigner()
 
     // Check if we have to approve the asset we want to swap.
     const assetContract = new ethers.Contract(
@@ -237,31 +276,35 @@ export const approveTransfer = createBackgroundAsyncThunk(
     },
     { dispatch }
   ) => {
-    const provider = getProvider()
-    const signer = provider.getSigner()
+    dispatch(setApprovalInProgress(assetContractAddress))
 
-    const assetContract = new ethers.Contract(
-      assetContractAddress,
-      ERC20_ABI,
-      signer
-    )
-    const approvalTransactionData =
-      await assetContract.populateTransaction.approve(
-        approvalTarget,
-        ethers.constants.MaxUint256 // infinite approval :(
-      )
-
-    dispatch(setApprovalInProgress())
     try {
+      const provider = getProvider()
+      const signer = provider.getSigner()
+
+      const assetContract = new ethers.Contract(
+        assetContractAddress,
+        ERC20_ABI,
+        signer
+      )
+      const approvalTransactionData =
+        await assetContract.populateTransaction.approve(
+          approvalTarget,
+          ethers.constants.MaxUint256 // infinite approval :(
+        )
+
+      logger.debug("Issuing approval transaction", approvalTransactionData)
       const transactionHash = await signer.sendUncheckedTransaction(
         approvalTransactionData
       )
 
       // Wait for transaction to mine before indicating approval is complete.
-      await provider.waitForTransaction(transactionHash)
+      const receipt = await provider.waitForTransaction(transactionHash)
+      logger.debug("Approval transaction mined", receipt)
     } catch (error) {
       logger.error("Approval transaction failed: ", error)
     }
+
     dispatch(clearApprovalInProgress())
   }
 )
@@ -296,7 +339,7 @@ export const selectLatestQuoteRequest = createSelector(
   (latestQuoteRequest) => latestQuoteRequest
 )
 
-export const selectIsApprovalInProgress = createSelector(
-  (state: { swap: SwapState }) => state.swap.approvalInProgress,
+export const selectInProgressApprovalContract = createSelector(
+  (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
 )

@@ -10,7 +10,11 @@ import {
 } from "@ethersproject/transactions"
 import { TypedDataUtils } from "eth-sig-util"
 import { bufferToHex } from "ethereumjs-util"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import {
+  EIP1559TransactionRequest,
+  EVMNetwork,
+  SignedEVMTransaction,
+} from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -18,7 +22,7 @@ import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
-import { getEthereumNetwork } from "../../lib/utils"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 enum LedgerType {
   UNKNOWN,
@@ -126,9 +130,11 @@ function signatureToString(signature: {
  * - xxx
  */
 export default class LedgerService extends BaseService<Events> {
-  #currentLedgerId: string | undefined = undefined
+  #currentLedgerId: string | null = null
 
   transport: Transport | undefined = undefined
+
+  #lastOperationPromise = Promise.resolve()
 
   static create: ServiceCreatorFunction<Events, LedgerService, []> =
     async () => {
@@ -139,38 +145,60 @@ export default class LedgerService extends BaseService<Events> {
     super()
   }
 
-  async onConnection(productId: number): Promise<void> {
-    if (!TestedProductId(productId)) {
-      return
-    }
-
-    this.transport = await TransportWebUSB.create()
-
-    const eth = new Eth(this.transport)
-
-    const [id, type] = await generateLedgerId(this.transport, eth)
-
-    const ethVersion = (await eth.getAppConfiguration()).version
-
-    this.#currentLedgerId = `${LedgerTypeAsString[type]}_${id}`
-
-    this.emitter.emit("connected", { id: this.#currentLedgerId, type })
-
-    const knownAddresses = await this.db.getAllAccountsByLedgerId(
-      this.#currentLedgerId
+  private runSerialized<T>(operation: () => Promise<T>) {
+    const oldOperationPromise = this.#lastOperationPromise
+    const newOperationPromise = oldOperationPromise.then(async () =>
+      operation()
     )
 
-    if (!knownAddresses.length) {
-      this.emitter.emit("ledgerAdded", {
-        id: this.#currentLedgerId,
-        type,
-        accountIDs: [idDerviationPath],
-        metadata: { ethereumVersion: ethVersion },
-      })
-    }
+    this.#lastOperationPromise = newOperationPromise.then(
+      () => {},
+      () => {}
+    )
+
+    return newOperationPromise
   }
 
-  async #onUSBConnect(event: USBConnectionEvent): Promise<void> {
+  async onConnection(productId: number): Promise<void> {
+    return this.runSerialized(async () => {
+      if (!TestedProductId(productId)) {
+        return
+      }
+
+      this.transport = await TransportWebUSB.create()
+
+      const eth = new Eth(this.transport)
+
+      const [id, type] = await generateLedgerId(this.transport, eth)
+
+      if (!id) {
+        throw new Error("Can't derive meaningful identification address!")
+      }
+
+      const ethVersion = (await eth.getAppConfiguration()).version
+
+      const normalizedID = normalizeEVMAddress(id)
+
+      this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+
+      this.emitter.emit("connected", { id: this.#currentLedgerId, type })
+
+      const knownAddresses = await this.db.getAllAccountsByLedgerId(
+        this.#currentLedgerId
+      )
+
+      if (!knownAddresses.length) {
+        this.emitter.emit("ledgerAdded", {
+          id: this.#currentLedgerId,
+          type,
+          accountIDs: [idDerviationPath],
+          metadata: { ethereumVersion: ethVersion },
+        })
+      }
+    })
+  }
+
+  #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
     if (!TestedProductId(event.device.productId)) {
       return
     }
@@ -178,7 +206,7 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  async #onUSBDisconnect(event: USBConnectionEvent): Promise<void> {
+  #handleUSBDisconnect = async (event: USBConnectionEvent): Promise<void> => {
     if (!this.#currentLedgerId) {
       return
     }
@@ -188,66 +216,68 @@ export default class LedgerService extends BaseService<Events> {
       type: LedgerType.LEDGER_NANO_S,
     })
 
-    this.#currentLedgerId = undefined
+    this.#currentLedgerId = null
   }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.addEventListener("connect", this.#onUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#onUSBDisconnect)
+    this.refreshConnectedLedger()
+
+    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
+    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
   }
 
   protected async internalStopService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.removeEventListener("disconnect", this.#onUSBDisconnect)
-    navigator.usb.removeEventListener("connect", this.#onUSBConnect)
+    navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
+    navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
   }
 
-  async connectLedger(): Promise<string> {
+  async refreshConnectedLedger(): Promise<string | null> {
     const devArray = await navigator.usb.getDevices()
 
-    if (devArray.length === 0) {
-      throw new Error("No paired device when the Ledger is connected!?")
+    if (devArray.length !== 0) {
+      await this.onConnection(devArray[0].productId)
     }
 
-    this.onConnection(devArray[0].productId)
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.#currentLedgerId!
+    return this.#currentLedgerId
   }
 
   async deriveAddress(accountID: string): Promise<HexString> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
+    return this.runSerialized(async () => {
+      try {
+        if (!this.transport) {
+          throw new Error("Uninitialized transport!")
+        }
+
+        if (!this.#currentLedgerId) {
+          throw new Error("Uninitialized Ledger ID!")
+        }
+
+        const eth = new Eth(this.transport)
+
+        const accountAddress = normalizeEVMAddress(
+          await deriveAddressOnLedger(accountID, eth)
+        )
+
+        this.emitter.emit("address", {
+          ledgerID: this.#currentLedgerId,
+          derivationPath: accountID,
+          address: accountAddress,
+        })
+
+        return accountAddress
+      } catch (err) {
+        logger.error(
+          `Error encountered! ledgerID: ${
+            this.#currentLedgerId
+          } accountID: ${accountID} error: ${err}`
+        )
+        throw err
       }
-
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
-
-      const eth = new Eth(this.transport)
-
-      const accountAddress = await deriveAddressOnLedger(accountID, eth)
-
-      this.emitter.emit("address", {
-        ledgerID: this.#currentLedgerId,
-        derivationPath: accountID,
-        address: accountAddress,
-      })
-
-      return accountAddress
-    } catch (err) {
-      logger.error(
-        `Error encountered! ledgerID: ${
-          this.#currentLedgerId
-        } accountID: ${accountID} error: ${err}`
-      )
-    }
-
-    throw new Error("Address derivation is unsuccessful!")
+    })
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
@@ -259,165 +289,157 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    address: HexString,
-    transactionRequest: EIP1559TransactionRequest & { nonce: number }
+    network: EVMNetwork,
+    transactionRequest: EIP1559TransactionRequest & { nonce: number },
+    deviceID: string,
+    path: string
   ): Promise<SignedEVMTransaction> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
-      }
+    return this.runSerialized(async () => {
+      try {
+        if (!this.transport) {
+          throw new Error("Uninitialized transport!")
+        }
 
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
+        if (!this.#currentLedgerId) {
+          throw new Error("Uninitialized Ledger ID!")
+        }
 
-      const ethersTx =
-        ethersTransactionRequestFromEIP1559TransactionRequest(
-          transactionRequest
+        const ethersTx =
+          ethersTransactionRequestFromEIP1559TransactionRequest(
+            transactionRequest
+          )
+
+        const serializedTx = serialize(
+          ethersTx as UnsignedTransaction
+        ).substring(2) // serialize adds 0x prefix which kills Eth::signTransaction
+
+        const accountData = await this.db.getAccountByAddress(
+          transactionRequest.from
         )
 
-      const serializedTx = serialize(ethersTx as UnsignedTransaction).substring(
-        2
-      ) // serialize adds 0x prefix which kills Eth::signTransaction
+        if (
+          !accountData ||
+          path !== accountData.path ||
+          deviceID !== accountData.ledgerId
+        ) {
+          throw new Error("Signing method mismatch!")
+        }
 
-      const accountData = await this.db.getAccountByAddress(address)
-      if (!accountData) {
-        throw new Error(
-          "Cannot generate signature without stored derivation path!"
+        if (deviceID !== this.#currentLedgerId) {
+          throw new Error("Cannot sign on wrong device attached!")
+        }
+
+        const eth = new Eth(this.transport)
+        const signature = await eth.signTransaction(path, serializedTx, null)
+
+        const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
+          r: `0x${signature.r}`,
+          s: `0x${signature.s}`,
+          v: parseInt(signature.v, 16),
+        })
+        const tx = parseRawTransaction(signedTransaction)
+
+        if (
+          !tx.hash ||
+          !tx.from ||
+          !tx.r ||
+          !tx.s ||
+          typeof tx.v === "undefined"
+        ) {
+          throw new Error("Transaction doesn't appear to have been signed.")
+        }
+
+        if (
+          typeof tx.maxPriorityFeePerGas === "undefined" ||
+          typeof tx.maxFeePerGas === "undefined" ||
+          tx.type !== 2
+        ) {
+          throw new Error("Can only sign EIP-1559 conforming transactions")
+        }
+
+        const signedTx: SignedEVMTransaction = {
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          nonce: tx.nonce,
+          input: tx.data,
+          value: tx.value.toBigInt(),
+          type: tx.type,
+          gasPrice: null,
+          maxFeePerGas: tx.maxFeePerGas.toBigInt(),
+          maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
+          gasLimit: tx.gasLimit.toBigInt(),
+          r: tx.r,
+          s: tx.s,
+          v: tx.v,
+
+          blockHash: null,
+          blockHeight: null,
+          asset: ETH,
+          network,
+        }
+
+        return signedTx
+      } catch (err) {
+        logger.error(
+          `Error encountered! ledgerID: ${
+            this.#currentLedgerId
+          } transactionRequest: ${transactionRequest} error: ${err}`
         )
+
+        throw err
       }
-
-      const eth = new Eth(this.transport)
-      const signature = await eth.signTransaction(
-        accountData.path,
-        serializedTx,
-        null
-      )
-
-      const alteredSig = {
-        r: signature.r,
-        s: signature.s,
-        v: parseInt(signature.v, 16),
-      }
-
-      const signedTransaction = serialize(
-        ethersTx as UnsignedTransaction,
-        alteredSig
-      )
-      const tx = parseRawTransaction(signedTransaction)
-
-      if (
-        !tx.hash ||
-        !tx.from ||
-        !tx.r ||
-        !tx.s ||
-        typeof tx.v === "undefined"
-      ) {
-        throw new Error("Transaction doesn't appear to have been signed.")
-      }
-
-      if (
-        typeof tx.maxPriorityFeePerGas === "undefined" ||
-        typeof tx.maxFeePerGas === "undefined" ||
-        tx.type !== 2
-      ) {
-        throw new Error("Can only sign EIP-1559 conforming transactions")
-      }
-
-      const signedTx: SignedEVMTransaction = {
-        hash: tx.hash,
-        from: tx.from,
-        to: tx.to,
-        nonce: tx.nonce,
-        input: tx.data,
-        value: tx.value.toBigInt(),
-        type: tx.type,
-        gasPrice: null,
-        maxFeePerGas: tx.maxFeePerGas.toBigInt(),
-        maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
-        gasLimit: tx.gasLimit.toBigInt(),
-        r: tx.r,
-        s: tx.s,
-        v: tx.v,
-
-        blockHash: null,
-        blockHeight: null,
-        asset: ETH,
-        network: getEthereumNetwork(),
-      }
-
-      return signedTx
-    } catch (err) {
-      logger.error(
-        `Error encountered! ledgerID: ${
-          this.#currentLedgerId
-        } address: ${address} transactionRequest: ${transactionRequest} error: ${err}`
-      )
-    }
-
-    throw new Error("Transaction signing is unsuccessful!")
+    })
   }
 
   async signTypedData(
     typedData: EIP712TypedData,
     account: HexString
   ): Promise<string> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
-      }
-
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
-
-      const eth = new Eth(this.transport)
-      const hashedDomain = TypedDataUtils.hashStruct(
-        "EIP712Domain",
-        typedData.domain,
-        typedData.types,
-        true
-      )
-      const hashedMessage = TypedDataUtils.hashStruct(
-        typedData.primaryType,
-        typedData.message,
-        typedData.types,
-        true
-      )
-
-      const signature = await eth.signEIP712HashedMessage(
-        account,
-        bufferToHex(hashedDomain),
-        bufferToHex(hashedMessage)
-      )
-      this.emitter.emit("signedData", signatureToString(signature))
-      return signatureToString(signature)
-    } catch (error) {
-      throw new Error("Signing data failed")
+    if (!this.transport) {
+      throw new Error("Uninitialized transport!")
     }
 
-    throw new Error("Typed data signing is unsuccessful!")
+    if (!this.#currentLedgerId) {
+      throw new Error("Uninitialized Ledger ID!")
+    }
+
+    const eth = new Eth(this.transport)
+    const hashedDomain = TypedDataUtils.hashStruct(
+      "EIP712Domain",
+      typedData.domain,
+      typedData.types,
+      true
+    )
+    const hashedMessage = TypedDataUtils.hashStruct(
+      typedData.primaryType,
+      typedData.message,
+      typedData.types,
+      true
+    )
+
+    const signature = await eth.signEIP712HashedMessage(
+      account,
+      bufferToHex(hashedDomain),
+      bufferToHex(hashedMessage)
+    )
+    this.emitter.emit("signedData", signatureToString(signature))
+    return signatureToString(signature)
   }
 
   async signMessage(address: string, message: string): Promise<string> {
-    try {
-      if (!this.transport) {
-        throw new Error("Uninitialized transport!")
-      }
-
-      if (!this.#currentLedgerId) {
-        throw new Error("Uninitialized Ledger ID!")
-      }
-
-      const eth = new Eth(this.transport)
-
-      const signature = await eth.signPersonalMessage(address, message)
-      this.emitter.emit("signedData", signatureToString(signature))
-      return signatureToString(signature)
-    } catch (error) {
-      throw new Error("Signing data failed")
+    if (!this.transport) {
+      throw new Error("Uninitialized transport!")
     }
 
-    throw new Error("Typed data signing is unsuccessful!")
+    if (!this.#currentLedgerId) {
+      throw new Error("Uninitialized Ledger ID!")
+    }
+
+    const eth = new Eth(this.transport)
+
+    const signature = await eth.signPersonalMessage(address, message)
+    this.emitter.emit("signedData", signatureToString(signature))
+    return signatureToString(signature)
   }
 }

@@ -12,6 +12,7 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import logger from "@tallyho/tally-background/lib/logger"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
@@ -38,7 +39,7 @@ type GasOption = {
 const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
-  gasLimit: string,
+  gasLimit: bigint | undefined,
   { confidence, price, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
@@ -50,13 +51,11 @@ const gasOptionFromEstimate = (
   }
 
   const feeAssetAmount =
-    typeof mainCurrencyPricePoint !== "undefined"
+    typeof gasLimit !== "undefined"
       ? enrichAssetAmountWithMainCurrencyValues(
           {
             asset: ETH,
-            amount:
-              (maxFeePerGas + maxPriorityFeePerGas) *
-              (gasLimit ? BigInt(gasLimit) : 21000n),
+            amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
           },
           mainCurrencyPricePoint,
           2
@@ -70,7 +69,7 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
-    dollarValue: feeAssetAmount?.localizedMainCurrencyAmount ?? "N/A",
+    dollarValue: feeAssetAmount?.localizedMainCurrencyAmount ?? "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     price,
@@ -133,6 +132,7 @@ export default function NetworkSettingsSelect({
           maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
         },
         gasLimit: networkSettings.gasLimit,
+        suggestedGasLimit: networkSettings.suggestedGasLimit,
       })
     }
   }, [
@@ -140,6 +140,7 @@ export default function NetworkSettingsSelect({
     activeFeeIndex,
     onNetworkSettingsChange,
     networkSettings.gasLimit,
+    networkSettings.suggestedGasLimit,
   ])
 
   const handleSelectGasOption = (index: number) => {
@@ -152,12 +153,23 @@ export default function NetworkSettingsSelect({
         maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
       },
       gasLimit: networkSettings.gasLimit,
+      suggestedGasLimit: networkSettings.suggestedGasLimit,
     })
   }
 
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
+      let gasLimit = networkSettings.suggestedGasLimit
+      try {
+        gasLimit = BigInt(networkSettings.gasLimit)
+      } catch (error) {
+        logger.debug(
+          "Failed to parse network settings gas limit",
+          networkSettings.gasLimit
+        )
+      }
+
       if (
         typeof instant !== "undefined" &&
         typeof express !== "undefined" &&
@@ -169,7 +181,7 @@ export default function NetworkSettingsSelect({
           gasOptionFromEstimate(
             mainCurrencyPricePoint,
             estimatedFeesPerGas.baseFeePerGas,
-            networkSettings.gasLimit,
+            gasLimit,
             option
           )
         )
@@ -185,8 +197,9 @@ export default function NetworkSettingsSelect({
     }
   }, [
     estimatedFeesPerGas,
-    mainCurrencyPricePoint,
+    networkSettings.suggestedGasLimit,
     networkSettings.gasLimit,
+    mainCurrencyPricePoint,
     currentlySelectedType,
   ])
 
@@ -196,9 +209,7 @@ export default function NetworkSettingsSelect({
 
   const setGasLimit = (newGasLimit: string) => {
     // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
-    // FIXME entry as possible. Note that we also need to track when the user
-    // FIXME doesn't change the gas limit as that generally signals preferring
-    // FIXME the wallet's gas estimates.
+    // FIXME entry as possible.
     onNetworkSettingsChange({
       ...networkSettings,
       gasLimit: newGasLimit,
@@ -235,8 +246,8 @@ export default function NetworkSettingsSelect({
           <SharedInput
             id="gasLimit"
             value={networkSettings.gasLimit}
+            placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
-            defaultValue="21000"
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"

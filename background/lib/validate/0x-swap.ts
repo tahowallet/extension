@@ -2,21 +2,6 @@
 // occasional direct reading of the API code at
 // https://github.com/0x-project/0x-api .
 
-export const swapAssetsJTD = {
-  properties: {
-    records: {
-      elements: {
-        properties: {
-          address: { type: "string" },
-          decimals: { type: "int8" },
-          name: { type: "string" },
-          symbol: { type: "string" },
-        },
-      },
-    },
-  },
-} as const
-
 // Swap prices come from the 0x /price endpoint, and provide
 // information on available RFQ-T prices. Subset of the quote
 // fields.
@@ -40,6 +25,7 @@ export const swapPriceJTD = {
           name: { type: "string" },
           proportion: { type: "string" },
         },
+        additionalProperties: true,
       },
     },
     allowanceTarget: { type: "string" },

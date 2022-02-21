@@ -59,8 +59,12 @@ export default function SharedSelect(props: Props): ReactElement {
     [initialOptions]
   )
 
-  const currentLabel = activeIndex ? options[activeIndex].label : placeholder
-  const currentValue = activeIndex ? options[activeIndex].value : null
+  const currentOption =
+    activeIndex !== null && activeIndex !== undefined
+      ? options[activeIndex]
+      : null
+  const currentLabel = currentOption?.label ?? null
+  const currentValue = currentOption?.value ?? null
 
   useEffect(() => {
     if (currentValue) onChange(currentValue)

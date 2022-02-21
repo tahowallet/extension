@@ -41,7 +41,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
               size="medium"
               linkTo="/onboarding/importMetamask"
             >
-              Import MetaMask
+              Import recovery phrase
             </SharedButton>
           </li>
         )}
