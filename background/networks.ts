@@ -166,6 +166,16 @@ export type EIP1559TransactionRequest = Pick<
 }
 
 /**
+ * EVM log metadata, including the contract address that generated the log, the
+ * full log data, and the indexed log topics.
+ */
+export type EVMLog = {
+  contractAddress: HexString
+  data: HexString
+  topics: HexString[]
+}
+
+/**
  * A confirmed EVM transaction that has been included in a block. Includes
  * information about the gas actually used to execute the transaction, as well
  * as the block hash and block height at which the transaction was included.
@@ -175,6 +185,7 @@ export type ConfirmedEVMTransaction = EVMTransaction & {
   status: number
   blockHash: string
   blockHeight: number
+  logs: EVMLog[] | undefined
 }
 
 /**

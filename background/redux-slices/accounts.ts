@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
-import { AccountBalance, AddressNetwork, NameNetwork } from "../accounts"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
 import { AnyEVMBlock, Network } from "../networks"
 import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
 import {
@@ -45,7 +45,7 @@ type AccountData = {
 }
 
 export type AccountState = {
-  account?: AddressNetwork
+  account?: AddressOnNetwork
   accountLoading?: string
   hasAccountError?: boolean
   // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
@@ -61,19 +61,21 @@ export type CombinedAccountData = {
   assets: AnyAssetAmount[]
 }
 
-/**
- * An asset amount including localized and numeric main currency and decimal
- * equivalents, where applicable.
- */
-export type CompleteAssetAmount<
+// Utility type, wrapped in CompleteAssetAmount<T>.
+type InternalCompleteAssetAmount<
   E extends AnyAsset = AnyAsset,
   T extends AnyAssetAmount<E> = AnyAssetAmount<E>
 > = T & AssetMainCurrencyAmount & AssetDecimalAmount
 
-export type CompleteSmartContractFungibleAssetAmount = CompleteAssetAmount<
-  SmartContractFungibleAsset,
-  AnyAssetAmount<SmartContractFungibleAsset>
->
+/**
+ * An asset amount including localized and numeric main currency and decimal
+ * equivalents, where applicable.
+ */
+export type CompleteAssetAmount<T extends AnyAsset = AnyAsset> =
+  InternalCompleteAssetAmount<T, AnyAssetAmount<T>>
+
+export type CompleteSmartContractFungibleAssetAmount =
+  CompleteAssetAmount<SmartContractFungibleAsset>
 
 export const initialState = {
   accountsData: {},
@@ -210,7 +212,7 @@ const accountSlice = createSlice({
       immerState,
       {
         payload: addressNetworkName,
-      }: { payload: AddressNetwork & { name: DomainName } }
+      }: { payload: AddressOnNetwork & { name: DomainName } }
     ) => {
       // TODO Refactor when accounts are also keyed per network.
       const address = addressNetworkName.address.toLowerCase()
@@ -230,7 +232,7 @@ const accountSlice = createSlice({
       immerState,
       {
         payload: addressNetworkAvatar,
-      }: { payload: AddressNetwork & { avatar: URI } }
+      }: { payload: AddressOnNetwork & { avatar: URI } }
     ) => {
       // TODO Refactor when accounts are also keyed per network.
       const address = addressNetworkAvatar.address.toLowerCase()
@@ -269,7 +271,7 @@ export default accountSlice.reducer
  */
 export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
-  async (addressNetwork: AddressNetwork, { dispatch, extra: { main } }) => {
+  async (addressNetwork: AddressOnNetwork, { dispatch, extra: { main } }) => {
     const normalizedAddressNetwork = {
       address: addressNetwork.address.toLowerCase(),
       network: addressNetwork.network,
@@ -286,7 +288,7 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
  */
 export const addAccountByName = createBackgroundAsyncThunk(
   "account/addAccountByName",
-  async (nameNetwork: NameNetwork, { extra: { main } }) => {
+  async (nameNetwork: NameOnNetwork, { extra: { main } }) => {
     await main.addAccountByName(nameNetwork)
   }
 )

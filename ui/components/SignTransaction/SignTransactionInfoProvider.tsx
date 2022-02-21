@@ -1,6 +1,4 @@
-import { parseERC20Tx } from "@tallyho/tally-background/lib/erc20"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { TransactionDescription } from "ethers/lib/utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import { SignTransactionInfo } from "./SignTransactionInfoBaseProvider"
@@ -9,97 +7,55 @@ import SignTransactionSpendAssetInfoProvider from "./SignTransactionSpendAssetIn
 import SignTransactionSwapAssetInfoProvider from "./SignTransactionSwapAssetInfoProvider"
 import SignTransactionTransferInfoProvider from "./SignTransactionTransferInfoProvider"
 
-export interface SignLocationState {
-  assetSymbol: string
-  amount: number
-  signType: SignType
-  to: string
-  value: string | number
-}
-
-export enum SignType {
-  Sign = "sign",
-  SignSwap = "sign-swap",
-  SignSpend = "sign-spend",
-  SignTransfer = "sign-transfer",
-}
-
-export function getSignType(
-  parsedTx: TransactionDescription | undefined
-): SignType {
-  if (parsedTx?.name === "approve") {
-    return SignType.SignSpend
-  }
-  return SignType.Sign
-}
-
 /**
  * Creates transaction type-specific UI blocks and provides them to children.
  */
 export default function SignTransactionInfoProvider({
   children,
-  location,
 }: {
   children: (info: SignTransactionInfo) => ReactElement
-  location: { state?: SignLocationState }
 }): ReactElement {
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
-  const parsedTx = parseERC20Tx(transactionDetails?.input ?? "")
-
-  const { assetSymbol, amount, to, value, signType } = location?.state ?? {
-    signType: getSignType(parsedTx),
-  }
-
   if (!transactionDetails) return <></>
 
-  switch (signType) {
-    case SignType.SignSwap:
+  const annotation =
+    "annotation" in transactionDetails
+      ? transactionDetails.annotation
+      : undefined
+
+  switch (annotation?.type) {
+    case "asset-swap":
       return (
         <SignTransactionSwapAssetInfoProvider
           inner={children}
           transactionDetails={transactionDetails}
-          parsedTx={parsedTx}
+          annotation={annotation}
         />
       )
-    case SignType.SignSpend:
+    case "asset-approval":
       return (
         <SignTransactionSpendAssetInfoProvider
           inner={children}
           transactionDetails={transactionDetails}
-          parsedTx={parsedTx}
+          annotation={annotation}
         />
       )
-    case SignType.SignTransfer:
-      if (
-        assetSymbol === undefined ||
-        amount === undefined ||
-        to === undefined ||
-        value === undefined
-      ) {
-        return <></>
-      }
-
+    case "asset-transfer":
       return (
         <SignTransactionTransferInfoProvider
           inner={children}
           transactionDetails={transactionDetails}
-          parsedTx={parsedTx}
-          token={assetSymbol}
-          amount={amount}
-          destination={to}
-          localizedValue={value}
+          annotation={annotation}
         />
       )
-    case SignType.Sign:
+    default:
       return (
         <SignTransactionSignInfoProvider
           inner={children}
           transactionDetails={transactionDetails}
-          parsedTx={parsedTx}
+          annotation={annotation}
         />
       )
-    default:
-      return <></>
   }
 }
