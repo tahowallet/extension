@@ -23,7 +23,7 @@ export default function LedgerPrepare({
             No Ledger device is connected
           </div>
           <div className="warning">
-            Please follow the steps below and <br /> click on Continue again!
+            Please follow the steps below and <br /> click on Try Again!
           </div>
         </div>
       ) : (
