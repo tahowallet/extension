@@ -1,12 +1,12 @@
-import { AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
 import { USD } from "@tallyho/tally-background/constants"
-import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import { selectCurrentAddressNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  AssetDecimalAmount,
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
+  heuristicDesiredDecimalsForUnitPrice,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
@@ -30,19 +30,20 @@ export default function SignTransactionSignInfoProvider({
       asset: network.baseAsset,
       amount: transactionDetails.value,
     },
-    4
+    heuristicDesiredDecimalsForUnitPrice(
+      2,
+      typeof baseAssetPricePoint !== "undefined"
+        ? unitPricePointForPricePoint(baseAssetPricePoint)
+        : undefined
+    )
   )
 
-  const completeTransactionAssetAmount:
-    | (AnyAssetAmount & AssetDecimalAmount)
-    | CompleteAssetAmount =
-    typeof baseAssetPricePoint !== "undefined"
-      ? enrichAssetAmountWithMainCurrencyValues(
-          transactionAssetAmount,
-          baseAssetPricePoint,
-          2
-        )
-      : transactionAssetAmount
+  const completeTransactionAssetAmount =
+    enrichAssetAmountWithMainCurrencyValues(
+      transactionAssetAmount,
+      baseAssetPricePoint,
+      2
+    )
 
   return (
     <SignTransactionBaseInfoProvider
@@ -59,8 +60,7 @@ export default function SignTransactionSignInfoProvider({
               <>
                 <div className="label">Send to</div>
                 <div className="send_to">
-                  {transactionDetails.to.slice(0, 6)}...
-                  {transactionDetails.to.slice(-4)}
+                  {truncateAddress(transactionDetails.to)}
                 </div>
               </>
             )}
@@ -73,12 +73,8 @@ export default function SignTransactionSignInfoProvider({
                 {completeTransactionAssetAmount.localizedDecimalAmount}
               </div>
               <div className="main_currency_value">
-                {"localizedMainCurrencyAmount" in
-                completeTransactionAssetAmount ? (
-                  `$${completeTransactionAssetAmount.localizedMainCurrencyAmount}`
-                ) : (
-                  <></>
-                )}
+                {completeTransactionAssetAmount.localizedMainCurrencyAmount ??
+                  "-"}
               </div>
             </div>
           </div>

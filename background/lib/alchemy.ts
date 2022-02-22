@@ -12,17 +12,14 @@ import {
   SmartContractFungibleAsset,
 } from "../assets"
 import { ETH } from "../constants"
-import {
-  convertToHexAndNormalize,
-  getEthereumNetwork,
-  normalizeEVMAddress,
-} from "./utils"
+import { convertToHexAndNormalize, normalizeEVMAddress } from "./utils"
 import { AnyEVMTransaction, EVMNetwork } from "../networks"
 import {
   isValidAlchemyAssetTransferResponse,
   isValidAlchemyTokenBalanceResponse,
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
+import { AddressOnNetwork } from "../accounts"
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -33,16 +30,21 @@ import {
  *
  * More information https://docs.alchemy.com/alchemy/documentation/apis/enhanced-apis/transfers-api#alchemy_getassettransfers
  * @param provider an Alchemy ethers provider
- * @param account the account whose transfer history we're fetching
+ * @param addressOnNetwork the address whose transfer history we're fetching
+ *        and the network it should happen on; note that if the network does
+ *        not match the network the provider is set up for, this will likely
+ *        fail.
  * @param fromBlock the block height specifying how far in the past we want
  *        to look.
  */
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  account: string,
+  addressOnNetwork: AddressOnNetwork,
   fromBlock: number,
   toBlock?: number
 ): Promise<AssetTransfer[]> {
+  const { address: account, network } = addressOnNetwork
+
   const params = {
     fromBlock: convertToHexAndNormalize(fromBlock),
     toBlock:
@@ -102,11 +104,11 @@ export async function getAssetTransfers(
             contractAddress: transfer.rawContract.address,
             decimals: Number(BigInt(transfer.rawContract.decimal)),
             symbol: transfer.asset,
-            homeNetwork: getEthereumNetwork(), // TODO internally track the current network instead of relying on the .env file
+            homeNetwork: network,
           }
         : ETH
       return {
-        network: getEthereumNetwork(), // TODO make this friendly across other networks
+        network, // TODO make this friendly across other networks
         assetAmount: {
           asset,
           amount: BigInt(transfer.rawContract.value),
@@ -187,13 +189,18 @@ export async function getTokenBalances(
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
  *
  * @param provider an Alchemy ethers provider
- * @param contractAddress the address of the token smart contract whose
- *        metadata should be returned
+ * @param contractAddressOnNetwork the address of the token smart contract
+ *        whose metadata should be returned, with network information; note
+ *        that the passed provider should be for the same network, or results
+ *        are unpredictable.
  */
 export async function getTokenMetadata(
+  // FIXME Track provider + network similarly to address + network.
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  contractAddress: HexString
+  contractAddressOnNetwork: AddressOnNetwork
 ): Promise<SmartContractFungibleAsset | null> {
+  const { address: contractAddress, network } = contractAddressOnNetwork
+
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
     contractAddress,
   ])
@@ -212,7 +219,7 @@ export async function getTokenMetadata(
       tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
-    homeNetwork: getEthereumNetwork(), // TODO make multi-network friendly
+    homeNetwork: network, // TODO make multi-network friendly
     contractAddress,
   }
 }

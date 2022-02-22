@@ -1,7 +1,7 @@
 import Dexie from "dexie"
 
 import { UNIXTime } from "../../types"
-import { AccountBalance, AddressNetwork } from "../../accounts"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { normalizeEVMAddress } from "../../lib/utils"
@@ -12,7 +12,7 @@ type Transaction = AnyEVMTransaction & {
 }
 
 type AccountAssetTransferLookup = {
-  addressNetwork: AddressNetwork
+  addressNetwork: AddressOnNetwork
   retrievedAt: UNIXTime
   startBlock: bigint
   endBlock: bigint
@@ -34,7 +34,7 @@ export class ChainDatabase extends Dexie {
    * Keyed by the [address, network name, network chain ID] triplet.
    */
   private accountsToTrack!: Dexie.Table<
-    AddressNetwork,
+    AddressOnNetwork,
     [string, string, string]
   >
 
@@ -206,12 +206,12 @@ export class ChainDatabase extends Dexie {
     return balanceCandidates.length > 0 ? balanceCandidates[0] : null
   }
 
-  async addAccountToTrack(addressNetwork: AddressNetwork): Promise<void> {
+  async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.accountsToTrack.put(addressNetwork)
   }
 
   async setAccountsToTrack(
-    addressesAndNetworks: Set<AddressNetwork>
+    addressesAndNetworks: Set<AddressOnNetwork>
   ): Promise<void> {
     await this.transaction("rw", this.accountsToTrack, () => {
       this.accountsToTrack.clear()
@@ -220,7 +220,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getOldestAccountAssetTransferLookup(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
@@ -237,7 +237,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getNewestAccountAssetTransferLookup(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
@@ -254,7 +254,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async recordAccountAssetTransferLookup(
-    addressNetwork: AddressNetwork,
+    addressNetwork: AddressOnNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
@@ -276,7 +276,7 @@ export class ChainDatabase extends Dexie {
     await this.balances.add(accountBalance)
   }
 
-  async getAccountsToTrack(): Promise<AddressNetwork[]> {
+  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
   }
 

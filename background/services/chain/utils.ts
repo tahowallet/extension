@@ -15,12 +15,15 @@ import {
   ConfirmedEVMTransaction,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { getEthereumNetwork, normalizeEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 /**
  * Parse a block as returned by a polling provider.
  */
-export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
+export function blockFromEthersBlock(
+  network: EVMNetwork,
+  gethResult: EthersBlock
+): AnyEVMBlock {
   return {
     hash: normalizeEVMAddress(gethResult.hash),
     blockHeight: gethResult.number,
@@ -34,7 +37,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
     difficulty: 0n,
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
-    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
+    network,
   }
 }
 
@@ -42,6 +45,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
  * Parse a block as returned by a websocket provider subscription.
  */
 export function blockFromWebsocketBlock(
+  network: EVMNetwork,
   incomingGethResult: unknown
 ): AnyEVMBlock {
   const gethResult = incomingGethResult as {
@@ -62,7 +66,7 @@ export function blockFromWebsocketBlock(
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)
       : undefined,
-    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
+    network,
   }
 }
 
