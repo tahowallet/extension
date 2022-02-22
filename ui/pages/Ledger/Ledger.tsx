@@ -1,6 +1,7 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
+import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 import BrowserTabContainer from "../../components/BrowserTab/BrowserTabContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -8,6 +9,13 @@ import LedgerConnectPopup from "./LedgerConnectPopup"
 import LedgerImportDone from "./LedgerImportDone"
 import LedgerImportAccounts from "./LedgerImportAccounts"
 import LedgerPrepare from "./LedgerPrepare"
+
+const filters = Object.values(LedgerProductDatabase).map(
+  ({ productId }): USBDeviceFilter => ({
+    vendorId: ledgerUSBVendorId,
+    productId,
+  })
+)
 
 export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<
@@ -34,7 +42,7 @@ export default function Ledger(): ReactElement {
               // Open popup for testing
               // TODO: use result (for multiple devices)?
               await navigator.usb.requestDevice({
-                filters: [{ vendorId: ledgerUSBVendorId }],
+                filters,
               })
             } catch {
               // Timeout is needed to respond to clicks to,
