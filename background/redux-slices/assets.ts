@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
-import { AnyAsset, findClosestAssetIndex, PricePoint } from "../assets"
+import { AnyAsset, PricePoint } from "../assets"
+import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 
 type SingleAssetState = AnyAsset & {
@@ -118,7 +119,7 @@ const assetsSlice = createSlice({
         const index = findClosestAssetIndex(pricedAsset, [
           ...immerState,
         ] as AnyAsset[])
-        if (index !== null) {
+        if (typeof index !== "undefined") {
           // append to longer-running prices
           const prices = prunePrices(
             [...immerState[index].prices].concat([pricePoint])
