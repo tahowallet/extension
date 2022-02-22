@@ -664,6 +664,11 @@ export default class Main extends BaseService<never> {
       "requestSignature",
       async ({ transaction, method }) => {
         if (HIDE_IMPORT_LEDGER) {
+          const network = this.chainService.resolveNetwork(transaction)
+          if (typeof network === "undefined") {
+            throw new Error(`Unknown chain ID ${transaction.chainID}.`)
+          }
+
           const transactionWithNonce =
             await this.chainService.populateEVMTransactionNonce(transaction)
 
@@ -686,7 +691,6 @@ export default class Main extends BaseService<never> {
         } else {
           try {
             const signedTx = await this.signingService.signTransaction(
-              this.chainService.ethereumNetwork,
               transaction,
               method
             )

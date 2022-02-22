@@ -111,10 +111,14 @@ export default class SigningService extends BaseService<Events> {
   }
 
   async signTransaction(
-    network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest,
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
+    const network = this.chainService.resolveNetwork(transactionRequest)
+    if (typeof network === "undefined") {
+      throw new Error(`Unknown chain ID ${transactionRequest.chainID}.`)
+    }
+
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
