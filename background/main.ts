@@ -953,8 +953,13 @@ export default class Main extends BaseService<never> {
 
     keyringSliceEmitter.on(
       "importKeyring",
-      async ({ mnemonic, path, source }) => {
-        await this.keyringService.importKeyring(mnemonic, source, path)
+      async ({ mnemonic, path, source, passphrase }) => {
+        await this.keyringService.importKeyring(
+          mnemonic,
+          source,
+          path,
+          passphrase
+        )
       }
     )
   }

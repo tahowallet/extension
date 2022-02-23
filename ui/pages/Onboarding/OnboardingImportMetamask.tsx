@@ -3,9 +3,13 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
-import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/features"
+import {
+  HIDE_IMPORT_DERIVATION_PATH,
+  HIDE_IMPORT_PASSPHRASE,
+} from "@tallyho/tally-background/features/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
+import SharedInput from "../../components/Shared/SharedInput"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
@@ -98,6 +102,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [path, setPath] = useState<string>("m/44'/60'/0'/0")
+  const [passphrase, setPassphrase] = useState("")
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
@@ -128,13 +133,14 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         importKeyring({
           mnemonic: trimmedRecoveryPhrase,
           path,
+          passphrase,
           source: "import",
         })
       )
     } else {
       setErrorMessage("Invalid recovery phrase")
     }
-  }, [dispatch, recoveryPhrase, path])
+  }, [dispatch, recoveryPhrase, path, passphrase])
 
   if (!areKeyringsUnlocked) return <></>
 
@@ -171,6 +177,20 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
             {!HIDE_IMPORT_DERIVATION_PATH && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
+              </div>
+            )}
+
+            {!HIDE_IMPORT_PASSPHRASE && (
+              <div>
+                <SharedInput
+                  type="text"
+                  label="BIP-39 Passphrase"
+                  value={passphrase}
+                  onChange={(value: string) => {
+                    setPassphrase(value)
+                  }}
+                  errorMessage=""
+                />
               </div>
             )}
           </div>
