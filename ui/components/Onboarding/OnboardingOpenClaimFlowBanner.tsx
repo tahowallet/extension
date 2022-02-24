@@ -69,7 +69,11 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
               />
             </div>
 
-            <SharedButton type="tertiary" size="small">
+            <SharedButton
+              type="tertiary"
+              size="small"
+              linkTo="/onboarding/addWallet"
+            >
               Try another address
             </SharedButton>
           </div>
