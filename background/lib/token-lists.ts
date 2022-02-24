@@ -95,7 +95,7 @@ export function mergeAssets<T extends FungibleAsset>(
     // For each key, determine where a close asset match exists.
     const matchingAssetIndex = findClosestAssetIndex(
       asset,
-      seenAssetsBySimilarityKey[referenceKey]
+      updatedSeenAssetsBySimilarityKey[referenceKey]
     )
 
     if (typeof matchingAssetIndex !== "undefined") {
