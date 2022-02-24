@@ -3,11 +3,11 @@ import Emittery from "emittery"
 
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Keyring } from "../services/keyring/index"
+import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]
-  keyringSources: { [keyringId: string]: "import" | "newSeed" }
+  keyringMetadata: { [keyringId: string]: { source: "import" | "newSeed" } }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -18,7 +18,7 @@ type KeyringsState = {
 
 export const initialState: KeyringsState = {
   keyrings: [],
-  keyringSources: {},
+  keyringMetadata: {},
   importing: false,
   status: "uninitialized",
   keyringToVerify: null,
@@ -69,16 +69,14 @@ const keyringsSlice = createSlice({
   reducers: {
     keyringLocked: (state) => ({ ...state, status: "locked" }),
     keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
-    updateKeyringSources: (
+    updateKeyringMetadata: (
       state,
-      {
-        payload: { keyringId, source },
-      }: { payload: { keyringId: string; source: "import" | "newSeed" } }
+      { payload }: { payload: { [keyringId: string]: KeyringMetadata } }
     ) => ({
       ...state,
-      keyringSources: {
-        ...state.keyringSources,
-        [keyringId]: source,
+      keyringMetadata: {
+        ...state.keyringMetadata,
+        ...payload,
       },
     }),
     updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
@@ -120,7 +118,7 @@ const keyringsSlice = createSlice({
 
 export const {
   updateKeyrings,
-  updateKeyringSources,
+  updateKeyringMetadata,
   keyringLocked,
   keyringUnlocked,
   setKeyringToVerify,

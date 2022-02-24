@@ -28,6 +28,15 @@ export type Keyring = {
   addresses: string[]
 }
 
+export interface KeyringMetadata {
+  source: "import" | "newSeed"
+}
+
+interface SerializedKeyringData {
+  keyrings: SerializedHDKeyring[]
+  metadata: { [keyringId: string]: KeyringMetadata }
+}
+
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
   keyrings: Keyring[]
@@ -35,9 +44,8 @@ interface Events extends ServiceLifecycleEvents {
   // TODO message was signed
   signedTx: SignedEVMTransaction
   signedData: string
-  keyringSource: {
-    keyringId: string
-    source: "import" | "newSeed"
+  keyringMetadata: {
+    [keyringId: string]: KeyringMetadata
   }
 }
 
@@ -58,6 +66,8 @@ export default class KeyringService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
 
   #keyrings: HDKeyring[] = []
+
+  #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
 
   /**
    * The last time a keyring took an action that required the service to be
@@ -149,9 +159,9 @@ export default class KeyringService extends BaseService<Events> {
           password,
           currentEncryptedVault.salt
         )
-        let plainTextVault: SerializedHDKeyring[]
+        let plainTextVault: SerializedKeyringData
         try {
-          plainTextVault = await decryptVault<SerializedHDKeyring[]>(
+          plainTextVault = await decryptVault<SerializedKeyringData>(
             currentEncryptedVault,
             saltedKey
           )
@@ -162,9 +172,16 @@ export default class KeyringService extends BaseService<Events> {
         }
         // hooray! vault is loaded, import any serialized keyrings
         this.#keyrings = []
-        plainTextVault.forEach((kr) => {
+        this.#keyringMetadata = {}
+        plainTextVault.keyrings.forEach((kr) => {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
+
+        Object.entries(plainTextVault.metadata).forEach(
+          ([keyringId, metadata]) => {
+            this.#keyringMetadata[keyringId] = metadata
+          }
+        )
 
         this.emitKeyrings()
       }
@@ -294,12 +311,13 @@ export default class KeyringService extends BaseService<Events> {
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
+    this.#keyringMetadata[newKeyring.id] = { source }
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
     this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
-    this.emitKeyringSource(newKeyring.id, source)
+    this.emitKeyringMetadata()
 
     return newKeyring.id
   }
@@ -471,11 +489,8 @@ export default class KeyringService extends BaseService<Events> {
     }
   }
 
-  private emitKeyringSource(keyringId: string, source: "import" | "newSeed") {
-    this.emitter.emit("keyringSource", {
-      keyringId,
-      source,
-    })
+  private emitKeyringMetadata() {
+    this.emitter.emit("keyringMetadata", this.#keyringMetadata)
   }
 
   /**
@@ -488,8 +503,15 @@ export default class KeyringService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
+      const keyringMetadata = this.#keyringMetadata
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(serializedKeyrings, this.#cachedKey)
+      const vault = await encryptVault(
+        {
+          keyrings: serializedKeyrings,
+          metadata: keyringMetadata,
+        },
+        this.#cachedKey
+      )
       await writeLatestEncryptedVault(vault)
     }
   }

@@ -28,10 +28,10 @@ export const selectKeyringsByAddresses = createSelector(
 
 export const selectSourcesByAddress = createSelector(
   (state: RootState) => state.keyrings.keyrings,
-  (state: RootState) => state.keyrings.keyringSources,
+  (state: RootState) => state.keyrings.keyringMetadata,
   (
     keyrings,
-    keyringSources
+    keyringMetadata
   ): {
     [keyringId: string]: "import" | "newSeed"
   } =>
@@ -44,7 +44,7 @@ export const selectSourcesByAddress = createSelector(
             address,
             // Guaranteed to exist by the filter above
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            keyringSources[keyring.id!],
+            keyringMetadata[keyring.id!]?.source,
           ])
         )
     )
