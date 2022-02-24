@@ -43,18 +43,18 @@ function recentPricesFromArray(
   baseAsset: AnyAsset,
   prices: PricePoint[]
 ): SingleAssetState["recentPrices"] {
-  const pricesToSort = prices.map((pp) => [pp.time, pp])
+  const pricesToSort = prices.map((pp) => [pp.time, pp] as const)
   pricesToSort.sort()
   return pricesToSort
-    .map((r) => r[1] as PricePoint)
+    .map((r) => r[1])
     .reduce((agg: SingleAssetState["recentPrices"], pp: PricePoint) => {
-      const pricedAssetIndex = findClosestAssetIndex(baseAsset, pp.pair)
-      if (pricedAssetIndex !== null) {
-        const pricedAsset = pp.pair[pricedAssetIndex === 0 ? 0 : 1]
+      const baseAssetIndex = findClosestAssetIndex(baseAsset, pp.pair)
+      if (baseAssetIndex !== null) {
+        const priceAsset = pp.pair[baseAssetIndex === 0 ? 1 : 0]
         const newAgg = {
           ...agg,
         }
-        newAgg[pricedAsset.symbol] = pp
+        newAgg[priceAsset.symbol] = pp
         return newAgg
       }
       return agg
@@ -116,14 +116,10 @@ const assetsSlice = createSlice({
     ) => {
       pricePoint.pair.forEach((pricedAsset) => {
         // find the asset metadata
-        const index = findClosestAssetIndex(pricedAsset, [
-          ...immerState,
-        ] as AnyAsset[])
+        const index = findClosestAssetIndex(pricedAsset, immerState)
         if (typeof index !== "undefined") {
           // append to longer-running prices
-          const prices = prunePrices(
-            [...immerState[index].prices].concat([pricePoint])
-          )
+          const prices = prunePrices([...immerState[index].prices, pricePoint])
           immerState[index].prices = prices
           // update recent prices for easy checks by symbol
           immerState[index].recentPrices = recentPricesFromArray(
