@@ -213,6 +213,7 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyringMetadata = {}
     this.emitter.emit("locked", true)
     this.emitKeyrings()
+    this.emitKeyringMetadata()
   }
 
   /**

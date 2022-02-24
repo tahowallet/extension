@@ -352,10 +352,10 @@ describe("KeyringService when saving keyrings", () => {
           {
             timeSaved: 1635201991098,
             vault: {
-              salt: "XeQ9825jVp7rCq6f2vRySunT/G7Q4rbCcrWxKc/o6KiRCx27eyrQYHciGz4YB3wYCh6Po1liuffN7GIYqkxWJw==",
-              initializationVector: "7MJ1ur79CzKwgVAXXcJmQA==",
+              salt: "cf1U5D4p8XdhVHAr3SaLE5pz8IdsOkWu9+bWgwlPySQRZThr5dsfD1QNmFroGnGn2Fh102ovm41vfFFb5Y/80A==",
+              initializationVector: "M4PB1noDXQFoF8Lp4BwevQ==",
               cipherText:
-                "0bi2msjv2+3zVt2Tjd40i7BNfAuMgbomzCOuce2/l5oiyxsTcqOb871xdDYIvh2g7uHnRXC+BSbopA4xoXpRn/uh4Tjcu8R0dZxsCxCBRAiXVu1RLFojAdhsUwuUZuHn7nhGmu9mrLNKrVh8lFmshYfjtFMgiUFjAIkzEwWvVDvVT0PWVZghg+KXrUd+i3ymVRHYnvz2nZ91fYa3TBIP27ohTxSrNGyccz63Njqk7fCVNACSEXMC7Uqment1h/YpIYG8IGDTfo7/7kz8dSvBQlPlTSgOnC4O9Bey0UEj0LAZXur/i6EyJUxQWlWIXN6is5tEDfWFunrjRmbeqpQBMrPhlhUbGNfbvid5bTGHsgO2Kz9d3w==",
+                "krZ97jlfucMCq7u3TEy0skshtAC9z3cK8V0bZiQz6Nuk75RO//FBmNW3dQ9CzaMxpoQ4MUchA4e2xz9YjpCFmOWZqUJ9ESjGM348KIBW+VRB8YKTIWlvqB/nGsfd1UTUqtyElrUKvryO5o3AzNAVG8onRNR7ngXXB7K8PXXrtQGikoHmhrv+lu+WzVVE+tM/jvi71rQkSEveOX8u1MA5A/Gyow/7tOWCL6WY5a2tFdYffIwAPgtI1R+XVw5HmreBNiD4t46U7qALihcHVqcX9D/yJx8dP9XrKylyiF5u89qm0tKomZYJhpzE6yWPOjMHFyOwvTbJxxbhiXAKIdF2BsA6UCc/L1gbk8aVhyjVnOjyCNPjWcKPPDRD+Cfy9I6L+lTvWghHKrv2WykPtTne/XjxkgYCt2wkqgjm9Tl3dpFtigz8pBmkg+KkuEna",
             },
           },
         ],
@@ -380,8 +380,8 @@ describe("KeyringService when saving keyrings", () => {
 
     expect(storedKeyrings[0]).toMatchObject({
       type: KeyringTypes.mnemonicBIP39S256,
-      id: "0x0f38729e",
-      addresses: ["0xf34d8078c80d4be6ff928ff794ab65aa535ead4c"],
+      id: "0x77555a3b",
+      addresses: ["0x3c10745391dfae50df6dc0ee17281f34bbda2fbf"],
     })
   })
 })
