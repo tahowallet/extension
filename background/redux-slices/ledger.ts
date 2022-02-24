@@ -92,6 +92,13 @@ const ledgerSlice = createSlice({
         payload: { deviceID, status },
       }: { payload: { deviceID: string; status: LedgerConnectionStatus } }
     ) => {
+      if (
+        immerState.currentDeviceID === deviceID &&
+        status === "disconnected"
+      ) {
+        immerState.currentDeviceID = null
+      }
+
       const device = immerState.devices[deviceID]
       if (!device) return
       device.status = status
