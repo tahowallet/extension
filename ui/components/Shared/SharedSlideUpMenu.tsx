@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import React, { ReactElement, useState, useEffect, CSSProperties } from "react"
+import React, { ReactElement, CSSProperties } from "react"
 import { useDelayContentChange } from "../../hooks"
 
 export type SharedSlideUpMenuSize =
