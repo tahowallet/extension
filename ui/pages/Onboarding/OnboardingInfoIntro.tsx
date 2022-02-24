@@ -56,7 +56,7 @@ export default function OnboardingInfoIntro(): ReactElement {
       <div className="bottom_part">
         <div className="bottom_content">
           <SharedProgressIndicator
-            numberOfSteps={4}
+            numberOfSteps={steps.length}
             activeStep={activeStep}
             onProgressStepClicked={(step) => {
               setActiveStep(step)
