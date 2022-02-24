@@ -7,6 +7,7 @@ import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
+  heuristicDesiredDecimalsForUnitPrice,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -14,7 +15,7 @@ import {
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
 } from "../../assets"
-import { selectCurrentAccount } from "./uiSelectors"
+import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
@@ -27,19 +28,15 @@ import {
 // TODO decimals? Maybe it's configurable?
 const desiredDecimals = 2
 // TODO Make this a setting.
-const mainCurrencySymbol = "USD"
-// TODO Make this a setting.
 const userValueDustThreshold = 2
 
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
+  mainCurrencySymbol: string,
   hideDust: boolean
 ): {
-  combinedAssetAmounts: CompleteAssetAmount<
-    AnyAsset,
-    AnyAssetAmount<AnyAsset>
-  >[]
+  combinedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Keep a tally of the total user value; undefined if no main currency data
@@ -56,44 +53,27 @@ const computeCombinedAssetAmountsData = (
         mainCurrencySymbol
       )
 
-      if (assetPricePoint) {
-        const mainCurrencyEnrichedAssetAmount =
-          enrichAssetAmountWithMainCurrencyValues(
-            assetAmount,
-            assetPricePoint,
-            desiredDecimals
-          )
-
-        // Heuristically add decimal places to high-unit-price assets, `
-        // 1 decimal place per order of magnitude in the unit price; e.g.
-        // if USD is the main currency and the asset unit price is $100,
-        // 2 decimal points, $1000, 3 decimal points, $10000, 4 decimal
-        // points, etc. `desiredDecimals` is treated as the minimum, and
-        // order of magnitude is rounded up (e.g. $2000 = >3 orders of
-        // magnitude, so 4 decimal points).
-        const decimalValuePlaces = Math.max(
-          // Using ?? 0, safely handle cases where no main currency is
-          // available.
-          Math.ceil(Math.log10(mainCurrencyEnrichedAssetAmount.unitPrice ?? 0)),
+      const mainCurrencyEnrichedAssetAmount =
+        enrichAssetAmountWithMainCurrencyValues(
+          assetAmount,
+          assetPricePoint,
           desiredDecimals
         )
 
-        const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
-          mainCurrencyEnrichedAssetAmount,
-          decimalValuePlaces
+      const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
+        mainCurrencyEnrichedAssetAmount,
+        heuristicDesiredDecimalsForUnitPrice(
+          desiredDecimals,
+          mainCurrencyEnrichedAssetAmount.unitPrice
         )
+      )
 
-        if (
-          typeof fullyEnrichedAssetAmount.mainCurrencyAmount !== "undefined"
-        ) {
-          totalMainCurrencyAmount ??= 0 // initialize if needed
-          totalMainCurrencyAmount += fullyEnrichedAssetAmount.mainCurrencyAmount
-        }
-
-        return fullyEnrichedAssetAmount
+      if (typeof fullyEnrichedAssetAmount.mainCurrencyAmount !== "undefined") {
+        totalMainCurrencyAmount ??= 0 // initialize if needed
+        totalMainCurrencyAmount += fullyEnrichedAssetAmount.mainCurrencyAmount
       }
 
-      return enrichAssetAmountWithDecimalValues(assetAmount, desiredDecimals)
+      return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
       const isNotDust =
@@ -121,11 +101,13 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
   selectHideDust,
-  (account, assets, hideDust) => {
+  selectMainCurrencySymbol,
+  (account, assets, hideDust, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
+        mainCurrencySymbol,
         hideDust
       )
 
@@ -147,7 +129,8 @@ export const selectAccountAndTimestampedActivities = createSelector(
 
 export const selectMainCurrencyPricePoint = createSelector(
   getAssetsState,
-  (assets) => {
+  (state) => selectMainCurrencySymbol(state),
+  (assets, mainCurrencySymbol) => {
     // TODO Support multi-network base assets.
     return selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
   }
@@ -157,7 +140,8 @@ export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
   selectHideDust,
-  (currentAccount, assets, hideDust) => {
+  selectMainCurrencySymbol,
+  (currentAccount, assets, hideDust, mainCurrencySymbol) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -167,7 +151,12 @@ export const selectCurrentAccountBalances = createSelector(
     )
 
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
-      computeCombinedAssetAmountsData(assetAmounts, assets, hideDust)
+      computeCombinedAssetAmountsData(
+        assetAmounts,
+        assets,
+        mainCurrencySymbol,
+        hideDust
+      )
 
     return {
       assetAmounts: combinedAssetAmounts,
@@ -228,12 +217,14 @@ export const selectAccountTotalsByCategory = createSelector(
   selectAddressSigningMethods,
   selectKeyringsByAddresses,
   selectSourcesByAddress,
+  selectMainCurrencySymbol,
   (
     accounts,
     assets,
     signingAccounts,
     keyringsByAddresses,
-    sourcesByAddress
+    sourcesByAddress,
+    mainCurrencySymbol
   ): CategorizedAccountTotals => {
     // TODO: here
 
