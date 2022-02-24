@@ -184,6 +184,7 @@ export default class KeyringService extends BaseService<Events> {
         )
 
         this.emitKeyrings()
+        this.emitKeyringMetadata()
       }
     }
 
@@ -209,6 +210,7 @@ export default class KeyringService extends BaseService<Events> {
     this.lastOutsideActivity = undefined
     this.#cachedKey = null
     this.#keyrings = []
+    this.#keyringMetadata = {}
     this.emitter.emit("locked", true)
     this.emitKeyrings()
   }
