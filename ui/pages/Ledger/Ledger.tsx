@@ -1,6 +1,7 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
+import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 import BrowserTabContainer from "../../components/BrowserTab/BrowserTabContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -8,6 +9,13 @@ import LedgerConnectPopup from "./LedgerConnectPopup"
 import LedgerImportDone from "./LedgerImportDone"
 import LedgerImportAccounts from "./LedgerImportAccounts"
 import LedgerPrepare from "./LedgerPrepare"
+
+const filters = Object.values(LedgerProductDatabase).map(
+  ({ productId }): USBDeviceFilter => ({
+    vendorId: ledgerUSBVendorId,
+    productId,
+  })
+)
 
 export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<
@@ -22,18 +30,19 @@ export default function Ledger(): ReactElement {
   const device = deviceID === null ? null : devices[deviceID] ?? null
 
   const dispatch = useBackgroundDispatch()
-
+  const connectionError = phase === "2-connect" && !device && !connecting
   return (
     <BrowserTabContainer>
-      {phase === "0-prepare" && (
+      {(phase === "0-prepare" || connectionError) && (
         <LedgerPrepare
+          showWarning={connectionError}
           onContinue={async () => {
             setPhase("1-request")
             try {
               // Open popup for testing
               // TODO: use result (for multiple devices)?
               await navigator.usb.requestDevice({
-                filters: [{ vendorId: ledgerUSBVendorId }],
+                filters,
               })
             } catch {
               // Timeout is needed to respond to clicks to,
@@ -42,8 +51,10 @@ export default function Ledger(): ReactElement {
               // before firing clicks outside the popup.
               await new Promise((resolve) => setTimeout(resolve, 100))
 
-              // Advance anyway for testing. (TODO: do not.)
+              // We don't handle the error here but let
+              // connectLedger fail later.
             }
+
             setPhase("2-connect")
 
             setConnecting(true)
@@ -62,13 +73,6 @@ export default function Ledger(): ReactElement {
           heading="Connecting..."
         />
       )}
-      {phase === "2-connect" && !device && !connecting && (
-        /* FIXME: no UI spec for this */
-        <LedgerPanelContainer
-          indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-          heading="Error during connection, reload the page"
-        />
-      )}
       {phase === "2-connect" && device && (
         <LedgerImportAccounts
           device={device}
@@ -80,7 +84,7 @@ export default function Ledger(): ReactElement {
       {phase === "3-done" && (
         <LedgerImportDone
           onClose={() => {
-            setPhase("0-prepare")
+            window.close()
           }}
         />
       )}
