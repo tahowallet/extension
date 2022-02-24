@@ -167,9 +167,16 @@ const pageList: PageList[] = [
     persistOnClose: false,
   },
   {
-    path: "/",
+    path: "/eligible",
     Component: Eligible,
     hasTabBar: false,
+    hasTopBar: true,
+    persistOnClose: false,
+  },
+  {
+    path: "/",
+    Component: Wallet,
+    hasTabBar: true,
     hasTopBar: true,
     persistOnClose: true,
   },
