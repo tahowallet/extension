@@ -6,10 +6,10 @@ import SharedProgressIndicator from "../../components/Shared/SharedProgressIndic
 const steps = [
   {
     image: {
-      width: 273,
-      height: 245.06,
-      fileName: "illustration_onboarding_welcome",
-      extraStyles: `margin-top: 25px;`,
+      width: 267.15,
+      height: 153.33,
+      fileName: "onboarding/graphic_different",
+      extraStyles: `margin-top: 78px;`,
     },
     title: "Tally is different",
     body: "Tally is the first community-owned wallet for Web3 and DeFi. If you own TALLY tokens, you are an owner.",
@@ -17,10 +17,10 @@ const steps = [
   },
   {
     image: {
-      width: 267,
-      height: 251,
-      fileName: "illustration_onboarding_dao",
-      extraStyles: ``,
+      width: 359.65,
+      height: 343.17,
+      fileName: "onboarding/graphic_tally_token",
+      extraStyles: `margin-top: -12px;`,
     },
     title: "The TALLY token",
     body: `You can earn TALLY in many ways! Check out  the Earn and Swap tabs.`,
@@ -28,10 +28,10 @@ const steps = [
   },
   {
     image: {
-      width: 244.22,
-      height: 247.24,
-      fileName: "illustration_onboarding_community_edition",
-      extraStyles: `margin-top: 21px;`,
+      width: 330,
+      height: 277,
+      fileName: "onboarding/graphic_airdrop",
+      extraStyles: `margin-top: 0px; margin-right: 0px;`,
     },
     title: "TALLY token drop",
     body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
