@@ -1,3 +1,4 @@
+import { AlchemyProvider } from "@ethersproject/providers"
 import logger from "../../lib/logger"
 
 import { HexString } from "../../types"
@@ -337,7 +338,7 @@ export default class IndexingService extends BaseService<Events> {
     contractAddresses?: HexString[]
   ): ReturnType<typeof getTokenBalances> {
     const balances = await getTokenBalances(
-      this.chainService.pollingProviders.ethereum,
+      this.chainService.providers.ethereum as unknown as AlchemyProvider,
       addressNetwork.address,
       contractAddresses || undefined
     )
@@ -414,7 +415,8 @@ export default class IndexingService extends BaseService<Events> {
       )
       if (!customAsset) {
         // TODO hardcoded to Ethereum
-        const provider = this.chainService.pollingProviders.ethereum
+        const provider = this.chainService.providers
+          .ethereum as unknown as AlchemyProvider
         // pull metadata from Alchemy
         customAsset =
           (await getTokenMetadata(provider, {
@@ -586,7 +588,7 @@ export default class IndexingService extends BaseService<Events> {
       ).map(async (addressOnNetwork) => {
         // TODO hardcoded to Ethereum
         const balances = await getAssetBalances(
-          this.chainService.pollingProviders.ethereum,
+          this.chainService.providers.ethereum as unknown as AlchemyProvider,
           activeAssetsToTrack,
           addressOnNetwork
         )

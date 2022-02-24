@@ -597,7 +597,7 @@ export default class Main extends BaseService<never> {
 
   async getAccountEthBalanceUncached(address: string): Promise<bigint> {
     const amountBigNumber =
-      await this.chainService.pollingProviders.ethereum.getBalance(address)
+      await this.chainService.providers.ethereum.getBalance(address)
     return amountBigNumber.toBigInt()
   }
 
