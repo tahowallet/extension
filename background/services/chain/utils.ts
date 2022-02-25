@@ -14,7 +14,6 @@ import {
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
 } from "../../networks"
-import { FungibleAsset } from "../../assets"
 
 /**
  * Parse a block as returned by a polling provider.
@@ -183,7 +182,6 @@ export function transactionFromEthersTransaction(
     blockNumber?: number
     type?: number | null
   },
-  asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
@@ -210,7 +208,7 @@ export function transactionFromEthersTransaction(
     blockHash: tx.blockHash || null,
     blockHeight: tx.blockNumber || null,
     network,
-    asset,
+    asset: network.baseAsset,
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {

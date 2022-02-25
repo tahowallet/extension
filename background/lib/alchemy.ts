@@ -227,7 +227,6 @@ export async function getTokenMetadata(
  */
 export function transactionFromAlchemyWebsocketTransaction(
   websocketTx: unknown,
-  asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
   // These are the props we expect here.
@@ -273,7 +272,7 @@ export function transactionFromAlchemyWebsocketTransaction(
       tx.type !== undefined
         ? (BigNumber.from(tx.type).toNumber() as AnyEVMTransaction["type"])
         : 0,
-    asset,
+    asset: network.baseAsset,
     network,
   }
 }
