@@ -7,6 +7,10 @@ import {
 } from "@ethersproject/providers"
 import { MINUTE } from "../../constants"
 import logger from "../../lib/logger"
+import { AnyEVMTransaction, EVMNetwork } from "../../networks"
+import { AddressOnNetwork } from "../../accounts"
+import { transactionFromEthersTransaction } from "./utils"
+import { transactionFromAlchemyWebsocketTransaction } from "../../lib/alchemy"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 150
@@ -122,6 +126,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }[] = []
 
   constructor(
+    // Internal network type useful for helper calls, but not exposed to avoid
+    // clashing with Ethers's own `network` stuff.
+    private evmNetwork: EVMNetwork,
     firstProviderCreator: () => WebSocketProvider,
     ...remainingProviderCreators: (() => JsonRpcProvider)[]
   ) {
@@ -255,9 +262,78 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return this.currentProvider.detectNetwork()
   }
 
-  // Overriding internal functionality here to support event listener
-  // restoration on reconnect.
-  // eslint-disable-next-line no-underscore-dangle
+  /**
+   * Subscribe to pending transactions that have been resolved to a full
+   * transaction object; uses optimized paths when the provider supports it,
+   * otherwise subscribes to pending transaction hashes and manually resolves
+   * them with a transaction lookup.
+   */
+  async subscribeFullPendingTransactions(
+    { address, network }: AddressOnNetwork,
+    handler: (pendingTransaction: AnyEVMTransaction) => void
+  ): Promise<void> {
+    if (this.evmNetwork.chainID !== network.chainID) {
+      logger.error(
+        `Tried to subscribe to pending transactions for chain id ` +
+          `${network.chainID} but provider was on ` +
+          `${this.evmNetwork.chainID}`
+      )
+      return
+    }
+
+    try {
+      await this.subscribe(
+        "filteredNewFullPendingTransactionsSubscriptionID",
+        ["alchemy_filteredNewFullPendingTransactions", { address }],
+        async (result: unknown) => {
+          // TODO use proper provider string
+          // handle incoming transactions for an account
+          try {
+            const transaction = transactionFromAlchemyWebsocketTransaction(
+              result,
+              network
+            )
+
+            handler(transaction)
+          } catch (error) {
+            logger.error(
+              `Error handling incoming pending transaction: ${result}`,
+              error
+            )
+          }
+        }
+      )
+    } catch (error) {
+      const errorString = String(error)
+      if (errorString.match(/unsupported subscription/i)) {
+        // Fall back on a standard pending transaction subscription if the
+        // Alchemy version is unsupported.
+        this.on("pending", async (transactionHash: unknown) => {
+          try {
+            if (typeof transactionHash === "string") {
+              const transaction = transactionFromEthersTransaction(
+                await this.getTransaction(transactionHash),
+                network
+              )
+
+              handler(transaction)
+            }
+          } catch (innerError) {
+            logger.error(
+              `Error handling incoming pending transaction hash: ${transactionHash}`,
+              innerError
+            )
+          }
+        })
+      }
+    }
+  }
+
+  /**
+   * Behaves the same as the `JsonRpcProvider` `on` method, but also trakcs the
+   * event subscription so that an underlying provider failure will not prevent
+   * it from firing.
+   */
   on(eventName: EventType, listener: Listener): this {
     this.eventSubscriptions.push({
       eventName,

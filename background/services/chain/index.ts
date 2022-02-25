@@ -197,6 +197,7 @@ export default class ChainService extends BaseService<Events> {
     // TODO set up for each relevant network
     this.providers = {
       ethereum: new SerialFallbackProvider(
+        this.ethereumNetwork,
         () =>
           new AlchemyWebSocketProvider(
             getNetwork(Number(this.ethereumNetwork.chainID)),
@@ -1018,19 +1019,11 @@ export default class ChainService extends BaseService<Events> {
 
     // TODO look up provider network properly
     const provider = this.providers.ethereum
-    await provider.subscribe(
-      "filteredNewFullPendingTransactionsSubscriptionID",
-      ["alchemy_filteredNewFullPendingTransactions", { address }],
-      async (result: unknown) => {
-        // TODO use proper provider string
+    await provider.subscribeFullPendingTransactions(
+      { address, network },
+      async (transaction) => {
         // handle incoming transactions for an account
         try {
-          const transaction = transactionFromAlchemyWebsocketTransaction(
-            result,
-            ETH,
-            network
-          )
-
           const normalizedFromAddress = normalizeEVMAddress(transaction.from)
 
           // If this is an EVM chain, we're tracking the from address's
@@ -1056,10 +1049,11 @@ export default class ChainService extends BaseService<Events> {
           // Wait for confirmation/receipt information.
           this.subscribeToTransactionConfirmation(network, transaction)
         } catch (error) {
-          logger.error(`Error saving tx: ${result}`, error)
+          logger.error(`Error saving tx: ${transaction}`, error)
         }
       }
     )
+
     this.subscribedAccounts.push({
       account: address,
       provider,
