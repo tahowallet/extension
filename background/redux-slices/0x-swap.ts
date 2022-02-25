@@ -34,11 +34,17 @@ export type SwapQuoteRequest = {
   gasPrice: bigint
 }
 
+export interface SwapQuoteResponse {
+  request: SwapQuoteRequest
+  quote: ZrxPrice
+  needsApproval: boolean
+}
+
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
 export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 
 export interface SwapState {
-  latestQuoteRequest?: SwapQuoteRequest | undefined
+  latestQuoteResponse?: SwapQuoteResponse | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
 }
@@ -59,12 +65,12 @@ const swapSlice = createSlice({
       finalQuote,
     }),
 
-    setLatestQuoteRequest: (
+    setLatestQuoteResponse: (
       state,
-      { payload: quoteRequest }: { payload: SwapQuoteRequest }
+      { payload: response }: { payload: SwapQuoteResponse }
     ) => ({
       ...state,
-      latestQuoteRequest: quoteRequest,
+      latestQuoteResponse: response,
     }),
 
     setInProgressApprovalContract: (
@@ -83,13 +89,13 @@ const swapSlice = createSlice({
     clearSwapQuote: (state) => ({
       ...state,
       finalQuote: undefined,
-      latestQuoteRequest: undefined,
+      latestQuoteResponse: undefined,
     }),
   },
 })
 
 const {
-  setLatestQuoteRequest,
+  setLatestQuoteResponse,
   setInProgressApprovalContract: setApprovalInProgress,
   clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
@@ -205,10 +211,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
  */
 export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
-  async (
-    quoteRequest: SwapQuoteRequest,
-    { dispatch }
-  ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
+  async (quoteRequest: SwapQuoteRequest, { dispatch }) => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
@@ -228,7 +231,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
-      return undefined
+      return
     }
 
     const quote = apiData
@@ -248,9 +251,9 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
     const needsApproval = existingAllowance.lt(quote.sellAmount)
 
-    dispatch(setLatestQuoteRequest(quoteRequest))
-
-    return { quote, needsApproval }
+    dispatch(
+      setLatestQuoteResponse({ request: quoteRequest, quote, needsApproval })
+    )
   }
 )
 
@@ -330,9 +333,9 @@ export const executeSwap = createBackgroundAsyncThunk(
   }
 )
 
-export const selectLatestQuoteRequest = createSelector(
-  (state: { swap: SwapState }) => state.swap.latestQuoteRequest,
-  (latestQuoteRequest) => latestQuoteRequest
+export const selectLatestQuoteResponse = createSelector(
+  (state: { swap: SwapState }) => state.swap.latestQuoteResponse,
+  (latestQuoteResponse) => latestQuoteResponse
 )
 
 export const selectInProgressApprovalContract = createSelector(

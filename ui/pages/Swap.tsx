@@ -9,10 +9,10 @@ import {
   fetchSwapPrice,
   clearSwapQuote,
   approveTransfer,
-  selectLatestQuoteRequest,
   selectInProgressApprovalContract,
   SwapQuoteRequest,
   fetchSwapQuote,
+  selectLatestQuoteResponse,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -21,10 +21,12 @@ import {
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
-import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
-import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import {
+  encodeJSON,
+  normalizeEVMAddress,
+} from "@tallyho/tally-background/lib/utils"
 import { CompleteSmartContractFungibleAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   clearTransactionState,
@@ -64,6 +66,11 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
   }
 
   return asset1.symbol === asset2.symbol
+}
+
+/* FIXME: possibly slow */
+function deepEquals(a: unknown, b: unknown) {
+  return encodeJSON(a) === encodeJSON(b)
 }
 
 export default function Swap(): ReactElement {
@@ -110,7 +117,9 @@ export default function Swap(): ReactElement {
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
-  const savedQuoteRequest = useBackgroundSelector(selectLatestQuoteRequest)
+  const latestQuoteResponse = useBackgroundSelector(selectLatestQuoteResponse)
+  const savedQuoteRequest = latestQuoteResponse?.request
+
   const {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
@@ -252,8 +261,12 @@ export default function Swap(): ReactElement {
     ): Promise<void> => {
       if (requestedQuote === "sell") {
         setBuyAmount("")
+        setBuyAmountLoading(true)
+        setSellAmountLoading(false)
       } else {
         setSellAmount("")
+        setBuyAmountLoading(false)
+        setSellAmountLoading(true)
       }
 
       const quoteSellAsset =
@@ -287,63 +300,9 @@ export default function Swap(): ReactElement {
         gasPrice: swapTransactionSettings.networkSettings.values.maxFeePerGas,
       }
 
-      // If there's a different quote in progress, reset all loading states as
-      // we're about to replace it.
-      if (latestQuoteRequest.current !== quoteRequest) {
-        setBuyAmountLoading(false)
-        setSellAmountLoading(false)
-      }
-
-      if (requestedQuote === "sell") {
-        setBuyAmountLoading(true)
-      } else {
-        setSellAmountLoading(true)
-      }
-
       latestQuoteRequest.current = quoteRequest
-      const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-        fetchSwapPrice(quoteRequest)
-      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
-        quote: undefined,
-        needsApproval: false,
-      }
 
-      // Only proceed if the quote we just got is the same one we were looking for.
-      if (latestQuoteRequest.current === quoteRequest) {
-        if (typeof quote === "undefined") {
-          // If there's no quote, clear states and abort.
-          setBuyAmountLoading(false)
-          setSellAmountLoading(false)
-          setNeedsApproval(false)
-          setApprovalTarget(undefined)
-          latestQuoteRequest.current = undefined
-
-          // TODO set an error on the buy or sell state.
-
-          return
-        }
-
-        setNeedsApproval(quoteNeedsApproval)
-        setApprovalTarget(quote.allowanceTarget)
-
-        if (requestedQuote === "sell") {
-          setBuyAmount(
-            fixedPointNumberToString({
-              amount: BigInt(quote.buyAmount),
-              decimals: quoteBuyAsset.decimals,
-            })
-          )
-          setBuyAmountLoading(false)
-        } else {
-          setSellAmount(
-            fixedPointNumberToString({
-              amount: BigInt(quote.sellAmount),
-              decimals: quoteSellAsset.decimals,
-            })
-          )
-          setSellAmountLoading(false)
-        }
-      }
+      await dispatch(fetchSwapPrice(quoteRequest))
     },
     [
       buyAsset,
@@ -353,6 +312,48 @@ export default function Swap(): ReactElement {
       swapTransactionSettings.slippageTolerance,
     ]
   )
+
+  useEffect(() => {
+    // If we have a quote response, update the data accordingly,
+    // but only if it applies to the latest request we made.
+
+    if (!latestQuoteResponse) return
+    if (!deepEquals(latestQuoteRequest.current, latestQuoteResponse.request)) {
+      return
+    }
+
+    const { quote, needsApproval: newNeedsApproval } = latestQuoteResponse
+    if (typeof quote === "undefined") {
+      // If there's no quote, clear states and abort.
+      setBuyAmountLoading(false)
+      setSellAmountLoading(false)
+      setNeedsApproval(false)
+      setApprovalTarget(undefined)
+      latestQuoteRequest.current = undefined
+
+      // TODO set an error on the buy or sell state.
+
+      return
+    }
+
+    setNeedsApproval(newNeedsApproval)
+    setApprovalTarget(quote.allowanceTarget)
+
+    setBuyAmount(
+      fixedPointNumberToString({
+        amount: BigInt(quote.buyAmount),
+        decimals: latestQuoteResponse.request.assets.buyAsset.decimals,
+      })
+    )
+    setBuyAmountLoading(false)
+    setSellAmount(
+      fixedPointNumberToString({
+        amount: BigInt(quote.sellAmount),
+        decimals: latestQuoteResponse.request.assets.sellAsset.decimals,
+      })
+    )
+    setSellAmountLoading(false)
+  }, [latestQuoteResponse])
 
   const updateSellAsset = useCallback(
     (asset: SmartContractFungibleAsset) => {
