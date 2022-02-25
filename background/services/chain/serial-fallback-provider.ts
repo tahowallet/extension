@@ -220,25 +220,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
-  private async disconnectCurrentProvider() {
-    logger.debug(
-      "Disconnecting current provider; websocket: ",
-      this.currentProvider instanceof WebSocketProvider,
-      "."
-    )
-    if (this.currentProvider instanceof WebSocketProvider) {
-      this.currentProvider.destroy()
-    } else {
-      // For non-WebSocket providers, kill all subscriptions so the listeners
-      // won't fire; the next provider will pick them up. We could lose events
-      // in between, but if we're considering the current provider dead, let's
-      // assume we would lose them anyway.
-      this.eventSubscriptions.forEach(({ eventName }) =>
-        this.removeAllListeners(eventName)
-      )
-    }
-  }
-
+  /**
+   * Exposes direct WebSocket subscription by JSON-RPC method. Takes immediate
+   * effect if the current underlying provider is a WebSocketProvider. If it is
+   * not, queues the subscription up for when a WebSocketProvider can connect.
+   */
   async subscribe(
     tag: string,
     param: Array<unknown>,
@@ -346,6 +332,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return this
   }
 
+  /**
+   * Behaves the same as the `JsonRpcProvider` `once` method, but also trakcs
+   * the event subscription so that an underlying provider failure will not
+   * prevent it from firing.
+   */
   once(eventName: EventType, listener: Listener): this {
     const adjustedListener = this.listenerWithCleanup(eventName, listener)
 
@@ -397,6 +388,35 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
+   * Handles any cleanup needed for the current provider.
+   *
+   * Useful especially for when a non-WebSocket provider is tracking events,
+   * which are done via polling. In these cases, if the provider became
+   * available again, even if it was no longer the current provider, it would
+   * start calling its event handlers again; disconnecting in this way
+   * unsubscribes all those event handlers so they can be attached to the new
+   * current provider.
+   */
+  private async disconnectCurrentProvider() {
+    logger.debug(
+      "Disconnecting current provider; websocket: ",
+      this.currentProvider instanceof WebSocketProvider,
+      "."
+    )
+    if (this.currentProvider instanceof WebSocketProvider) {
+      this.currentProvider.destroy()
+    } else {
+      // For non-WebSocket providers, kill all subscriptions so the listeners
+      // won't fire; the next provider will pick them up. We could lose events
+      // in between, but if we're considering the current provider dead, let's
+      // assume we would lose them anyway.
+      this.eventSubscriptions.forEach(({ eventName }) =>
+        this.removeAllListeners(eventName)
+      )
+    }
+  }
+
+  /**
    * Wraps an Ethers listener function meant to only be invoked once with
    * cleanup to ensure it won't be resubscribed in case of a provider switch.
    */
@@ -445,6 +465,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
 
+  /**
+   * Resubscribes existing WebSocket subscriptions (if the current provider is
+   * a `WebSocketProvider`) and regular Ethers subscriptions (for all
+   * providers).
+   */
   private async resubscribe() {
     logger.debug("Resubscribing subscriptions...")
 
@@ -492,7 +517,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * index is new, starts with the base backoff; if the provider index is
    * unchanged, computes a jittered exponential backoff. If the current
    * provider has already exceeded its maximum retries, returns undefined to
-   * signal the provider should be considered dead for the time being.
+   * signal that the provider should be considered dead for the time being.
    *
    * Backoffs respect a cooldown time after which they reset down to the base
    * backoff time.
