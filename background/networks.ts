@@ -32,7 +32,7 @@ export type Network = {
  * networks.
  */
 export type NetworkSpecific = {
-  homeNetwork: Network
+  homeNetwork: AnyNetwork
 }
 
 /**
@@ -50,6 +50,11 @@ export type EVMNetwork = Network & {
   chainID: string
   family: "EVM"
 }
+
+/**
+ * Union type that allows narrowing to particular network subtypes.
+ */
+export type AnyNetwork = EVMNetwork
 
 /**
  * An EVM-style block identifier, including difficulty, block height, and
