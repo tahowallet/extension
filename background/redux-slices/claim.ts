@@ -1,11 +1,11 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
-import { BigNumber } from "ethers"
+import { BigNumber, Signature, utils } from "ethers"
 import { Eligible } from "../services/claim/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { truncateAddress } from "../lib/utils"
 
-import { getContract } from "./utils/contract-utils"
+import { getContract, getProvider } from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
 import delegates from "../static/delegates.json"
 import { HexString } from "../types"
@@ -39,6 +39,9 @@ interface ClaimingState {
   DAOs: DAO[]
   selectedDAO: DAO | null
   selectedDelegate: Delegate | null
+  signature: Signature
+  nonce: number
+  expiry: number
 }
 
 const newBalanceTree = new BalanceTree(eligibles)
@@ -113,6 +116,9 @@ export const claimRewards = createBackgroundAsyncThunk(
 
     const distributorContract = await getDistributorContract()
 
+    const { r, s, v } = claim.signature
+    const { nonce, expiry } = claim
+
     try {
       if (!referralCode && !delegate) {
         const tx = await distributorContract.claim(
@@ -121,19 +127,30 @@ export const claimRewards = createBackgroundAsyncThunk(
           balance,
           merkleProof
         )
-        const receipt = await tx.wait()
-        return receipt
+        await tx.wait()
+        return account
       }
 
-      // TODO Where do we get the { nonce, expiry, r, s, v }, do we sig TypedData?
+      if (referralCode && !delegate) {
+        const tx = await distributorContract.claimWithCommunityCode(
+          index,
+          account,
+          balance,
+          merkleProof,
+          referralCode
+        )
+        await tx.wait()
+        return account
+      }
+
       const tx = await distributorContract.voteWithFriends(
         index,
         account,
         balance,
         merkleProof,
         referralCode,
-        delegate
-        // { nonce, expiry, r, s, v }
+        delegate,
+        { nonce, expiry, r, s, v }
       )
       await tx.wait()
       return account
@@ -167,6 +184,17 @@ const claimingSlice = createSlice({
     setEligibility: (immerState, { payload: eligibility }) => {
       immerState.eligibility = eligibility
     },
+    saveSignature: (
+      state,
+      {
+        payload: { signature, nonce, expiry },
+      }: { payload: { signature: Signature; nonce: number; expiry: number } }
+    ) => ({
+      ...state,
+      signature,
+      nonce,
+      expiry,
+    }),
   },
   extraReducers: (builder) => {
     builder.addCase(claimRewards.pending, (immerState) => {
@@ -185,10 +213,46 @@ const claimingSlice = createSlice({
   },
 })
 
-export const { chooseDAO, chooseDelegate, setEligibility } =
+export const { chooseDAO, chooseDelegate, setEligibility, saveSignature } =
   claimingSlice.actions
 
 export default claimingSlice.reducer
+
+export const signTokenDelegationData = createBackgroundAsyncThunk(
+  "claim/signDelegation",
+  async (account: HexString, { dispatch }) => {
+    const provider = getProvider()
+    const signer = provider.getSigner()
+    const TALLY_TOKEN = "0x"
+
+    const nonce = 0 // how to determine next nonce
+    const expiry = 1650153025 // what should be the expiry?
+    const types = {
+      Delegation: [
+        { name: "delegatee", type: "address" },
+        { name: "nonce", type: "uint256" },
+        { name: "expiry", type: "uint256" },
+      ],
+    }
+    const domain = {
+      name: "Tally",
+      chainId: 31337,
+      TALLY_TOKEN,
+    }
+    const message = {
+      account,
+      nonce,
+      expiry,
+    }
+    // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
+    // eslint-disable-next-line no-underscore-dangle
+    const tx = await signer._signTypedData(domain, types, message)
+
+    const signature = utils.splitSignature(tx)
+
+    dispatch(claimingSlice.actions.saveSignature({ signature, nonce, expiry }))
+  }
+)
 
 export const selectClaim = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
