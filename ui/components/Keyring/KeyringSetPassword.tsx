@@ -52,7 +52,7 @@ export default function KeyringSetPassword(): ReactElement {
   }
 
   return (
-    <section>
+    <section className="standard_width">
       <div className="top">
         <SharedBackButton />
         <div className="wordmark" />
@@ -124,12 +124,6 @@ export default function KeyringSetPassword(): ReactElement {
           section {
             padding-top: 25px;
             background-color: var(--hunter-green);
-          }
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 52px;
-            height: 25px;
           }
           .input_wrap {
             width: 211px;
