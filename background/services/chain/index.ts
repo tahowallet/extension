@@ -50,6 +50,7 @@ import type {
 } from "../enrichment"
 import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
+import AssetDataHelper from "./asset-data-helper"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -157,6 +158,8 @@ export default class ChainService extends BaseService<Events> {
 
   ethereumNetwork: EVMNetwork
 
+  assetData: AssetDataHelper
+
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService
@@ -214,6 +217,8 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
+
+    this.assetData = new AssetDataHelper(this)
   }
 
   async internalStartService(): Promise<void> {
@@ -259,6 +264,14 @@ export default class ChainService extends BaseService<Events> {
             })
         )
     )
+  }
+
+  /**
+   * Finds a provider for the given network, or returns undefined if no such
+   * provider exists.
+   */
+  providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
+    return this.providers[network.name]
   }
 
   /**

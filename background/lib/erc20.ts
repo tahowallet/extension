@@ -1,4 +1,4 @@
-import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
+import { BaseProvider } from "@ethersproject/providers"
 import { BigNumber, ethers } from "ethers"
 import {
   EventFragment,
@@ -6,10 +6,8 @@ import {
   FunctionFragment,
   TransactionDescription,
 } from "ethers/lib/utils"
-import { getTokenBalances } from "./alchemy"
-import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
-import { EVMLog } from "../networks"
+import { EVMLog, SmartContract } from "../networks"
 import { HexString } from "../types"
 
 export const ERC20_FUNCTIONS = {
@@ -74,56 +72,40 @@ export async function getBalance(
   return BigInt((await token.balanceOf(account)).toString())
 }
 
-/*
- * Get multiple token balances for an account using Alchemy.
- *
- * If no token contracts are provided, no balances will be returned.
+/**
+ * Returns the metadata for a single ERC20 token by calling the contract
+ * directly. Certain providers may support more efficient lookup strategies.
  */
-export async function getBalances(
-  provider: AlchemyProvider,
-  tokens: SmartContractFungibleAsset[],
-  { address, network }: AddressOnNetwork
-): Promise<AccountBalance[]> {
-  if (tokens.length === 0) {
-    return [] as AccountBalance[]
+export async function getMetadata(
+  provider: BaseProvider,
+  tokenSmartContract: SmartContract
+): Promise<SmartContractFungibleAsset> {
+  const token = new ethers.Contract(
+    tokenSmartContract.contractAddress,
+    ERC20_ABI,
+    provider
+  )
+
+  const [symbol, name, decimals] = await Promise.all(
+    [
+      ERC20_FUNCTIONS.symbol,
+      ERC20_FUNCTIONS.name,
+      ERC20_FUNCTIONS.decimals,
+    ].map(({ name: functionName }) => token.callStatic[functionName]())
+  )
+
+  return {
+    ...tokenSmartContract,
+    symbol,
+    name,
+    decimals,
   }
-
-  const tokenBalances = await getTokenBalances(
-    provider,
-    address,
-    tokens.map((t) => t.contractAddress)
-  )
-
-  const assetByAddress = tokens.reduce<{
-    [contractAddress: string]: SmartContractFungibleAsset
-  }>((acc, asset) => {
-    const newAcc = { ...acc }
-    newAcc[asset.contractAddress.toLowerCase()] = asset
-    return newAcc
-  }, {})
-
-  return tokenBalances.reduce(
-    (
-      acc: AccountBalance[],
-      tokenDetail: { contractAddress: string; amount: bigint }
-    ) => {
-      const accountBalance: AccountBalance = {
-        assetAmount: {
-          amount: tokenDetail.amount,
-          asset: assetByAddress[tokenDetail.contractAddress.toLowerCase()],
-        },
-        address,
-        network,
-        retrievedAt: Date.now(),
-        dataSource: "alchemy",
-      }
-
-      return acc.concat([accountBalance])
-    },
-    []
-  )
 }
 
+/**
+ * Parses a contract input/data field as if it were an ERC20 transaction.
+ * Returns the parsed data if parsing succeeds, otherwise returns `undefined`.
+ */
 export function parseERC20Tx(
   input: string
 ): TransactionDescription | undefined {
@@ -191,7 +173,3 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
     })
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
 }
-
-// TODO get token balances of a many token contracts for a particular account the slow way, cache
-// TODO export a function that can take a tx and return any involved ERC-20s using traces
-// TODO export a function that can simulate an unsigned transaction and return the token balance changes

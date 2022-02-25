@@ -94,7 +94,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  private currentProvider: JsonRpcProvider
+  currentProvider: JsonRpcProvider
 
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
