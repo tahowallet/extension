@@ -16,17 +16,17 @@ import {
   useAreKeyringsUnlocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
-import SignTransactionInfoProvider, {
-  SignLocationState,
-} from "../components/SignTransaction/SignTransactionInfoProvider"
+import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
 import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
-
-export { SignType } from "../components/SignTransaction/SignTransactionInfoProvider"
 
 export default function SignTransaction({
   location,
 }: {
-  location: { key?: string; pathname: string; state?: SignLocationState }
+  location: {
+    key?: string
+    pathname: string
+    state?: { redirectTo: { path: string; state: unknown } }
+  }
 }): ReactElement {
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
@@ -70,10 +70,12 @@ export default function SignTransaction({
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
 
-      const assetSymbol = location.state?.assetSymbol
       // Request broadcast if not dApp...
-      if (typeof assetSymbol !== "undefined") {
-        history.push("/singleAsset", { symbol: assetSymbol })
+      if (typeof location.state !== "undefined") {
+        history.push(
+          location.state.redirectTo.path,
+          location.state.redirectTo.state
+        )
       } else {
         history.goBack()
       }
@@ -84,7 +86,7 @@ export default function SignTransaction({
     isTransactionSigned,
     isTransactionSigning,
     isWaitingForKeyrings,
-    location.state?.assetSymbol,
+    location.state,
     shouldBroadcastOnSign,
     signedTransaction,
   ])
@@ -134,7 +136,7 @@ export default function SignTransaction({
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   return (
-    <SignTransactionInfoProvider location={location}>
+    <SignTransactionInfoProvider>
       {({ title, infoBlock, textualInfoBlock, confirmButtonLabel }) => (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}

@@ -9,7 +9,7 @@ import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
-import { AccountBalance, AddressNetwork } from "../../accounts"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
@@ -47,10 +47,6 @@ import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../enrichment"
-import {
-  convertFixedPointNumber,
-  multiplyFixedPointNumbers,
-} from "../../lib/fixed-point"
 import { HOUR } from "../../constants"
 
 // We can't use destructuring because webpack has to replace all instances of
@@ -87,10 +83,10 @@ const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
-  newAccountToTrack: AddressNetwork
+  newAccountToTrack: AddressOnNetwork
   accountBalance: AccountBalance
   assetTransfers: {
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
     assetTransfers: AssetTransfer[]
   }
   block: AnyEVMBlock
@@ -159,6 +155,8 @@ export default class ChainService extends BaseService<Events> {
     return new this(await getOrCreateDB(), await preferenceService)
   }
 
+  ethereumNetwork: EVMNetwork
+
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService
@@ -194,16 +192,18 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
+    this.ethereumNetwork = getEthereumNetwork()
+
     // TODO set up for each relevant network
     this.pollingProviders = {
       ethereum: new AlchemyProvider(
-        getNetwork(Number(getEthereumNetwork().chainID)),
+        getNetwork(Number(this.ethereumNetwork.chainID)),
         ALCHEMY_KEY
       ),
     }
     this.websocketProviders = {
       ethereum: new AlchemyWebSocketProvider(
-        getNetwork(Number(getEthereumNetwork().chainID)),
+        getNetwork(Number(this.ethereumNetwork.chainID)),
         ALCHEMY_KEY
       ),
     }
@@ -217,20 +217,19 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
     const ethProvider = this.pollingProviders.ethereum
+    const network = this.ethereumNetwork
 
     // FIXME Should we await or drop Promise.all on the below two?
     Promise.all([
       // TODO get the latest block for other networks
       ethProvider.getBlockNumber().then(async (n) => {
         const result = await ethProvider.getBlock(n)
-        const block = blockFromEthersBlock(result)
+        const block = blockFromEthersBlock(network, result)
         await this.db.addBlock(block)
       }),
 
-      this.subscribeToNewHeads(getEthereumNetwork()),
+      this.subscribeToNewHeads(network),
     ])
-
-    const network = getEthereumNetwork()
 
     Promise.all(
       accounts
@@ -437,33 +436,35 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async getAccountsToTrack(): Promise<AddressNetwork[]> {
+  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.db.getAccountsToTrack()
   }
 
   async getLatestBaseAccountBalance(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<AccountBalance> {
+    this.checkNetwork(addressNetwork.network)
+
     // TODO look up provider network properly
     const balance = await this.pollingProviders.ethereum.getBalance(
       addressNetwork.address
     )
-    const accountBalance = {
+    const accountBalance: AccountBalance = {
       address: addressNetwork.address,
       assetAmount: {
         asset: ETH,
         amount: balance.toBigInt(),
       },
-      network: getEthereumNetwork(),
+      network: addressNetwork.network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
-    } as AccountBalance
+    }
     this.emitter.emit("accountBalance", accountBalance)
     await this.db.addBalance(accountBalance)
     return accountBalance
   }
 
-  async addAccountToTrack(addressNetwork: AddressNetwork): Promise<void> {
+  async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
     this.getLatestBaseAccountBalance(addressNetwork)
@@ -490,7 +491,7 @@ export default class ChainService extends BaseService<Events> {
    * @param blockHash the hash of the block we're interested in
    */
   async getBlockData(
-    network: Network,
+    network: EVMNetwork,
     blockHash: string
   ): Promise<AnyEVMBlock> {
     // TODO make this multi network
@@ -502,7 +503,7 @@ export default class ChainService extends BaseService<Events> {
     // Looking for new block
     const resultBlock = await this.pollingProviders.ethereum.getBlock(blockHash)
 
-    const block = blockFromEthersBlock(resultBlock)
+    const block = blockFromEthersBlock(network, resultBlock)
 
     await this.db.addBlock(block)
     this.emitter.emit("block", block)
@@ -534,7 +535,7 @@ export default class ChainService extends BaseService<Events> {
     const newTransaction = transactionFromEthersTransaction(
       gethResult,
       ETH,
-      getEthereumNetwork()
+      network
     )
 
     if (!newTransaction.blockHash && !newTransaction.blockHeight) {
@@ -657,13 +658,27 @@ export default class ChainService extends BaseService<Events> {
    * **************** */
 
   /**
+   * Ensure the given network is supported; otherwise, log and throw.
+   */
+  private checkNetwork(network: EVMNetwork): void {
+    if (network.name !== this.ethereumNetwork.name) {
+      logger.error(
+        "Request received for operation on unsupported network",
+        network,
+        "expected",
+        this.ethereumNetwork
+      )
+    }
+  }
+
+  /**
    * Load recent asset transfers from an account on a particular network. Backs
    * off exponentially (in block range, not in time) on failure.
    *
    * @param addressNetwork the address and network whose asset transfers we need
    */
   private async loadRecentAssetTransfers(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
@@ -723,7 +738,7 @@ export default class ChainService extends BaseService<Events> {
    * @param addressNetwork The account whose asset transfers are being loaded.
    */
   private async loadHistoricAssetTransfers(
-    addressNetwork: AddressNetwork
+    addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const oldest = await this.db.getOldestAccountAssetTransferLookup(
       addressNetwork
@@ -754,37 +769,42 @@ export default class ChainService extends BaseService<Events> {
    * particular block range. Emit events for any transfers found, and look up
    * any related transactions and blocks.
    *
-   * @param addressNetwork the address and network whose asset transfers we need
+   * @param addressOnNetwork the address and network whose asset transfers we need
    */
   private async loadAssetTransfers(
-    addressNetwork: AddressNetwork,
+    addressOnNetwork: AddressOnNetwork,
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
+    this.checkNetwork(addressOnNetwork.network)
+
     // TODO only works on Ethereum today
     const assetTransfers = await getAssetTransfers(
       this.pollingProviders.ethereum,
-      addressNetwork.address,
+      addressOnNetwork,
       Number(startBlock),
       Number(endBlock)
     )
 
     await this.db.recordAccountAssetTransferLookup(
-      addressNetwork,
+      addressOnNetwork,
       startBlock,
       endBlock
     )
 
     this.emitter.emit("assetTransfers", {
-      addressNetwork,
+      addressNetwork: addressOnNetwork,
       assetTransfers,
     })
 
     const firstSeen = Date.now()
-    const network = getEthereumNetwork()
     /// send all found tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(network, a.txHash, firstSeen)
+      this.queueTransactionHashToRetrieve(
+        addressOnNetwork.network,
+        a.txHash,
+        firstSeen
+      )
     )
   }
 
@@ -807,7 +827,8 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    const ethereumNetwork = getEthereumNetwork()
+    const network = this.ethereumNetwork
+
     toHandle.forEach(async ({ hash, firstSeen }) => {
       try {
         // TODO make this multi network
@@ -816,7 +837,7 @@ export default class ChainService extends BaseService<Events> {
         const transaction = transactionFromEthersTransaction(
           result,
           ETH,
-          ethereumNetwork
+          network
         )
 
         // TODO make this provider specific
@@ -836,30 +857,28 @@ export default class ChainService extends BaseService<Events> {
       } catch (error) {
         logger.error(`Error retrieving transaction ${hash}`, error)
         if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-          this.queueTransactionHashToRetrieve(ethereumNetwork, hash, firstSeen)
+          this.queueTransactionHashToRetrieve(network, hash, firstSeen)
         } else {
           logger.warn(
             `Transaction ${hash} is too old to keep looking for it; treating ` +
               "it as expired."
           )
 
-          this.db
-            .getTransaction(ethereumNetwork, hash)
-            .then((existingTransaction) => {
-              if (existingTransaction !== null) {
-                logger.debug(
-                  "Found existing transaction for expired lookup; marking as " +
-                    "failed if no other status exists."
-                )
-                this.saveTransaction(
-                  // Don't override an already-persisted successful status with
-                  // an expiration-based failed status, but do set status to
-                  // failure if no transaction was seen.
-                  { status: 0, ...existingTransaction },
-                  "local"
-                )
-              }
-            })
+          this.db.getTransaction(network, hash).then((existingTransaction) => {
+            if (existingTransaction !== null) {
+              logger.debug(
+                "Found existing transaction for expired lookup; marking as " +
+                  "failed if no other status exists."
+              )
+              this.saveTransaction(
+                // Don't override an already-persisted successful status with
+                // an expiration-based failed status, but do set status to
+                // failure if no transaction was seen.
+                { status: 0, ...existingTransaction },
+                "local"
+              )
+            }
+          })
         }
       }
     })
@@ -931,6 +950,23 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
+   * Looks up whether any of the passed address/network pairs are being tracked.
+   */
+  async isTrackingAddressesOnNetworks(
+    ...addressesOnNetworks: AddressOnNetwork[]
+  ): Promise<boolean> {
+    const accounts = await this.getAccountsToTrack()
+
+    return addressesOnNetworks.some(({ address, network }) =>
+      accounts.some(
+        ({ address: trackedAddress, network: trackedNetwork }) =>
+          sameEVMAddress(trackedAddress, address) &&
+          network.name === trackedNetwork.name
+      )
+    )
+  }
+
+  /**
    * Watch a network for new blocks, saving each to the database and emitting an
    * event. Re-orgs are currently ignored.
    *
@@ -945,7 +981,7 @@ export default class ChainService extends BaseService<Events> {
       ["newHeads"],
       async (result: unknown) => {
         // add new head to database
-        const block = blockFromWebsocketBlock(result)
+        const block = blockFromWebsocketBlock(network, result)
         await this.db.addBlock(block)
         // emit the new block, don't wait to settle
         this.emitter.emit("block", block)
@@ -964,20 +1000,20 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Watch logs for an account's transactions on a particular network.
    *
-   * @param addressNetwork The network and address to watch.
+   * @param addressOnNetwork The network and address to watch.
    */
-  private async subscribeToAccountTransactions(
-    addressNetwork: AddressNetwork
-  ): Promise<void> {
+  private async subscribeToAccountTransactions({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO look up provider network properly
     const provider = this.websocketProviders.ethereum
     // eslint-disable-next-line no-underscore-dangle
     await provider._subscribe(
       "filteredNewFullPendingTransactionsSubscriptionID",
-      [
-        "alchemy_filteredNewFullPendingTransactions",
-        { address: addressNetwork.address },
-      ],
+      ["alchemy_filteredNewFullPendingTransactions", { address }],
       async (result: unknown) => {
         // TODO use proper provider string
         // handle incoming transactions for an account
@@ -985,7 +1021,7 @@ export default class ChainService extends BaseService<Events> {
           const transaction = transactionFromAlchemyWebsocketTransaction(
             result,
             ETH,
-            getEthereumNetwork()
+            network
           )
 
           const normalizedFromAddress = normalizeEVMAddress(transaction.from)
@@ -996,32 +1032,29 @@ export default class ChainService extends BaseService<Events> {
           // transaction submitted outside of this wallet causes this wallet to
           // produce bad transactions with reused nonces.
           if (
-            typeof addressNetwork.network.chainID !== "undefined" &&
+            typeof network.chainID !== "undefined" &&
             typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
+              network.chainID
             ]?.[normalizedFromAddress] !== "undefined" &&
-            this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
-            ]?.[normalizedFromAddress] <= transaction.nonce
+            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+              normalizedFromAddress
+            ] <= transaction.nonce
           ) {
-            this.evmChainLastSeenNoncesByNormalizedAddress[
-              addressNetwork.network.chainID
-            ][normalizedFromAddress] = transaction.nonce
+            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+              normalizedFromAddress
+            ] = transaction.nonce
           }
           await this.saveTransaction(transaction, "alchemy")
 
           // Wait for confirmation/receipt information.
-          this.subscribeToTransactionConfirmation(
-            getEthereumNetwork(),
-            transaction
-          )
+          this.subscribeToTransactionConfirmation(network, transaction)
         } catch (error) {
           logger.error(`Error saving tx: ${result}`, error)
         }
       }
     )
     this.subscribedAccounts.push({
-      account: addressNetwork.address,
+      account: address,
       provider,
     })
   }
@@ -1037,6 +1070,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO make proper use of the network
     this.websocketProviders.ethereum.once(
       transaction.hash,
@@ -1059,6 +1094,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
+    this.checkNetwork(network)
+
     // TODO make proper use of the network
     const receipt = await this.pollingProviders.ethereum.getTransactionReceipt(
       transaction.hash

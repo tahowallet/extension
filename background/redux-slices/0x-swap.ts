@@ -105,16 +105,11 @@ const zeroXApiBase =
   process.env.ZEROX_API_KEY.trim() !== ""
     ? "gated.api.0x.org"
     : "api.0x.org"
-const gatedParameters =
-  typeof process.env.ZEROX_API_KEY !== "undefined" &&
-  process.env.ZEROX_API_KEY.trim() !== ""
-    ? {
-        affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
-        feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
-        // includedSources: "RFQT", FIXME This seems to limit available liquidity considerably
-        buyTokenPercentageFee: SWAP_FEE,
-      }
-    : {}
+const gatedParameters = {
+  affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
+  feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
+  buyTokenPercentageFee: SWAP_FEE,
+}
 const gatedHeaders: { [header: string]: string } =
   typeof process.env.ZEROX_API_KEY !== "undefined" &&
   process.env.ZEROX_API_KEY.trim() !== ""
@@ -157,7 +152,7 @@ function build0xUrlFromSwapRequest(
     ...gatedParameters,
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
-    requestUrl.searchParams.set(parameter, value)
+    requestUrl.searchParams.set(parameter, value.toString())
   })
 
   return requestUrl
