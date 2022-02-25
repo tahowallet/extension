@@ -1,4 +1,5 @@
 import { AnyAsset, isSmartContractFungibleAsset } from "../assets"
+import { sameNetwork } from "../networks"
 import { normalizeEVMAddress } from "./utils"
 
 /**
@@ -18,24 +19,17 @@ export function scoreAssetSimilarity(a: AnyAsset, b: AnyAsset): number {
   if (a.name === b.name) {
     score += 1
   }
-  if ("decimals" in a && "decimals" in b) {
-    if (a.decimals === b.decimals) {
-      score += 1
-    } else {
-      score -= 1
-    }
+  if ("decimals" in a && "decimals" in b && a.decimals === b.decimals) {
+    score += 1
   } else if ("decimals" in a || "decimals" in b) {
     score -= 1
   }
-  if ("homeNetwork" in a && "homeNetwork" in b) {
-    const sameNetwork =
-      a.homeNetwork.name === b.homeNetwork.name &&
-      a.homeNetwork.chainID === b.homeNetwork.chainID
-    if (sameNetwork) {
-      score += 1
-    } else {
-      score -= 1
-    }
+  if (
+    "homeNetwork" in a &&
+    "homeNetwork" in b &&
+    sameNetwork(a.homeNetwork, b.homeNetwork)
+  ) {
+    score += 1
   } else if ("homeNetwork" in a || "homeNetwork" in b) {
     score -= 1
   }

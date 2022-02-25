@@ -288,3 +288,18 @@ export type BlockEstimate = {
    */
   maxFeePerGas: bigint
 }
+
+/**
+ * Tests whether two networks should be considered the same. Verifies family,
+ * chainID, and name.
+ */
+export function sameNetwork(
+  network1: AnyNetwork,
+  network2: AnyNetwork
+): boolean {
+  return (
+    network1.family === network2.family &&
+    network1.chainID === network2.chainID &&
+    network1.name === network2.name
+  )
+}
