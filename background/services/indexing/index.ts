@@ -1,4 +1,3 @@
-import { AlchemyProvider } from "@ethersproject/providers"
 import logger from "../../lib/logger"
 
 import { HexString } from "../../types"
@@ -10,11 +9,10 @@ import {
   FungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
+  SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
-import { getBalances as getAssetBalances } from "../../lib/erc20"
-import { getTokenBalances, getTokenMetadata } from "../../lib/alchemy"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -278,7 +276,9 @@ export default class IndexingService extends BaseService<Events> {
         // Note that we'll want to move this to a queuing system that can be
         // easily rate-limited eventually.
         const checkedContractAddresses = new Set(
-          balances.map((b) => b.contractAddress).filter(Boolean)
+          balances.map(
+            ({ smartContract: { contractAddress } }) => contractAddress
+          )
         )
         const cachedAssets = await this.getCachedAssets(
           addressOnNetwork.network
@@ -291,10 +291,7 @@ export default class IndexingService extends BaseService<Events> {
               !checkedContractAddresses.has(a.contractAddress)
           )
 
-        await this.retrieveTokenBalances(
-          addressOnNetwork,
-          otherActiveAssets.map((a) => a.contractAddress)
-        )
+        await this.retrieveTokenBalances(addressOnNetwork, otherActiveAssets)
       }
     )
 
@@ -335,46 +332,54 @@ export default class IndexingService extends BaseService<Events> {
    */
   private async retrieveTokenBalances(
     addressNetwork: AddressOnNetwork,
-    contractAddresses?: HexString[]
-  ): ReturnType<typeof getTokenBalances> {
-    const balances = await getTokenBalances(
-      this.chainService.providers.ethereum as unknown as AlchemyProvider,
-      addressNetwork.address,
-      contractAddresses || undefined
+    smartContractAssets?: SmartContractFungibleAsset[]
+  ): Promise<SmartContractAmount[]> {
+    const balances = await this.chainService.assetData.getTokenBalances(
+      addressNetwork,
+      smartContractAssets?.map(({ contractAddress }) => contractAddress)
     )
+
+    const listedAssetByAddress = (smartContractAssets ?? []).reduce<{
+      [contractAddress: string]: SmartContractFungibleAsset
+    }>((acc, asset) => {
+      const newAcc = { ...acc }
+      newAcc[asset.contractAddress.toLowerCase()] = asset
+      return newAcc
+    }, {})
 
     // look up all assets and set balances
     await Promise.allSettled(
-      balances.map(async (b) => {
-        const knownAsset = await this.getKnownSmartContractAsset(
-          addressNetwork.network,
-          b.contractAddress
-        )
+      balances.map(async ({ smartContract: { contractAddress }, amount }) => {
+        const knownAsset =
+          listedAssetByAddress[contractAddress] ??
+          (await this.getKnownSmartContractAsset(
+            addressNetwork.network,
+            contractAddress
+          ))
+
         if (knownAsset) {
           const accountBalance = {
             ...addressNetwork,
             assetAmount: {
               asset: knownAsset,
-              amount: b.amount,
+              amount,
             },
             retrievedAt: Date.now(),
             dataSource: "alchemy",
           } as const
           await this.db.addBalances([accountBalance])
           this.emitter.emit("accountBalance", accountBalance)
-          if (b.amount > 0) {
+          if (amount > 0) {
             await this.addAssetToTrack(knownAsset)
           }
-        } else if (b.amount > 0) {
-          await this.addTokenToTrackByContract(
-            addressNetwork,
-            b.contractAddress
-          )
+        } else if (amount > 0) {
+          await this.addTokenToTrackByContract(addressNetwork, contractAddress)
           // TODO we're losing balance information here, consider an
           // addTokenAndBalanceToTrackByContract method
         }
       })
     )
+
     return balances
   }
 
@@ -414,14 +419,11 @@ export default class IndexingService extends BaseService<Events> {
         contractAddress
       )
       if (!customAsset) {
-        // TODO hardcoded to Ethereum
-        const provider = this.chainService.providers
-          .ethereum as unknown as AlchemyProvider
         // pull metadata from Alchemy
         customAsset =
-          (await getTokenMetadata(provider, {
-            address: contractAddress,
-            network,
+          (await this.chainService.assetData.getTokenMetadata({
+            contractAddress,
+            homeNetwork: network,
           })) || undefined
 
         if (customAsset) {
@@ -586,14 +588,7 @@ export default class IndexingService extends BaseService<Events> {
       (
         await this.chainService.getAccountsToTrack()
       ).map(async (addressOnNetwork) => {
-        // TODO hardcoded to Ethereum
-        const balances = await getAssetBalances(
-          this.chainService.providers.ethereum as unknown as AlchemyProvider,
-          activeAssetsToTrack,
-          addressOnNetwork
-        )
-        balances.forEach((ab) => this.emitter.emit("accountBalance", ab))
-        await this.db.addBalances(balances)
+        await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
       })
     )
   }

@@ -1,7 +1,6 @@
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
-  BaseProvider,
   TransactionReceipt,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
@@ -22,10 +21,6 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import {
-  getAssetTransfers,
-  transactionFromAlchemyWebsocketTransaction,
-} from "../../lib/alchemy"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -556,11 +551,7 @@ export default class ChainService extends BaseService<Events> {
     }
     // TODO make proper use of the network
     const gethResult = await this.providers.ethereum.getTransaction(txHash)
-    const newTransaction = transactionFromEthersTransaction(
-      gethResult,
-      ETH,
-      network
-    )
+    const newTransaction = transactionFromEthersTransaction(gethResult, network)
 
     if (!newTransaction.blockHash && !newTransaction.blockHeight) {
       this.subscribeToTransactionConfirmation(network, newTransaction)
@@ -800,9 +791,7 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     this.checkNetwork(addressOnNetwork.network)
 
-    // TODO only works on Ethereum today
-    const assetTransfers = await getAssetTransfers(
-      this.providers.ethereum as unknown as AlchemyWebSocketProvider,
+    const assetTransfers = await this.assetData.getAssetTransfers(
       addressOnNetwork,
       Number(startBlock),
       Number(endBlock)
@@ -856,11 +845,7 @@ export default class ChainService extends BaseService<Events> {
         // TODO make this multi network
         const result = await this.providers.ethereum.getTransaction(hash)
 
-        const transaction = transactionFromEthersTransaction(
-          result,
-          ETH,
-          network
-        )
+        const transaction = transactionFromEthersTransaction(result, network)
 
         // TODO make this provider specific
         await this.saveTransaction(transaction, "alchemy")
