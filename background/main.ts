@@ -82,6 +82,7 @@ import {
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
 import { SignatureResponse } from "./services/signing"
+import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -487,6 +488,8 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(
       clearTransactionState(TransactionConstructionStatus.Idle)
     )
+
+    this.store.dispatch(clearApprovalInProgress())
 
     this.connectPopupMonitor()
   }

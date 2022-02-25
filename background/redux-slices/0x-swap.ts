@@ -94,6 +94,8 @@ const {
   clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
 
+export { clearApprovalInProgress }
+
 export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
 
@@ -299,9 +301,9 @@ export const approveTransfer = createBackgroundAsyncThunk(
       logger.debug("Approval transaction mined", receipt)
     } catch (error) {
       logger.error("Approval transaction failed: ", error)
+    } finally {
+      dispatch(clearApprovalInProgress())
     }
-
-    dispatch(clearApprovalInProgress())
   }
 )
 
