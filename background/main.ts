@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill"
+import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
@@ -59,6 +59,7 @@ import {
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
+  rejectTransactionSignature,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -68,6 +69,7 @@ import {
 } from "./redux-slices/dapp-permission"
 import logger from "./lib/logger"
 import {
+  rejectDataSignature,
   signedTypedData,
   signingSliceEmitter,
   SignTypedDataRequest,
@@ -230,6 +232,8 @@ const initializeStore = (preloadedState = {}, main: Main) =>
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
+
+export const popupMonitorPortName = "popup-monitor"
 
 // TODO Rename ReduxService or CoordinationService, move to services/, etc.
 export default class Main extends BaseService<never> {
@@ -483,6 +487,8 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(
       clearTransactionState(TransactionConstructionStatus.Idle)
     )
+
+    this.connectPopupMonitor()
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -1008,5 +1014,19 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  private connectPopupMonitor() {
+    runtime.onConnect.addListener((port) => {
+      if (port.name !== popupMonitorPortName) return
+      port.onDisconnect.addListener(() => {
+        this.onPopupDisconnected()
+      })
+    })
+  }
+
+  private onPopupDisconnected() {
+    this.store.dispatch(rejectTransactionSignature())
+    this.store.dispatch(rejectDataSignature())
   }
 }
