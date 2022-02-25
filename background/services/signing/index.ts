@@ -7,7 +7,7 @@ import {
   EVMNetwork,
   SignedEVMTransaction,
 } from "../../networks"
-import { HexString } from "../../types"
+import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
@@ -161,15 +161,23 @@ export default class SigningService extends BaseService<Events> {
     this.addressHandlers.push({ address, signer: handler })
   }
 
-  async signTypedData(
-    address: string,
-    domain: TypedDataDomain,
-    types: Record<string, Array<TypedDataField>>,
-    value: Record<string, unknown>
-  ): Promise<string> {
-    this.signTypedData = this.signTypedData.bind(this)
-
-    throw new Error("Unimplemented")
+  async signTypedData({
+    typedData,
+    account,
+    signingMethod,
+  }: {
+    typedData: EIP712TypedData
+    account: HexString
+    signingMethod: SigningMethod
+  }): Promise<string> {
+    switch (signingMethod.type) {
+      case "ledger":
+        return this.ledgerService.signTypedData(typedData, account)
+      case "keyring":
+        return this.keyringService.signTypedData({ typedData, account })
+      default:
+        throw new Error(`Unreachable!`)
+    }
   }
 
   async signMessage(address: string, message: string): Promise<string> {

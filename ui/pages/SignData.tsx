@@ -1,5 +1,8 @@
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAccountTotal,
+  selectAddressSigningMethods,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
   selectTypedData,
@@ -40,6 +43,10 @@ export default function SignData({
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
+  const signerMethodsOfAddresses = useBackgroundSelector(
+    selectAddressSigningMethods
+  )
+
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof typedDataRequest !== "undefined") {
       return getAccountTotal(state, typedDataRequest.account)
@@ -53,12 +60,15 @@ export default function SignData({
   ) {
     return <></>
   }
+
   const { domain, message, primaryType } = typedDataRequest.typedData
 
   const keys = Object.keys(message)
 
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
+      typedDataRequest.signingMethod =
+        signerMethodsOfAddresses[typedDataRequest.account]
       dispatch(signTypedData(typedDataRequest))
     }
   }

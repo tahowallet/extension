@@ -33,6 +33,7 @@ import {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
+  AccountType,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
@@ -68,7 +69,9 @@ import {
 } from "./redux-slices/dapp-permission"
 import logger from "./lib/logger"
 import {
+  clearSigningState,
   signedTypedData,
+  SigningMethod,
   signingSliceEmitter,
   SignTypedDataRequest,
   typedDataRequest,
@@ -657,15 +660,23 @@ export default class Main extends BaseService<never> {
       async ({
         typedData,
         account,
+        signingMethod,
       }: {
         typedData: EIP712TypedData
         account: HexString
+        signingMethod: SigningMethod
       }) => {
-        const signedData = await this.keyringService.signTypedData({
-          typedData,
-          account,
-        })
-        this.store.dispatch(signedTypedData(signedData))
+        try {
+          const signedData = await this.signingService.signTypedData({
+            typedData,
+            account,
+            signingMethod,
+          })
+          this.store.dispatch(signedTypedData(signedData))
+        } catch (err) {
+          logger.error("Error signing typed data", typedData)
+          this.store.dispatch(clearSigningState)
+        }
       }
     )
 
