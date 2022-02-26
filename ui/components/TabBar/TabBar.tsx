@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 
 import { useLocation } from "react-router-dom"
 import TabBarIcon from "./TabBarIcon"

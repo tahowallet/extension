@@ -1,6 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import browser from "webextension-polyfill"
-import { Provider, Web3Provider } from "@ethersproject/providers"
-import { INTERNAL_PORT_NAME } from "@tallyho/provider-bridge-shared"
+import { Web3Provider } from "@ethersproject/providers"
 import TallyWindowProvider from "@tallyho/window-provider"
 import { Contract, ethers, ContractInterface } from "ethers"
 import Emittery from "emittery"

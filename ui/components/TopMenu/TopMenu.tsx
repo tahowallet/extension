@@ -34,7 +34,7 @@ export default function TopMenu(): ReactElement {
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
 
   const initPermissionAndOrigin = useCallback(async () => {
-    const { url, favIconUrl, title } = await browser.tabs
+    const { url } = await browser.tabs
       .query({
         active: true,
         lastFocusedWindow: true,

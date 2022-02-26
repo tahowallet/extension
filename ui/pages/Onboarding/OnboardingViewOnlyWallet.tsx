@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { isAddress } from "@ethersproject/address"
 import {
