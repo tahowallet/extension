@@ -19,7 +19,7 @@ import {
   fetchAndValidateTokenList,
   mergeAssets,
   networkAssetsFromLists,
-} from "../../lib/tokenList"
+} from "../../lib/token-lists"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
