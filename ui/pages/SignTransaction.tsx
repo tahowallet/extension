@@ -110,8 +110,7 @@ export default function SignTransaction({
   const signingMethod = signerAccountTotal?.signingMethod ?? null
   if (
     typeof transactionDetails === "undefined" ||
-    typeof signerAccountTotal === "undefined" ||
-    signingMethod === null
+    typeof signerAccountTotal === "undefined"
   ) {
     // TODO Some sort of unexpected state error if we end up here... Or do we
     // go back in history? That won't work for dApp popovers though.
@@ -122,7 +121,11 @@ export default function SignTransaction({
     await dispatch(rejectTransactionSignature())
   }
   const handleConfirm = async () => {
-    if (isTransactionDataReady && transactionDetails) {
+    if (
+      isTransactionDataReady &&
+      transactionDetails &&
+      signingMethod !== null
+    ) {
       dispatch(
         signTransaction({
           transaction: transactionDetails,
