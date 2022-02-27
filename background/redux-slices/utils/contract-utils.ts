@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import browser from "webextension-polyfill"
 import { Web3Provider } from "@ethersproject/providers"
 import TallyWindowProvider from "@tallyho/window-provider"
 import { Contract, ethers, ContractInterface } from "ethers"
