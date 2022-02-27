@@ -163,7 +163,7 @@ export default class NameService extends BaseService<Events> {
     // TODO ENS lookups should work on Ethereum mainnet and a few testnets as well.
     // This is going to be strange, though, as we'll be looking up ENS names for
     // non-Ethereum networks (eg eventually Bitcoin).
-    const provider = this.chainService.pollingProviders.ethereum
+    const provider = this.chainService.providers.ethereum
     // TODO cache name resolution and TTL
     const address = await provider.resolveName(name)
     if (!address || !address.match(/^0x[a-zA-Z0-9]*$/)) {
@@ -198,7 +198,7 @@ export default class NameService extends BaseService<Events> {
       }
     }
 
-    const provider = this.chainService.pollingProviders.ethereum
+    const provider = this.chainService.providers.ethereum
     // TODO cache name resolution and TTL
     const name = await provider.lookupAddress(address)
     // TODO proper domain name validation ala RFC2181
@@ -248,7 +248,7 @@ export default class NameService extends BaseService<Events> {
       return undefined
     }
     // TODO handle if it doesn't exist
-    const provider = this.chainService.pollingProviders.ethereum
+    const provider = this.chainService.providers.ethereum
     const resolver = await provider.getResolver(name)
     if (!sameEVMAddress(await resolver?.getAddress(), address)) {
       return undefined
