@@ -40,9 +40,9 @@ $ yarn start # start a continuous webpack build that will auto-update with chang
 Once the build is running, you can install the extension in your browser of choice:
 
 - [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
-- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
+- [Chrome, Brave, Edge, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
   - Note that these instructions are for Chrome, but substituting
-    `brave://extensions` or `opera://extensions` for `chrome://extensions`
+    `brave://extensions` or `edge://extensions` or `opera://extensions` for `chrome://extensions`
     depending on browser should get you to the same buttons.
 
 Extension bundles for each browser are in `dist/<browser>`.
@@ -291,11 +291,13 @@ src/ # extension source files
 
 dist/ # output directory for builds
   brave/   # browser-specific
-  firefox/ # build
-  chrome/  # directories
-  brave.zip   # browser-specific
-  firefox.zip # production
-  chrome.zip  # bundles
+  chrome/  # build
+  edge/    # directories
+  firefox/
+  brave.zip  # browser-specific
+  chrome.zip # production
+  edge.zip   # bundles
+  firefox.zip
 
 build-utils/ # build-related helpers, used in webpack.config.js
   *.js
