@@ -242,7 +242,7 @@ export default function AccountsNotificationPanelAccounts({
                               isSelected={
                                 lowerCaseAddress === selectedAccountAddress
                               }
-                              hideMenu
+                              hideMenu={accountType !== AccountType.ReadOnly}
                             />
                           </button>
                         </li>
