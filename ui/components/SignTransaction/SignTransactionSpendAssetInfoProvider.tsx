@@ -12,10 +12,11 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { useDispatch } from "react-redux"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
@@ -34,62 +35,64 @@ export default function SignTransactionSpendAssetInfoProvider({
   annotation,
   inner,
 }: SignTransactionInfoProviderProps<AssetApproval>): ReactElement {
-  const [approvalLimit, setApprovalLimit] = useState("")
   const dispatch = useDispatch()
   const {
-    assetAmount: { asset, amount: approveAmount },
+    assetAmount: { asset, amount: approvalLimit },
     spenderAddress,
   } = annotation
-  const [changing, setChanging] = useState(false)
+  // `null` means no limit
+  const approvalLimitString = isMaxUint256(approvalLimit)
+    ? null
+    : fixedPointNumberToString({
+        amount: approvalLimit,
+        decimals: asset.decimals,
+      })
 
-  const infiniteApproval = isMaxUint256(approveAmount ?? 0n)
+  const approvalLimitDisplayValue = `${
+    approvalLimitString ?? "Infinite"
+  } ${asset?.symbol.toUpperCase()}`
 
-  useEffect(() => {
-    setApprovalLimit(
-      isMaxUint256(approveAmount)
-        ? "Infinite"
-        : fixedPointNumberToString({
-            amount: approveAmount,
-            decimals: asset.decimals,
-          })
-    )
-  }, [approveAmount, asset?.decimals])
+  const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
+    null
+  )
+  const changing = approvalLimitInput !== null
 
   const handleUpdateClick = () => {
-    setChanging(!changing)
-    if (changing) {
-      const parsedApprovalAmount = parseToFixedPointNumber(approvalLimit) ?? {
-        amount: 0n,
-        decimals: 0,
-      }
-      const assetMatchedApprovalAmount = convertFixedPointNumber(
-        parsedApprovalAmount,
-        asset.decimals
-      )
-      const approvalLimitBigInt =
-        approvalLimit.match(/infinit[ey]/i) ||
-        (parsedApprovalAmount.decimals === 0 &&
-          isMaxUint256(parsedApprovalAmount.amount))
-          ? ethers.constants.MaxUint256.toBigInt()
-          : assetMatchedApprovalAmount.amount
-
-      // This will replace any bad inputs with the parsed number that is sent
-      // to the backend. Mostly useful if the approval amount was 0 and becomes
-      // 0 again due to bad input, since otherwise the amount is considered
-      // "unchanged".
-      setApprovalLimit(fixedPointNumberToString(assetMatchedApprovalAmount))
-
-      const updatedInput = ERC20_INTERFACE.encodeFunctionData(
-        ERC20_FUNCTIONS.approve,
-        [spenderAddress, hexlify(approvalLimitBigInt)]
-      )
-      dispatch(
-        updateTransactionOptions({
-          ...transactionDetails,
-          input: updatedInput,
-        })
-      )
+    if (!changing) {
+      setApprovalLimitInput(approvalLimitString ?? "")
+      return
     }
+
+    const decimalAmount =
+      approvalLimitInput === ""
+        ? null
+        : parseToFixedPointNumber(approvalLimitInput)
+
+    if (
+      decimalAmount === undefined ||
+      (decimalAmount !== null && decimalAmount.amount < 0n)
+    ) {
+      dispatch(setSnackbarMessage("Invalid amount"))
+      return
+    }
+
+    const bigintAmount =
+      decimalAmount === null
+        ? ethers.constants.MaxUint256.toBigInt()
+        : convertFixedPointNumber(decimalAmount, asset.decimals).amount
+
+    setApprovalLimitInput(null)
+
+    const updatedInput = ERC20_INTERFACE.encodeFunctionData(
+      ERC20_FUNCTIONS.approve,
+      [spenderAddress, hexlify(bigintAmount)]
+    )
+    dispatch(
+      updateTransactionOptions({
+        ...transactionDetails,
+        input: updatedInput,
+      })
+    )
   }
 
   return (
@@ -120,15 +123,13 @@ export default function SignTransactionSpendAssetInfoProvider({
               <div>
                 <SharedInput
                   label=""
-                  value={approvalLimit}
-                  onChange={setApprovalLimit}
+                  value={approvalLimitInput}
+                  placeholder="Infinite"
+                  onChange={setApprovalLimitInput}
                 />
               </div>
             ) : (
-              <span className="spend_amount">
-                {infiniteApproval ? "Infinite" : approvalLimit}{" "}
-                {asset?.symbol.toUpperCase()}
-              </span>
+              <span className="spend_amount">{approvalLimitDisplayValue}</span>
             )}
             <SharedButton
               size="small"
@@ -207,9 +208,7 @@ export default function SignTransactionSpendAssetInfoProvider({
             name="Spend limit"
             value={
               asset?.symbol ? (
-                `${
-                  infiniteApproval ? "Infinite" : approvalLimit
-                } ${asset?.symbol.toUpperCase()}`
+                approvalLimitDisplayValue
               ) : (
                 <SharedSkeletonLoader />
               )
