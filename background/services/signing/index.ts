@@ -1,4 +1,3 @@
-import { TypedDataDomain, TypedDataField } from "@ethersproject/abstract-signer"
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService from "../keyring"
 import LedgerService from "../ledger"
@@ -15,7 +14,7 @@ import { SigningMethod } from "../../redux-slices/signing"
 
 export type SignatureResponse =
   | {
-      type: "success"
+      type: "success-tx"
       signedTx: SignedEVMTransaction
     }
   | {
@@ -24,7 +23,7 @@ export type SignatureResponse =
     }
 
 type Events = ServiceLifecycleEvents & {
-  signingResponse: SignatureResponse
+  signingTxResponse: SignatureResponse
 }
 
 type SignerType = "keyring" | HardwareSignerType
@@ -125,8 +124,8 @@ export default class SigningService extends BaseService<Events> {
         signingMethod
       )
 
-      this.emitter.emit("signingResponse", {
-        type: "success",
+      this.emitter.emit("signingTxResponse", {
+        type: "success-tx",
         signedTx,
       })
 
@@ -136,7 +135,7 @@ export default class SigningService extends BaseService<Events> {
         const transportError = err as Error & { statusCode: number }
         switch (transportError.statusCode) {
           case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
-            this.emitter.emit("signingResponse", {
+            this.emitter.emit("signingTxResponse", {
               type: "error",
               reason: "userRejected",
             })
@@ -146,7 +145,7 @@ export default class SigningService extends BaseService<Events> {
         }
       }
 
-      this.emitter.emit("signingResponse", {
+      this.emitter.emit("signingTxResponse", {
         type: "error",
         reason: "genericError",
       })

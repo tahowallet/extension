@@ -861,7 +861,7 @@ export default class Main extends BaseService<never> {
             this.keyringService.emitter.off("signedTx", resolveAndClear)
           } else {
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            this.signingService.emitter.off("signingResponse", handleAndClear)
+            this.signingService.emitter.off("signingTxResponse", handleAndClear)
           }
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
@@ -873,7 +873,7 @@ export default class Main extends BaseService<never> {
         const handleAndClear = (response: SignatureResponse) => {
           clear()
           switch (response.type) {
-            case "success":
+            case "success-tx":
               resolver(response.signedTx)
               break
             default:
@@ -895,7 +895,7 @@ export default class Main extends BaseService<never> {
         if (HIDE_IMPORT_LEDGER) {
           this.keyringService.emitter.on("signedTx", resolveAndClear)
         } else {
-          this.signingService.emitter.on("signingResponse", handleAndClear)
+          this.signingService.emitter.on("signingTxResponse", handleAndClear)
         }
         transactionConstructionSliceEmitter.on(
           "signatureRejected",
