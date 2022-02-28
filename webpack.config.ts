@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from "path"
 import webpack, {
   Configuration,
@@ -17,7 +18,23 @@ import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpa
 
 const supportedBrowsers = ["brave", "chrome", "edge", "firefox", "opera"]
 
-const gitRevisionPlugin = new GitRevisionPlugin()
+const gitRevisionPlugin = new GitRevisionPlugin({
+  /* `--tags` option allows for un-annotated tags, currently present in the repo */
+  versionCommand: `describe --tags`,
+})
+
+const gitVersion = gitRevisionPlugin.version()
+if (gitVersion === null || !gitVersion.startsWith("v")) {
+  throw new Error(`cannot get current version from git: missing or invalid`)
+}
+
+const [manifestVersion, versionQualifier] = gitVersion
+  .substring(1)
+  .split("-", 2)
+
+if (typeof versionQualifier !== "undefined") {
+  console.log(`Building NON-OFFICIAL version ${gitVersion}. Do not release.`)
+}
 
 // Replicated and adjusted for each target browser and the current build mode.
 const baseConfig: Configuration = {
@@ -217,6 +234,12 @@ export default (
                     .filter((assetData) => assetData.trim().length > 0)
                     .map((assetData) => JSON.parse(assetData))
                 )
+
+                if (combinedManifest.version !== manifestVersion) {
+                  throw new Error(
+                    `manifest version '${combinedManifest.version}' does not match git version '${manifestVersion}'`
+                  )
+                }
 
                 return JSON.stringify(combinedManifest, null, 2)
               },

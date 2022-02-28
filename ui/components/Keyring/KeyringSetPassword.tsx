@@ -5,6 +5,7 @@ import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import titleStyle from "../Onboarding/titleStyle"
+import SharedBackButton from "../Shared/SharedBackButton"
 
 export default function KeyringSetPassword(): ReactElement {
   const [password, setPassword] = useState("")
@@ -51,8 +52,11 @@ export default function KeyringSetPassword(): ReactElement {
   }
 
   return (
-    <section>
-      <div className="wordmark" />
+    <section className="standard_width">
+      <div className="top">
+        <SharedBackButton />
+        <div className="wordmark" />
+      </div>
       <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
       <div className="subtitle">
         You will NOT be able to change this password for now.
@@ -96,6 +100,20 @@ export default function KeyringSetPassword(): ReactElement {
       </div>
       <style jsx>
         {`
+          .top {
+            display: flex;
+            width: 100%;
+          }
+          .wordmark {
+            background: url("./images/wordmark@2x.png");
+            background-size: cover;
+            width: 52px;
+            height: 25px;
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            margin: 0 auto;
+          }
           ${titleStyle}
           .serif_header {
             width: 335px;
@@ -106,12 +124,6 @@ export default function KeyringSetPassword(): ReactElement {
           section {
             padding-top: 25px;
             background-color: var(--hunter-green);
-          }
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 52px;
-            height: 25px;
           }
           .input_wrap {
             width: 211px;
