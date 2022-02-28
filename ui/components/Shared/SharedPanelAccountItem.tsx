@@ -67,13 +67,22 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
             <SharedButton
               type="secondary"
               size="medium"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
                 setShowAddressRemoveConfirm(false)
               }}
             >
               Cancel
             </SharedButton>
-            <SharedButton type="primary" size="medium">
+            <SharedButton
+              type="primary"
+              size="medium"
+              onClick={(e) => {
+                e.stopPropagation()
+                dispatch(removeAccount(address))
+                setShowAddressRemoveConfirm(false)
+              }}
+            >
               Yes, I want to remove it
             </SharedButton>
           </div>
@@ -111,7 +120,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
             <div className="connected_status">Connected</div>
           ) : null}
         </div>
-        {!hideMenu ? (
+        {!hideMenu && (
           <div
             className="icon_settings"
             role="menu"
@@ -126,8 +135,6 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
               setShowAddressRemoveConfirm(true)
             }}
           />
-        ) : (
-          <div />
         )}
       </div>
       <style jsx>{`
