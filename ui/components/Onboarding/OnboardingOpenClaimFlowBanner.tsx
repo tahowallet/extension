@@ -33,13 +33,17 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
   if (claimAmount === "0" && showOrHide === "hide") return <></>
 
   return (
-    <div className="standard_width">
+    <div
+      className={classNames("standard_width", {
+        upgrade: !currentAccountSigningMethod,
+      })}
+    >
       <div className="banner">
-        <div>
-          <img className="image" src="./images/claim.png" alt="" />
-        </div>
         {claimAmount > "0" ? (
           <>
+            <div>
+              <img className="image" src="./images/claim.png" alt="" />
+            </div>
             <div className="claimable">
               <div className="claimable_woohoo">
                 {currentAccountSigningMethod
@@ -63,8 +67,8 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
           <div className="right">
             <div className="top">
               <p>
-                Looks like there are no <br />
-                tokens to claim.
+                Looks like there are no tokens to claim.
+                <br /> Try another address or see other ways to earn
               </p>
 
               <button
@@ -74,14 +78,25 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
                 aria-label="Close menu"
               />
             </div>
-
-            <SharedButton
-              type="tertiary"
-              size="small"
-              linkTo="/onboarding/addWallet"
-            >
-              Try another address
-            </SharedButton>
+            <div className="bottom">
+              <SharedButton
+                type="tertiary"
+                size="small"
+                linkTo="/onboarding/addWallet"
+                icon="plus"
+                iconPosition="left"
+              >
+                Add wallet
+              </SharedButton>
+              <SharedButton
+                type="tertiary"
+                size="small"
+                icon="external_small"
+                iconPosition="left"
+              >
+                Learn more
+              </SharedButton>
+            </div>
           </div>
         )}
       </div>
@@ -108,6 +123,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             background-color: var(--green-40);
             margin-top: 8px;
             margin-right: 8px;
+            flex-shrink: 0;
           }
           .icon_close:hover {
             background-color: #fff;
@@ -150,7 +166,6 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
           .right {
             display: flex;
             flex-direction: column;
-            width: 258px;
           }
           .top {
             display: flex;
@@ -158,12 +173,15 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
           }
           p {
             color: var(--green-40);
-            font-size: 16px;
+            font-size: 14.6px;
             font-weight: 500;
             line-height: 22px;
             margin-left: 11px;
-            margin-bottom: -3px;
+            margin-bottom: -1px;
             margin-top: 1px;
+          }
+          .bottom {
+            display: flex;
           }
         `}
       </style>
