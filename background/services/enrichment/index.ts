@@ -9,7 +9,6 @@ import {
 } from "../../networks"
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
-import { ETH } from "../../constants"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { sameEVMAddress } from "../../lib/utils"
 
