@@ -61,6 +61,7 @@ export default function SignData({
     if (typedDataRequest !== undefined) {
       dispatch(signTypedData(typedDataRequest))
     }
+    history.goBack()
   }
 
   const handleReject = async () => {

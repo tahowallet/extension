@@ -1,5 +1,8 @@
-import { claimRewards } from "@tallyho/tally-background/redux-slices/claim"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  claimRewards,
+  selectClaimSelections,
+  signTokenDelegationData,
+} from "@tallyho/tally-background/redux-slices/claim"
 import React, {
   Dispatch,
   ReactElement,
@@ -7,6 +10,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react"
+import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
@@ -28,27 +32,32 @@ export default function ClaimFooter({
     () => ["Get started", "Continue", "Continue", "Continue", "Claim"],
     []
   )
-
+  const history = useHistory()
   const dispatch = useBackgroundDispatch()
 
-  const selectedAccountAddress =
-    useBackgroundSelector(selectCurrentAccount).address
+  const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
 
   const handleClick = useCallback(async () => {
     if (buttonText[step - 1] === "Claim") {
-      await dispatch(claimRewards({ account: selectedAccountAddress }))
-
-      showSuccess()
+      if (selectedDelegate) {
+        dispatch(signTokenDelegationData())
+        history.push("/signData")
+        return
+      }
+      dispatch(claimRewards())
+      history.push("/signTransaction")
+      // showSuccess()
     } else {
       advanceStep()
     }
   }, [
     buttonText,
     step,
-    showSuccess,
+    // showSuccess,
     advanceStep,
+    selectedDelegate,
     dispatch,
-    selectedAccountAddress,
+    history,
   ])
 
   return (
