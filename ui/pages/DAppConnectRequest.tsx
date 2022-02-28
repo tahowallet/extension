@@ -121,6 +121,7 @@ export default function DAppConnectRequest(): ReactElement {
         <div className="icon_connection" />
         <div className="connection_destination">
           <SharedPanelAccountItem
+            address="@TODO"
             key={permission.accountAddress}
             accountTotal={currentAccountTotal}
             hideMenu

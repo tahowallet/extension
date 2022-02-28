@@ -1,6 +1,9 @@
 import React, { ReactElement } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { useDispatch } from "react-redux"
+import { HexString } from "@tallyho/tally-background/types"
+import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
@@ -8,10 +11,12 @@ interface Props {
   isSelected: boolean
   accountTotal: AccountTotal
   hideMenu: boolean
+  address: HexString
 }
 
 export default function SharedPanelAccountItem(props: Props): ReactElement {
-  const { isSelected, hideMenu, accountTotal: account } = props
+  const dispatch = useDispatch()
+  const { isSelected, hideMenu, accountTotal: account, address } = props
   const {
     shortenedAddress,
     name,
@@ -53,7 +58,15 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
             <div className="connected_status">Connected</div>
           ) : null}
         </div>
-        {!hideMenu && <div className="icon_settings" />}
+        {!hideMenu && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation()
+              dispatch(removeAccount(address))
+            }}
+            className="icon_settings"
+          />
+        )}
       </div>
       <style jsx>{`
         li {

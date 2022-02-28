@@ -228,6 +228,8 @@ export default function AccountsNotificationPanelAccounts({
                     {accountTotalsByKeyringId.map((accountTotal) => {
                       const lowerCaseAddress =
                         accountTotal.address.toLocaleLowerCase()
+                      const isSelected =
+                        lowerCaseAddress === selectedAccountAddress
                       return (
                         <li key={lowerCaseAddress}>
                           <button
@@ -239,10 +241,12 @@ export default function AccountsNotificationPanelAccounts({
                             <SharedPanelAccountItem
                               key={lowerCaseAddress}
                               accountTotal={accountTotal}
-                              isSelected={
-                                lowerCaseAddress === selectedAccountAddress
+                              address={accountTotal.address}
+                              isSelected={isSelected}
+                              hideMenu={
+                                isSelected ||
+                                accountType !== AccountType.ReadOnly
                               }
-                              hideMenu={accountType !== AccountType.ReadOnly}
                             />
                           </button>
                         </li>

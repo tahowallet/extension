@@ -152,6 +152,22 @@ const accountSlice = createSlice({
             accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
           }
     },
+    removeAccount: (
+      state,
+      { payload: accountToRemove }: { payload: string }
+    ) => {
+      if (!state.accountsData[accountToRemove]) {
+        return state
+      }
+      // Immutable remove the account passed in
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const { [accountToRemove]: _, ...withoutAccountToRemove } =
+        state.accountsData
+      return {
+        ...state,
+        accountsData: withoutAccountToRemove,
+      }
+    },
     updateAccountBalance: (
       immerState,
       { payload: updatedAccountBalance }: { payload: AccountBalance }
@@ -254,6 +270,7 @@ const accountSlice = createSlice({
 
 export const {
   loadAccount,
+  removeAccount,
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
