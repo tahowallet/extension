@@ -7,7 +7,6 @@ import {
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
 
