@@ -3,9 +3,14 @@ import { BigNumber, Signature, utils } from "ethers"
 import { Eligible } from "../services/claim/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { truncateAddress } from "../lib/utils"
+import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
 
-import { getContract, getProvider } from "./utils/contract-utils"
+import {
+  getContract,
+  getCurrentTimestamp,
+  getNonce,
+  getProvider,
+} from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
 import delegates from "../static/delegates.json"
 import { HexString } from "../types"
@@ -13,6 +18,7 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import BalanceTree from "../lib/balance-tree"
 import eligibles from "../static/eligibles.json"
+import { HOUR } from "../constants"
 
 export interface DAO {
   address: string
@@ -47,13 +53,16 @@ interface ClaimingState {
 const newBalanceTree = new BalanceTree(eligibles)
 
 const findIndexAndBalance = (address: string) => {
-  const index = eligibles.findIndex((el) => address === el.address)
+  const index = eligibles.findIndex(
+    (el) => normalizeEVMAddress(address) === normalizeEVMAddress(el.address)
+  )
   const balance = eligibles[index].earnings
   return { index, balance }
 }
 
 const getDistributorContract = async () => {
-  const distributorContractAddress = "0x123" // Change distributor address here
+  const distributorContractAddress =
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2" // Change distributor address here
   const distributor = await getContract(
     distributorContractAddress,
     DISTRIBUTOR_ABI
@@ -88,24 +97,15 @@ const verifyProof = (
 
 export const claimRewards = createBackgroundAsyncThunk(
   "claim/distributorClaim",
-  async (
-    {
-      account,
-      referralCode,
-      delegate,
-    }: {
-      account: string
-      referralCode?: string
-      delegate?: HexString
-    },
-    { getState }
-  ): Promise<string> => {
+  async (_, { getState }): Promise<string> => {
     const state = getState()
     const { claim } = state as { claim: ClaimingState }
+    const provider = getProvider()
+    const signer = provider.getSigner()
+    const account = await signer.getAddress()
 
-    if (claim.claimed[account]) {
-      throw new Error("already claimed")
-    }
+    const referralCode = claim.selectedDAO
+    const delegate = claim.selectedDelegate
 
     const { index, balance } = await findIndexAndBalance(account)
 
@@ -116,18 +116,15 @@ export const claimRewards = createBackgroundAsyncThunk(
 
     const distributorContract = await getDistributorContract()
 
-    const { r, s, v } = claim.signature
-    const { nonce, expiry } = claim
-
     try {
-      if (!referralCode && !delegate) {
-        const tx = await distributorContract.claim(
+      if (!claim.selectedDAO && !delegate) {
+        const tx = await distributorContract.populateTransaction.claim(
           index,
           account,
           balance,
           merkleProof
         )
-        await tx.wait()
+        await signer.sendTransaction(tx)
         return account
       }
 
@@ -139,10 +136,12 @@ export const claimRewards = createBackgroundAsyncThunk(
           merkleProof,
           referralCode
         )
-        await tx.wait()
+
+        await signer.sendTransaction(tx)
         return account
       }
-
+      const { r, s, v } = claim.signature
+      const { nonce, expiry } = claim
       const tx = await distributorContract.voteWithFriends(
         index,
         account,
@@ -152,7 +151,7 @@ export const claimRewards = createBackgroundAsyncThunk(
         delegate,
         { nonce, expiry, r, s, v }
       )
-      await tx.wait()
+      await signer.sendTransaction(tx)
       return account
     } catch {
       return Promise.reject()
@@ -220,37 +219,48 @@ export default claimingSlice.reducer
 
 export const signTokenDelegationData = createBackgroundAsyncThunk(
   "claim/signDelegation",
-  async (account: HexString, { dispatch }) => {
+  async (_, { getState, dispatch }) => {
     const provider = getProvider()
     const signer = provider.getSigner()
-    const TALLY_TOKEN = "0x"
 
-    const nonce = 0 // how to determine next nonce
-    const expiry = 1650153025 // what should be the expiry?
-    const types = {
-      Delegation: [
-        { name: "delegatee", type: "address" },
-        { name: "nonce", type: "uint256" },
-        { name: "expiry", type: "uint256" },
-      ],
-    }
-    const domain = {
-      name: "Tally",
-      chainId: 31337,
-      TALLY_TOKEN,
-    }
-    const message = {
-      account,
-      nonce,
-      expiry,
-    }
-    // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
-    // eslint-disable-next-line no-underscore-dangle
-    const tx = await signer._signTypedData(domain, types, message)
+    const state = getState()
+    const { claim } = state as { claim: ClaimingState }
 
-    const signature = utils.splitSignature(tx)
+    const delegatee = claim.selectedDelegate?.address
 
-    dispatch(claimingSlice.actions.saveSignature({ signature, nonce, expiry }))
+    if (delegatee) {
+      const nonce = await getNonce()
+      const timestamp = await getCurrentTimestamp()
+      const TALLY_TOKEN = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2" // probably validating contract should be the distributor
+
+      const expiry = timestamp + 12 * HOUR // what should be the expiry?
+      const types = {
+        Delegation: [
+          { name: "delegatee", type: "address" },
+          { name: "nonce", type: "uint256" },
+          { name: "expiry", type: "uint256" },
+        ],
+      }
+      const domain = {
+        name: "Tally Token",
+        chainId: 31337,
+        validatingContract: TALLY_TOKEN,
+      }
+      const message = {
+        delegatee,
+        nonce,
+        expiry,
+      }
+      // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
+      // eslint-disable-next-line no-underscore-dangle
+      const tx = await signer._signTypedData(domain, types, message)
+
+      const signature = utils.splitSignature(tx)
+
+      dispatch(
+        claimingSlice.actions.saveSignature({ signature, nonce, expiry })
+      )
+    }
   }
 )
 
