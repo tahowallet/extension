@@ -15,7 +15,7 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import { GitRevisionPlugin } from "git-revision-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 
-const supportedBrowsers = ["firefox", "brave", "opera", "chrome"]
+const supportedBrowsers = ["brave", "chrome", "edge", "firefox", "opera"]
 
 const gitRevisionPlugin = new GitRevisionPlugin()
 

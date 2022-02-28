@@ -1,12 +1,12 @@
 import { AlchemyProvider, BaseProvider } from "@ethersproject/providers"
-import { BigNumber, ethers, logger } from "ethers"
+import { BigNumber, ethers } from "ethers"
 import {
   EventFragment,
   Fragment,
   FunctionFragment,
   TransactionDescription,
 } from "ethers/lib/utils"
-import { getTokenBalances, getTokenMetadata } from "./alchemy"
+import { getTokenBalances } from "./alchemy"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"

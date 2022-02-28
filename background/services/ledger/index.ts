@@ -23,6 +23,7 @@ import { getOrCreateDB, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { HIDE_IMPORT_LEDGER } from "../../features/features"
 
 enum LedgerType {
   UNKNOWN,
@@ -32,14 +33,17 @@ enum LedgerType {
 
 const LedgerTypeAsString = Object.values(LedgerType)
 
-const LedgerProductDatabase = {
-  LEDGER_NANO_S: { knownPids: [0x1015] },
-  LEDGER_NANO_X: { knownPids: [0x4015] },
+export const LedgerProductDatabase = {
+  LEDGER_NANO_S: { productId: 0x1015 },
+  LEDGER_NANO_X: { productId: 0x4015 },
 }
 
+export const isLedgerSupported =
+  !HIDE_IMPORT_LEDGER && typeof navigator.usb === "object"
+
 const TestedProductId = (productId: number): boolean => {
-  return Object.values(LedgerProductDatabase).some((e) =>
-    e.knownPids.includes(productId)
+  return Object.values(LedgerProductDatabase).some(
+    (e) => e.productId === productId
   )
 }
 
