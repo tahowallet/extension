@@ -10,6 +10,7 @@ import {
 } from "@ethersproject/transactions"
 import { TypedDataUtils } from "eth-sig-util"
 import { bufferToHex } from "ethereumjs-util"
+import { joinSignature } from "ethers/lib/utils"
 import {
   EIP1559TransactionRequest,
   EVMNetwork,
@@ -103,21 +104,6 @@ async function generateLedgerId(
   const address = await deriveAddressOnLedger(idDerviationPath, eth)
 
   return [address, extensionDeviceType]
-}
-
-function signatureToString(signature: {
-  v: number
-  s: string
-  r: string
-}): string {
-  let v: string | number = signature.v - 27
-  v = v.toString(16)
-
-  if (v.length < 2) {
-    v = `0${v}`
-  }
-
-  return `0x${signature.r}${signature.s}${v}`
 }
 
 /**
@@ -423,8 +409,8 @@ export default class LedgerService extends BaseService<Events> {
       bufferToHex(hashedDomain),
       bufferToHex(hashedMessage)
     )
-    this.emitter.emit("signedData", signatureToString(signature))
-    return signatureToString(signature)
+    this.emitter.emit("signedData", joinSignature(signature))
+    return joinSignature(signature)
   }
 
   async signMessage(address: string, message: string): Promise<string> {
@@ -439,7 +425,7 @@ export default class LedgerService extends BaseService<Events> {
     const eth = new Eth(this.transport)
 
     const signature = await eth.signPersonalMessage(address, message)
-    this.emitter.emit("signedData", signatureToString(signature))
-    return signatureToString(signature)
+    this.emitter.emit("signedData", joinSignature(signature))
+    return joinSignature(signature)
   }
 }
