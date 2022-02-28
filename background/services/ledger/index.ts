@@ -404,13 +404,33 @@ export default class LedgerService extends BaseService<Events> {
       true
     )
 
+    const ledgerAcc = await this.db.getAccountByAddress(account)
+
+    if (!ledgerAcc) {
+      throw new Error(
+        `Address ${account} does not have corresponding derivation path stored!`
+      )
+    }
+
     const signature = await eth.signEIP712HashedMessage(
-      account,
+      ledgerAcc.path,
       bufferToHex(hashedDomain),
       bufferToHex(hashedMessage)
     )
-    this.emitter.emit("signedData", joinSignature(signature))
-    return joinSignature(signature)
+
+    this.emitter.emit(
+      "signedData",
+      joinSignature({
+        r: `0x${signature.r}`,
+        s: `0x${signature.s}`,
+        v: signature.v,
+      })
+    )
+    return joinSignature({
+      r: `0x${signature.r}`,
+      s: `0x${signature.s}`,
+      v: signature.v,
+    })
   }
 
   async signMessage(address: string, message: string): Promise<string> {
