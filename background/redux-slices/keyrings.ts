@@ -69,17 +69,17 @@ const keyringsSlice = createSlice({
   reducers: {
     keyringLocked: (state) => ({ ...state, status: "locked" }),
     keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
-    updateKeyringMetadata: (
+    updateKeyrings: (
       state,
-      { payload }: { payload: { [keyringId: string]: KeyringMetadata } }
-    ) => ({
-      ...state,
-      keyringMetadata: {
-        ...state.keyringMetadata,
-        ...payload,
-      },
-    }),
-    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
+      {
+        payload: { keyrings, keyringMetadata },
+      }: {
+        payload: {
+          keyrings: Keyring[]
+          keyringMetadata: { [keyringId: string]: KeyringMetadata }
+        }
+      }
+    ) => {
       // When the keyrings are locked, we receive updateKeyrings with an empty
       // list as the keyring service clears the in-memory keyrings. For UI
       // purposes, however, we want to continue tracking the keyring metadata,
@@ -91,6 +91,7 @@ const keyringsSlice = createSlice({
       return {
         ...state,
         keyrings,
+        keyringMetadata,
       }
     },
     setKeyringToVerify: (state, { payload }) => ({
@@ -118,7 +119,6 @@ const keyringsSlice = createSlice({
 
 export const {
   updateKeyrings,
-  updateKeyringMetadata,
   keyringLocked,
   keyringUnlocked,
   setKeyringToVerify,

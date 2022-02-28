@@ -365,8 +365,8 @@ describe("KeyringService when saving keyrings", () => {
     const storedKeyrings: Keyring[] = []
 
     const service = await startKeyringService()
-    service.emitter.on("keyrings", (keyrings) => {
-      storedKeyrings.push(...keyrings)
+    service.emitter.on("keyrings", (keyringEvent) => {
+      storedKeyrings.push(...keyringEvent.keyrings)
       return Promise.resolve()
     })
     await service.unlock(testPassword)

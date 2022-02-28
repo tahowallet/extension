@@ -39,14 +39,16 @@ interface SerializedKeyringData {
 
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
-  keyrings: Keyring[]
+  keyrings: {
+    keyrings: Keyring[]
+    keyringMetadata: {
+      [keyringId: string]: KeyringMetadata
+    }
+  }
   address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
   signedData: string
-  keyringMetadata: {
-    [keyringId: string]: KeyringMetadata
-  }
 }
 
 /*
@@ -184,7 +186,6 @@ export default class KeyringService extends BaseService<Events> {
         )
 
         this.emitKeyrings()
-        this.emitKeyringMetadata()
       }
     }
 
@@ -213,7 +214,6 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyringMetadata = {}
     this.emitter.emit("locked", true)
     this.emitKeyrings()
-    this.emitKeyringMetadata()
   }
 
   /**
@@ -320,7 +320,6 @@ export default class KeyringService extends BaseService<Events> {
 
     this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
-    this.emitKeyringMetadata()
 
     return newKeyring.id
   }
@@ -485,15 +484,14 @@ export default class KeyringService extends BaseService<Events> {
 
   private emitKeyrings() {
     if (this.locked()) {
-      this.emitter.emit("keyrings", [])
+      this.emitter.emit("keyrings", { keyrings: [], keyringMetadata: {} })
     } else {
       const keyrings = this.getKeyrings()
-      this.emitter.emit("keyrings", keyrings)
+      this.emitter.emit("keyrings", {
+        keyrings,
+        keyringMetadata: this.#keyringMetadata,
+      })
     }
-  }
-
-  private emitKeyringMetadata() {
-    this.emitter.emit("keyringMetadata", this.#keyringMetadata)
   }
 
   /**

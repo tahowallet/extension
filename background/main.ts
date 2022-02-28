@@ -42,7 +42,6 @@ import {
   keyringUnlocked,
   updateKeyrings,
   setKeyringToVerify,
-  updateKeyringMetadata,
 } from "./redux-slices/keyrings"
 import {
   initializationLoadingTimeHitLimit,
@@ -778,10 +777,6 @@ export default class Main extends BaseService<never> {
   async connectKeyringService(): Promise<void> {
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
-    })
-
-    this.keyringService.emitter.on("keyringMetadata", (metadata) => {
-      this.store.dispatch(updateKeyringMetadata(metadata))
     })
 
     this.keyringService.emitter.on("address", (address) => {
