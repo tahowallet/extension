@@ -916,23 +916,52 @@ export default class Main extends BaseService<never> {
       }) => {
         this.store.dispatch(typedDataRequest(payload))
 
-        const resolveAndClear = (signature: string) => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
+        const clear = () => {
+          if (HIDE_IMPORT_LEDGER) {
+            // Ye olde mutual dependency.
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.keyringService.emitter.off("signedData", resolveAndClear)
+          } else {
+            this.signingService.emitter.off(
+              "signingDataResponse",
+              // eslint-disable-next-line @typescript-eslint/no-use-before-define
+              handleAndClear
+            )
+          }
           signingSliceEmitter.off(
             "signatureRejected",
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
-          resolver(signature)
+        }
+
+        const handleAndClear = (response: SignatureResponse) => {
+          clear()
+          switch (response.type) {
+            case "success-data":
+              resolver(response.signedData)
+              break
+            default:
+              rejecter()
+              break
+          }
+        }
+
+        const resolveAndClear = (signedData: string) => {
+          clear()
+          resolver(signedData)
         }
 
         const rejectAndClear = () => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
-          signingSliceEmitter.off("signatureRejected", rejectAndClear)
+          clear()
           rejecter()
         }
 
-        this.keyringService.emitter.on("signedData", resolveAndClear)
+        if (HIDE_IMPORT_LEDGER) {
+          this.keyringService.emitter.on("signedData", resolveAndClear)
+        } else {
+          this.signingService.emitter.on("signingDataResponse", handleAndClear)
+        }
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )

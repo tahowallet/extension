@@ -442,7 +442,9 @@ export default class KeyringService extends BaseService<Events> {
         typesForSigning,
         message
       )
-      this.emitter.emit("signedData", signature)
+      if (HIDE_IMPORT_LEDGER) {
+        this.emitter.emit("signedData", signature)
+      }
       return signature
     } catch (error) {
       throw new Error("Signing data failed")

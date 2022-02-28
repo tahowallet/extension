@@ -18,12 +18,17 @@ export type SignatureResponse =
       signedTx: SignedEVMTransaction
     }
   | {
+      type: "success-data"
+      signedData: string
+    }
+  | {
       type: "error"
       reason: "userRejected" | "genericError"
     }
 
 type Events = ServiceLifecycleEvents & {
   signingTxResponse: SignatureResponse
+  signingDataResponse: SignatureResponse
 }
 
 type SignerType = "keyring" | HardwareSignerType
@@ -169,14 +174,27 @@ export default class SigningService extends BaseService<Events> {
     account: HexString
     signingMethod: SigningMethod
   }): Promise<string> {
+    let signedData: string
     switch (signingMethod.type) {
       case "ledger":
-        return this.ledgerService.signTypedData(typedData, account)
+        signedData = await this.ledgerService.signTypedData(typedData, account)
+        break
       case "keyring":
-        return this.keyringService.signTypedData({ typedData, account })
+        signedData = await this.keyringService.signTypedData({
+          typedData,
+          account,
+        })
+        break
       default:
         throw new Error(`Unreachable!`)
     }
+
+    this.emitter.emit("signingDataResponse", {
+      type: "success-data",
+      signedData,
+    })
+
+    return signedData
   }
 
   async signMessage(address: string, message: string): Promise<string> {
