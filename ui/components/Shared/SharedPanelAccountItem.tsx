@@ -6,6 +6,8 @@ import { HexString } from "@tallyho/tally-background/types"
 import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
+import SharedSlideUpMenu from "./SharedSlideUpMenu"
+import SharedButton from "./SharedButton"
 
 interface Props {
   isSelected: boolean
@@ -15,6 +17,8 @@ interface Props {
 }
 
 export default function SharedPanelAccountItem(props: Props): ReactElement {
+  const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
+    React.useState(false)
   const dispatch = useDispatch()
   const { isSelected, hideMenu, accountTotal: account, address } = props
   const {
@@ -26,6 +30,55 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
 
   return (
     <li className="standard_width">
+      <SharedSlideUpMenu
+        size="custom"
+        customSize="336px"
+        isOpen={showAddressRemoveConfirm}
+        close={() => {
+          setShowAddressRemoveConfirm(false)
+        }}
+      >
+        <div className="remove_address_menu">
+          <div className="remove_address">
+            <div className="icon_garbage" />
+            <strong>Remove address?</strong>
+          </div>
+
+          <ul>
+            <li className="account_container">
+              <SharedPanelAccountItem
+                accountTotal={account}
+                address={address}
+                hideMenu
+                isSelected={isSelected}
+              />
+            </li>
+          </ul>
+          <div className="remove_address_details">
+            <span>
+              Removing this address does not delete it from your seed phrase.
+            </span>
+            <span>
+              It just hides it from the extension and you won&apos;t be able to
+              use it until you add it back
+            </span>
+          </div>
+          <div className="button_container">
+            <SharedButton
+              type="secondary"
+              size="medium"
+              onClick={() => {
+                setShowAddressRemoveConfirm(false)
+              }}
+            >
+              Cancel
+            </SharedButton>
+            <SharedButton type="primary" size="medium">
+              Yes, I want to remove it
+            </SharedButton>
+          </div>
+        </div>
+      </SharedSlideUpMenu>
       <div className="left">
         {isSelected ? (
           <div className="avatar_selected_outline">
@@ -58,14 +111,23 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
             <div className="connected_status">Connected</div>
           ) : null}
         </div>
-        {!hideMenu && (
+        {!hideMenu ? (
           <div
+            className="icon_settings"
+            role="menu"
+            tabIndex={0}
+            onKeyPress={(e) => {
+              if (e.key === "enter") {
+                setShowAddressRemoveConfirm(true)
+              }
+            }}
             onClick={(e) => {
               e.stopPropagation()
-              dispatch(removeAccount(address))
+              setShowAddressRemoveConfirm(true)
             }}
-            className="icon_settings"
           />
+        ) : (
+          <div />
         )}
       </div>
       <style jsx>{`
@@ -142,6 +204,47 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         .right {
           display: flex;
           align-items: center;
+        }
+        .icon_garbage {
+          background: url("./images/garbage@2x.png") center no-repeat;
+          background-size: cover;
+          filter: saturate(500%) contrast(800%) brightness(500%) invert(80%) sepia(28%);
+          width: 16px;
+          margin-right: 5px;
+          height: 16px;
+        }
+        .remove_address_menu {
+          margin-left: 20px;
+          margin-right: 20px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          height: 95%;
+        }
+        .remove_address_details {
+          display: flex;
+          flex-direction: column;
+          line-height: 24px;
+          font-size 16px;
+        }
+        .button_container {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .remove_address {
+          display: flex;
+          flexDirection: row;
+          align-items: center;
+          color: var(--error);
+          font-size: 18px;
+          line-height 24px;
+        }
+        .account_container {
+          margin-top: -10px;
+          background-color: var(--hunter-green);
+          padding: 5px;
+          border-radius: 16px;
         }
       `}</style>
     </li>
