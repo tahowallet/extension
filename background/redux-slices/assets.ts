@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import { AnyAsset, PricePoint } from "../assets"
+import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 
 type SingleAssetState = AnyAsset & {
@@ -12,77 +13,6 @@ type SingleAssetState = AnyAsset & {
 export type AssetsState = SingleAssetState[]
 
 export const initialState = [] as AssetsState
-
-/*
- * Use heuristics to score two assets based on their metadata similarity. The
- * higher the score, the more likely the asset metadata refers to the same
- * asset.
- *
- * @param a - the first asset
- * @param b - the second asset
- * @returns an integer score >= 0
- */
-function scoreAssetSimilarity(a: AnyAsset, b: AnyAsset): number {
-  let score = 0
-  if (a.symbol === b.symbol) {
-    score += 1
-  }
-  if (a.name === b.name) {
-    score += 1
-  }
-  if ("decimals" in a && "decimals" in b) {
-    if (a.decimals === b.decimals) {
-      score += 1
-    } else {
-      score -= 1
-    }
-  } else if ("decimals" in a || "decimals" in b) {
-    score -= 1
-  }
-  if ("homeNetwork" in a && "homeNetwork" in b) {
-    if (
-      a.homeNetwork.name === b.homeNetwork.name &&
-      a.homeNetwork.chainID === b.homeNetwork.chainID
-    ) {
-      score += 1
-    } else {
-      score -= 1
-    }
-  } else if ("homeNetwork" in a || "homeNetwork" in b) {
-    score -= 1
-  }
-  return score
-}
-
-/*
- * Score all assets by similarity, returning the most similiar asset as long as
- * it is above a base similiarity score, or null.
- *
- * @param baseAsset - the asset we're trying to find
- * @param assets - an array of assets to sort
- */
-function findClosestAsset(
-  baseAsset: AnyAsset,
-  assets: AnyAsset[],
-  minScore = 2
-): number | null {
-  const [bestScore, index] = assets.reduce(
-    ([runningScore, runningScoreIndex], asset, i) => {
-      const score = scoreAssetSimilarity(baseAsset, asset)
-      if (score > runningScore) {
-        return [score, i]
-      }
-      return [runningScore, runningScoreIndex]
-    },
-    [0, -1] as [number, number]
-  )
-
-  if (bestScore >= minScore && index >= 0) {
-    return index
-  }
-
-  return null
-}
 
 function prunePrices(prices: PricePoint[]): PricePoint[] {
   // TODO filter prices to daily in the past week, weekly in the past month, monthly in the past year
@@ -113,18 +43,18 @@ function recentPricesFromArray(
   baseAsset: AnyAsset,
   prices: PricePoint[]
 ): SingleAssetState["recentPrices"] {
-  const pricesToSort = prices.map((pp) => [pp.time, pp])
+  const pricesToSort = prices.map((pp) => [pp.time, pp] as const)
   pricesToSort.sort()
   return pricesToSort
-    .map((r) => r[1] as PricePoint)
+    .map((r) => r[1])
     .reduce((agg: SingleAssetState["recentPrices"], pp: PricePoint) => {
-      const pricedAssetIndex = findClosestAsset(baseAsset, pp.pair)
-      if (pricedAssetIndex !== null) {
-        const pricedAsset = pp.pair[+(pricedAssetIndex === 0)]
+      const baseAssetIndex = findClosestAssetIndex(baseAsset, pp.pair)
+      if (baseAssetIndex !== null) {
+        const priceAsset = pp.pair[baseAssetIndex === 0 ? 1 : 0]
         const newAgg = {
           ...agg,
         }
-        newAgg[pricedAsset.symbol] = pp
+        newAgg[priceAsset.symbol] = pp
         return newAgg
       }
       return agg
@@ -186,14 +116,10 @@ const assetsSlice = createSlice({
     ) => {
       pricePoint.pair.forEach((pricedAsset) => {
         // find the asset metadata
-        const index = findClosestAsset(pricedAsset, [
-          ...immerState,
-        ] as AnyAsset[])
-        if (index !== null) {
+        const index = findClosestAssetIndex(pricedAsset, immerState)
+        if (typeof index !== "undefined") {
           // append to longer-running prices
-          const prices = prunePrices(
-            [...immerState[index].prices].concat([pricePoint])
-          )
+          const prices = prunePrices([...immerState[index].prices, pricePoint])
           immerState[index].prices = prices
           // update recent prices for easy checks by symbol
           immerState[index].recentPrices = recentPricesFromArray(

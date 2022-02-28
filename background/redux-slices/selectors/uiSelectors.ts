@@ -8,7 +8,10 @@ const hardcodedMainCurrencySymbol = "USD"
 export const selectShowingActivityDetail = createSelector(
   (state: RootState) => state.activities,
   (state: RootState) => state.ui.showingActivityDetailID,
-  (state: RootState) => state.account.blocks,
+  (state: RootState) => {
+    const { network } = state.ui.selectedAccount
+    return state.networks.evm[network.chainID].blocks
+  },
   (activities, showingActivityDetailID, blocks) => {
     return showingActivityDetailID === null
       ? null
