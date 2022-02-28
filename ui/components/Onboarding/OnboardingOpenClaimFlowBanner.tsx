@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
+import classNames from "classnames"
 import {
   toFixedPointNumber,
   fixedPointNumberToString,
@@ -49,8 +50,13 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
                 <span className="claimable_amount">{claimAmount}</span> TALLY
               </div>
             </div>
-            <Link to="/eligible">
-              <div className="button">{">"}</div>
+            <Link
+              to="/eligible"
+              className={classNames({
+                no_click: !currentAccountSigningMethod,
+              })}
+            >
+              <div className="link_content">{">"}</div>
             </Link>
           </>
         ) : (
@@ -127,16 +133,19 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             line-height: 38px;
             color: #22c480;
           }
-          .button {
+          .link_content {
             width: 40px;
             height: 74px;
-            background: #d08e39;
+            background-color: var(--trophy-gold);
             border-radius: 8px;
             color: black;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 18px;
+          }
+          .upgrade .link_content {
+            background-color: var(--green-80);
           }
           .right {
             display: flex;
