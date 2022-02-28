@@ -76,6 +76,7 @@ export default function SignData({
         dispatch(signTypedData(typedDataRequest))
       }
     }
+    history.goBack()
   }
 
   const handleReject = async () => {
