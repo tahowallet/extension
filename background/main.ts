@@ -674,7 +674,7 @@ export default class Main extends BaseService<never> {
           })
           this.store.dispatch(signedTypedData(signedData))
         } catch (err) {
-          logger.error("Error signing typed data", typedData)
+          logger.error("Error signing typed data", typedData, "error: ", err)
           this.store.dispatch(clearSigningState)
         }
       }
