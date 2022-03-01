@@ -10,6 +10,7 @@ import {
 } from "@ethersproject/transactions"
 import { TypedDataUtils } from "eth-sig-util"
 import { bufferToHex } from "ethereumjs-util"
+import { joinSignature } from "ethers/lib/utils"
 import {
   EIP1559TransactionRequest,
   EVMNetwork,
@@ -23,6 +24,7 @@ import { getOrCreateDB, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { HIDE_IMPORT_LEDGER } from "../../features/features"
 
 enum LedgerType {
   UNKNOWN,
@@ -36,6 +38,9 @@ export const LedgerProductDatabase = {
   LEDGER_NANO_S: { productId: 0x1015 },
   LEDGER_NANO_X: { productId: 0x4015 },
 }
+
+export const isLedgerSupported =
+  !HIDE_IMPORT_LEDGER && typeof navigator.usb === "object"
 
 const TestedProductId = (productId: number): boolean => {
   return Object.values(LedgerProductDatabase).some(
@@ -103,21 +108,6 @@ async function generateLedgerId(
   const address = await deriveAddressOnLedger(idDerviationPath, eth)
 
   return [address, extensionDeviceType]
-}
-
-function signatureToString(signature: {
-  v: number
-  s: string
-  r: string
-}): string {
-  let v: string | number = signature.v - 27
-  v = v.toString(16)
-
-  if (v.length < 2) {
-    v = `0${v}`
-  }
-
-  return `0x${signature.r}${signature.s}${v}`
 }
 
 /**
@@ -418,13 +408,33 @@ export default class LedgerService extends BaseService<Events> {
       true
     )
 
+    const ledgerAcc = await this.db.getAccountByAddress(account)
+
+    if (!ledgerAcc) {
+      throw new Error(
+        `Address ${account} does not have corresponding derivation path stored!`
+      )
+    }
+
     const signature = await eth.signEIP712HashedMessage(
-      account,
+      ledgerAcc.path,
       bufferToHex(hashedDomain),
       bufferToHex(hashedMessage)
     )
-    this.emitter.emit("signedData", signatureToString(signature))
-    return signatureToString(signature)
+
+    this.emitter.emit(
+      "signedData",
+      joinSignature({
+        r: `0x${signature.r}`,
+        s: `0x${signature.s}`,
+        v: signature.v,
+      })
+    )
+    return joinSignature({
+      r: `0x${signature.r}`,
+      s: `0x${signature.s}`,
+      v: signature.v,
+    })
   }
 
   async signMessage(address: string, message: string): Promise<string> {
@@ -439,7 +449,7 @@ export default class LedgerService extends BaseService<Events> {
     const eth = new Eth(this.transport)
 
     const signature = await eth.signPersonalMessage(address, message)
-    this.emitter.emit("signedData", signatureToString(signature))
-    return signatureToString(signature)
+    this.emitter.emit("signedData", joinSignature(signature))
+    return joinSignature(signature)
   }
 }

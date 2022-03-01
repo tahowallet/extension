@@ -1,4 +1,3 @@
-import { TypedDataDomain, TypedDataField } from "@ethersproject/abstract-signer"
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService from "../keyring"
 import LedgerService from "../ledger"
@@ -7,7 +6,7 @@ import {
   EVMNetwork,
   SignedEVMTransaction,
 } from "../../networks"
-import { HexString } from "../../types"
+import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
@@ -15,8 +14,12 @@ import { SigningMethod } from "../../redux-slices/signing"
 
 export type SignatureResponse =
   | {
-      type: "success"
+      type: "success-tx"
       signedTx: SignedEVMTransaction
+    }
+  | {
+      type: "success-data"
+      signedData: string
     }
   | {
       type: "error"
@@ -24,7 +27,8 @@ export type SignatureResponse =
     }
 
 type Events = ServiceLifecycleEvents & {
-  signingResponse: SignatureResponse
+  signingTxResponse: SignatureResponse
+  signingDataResponse: SignatureResponse
 }
 
 type SignerType = "keyring" | HardwareSignerType
@@ -111,10 +115,14 @@ export default class SigningService extends BaseService<Events> {
   }
 
   async signTransaction(
-    network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest,
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
+    const network = this.chainService.resolveNetwork(transactionRequest)
+    if (typeof network === "undefined") {
+      throw new Error(`Unknown chain ID ${transactionRequest.chainID}.`)
+    }
+
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
@@ -125,8 +133,8 @@ export default class SigningService extends BaseService<Events> {
         signingMethod
       )
 
-      this.emitter.emit("signingResponse", {
-        type: "success",
+      this.emitter.emit("signingTxResponse", {
+        type: "success-tx",
         signedTx,
       })
 
@@ -136,7 +144,7 @@ export default class SigningService extends BaseService<Events> {
         const transportError = err as Error & { statusCode: number }
         switch (transportError.statusCode) {
           case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
-            this.emitter.emit("signingResponse", {
+            this.emitter.emit("signingTxResponse", {
               type: "error",
               reason: "userRejected",
             })
@@ -146,14 +154,14 @@ export default class SigningService extends BaseService<Events> {
         }
       }
 
-      this.emitter.emit("signingResponse", {
+      this.emitter.emit("signingTxResponse", {
         type: "error",
         reason: "genericError",
       })
 
-      throw err
-    } finally {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+
+      throw err
     }
   }
 
@@ -161,15 +169,36 @@ export default class SigningService extends BaseService<Events> {
     this.addressHandlers.push({ address, signer: handler })
   }
 
-  async signTypedData(
-    address: string,
-    domain: TypedDataDomain,
-    types: Record<string, Array<TypedDataField>>,
-    value: Record<string, unknown>
-  ): Promise<string> {
-    this.signTypedData = this.signTypedData.bind(this)
+  async signTypedData({
+    typedData,
+    account,
+    signingMethod,
+  }: {
+    typedData: EIP712TypedData
+    account: HexString
+    signingMethod: SigningMethod
+  }): Promise<string> {
+    let signedData: string
+    switch (signingMethod.type) {
+      case "ledger":
+        signedData = await this.ledgerService.signTypedData(typedData, account)
+        break
+      case "keyring":
+        signedData = await this.keyringService.signTypedData({
+          typedData,
+          account,
+        })
+        break
+      default:
+        throw new Error(`Unreachable!`)
+    }
 
-    throw new Error("Unimplemented")
+    this.emitter.emit("signingDataResponse", {
+      type: "success-data",
+      signedData,
+    })
+
+    return signedData
   }
 
   async signMessage(address: string, message: string): Promise<string> {

@@ -1,4 +1,5 @@
 import Dexie from "dexie"
+import { normalizeEVMAddress } from "../../lib/utils"
 import { HexString } from "../../types"
 
 export interface LedgerAccount {
@@ -23,7 +24,12 @@ export class LedgerDatabase extends Dexie {
   }
 
   async getAccountByAddress(address: HexString): Promise<LedgerAccount | null> {
-    return (await this.ledger.where("address").equals(address).first()) ?? null
+    return (
+      (await this.ledger
+        .where("address")
+        .equals(normalizeEVMAddress(address))
+        .first()) ?? null
+    )
   }
 
   async getAllAccountsByLedgerId(ledgerId: string): Promise<LedgerAccount[]> {
