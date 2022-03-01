@@ -33,11 +33,12 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
       </ul>
       <div className="remove_address_details">
         <span>
-          Removing this address does not delete it from your seed phrase.
+          Removing this address doesn&apos;t delete your recovery phrase or any
+          private keys.
         </span>
         <span>
-          It just hides it from the extension and you won&apos;t be able to use
-          it until you add it back
+          Instead it just hides it from the extension and you won&apos;t be able
+          to use it until you add it back
         </span>
       </div>
       <div className="button_container">
