@@ -238,16 +238,18 @@ export default function AccountsNotificationPanelAccounts({
                               updateCurrentAccount(lowerCaseAddress)
                             }}
                           >
-                            <SharedPanelAccountItem
-                              key={lowerCaseAddress}
-                              accountTotal={accountTotal}
-                              address={accountTotal.address}
-                              isSelected={isSelected}
-                              hideMenu={
-                                isSelected ||
-                                accountType !== AccountType.ReadOnly
-                              }
-                            />
+                            <li className="standard_width">
+                              <SharedPanelAccountItem
+                                key={lowerCaseAddress}
+                                accountTotal={accountTotal}
+                                address={accountTotal.address}
+                                isSelected={isSelected}
+                                hideMenu={
+                                  isSelected ||
+                                  accountType !== AccountType.ReadOnly
+                                }
+                              />
+                            </li>
                           </button>
                         </li>
                       )
