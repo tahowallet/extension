@@ -31,65 +31,70 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
 
   return (
     <li className="standard_width">
-      <SharedSlideUpMenu
-        size="custom"
-        customSize="336px"
-        isOpen={showAddressRemoveConfirm}
-        close={() => {
-          setShowAddressRemoveConfirm(false)
-          setShowOptionsMenu(false)
-        }}
+      <div
+        role="presentation"
+        onClick={(e) => e.stopPropagation()}
+        style={{ cursor: "default" }}
       >
-        <div className="remove_address_menu">
-          <div className="remove_address">
-            <div className="icon_garbage" />
-            <strong>Remove address?</strong>
-          </div>
+        <SharedSlideUpMenu
+          size="custom"
+          customSize="336px"
+          isOpen={showAddressRemoveConfirm}
+          close={() => {
+            setShowAddressRemoveConfirm(false)
+          }}
+        >
+          <div className="remove_address_menu">
+            <div className="remove_address">
+              <div className="icon_garbage" />
+              <strong>Remove address?</strong>
+            </div>
 
-          <ul>
-            <li className="account_container">
-              <SharedPanelAccountItem
-                accountTotal={account}
-                address={address}
-                hideMenu
-                isSelected={isSelected}
-              />
-            </li>
-          </ul>
-          <div className="remove_address_details">
-            <span>
-              Removing this address does not delete it from your seed phrase.
-            </span>
-            <span>
-              It just hides it from the extension and you won&apos;t be able to
-              use it until you add it back
-            </span>
+            <ul>
+              <li className="account_container">
+                <SharedPanelAccountItem
+                  accountTotal={account}
+                  address={address}
+                  hideMenu
+                  isSelected={isSelected}
+                />
+              </li>
+            </ul>
+            <div className="remove_address_details">
+              <span>
+                Removing this address does not delete it from your seed phrase.
+              </span>
+              <span>
+                It just hides it from the extension and you won&apos;t be able
+                to use it until you add it back
+              </span>
+            </div>
+            <div className="button_container">
+              <SharedButton
+                type="secondary"
+                size="medium"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowAddressRemoveConfirm(false)
+                }}
+              >
+                Cancel
+              </SharedButton>
+              <SharedButton
+                type="primary"
+                size="medium"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dispatch(removeAccount(address))
+                  setShowAddressRemoveConfirm(false)
+                }}
+              >
+                Yes, I want to remove it
+              </SharedButton>
+            </div>
           </div>
-          <div className="button_container">
-            <SharedButton
-              type="secondary"
-              size="medium"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowAddressRemoveConfirm(false)
-              }}
-            >
-              Cancel
-            </SharedButton>
-            <SharedButton
-              type="primary"
-              size="medium"
-              onClick={(e) => {
-                e.stopPropagation()
-                dispatch(removeAccount(address))
-                setShowAddressRemoveConfirm(false)
-              }}
-            >
-              Yes, I want to remove it
-            </SharedButton>
-          </div>
-        </div>
-      </SharedSlideUpMenu>
+        </SharedSlideUpMenu>
+      </div>
       <div className="left">
         {isSelected ? (
           <div className="avatar_selected_outline">
@@ -123,7 +128,8 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           ) : null}
         </div>
         {!hideMenu && (
-          <div
+          <button
+            type="button"
             className="icon_settings"
             role="menu"
             tabIndex={0}
@@ -151,6 +157,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
               }}
               onClick={(e) => {
                 e.stopPropagation()
+                setShowOptionsMenu(false)
                 setShowAddressRemoveConfirm(true)
               }}
             >
@@ -279,6 +286,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           margin-left: 20px;
           margin-right: 20px;
           display: flex;
+          pointer: wait;
           flex-direction: column;
           justify-content: space-between;
           height: 95%;
