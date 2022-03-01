@@ -1,5 +1,9 @@
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAccountTotal,
+  selectAddressSigningMethods,
+  selectCurrentAccountSigningMethod,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
   selectTypedData,
@@ -38,28 +42,39 @@ export default function SignData({
     internal: false,
   }
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
-
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof typedDataRequest !== "undefined") {
       return getAccountTotal(state, typedDataRequest.account)
     }
     return undefined
   })
+
+  const redirect = signerAccountTotal?.accountType === AccountType.Imported
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(redirect)
+
+  const currentAddressSigner = useBackgroundSelector(
+    selectCurrentAccountSigningMethod
+  )
+
   if (
-    !areKeyringsUnlocked ||
+    (signerAccountTotal?.accountType === AccountType.Imported &&
+      !areKeyringsUnlocked) ||
     typeof typedDataRequest === "undefined" ||
     typeof signerAccountTotal === "undefined"
   ) {
     return <></>
   }
+
   const { domain, message, primaryType } = typedDataRequest.typedData
 
   const keys = Object.keys(message)
 
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
-      dispatch(signTypedData(typedDataRequest))
+      if (currentAddressSigner) {
+        typedDataRequest.signingMethod = currentAddressSigner
+        dispatch(signTypedData(typedDataRequest))
+      }
     }
   }
 
@@ -117,7 +132,9 @@ export default function SignData({
         >
           Reject
         </SharedButton>
-        {signerAccountTotal.accountType === AccountType.Imported ? (
+        {signerAccountTotal.accountType === AccountType.ReadOnly ? (
+          <span className="no-signing">Read-only accounts cannot sign</span>
+        ) : (
           <SharedButton
             type="primary"
             iconSize="large"
@@ -127,8 +144,6 @@ export default function SignData({
           >
             Sign
           </SharedButton>
-        ) : (
-          <span className="no-signing">Read-only accounts cannot sign</span>
         )}
       </div>
       <style jsx>
