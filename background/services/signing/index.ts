@@ -12,6 +12,8 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { SigningMethod } from "../../redux-slices/signing"
 
+type SigningErrorReason = "userRejected" | "genericError"
+
 export type SignatureResponse =
   | {
       type: "success-tx"
@@ -23,7 +25,7 @@ export type SignatureResponse =
     }
   | {
       type: "error"
-      reason: "userRejected" | "genericError"
+      reason: SigningErrorReason
     }
 
 type Events = ServiceLifecycleEvents & {
@@ -42,6 +44,19 @@ type AddressHandler = {
 type AccountSigner = {
   type: SignerType
   accountID: string
+}
+
+function getSigningErrorReason(err: unknown): SigningErrorReason {
+  if (err instanceof TransportStatusError) {
+    const transportError = err as Error & { statusCode: number }
+    switch (transportError.statusCode) {
+      case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
+        return "userRejected"
+      default:
+    }
+  }
+
+  return "genericError"
 }
 
 /**
@@ -140,23 +155,9 @@ export default class SigningService extends BaseService<Events> {
 
       return signedTx
     } catch (err) {
-      if (err instanceof TransportStatusError) {
-        const transportError = err as Error & { statusCode: number }
-        switch (transportError.statusCode) {
-          case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
-            this.emitter.emit("signingTxResponse", {
-              type: "error",
-              reason: "userRejected",
-            })
-            throw err
-          default:
-            break
-        }
-      }
-
       this.emitter.emit("signingTxResponse", {
         type: "error",
-        reason: "genericError",
+        reason: getSigningErrorReason(err),
       })
 
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
@@ -205,23 +206,9 @@ export default class SigningService extends BaseService<Events> {
 
       return signedData
     } catch (err) {
-      if (err instanceof TransportStatusError) {
-        const transportError = err as Error & { statusCode: number }
-        switch (transportError.statusCode) {
-          case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
-            this.emitter.emit("signingDataResponse", {
-              type: "error",
-              reason: "userRejected",
-            })
-            throw err
-          default:
-            break
-        }
-      }
-
       this.emitter.emit("signingDataResponse", {
         type: "error",
-        reason: "genericError",
+        reason: getSigningErrorReason(err),
       })
 
       throw err
