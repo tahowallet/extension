@@ -178,32 +178,54 @@ export default class SigningService extends BaseService<Events> {
     account: HexString
     signingMethod: SigningMethod
   }): Promise<string> {
-    let signedData: string
-    switch (signingMethod.type) {
-      case "ledger":
-        signedData = await this.ledgerService.signTypedData(
-          typedData,
-          account,
-          signingMethod.deviceID,
-          signingMethod.path
-        )
-        break
-      case "keyring":
-        signedData = await this.keyringService.signTypedData({
-          typedData,
-          account,
-        })
-        break
-      default:
-        throw new Error(`Unreachable!`)
+    try {
+      let signedData: string
+      switch (signingMethod.type) {
+        case "ledger":
+          signedData = await this.ledgerService.signTypedData(
+            typedData,
+            account,
+            signingMethod.deviceID,
+            signingMethod.path
+          )
+          break
+        case "keyring":
+          signedData = await this.keyringService.signTypedData({
+            typedData,
+            account,
+          })
+          break
+        default:
+          throw new Error(`Unreachable!`)
+      }
+      this.emitter.emit("signingDataResponse", {
+        type: "success-data",
+        signedData,
+      })
+
+      return signedData
+    } catch (err) {
+      if (err instanceof TransportStatusError) {
+        const transportError = err as Error & { statusCode: number }
+        switch (transportError.statusCode) {
+          case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
+            this.emitter.emit("signingDataResponse", {
+              type: "error",
+              reason: "userRejected",
+            })
+            throw err
+          default:
+            break
+        }
+      }
+
+      this.emitter.emit("signingDataResponse", {
+        type: "error",
+        reason: "genericError",
+      })
+
+      throw err
     }
-
-    this.emitter.emit("signingDataResponse", {
-      type: "success-data",
-      signedData,
-    })
-
-    return signedData
   }
 
   async signMessage(address: string, message: string): Promise<string> {
