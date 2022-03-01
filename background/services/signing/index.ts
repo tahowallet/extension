@@ -181,7 +181,12 @@ export default class SigningService extends BaseService<Events> {
     let signedData: string
     switch (signingMethod.type) {
       case "ledger":
-        signedData = await this.ledgerService.signTypedData(typedData, account)
+        signedData = await this.ledgerService.signTypedData(
+          typedData,
+          account,
+          signingMethod.deviceID,
+          signingMethod.path
+        )
         break
       case "keyring":
         signedData = await this.keyringService.signTypedData({

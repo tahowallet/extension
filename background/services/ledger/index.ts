@@ -384,7 +384,9 @@ export default class LedgerService extends BaseService<Events> {
 
   async signTypedData(
     typedData: EIP712TypedData,
-    account: HexString
+    account: HexString,
+    deviceID: string,
+    path: string
   ): Promise<string> {
     if (!this.transport) {
       throw new Error("Uninitialized transport!")
@@ -408,16 +410,22 @@ export default class LedgerService extends BaseService<Events> {
       true
     )
 
-    const ledgerAcc = await this.db.getAccountByAddress(account)
+    const accountData = await this.db.getAccountByAddress(account)
 
-    if (!ledgerAcc) {
-      throw new Error(
-        `Address ${account} does not have corresponding derivation path stored!`
-      )
+    if (
+      !accountData ||
+      path !== accountData.path ||
+      deviceID !== accountData.ledgerId
+    ) {
+      throw new Error("Signing method mismatch!")
+    }
+
+    if (deviceID !== this.#currentLedgerId) {
+      throw new Error("Cannot sign on wrong device attached!")
     }
 
     const signature = await eth.signEIP712HashedMessage(
-      ledgerAcc.path,
+      path,
       bufferToHex(hashedDomain),
       bufferToHex(hashedMessage)
     )
@@ -430,6 +438,7 @@ export default class LedgerService extends BaseService<Events> {
         v: signature.v,
       })
     )
+
     return joinSignature({
       r: `0x${signature.r}`,
       s: `0x${signature.s}`,
