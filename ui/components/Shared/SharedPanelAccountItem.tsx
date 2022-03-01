@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useRef, useState } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { useDispatch } from "react-redux"
@@ -9,6 +9,7 @@ import classNames from "classnames"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedButton from "./SharedButton"
+import { useOnClickOutside } from "../../hooks"
 
 interface Props {
   isSelected: boolean
@@ -63,6 +64,10 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
+  const optionsMenuRef = useRef(null)
+  useOnClickOutside(optionsMenuRef, () => {
+    setShowOptionsMenu(false)
+  })
   const dispatch = useDispatch()
   const { isSelected, hideMenu, accountTotal: account, address } = props
   const {
@@ -184,7 +189,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           />
         )}
         {showOptionsMenu && (
-          <ul className="options">
+          <ul ref={optionsMenuRef} className="options">
             <li>
               <button
                 className="remove_address"
