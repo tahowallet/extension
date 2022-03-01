@@ -87,7 +87,6 @@ export default function Menu(): ReactElement {
           ))}
         </ul>
         <div className="community_cta_wrap">
-          <div className="illustration_discord" />
           <h2 className="serif_header">Community release!</h2>
           <p>Join our discord to give us feedback!</p>
           <SharedButton
@@ -104,19 +103,24 @@ export default function Menu(): ReactElement {
           </SharedButton>
           <div className="version">
             Version: {process.env.VERSION ?? `<unknown>`} (
-            {process.env.GIT_COMMIT_DATE?.slice(0, "YYYY-MM-DD".length)})
+            {new Date(
+              process.env.GIT_COMMIT_DATE ?? "invalid date"
+            ).toLocaleDateString(undefined, { dateStyle: "medium" })}
+            )
           </div>
         </div>
       </section>
       <style jsx>
         {`
           section {
+            display: flex;
+            flex-flow: column;
+            height: 544px;
             background-color: var(--hunter-green);
           }
           .community_cta_wrap {
             width: 100vw;
-            height: 370px;
-            margin-top: 19px;
+            margin-top: auto;
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;
@@ -159,15 +163,8 @@ export default function Menu(): ReactElement {
           .mega_discord_chat_bubble_button:hover {
             opacity: 0.8;
           }
-          .illustration_discord {
-            background: url("./images/illustration_menu_tab_discord@2x.png");
-            background-size: cover;
-            width: 252px;
-            height: 162px;
-            margin: 5px 0px 20px -19px;
-          }
           .version {
-            margin: 4px 0;
+            margin: 16px 0;
             color: var(--green-60);
             font-size: 12px;
           }

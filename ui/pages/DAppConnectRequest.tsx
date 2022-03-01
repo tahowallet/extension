@@ -64,7 +64,7 @@ export default function DAppConnectRequest(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    window.onbeforeunload = (ev) => {
+    window.onbeforeunload = () => {
       if (typeof permission !== "undefined") {
         dispatch(
           denyOrRevokePermission({
