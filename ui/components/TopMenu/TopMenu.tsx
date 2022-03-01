@@ -9,6 +9,7 @@ import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/d
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
+import BonusProgramModalContent from "../BonusProgram/BonusProgramModalContent"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import TopMenuConnectedDAppInfo from "./TopMenuConnectedDAppInfo"
@@ -19,6 +20,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 export default function TopMenu(): ReactElement {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(true)
 
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
@@ -84,6 +86,16 @@ export default function TopMenu(): ReactElement {
         />
       ) : null}
       <SharedSlideUpMenu
+        isOpen={isBonusProgramOpen}
+        close={() => {
+          setIsBonusProgramOpen(false)
+        }}
+        size="custom"
+        customSize="497px"
+      >
+        <BonusProgramModalContent />
+      </SharedSlideUpMenu>
+      <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         close={() => {
           setIsProtocolListOpen(false)
@@ -117,6 +129,14 @@ export default function TopMenu(): ReactElement {
                 }}
               />
             )}
+            <button
+              type="button"
+              aria-label="Rewards program"
+              className="gift_button"
+              onClick={() => {
+                setIsBonusProgramOpen(!isBonusProgramOpen)
+              }}
+            />
             <TopMenuProfileButton
               onClick={() => {
                 setIsNotificationsOpen(!isNotificationsOpen)
@@ -147,17 +167,23 @@ export default function TopMenu(): ReactElement {
               display: flex;
               align-items: center;
             }
-            .connection_button {
-              background: url("./images/bolt@2x.png") center no-repeat;
+            button {
               border-radius: 12px;
-              background-size: 10px 20px;
               border: solid 3px var(--hunter-green);
               width: 32px;
               height: 32px;
               margin-right: 2px;
             }
-            .connection_button:hover {
+            button:hover {
               background-color: var(--green-80);
+            }
+            .connection_button {
+              background: url("./images/bolt@2x.png") center no-repeat;
+              background-size: 10px 20px;
+            }
+            .gift_button {
+              background: url("./images/gift@2x.png") center no-repeat;
+              background-size: 24px 24px;
             }
           `}
         </style>
