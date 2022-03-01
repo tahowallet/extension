@@ -10,11 +10,10 @@ interface Props {
   isSelected: boolean
   accountTotal: AccountTotal
   hideMenu: boolean
-  address: HexString
 }
 
 export default function SharedPanelAccountItem(props: Props): ReactElement {
-  const { isSelected, hideMenu, accountTotal: account, address } = props
+  const { isSelected, hideMenu, accountTotal: account } = props
 
   return (
     <li className="standard_width">
@@ -22,7 +21,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
       <AccountItemOptionsMenu
         hideMenu={hideMenu}
         account={account}
-        address={address}
+        address={account.address}
         isSelected={isSelected}
       />
 

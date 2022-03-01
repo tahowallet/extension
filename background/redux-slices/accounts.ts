@@ -159,7 +159,7 @@ const accountSlice = createSlice({
       if (!state.accountsData[accountToRemove]) {
         return state
       }
-      // Immutable remove the account passed in
+      // Immutably remove the account passed in
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const { [accountToRemove]: _, ...withoutAccountToRemove } =
         state.accountsData

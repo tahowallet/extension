@@ -242,7 +242,6 @@ export default function AccountsNotificationPanelAccounts({
                               <SharedPanelAccountItem
                                 key={lowerCaseAddress}
                                 accountTotal={accountTotal}
-                                address={accountTotal.address}
                                 isSelected={isSelected}
                                 hideMenu={
                                   isSelected ||
