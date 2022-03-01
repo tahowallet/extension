@@ -4,6 +4,7 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { useDispatch } from "react-redux"
 import { HexString } from "@tallyho/tally-background/types"
 import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
+import classNames from "classnames"
 
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
@@ -14,6 +15,48 @@ interface Props {
   accountTotal: AccountTotal
   hideMenu: boolean
   address: HexString
+}
+
+interface RemoveAddressProps {
+  hoverable?: boolean
+}
+
+const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
+  return (
+    <div className={classNames("remove_address", { hover: hoverable })}>
+      <div className="icon_garbage" />
+      <span>Remove address?</span>
+      <style jsx>{`
+        .icon_garbage {
+          background: url("./images/garbage@2x.png") center no-repeat;
+          background-size: cover;
+          filter: brightness(0) saturate(100%) invert(39%) sepia(31%) saturate(7451%) hue-rotate(333deg) brightness(100%) contrast(83%);
+          width: 16px;
+          margin-right: 5px;
+          height: 16px;
+        }
+        .remove_address {
+          display: flex;
+          flexDirection: row;
+          align-items: center;
+          color: var(--error);
+          font-size: 18px;
+          line-height 24px;
+          font-weight: bold;
+          width: 100%;
+        }
+        .hover:hover {
+          color: var(--error-80);
+        }
+        .hover:hover .icon_garbage {
+          filter: brightness(0) saturate(100%) invert(61%) sepia(6%) saturate(4092%) hue-rotate(309deg) brightness(109%) contrast(89%); 
+        }
+      `}</style>
+    </div>
+  )
+}
+RemoveAddressLabel.defaultProps = {
+  hoverable: false,
 }
 
 export default function SharedPanelAccountItem(props: Props): ReactElement {
@@ -31,25 +74,21 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
 
   return (
     <li className="standard_width">
-      <div
-        role="presentation"
-        onClick={(e) => e.stopPropagation()}
-        style={{ cursor: "default" }}
+      <SharedSlideUpMenu
+        size="custom"
+        customSize="336px"
+        isOpen={showAddressRemoveConfirm}
+        close={() => {
+          setShowAddressRemoveConfirm(false)
+        }}
       >
-        <SharedSlideUpMenu
-          size="custom"
-          customSize="336px"
-          isOpen={showAddressRemoveConfirm}
-          close={() => {
-            setShowAddressRemoveConfirm(false)
-          }}
+        <div
+          role="presentation"
+          onClick={(e) => e.stopPropagation()}
+          style={{ cursor: "default" }}
         >
-          <div className="remove_address_menu">
-            <div className="remove_address">
-              <div className="icon_garbage" />
-              <strong>Remove address?</strong>
-            </div>
-
+          <div className="remove_address_option">
+            <RemoveAddressLabel />
             <ul>
               <li className="account_container">
                 <SharedPanelAccountItem
@@ -93,8 +132,8 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
               </SharedButton>
             </div>
           </div>
-        </SharedSlideUpMenu>
-      </div>
+        </div>
+      </SharedSlideUpMenu>
       <div className="left">
         {isSelected ? (
           <div className="avatar_selected_outline">
@@ -145,35 +184,30 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           />
         )}
         {showOptionsMenu && (
-          <div className="options">
-            <div
-              className="remove_address"
-              role="menu"
-              tabIndex={0}
-              onKeyPress={(e) => {
-                if (e.key === "enter") {
+          <ul className="options">
+            <li>
+              <button
+                className="remove_address"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowOptionsMenu(false)
                   setShowAddressRemoveConfirm(true)
-                }
-              }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-                setShowAddressRemoveConfirm(true)
-              }}
-            >
-              <div className="icon_garbage" />
-              <strong>Remove address</strong>
-            </div>
-            <button
-              type="button"
-              className="icon_close"
-              aria-label="Close"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-              }}
-            />
-          </div>
+                }}
+              >
+                <RemoveAddressLabel hoverable />
+              </button>
+              <button
+                type="button"
+                className="icon_close"
+                aria-label="Close"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowOptionsMenu(false)
+                }}
+              />
+            </li>
+          </ul>
         )}
       </div>
 
@@ -275,19 +309,10 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           background-color: var(--green-20);
           z-index: 1;
         }
-        .icon_garbage {
-          background: url("./images/garbage@2x.png") center no-repeat;
-          background-size: cover;
-          filter: brightness(0) saturate(100%) invert(39%) sepia(31%) saturate(7451%) hue-rotate(333deg) brightness(100%) contrast(83%);
-          width: 16px;
-          margin-right: 5px;
-          height: 16px;
-        }
-        .remove_address_menu {
+        .remove_address_option {
           margin-left: 20px;
           margin-right: 20px;
           display: flex;
-          pointer: wait;
           flex-direction: column;
           justify-content: space-between;
           height: 95%;
@@ -297,14 +322,6 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           flex-direction: column;
           line-height: 24px;
           font-size 16px;
-        }
-        .remove_address {
-          display: flex;
-          flexDirection: row;
-          align-items: center;
-          color: var(--error);
-          font-size: 18px;
-          line-height 24px;
         }
         .button_container {
           display: flex;
