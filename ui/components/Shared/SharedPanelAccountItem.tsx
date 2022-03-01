@@ -229,7 +229,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         }
         .options {
           position: absolute;
-          right: 0,
+          right: 0;
           height: 48px;
           background-color: var(--green-120);
           display: flex;
