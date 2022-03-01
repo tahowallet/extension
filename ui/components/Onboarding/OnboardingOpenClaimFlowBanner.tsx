@@ -7,13 +7,17 @@ import {
 } from "@tallyho/tally-background/lib/fixed-point"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
 
+import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
 export default function OnboardingOpenClaimFlowBanner(): ReactElement {
   const claimAmount = useBackgroundSelector((state) =>
     fixedPointNumberToString(
-      toFixedPointNumber(Number(state.claim?.eligibility?.earnings) || 0, 18)
+      toFixedPointNumber(
+        Number(state.claim?.eligibility?.earnings) || 0,
+        tallyTokenDecimalDigits
+      )
     )
   )
 
