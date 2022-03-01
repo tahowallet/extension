@@ -39,7 +39,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
       })}
     >
       <div className="banner">
-        {claimAmount > "0" ? (
+        {claimAmount !== "0" ? (
           <>
             <div>
               <img className="image" src="./images/claim.png" alt="" />
