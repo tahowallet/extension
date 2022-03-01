@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { useDispatch } from "react-redux"
@@ -17,8 +17,9 @@ interface Props {
 }
 
 export default function SharedPanelAccountItem(props: Props): ReactElement {
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
-    React.useState(false)
+    useState(false)
   const dispatch = useDispatch()
   const { isSelected, hideMenu, accountTotal: account, address } = props
   const {
@@ -127,16 +128,47 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
             tabIndex={0}
             onKeyPress={(e) => {
               if (e.key === "enter") {
-                setShowAddressRemoveConfirm(true)
+                setShowOptionsMenu(true)
               }
             }}
             onClick={(e) => {
               e.stopPropagation()
-              setShowAddressRemoveConfirm(true)
+              setShowOptionsMenu(true)
             }}
           />
         )}
+        {showOptionsMenu && (
+          <div className="options">
+            <div
+              className="remove_address"
+              role="menu"
+              tabIndex={0}
+              onKeyPress={(e) => {
+                if (e.key === "enter") {
+                  setShowAddressRemoveConfirm(true)
+                }
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowAddressRemoveConfirm(true)
+              }}
+            >
+              <div className="icon_garbage" />
+              <strong>Remove address</strong>
+            </div>
+            <button
+              type="button"
+              className="icon_close"
+              aria-label="Close"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowOptionsMenu(false)
+              }}
+            />
+          </div>
+        )}
       </div>
+
       <style jsx>{`
         li {
           display: flex;
@@ -195,6 +227,19 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           line-height: 24px;
           text-align: right;
         }
+        .options {
+          position: absolute;
+          right: 0,
+          height: 48px;
+          background-color: var(--green-120);
+          display: flex;
+          align-items: center;
+          flex-direction: row;
+          justify-content: space-between;
+          width: 212px;
+          padding: 10px;
+          border-radius: 4px;
+        }
         .info {
           margin-left: 16px;
         }
@@ -212,10 +257,19 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           display: flex;
           align-items: center;
         }
+        .icon_close {
+          mask-image: url("./images/close.svg");
+          mask-size: cover;
+          width: 11px;
+          height: 11px;
+          padding: 2.5px;
+          background-color: var(--green-20);
+          z-index: 1;
+        }
         .icon_garbage {
           background: url("./images/garbage@2x.png") center no-repeat;
           background-size: cover;
-          filter: saturate(500%) contrast(800%) brightness(500%) invert(80%) sepia(28%);
+          filter: brightness(0) saturate(100%) invert(39%) sepia(31%) saturate(7451%) hue-rotate(333deg) brightness(100%) contrast(83%);
           width: 16px;
           margin-right: 5px;
           height: 16px;
@@ -234,11 +288,6 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           line-height: 24px;
           font-size 16px;
         }
-        .button_container {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-        }
         .remove_address {
           display: flex;
           flexDirection: row;
@@ -246,6 +295,11 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           color: var(--error);
           font-size: 18px;
           line-height 24px;
+        }
+        .button_container {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
         }
         .account_container {
           margin-top: -10px;
