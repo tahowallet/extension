@@ -260,6 +260,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           width: 4px;
           height: 20px;
           margin-left: 16px;
+          border: 10px solid transparent;
         }
         .right {
           display: flex;
