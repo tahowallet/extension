@@ -388,61 +388,63 @@ export default class LedgerService extends BaseService<Events> {
     deviceID: string,
     path: string
   ): Promise<string> {
-    if (!this.transport) {
-      throw new Error("Uninitialized transport!")
-    }
+    return this.runSerialized(async () => {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
 
-    if (!this.#currentLedgerId) {
-      throw new Error("Uninitialized Ledger ID!")
-    }
+      if (!this.#currentLedgerId) {
+        throw new Error("Uninitialized Ledger ID!")
+      }
 
-    const eth = new Eth(this.transport)
-    const hashedDomain = TypedDataUtils.hashStruct(
-      "EIP712Domain",
-      typedData.domain,
-      typedData.types,
-      true
-    )
-    const hashedMessage = TypedDataUtils.hashStruct(
-      typedData.primaryType,
-      typedData.message,
-      typedData.types,
-      true
-    )
+      const eth = new Eth(this.transport)
+      const hashedDomain = TypedDataUtils.hashStruct(
+        "EIP712Domain",
+        typedData.domain,
+        typedData.types,
+        true
+      )
+      const hashedMessage = TypedDataUtils.hashStruct(
+        typedData.primaryType,
+        typedData.message,
+        typedData.types,
+        true
+      )
 
-    const accountData = await this.db.getAccountByAddress(account)
+      const accountData = await this.db.getAccountByAddress(account)
 
-    if (
-      !accountData ||
-      path !== accountData.path ||
-      deviceID !== accountData.ledgerId
-    ) {
-      throw new Error("Signing method mismatch!")
-    }
+      if (
+        !accountData ||
+        path !== accountData.path ||
+        deviceID !== accountData.ledgerId
+      ) {
+        throw new Error("Signing method mismatch!")
+      }
 
-    if (deviceID !== this.#currentLedgerId) {
-      throw new Error("Cannot sign on wrong device attached!")
-    }
+      if (deviceID !== this.#currentLedgerId) {
+        throw new Error("Cannot sign on wrong device attached!")
+      }
 
-    const signature = await eth.signEIP712HashedMessage(
-      path,
-      bufferToHex(hashedDomain),
-      bufferToHex(hashedMessage)
-    )
+      const signature = await eth.signEIP712HashedMessage(
+        path,
+        bufferToHex(hashedDomain),
+        bufferToHex(hashedMessage)
+      )
 
-    this.emitter.emit(
-      "signedData",
-      joinSignature({
+      this.emitter.emit(
+        "signedData",
+        joinSignature({
+          r: `0x${signature.r}`,
+          s: `0x${signature.s}`,
+          v: signature.v,
+        })
+      )
+
+      return joinSignature({
         r: `0x${signature.r}`,
         s: `0x${signature.s}`,
         v: signature.v,
       })
-    )
-
-    return joinSignature({
-      r: `0x${signature.r}`,
-      s: `0x${signature.s}`,
-      v: signature.v,
     })
   }
 
