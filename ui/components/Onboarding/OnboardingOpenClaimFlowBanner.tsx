@@ -6,132 +6,43 @@ import {
   fixedPointNumberToString,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
-
+import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
-export default function OnboardingOpenClaimFlowBanner(): ReactElement {
-  const claimAmount = useBackgroundSelector((state) =>
-    fixedPointNumberToString(
-      toFixedPointNumber(
-        Number(state.claim?.eligibility?.earnings) || 0,
-        tallyTokenDecimalDigits
-      )
-    )
-  )
-
-  const currentAccountSigningMethod = useBackgroundSelector(
-    selectCurrentAccountSigningMethod
-  )
-
-  const [showOrHide, setShowOrHide] = useLocalStorage(
-    "showOrHideOnboardingClaimFlowBanner",
-    "show"
-  )
-
-  function handleCloseBanner() {
-    setShowOrHide("hide")
-  }
-
-  if (claimAmount === "0" && showOrHide === "hide") return <></>
-
+function IneligibleCTAContent({
+  currentAccountSigningMethod,
+  claimAmount,
+}: {
+  currentAccountSigningMethod: SigningMethod | null
+  claimAmount: string
+}) {
   return (
-    <div
-      className={classNames("standard_width", {
-        upgrade: !currentAccountSigningMethod,
-      })}
-    >
-      <div className="banner">
-        {claimAmount !== "0" ? (
-          <>
-            <div>
-              <img className="image" src="./images/claim.png" alt="" />
-            </div>
-            <div className="claimable">
-              <div className="claimable_woohoo">
-                {currentAccountSigningMethod
-                  ? "Wohoo! You can claim"
-                  : "Upgrade your wallet to claim"}
-              </div>
-              <div>
-                <span className="claimable_amount">{claimAmount}</span> TALLY
-              </div>
-            </div>
-            <Link
-              to="/eligible"
-              className={classNames({
-                no_click: !currentAccountSigningMethod,
-              })}
-            >
-              <div className="link_content">{">"}</div>
-            </Link>
-          </>
-        ) : (
-          <div className="right">
-            <div className="top">
-              <p>
-                Looks like there are no tokens to claim.
-                <br /> Try another address or see other ways to earn
-              </p>
-
-              <button
-                type="button"
-                className="icon_close"
-                onClick={handleCloseBanner}
-                aria-label="Close menu"
-              />
-            </div>
-            <div className="bottom">
-              <SharedButton
-                type="tertiary"
-                size="small"
-                linkTo="/onboarding/addWallet"
-                icon="plus"
-                iconPosition="left"
-              >
-                Add wallet
-              </SharedButton>
-              <SharedButton
-                type="tertiary"
-                size="small"
-                icon="external_small"
-                iconPosition="left"
-              >
-                Learn more
-              </SharedButton>
-            </div>
-          </div>
-        )}
+    <>
+      <div>
+        <img className="image" src="./images/claim.png" alt="" />
       </div>
-
-      <style jsx>
+      <div className="claimable">
+        <div className="claimable_woohoo">
+          {currentAccountSigningMethod
+            ? "Wohoo! You can claim"
+            : "Upgrade your wallet to claim"}
+        </div>
+        <div>
+          <span className="claimable_amount">{claimAmount}</span> TALLY
+        </div>
+      </div>
+      <Link
+        to="/eligible"
+        className={classNames({
+          no_click: !currentAccountSigningMethod,
+        })}
+      >
+        <div className="link_content">{">"}</div>
+      </Link>
+      <style>
         {`
-          .banner {
-            height: 90px;
-            width: 100%;
-            border-radius: 16px;
-            background-color: var(--green-95);
-            display: flex;
-            padding: 0 8px;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-            justify-content: space-between;
-            align-items: center;
-          }
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            width: 12px;
-            height: 12px;
-            background-color: var(--green-40);
-            margin-top: 8px;
-            margin-right: 8px;
-            flex-shrink: 0;
-          }
-          .icon_close:hover {
-            background-color: #fff;
-          }
           .image {
             width: 72px;
             position: relative;
@@ -167,6 +78,66 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
           .upgrade .link_content {
             background-color: var(--green-80);
           }
+        `}
+      </style>
+    </>
+  )
+}
+
+function EligibleCTAContent({
+  handleCloseBanner,
+}: {
+  handleCloseBanner: () => void
+}) {
+  return (
+    <div className="right">
+      <div className="top">
+        <p>
+          Looks like there are no tokens to claim.
+          <br /> Try another address or see other ways to earn
+        </p>
+
+        <button
+          type="button"
+          className="icon_close"
+          onClick={handleCloseBanner}
+          aria-label="Close menu"
+        />
+      </div>
+      <div className="bottom">
+        <SharedButton
+          type="tertiary"
+          size="small"
+          linkTo="/onboarding/addWallet"
+          icon="plus"
+          iconPosition="left"
+        >
+          Add wallet
+        </SharedButton>
+        <SharedButton
+          type="tertiary"
+          size="small"
+          icon="external_small"
+          iconPosition="left"
+        >
+          Learn more
+        </SharedButton>
+      </div>
+      <style>
+        {`
+          .icon_close {
+            mask-image: url("./images/close.svg");
+            mask-size: cover;
+            width: 12px;
+            height: 12px;
+            background-color: var(--green-40);
+            margin-top: 8px;
+            margin-right: 8px;
+            flex-shrink: 0;
+          }
+          .icon_close:hover {
+            background-color: #fff;
+          }
           .right {
             display: flex;
             flex-direction: column;
@@ -186,6 +157,68 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
           }
           .bottom {
             display: flex;
+          }
+        `}
+      </style>
+    </div>
+  )
+}
+
+export default function OnboardingOpenClaimFlowBanner(): ReactElement {
+  const claimAmount = useBackgroundSelector((state) =>
+    fixedPointNumberToString(
+      toFixedPointNumber(
+        Number(state.claim?.eligibility?.earnings) || 0,
+        tallyTokenDecimalDigits
+      )
+    )
+  )
+
+  const currentAccountSigningMethod = useBackgroundSelector(
+    selectCurrentAccountSigningMethod
+  )
+
+  const [showOrHide, setShowOrHide] = useLocalStorage(
+    "showOrHideOnboardingClaimFlowBanner",
+    "show"
+  )
+
+  if (claimAmount === "0" && showOrHide === "hide") return <></>
+
+  return (
+    <div
+      className={classNames("standard_width", {
+        upgrade: !currentAccountSigningMethod,
+      })}
+    >
+      <div className="banner">
+        {claimAmount !== "0" ? (
+          <IneligibleCTAContent
+            currentAccountSigningMethod={currentAccountSigningMethod}
+            claimAmount={claimAmount}
+          />
+        ) : (
+          <EligibleCTAContent
+            handleCloseBanner={() => {
+              setShowOrHide("hide")
+            }}
+          />
+        )}
+      </div>
+
+      <style jsx>
+        {`
+          .banner {
+            height: 90px;
+            width: 100%;
+            border-radius: 16px;
+            background-color: var(--green-95);
+            display: flex;
+            padding: 0 8px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
           }
         `}
       </style>
