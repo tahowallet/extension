@@ -20,7 +20,7 @@ import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
-import { getOrCreateDB, LedgerDatabase } from "./db"
+import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
@@ -307,17 +307,7 @@ export default class LedgerService extends BaseService<Events> {
           transactionRequest.from
         )
 
-        if (
-          !accountData ||
-          path !== accountData.path ||
-          deviceID !== accountData.ledgerId
-        ) {
-          throw new Error("Signing method mismatch!")
-        }
-
-        if (deviceID !== this.#currentLedgerId) {
-          throw new Error("Cannot sign on wrong device attached!")
-        }
+        this.checkCanSign(accountData, path, deviceID)
 
         const eth = new Eth(this.transport)
         const signature = await eth.signTransaction(path, serializedTx, null)
@@ -413,17 +403,7 @@ export default class LedgerService extends BaseService<Events> {
 
       const accountData = await this.db.getAccountByAddress(account)
 
-      if (
-        !accountData ||
-        path !== accountData.path ||
-        deviceID !== accountData.ledgerId
-      ) {
-        throw new Error("Signing method mismatch!")
-      }
-
-      if (deviceID !== this.#currentLedgerId) {
-        throw new Error("Cannot sign on wrong device attached!")
-      }
+      this.checkCanSign(accountData, path, deviceID)
 
       const signature = await eth.signEIP712HashedMessage(
         path,
@@ -446,6 +426,24 @@ export default class LedgerService extends BaseService<Events> {
         v: signature.v,
       })
     })
+  }
+
+  private checkCanSign(
+    accountData: LedgerAccount | null,
+    path: string,
+    deviceID: string
+  ) {
+    if (
+      !accountData ||
+      path !== accountData.path ||
+      deviceID !== accountData.ledgerId
+    ) {
+      throw new Error("Signing method mismatch!")
+    }
+
+    if (deviceID !== this.#currentLedgerId) {
+      throw new Error("Cannot sign on wrong device attached!")
+    }
   }
 
   async signMessage(address: string, message: string): Promise<string> {
