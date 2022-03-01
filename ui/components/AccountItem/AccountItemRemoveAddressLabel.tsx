@@ -9,7 +9,7 @@ const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
   return (
     <div className={classNames("remove_address", { hover: hoverable })}>
       <div className="icon_garbage" />
-      <span>Remove address?</span>
+      <span>Remove address</span>
       <style jsx>{`
           .icon_garbage {
             background: url("./images/garbage@2x.png") center no-repeat;
