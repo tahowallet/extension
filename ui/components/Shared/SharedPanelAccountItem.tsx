@@ -37,6 +37,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         isOpen={showAddressRemoveConfirm}
         close={() => {
           setShowAddressRemoveConfirm(false)
+          setShowOptionsMenu(false)
         }}
       >
         <div className="remove_address_menu">
