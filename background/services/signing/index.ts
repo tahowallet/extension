@@ -12,6 +12,8 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { SigningMethod } from "../../redux-slices/signing"
 
+type SigningErrorReason = "userRejected" | "genericError"
+
 export type SignatureResponse =
   | {
       type: "success-tx"
@@ -23,7 +25,7 @@ export type SignatureResponse =
     }
   | {
       type: "error"
-      reason: "userRejected" | "genericError"
+      reason: SigningErrorReason
     }
 
 type Events = ServiceLifecycleEvents & {
@@ -42,6 +44,19 @@ type AddressHandler = {
 type AccountSigner = {
   type: SignerType
   accountID: string
+}
+
+function getSigningErrorReason(err: unknown): SigningErrorReason {
+  if (err instanceof TransportStatusError) {
+    const transportError = err as Error & { statusCode: number }
+    switch (transportError.statusCode) {
+      case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
+        return "userRejected"
+      default:
+    }
+  }
+
+  return "genericError"
 }
 
 /**
@@ -140,23 +155,9 @@ export default class SigningService extends BaseService<Events> {
 
       return signedTx
     } catch (err) {
-      if (err instanceof TransportStatusError) {
-        const transportError = err as Error & { statusCode: number }
-        switch (transportError.statusCode) {
-          case StatusCodes.CONDITIONS_OF_USE_NOT_SATISFIED:
-            this.emitter.emit("signingTxResponse", {
-              type: "error",
-              reason: "userRejected",
-            })
-            throw err
-          default:
-            break
-        }
-      }
-
       this.emitter.emit("signingTxResponse", {
         type: "error",
-        reason: "genericError",
+        reason: getSigningErrorReason(err),
       })
 
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
@@ -178,27 +179,40 @@ export default class SigningService extends BaseService<Events> {
     account: HexString
     signingMethod: SigningMethod
   }): Promise<string> {
-    let signedData: string
-    switch (signingMethod.type) {
-      case "ledger":
-        signedData = await this.ledgerService.signTypedData(typedData, account)
-        break
-      case "keyring":
-        signedData = await this.keyringService.signTypedData({
-          typedData,
-          account,
-        })
-        break
-      default:
-        throw new Error(`Unreachable!`)
+    try {
+      let signedData: string
+      switch (signingMethod.type) {
+        case "ledger":
+          signedData = await this.ledgerService.signTypedData(
+            typedData,
+            account,
+            signingMethod.deviceID,
+            signingMethod.path
+          )
+          break
+        case "keyring":
+          signedData = await this.keyringService.signTypedData({
+            typedData,
+            account,
+          })
+          break
+        default:
+          throw new Error(`Unreachable!`)
+      }
+      this.emitter.emit("signingDataResponse", {
+        type: "success-data",
+        signedData,
+      })
+
+      return signedData
+    } catch (err) {
+      this.emitter.emit("signingDataResponse", {
+        type: "error",
+        reason: getSigningErrorReason(err),
+      })
+
+      throw err
     }
-
-    this.emitter.emit("signingDataResponse", {
-      type: "success-data",
-      signedData,
-    })
-
-    return signedData
   }
 
   async signMessage(address: string, message: string): Promise<string> {
