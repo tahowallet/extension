@@ -38,6 +38,10 @@ export type AlarmHandlerSchedule = {
   schedule: AlarmSchedule
   handler: (alarm?: Alarms.Alarm) => void
   runAtStart?: boolean
+  multiTickBased?: {
+    tickCounter: number
+    extendedPeriodMultiplier: number
+  }
 }
 
 /**
@@ -152,7 +156,39 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
    * named alarm, if available. Override for custom behavior.
    */
   protected handleAlarm(alarm: Alarms.Alarm): void {
-    this.alarmSchedules[alarm.name]?.handler(alarm)
+    const alarmSchedule = this.alarmSchedules[alarm.name]
+
+    if (!alarmSchedule) {
+      return
+    }
+
+    const { multiTickBased, handler } = alarmSchedule
+
+    if (!multiTickBased) {
+      handler(alarm)
+    } else {
+      multiTickBased.tickCounter += 1
+
+      if (
+        multiTickBased.tickCounter >= multiTickBased.extendedPeriodMultiplier
+      ) {
+        handler(alarm)
+        multiTickBased.tickCounter = 0
+      }
+    }
+  }
+
+  protected setPollingPeriod(alarmName: string, newPeriod: number): void {
+    const scheduleEntry = this.alarmSchedules[alarmName]
+
+    if (scheduleEntry && scheduleEntry.multiTickBased) {
+      // set new period and trigger if the new deadline is expired when set
+      scheduleEntry.multiTickBased.extendedPeriodMultiplier = newPeriod
+      if (scheduleEntry.multiTickBased.tickCounter >= newPeriod) {
+        scheduleEntry.handler()
+      }
+      scheduleEntry.multiTickBased.tickCounter = 0
+    }
   }
 
   private serviceState: "unstarted" | "started" | "stopped" = "unstarted"

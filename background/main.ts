@@ -85,6 +85,7 @@ import {
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import { PollingPeriod } from "./services/chain"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1146,6 +1147,12 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+
+    uiSliceEmitter.on("setUiVisibility", async (visibility: boolean) => {
+      this.chainService.setBlockPollingPeriod(
+        visibility ? PollingPeriod.SHORT : PollingPeriod.LONG
+      )
+    })
   }
 
   connectTelemetryService(): void {

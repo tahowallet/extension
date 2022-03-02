@@ -1,7 +1,6 @@
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
-  BaseProvider,
   TransactionReceipt,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
@@ -50,6 +49,11 @@ import type {
 } from "../enrichment"
 import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
+
+export enum PollingPeriod {
+  SHORT = 1,
+  LONG = 30,
+}
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -185,6 +189,10 @@ export default class ChainService extends BaseService<Events> {
         schedule: {
           periodInMinutes:
             Number(process.env.GAS_PRICE_POLLING_FREQUENCY ?? "120") / 60,
+        },
+        multiTickBased: {
+          tickCounter: 0,
+          extendedPeriodMultiplier: PollingPeriod.SHORT,
         },
         handler: () => {
           this.pollBlockPrices()
@@ -659,6 +667,10 @@ export default class ChainService extends BaseService<Events> {
 
   async send(method: string, params: unknown[]): Promise<unknown> {
     return this.providers.ethereum.send(method, params)
+  }
+
+  setBlockPollingPeriod(ticks: PollingPeriod): void {
+    this.setPollingPeriod("blockPrices", ticks)
   }
 
   /* *****************
