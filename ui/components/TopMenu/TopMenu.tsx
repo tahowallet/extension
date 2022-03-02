@@ -20,7 +20,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 export default function TopMenu(): ReactElement {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(true)
+  const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
 
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
