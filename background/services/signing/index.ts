@@ -14,8 +14,8 @@ import { SigningMethod } from "../../redux-slices/signing"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
-    type: "error"
-    reason: SigningErrorReason 
+  type: "error"
+  reason: SigningErrorReason
 }
 
 export type TXSignatureResponse =
