@@ -125,3 +125,11 @@ label {
   opacity: 0;
   pointer-events: none;
 }
+
+.divider {
+  width: 80%;
+  height: 2px;
+  opacity: 60%;
+  background-color: var(--green-120);
+}
+
