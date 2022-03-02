@@ -10,7 +10,9 @@ export default function BonusProgramModalContent(): ReactElement {
           <img src="./images/claim@2x.png" alt="" />
         </div>
         <div className="claimable">
+          <div className="claimable_info">Total bonus received so far</div>
           <div className="amount">36,736</div>
+          <div className="claimable_info">TALLY</div>
         </div>
       </div>
       <h2>Share to receive 10%</h2>
@@ -19,25 +21,33 @@ export default function BonusProgramModalContent(): ReactElement {
         of the claim.
       </p>
       <div className="link_cta_wrap">
-        <span>Your link: tally.cash/referral/...C11e09517BF</span>
+        <span>
+          Your link:{" "}
+          <span className="link">tally.cash/referral/...C11e09517BF</span>
+        </span>
         <div className="bottom">
           <SharedButton
             type="primary"
             size="medium"
-            linkTo="/onboarding/addWallet"
+            iconPosition="left"
+            icon="external_small"
           >
             Share
           </SharedButton>
           <SharedButton
             type="secondary"
             size="medium"
-            linkTo="/onboarding/addWallet"
+            icon="plus"
+            iconPosition="left"
           >
             Copy to clipboard
           </SharedButton>
         </div>
       </div>
-      <div className="public_notice">Address will be visible in the link</div>
+      <div className="public_notice">
+        <div className="icon_eye" />
+        Address will be visible in the link
+      </div>
       <style jsx>
         {`
           .wrap {
@@ -74,7 +84,20 @@ export default function BonusProgramModalContent(): ReactElement {
             font-family: Quincy CF;
             font-size: 36px;
             color: var(--success);
-            margin-left: 5px;
+            margin-bottom: -4px;
+            margin-top: -2px;
+          }
+          .claimable {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-right: 5px;
+          }
+          .claimable_info {
+            color: var(--green-40);
+            font-weight: 500;
+            text-align: center;
           }
           h2 {
             color: var(--green-20);
@@ -91,16 +114,19 @@ export default function BonusProgramModalContent(): ReactElement {
           }
           .link_cta_wrap {
             width: 352px;
-            height: 104px;
+            height: 110px;
             border-radius: 12px;
             border: 1px solid var(--green-80);
             padding: 16px;
             box-sizing: border-box;
           }
+          .link {
+            color: var(--green-40);
+          }
           .bottom {
             display: flex;
             margin-top: 16px;
-            grid-gap: 28px;
+            grid-gap: 19px;
           }
           .public_notice {
             width: 352px;
@@ -111,7 +137,14 @@ export default function BonusProgramModalContent(): ReactElement {
             align-items: center;
             padding: 12px;
             box-sizing: border-box;
-            margin-top: 28px;
+            margin-top: 24px;
+          }
+          .icon_eye {
+            background: url("./images/eye@2x.png");
+            background-size: 24px 24px;
+            width: 24px;
+            height: 24px;
+            margin-right: 5px;
           }
         `}
       </style>
