@@ -171,6 +171,7 @@ function migrateReduxState(
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
+  ;(window as any).store = store
 
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
@@ -487,6 +488,10 @@ export default class Main extends BaseService<never> {
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
+  }
+
+  hideAddress(address: HexString): void {
+    this.keyringService.hideAddress(address)
   }
 
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {

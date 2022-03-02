@@ -318,6 +318,9 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     const [address] = newKeyring.getAddressesSync()
+    if (this.#hiddenAddresses[address]) {
+      this.#hiddenAddresses[address] = false
+    }
     await this.persistKeyrings()
     this.emitter.emit("address", address)
     this.emitKeyrings()
