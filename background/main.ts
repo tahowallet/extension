@@ -309,10 +309,8 @@ export default class Main extends BaseService<never> {
     )
     const keyringService = KeyringService.create()
     const nameService = NameService.create(chainService)
-    const internalEthereumProviderService = InternalEthereumProviderService.create(
-      chainService,
-      preferenceService
-    )
+    const internalEthereumProviderService =
+      InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
       internalEthereumProviderService,
       preferenceService
@@ -322,11 +320,11 @@ export default class Main extends BaseService<never> {
     const telemetryService = TelemetryService.create()
 
     const ledgerService = HIDE_IMPORT_LEDGER
-      ? ((Promise.resolve(null) as unknown) as Promise<LedgerService>)
+      ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
       : LedgerService.create()
 
     const signingService = HIDE_IMPORT_LEDGER
-      ? ((Promise.resolve(null) as unknown) as Promise<SigningService>)
+      ? (Promise.resolve(null) as unknown as Promise<SigningService>)
       : SigningService.create(keyringService, ledgerService, chainService)
 
     let savedReduxState = {}
@@ -614,9 +612,8 @@ export default class Main extends BaseService<never> {
   }
 
   async getAccountEthBalanceUncached(address: string): Promise<bigint> {
-    const amountBigNumber = await this.chainService.providers.ethereum.getBalance(
-      address
-    )
+    const amountBigNumber =
+      await this.chainService.providers.ethereum.getBalance(address)
     return amountBigNumber.toBigInt()
   }
 
@@ -636,26 +633,23 @@ export default class Main extends BaseService<never> {
         values: { maxFeePerGas, maxPriorityFeePerGas },
       } = selectDefaultNetworkFeeSettings(this.store.getState())
 
-      const {
-        transactionRequest: populatedRequest,
-        gasEstimationError,
-      } = await this.chainService.populatePartialEVMTransactionRequest(
-        this.chainService.ethereumNetwork,
-        {
-          ...options,
-          maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-          maxPriorityFeePerGas:
-            options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-        }
-      )
+      const { transactionRequest: populatedRequest, gasEstimationError } =
+        await this.chainService.populatePartialEVMTransactionRequest(
+          this.chainService.ethereumNetwork,
+          {
+            ...options,
+            maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+            maxPriorityFeePerGas:
+              options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+          }
+        )
 
-      const {
-        annotation,
-      } = await this.enrichmentService.enrichTransactionSignature(
-        this.chainService.ethereumNetwork,
-        populatedRequest,
-        2 /* TODO desiredDecimals should be configurable */
-      )
+      const { annotation } =
+        await this.enrichmentService.enrichTransactionSignature(
+          this.chainService.ethereumNetwork,
+          populatedRequest,
+          2 /* TODO desiredDecimals should be configurable */
+        )
       const enrichedPopulatedRequest = { ...populatedRequest, annotation }
 
       if (typeof gasEstimationError === "undefined") {
@@ -691,9 +685,8 @@ export default class Main extends BaseService<never> {
             throw new Error(`Unknown chain ID ${transaction.chainID}.`)
           }
 
-          const transactionWithNonce = await this.chainService.populateEVMTransactionNonce(
-            transaction
-          )
+          const transactionWithNonce =
+            await this.chainService.populateEVMTransactionNonce(transaction)
 
           try {
             const signedTx = await this.keyringService.signTransaction(

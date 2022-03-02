@@ -128,3 +128,7 @@ label {
   opacity: 0;
   pointer-events: none;
 }
+
+.no_click {
+  pointer-events: none;
+}

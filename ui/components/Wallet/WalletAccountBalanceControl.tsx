@@ -7,36 +7,6 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 
-function ReadOnlyNotice(): ReactElement {
-  return (
-    <div className="notice_wrap">
-      <div className="icon_eye" />
-      Read-only mode
-      <style jsx>{`
-        .notice_wrap {
-          width: 177px;
-          height: 40px;
-          background: rgba(238, 178, 24, 0.1);
-          border-radius: 2px;
-          margin-top: 6px;
-          font-weight: 500;
-          font-size: 16px;
-          display: flex;
-          align-items: center;
-          border-left: solid 2px var(--attention);
-        }
-        .icon_eye {
-          background: url("./images/eye@2x.png");
-          background-size: cover;
-          width: 24px;
-          height: 24px;
-          margin: 0px 7px 0px 10px;
-        }
-      `}</style>
-    </div>
-  )
-}
-
 interface Props {
   balance?: string
   initializationLoadingTimeExpired: boolean
@@ -85,51 +55,58 @@ export default function WalletAccountBalanceControl(
             {balance ?? 0}
           </span>
         </span>
-        {currentAccountSigningMethod && !HIDE_SEND_BUTTON ? (
-          <>
-            {hasSavedSeed ? (
-              <div className="send_receive_button_wrap">
-                <SharedButton
-                  icon="send"
-                  size="medium"
-                  type="tertiary"
-                  linkTo="/send"
-                  iconPosition="left"
-                >
-                  Send
-                </SharedButton>
-                <SharedButton
-                  onClick={handleClick}
-                  icon="receive"
-                  size="medium"
-                  type="tertiary"
-                  iconPosition="left"
-                >
-                  Receive
-                </SharedButton>
-              </div>
-            ) : (
-              <div className="save_seed_button_wrap">
-                <SharedButton
-                  icon="arrow_right"
-                  iconSize="large"
-                  size="large"
-                  type="warning"
-                  linkTo="/onboarding/2"
-                >
-                  First, secure your recovery seed
-                </SharedButton>
-              </div>
-            )}
-          </>
-        ) : (
-          <ReadOnlyNotice />
-        )}
+        <div className="balance_actions">
+          {currentAccountSigningMethod && !HIDE_SEND_BUTTON ? (
+            <>
+              {hasSavedSeed ? (
+                <div className="send_receive_button_wrap">
+                  <SharedButton
+                    icon="send"
+                    size="medium"
+                    type="tertiary"
+                    linkTo="/send"
+                    iconPosition="left"
+                  >
+                    Send
+                  </SharedButton>
+                  <SharedButton
+                    onClick={handleClick}
+                    icon="receive"
+                    size="medium"
+                    type="tertiary"
+                    iconPosition="left"
+                  >
+                    Receive
+                  </SharedButton>
+                </div>
+              ) : (
+                <div className="save_seed_button_wrap">
+                  <SharedButton
+                    icon="arrow_right"
+                    iconSize="large"
+                    size="large"
+                    type="warning"
+                    linkTo="/onboarding/2"
+                  >
+                    First, secure your recovery seed
+                  </SharedButton>
+                </div>
+              )}
+            </>
+          ) : (
+            <SharedButton
+              linkTo="/onboarding/importMetamask"
+              size="medium"
+              type="tertiary"
+            >
+              Upgrade wallet
+            </SharedButton>
+          )}
+        </div>
       </div>
       <style jsx>
         {`
           .wrap {
-            height: 146px;
             display: flex;
             justify-contnet: space-between;
             align-items: center;
@@ -152,6 +129,9 @@ export default function WalletAccountBalanceControl(
             display: flex;
             width: 180px;
             justify-content: space-between;
+          }
+          .balance_actions {
+            margin-bottom: 20px;
           }
           .balance_label {
             width: 160px;

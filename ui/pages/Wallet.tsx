@@ -9,6 +9,7 @@ import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
+import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
@@ -47,6 +48,7 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
+        <OnboardingOpenClaimFlowBanner />
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
@@ -84,10 +86,9 @@ export default function Wallet(): ReactElement {
             width: 100%;
           }
           .panel {
-            height: 302px;
-            overflow-y: auto;
             padding-top: 16px;
             box-sizing: border-box;
+            min-height: 277px;
           }
           .panel::-webkit-scrollbar {
             display: none;

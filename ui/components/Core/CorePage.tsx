@@ -26,7 +26,7 @@ export default function CorePage(props: Props): ReactElement {
             align-items: center;
             background-color: var(--hunter-green);
             z-index: 10;
-            height: ${hasTopBar ? "480px" : "100vh"};
+            height: ${hasTopBar && hasTabBar ? "480px" : "100vh"};
             margin-top: ${hasTopBar ? "0px" : "-64px"};
           }
           .top_menu_wrap {
