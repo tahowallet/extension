@@ -78,6 +78,7 @@ const AccountItemSummary: React.FC<Props> = (props: Props) => {
         .left {
           display: flex;
           align-items: center;
+          padding-left: 4px;
         }
         .address_name {
           color: #fff;
@@ -109,6 +110,7 @@ const AccountItemSummary: React.FC<Props> = (props: Props) => {
         .right {
           display: flex;
           align-items: center;
+          padding-right: 4px;
         }
       `}</style>
     </>
