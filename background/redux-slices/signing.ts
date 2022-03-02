@@ -7,6 +7,7 @@ export type Events = {
   requestSignTypedData: {
     typedData: EIP712TypedData
     account: HexString
+    signingMethod: SigningMethod
   }
   signatureRejected: never
 }
@@ -37,15 +38,18 @@ export type EIP712DomainType = {
 export type SignTypedDataRequest = {
   account: string
   typedData: EIP712TypedData
+  signingMethod: SigningMethod
 }
 
 export const signTypedData = createBackgroundAsyncThunk(
   "signing/signTypedData",
   async (data: SignTypedDataRequest) => {
-    const { account, typedData } = data
+    const { account, typedData, signingMethod } = data
+
     await signingSliceEmitter.emit("requestSignTypedData", {
       typedData,
       account,
+      signingMethod,
     })
   }
 )

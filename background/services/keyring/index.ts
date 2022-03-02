@@ -2,7 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
-import { normalizeEVMAddress, getEthereumNetwork } from "../../lib/utils"
+import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -17,6 +17,7 @@ import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { HIDE_IMPORT_LEDGER } from "../../features/features"
+import { AddressOnNetwork } from "../../accounts"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
@@ -88,6 +89,7 @@ export default class KeyringService extends BaseService<Events> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
     // it is. Don't emit if there are no keyrings to unlock.
+    await super.internalStartService()
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
     }
@@ -130,7 +132,7 @@ export default class KeyringService extends BaseService<Events> {
     password: string,
     ignoreExistingVaults = false
   ): Promise<boolean> {
-    if (this.#cachedKey) {
+    if (!this.locked()) {
       throw new Error("KeyringService is already unlocked!")
     }
 
@@ -231,7 +233,7 @@ export default class KeyringService extends BaseService<Events> {
   // Throw if the keyring is not unlocked; if it is, update the last keyring
   // activity timestamp.
   private requireUnlocked(): void {
-    if (!this.#cachedKey) {
+    if (this.locked()) {
       throw new Error("KeyringService must be unlocked.")
     }
 
@@ -355,10 +357,12 @@ export default class KeyringService extends BaseService<Events> {
    * @param txRequest -
    */
   async signTransaction(
-    account: HexString,
+    addressOnNetwork: AddressOnNetwork,
     txRequest: EIP1559TransactionRequest & { nonce: number }
   ): Promise<SignedEVMTransaction> {
     this.requireUnlocked()
+
+    const { address: account, network } = addressOnNetwork
 
     // find the keyring using a linear search
     const keyring = await this.#findKeyring(account)
@@ -403,7 +407,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network: getEthereumNetwork(),
+      network,
     }
     if (HIDE_IMPORT_LEDGER) {
       this.emitter.emit("signedTx", signedTx)
@@ -438,7 +442,9 @@ export default class KeyringService extends BaseService<Events> {
         typesForSigning,
         message
       )
-      this.emitter.emit("signedData", signature)
+      if (HIDE_IMPORT_LEDGER) {
+        this.emitter.emit("signedData", signature)
+      }
       return signature
     } catch (error) {
       throw new Error("Signing data failed")
@@ -450,8 +456,12 @@ export default class KeyringService extends BaseService<Events> {
   // //////////////////
 
   private emitKeyrings() {
-    const keyrings = this.getKeyrings()
-    this.emitter.emit("keyrings", keyrings)
+    if (this.locked()) {
+      this.emitter.emit("keyrings", [])
+    } else {
+      const keyrings = this.getKeyrings()
+      this.emitter.emit("keyrings", keyrings)
+    }
   }
 
   /**

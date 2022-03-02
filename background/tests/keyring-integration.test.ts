@@ -10,6 +10,7 @@ import KeyringService, {
 } from "../services/keyring"
 import { KeyringTypes } from "../types"
 import { EIP1559TransactionRequest } from "../networks"
+import { ETHEREUM } from "../constants"
 
 const originalCrypto = global.crypto
 beforeEach(() => {
@@ -108,7 +109,10 @@ describe("KeyringService when uninitialized", () => {
 
     it("won't sign transactions", async () => {
       await expect(
-        service.signTransaction("0x0", validTransactionRequests.simple)
+        service.signTransaction(
+          { address: "0x0", network: ETHEREUM },
+          validTransactionRequests.simple
+        )
       ).rejects.toThrow("KeyringService must be unlocked.")
     })
   })
@@ -196,7 +200,7 @@ describe("KeyringService when initialized", () => {
     })
   })
 
-  it.only("will derive a new address", async () => {
+  it("will derive a new address", async () => {
     const [
       {
         id,
@@ -227,7 +231,10 @@ describe("KeyringService when initialized", () => {
     }
 
     await expect(
-      service.signTransaction(address, transactionWithFrom)
+      service.signTransaction(
+        { address, network: ETHEREUM },
+        transactionWithFrom
+      )
     ).resolves.toMatchObject({
       from: expect.stringMatching(new RegExp(address, "i")), // case insensitive match
       r: expect.anything(),
@@ -252,7 +259,10 @@ describe("KeyringService when initialized", () => {
     expect(goodUnlockResult).toEqual(true)
 
     await expect(
-      service.signTransaction(address, transactionWithFrom)
+      service.signTransaction(
+        { address, network: ETHEREUM },
+        transactionWithFrom
+      )
     ).resolves.toBeDefined()
   })
 })
@@ -334,7 +344,7 @@ describe("KeyringService when saving keyrings", () => {
     })
   })
 
-  it.only("loads encrypted data at instantiation time", async () => {
+  it("loads encrypted data at instantiation time", async () => {
     localStorage = {
       tallyVaults: {
         version: 1,
@@ -441,7 +451,10 @@ describe("Keyring service when autolocking", () => {
           from: address,
         }
 
-        await service.signTransaction(address, transactionWithFrom)
+        await service.signTransaction(
+          { address, network: ETHEREUM },
+          transactionWithFrom
+        )
       },
     },
     {

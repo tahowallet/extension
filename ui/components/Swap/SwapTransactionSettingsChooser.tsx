@@ -98,8 +98,8 @@ export default function SwapTransactionSettingsChooser({
           </SharedSlideUpMenu>
 
           <div className="top_label label">
-            Transaction settings
-            <button type="button" onClick={openSettings}>
+            <label htmlFor="open-settings">Transaction settings</label>
+            <button type="button" id="open-settings" onClick={openSettings}>
               <span className="icon_cog" />
             </button>
           </div>
@@ -131,6 +131,9 @@ export default function SwapTransactionSettingsChooser({
           }
           .top_label {
             margin-bottom: 7px;
+          }
+          .top_label label {
+            flex-grow: 2;
           }
           .row {
             padding: 15px 0px;

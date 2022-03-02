@@ -1,5 +1,5 @@
 import { AnyAssetAmount } from "./assets"
-import { Network } from "./networks"
+import { EVMNetwork } from "./networks"
 import { HexString } from "./types"
 
 /**
@@ -19,7 +19,7 @@ export type AccountBalance = {
   /**
    * The network on which the account balance was measured.
    */
-  network: Network
+  network: EVMNetwork
   /**
    * The block height at while the balance measurement is valid.
    */
@@ -38,15 +38,15 @@ export type AccountBalance = {
 /**
  * An address on a particular network. That's it. That's the comment.
  */
-export type AddressNetwork = {
+export type AddressOnNetwork = {
   address: HexString
-  network: Network
+  network: EVMNetwork
 }
 
 /**
  * A domain name, with a particular network.
  */
-export type NameNetwork = {
+export type NameOnNetwork = {
   name: string
-  network: Network
+  network: EVMNetwork
 }

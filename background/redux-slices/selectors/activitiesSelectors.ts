@@ -5,14 +5,13 @@ import { RootState } from ".."
 
 export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
   (state: RootState) => {
-    const currentAccountAddress = selectCurrentAccount(state).address
+    const currentAccount = selectCurrentAccount(state)
+    const { address, network } = currentAccount
 
     return {
       currentAccountActivities:
-        typeof currentAccountAddress !== "undefined"
-          ? state.activities[currentAccountAddress]
-          : undefined,
-      blocks: state.account.blocks,
+        typeof address !== "undefined" ? state.activities[address] : undefined,
+      blocks: state.networks.evm[network.chainID]?.blocks ?? {},
     }
   },
   ({ currentAccountActivities, blocks }) => {

@@ -30,6 +30,7 @@ Try this.
 
 ```sh
 $ nvm use
+$ nvm install
 $ npm install -g yarn # if you don't have yarn globally installed
 $ yarn install # install all dependencies; rerun with --ignore-scripts if
                # scrypt node-gyp failures prevent the install from completing
@@ -39,9 +40,9 @@ $ yarn start # start a continuous webpack build that will auto-update with chang
 Once the build is running, you can install the extension in your browser of choice:
 
 - [Firefox instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
-- [Chrome, Brave, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
+- [Chrome, Brave, Edge, and Opera instructions](https://developer.chrome.com/docs/extensions/mv3/getstarted/#manifest)
   - Note that these instructions are for Chrome, but substituting
-    `brave://extensions` or `opera://extensions` for `chrome://extensions`
+    `brave://extensions` or `edge://extensions` or `opera://extensions` for `chrome://extensions`
     depending on browser should get you to the same buttons.
 
 Extension bundles for each browser are in `dist/<browser>`.
@@ -55,6 +56,16 @@ to only rebuild the Firefox extension on change:
 $ yarn start --config-name firefox
 # On change, rebuild the firefox and brave extensions but not others.
 $ yarn start --config-name firefox --config-name brave
+```
+
+### Note for some Linux distributions
+
+In some Linux distributions such as Ubuntu 20.04, you need to explicitly
+tell npm where your `python3` executable is located before running the above
+commands successfully:
+
+```sh
+$ npm config set python /usr/bin/python3
 ```
 
 ## Package Structure, Build Structure, and Threat Model
@@ -114,6 +125,13 @@ install:
 Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
 by running `pre-commit install`. The macOS setup script does this for you.
+
+### Commit signing
+
+Commits on the Tally repository are all required to be signed.
+No PR will be merged if it has unsigned commits. See the
+[GitHub documentation on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
+to get it set up.
 
 ### Releasing a version
 
@@ -273,11 +291,13 @@ src/ # extension source files
 
 dist/ # output directory for builds
   brave/   # browser-specific
-  firefox/ # build
-  chrome/  # directories
-  brave.zip   # browser-specific
-  firefox.zip # production
-  chrome.zip  # bundles
+  chrome/  # build
+  edge/    # directories
+  firefox/
+  brave.zip  # browser-specific
+  chrome.zip # production
+  edge.zip   # bundles
+  firefox.zip
 
 build-utils/ # build-related helpers, used in webpack.config.js
   *.js
