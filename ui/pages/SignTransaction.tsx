@@ -18,6 +18,7 @@ import {
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
 import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
+import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
 
 export default function SignTransaction({
   location,
@@ -149,9 +150,9 @@ export default function SignTransaction({
           confirmButtonLabel={confirmButtonLabel}
           handleConfirm={handleConfirm}
           handleReject={handleReject}
-        >
-          {isWaitingForHardware ? textualInfoBlock : infoBlock}
-        </SignTransactionContainer>
+          detailPanel={isWaitingForHardware ? textualInfoBlock : infoBlock}
+          extraPanel={<SignTransactionPanelSwitcher />}
+        />
       )}
     </SignTransactionInfoProvider>
   )

@@ -1,9 +1,7 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
-import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
@@ -13,7 +11,8 @@ import { SigningLedgerState } from "./useSigningLedgerState"
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
-  children,
+  detailPanel,
+  extraPanel,
   signingLedgerState,
   isWaitingForHardware,
   confirmButtonLabel,
@@ -22,7 +21,8 @@ export default function SignTransactionContainer({
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
-  children: ReactNode
+  detailPanel: ReactNode
+  extraPanel: ReactNode
   signingLedgerState: SigningLedgerState | null
   isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
@@ -30,7 +30,6 @@ export default function SignTransactionContainer({
   handleReject: () => void
 }): ReactElement {
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
-  const [panelNumber, setPanelNumber] = useState(0)
 
   return (
     <section>
@@ -40,7 +39,7 @@ export default function SignTransactionContainer({
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
-      <div className="primary_info_card standard_width">{children}</div>
+      <div className="primary_info_card standard_width">{detailPanel}</div>
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
@@ -48,12 +47,7 @@ export default function SignTransactionContainer({
         </div>
       ) : (
         <>
-          <SharedPanelSwitcher
-            setPanelNumber={setPanelNumber}
-            panelNumber={panelNumber}
-            panelNames={["Details"]}
-          />
-          {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
+          {extraPanel}
           <div className="footer_actions">
             <SharedButton
               iconSize="large"
