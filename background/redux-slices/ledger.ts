@@ -25,6 +25,7 @@ export type LedgerState = {
   currentDeviceID: string | null
   /** Devices by ID */
   devices: Record<string, LedgerDeviceState>
+  usbDeviceCount: number
 }
 
 export type Events = {
@@ -51,6 +52,7 @@ export type Events = {
 export const initialState: LedgerState = {
   currentDeviceID: null,
   devices: {},
+  usbDeviceCount: 0,
 }
 
 const ledgerSlice = createSlice({
@@ -172,11 +174,21 @@ const ledgerSlice = createSlice({
       if (!account) return
       if (account.balance === null) account.balance = balance
     },
+    setUsbDeviceCount: (
+      immerState,
+      { payload: { usbDeviceCount } }: { payload: { usbDeviceCount: number } }
+    ) => {
+      immerState.usbDeviceCount = usbDeviceCount
+    },
   },
 })
 
-export const { resetLedgerState, setDeviceConnectionStatus, addLedgerAccount } =
-  ledgerSlice.actions
+export const {
+  resetLedgerState,
+  setDeviceConnectionStatus,
+  addLedgerAccount,
+  setUsbDeviceCount,
+} = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 

@@ -70,6 +70,7 @@ type Events = ServiceLifecycleEvents & {
   address: { ledgerID: string; derivationPath: string; address: HexString }
   signedTransaction: SignedEVMTransaction
   signedData: string
+  usbDeviceCount: number
 }
 
 export const idDerviationPath = "44'/60'/0'/0/0"
@@ -189,6 +190,10 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
+    this.emitter.emit(
+      "usbDeviceCount",
+      (await navigator.usb.getDevices()).length
+    )
     if (!TestedProductId(event.device.productId)) {
       return
     }
@@ -197,6 +202,10 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   #handleUSBDisconnect = async (event: USBConnectionEvent): Promise<void> => {
+    this.emitter.emit(
+      "usbDeviceCount",
+      (await navigator.usb.getDevices()).length
+    )
     if (!this.#currentLedgerId) {
       return
     }
@@ -226,10 +235,16 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
-    const devArray = await navigator.usb.getDevices()
+    const usbDeviceArray = await navigator.usb.getDevices()
 
-    if (devArray.length !== 0) {
-      await this.onConnection(devArray[0].productId)
+    this.emitter.emit("usbDeviceCount", usbDeviceArray.length)
+
+    if (usbDeviceArray.length === 0 || usbDeviceArray.length > 1) {
+      return null // Nasty things may happen when we've got zero or multiple choices
+    }
+
+    if (usbDeviceArray.length === 1) {
+      await this.onConnection(usbDeviceArray[0].productId)
     }
 
     return this.#currentLedgerId
