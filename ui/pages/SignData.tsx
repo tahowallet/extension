@@ -8,7 +8,7 @@ import {
   selectTypedData,
   signTypedData,
 } from "@tallyho/tally-background/redux-slices/signing"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { useHistory } from "react-router-dom"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import {
@@ -42,6 +42,8 @@ export default function SignData(): ReactElement {
     selectCurrentAccountSigningMethod
   )
 
+  const [isTransactionSigning, setIsTransactionSigning] = useState(false)
+
   if (
     (signerAccountTotal?.accountType === AccountType.Imported &&
       !areKeyringsUnlocked) ||
@@ -56,6 +58,7 @@ export default function SignData(): ReactElement {
       if (currentAddressSigner) {
         typedDataRequest.signingMethod = currentAddressSigner
         dispatch(signTypedData(typedDataRequest))
+        setIsTransactionSigning(true)
       }
     }
   }
@@ -71,10 +74,10 @@ export default function SignData(): ReactElement {
       confirmButtonLabel="Sign"
       handleConfirm={handleConfirm}
       handleReject={handleReject}
-      isWaitingForHardware={false}
-      signingLedgerState="available"
       title={`Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`}
       detailPanel={<SignDataDetailPanel />}
+      reviewPanel={<SignDataDetailPanel />}
+      isTransactionSigning={isTransactionSigning}
       extraPanel={null}
     />
   )

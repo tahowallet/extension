@@ -6,30 +6,36 @@ import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
-import { SigningLedgerState } from "./useSigningLedgerState"
+import { useSigningLedgerState } from "./useSigningLedgerState"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
   detailPanel,
+  reviewPanel,
   extraPanel,
-  signingLedgerState,
-  isWaitingForHardware,
   confirmButtonLabel,
   handleConfirm,
   handleReject,
+  isTransactionSigning,
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
   detailPanel: ReactNode
+  reviewPanel: ReactNode
   extraPanel: ReactNode
-  signingLedgerState: SigningLedgerState | null
-  isWaitingForHardware: boolean
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
+  isTransactionSigning: boolean
 }): ReactElement {
+  const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
+
+  const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
+
+  const isLedgerSigning = signingMethod?.type === "ledger"
+  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   return (
     <section>
@@ -39,7 +45,9 @@ export default function SignTransactionContainer({
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
-      <div className="primary_info_card standard_width">{detailPanel}</div>
+      <div className="primary_info_card standard_width">
+        {isWaitingForHardware ? reviewPanel : detailPanel}
+      </div>
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />

@@ -17,7 +17,6 @@ import {
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
-import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
 import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
 
 export default function SignTransaction({
@@ -59,11 +58,13 @@ export default function SignTransaction({
     return undefined
   })
 
-  const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
+  const [isTransactionSigning, setIsTransactionSigning] = useState(false)
+
+  const signingMethod = signerAccountTotal?.signingMethod ?? null
+
+  const needsKeyrings = signingMethod?.type === "keyring"
   const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
   const isWaitingForKeyrings = needsKeyrings && !areKeyringsUnlocked
-
-  const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   useEffect(() => {
     if (!isWaitingForKeyrings && isTransactionSigned && isTransactionSigning) {
@@ -98,17 +99,10 @@ export default function SignTransaction({
     }
   }, [history, isTransactionMissingOrRejected])
 
-  const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
-
-  const signingLedgerState = useSigningLedgerState(
-    signerAccountTotal?.signingMethod ?? null
-  )
-
   if (isWaitingForKeyrings) {
     return <></>
   }
 
-  const signingMethod = signerAccountTotal?.signingMethod ?? null
   if (
     typeof transactionDetails === "undefined" ||
     typeof signerAccountTotal === "undefined"
@@ -137,21 +131,19 @@ export default function SignTransaction({
     }
   }
 
-  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
-
   return (
     <SignTransactionInfoProvider>
       {({ title, infoBlock, textualInfoBlock, confirmButtonLabel }) => (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
-          signingLedgerState={signingLedgerState}
           title={title}
-          isWaitingForHardware={isWaitingForHardware}
           confirmButtonLabel={confirmButtonLabel}
           handleConfirm={handleConfirm}
           handleReject={handleReject}
-          detailPanel={isWaitingForHardware ? textualInfoBlock : infoBlock}
+          detailPanel={infoBlock}
+          reviewPanel={textualInfoBlock}
           extraPanel={<SignTransactionPanelSwitcher />}
+          isTransactionSigning={isTransactionSigning}
         />
       )}
     </SignTransactionInfoProvider>
