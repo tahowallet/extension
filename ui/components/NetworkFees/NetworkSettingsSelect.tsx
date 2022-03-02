@@ -51,7 +51,6 @@ const gasOptionFromEstimate = (
   }
 
   const feeAssetAmount =
-    typeof mainCurrencyPricePoint !== "undefined" &&
     typeof gasLimit !== "undefined"
       ? enrichAssetAmountWithMainCurrencyValues(
           {

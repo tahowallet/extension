@@ -4,7 +4,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON, getEthereumNetwork } from "./lib/utils"
+import { decodeJSON, encodeJSON } from "./lib/utils"
 
 import {
   BaseService,
@@ -25,16 +25,16 @@ import {
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
-import { AddressNetwork, NameNetwork } from "./accounts"
+import { AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/claim/types"
 
 import rootReducer from "./redux-slices"
 import {
   loadAccount,
-  blockSeen,
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
+  AccountType,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
@@ -46,6 +46,7 @@ import {
   updateKeyrings,
   setKeyringToVerify,
 } from "./redux-slices/keyrings"
+import { blockSeen } from "./redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -71,7 +72,9 @@ import {
 } from "./redux-slices/dapp-permission"
 import logger from "./lib/logger"
 import {
+  clearSigningState,
   signedTypedData,
+  SigningMethod,
   signingSliceEmitter,
   SignTypedDataRequest,
   typedDataRequest,
@@ -104,7 +107,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 3
+const REDUX_STATE_VERSION = 4
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -143,6 +146,54 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
     newState.assets = []
 
     return newState
+  },
+  4: (prevState: Record<string, unknown>) => {
+    // Migrate the ETH-only block data in store.accounts.blocks[blockHeight] to
+    // a new networks slice. Block data is now network-specific, keyed by EVM
+    // chainID in store.networks.networkData[chainId].blocks
+    type OldState = {
+      account?: {
+        blocks?: { [blockHeight: number]: unknown }
+      }
+    }
+    type NetworkState = {
+      evm: {
+        [chainID: string]: {
+          blockHeight: number | null
+          blocks: {
+            [blockHeight: number]: unknown
+          }
+        }
+      }
+    }
+
+    const oldState = prevState as OldState
+
+    const networks: NetworkState = {
+      evm: {
+        "1": {
+          blocks: { ...oldState.account?.blocks },
+          blockHeight:
+            Math.max(
+              ...Object.keys(oldState.account?.blocks ?? {}).map((s) =>
+                parseInt(s, 10)
+              )
+            ) || null,
+        },
+      },
+    }
+
+    const { blocks, ...oldStateAccountWithoutBlocks } = oldState.account ?? {
+      blocks: undefined,
+    }
+
+    return {
+      ...prevState,
+      // Drop blocks from account slice.
+      account: oldStateAccountWithoutBlocks,
+      // Add new networks slice data.
+      networks,
+    }
   },
 }
 
@@ -498,11 +549,11 @@ export default class Main extends BaseService<never> {
     )
   }
 
-  async addAccount(addressNetwork: AddressNetwork): Promise<void> {
+  async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  async addAccountByName(nameNetwork: NameNetwork): Promise<void> {
+  async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(
         nameNetwork.name
@@ -562,7 +613,7 @@ export default class Main extends BaseService<never> {
 
   async getAccountEthBalanceUncached(address: string): Promise<bigint> {
     const amountBigNumber =
-      await this.chainService.pollingProviders.ethereum.getBalance(address)
+      await this.chainService.providers.ethereum.getBalance(address)
     return amountBigNumber.toBigInt()
   }
 
@@ -584,7 +635,7 @@ export default class Main extends BaseService<never> {
 
       const { transactionRequest: populatedRequest, gasEstimationError } =
         await this.chainService.populatePartialEVMTransactionRequest(
-          getEthereumNetwork(),
+          this.chainService.ethereumNetwork,
           {
             ...options,
             maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
@@ -593,17 +644,25 @@ export default class Main extends BaseService<never> {
           }
         )
 
+      const { annotation } =
+        await this.enrichmentService.enrichTransactionSignature(
+          this.chainService.ethereumNetwork,
+          populatedRequest,
+          2 /* TODO desiredDecimals should be configurable */
+        )
+      const enrichedPopulatedRequest = { ...populatedRequest, annotation }
+
       if (typeof gasEstimationError === "undefined") {
         this.store.dispatch(
           transactionRequest({
-            transactionRequest: populatedRequest,
+            transactionRequest: enrichedPopulatedRequest,
             transactionLikelyFails: false,
           })
         )
       } else {
         this.store.dispatch(
           transactionRequest({
-            transactionRequest: populatedRequest,
+            transactionRequest: enrichedPopulatedRequest,
             transactionLikelyFails: true,
           })
         )
@@ -621,12 +680,20 @@ export default class Main extends BaseService<never> {
       "requestSignature",
       async ({ transaction, method }) => {
         if (HIDE_IMPORT_LEDGER) {
+          const network = this.chainService.resolveNetwork(transaction)
+          if (typeof network === "undefined") {
+            throw new Error(`Unknown chain ID ${transaction.chainID}.`)
+          }
+
           const transactionWithNonce =
             await this.chainService.populateEVMTransactionNonce(transaction)
 
           try {
             const signedTx = await this.keyringService.signTransaction(
-              transaction.from,
+              {
+                address: transaction.from,
+                network: this.chainService.ethereumNetwork,
+              },
               transactionWithNonce
             )
             this.store.dispatch(signed(signedTx))
@@ -658,15 +725,23 @@ export default class Main extends BaseService<never> {
       async ({
         typedData,
         account,
+        signingMethod,
       }: {
         typedData: EIP712TypedData
         account: HexString
+        signingMethod: SigningMethod
       }) => {
-        const signedData = await this.keyringService.signTypedData({
-          typedData,
-          account,
-        })
-        this.store.dispatch(signedTypedData(signedData))
+        try {
+          const signedData = await this.signingService.signTypedData({
+            typedData,
+            account,
+            signingMethod,
+          })
+          this.store.dispatch(signedTypedData(signedData))
+        } catch (err) {
+          logger.error("Error signing typed data", typedData, "error: ", err)
+          this.store.dispatch(clearSigningState)
+        }
       }
     )
 
@@ -741,6 +816,9 @@ export default class Main extends BaseService<never> {
     this.enrichmentService.emitter.on(
       "enrichedEVMTransaction",
       async (transactionData) => {
+        this.indexingService.notifyEnrichedTransaction(
+          transactionData.transaction
+        )
         this.store.dispatch(activityEncountered(transactionData))
       }
     )
@@ -784,7 +862,7 @@ export default class Main extends BaseService<never> {
       this.chainService.addAccountToTrack({
         address,
         // TODO support other networks
-        network: getEthereumNetwork(),
+        network: this.chainService.ethereumNetwork,
       })
     })
 
@@ -805,10 +883,14 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
-      await this.signingService.deriveAddress({
-        type: "keyring",
-        accountID: keyringID,
-      })
+      if (HIDE_IMPORT_LEDGER) {
+        await this.keyringService.deriveAddress(keyringID)
+      } else {
+        await this.signingService.deriveAddress({
+          type: "keyring",
+          accountID: keyringID,
+        })
+      }
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
@@ -829,25 +911,13 @@ export default class Main extends BaseService<never> {
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
-    this.enrichmentService.emitter.on(
-      "enrichedEVMTransactionSignatureRequest",
-      async (enrichedEVMTransactionSignatureRequest) => {
-        this.store.dispatch(
-          updateTransactionOptions(enrichedEVMTransactionSignatureRequest)
-        )
-      }
-    )
-
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
-        this.enrichmentService.enrichTransactionSignature(
-          payload,
-          2 /* TODO desiredDecimals should be configurable */
-        )
+        this.store.dispatch(updateTransactionOptions(payload))
 
         const clear = () => {
           if (HIDE_IMPORT_LEDGER) {
@@ -856,7 +926,7 @@ export default class Main extends BaseService<never> {
             this.keyringService.emitter.off("signedTx", resolveAndClear)
           } else {
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            this.signingService.emitter.off("signingResponse", handleAndClear)
+            this.signingService.emitter.off("signingTxResponse", handleAndClear)
           }
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
@@ -868,7 +938,7 @@ export default class Main extends BaseService<never> {
         const handleAndClear = (response: SignatureResponse) => {
           clear()
           switch (response.type) {
-            case "success":
+            case "success-tx":
               resolver(response.signedTx)
               break
             default:
@@ -890,7 +960,7 @@ export default class Main extends BaseService<never> {
         if (HIDE_IMPORT_LEDGER) {
           this.keyringService.emitter.on("signedTx", resolveAndClear)
         } else {
-          this.signingService.emitter.on("signingResponse", handleAndClear)
+          this.signingService.emitter.on("signingTxResponse", handleAndClear)
         }
         transactionConstructionSliceEmitter.on(
           "signatureRejected",
@@ -911,23 +981,52 @@ export default class Main extends BaseService<never> {
       }) => {
         this.store.dispatch(typedDataRequest(payload))
 
-        const resolveAndClear = (signature: string) => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
+        const clear = () => {
+          if (HIDE_IMPORT_LEDGER) {
+            // Ye olde mutual dependency.
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.keyringService.emitter.off("signedData", resolveAndClear)
+          } else {
+            this.signingService.emitter.off(
+              "signingDataResponse",
+              // eslint-disable-next-line @typescript-eslint/no-use-before-define
+              handleAndClear
+            )
+          }
           signingSliceEmitter.off(
             "signatureRejected",
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
-          resolver(signature)
+        }
+
+        const handleAndClear = (response: SignatureResponse) => {
+          clear()
+          switch (response.type) {
+            case "success-data":
+              resolver(response.signedData)
+              break
+            default:
+              rejecter()
+              break
+          }
+        }
+
+        const resolveAndClear = (signedData: string) => {
+          clear()
+          resolver(signedData)
         }
 
         const rejectAndClear = () => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
-          signingSliceEmitter.off("signatureRejected", rejectAndClear)
+          clear()
           rejecter()
         }
 
-        this.keyringService.emitter.on("signedData", resolveAndClear)
+        if (HIDE_IMPORT_LEDGER) {
+          this.keyringService.emitter.on("signedData", resolveAndClear)
+        } else {
+          this.signingService.emitter.on("signingDataResponse", handleAndClear)
+        }
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
@@ -970,7 +1069,7 @@ export default class Main extends BaseService<never> {
 
     this.preferenceService.emitter.on(
       "initializeSelectedAccount",
-      async (dbAddressNetwork: AddressNetwork) => {
+      async (dbAddressNetwork: AddressOnNetwork) => {
         if (dbAddressNetwork) {
           // TBD: naming the normal reducer and async thunks
           // Initialize redux from the db

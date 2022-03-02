@@ -8,9 +8,6 @@ export default function LedgerConnectPopup(): ReactElement {
       <div className="help select_device_help">
         <div className="arrow upward_arrow" />
         <div className="main">Select the device</div>
-        <a href={"#TODO" /* TODO: link to help page */} className="support">
-          I don&rsquo;t see my device?
-        </a>
       </div>
       <div className="help click_connect_help">
         <div className="arrow downward_arrow" />

@@ -104,10 +104,7 @@ export type AssetAmount = {
 /*
  * The primary type representing amounts in fungible asset transactions.
  */
-export type FungibleAssetAmount = {
-  asset: FungibleAsset
-  amount: bigint
-}
+export type FungibleAssetAmount = AnyAssetAmount<FungibleAsset>
 
 /*
  * A union of all assets we expect to price.
@@ -148,8 +145,8 @@ export type PricePoint = {
  * In almost all cases, PricePoint should be preferred. UnitPricePoint should
  * only be used when the details of the other side of a price pair are unknown.
  */
-export type UnitPricePoint = {
-  unitPrice: AnyAssetAmount
+export type UnitPricePoint<T extends AnyAsset> = {
+  unitPrice: AnyAssetAmount<T>
   time: UNIXTime
 }
 
@@ -185,6 +182,9 @@ export function isSmartContractFungibleAsset(
 
 /**
  * Type guard to check if an AnyAssetAmount is actually a FungibleAssetAmount.
+ *
+ * WARNING: Only use this if AnyAssetAmount<T> typing isn't enough to carry the
+ * FungibleAsset nature of the internal asset!
  */
 export function isFungibleAssetAmount(
   assetAmount: AnyAssetAmount
@@ -209,7 +209,8 @@ export function isFungibleAssetAmount(
  * @param sourceAssetAmount The AssetAmount being converted. The asset of this
  *        amount should match the first asset in the price point.
  * @param assetPricePoint A PricePoint with the first item being the source asset
- *        and the second being the target asset.
+ *        and the second being the target asset. If undefined, this function will
+ *        return undefined.
  *
  * @return If the source and target assets are both fungible, the target asset
  *         amount corresponding to the passed source asset amount. If the source
@@ -219,8 +220,12 @@ export function isFungibleAssetAmount(
  */
 export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
   sourceAssetAmount: T,
-  assetPricePoint: PricePoint
+  assetPricePoint: PricePoint | undefined
 ): FungibleAssetAmount | undefined {
+  if (typeof assetPricePoint === "undefined") {
+    return undefined
+  }
+
   const [sourceAsset, targetAsset] = assetPricePoint.pair
   const [sourceConversionFactor, targetConversionFactor] =
     assetPricePoint.amounts
@@ -280,10 +285,18 @@ export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
  * equivalent to one of the first asset. In addition to handling strange
  * ratios, recognizes a unit in the appropriate fixed point decimal count of
  * the target asset.
+ *
+ * Like convertAssetAmountViaPricePoint, returns undefined if either of the two
+ * assets in the price point are not fungible, or if the provided price point
+ * is undefined.
  */
 export function unitPricePointForPricePoint(
-  assetPricePoint: PricePoint
-): (UnitPricePoint & { unitPrice: FungibleAssetAmount }) | undefined {
+  assetPricePoint: PricePoint | undefined
+): UnitPricePoint<FungibleAsset> | undefined {
+  if (typeof assetPricePoint === "undefined") {
+    return undefined
+  }
+
   const sourceAsset = assetPricePoint.pair[0]
 
   const unitPrice = convertAssetAmountViaPricePoint(
