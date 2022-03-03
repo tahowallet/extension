@@ -67,12 +67,12 @@ function getSigningErrorReason(err: unknown): SigningErrorReason {
 }
 
 /**
- * The SigningService is responsible for
+ * The SigningService is intended hide and demultiplex of accesses
+ * to concrete signer implementations.
  *
- * The main purpose for this service/layer is
+ * It also emits all the abstract signing-related event to subscribers
+ * grabbing this responsibility from each different implementation.
  *
- * The responsibility of this service is 2 fold.
- * - xxx
  */
 export default class SigningService extends BaseService<Events> {
   addressHandlers: AddressHandler[] = []
