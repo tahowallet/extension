@@ -11,7 +11,13 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import { HexString, KeyringTypes, EIP712TypedData, UNIXTime } from "../../types"
+import {
+  HexString,
+  KeyringTypes,
+  EIP191Data,
+  EIP712TypedData,
+  UNIXTime,
+} from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, MINUTE } from "../../constants"
@@ -471,6 +477,35 @@ export default class KeyringService extends BaseService<Events> {
         typesForSigning,
         message
       )
+      if (HIDE_IMPORT_LEDGER) {
+        this.emitter.emit("signedData", signature)
+      }
+      return signature
+    } catch (error) {
+      throw new Error("Signing data failed")
+    }
+  }
+
+  /**
+   * Sign data based on EIP-191 with the usage of personal_sign method,
+   * more information about the EIP can be found at https://eips.ethereum.org/EIPS/eip-191
+   *
+   * @param signingData - the data to be signed
+   * @param account - signers account address
+   */
+
+  async personalSign({
+    signingData,
+    account,
+  }: {
+    signingData: EIP191Data
+    account: HexString
+  }): Promise<string> {
+    this.requireUnlocked()
+    // find the keyring using a linear search
+    const keyring = await this.#findKeyring(account)
+    try {
+      const signature = await keyring.signMessage(account, signingData)
       this.emitter.emit("signedData", signature)
       return signature
     } catch (error) {
