@@ -50,7 +50,4 @@ by the folder they're in.
 
 /public
 # Static assets like fonts and images
-
-/slices
-# Reducers and actions consolidated as files here. Interacting with the project's background.js api and using its data to populate frontend's state happens here
 ```
