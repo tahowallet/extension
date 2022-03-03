@@ -71,7 +71,7 @@ export default class KeyringService extends BaseService<Events> {
 
   #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
 
-  #hiddenAddresses: { [address: HexString]: boolean } = {}
+  #hiddenAccounts: { [address: HexString]: boolean } = {}
 
   /**
    * The last time a keyring took an action that required the service to be
@@ -318,8 +318,8 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     const [address] = newKeyring.getAddressesSync()
-    if (this.#hiddenAddresses[address]) {
-      this.#hiddenAddresses[address] = false
+    if (this.#hiddenAccounts[address]) {
+      this.#hiddenAccounts[address] = false
     }
     await this.persistKeyrings()
     this.emitter.emit("address", address)
@@ -343,7 +343,7 @@ export default class KeyringService extends BaseService<Events> {
       addresses: [
         ...kr
           .getAddressesSync()
-          .filter((address) => this.#hiddenAddresses[address] !== true),
+          .filter((address) => this.#hiddenAccounts[address] !== true),
       ],
       id: kr.id,
     }))
@@ -372,8 +372,8 @@ export default class KeyringService extends BaseService<Events> {
     return newAddress
   }
 
-  hideAddress(address: HexString): void {
-    this.#hiddenAddresses[address] = true
+  hideAccount(address: HexString): void {
+    this.#hiddenAccounts[address] = true
     this.emitKeyrings()
   }
 

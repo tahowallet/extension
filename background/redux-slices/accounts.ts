@@ -312,10 +312,10 @@ export const addAccountByName = createBackgroundAsyncThunk(
 )
 
 // @TODO Normalize `address` to `account` throughout everything I've touched
-export const hideAddress = createBackgroundAsyncThunk(
-  "account/hideAddress",
+export const hideAccount = createBackgroundAsyncThunk(
+  "account/hideAccount",
   async (address: HexString, { dispatch, extra: { main } }) => {
     dispatch(removeAccount(address))
-    main.hideAddress(address)
+    main.hideAccount(address)
   }
 )

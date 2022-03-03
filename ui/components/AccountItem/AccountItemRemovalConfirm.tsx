@@ -1,5 +1,5 @@
 import {
-  hideAddress,
+  hideAccount,
   removeAccount,
 } from "@tallyho/tally-background/redux-slices/accounts"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
@@ -57,7 +57,7 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
-            dispatch(hideAddress(address))
+            dispatch(hideAccount(address))
             close()
           }}
         >

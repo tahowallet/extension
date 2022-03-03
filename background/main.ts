@@ -490,8 +490,8 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  hideAddress(address: HexString): void {
-    this.keyringService.hideAddress(address)
+  hideAccount(address: HexString): void {
+    this.keyringService.hideAccount(address)
   }
 
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
