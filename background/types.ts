@@ -66,3 +66,5 @@ export type EIP712TypedData = {
   message: Record<string, unknown>
   primaryType: string
 }
+
+export type EIP191Data = string
