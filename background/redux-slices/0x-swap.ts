@@ -44,7 +44,6 @@ export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
 export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 
 export interface SwapState {
-  latestQuoteResponse?: SwapQuoteResponse | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
 }
@@ -65,14 +64,6 @@ const swapSlice = createSlice({
       finalQuote,
     }),
 
-    setLatestQuoteResponse: (
-      state,
-      { payload: response }: { payload: SwapQuoteResponse }
-    ) => ({
-      ...state,
-      latestQuoteResponse: response,
-    }),
-
     setInProgressApprovalContract: (
       state,
       { payload: approvingContractAddress }: { payload: string }
@@ -89,13 +80,11 @@ const swapSlice = createSlice({
     clearSwapQuote: (state) => ({
       ...state,
       finalQuote: undefined,
-      latestQuoteResponse: undefined,
     }),
   },
 })
 
 const {
-  setLatestQuoteResponse,
   setInProgressApprovalContract: setApprovalInProgress,
   clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
@@ -211,7 +200,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
  */
 export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
-  async (quoteRequest: SwapQuoteRequest, { dispatch }) => {
+  async (quoteRequest: SwapQuoteRequest): Promise<SwapQuoteResponse | null> => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
@@ -231,7 +220,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
-      return
+      return null
     }
 
     const quote = apiData
@@ -251,9 +240,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
     const needsApproval = existingAllowance.lt(quote.sellAmount)
 
-    dispatch(
-      setLatestQuoteResponse({ request: quoteRequest, quote, needsApproval })
-    )
+    return { request: quoteRequest, quote, needsApproval }
   }
 )
 
@@ -331,11 +318,6 @@ export const executeSwap = createBackgroundAsyncThunk(
       type: 1 as const,
     })
   }
-)
-
-export const selectLatestQuoteResponse = createSelector(
-  (state: { swap: SwapState }) => state.swap.latestQuoteResponse,
-  (latestQuoteResponse) => latestQuoteResponse
 )
 
 export const selectInProgressApprovalContract = createSelector(

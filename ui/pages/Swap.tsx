@@ -11,8 +11,8 @@ import {
   approveTransfer,
   selectInProgressApprovalContract,
   SwapQuoteRequest,
+  SwapQuoteResponse,
   fetchSwapQuote,
-  selectLatestQuoteResponse,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -33,6 +33,7 @@ import {
   selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -117,13 +118,13 @@ export default function Swap(): ReactElement {
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
-  const latestQuoteResponse = useBackgroundSelector(selectLatestQuoteResponse)
-  const savedQuoteRequest = latestQuoteResponse?.request
+  const [latestQuoteResponse, setLatestQuoteResponse] =
+    useState<SwapQuoteResponse | null>(null)
 
   const {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
-  } = savedQuoteRequest ?? {
+  } = latestQuoteResponse?.request ?? {
     assets: { sellAsset: locationAsset },
   }
 
@@ -195,7 +196,7 @@ export default function Swap(): ReactElement {
   })
 
   const latestQuoteRequest = useRef<SwapQuoteRequest | undefined>(
-    savedQuoteRequest
+    latestQuoteResponse?.request
   )
 
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
@@ -302,7 +303,12 @@ export default function Swap(): ReactElement {
 
       latestQuoteRequest.current = quoteRequest
 
-      await dispatch(fetchSwapPrice(quoteRequest))
+      setLatestQuoteResponse(
+        ((await dispatch(
+          fetchSwapPrice(quoteRequest)
+        )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ??
+          null
+      )
     },
     [
       buyAsset,
@@ -317,7 +323,7 @@ export default function Swap(): ReactElement {
     // If we have a quote response, update the data accordingly,
     // but only if it applies to the latest request we made.
 
-    if (!latestQuoteResponse) return
+    if (latestQuoteResponse === null) return
     if (!deepEquals(latestQuoteRequest.current, latestQuoteResponse.request)) {
       return
     }
