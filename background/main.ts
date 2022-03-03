@@ -910,9 +910,12 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setKeyringToVerify(generated))
     })
 
-    keyringSliceEmitter.on("importKeyring", async ({ mnemonic, path }) => {
-      await this.keyringService.importKeyring(mnemonic, path)
-    })
+    keyringSliceEmitter.on(
+      "importKeyring",
+      async ({ mnemonic, path, source }) => {
+        await this.keyringService.importKeyring(mnemonic, source, path)
+      }
+    )
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {

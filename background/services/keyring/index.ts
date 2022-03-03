@@ -34,9 +34,23 @@ export type Keyring = {
   addresses: string[]
 }
 
+export interface KeyringMetadata {
+  source: "import" | "newSeed"
+}
+
+interface SerializedKeyringData {
+  keyrings: SerializedHDKeyring[]
+  metadata: { [keyringId: string]: KeyringMetadata }
+}
+
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
-  keyrings: Keyring[]
+  keyrings: {
+    keyrings: Keyring[]
+    keyringMetadata: {
+      [keyringId: string]: KeyringMetadata
+    }
+  }
   address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
@@ -60,6 +74,8 @@ export default class KeyringService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
 
   #keyrings: HDKeyring[] = []
+
+  #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
 
   /**
    * The last time a keyring took an action that required the service to be
@@ -151,9 +167,9 @@ export default class KeyringService extends BaseService<Events> {
           password,
           currentEncryptedVault.salt
         )
-        let plainTextVault: SerializedHDKeyring[]
+        let plainTextVault: SerializedKeyringData
         try {
-          plainTextVault = await decryptVault<SerializedHDKeyring[]>(
+          plainTextVault = await decryptVault<SerializedKeyringData>(
             currentEncryptedVault,
             saltedKey
           )
@@ -164,9 +180,16 @@ export default class KeyringService extends BaseService<Events> {
         }
         // hooray! vault is loaded, import any serialized keyrings
         this.#keyrings = []
-        plainTextVault.forEach((kr) => {
+        this.#keyringMetadata = {}
+        plainTextVault.keyrings.forEach((kr) => {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
+
+        Object.entries(plainTextVault.metadata).forEach(
+          ([keyringId, metadata]) => {
+            this.#keyringMetadata[keyringId] = metadata
+          }
+        )
 
         this.emitKeyrings()
       }
@@ -194,6 +217,7 @@ export default class KeyringService extends BaseService<Events> {
     this.lastOutsideActivity = undefined
     this.#cachedKey = null
     this.#keyrings = []
+    this.#keyringMetadata = {}
     this.emitter.emit("locked", true)
     this.emitKeyrings()
   }
@@ -285,13 +309,18 @@ export default class KeyringService extends BaseService<Events> {
    * @param mnemonic - a seed phrase
    * @returns The string ID of the new keyring.
    */
-  async importKeyring(mnemonic: string, path?: string): Promise<string> {
+  async importKeyring(
+    mnemonic: string,
+    source: "import" | "newSeed",
+    path?: string
+  ): Promise<string> {
     this.requireUnlocked()
 
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
+    this.#keyringMetadata[newKeyring.id] = { source }
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
@@ -490,10 +519,13 @@ export default class KeyringService extends BaseService<Events> {
 
   private emitKeyrings() {
     if (this.locked()) {
-      this.emitter.emit("keyrings", [])
+      this.emitter.emit("keyrings", { keyrings: [], keyringMetadata: {} })
     } else {
       const keyrings = this.getKeyrings()
-      this.emitter.emit("keyrings", keyrings)
+      this.emitter.emit("keyrings", {
+        keyrings,
+        keyringMetadata: this.#keyringMetadata,
+      })
     }
   }
 
@@ -507,8 +539,15 @@ export default class KeyringService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
+      const keyringMetadata = this.#keyringMetadata
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(serializedKeyrings, this.#cachedKey)
+      const vault = await encryptVault(
+        {
+          keyrings: serializedKeyrings,
+          metadata: keyringMetadata,
+        },
+        this.#cachedKey
+      )
       await writeLatestEncryptedVault(vault)
     }
   }
