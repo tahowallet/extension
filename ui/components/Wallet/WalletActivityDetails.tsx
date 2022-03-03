@@ -253,7 +253,7 @@ export default function WalletActivityDetails(
           }
           .check {
             mask-image: url("./images/check@2x.png");
-            background-color: #22c480;
+            background-color: var(--success);
           }
           .activity_log_wrap {
             display: none;
