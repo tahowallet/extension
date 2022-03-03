@@ -16,7 +16,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
   const { isSelected, hideMenu, accountTotal: account } = props
 
   return (
-    <li className="standard_width">
+    <div className="standard_width container">
       <AccountItemSummary isSelected={isSelected} account={account} />
       <AccountItemOptionsMenu
         hideMenu={hideMenu}
@@ -26,7 +26,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
       />
 
       <style jsx>{`
-        li {
+        .container {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -35,7 +35,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
           height: 52px;
         }
       `}</style>
-    </li>
+    </div>
   )
 }
 

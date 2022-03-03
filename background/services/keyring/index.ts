@@ -318,6 +318,7 @@ export default class KeyringService extends BaseService<Events> {
     this.#keyrings.push(newKeyring)
     newKeyring.addAddressesSync(1)
     const [address] = newKeyring.getAddressesSync()
+    // Make sure that the first address of a keyring is not "hidden".
     if (this.#hiddenAccounts[address]) {
       this.#hiddenAccounts[address] = false
     }
@@ -363,7 +364,16 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Keyring not found.")
     }
 
-    const [newAddress] = keyring.addAddressesSync(1)
+    const keyringAddresses = keyring.getAddressesSync()
+
+    // If There are any hidden addresses, show those first before adding new ones.
+    const newAddress =
+      keyringAddresses.find(
+        (address) => this.#hiddenAccounts[address] === true
+      ) ?? keyring.addAddressesSync(1)[0]
+
+    this.#hiddenAccounts[newAddress] = false
+
     await this.persistKeyrings()
 
     this.emitter.emit("address", newAddress)
