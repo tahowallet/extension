@@ -124,7 +124,13 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       setErrorMessage("Must be a 12 or 24 word recovery phrase")
     } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(importKeyring({ mnemonic: trimmedRecoveryPhrase, path }))
+      dispatch(
+        importKeyring({
+          mnemonic: trimmedRecoveryPhrase,
+          path,
+          source: "import",
+        })
+      )
     } else {
       setErrorMessage("Invalid recovery phrase")
     }

@@ -28,7 +28,7 @@ export default function NotificationItem(): ReactElement {
           background-size: 12px 12px;
           width: 24px;
           height: 24px;
-          background-color: #22c480;
+          background-color: var(--success);
           border-radius: 50px;
           margin-right: 8px;
           flex-shrink: 0;

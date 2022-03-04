@@ -78,9 +78,9 @@ export function Main(): ReactElement {
   const [showTabBar, setShowTabBar] = useState(true)
   const renderCount = useRef(0)
 
-  const routeHistoryEntries = useBackgroundSelector((state) => {
-    return state.ui.routeHistoryEntries
-  })
+  const routeHistoryEntries = useBackgroundSelector(
+    (state) => state.ui.routeHistoryEntries
+  )
 
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const isNotOnKeyringRelatedPage =

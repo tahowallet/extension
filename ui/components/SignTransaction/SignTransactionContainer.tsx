@@ -63,17 +63,32 @@ export default function SignTransactionContainer({
             >
               Reject
             </SharedButton>
-            {signerAccountTotal.signingMethod ? (
-              <SharedButton
-                type="primary"
-                iconSize="large"
-                size="large"
-                onClick={handleConfirm}
-                showLoadingOnClick
-              >
-                {confirmButtonLabel}
-              </SharedButton>
-            ) : (
+            {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
+            {signerAccountTotal.signingMethod &&
+              (signerAccountTotal.signingMethod.type === "ledger" &&
+              signingLedgerState !== "available" ? (
+                <SharedButton
+                  type="primary"
+                  iconSize="large"
+                  size="large"
+                  onClick={() => {
+                    setSlideUpOpen(true)
+                  }}
+                >
+                  Connect Ledger
+                </SharedButton>
+              ) : (
+                <SharedButton
+                  type="primary"
+                  iconSize="large"
+                  size="large"
+                  onClick={handleConfirm}
+                  showLoadingOnClick
+                >
+                  {confirmButtonLabel}
+                </SharedButton>
+              ))}
+            {!signerAccountTotal.signingMethod && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>
