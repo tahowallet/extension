@@ -125,7 +125,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       </div>
       <div className="divider" />
-      <ul>
+      <ul className="assets_list">
         {sortedFilteredAssets.map((assetWithOptionalAmount) => {
           const { asset } = assetWithOptionalAmount
           return (
@@ -181,6 +181,12 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             border-bottom: 1px solid var(--hunter-green);
             margin-top: 15px;
             margin-bottom: 8.5px;
+          }
+          .assets_list {
+            display: block;
+            overflow: scroll;
+            height: calc(100% - 106px);
+            width: 100%;
           }
         `}
       </style>
