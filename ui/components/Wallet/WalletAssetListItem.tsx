@@ -16,6 +16,11 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
 
+  const contractAddress =
+    "contractAddress" in assetAmount.asset
+      ? assetAmount.asset.contractAddress
+      : undefined
+
   return (
     <li>
       <Link
@@ -23,10 +28,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           pathname: "/singleAsset",
           state: {
             symbol: assetAmount.asset.symbol,
-            contractAddress:
-              "contractAddress" in assetAmount.asset
-                ? assetAmount.asset.contractAddress
-                : undefined,
+            contractAddress,
           },
         }}
       >
@@ -58,7 +60,20 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            <span className="icon_send_asset" />
+            {!contractAddress && (
+              <Link
+                to={{
+                  pathname: "/send",
+                  state: {
+                    symbol: assetAmount.asset.symbol,
+                    contractAddress,
+                  },
+                }}
+                className="icon_send_asset"
+              >
+                <span className="icon_send_asset" />
+              </Link>
+            )}
           </div>
         </div>
       </Link>
