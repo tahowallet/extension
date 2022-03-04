@@ -1,10 +1,4 @@
-import React, {
-  ReactElement,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-} from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import {
   fetchSwapPrice,
   clearSwapQuote,
@@ -23,10 +17,7 @@ import {
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
-import {
-  encodeJSON,
-  normalizeEVMAddress,
-} from "@tallyho/tally-background/lib/utils"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteSmartContractFungibleAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   clearTransactionState,
@@ -67,11 +58,6 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
   }
 
   return asset1.symbol === asset2.symbol
-}
-
-/* FIXME: possibly slow */
-function deepEquals(a: unknown, b: unknown) {
-  return encodeJSON(a) === encodeJSON(b)
 }
 
 export default function Swap(): ReactElement {
@@ -118,13 +104,15 @@ export default function Swap(): ReactElement {
 
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
-  const [latestQuoteResponse, setLatestQuoteResponse] =
-    useState<SwapQuoteResponse | null>(null)
+  const [latestQuoteState, setLatestQuoteState] = useState<{
+    request: SwapQuoteRequest | null
+    response: SwapQuoteResponse | null
+  }>({ request: null, response: null })
 
   const {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
-  } = latestQuoteResponse?.request ?? {
+  } = latestQuoteState.request ?? {
     assets: { sellAsset: locationAsset },
   }
 
@@ -195,10 +183,6 @@ export default function Swap(): ReactElement {
     networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
   })
 
-  const latestQuoteRequest = useRef<SwapQuoteRequest | undefined>(
-    latestQuoteResponse?.request
-  )
-
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
 
   /* We have to watch the state to determine when the quote is fetched */
@@ -212,11 +196,9 @@ export default function Swap(): ReactElement {
   const getFinalQuote = async () => {
     // The final quote requires a previous non-final quote having been
     // requested; this is also guarded at the button (by disabling the button).
-    if (typeof latestQuoteRequest.current === "undefined") {
-      return false
-    }
+    if (latestQuoteState.request === null) return false
 
-    dispatch(fetchSwapQuote(latestQuoteRequest.current))
+    dispatch(fetchSwapQuote(latestQuoteState.request))
 
     return true
   }
@@ -288,7 +270,7 @@ export default function Swap(): ReactElement {
         return
       }
 
-      const quoteRequest: SwapQuoteRequest = {
+      const request: SwapQuoteRequest = {
         assets: {
           sellAsset: quoteSellAsset,
           buyAsset: quoteBuyAsset,
@@ -301,14 +283,18 @@ export default function Swap(): ReactElement {
         gasPrice: swapTransactionSettings.networkSettings.values.maxFeePerGas,
       }
 
-      latestQuoteRequest.current = quoteRequest
+      setLatestQuoteState({ request, response: null })
 
-      setLatestQuoteResponse(
+      const response =
         ((await dispatch(
-          fetchSwapPrice(quoteRequest)
+          fetchSwapPrice(request)
         )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ??
-          null
-      )
+        null
+
+      setLatestQuoteState((old) => {
+        if (old?.request !== request) return old // request changed in the meanwhile
+        return { request, response }
+      })
     },
     [
       buyAsset,
@@ -320,27 +306,14 @@ export default function Swap(): ReactElement {
   )
 
   useEffect(() => {
-    // If we have a quote response, update the data accordingly,
-    // but only if it applies to the latest request we made.
-
-    if (latestQuoteResponse === null) return
-    if (!deepEquals(latestQuoteRequest.current, latestQuoteResponse.request)) {
+    if (
+      latestQuoteState.request === null ||
+      latestQuoteState.response === null
+    ) {
       return
     }
 
-    const { quote, needsApproval: newNeedsApproval } = latestQuoteResponse
-    if (typeof quote === "undefined") {
-      // If there's no quote, clear states and abort.
-      setBuyAmountLoading(false)
-      setSellAmountLoading(false)
-      setNeedsApproval(false)
-      setApprovalTarget(undefined)
-      latestQuoteRequest.current = undefined
-
-      // TODO set an error on the buy or sell state.
-
-      return
-    }
+    const { quote, needsApproval: newNeedsApproval } = latestQuoteState.response
 
     setNeedsApproval(newNeedsApproval)
     setApprovalTarget(quote.allowanceTarget)
@@ -348,18 +321,18 @@ export default function Swap(): ReactElement {
     setBuyAmount(
       fixedPointNumberToString({
         amount: BigInt(quote.buyAmount),
-        decimals: latestQuoteResponse.request.assets.buyAsset.decimals,
+        decimals: latestQuoteState.request.assets.buyAsset.decimals,
       })
     )
     setBuyAmountLoading(false)
     setSellAmount(
       fixedPointNumberToString({
         amount: BigInt(quote.sellAmount),
-        decimals: latestQuoteResponse.request.assets.sellAsset.decimals,
+        decimals: latestQuoteState.request.assets.sellAsset.decimals,
       })
     )
     setSellAmountLoading(false)
-  }, [latestQuoteResponse])
+  }, [latestQuoteState])
 
   const updateSellAsset = useCallback(
     (asset: SmartContractFungibleAsset) => {
@@ -497,7 +470,7 @@ export default function Swap(): ReactElement {
                       type="primary"
                       size="large"
                       isDisabled={
-                        typeof latestQuoteRequest.current === "undefined" ||
+                        latestQuoteState.request === null ||
                         sellAmountLoading ||
                         buyAmountLoading
                       }
@@ -512,7 +485,7 @@ export default function Swap(): ReactElement {
                     type="primary"
                     size="large"
                     isDisabled={
-                      typeof latestQuoteRequest.current === "undefined" ||
+                      latestQuoteState.request === null ||
                       sellAmountLoading ||
                       buyAmountLoading
                     }

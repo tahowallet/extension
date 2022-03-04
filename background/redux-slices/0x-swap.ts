@@ -35,7 +35,6 @@ export type SwapQuoteRequest = {
 }
 
 export interface SwapQuoteResponse {
-  request: SwapQuoteRequest
   quote: ZrxPrice
   needsApproval: boolean
 }
@@ -240,7 +239,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
     const needsApproval = existingAllowance.lt(quote.sellAmount)
 
-    return { request: quoteRequest, quote, needsApproval }
+    return { quote, needsApproval }
   }
 )
 
