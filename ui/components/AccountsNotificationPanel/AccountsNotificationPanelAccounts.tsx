@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
+  AccountTotal,
   selectAccountTotalsByCategory,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -28,8 +29,12 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {
-    title: "Full access",
+    title: "Import",
     icon: "./images/imported@2x.png",
+  },
+  [AccountType.NewSeed]: {
+    title: "Tally",
+    icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
   },
   [AccountType.Ledger]: {
     title: "Full access via Ledger", // FIXME: check copy against UI specs
@@ -40,9 +45,11 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
 function WalletTypeHeader({
   accountType,
   onClickAddAddress,
+  walletNumber,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
+  walletNumber?: number
 }) {
   const { title, icon } = walletTypeDetails[accountType]
   const history = useHistory()
@@ -53,7 +60,7 @@ function WalletTypeHeader({
       <header className="wallet_title">
         <h2 className="left">
           <div className="icon" />
-          {title}
+          {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
         </h2>
         {onClickAddAddress ? (
           <div className="right">
@@ -143,10 +150,6 @@ export default function AccountsNotificationPanelAccounts({
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
-  const firstKeyringId = useBackgroundSelector((state) => {
-    return state.keyrings.keyrings[0]?.id
-  })
-
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
     dispatch(
@@ -167,7 +170,11 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
-  const accountTypes = [AccountType.Imported, AccountType.ReadOnly]
+  const accountTypes = [
+    AccountType.NewSeed,
+    AccountType.Imported,
+    AccountType.ReadOnly,
+  ]
 
   if (!HIDE_IMPORT_LEDGER) {
     accountTypes.push(AccountType.Ledger)
@@ -180,48 +187,71 @@ export default function AccountsNotificationPanelAccounts({
         .map((accountType) => {
           // Known-non-null due to above filter.
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const accountTypeTotals = accountTotals[accountType]!
+          const accountTotalsByType = accountTotals[accountType]!.reduce(
+            (acc, accountTypeTotal) => {
+              if (accountTypeTotal.keyringId) {
+                acc[accountTypeTotal.keyringId] ??= []
+                // Known-non-null due to above ??=
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                acc[accountTypeTotal.keyringId].push(accountTypeTotal)
+              } else {
+                acc.readOnly ??= []
+                acc.readOnly.push(accountTypeTotal)
+              }
+              return acc
+            },
+            {} as { [keyringId: string]: AccountTotal[] }
+          )
 
-          return (
-            <section key={accountType}>
-              <WalletTypeHeader
-                accountType={accountType}
-                onClickAddAddress={
-                  accountType === "imported"
-                    ? () => {
-                        if (firstKeyringId) {
-                          dispatch(deriveAddress(firstKeyringId))
-                        }
-                      }
-                    : undefined
-                }
-              />
-              <ul>
-                {accountTypeTotals.map((accountTotal) => {
-                  const lowerCaseAddress =
-                    accountTotal.address.toLocaleLowerCase()
-                  return (
-                    <li key={lowerCaseAddress}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateCurrentAccount(lowerCaseAddress)
-                        }}
-                      >
-                        <SharedPanelAccountItem
-                          key={lowerCaseAddress}
-                          accountTotal={accountTotal}
-                          isSelected={
-                            lowerCaseAddress === selectedAccountAddress
+          return Object.values(accountTotalsByType).map(
+            (accountTotalsByKeyringId, idx) => {
+              return (
+                <section key={accountType}>
+                  <WalletTypeHeader
+                    accountType={accountType}
+                    walletNumber={idx + 1}
+                    onClickAddAddress={
+                      accountType === "imported" || accountType === "newSeed"
+                        ? () => {
+                            if (accountTotalsByKeyringId[0].keyringId) {
+                              dispatch(
+                                deriveAddress(
+                                  accountTotalsByKeyringId[0].keyringId
+                                )
+                              )
+                            }
                           }
-                          hideMenu
-                        />
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
+                        : undefined
+                    }
+                  />
+                  <ul>
+                    {accountTotalsByKeyringId.map((accountTotal) => {
+                      const lowerCaseAddress =
+                        accountTotal.address.toLocaleLowerCase()
+                      return (
+                        <li key={lowerCaseAddress}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateCurrentAccount(lowerCaseAddress)
+                            }}
+                          >
+                            <SharedPanelAccountItem
+                              key={lowerCaseAddress}
+                              accountTotal={accountTotal}
+                              isSelected={
+                                lowerCaseAddress === selectedAccountAddress
+                              }
+                              hideMenu
+                            />
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )
+            }
           )
         })}
       <footer>

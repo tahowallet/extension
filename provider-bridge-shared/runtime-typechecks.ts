@@ -65,6 +65,7 @@ export const AllowedQueryParamPage = {
   signTransaction: "/signTransaction",
   dappPermission: "/dappPermission",
   signData: "/signData",
+  personalSignData: "/personalSign",
 } as const
 
 export type AllowedQueryParamPageType =

@@ -3,10 +3,11 @@ import Emittery from "emittery"
 
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Keyring } from "../services/keyring/index"
+import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]
+  keyringMetadata: { [keyringId: string]: { source: "import" | "newSeed" } }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -17,6 +18,7 @@ type KeyringsState = {
 
 export const initialState: KeyringsState = {
   keyrings: [],
+  keyringMetadata: {},
   importing: false,
   status: "uninitialized",
   keyringToVerify: null,
@@ -27,19 +29,22 @@ export type Events = {
   unlockKeyrings: string
   generateNewKeyring: never
   deriveAddress: string
-  importKeyring: { mnemonic: string; path?: string }
+  importKeyring: ImportKeyring
 }
 
 export const emitter = new Emittery<Events>()
 
+interface ImportKeyring {
+  mnemonic: string
+  source: "newSeed" | "import"
+  path?: string
+}
+
 // Async thunk to bubble the importKeyring action from  store to emitter.
 export const importKeyring = createBackgroundAsyncThunk(
   "keyrings/importKeyring",
-  async (
-    { mnemonic, path }: { mnemonic: string; path?: string },
-    { getState, dispatch }
-  ) => {
-    await emitter.emit("importKeyring", { mnemonic, path })
+  async ({ mnemonic, source, path }: ImportKeyring, { getState, dispatch }) => {
+    await emitter.emit("importKeyring", { mnemonic, path, source })
 
     const { keyrings, ui } = getState() as {
       keyrings: KeyringsState
@@ -64,7 +69,17 @@ const keyringsSlice = createSlice({
   reducers: {
     keyringLocked: (state) => ({ ...state, status: "locked" }),
     keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
-    updateKeyrings: (state, { payload: keyrings }: { payload: Keyring[] }) => {
+    updateKeyrings: (
+      state,
+      {
+        payload: { keyrings, keyringMetadata },
+      }: {
+        payload: {
+          keyrings: Keyring[]
+          keyringMetadata: { [keyringId: string]: KeyringMetadata }
+        }
+      }
+    ) => {
       // When the keyrings are locked, we receive updateKeyrings with an empty
       // list as the keyring service clears the in-memory keyrings. For UI
       // purposes, however, we want to continue tracking the keyring metadata,
@@ -76,6 +91,7 @@ const keyringsSlice = createSlice({
       return {
         ...state,
         keyrings,
+        keyringMetadata,
       }
     },
     setKeyringToVerify: (state, { payload }) => ({
