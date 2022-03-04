@@ -3,20 +3,21 @@ import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 
 export default function LedgerPrepare({
-  showWarning,
   onContinue,
+  initialScreen,
 }: {
-  showWarning: boolean
   onContinue: () => void
+  initialScreen: boolean
 }): ReactElement {
-  const buttonLabel = showWarning ? "Try Again" : "Continue"
+  const buttonLabel = initialScreen ? "Continue" : "Try Again"
+  const subHeadingVerb = initialScreen ? "start" : "retry"
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-      heading="Before we get started"
-      subHeading="Make sure you take these 3 steps before we start"
+      heading={initialScreen ? "Before we get started" : "Check your Ledger"}
+      subHeading={`Make sure you take these 3 steps before we ${subHeadingVerb}`}
     >
-      {showWarning ? (
+      {!initialScreen ? (
         <div className="steps">
           <div className="warning error">
             <span className="block_icon" />

@@ -35,7 +35,7 @@ export default function Ledger(): ReactElement {
     <BrowserTabContainer>
       {(phase === "0-prepare" || connectionError) && (
         <LedgerPrepare
-          showWarning={connectionError}
+          initialScreen={phase === "0-prepare"}
           onContinue={async () => {
             setPhase("1-request")
             try {
