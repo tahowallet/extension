@@ -135,6 +135,7 @@ export default function SignTransactionSpendAssetInfoProvider({
                   value={approvalLimitInput}
                   placeholder={approvalLimitString ?? ""}
                   onChange={setApprovalLimitInput}
+                  autoSelect
                 />
                 <div className="change_limit_actions">
                   <SharedButton
