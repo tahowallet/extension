@@ -57,16 +57,25 @@ export default function SignTransactionSpendAssetInfoProvider({
   )
   const changing = approvalLimitInput !== null
 
-  const handleUpdateClick = () => {
-    if (!changing) {
-      setApprovalLimitInput(approvalLimitString ?? "")
+  const handleChangeClick = () => {
+    setApprovalLimitInput(approvalLimitString ?? "")
+  }
+
+  const handleCancelClick = () => {
+    setApprovalLimitInput(null)
+  }
+
+  const handleSaveClick = () => {
+    if (!changing) return
+
+    if (
+      approvalLimitInput === "" ||
+      approvalLimitInput === approvalLimitString
+    ) {
       return
     }
 
-    const decimalAmount =
-      approvalLimitInput === ""
-        ? null
-        : parseToFixedPointNumber(approvalLimitInput)
+    const decimalAmount = parseToFixedPointNumber(approvalLimitInput)
 
     if (
       decimalAmount === undefined ||
@@ -124,21 +133,47 @@ export default function SignTransactionSpendAssetInfoProvider({
                 <SharedInput
                   label=""
                   value={approvalLimitInput}
-                  placeholder="Infinite"
+                  placeholder={approvalLimitString ?? ""}
                   onChange={setApprovalLimitInput}
                 />
+                <div className="change_limit_actions">
+                  <SharedButton
+                    size="small"
+                    isFormSubmit
+                    type="tertiary"
+                    onClick={handleCancelClick}
+                  >
+                    Cancel
+                  </SharedButton>
+                  <SharedButton
+                    size="small"
+                    isFormSubmit
+                    type="tertiary"
+                    onClick={handleSaveClick}
+                    isDisabled={
+                      approvalLimitInput === "" ||
+                      approvalLimitInput === approvalLimitString
+                    }
+                  >
+                    Save
+                  </SharedButton>
+                </div>
               </div>
             ) : (
-              <span className="spend_amount">{approvalLimitDisplayValue}</span>
+              <>
+                <span className="spend_amount">
+                  {approvalLimitDisplayValue}
+                </span>
+                <SharedButton
+                  size="small"
+                  isFormSubmit
+                  type="tertiary"
+                  onClick={handleChangeClick}
+                >
+                  Change limit
+                </SharedButton>
+              </>
             )}
-            <SharedButton
-              size="small"
-              isFormSubmit
-              type="tertiary"
-              onClick={handleUpdateClick}
-            >
-              {changing ? "Update spend limit" : "Change limit"}
-            </SharedButton>
           </form>
           <div className="spacer" />
           <style jsx>
@@ -181,6 +216,10 @@ export default function SignTransactionSpendAssetInfoProvider({
                 font-size: 14px;
                 line-height: 16px;
                 margin-bottom: 4px;
+              }
+              .change_limit_actions {
+                display: flex;
+                justify-content: space-between;
               }
               .spend_amount {
                 color: #fff;
