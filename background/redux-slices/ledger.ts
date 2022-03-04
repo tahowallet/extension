@@ -199,9 +199,13 @@ export const fetchAddress = createBackgroundAsyncThunk(
     { deviceID, path }: { deviceID: string; path: string },
     { dispatch, extra: { main } }
   ) => {
-    dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
-    const address = await main.deriveLedgerAddress(path) // FIXME: deviceID is ignored
-    dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
+    try {
+      dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
+      const address = await main.deriveLedgerAddress(path) // FIXME: deviceID is ignored
+      dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
+    } catch (err) {
+      dispatch(ledgerSlice.actions.resetLedgerState())
+    }
   }
 )
 
