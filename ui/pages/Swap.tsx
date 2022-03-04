@@ -429,7 +429,7 @@ export default function Swap(): ReactElement {
             <></>
           )}
         </SharedSlideUpMenu>
-        <div className="standard_width">
+        <div className="standard_width swap_wrap">
           <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
@@ -522,6 +522,9 @@ export default function Swap(): ReactElement {
       </CorePage>
       <style jsx>
         {`
+          .swap_wrap {
+            margin-top: -9px;
+          }
           .network_fee_group {
             display: flex;
             margin-bottom: 29px;
