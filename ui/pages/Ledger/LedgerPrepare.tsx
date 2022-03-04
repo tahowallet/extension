@@ -5,12 +5,18 @@ import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 export default function LedgerPrepare({
   onContinue,
   initialScreen,
+  deviceCount,
 }: {
   onContinue: () => void
   initialScreen: boolean
+  deviceCount: number
 }): ReactElement {
   const buttonLabel = initialScreen ? "Continue" : "Try Again"
   const subHeadingVerb = initialScreen ? "start" : "retry"
+  const warningText =
+    deviceCount === 0
+      ? "No Ledger device is connected"
+      : "Multiple Ledgers are connected"
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
@@ -21,7 +27,7 @@ export default function LedgerPrepare({
         <div className="steps">
           <div className="warning error">
             <span className="block_icon" />
-            No Ledger device is connected
+            {warningText}
           </div>
           <div className="warning">
             Please follow the steps below and <br /> click on Try Again!
@@ -31,7 +37,7 @@ export default function LedgerPrepare({
         <></>
       )}
       <ol className="steps">
-        <li>Plug in Ledger</li>
+        <li>Plug in a single Ledger</li>
         <li>Enter pin to unlock</li>
         <li>Open Ethereum App</li>
       </ol>
