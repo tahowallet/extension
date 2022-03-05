@@ -43,6 +43,7 @@
     "window-provider"
   ],
   "dependencies": {
+    "@ethersproject/providers": "^5.5.3",
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@tallyho/provider-bridge": "0.0.1",
     "@tallyho/provider-bridge-shared": "0.0.1",
