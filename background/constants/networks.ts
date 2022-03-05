@@ -44,6 +44,13 @@ export const BITCOIN: Network = {
   family: "BTC",
 }
 
+export const FORK: EVMNetwork = {
+  name: "Ethereum",
+  baseAsset: ETH,
+  chainID: process.env.MAINNET_FORK_CHAIN_ID ?? "1337",
+  family: "EVM",
+}
+
 export const EVM_MAIN_NETWORKS = [ETHEREUM]
 
 export const EVM_TEST_NETWORKS = [ROPSTEN, RINKEBY, GOERLI, KOVAN]
