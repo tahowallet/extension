@@ -228,11 +228,10 @@ export default function Swap(): ReactElement {
       return
     }
     if (
-      !isSmartContractFungibleAsset(sellAsset) ||
-      sellAsset.symbol !== "ETH"
+      !isSmartContractFungibleAsset(sellAsset)
     ) {
       logger.error(
-        "Attempting to approve transfer of a non-contract non-ETH asset.",
+        "Attempting to approve transfer of a non-contract asset.",
         sellAsset
       )
       return
