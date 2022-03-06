@@ -47,6 +47,10 @@ export const initialState: SwapState = {
   inProgressApprovalContract: undefined,
 }
 
+// The magic string used by the 0x API to signify we're dealing with ETH rather
+// than an ERC-20
+const ZEROX_ETH_SIGNIFIER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+
 const swapSlice = createSlice({
   name: "0x-swap",
   initialState,
@@ -241,9 +245,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     let needsApproval = false
     // If we aren't selling ETH, check whether we need an approval to swap
     // TODO Handle other non-ETH base assets
-    if (
-      quote.sellTokenAddress !== "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-    ) {
+    if (quote.sellTokenAddress !== ZEROX_ETH_SIGNIFIER) {
       const assetContract = new ethers.Contract(
         quote.sellTokenAddress,
         ERC20_ABI,
