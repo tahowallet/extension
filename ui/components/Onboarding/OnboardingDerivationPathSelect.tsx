@@ -25,6 +25,10 @@ const initialDerivationPaths: { value: string; label: string }[] = [
     label: "Trezor",
   },
   {
+    value: "m/44'/60'/0'",
+    label: "Legacy (MEW/MyCrypto)",
+  },
+  {
     value: "m/44'/137'/0'/0",
     label: "RSK",
   },
