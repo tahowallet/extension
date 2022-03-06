@@ -132,17 +132,15 @@ function build0xUrlFromSwapRequest(
     "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals
   )
 
-  // When available, use smart contract addresses. The only non-smart
-  // contract asset supported current is ETH. Once others are added, switch
-  // those to `.symbol`.
+  // When available, use smart contract addresses.
   const sellToken =
     "contractAddress" in assets.sellAsset
       ? assets.sellAsset.contractAddress
-      : "ETH"
+      : assets.sellAsset.symbol
   const buyToken =
     "contractAddress" in assets.buyAsset
       ? assets.buyAsset.contractAddress
-      : "ETH"
+      : assets.buyAsset.symbol
 
   // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
