@@ -70,7 +70,12 @@ module.exports = {
       },
     ],
   },
-  ignorePatterns: ["dist/", "extension-reload.js", "**/validate/*.js"],
+  ignorePatterns: [
+    "dist/",
+    "extension-reload.js",
+    "**/validate/*.js",
+    "**/local-chain/**",
+  ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     project: "./.tsconfig-eslint.json",

@@ -126,6 +126,18 @@ Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
 by running `pre-commit install`. The macOS setup script does this for you.
 
+#### Local mainnet fork setup for development
+
+For more detailed description see `./dev-utils/local-chain/README.md`
+
+Quick Start:
+
+```
+$ cd dev-utils/local-chain
+$ yarn install
+$ yarn start
+```
+
 ### Commit signing
 
 Commits on the Tally repository are all required to be signed.
