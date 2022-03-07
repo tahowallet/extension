@@ -455,13 +455,32 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Uninitialized Ledger ID!")
     }
 
+    const accountData = await this.db.getAccountByAddress(address)
+
+    if (!accountData) {
+      throw new Error(
+        `Address "${address}" doesn't have corresponding derivation path!`
+      )
+    }
+
     const eth = new Eth(this.transport)
 
     const signature = await eth.signPersonalMessage(
-      address,
+      accountData.path,
       Buffer.from(message).toString("hex")
     )
-    this.emitter.emit("signedData", joinSignature(signature))
-    return joinSignature(signature)
+    this.emitter.emit(
+      "signedData",
+      joinSignature({
+        r: `0x${signature.r}`,
+        s: `0x${signature.s}`,
+        v: signature.v,
+      })
+    )
+    return joinSignature({
+      r: `0x${signature.r}`,
+      s: `0x${signature.s}`,
+      v: signature.v,
+    })
   }
 }
