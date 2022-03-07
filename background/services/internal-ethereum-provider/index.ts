@@ -112,9 +112,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_signTypedData_v3":
       case "eth_signTypedData_v4":
         return this.signTypedData({
-          account: params[0],
+          account: params[0] as string,
           typedData: JSON.parse(params[1] as string),
-        } as SignTypedDataRequest)
+        })
       case "eth_chainId":
         return this.chainService.ethereumNetwork.chainID
       case "eth_blockNumber":

@@ -1,5 +1,8 @@
 import React, { ReactElement, useState } from "react"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAccountTotal,
+  selectCurrentAccountSigningMethod,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
   signData,
@@ -36,6 +39,8 @@ export default function PersonalSignData(): ReactElement {
     return undefined
   })
 
+  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
+
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
   if (
@@ -47,10 +52,11 @@ export default function PersonalSignData(): ReactElement {
   }
 
   const handleConfirm = () => {
-    if (signingDataRequest !== undefined) {
-      dispatch(signData(signingDataRequest))
-      setIsTransactionSigning(true)
-    }
+    if (signingMethod === null) return
+    if (signingDataRequest === undefined) return
+
+    dispatch(signData({ request: signingDataRequest, signingMethod }))
+    setIsTransactionSigning(true)
   }
 
   const handleReject = async () => {

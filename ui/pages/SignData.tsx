@@ -38,9 +38,7 @@ export default function SignData(): ReactElement {
   const redirect = signerAccountTotal?.accountType === AccountType.Imported
   const areKeyringsUnlocked = useAreKeyringsUnlocked(redirect)
 
-  const currentAddressSigner = useBackgroundSelector(
-    selectCurrentAccountSigningMethod
-  )
+  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
@@ -55,9 +53,8 @@ export default function SignData(): ReactElement {
 
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
-      if (currentAddressSigner) {
-        typedDataRequest.signingMethod = currentAddressSigner
-        dispatch(signTypedData(typedDataRequest))
+      if (signingMethod) {
+        dispatch(signTypedData({ request: typedDataRequest, signingMethod }))
         setIsTransactionSigning(true)
       }
     }
