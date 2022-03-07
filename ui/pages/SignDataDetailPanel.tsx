@@ -24,6 +24,7 @@ export default function SignDataDetailPanel(): ReactElement {
               : "A dapp is requesting your signature"}
           </div>
           <div className="divider" />
+          {/* FIXME: `domain.name` was removed as part of personal sign implementation. Why? */}
           <div className="header">{domain.name}</div>
           <div className="divider" />
           {keys.length > 2 ? (

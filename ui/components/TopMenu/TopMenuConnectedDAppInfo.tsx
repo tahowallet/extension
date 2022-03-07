@@ -77,7 +77,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           z-index: -1;
         }
         h1 {
-          color: #22c480;
+          color: var(--success);
           font-size: 16px;
           font-weight: 400;
           line-height: 24px;
