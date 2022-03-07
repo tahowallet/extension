@@ -3,7 +3,6 @@ import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
   AllowedQueryParamPage,
-  AllowedQueryParamPageType,
   PortRequestEvent,
   PortResponseEvent,
   EIP1193Error,
@@ -22,6 +21,7 @@ import {
   checkPermissionSign,
   checkPermissionSignTransaction,
 } from "./authorization"
+import showExtensionPopup from "./show-popup"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -221,9 +221,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     permissionRequest: PermissionRequest
   ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
-    await ProviderBridgeService.showExtensionPopup(
-      AllowedQueryParamPage.dappPermission
-    )
+    await showExtensionPopup(AllowedQueryParamPage.dappPermission)
 
     return new Promise((resolve) => {
       this.#pendingPermissionsRequests[permissionRequest.origin] = resolve
@@ -306,9 +304,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            ProviderBridgeService.showExtensionPopup(
-              AllowedQueryParamPage.signData
-            )
+            showExtensionPopup(AllowedQueryParamPage.signData)
           )
         case "eth_sign":
         case "personal_sign":
@@ -317,9 +313,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            ProviderBridgeService.showExtensionPopup(
-              AllowedQueryParamPage.personalSignData
-            )
+            showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "eth_signTransaction":
         case "eth_sendTransaction":
@@ -328,9 +322,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            ProviderBridgeService.showExtensionPopup(
-              AllowedQueryParamPage.signTransaction
-            )
+            showExtensionPopup(AllowedQueryParamPage.signTransaction)
           )
 
         default: {
@@ -344,22 +336,5 @@ export default class ProviderBridgeService extends BaseService<Events> {
       logger.log("error processing request", error)
       return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
     }
-  }
-
-  private static async showExtensionPopup(
-    url: AllowedQueryParamPageType
-  ): Promise<browser.Windows.Window> {
-    const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
-    const popupWidth = 384
-    const popupHeight = 600
-    return browser.windows.create({
-      url: `${browser.runtime.getURL("popup.html")}?page=${url}`,
-      type: "popup",
-      left: left + width - popupWidth,
-      top,
-      width: popupWidth,
-      height: popupHeight,
-      focused: true,
-    })
   }
 }
