@@ -145,7 +145,7 @@ const accountSlice = createSlice({
             accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
           }
     },
-    removeAccount: (
+    deleteAccount: (
       state,
       { payload: accountToRemove }: { payload: string }
     ) => {
@@ -305,7 +305,7 @@ export const addAccountByName = createBackgroundAsyncThunk(
 export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
   async (address: HexString, { dispatch, extra: { main } }) => {
-    dispatch(accountSlice.actions.removeAccount(address))
+    dispatch(accountSlice.actions.deleteAccount(address))
     main.removeAccount(address, { type: "keyring" })
   }
 )
