@@ -457,7 +457,10 @@ export default class LedgerService extends BaseService<Events> {
 
     const eth = new Eth(this.transport)
 
-    const signature = await eth.signPersonalMessage(address, message)
+    const signature = await eth.signPersonalMessage(
+      address,
+      Buffer.from(message).toString("hex")
+    )
     this.emitter.emit("signedData", joinSignature(signature))
     return joinSignature(signature)
   }
