@@ -321,6 +321,10 @@ export default class KeyringService extends BaseService<Events> {
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
+
+    if (this.#keyrings.some((kr) => kr.id === newKeyring.id)) {
+      return newKeyring.id
+    }
     this.#keyrings.push(newKeyring)
     this.#keyringMetadata = {
       ...this.#keyringMetadata,
