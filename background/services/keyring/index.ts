@@ -322,6 +322,10 @@ export default class KeyringService extends BaseService<Events> {
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
+    this.#keyringMetadata = {
+      ...this.#keyringMetadata,
+      [newKeyring.id]: { source },
+    }
     newKeyring.addAddressesSync(1)
     const [address] = newKeyring.getAddressesSync()
     // Make sure that the first address of a keyring is not "hidden".
@@ -331,7 +335,6 @@ export default class KeyringService extends BaseService<Events> {
     await this.persistKeyrings()
     this.emitter.emit("address", address)
     this.emitKeyrings()
-
     return newKeyring.id
   }
 
