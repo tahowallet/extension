@@ -96,8 +96,6 @@ export default function ClaimFooter({
           numberOfSteps={buttonText.length}
         />
       </div>
-      <div> Go Back</div>
-
       <SharedButton type="primary" size="medium" onClick={handleClick}>
         {buttonText[step - 1]}
       </SharedButton>
