@@ -106,7 +106,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 4
+const REDUX_STATE_VERSION = 5
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -193,6 +193,13 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       // Add new networks slice data.
       networks,
     }
+  },
+  5: (prevState: Record<string, unknown>) => {
+    const { ...newState } = prevState
+
+    ;(newState.keyrings as Record<string, unknown>).keyringMetadata = {}
+
+    return newState
   },
 }
 
