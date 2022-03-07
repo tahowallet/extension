@@ -1,12 +1,13 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import {
   toFixedPointNumber,
   multiplyByFloat,
   convertFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
+import { advanceClaimStep } from "@tallyho/tally-background/redux-slices/claim"
 import { Redirect } from "react-router-dom"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
 import ClaimReferral from "../../components/Claim/ClaimReferral"
 import ClaimReferralByUser from "../../components/Claim/ClaimReferralByUser"
@@ -18,7 +19,19 @@ import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalCo
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 
 export default function Eligible(): ReactElement {
-  const [step, setStep] = useState(1)
+  const dispatch = useBackgroundDispatch()
+  const { delegates, DAOs, claimAmountHex, claimStep } = useBackgroundSelector(
+    (state) => {
+      return {
+        delegates: state.claim.delegates,
+        DAOs: state.claim.DAOs,
+        claimAmountHex:
+          state.claim?.eligibility && state.claim?.eligibility.earnings,
+        claimStep: state.claim.claimStep,
+      }
+    }
+  )
+  const [step, setStep] = useState(claimStep)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
   const { accountData } = useBackgroundSelector(
@@ -27,14 +40,6 @@ export default function Eligible(): ReactElement {
   const hasAccounts = useBackgroundSelector(
     (state) => Object.keys(state.account.accountsData).length > 0
   )
-
-  const { delegates, DAOs, claimAmountHex } = useBackgroundSelector((state) => {
-    return {
-      delegates: state.claim.delegates,
-      DAOs: state.claim.DAOs,
-      claimAmountHex: state.claim?.eligibility?.earnings,
-    }
-  })
 
   if (!hasAccounts) {
     return <Redirect to="/onboarding/infoIntro" />
@@ -46,6 +51,9 @@ export default function Eligible(): ReactElement {
 
   const advanceStep = () => {
     setStep(step + 1)
+    if (step < 5) {
+      dispatch(advanceClaimStep())
+    }
   }
 
   const BONUS_PERCENT = 0.05
