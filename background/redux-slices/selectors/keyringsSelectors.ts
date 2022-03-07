@@ -1,4 +1,4 @@
-import { createSelector } from "@reduxjs/toolkit"
+import { createSelector, OutputSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Keyring } from "../../services/keyring"
 
@@ -6,6 +6,21 @@ export const selectKeyringStatus = createSelector(
   (state: RootState) => state.keyrings.status,
   (status) => status
 )
+
+export const selectKeyringByAddress = (
+  address: string
+): OutputSelector<
+  RootState,
+  Keyring | undefined,
+  (res: Keyring[]) => Keyring | undefined
+> =>
+  createSelector(
+    [(state: RootState) => state.keyrings.keyrings],
+    (keyrings) => {
+      const kr = keyrings.find((keyring) => keyring.addresses.includes(address))
+      return kr
+    }
+  )
 
 export const selectKeyringSigningAddresses = createSelector(
   (state: RootState) => state.keyrings.keyrings,

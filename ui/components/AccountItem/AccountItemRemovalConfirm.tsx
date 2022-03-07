@@ -1,11 +1,15 @@
 import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
-import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  AccountTotal,
+  selectKeyringByAddress,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
 import React from "react"
 import { useDispatch } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
+import { useBackgroundSelector } from "../../hooks"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
@@ -14,6 +18,23 @@ interface AccountItemRemovalConfirmProps {
   close: () => void
 }
 
+const RegularWarning: React.FC = () => (
+  <span>
+    Removing this address doesn&apos;t delete your recovery phrase or any
+    private keys. Instead it just hides it from the extension and you won&apos;t
+    be able to use it until you add it back.
+  </span>
+)
+
+const LoudWarning: React.FC = () => (
+  <span>
+    <h3>
+      Removing this address will remove its associated account from the UI.
+    </h3>{" "}
+    Are you sure you want to proceed?
+  </span>
+)
+
 const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
   account,
   address,
@@ -21,6 +42,8 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
   close,
 }) => {
   const dispatch = useDispatch()
+  const keyring = useBackgroundSelector(selectKeyringByAddress(address))
+  const onlyOneAddressVisible = keyring?.addresses.length === 1
   return (
     <div className="remove_address_option">
       <RemoveAddressLabel />
@@ -35,11 +58,7 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
         </li>
       </ul>
       <div className="remove_address_details">
-        <span>
-          Removing this address doesn&apos;t delete your recovery phrase or any
-          private keys. Instead it just hides it from the extension and you
-          won&apos;t be able to use it until you add it back.
-        </span>
+        {onlyOneAddressVisible ? <LoudWarning /> : <RegularWarning />}
       </div>
       <div className="button_container">
         <SharedButton
@@ -53,7 +72,7 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
           Cancel
         </SharedButton>
         <SharedButton
-          type="primary"
+          type={onlyOneAddressVisible ? "warning" : "primary"}
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
