@@ -187,12 +187,6 @@ export function Main(): ReactElement {
       <>
         <style jsx global>
           {`
-            body {
-              width: 384px;
-              height: 594px;
-              scrollbar-width: none;
-            }
-
             ::-webkit-scrollbar {
               width: 0px;
               background: transparent;
