@@ -23,14 +23,16 @@ export default function LedgerPrepare({
       heading={initialScreen ? "Before we get started" : "Check your Ledger"}
       subHeading={`Make sure you take these 3 steps before we ${subHeadingVerb}`}
     >
-      {!initialScreen ? (
+      {!initialScreen && deviceCount !== 1 ? (
         <div className="steps">
-          <div className="warning error">
+          <div className="box error">
             <span className="block_icon" />
             {warningText}
           </div>
-          <div className="warning">
-            Please follow the steps below and <br /> click on Try Again!
+          <div className="box">
+            <p className="highlight_text">
+              Please follow the steps below and click on Try Again!
+            </p>
           </div>
         </div>
       ) : (
@@ -82,22 +84,27 @@ export default function LedgerPrepare({
         .block_icon {
           width: 24px;
           height: 24px;
-          margin: 8px;
+          margin-right: 8px;
           background: no-repeat center / cover url("./images/block_icon@2x.png");
         }
 
-        .warning {
+        .box {
           display: flex;
-          align-items: center;
-          text-align: center;
-          justify-content: center;
-          padding: 16px;
+          padding: 6px;
         }
 
         .error {
           color: var(--error);
           font-weight: 600;
           font-size: 18px;
+        }
+
+        .highlight_text {
+          padding-left: 28px;
+          margin: 0.25rem;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--green-40);
         }
       `}</style>
     </LedgerPanelContainer>
