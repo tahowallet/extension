@@ -35,6 +35,7 @@ interface ClaimingState {
   DAOs: DAO[]
   selectedDAO: DAO | null
   selectedDelegate: Delegate | null
+  referrer: string | null
 }
 
 const getDistributorContract = async () => {
@@ -79,7 +80,7 @@ const claim = createBackgroundAsyncThunk(
   }
 )
 
-const initialState = {
+const initialState: ClaimingState = {
   status: "idle",
   claimed: {},
   distributor: {},
@@ -88,7 +89,8 @@ const initialState = {
   eligibility: null,
   delegates,
   DAOs,
-} as ClaimingState
+  referrer: null,
+}
 
 const claimingSlice = createSlice({
   name: "claim",
@@ -102,6 +104,9 @@ const claimingSlice = createSlice({
     },
     setEligibility: (immerState, { payload: eligibility }) => {
       immerState.eligibility = eligibility
+    },
+    setReferrer: (immerState, { payload: referrer }: { payload: string }) => {
+      immerState.referrer = referrer
     },
   },
   extraReducers: (builder) => {
@@ -119,7 +124,7 @@ const claimingSlice = createSlice({
   },
 })
 
-export const { chooseDAO, chooseDelegate, setEligibility } =
+export const { chooseDAO, chooseDelegate, setEligibility, setReferrer } =
   claimingSlice.actions
 
 export default claimingSlice.reducer

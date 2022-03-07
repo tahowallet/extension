@@ -1,12 +1,16 @@
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
+import ClaimReferrerProvider from "./ClaimReferrerProvider"
 
 export default function ClaimReferralByUser({
   claimAmount,
 }: {
   claimAmount: number
 }): ReactElement {
+  const referrer = useBackgroundSelector((state) => state.claim.referrer)
+
   return (
     <div className="wrap standard_width">
       <ClaimAmountBanner amount={claimAmount} />
@@ -17,7 +21,9 @@ export default function ClaimReferralByUser({
       <div className="description">
         You were referred by somebody, and to reward that you each get 463 TALLY
       </div>
-      <ClaimDelegateChoiceProfile name="henryboldi.eth" />
+      <ClaimReferrerProvider>
+        <ClaimDelegateChoiceProfile name={referrer ?? "henryboldi.eth"} />
+      </ClaimReferrerProvider>
       <style jsx>
         {`
           .wrap {
