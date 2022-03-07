@@ -302,3 +302,11 @@ export const addAccountByName = createBackgroundAsyncThunk(
     await main.addAccountByName(nameNetwork)
   }
 )
+
+export const hideAccount = createBackgroundAsyncThunk(
+  "account/hideAccount",
+  async (address: HexString, { dispatch, extra: { main } }) => {
+    dispatch(removeAccount(address))
+    main.hideAccount(address)
+  }
+)

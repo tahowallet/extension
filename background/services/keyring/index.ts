@@ -77,6 +77,8 @@ export default class KeyringService extends BaseService<Events> {
 
   #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
 
+  #hiddenAccounts: { [address: HexString]: boolean } = {}
+
   /**
    * The last time a keyring took an action that required the service to be
    * unlocked (signing, adding a keyring, etc).
@@ -320,11 +322,14 @@ export default class KeyringService extends BaseService<Events> {
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
-    this.#keyringMetadata[newKeyring.id] = { source }
     newKeyring.addAddressesSync(1)
+    const [address] = newKeyring.getAddressesSync()
+    // Make sure that the first address of a keyring is not "hidden".
+    if (this.#hiddenAccounts[address]) {
+      this.#hiddenAccounts[address] = false
+    }
     await this.persistKeyrings()
-
-    this.emitter.emit("address", newKeyring.getAddressesSync()[0])
+    this.emitter.emit("address", address)
     this.emitKeyrings()
 
     return newKeyring.id
@@ -342,7 +347,11 @@ export default class KeyringService extends BaseService<Events> {
       // Reconsider, or explicitly track which keyrings have been generated vs
       // imported as well as their strength
       type: KeyringTypes.mnemonicBIP39S256,
-      addresses: [...kr.getAddressesSync()],
+      addresses: [
+        ...kr
+          .getAddressesSync()
+          .filter((address) => this.#hiddenAccounts[address] !== true),
+      ],
       id: kr.id,
     }))
   }
@@ -361,13 +370,27 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Keyring not found.")
     }
 
-    const [newAddress] = keyring.addAddressesSync(1)
+    const keyringAddresses = keyring.getAddressesSync()
+
+    // If There are any hidden addresses, show those first before adding new ones.
+    const newAddress =
+      keyringAddresses.find(
+        (address) => this.#hiddenAccounts[address] === true
+      ) ?? keyring.addAddressesSync(1)[0]
+
+    this.#hiddenAccounts[newAddress] = false
+
     await this.persistKeyrings()
 
     this.emitter.emit("address", newAddress)
     this.emitKeyrings()
 
     return newAddress
+  }
+
+  hideAccount(address: HexString): void {
+    this.#hiddenAccounts[address] = true
+    this.emitKeyrings()
   }
 
   /**

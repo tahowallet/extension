@@ -542,6 +542,10 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  hideAccount(address: HexString): void {
+    this.keyringService.hideAccount(address)
+  }
+
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(

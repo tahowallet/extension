@@ -243,10 +243,7 @@ export default function AccountsNotificationPanelAccounts({
                                 key={lowerCaseAddress}
                                 accountTotal={accountTotal}
                                 isSelected={isSelected}
-                                hideMenu={
-                                  isSelected ||
-                                  accountType !== AccountType.ReadOnly
-                                }
+                                hideMenu={isSelected}
                               />
                             </li>
                           </button>
