@@ -227,9 +227,7 @@ export default function Swap(): ReactElement {
       logger.error("Attempting to approve transfer without an approval target.")
       return
     }
-    if (
-      !isSmartContractFungibleAsset(sellAsset)
-    ) {
+    if (!isSmartContractFungibleAsset(sellAsset)) {
       logger.error(
         "Attempting to approve transfer of a non-contract asset.",
         sellAsset
