@@ -326,12 +326,7 @@ export default class KeyringService extends BaseService<Events> {
       ...this.#keyringMetadata,
       [newKeyring.id]: { source },
     }
-    newKeyring.addAddressesSync(1)
-    const [address] = newKeyring.getAddressesSync()
-    // Make sure that the first address of a keyring is not "hidden".
-    if (this.#hiddenAccounts[address]) {
-      this.#hiddenAccounts[address] = false
-    }
+    const [address] = newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
     this.emitter.emit("address", address)
     this.emitKeyrings()
@@ -391,9 +386,35 @@ export default class KeyringService extends BaseService<Events> {
     return newAddress
   }
 
-  hideAccount(address: HexString): void {
+  async hideAccount(address: HexString): Promise<void> {
     this.#hiddenAccounts[address] = true
+    const keyring = await this.#findKeyring(address)
+    const keyringAddresses = await keyring.getAddresses()
+    if (
+      keyringAddresses.every(
+        (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true
+      )
+    ) {
+      keyringAddresses.forEach((keyringAddress) => {
+        delete this.#hiddenAccounts[keyringAddress]
+      })
+      this.#removeKeyring(keyring.id)
+    }
     this.emitKeyrings()
+  }
+
+  #removeKeyring(keyringId: string): HDKeyring[] {
+    const filteredKeyrings = this.#keyrings.filter(
+      (keyring) => keyring.id !== keyringId
+    )
+
+    if (filteredKeyrings.length === this.#keyrings.length) {
+      throw new Error(
+        `Attempting to remove keyring that does not exist. id: (${keyringId})`
+      )
+    }
+    this.#keyrings = filteredKeyrings
+    return filteredKeyrings
   }
 
   /**
