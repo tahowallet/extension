@@ -1,6 +1,13 @@
 // This is a non-ESM JS file, so this rule can't be followed.
 /* eslint-disable @typescript-eslint/no-var-requires */
 const {
+  rules: {
+    "@typescript-eslint/naming-convention":
+      airbnbTypeScriptNamingConventionRules,
+  },
+} = require("eslint-config-airbnb-typescript/lib/shared")
+
+const {
   rules: { "no-param-reassign": airbnbNoParamReassignRules },
 } = require("eslint-config-airbnb-base/rules/best-practices")
 /* eslint-enable @typescript-eslint/no-var-requires */
@@ -29,22 +36,15 @@ module.exports = {
     // usage (where .tsx is required).
     "react/jsx-filename-extension": [0],
     "@typescript-eslint/naming-convention": [
-      "error",
-      // Allow camelCase variables (23.2), PascalCase variables (23.8), and UPPER_CASE variables (23.10)
+      ...airbnbTypeScriptNamingConventionRules,
+      // Allow underscore-only identifiers to indicate ignored positional variables.
       {
         selector: "variable",
-        leadingUnderscore: "allow",
-        format: ["camelCase", "PascalCase", "UPPER_CASE"],
-      },
-      // Allow camelCase functions (23.2), and PascalCase functions (23.8)
-      {
-        selector: "function",
-        format: ["camelCase", "PascalCase"],
-      },
-      // Airbnb recommends PascalCase for classes (23.3), and although Airbnb does not make TypeScript recommendations, we are assuming this rule would similarly apply to anything "type like", including interfaces, type aliases, and enums
-      {
-        selector: "typeLike",
-        format: ["PascalCase"],
+        format: null,
+        custom: {
+          regex: "^_+$",
+          match: true,
+        },
       },
     ],
     // TypeScript allows us to declare props that are non-optional internally
