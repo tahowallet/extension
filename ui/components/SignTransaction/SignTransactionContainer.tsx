@@ -75,7 +75,7 @@ export default function SignTransactionContainer({
                     setSlideUpOpen(true)
                   }}
                 >
-                  Connect Ledger
+                  Check Ledger
                 </SharedButton>
               ) : (
                 <SharedButton
