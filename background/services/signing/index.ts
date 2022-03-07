@@ -134,10 +134,13 @@ export default class SigningService extends BaseService<Events> {
     }
   }
 
-  removeAccount(address: HexString, signingMethod: SigningMethod): void {
+  async removeAccount(
+    address: HexString,
+    signingMethod: SigningMethod
+  ): Promise<void> {
     switch (signingMethod.type) {
       case "keyring":
-        this.keyringService.hideAccount(address)
+        await this.keyringService.hideAccount(address)
         break
       case "ledger":
         // @TODO Implement removal of ledger accounts.
