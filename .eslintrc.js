@@ -28,6 +28,25 @@ module.exports = {
     // The rule is also mostly irrelevant to this codebase due to TypeScript
     // usage (where .tsx is required).
     "react/jsx-filename-extension": [0],
+    "@typescript-eslint/naming-convention": [
+      "error",
+      // Allow camelCase variables (23.2), PascalCase variables (23.8), and UPPER_CASE variables (23.10)
+      {
+        selector: "variable",
+        leadingUnderscore: "allow",
+        format: ["camelCase", "PascalCase", "UPPER_CASE"],
+      },
+      // Allow camelCase functions (23.2), and PascalCase functions (23.8)
+      {
+        selector: "function",
+        format: ["camelCase", "PascalCase"],
+      },
+      // Airbnb recommends PascalCase for classes (23.3), and although Airbnb does not make TypeScript recommendations, we are assuming this rule would similarly apply to anything "type like", including interfaces, type aliases, and enums
+      {
+        selector: "typeLike",
+        format: ["PascalCase"],
+      },
+    ],
     // TypeScript allows us to declare props that are non-optional internally
     // but are interpreted as optional externally if they have defaultProps
     // defined; the following two adjustments disable eslint-plugin-react
