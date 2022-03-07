@@ -2,24 +2,25 @@ import React from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 
-import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 interface Props {
-  isSelected: boolean
-  account: AccountTotal
+  isSelected?: boolean
+  accountTotal: AccountTotal
+  children?: React.ReactNode
 }
 
-const AccountItemSummary: React.FC<Props> = (props: Props) => {
-  const { isSelected, account } = props
+const SharedAccountItemSummary: React.FC<Props> = (props) => {
+  const { isSelected, accountTotal, children } = props
   const {
     shortenedAddress,
     name,
     avatarURL,
     localizedTotalMainCurrencyAmount,
-  } = account
+  } = accountTotal
 
   return (
-    <>
+    <li className="standard_width">
       <div className="left">
         {isSelected ? (
           <div className="avatar_selected_outline">
@@ -53,8 +54,17 @@ const AccountItemSummary: React.FC<Props> = (props: Props) => {
           ) : null}
         </div>
       </div>
+      {children}
 
       <style jsx>{`
+        li {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 0 auto;
+          width: 336px;
+          height: 52px;
+        }
         .avatar {
           background: url("${avatarURL ?? "./images/avatar@2x.png"}") center
             no-repeat;
@@ -113,12 +123,12 @@ const AccountItemSummary: React.FC<Props> = (props: Props) => {
           padding-right: 4px;
         }
       `}</style>
-    </>
+    </li>
   )
 }
 
-export default AccountItemSummary
+export default SharedAccountItemSummary
 
-AccountItemSummary.defaultProps = {
+SharedAccountItemSummary.defaultProps = {
   isSelected: false,
 }

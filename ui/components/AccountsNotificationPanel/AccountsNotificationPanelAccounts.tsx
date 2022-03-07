@@ -10,13 +10,14 @@ import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
-import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../hooks"
+import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
+import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 
 type WalletTypeInfo = {
   title: string
@@ -230,6 +231,7 @@ export default function AccountsNotificationPanelAccounts({
                         accountTotal.address.toLocaleLowerCase()
                       const isSelected =
                         lowerCaseAddress === selectedAccountAddress
+
                       return (
                         <li key={lowerCaseAddress}>
                           <button
@@ -238,14 +240,18 @@ export default function AccountsNotificationPanelAccounts({
                               updateCurrentAccount(lowerCaseAddress)
                             }}
                           >
-                            <li className="standard_width">
-                              <SharedPanelAccountItem
-                                key={lowerCaseAddress}
+                            <SharedAccountItemSummary
+                              key={lowerCaseAddress}
+                              accountTotal={accountTotal}
+                              isSelected={isSelected}
+                            >
+                              <AccountItemOptionsMenu
                                 accountTotal={accountTotal}
+                                address={accountTotal.address}
                                 isSelected={isSelected}
                                 hideMenu={isSelected}
                               />
-                            </li>
+                            </SharedAccountItemSummary>
                           </button>
                         </li>
                       )

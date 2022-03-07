@@ -8,7 +8,7 @@ import React from "react"
 import { useDispatch } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
-import AccountItemSummary from "./AccountItemSummary"
+import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
@@ -30,7 +30,10 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
       <ul>
         <li className="account_container">
           <li className="standard_width">
-            <AccountItemSummary account={account} isSelected={isSelected} />
+            <SharedAccountItemSummary
+              accountTotal={account}
+              isSelected={isSelected}
+            />
           </li>
         </li>
       </ul>
