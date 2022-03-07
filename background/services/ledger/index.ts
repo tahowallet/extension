@@ -1,5 +1,6 @@
 import Transport from "@ledgerhq/hw-transport"
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
+import TransportWebAuthn from "@ledgerhq/hw-transport-webauthn"
 import Eth from "@ledgerhq/hw-app-eth"
 import { DeviceModelId } from "@ledgerhq/devices"
 import {
@@ -40,8 +41,7 @@ export const LedgerProductDatabase = {
   LEDGER_NANO_X: { productId: 0x4015 },
 }
 
-export const isLedgerSupported =
-  !HIDE_IMPORT_LEDGER && typeof navigator.usb === "object"
+export const isLedgerSupported = !HIDE_IMPORT_LEDGER
 
 const TestedProductId = (productId: number): boolean => {
   return Object.values(LedgerProductDatabase).some(
@@ -119,6 +119,17 @@ async function generateLedgerId(
   return [address, extensionDeviceType]
 }
 
+function getTransport(): Promise<Transport> {
+  const isChrome =
+    /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
+
+  if (isChrome) {
+    return TransportWebUSB.create()
+  }
+
+  return TransportWebAuthn.create()
+}
+
 /**
  * The LedgerService is responsible for maintaining the connection
  * with a Ledger device.
@@ -164,7 +175,11 @@ export default class LedgerService extends BaseService<Events> {
         return
       }
 
-      this.transport = await TransportWebUSB.create()
+      this.transport = await getTransport()
+
+      if (!this.transport) {
+        throw new Error("Where Lambo?")
+      }
 
       const eth = new Eth(this.transport)
 
