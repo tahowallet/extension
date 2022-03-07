@@ -13,6 +13,7 @@ export default function ClaimReferrerProvider({
 
     const iframe = document.createElement("iframe")
     iframe.src = `${WEBSITE_ORIGIN}/_referral-bridge.html`
+    iframe.style.display = `none`
 
     document.body.append(iframe)
 
