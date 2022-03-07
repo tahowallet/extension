@@ -1,13 +1,19 @@
 import {
   claimRewards,
   selectClaimSelections,
+  selectIsDelegationSigned,
+  setClaimStep,
   signTokenDelegationData,
+  selectCurrentlyClaiming,
+  selectClaimed,
 } from "@tallyho/tally-background/redux-slices/claim"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import React, {
   Dispatch,
   ReactElement,
   SetStateAction,
   useCallback,
+  useEffect,
   useMemo,
 } from "react"
 import { useHistory } from "react-router-dom"
@@ -28,47 +34,69 @@ export default function ClaimFooter({
   advanceStep,
   showSuccess,
 }: ClaimFooterProps): ReactElement {
-  const buttonText = useMemo(
-    () => ["Get started", "Continue", "Continue", "Continue", "Claim"],
-    []
-  )
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
 
   const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
+  const isDelegationSigned = useBackgroundSelector(selectIsDelegationSigned)
+  const claimed = useBackgroundSelector(selectClaimed)
+  const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  const lastStepButtonText = useMemo(() => {
+    if (selectedDelegate.address !== undefined && !isDelegationSigned) {
+      return "Sign Delegation"
+    }
+    if (isCurrentlyClaiming) {
+      return "Claiming..."
+    }
+    return "Claim"
+  }, [isCurrentlyClaiming, isDelegationSigned, selectedDelegate.address])
+
+  const buttonText = useMemo(
+    () => [
+      "Get started",
+      "Continue",
+      "Continue",
+      "Continue",
+      lastStepButtonText,
+    ],
+    [lastStepButtonText]
+  )
 
   const handleClick = useCallback(async () => {
-    if (buttonText[step - 1] === "Claim") {
-      if (selectedDelegate) {
-        dispatch(signTokenDelegationData())
-        history.push("/signData")
-        return
-      }
+    if (buttonText[step - 1] === "Sign Delegation") {
+      dispatch(signTokenDelegationData())
+      history.push("/signData")
+    } else if (buttonText[step - 1] === "Claim") {
       dispatch(claimRewards())
       history.push("/signTransaction")
-      // showSuccess()
     } else {
       advanceStep()
     }
-  }, [
-    buttonText,
-    step,
-    // showSuccess,
-    advanceStep,
-    selectedDelegate,
-    dispatch,
-    history,
-  ])
+  }, [buttonText, step, advanceStep, dispatch, history])
+
+  useEffect(() => {
+    if (claimed[currentAccount.address]) {
+      showSuccess()
+    }
+  }, [claimed, showSuccess, currentAccount])
+
+  const handleProgressStepClick = (s: number) => {
+    setStep(s)
+    dispatch(setClaimStep(s))
+  }
 
   return (
     <footer>
       <div className="steps">
         <SharedProgressIndicator
           activeStep={step}
-          onProgressStepClicked={(s) => setStep(s)}
+          onProgressStepClicked={(s) => handleProgressStepClick(s)}
           numberOfSteps={buttonText.length}
         />
       </div>
+      <div> Go Back</div>
 
       <SharedButton type="primary" size="medium" onClick={handleClick}>
         {buttonText[step - 1]}
