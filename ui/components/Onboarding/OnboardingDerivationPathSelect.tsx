@@ -8,10 +8,10 @@ import React, {
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedModal from "../Shared/SharedModal"
-import SharedSelect from "../Shared/SharedSelect"
+import SharedSelect, { Option } from "../Shared/SharedSelect"
 
 // TODO make this network specific
-const initialDerivationPaths: { value: string; label: string }[] = [
+const initialDerivationPaths: Option[] = [
   {
     value: "m/44'/60'/0'/0",
     label: "Ethereum",
@@ -26,7 +26,8 @@ const initialDerivationPaths: { value: string; label: string }[] = [
   },
   {
     value: "m/44'/60'/0'",
-    label: "Legacy (MEW/MyCrypto)",
+    label: "Ledger Legacy",
+    hideActiveValue: true,
   },
   {
     value: "m/44'/137'/0'/0",
