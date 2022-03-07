@@ -263,7 +263,6 @@ const accountSlice = createSlice({
 
 export const {
   loadAccount,
-  removeAccount,
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
@@ -303,10 +302,10 @@ export const addAccountByName = createBackgroundAsyncThunk(
   }
 )
 
-export const hideAccount = createBackgroundAsyncThunk(
-  "account/hideAccount",
+export const removeAccount = createBackgroundAsyncThunk(
+  "account/removeAccount",
   async (address: HexString, { dispatch, extra: { main } }) => {
-    dispatch(removeAccount(address))
-    main.hideAccount(address)
+    dispatch(accountSlice.actions.removeAccount(address))
+    main.removeAccount(address)
   }
 )

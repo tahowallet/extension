@@ -542,7 +542,7 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  hideAccount(address: HexString): void {
+  removeAccount(address: HexString): void {
     this.keyringService.hideAccount(address)
   }
 
