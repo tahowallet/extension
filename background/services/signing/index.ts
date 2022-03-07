@@ -134,6 +134,19 @@ export default class SigningService extends BaseService<Events> {
     }
   }
 
+  removeAccount(address: HexString, signingMethod: SigningMethod): void {
+    switch (signingMethod.type) {
+      case "keyring":
+        this.keyringService.hideAccount(address)
+        break
+      case "ledger":
+        // @TODO Implement removal of ledger accounts.
+        break
+      default:
+        throw new Error("Unknown signingMethod type.")
+    }
+  }
+
   async signTransaction(
     transactionRequest: EIP1559TransactionRequest,
     signingMethod: SigningMethod

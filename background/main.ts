@@ -542,8 +542,8 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  removeAccount(address: HexString): void {
-    this.keyringService.hideAccount(address)
+  removeAccount(address: HexString, signingMethod: SigningMethod): void {
+    this.signingService.removeAccount(address, signingMethod)
   }
 
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {

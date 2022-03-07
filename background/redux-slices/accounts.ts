@@ -306,6 +306,6 @@ export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
   async (address: HexString, { dispatch, extra: { main } }) => {
     dispatch(accountSlice.actions.removeAccount(address))
-    main.removeAccount(address)
+    main.removeAccount(address, { type: "keyring" })
   }
 )
