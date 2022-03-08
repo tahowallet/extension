@@ -229,7 +229,7 @@ export default function AccountsNotificationPanelAccounts({
                     {accountTotalsByKeyringId.map((accountTotal) => {
                       const lowerCaseAddress =
                         accountTotal.address.toLocaleLowerCase()
-                      const isSelected =
+                      const sameEVMAddress =
                         lowerCaseAddress === selectedAccountAddress
 
                       return (
@@ -258,13 +258,13 @@ export default function AccountsNotificationPanelAccounts({
                             <SharedAccountItemSummary
                               key={lowerCaseAddress}
                               accountTotal={accountTotal}
-                              isSelected={isSelected}
+                              isSelected={sameEVMAddress}
                             >
                               <AccountItemOptionsMenu
                                 accountTotal={accountTotal}
                                 address={accountTotal.address}
-                                isSelected={isSelected}
-                                hideMenu={isSelected}
+                                isSelected={sameEVMAddress}
+                                hideMenu={sameEVMAddress}
                               />
                             </SharedAccountItemSummary>
                           </button>

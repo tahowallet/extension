@@ -77,7 +77,7 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
         >
           <li className="option">
             <button
-              className="remove_address"
+              className="remove_address_button"
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
@@ -89,13 +89,15 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
             </button>
             <button
               type="button"
-              className="icon_close"
+              className="close_button"
               aria-label="Close"
               onClick={(e) => {
                 e.stopPropagation()
                 setShowOptionsMenu(false)
               }}
-            />
+            >
+              <div className="icon_close" />
+            </button>
           </li>
         </ul>
       )}
@@ -109,11 +111,18 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
             margin-left: 16px;
             border: 10px solid transparent;
           }
+          .close_button {
+            height: 62px;
+          }
+          .remove_address_button {
+            flex-grow: 2;
+            height: 62px;
+          }
           .options {
             position: absolute;
             right: 8;
             border-radius: 4px;
-            height: 48px;
+            height: 42px;
             background-color: var(--green-120);
             display: flex;
             align-items: center;
@@ -135,7 +144,7 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
             mask-size: cover;
             width: 11px;
             height: 11px;
-            padding: 2.5px;
+            margin-right: 5px;
             background-color: var(--green-20);
             z-index: 1;
           }

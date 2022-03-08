@@ -12,9 +12,10 @@ const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
       <span>Remove address</span>
       <style jsx>{`
           .icon_garbage {
-            background: url("./images/garbage@2x.png") center no-repeat;
-            background-size: cover;
-            filter: brightness(0) saturate(100%) invert(39%) sepia(31%) saturate(7451%) hue-rotate(333deg) brightness(100%) contrast(83%);
+            mask-image: url("./images/garbage@2x.png");
+            mask-size: cover;
+            color: blue;
+            background-color: var(--error);
             width: 16px;
             margin-right: 5px;
             height: 16px;
@@ -25,6 +26,7 @@ const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
             align-items: center;
             color: var(--error);
             font-size: 18px;
+            height: 100%;
             line-height 24px;
             font-weight: bold;
             width: 100%;
@@ -33,7 +35,7 @@ const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
             color: var(--error-80);
           }
           .hover:hover .icon_garbage {
-            filter: brightness(0) saturate(100%) invert(61%) sepia(6%) saturate(4092%) hue-rotate(309deg) brightness(109%) contrast(89%); 
+            background-color: var(--error-80);
           }
         `}</style>
     </div>

@@ -46,7 +46,9 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
   const onlyOneAddressVisible = keyring?.addresses.length === 1
   return (
     <div className="remove_address_option">
-      <RemoveAddressLabel />
+      <div className="header">
+        <RemoveAddressLabel />
+      </div>
       <ul>
         <li className="account_container">
           <li className="standard_width">
@@ -91,6 +93,9 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
           margin: 0 auto;
           width: 336px;
           height: 52px;
+        }
+        .header {
+          height: 24px;
         }
         .remove_address_option {
           margin-left: 20px;
