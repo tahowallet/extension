@@ -22,7 +22,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, EIP191Data, HexString, KeyringTypes } from "./types"
+import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AddressOnNetwork, NameOnNetwork } from "./accounts"
 
