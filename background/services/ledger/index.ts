@@ -50,6 +50,13 @@ const TestedProductId = (productId: number): boolean => {
 
 type MetaData = {
   ethereumVersion: string
+  ethereumBlindSigner: boolean
+}
+
+export type ConnectedDevice = {
+  id: string
+  type: LedgerType
+  metadata: MetaData
 }
 
 type Events = ServiceLifecycleEvents & {
@@ -65,7 +72,7 @@ type Events = ServiceLifecycleEvents & {
     derivationPath: string
     addresses: HexString[]
   }
-  connected: { id: string; type: LedgerType }
+  connected: ConnectedDevice
   disconnected: { id: string; type: LedgerType }
   address: { ledgerID: string; derivationPath: string; address: HexString }
   signedTransaction: SignedEVMTransaction
@@ -166,13 +173,20 @@ export default class LedgerService extends BaseService<Events> {
         throw new Error("Can't derive meaningful identification address!")
       }
 
-      const ethVersion = (await eth.getAppConfiguration()).version
+      const appData = await eth.getAppConfiguration()
 
       const normalizedID = normalizeEVMAddress(id)
 
       this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
 
-      this.emitter.emit("connected", { id: this.#currentLedgerId, type })
+      this.emitter.emit("connected", {
+        id: this.#currentLedgerId,
+        type,
+        metadata: {
+          ethereumVersion: appData.version,
+          ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+        },
+      })
 
       const knownAddresses = await this.db.getAllAccountsByLedgerId(
         this.#currentLedgerId
@@ -183,7 +197,10 @@ export default class LedgerService extends BaseService<Events> {
           id: this.#currentLedgerId,
           type,
           accountIDs: [idDerviationPath],
-          metadata: { ethereumVersion: ethVersion },
+          metadata: {
+            ethereumVersion: appData.version,
+            ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+          },
         })
       }
     })

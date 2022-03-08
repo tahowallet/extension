@@ -843,9 +843,13 @@ export default class Main extends BaseService<never> {
   async connectLedgerService(): Promise<void> {
     this.store.dispatch(resetLedgerState())
 
-    this.ledgerService.emitter.on("connected", ({ id }) => {
+    this.ledgerService.emitter.on("connected", ({ id, metadata }) => {
       this.store.dispatch(
-        setDeviceConnectionStatus({ deviceID: id, status: "available" })
+        setDeviceConnectionStatus({
+          deviceID: id,
+          status: "available",
+          isBlindSigner: metadata.ethereumBlindSigner,
+        })
       )
     })
 
