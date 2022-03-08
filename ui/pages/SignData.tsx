@@ -1,7 +1,6 @@
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   getAccountTotal,
-  selectAddressSigningMethods,
   selectCurrentAccountSigningMethod,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -19,6 +18,7 @@ import {
   useBackgroundSelector,
 } from "../hooks"
 import capitalize from "../utils/capitalize"
+import SignTypedDataInfo from "../components/SignData/SignTypedDataInfo"
 
 export enum SignDataType {
   TypedData = "sign-typed-data",
@@ -65,8 +65,7 @@ export default function SignData({
     return <></>
   }
 
-  const { domain, message, primaryType } = typedDataRequest.typedData
-
+  const { message, primaryType } = typedDataRequest.typedData
   const keys = Object.keys(message)
 
   const handleConfirm = () => {
@@ -101,14 +100,7 @@ export default function SignData({
             <div className="divider" />
             <div className="divider" />
             {keys.length > 2 ? (
-              <div className="messages">
-                {keys.map((key) => (
-                  <div key={key} className="message">
-                    <div className="key">{capitalize(key)}</div>
-                    <div className="value light">{`${message[key]}`}</div>
-                  </div>
-                ))}
-              </div>
+              <SignTypedDataInfo typedDataRequest={typedDataRequest} />
             ) : (
               <>
                 {keys.map((key) => (
@@ -197,12 +189,6 @@ export default function SignData({
           }
           .header {
             padding: 16px 0;
-          }
-          .messages {
-            display: flex;
-            flex-flow: column;
-            width: 100%;
-            padding-top: 16px;
           }
           .message {
             display: flex;

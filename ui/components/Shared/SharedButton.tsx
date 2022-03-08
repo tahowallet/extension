@@ -24,6 +24,7 @@ interface Props {
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick: boolean
   isFormSubmit: boolean
+  customHeight?: string
 }
 
 export default function SharedButton(props: Props): ReactElement {
@@ -40,6 +41,7 @@ export default function SharedButton(props: Props): ReactElement {
     linkTo,
     showLoadingOnClick,
     isFormSubmit,
+    customHeight,
   } = props
 
   const [navigateTo, setNavigateTo] =
@@ -71,6 +73,7 @@ export default function SharedButton(props: Props): ReactElement {
   return (
     <button
       id={id}
+      style={customHeight ? { height: customHeight } : {}}
       type={isFormSubmit ? "submit" : "button"}
       className={classNames(
         { large: size === "large" },
