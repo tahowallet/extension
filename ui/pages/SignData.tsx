@@ -1,4 +1,3 @@
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   getAccountTotal,
   selectCurrentAccountSigningMethod,
@@ -12,9 +11,9 @@ import React, { ReactElement, useState } from "react"
 import { useHistory } from "react-router-dom"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import {
-  useAreKeyringsUnlocked,
   useBackgroundDispatch,
   useBackgroundSelector,
+  useIsSigningMethodLocked,
 } from "../hooks"
 import SignDataDetailPanel from "./SignDataDetailPanel"
 
@@ -35,16 +34,14 @@ export default function SignData(): ReactElement {
     return undefined
   })
 
-  const redirect = signerAccountTotal?.accountType === AccountType.Imported
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(redirect)
-
   const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
+  const isLocked = useIsSigningMethodLocked(signingMethod)
+  if (isLocked) return <></>
+
   if (
-    (signerAccountTotal?.accountType === AccountType.Imported &&
-      !areKeyringsUnlocked) ||
     typeof typedDataRequest === "undefined" ||
     typeof signerAccountTotal === "undefined"
   ) {

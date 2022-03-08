@@ -11,9 +11,9 @@ import {
 } from "@tallyho/tally-background/redux-slices/signing"
 import { useHistory } from "react-router-dom"
 import {
-  useAreKeyringsUnlocked,
   useBackgroundDispatch,
   useBackgroundSelector,
+  useIsSigningMethodLocked,
 } from "../hooks"
 import PersonalSignDetailPanel from "./PersonalSignDetailPanel"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
@@ -30,8 +30,6 @@ export default function PersonalSignData(): ReactElement {
 
   const history = useHistory()
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
-
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof signingDataRequest !== "undefined") {
       return getAccountTotal(state, signingDataRequest.account)
@@ -43,8 +41,10 @@ export default function PersonalSignData(): ReactElement {
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
+  const isLocked = useIsSigningMethodLocked(signingMethod)
+  if (isLocked) return <></>
+
   if (
-    !areKeyringsUnlocked ||
     typeof signingDataRequest === "undefined" ||
     typeof signerAccountTotal === "undefined"
   ) {
