@@ -18,7 +18,7 @@ interface AccountItemRemovalConfirmProps {
   close: () => void
 }
 
-const RegularWarning: React.FC = () => (
+const RegularWarning = (
   <span>
     Removing this address doesn&apos;t delete your recovery phrase or any
     private keys. Instead it just hides it from the extension and you won&apos;t
@@ -26,7 +26,7 @@ const RegularWarning: React.FC = () => (
   </span>
 )
 
-const LoudWarning: React.FC = () => (
+const LoudWarning = (
   <span>
     <h3>
       Removing this address will remove its associated account from the UI.
@@ -60,7 +60,7 @@ export default function AccountItemRemovalConfirm({
         </li>
       </ul>
       <div className="remove_address_details">
-        {onlyOneAddressVisible ? <LoudWarning /> : <RegularWarning />}
+        {onlyOneAddressVisible ? LoudWarning : RegularWarning}
       </div>
       <div className="button_container">
         <SharedButton
