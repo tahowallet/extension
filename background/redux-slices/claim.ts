@@ -283,7 +283,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
       }
       const domain = {
         name: "Tally Token",
-        chainId: 31337,
+        chainId: 1,
       }
       const message = {
         delegatee,

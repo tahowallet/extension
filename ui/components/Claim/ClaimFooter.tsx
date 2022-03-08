@@ -82,7 +82,6 @@ export default function ClaimFooter({
 
   if (claimed[currentAccount.address]) {
     showSuccess()
-    return <Redirect to="/" />
   }
 
   return (

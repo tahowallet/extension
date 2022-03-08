@@ -6,7 +6,7 @@ import {
   convertFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { advanceClaimStep } from "@tallyho/tally-background/redux-slices/claim"
-import { Redirect } from "react-router-dom"
+import { Redirect, useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
 import ClaimReferral from "../../components/Claim/ClaimReferral"
@@ -31,6 +31,7 @@ export default function Eligible(): ReactElement {
       }
     }
   )
+  const history = useHistory()
   const [step, setStep] = useState(claimStep)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
@@ -75,6 +76,11 @@ export default function Eligible(): ReactElement {
     convertFixedPointNumber(fixedPointClaimEarningsWithBonus, 0).amount
   )
 
+  const handleSuccessModalClose = () => {
+    setShowSuccessStep(false)
+    history.push("/")
+  }
+
   return (
     <div className="wrap">
       {infoModalVisible ? (
@@ -83,9 +89,7 @@ export default function Eligible(): ReactElement {
 
       <SharedSlideUpMenu
         isOpen={showSuccessStep}
-        close={() => {
-          setShowSuccessStep(false)
-        }}
+        close={handleSuccessModalClose}
         size="large"
       >
         <ClaimSuccessModalContent />

@@ -3,7 +3,9 @@ import { Redirect } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
+  selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectClaimed } from "@tallyho/tally-background/redux-slices/claim"
 import { useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -21,10 +23,14 @@ export default function Wallet(): ReactElement {
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
 
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
   const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
     assetAmounts: [],
     totalMainCurrencyValue: undefined,
   }
+
+  const claimed = useBackgroundSelector(selectClaimed)
 
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivitiesWithTimestamps
@@ -48,7 +54,11 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
-        <OnboardingOpenClaimFlowBanner />
+        {!claimed[currentAccount.address] ? (
+          <OnboardingOpenClaimFlowBanner />
+        ) : (
+          <></>
+        )}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
