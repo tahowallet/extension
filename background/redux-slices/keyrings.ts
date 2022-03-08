@@ -7,7 +7,7 @@ import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]
-  keyringMetadata: { [keyringId: string]: { source: "import" | "newSeed" } }
+  keyringMetadata: { [keyringId: string]: { source: "import" | "internal" } }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -36,7 +36,7 @@ export const emitter = new Emittery<Events>()
 
 interface ImportKeyring {
   mnemonic: string
-  source: "newSeed" | "import"
+  source: "internal" | "import"
   path?: string
 }
 
