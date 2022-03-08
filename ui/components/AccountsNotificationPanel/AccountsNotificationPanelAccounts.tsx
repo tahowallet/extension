@@ -233,7 +233,22 @@ export default function AccountsNotificationPanelAccounts({
                         lowerCaseAddress === selectedAccountAddress
 
                       return (
-                        <li key={lowerCaseAddress}>
+                        <li
+                          key={lowerCaseAddress}
+                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                          // from affecting the hover state of this li.
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => {
@@ -288,9 +303,6 @@ export default function AccountsNotificationPanelAccounts({
             width: 100%;
             box-sizing: border-box;
             padding: 8px 0px 8px 24px;
-          }
-          li:hover {
-            background-color: var(--hunter-green);
           }
           footer {
             width: 100%;

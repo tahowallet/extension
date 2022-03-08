@@ -69,7 +69,12 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
       />
 
       {showOptionsMenu && (
-        <ul ref={optionsMenuRef} className="options">
+        <ul
+          ref={optionsMenuRef}
+          className="options"
+          onMouseOver={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+        >
           <li className="option">
             <button
               className="remove_address"
