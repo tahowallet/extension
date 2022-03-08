@@ -196,7 +196,7 @@ const getAccountType = (
   address: string,
   signingMethod: SigningMethod,
   addressSources: {
-    [address: string]: "import" | "newSeed"
+    [address: string]: "import" | "internal"
   }
 ): AccountType => {
   if (signingMethod == null) {
@@ -208,7 +208,7 @@ const getAccountType = (
   if (addressSources[address] === "import") {
     return AccountType.Imported
   }
-  return AccountType.NewSeed
+  return AccountType.Internal
 }
 
 export const selectAccountTotalsByCategory = createSelector(

@@ -46,6 +46,12 @@ body {
   background-color: var(--hunter-green);
 }
 
+body.popup {
+  width: 384px;
+  height: 594px;
+  scrollbar-width: none;
+}
+
 a {
   text-decoration: none;
 }
@@ -132,4 +138,3 @@ label {
   opacity: 60%;
   background-color: var(--green-120);
 }
-
