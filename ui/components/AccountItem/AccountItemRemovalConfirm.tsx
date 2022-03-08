@@ -4,7 +4,7 @@ import {
   selectKeyringByAddress,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
-import React from "react"
+import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
@@ -40,7 +40,7 @@ export default function AccountItemRemovalConfirm({
   address,
   isSelected,
   close,
-}: AccountItemRemovalConfirmProps) {
+}: AccountItemRemovalConfirmProps): ReactElement {
   const dispatch = useDispatch()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
   const onlyOneAddressVisible = keyring?.addresses.length === 1

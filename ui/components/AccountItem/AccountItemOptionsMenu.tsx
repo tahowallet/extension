@@ -1,24 +1,22 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
-import React, { useRef, useState } from "react"
+import React, { ReactElement, useRef, useState } from "react"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 
 type AccountItemOptionsMenuProps = {
-  hideMenu: boolean
   accountTotal: AccountTotal
   address: HexString
   isSelected: boolean
 }
 
 export default function AccountItemOptionsMenu({
-  hideMenu,
   accountTotal,
   address,
   isSelected,
-}: AccountItemOptionsMenuProps) {
+}: AccountItemOptionsMenuProps): ReactElement {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
@@ -26,9 +24,7 @@ export default function AccountItemOptionsMenu({
   useOnClickOutside(optionsMenuRef, () => {
     setShowOptionsMenu(false)
   })
-  if (hideMenu) {
-    return <></>
-  }
+
   return (
     <>
       <SharedSlideUpMenu
