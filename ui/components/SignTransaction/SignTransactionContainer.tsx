@@ -6,6 +6,7 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
+import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLedgersConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
 import { SigningLedgerState } from "./useSigningLedgerState"
@@ -109,6 +110,9 @@ export default function SignTransactionContainer({
           <SignTransactionWrongLedgerConnected
             signerAccountTotal={signerAccountTotal}
           />
+        )}
+        {signingLedgerState === "multiple-ledgers-connected" && (
+          <SignTransactionMultipleLedgersConnected />
         )}
         {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>
