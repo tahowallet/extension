@@ -13,12 +13,12 @@ type AccountItemOptionsMenuProps = {
   isSelected: boolean
 }
 
-const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
+export default function AccountItemOptionsMenu({
   hideMenu,
   accountTotal,
   address,
   isSelected,
-}) => {
+}: AccountItemOptionsMenuProps) {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
@@ -153,5 +153,3 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
     </>
   )
 }
-
-export default AccountItemOptionsMenu

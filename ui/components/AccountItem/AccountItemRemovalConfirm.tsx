@@ -35,12 +35,12 @@ const LoudWarning: React.FC = () => (
   </span>
 )
 
-const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
+export default function AccountItemRemovalConfirm({
   account,
   address,
   isSelected,
   close,
-}) => {
+}: AccountItemRemovalConfirmProps) {
   const dispatch = useDispatch()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
   const onlyOneAddressVisible = keyring?.addresses.length === 1
@@ -126,5 +126,3 @@ const AccountItemRemovalConfirm: React.FC<AccountItemRemovalConfirmProps> = ({
     </div>
   )
 }
-
-export default AccountItemRemovalConfirm

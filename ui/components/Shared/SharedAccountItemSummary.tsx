@@ -1,4 +1,4 @@
-import React from "react"
+import React, { ReactElement } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 
@@ -10,7 +10,7 @@ interface Props {
   children?: React.ReactNode
 }
 
-const SharedAccountItemSummary: React.FC<Props> = (props) => {
+export default function SharedAccountItemSummary(props: Props): ReactElement {
   const { isSelected, accountTotal, children } = props
   const {
     shortenedAddress,
@@ -126,8 +126,6 @@ const SharedAccountItemSummary: React.FC<Props> = (props) => {
     </li>
   )
 }
-
-export default SharedAccountItemSummary
 
 SharedAccountItemSummary.defaultProps = {
   isSelected: false,

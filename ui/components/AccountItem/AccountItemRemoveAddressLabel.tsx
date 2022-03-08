@@ -1,11 +1,13 @@
 import classNames from "classnames"
-import React from "react"
+import React, { ReactElement } from "react"
 
 interface RemoveAddressProps {
   hoverable?: boolean
 }
 
-const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
+export default function RemoveAddressLabel({
+  hoverable,
+}: RemoveAddressProps): ReactElement {
   return (
     <div className={classNames("remove_address", { hover: hoverable })}>
       <div className="icon_garbage" />
@@ -44,5 +46,3 @@ const RemoveAddressLabel: React.FC<RemoveAddressProps> = ({ hoverable }) => {
 RemoveAddressLabel.defaultProps = {
   hoverable: false,
 }
-
-export default RemoveAddressLabel
