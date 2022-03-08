@@ -35,7 +35,7 @@ export type Keyring = {
 }
 
 export interface KeyringMetadata {
-  source: "import" | "newSeed"
+  source: "import" | "internal"
 }
 
 interface SerializedKeyringData {
@@ -311,7 +311,7 @@ export default class KeyringService extends BaseService<Events> {
    */
   async importKeyring(
     mnemonic: string,
-    source: "import" | "newSeed",
+    source: "import" | "internal",
     path?: string
   ): Promise<string> {
     this.requireUnlocked()

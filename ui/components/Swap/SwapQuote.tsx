@@ -63,7 +63,7 @@ export default function SwapQuote({
           gasPrice,
       })
     )
-    history.push("/signTransaction")
+    history.push("/sign-transaction")
   }, [
     finalQuote,
     dispatch,
