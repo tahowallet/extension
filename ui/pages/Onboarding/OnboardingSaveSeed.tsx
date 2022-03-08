@@ -60,7 +60,7 @@ export default function OnboardingSaveSeed(): ReactElement {
           size="medium"
           icon="arrow_right"
           iconSize="large"
-          linkTo="/onboarding/verifySeed"
+          linkTo="/onboarding/verify-seed"
         >
           I wrote it down
         </SharedButton>

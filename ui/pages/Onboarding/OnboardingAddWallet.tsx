@@ -26,7 +26,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
           <SharedButton
             type="tertiary"
             size="medium"
-            linkTo="/onboarding/viewOnlyWallet"
+            linkTo="/onboarding/view-only-wallet"
           >
             Preview an address
           </SharedButton>
@@ -39,7 +39,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
             <SharedButton
               type="tertiary"
               size="medium"
-              linkTo="/onboarding/importMetamask"
+              linkTo="/onboarding/import-metamask"
             >
               Import recovery phrase
             </SharedButton>
@@ -70,7 +70,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
               <SharedButton
                 type="secondary"
                 size="medium"
-                linkTo="/onboarding/onboardingInterstitialCreatePhrase"
+                linkTo="/onboarding/onboarding-interstitial-create-phrase"
               >
                 Create new wallet
               </SharedButton>

@@ -261,7 +261,7 @@ export default function AccountsNotificationPanelAccounts({
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-          linkTo="/onboarding/addWallet"
+          linkTo="/onboarding/add-wallet"
         >
           Add Wallet
         </SharedButton>
