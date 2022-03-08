@@ -106,7 +106,8 @@ const AccountItemOptionsMenu: React.FC<AccountItemOptionsMenuProps> = ({
           }
           .options {
             position: absolute;
-            right: 0;
+            right: 8;
+            border-radius: 4px;
             height: 48px;
             background-color: var(--green-120);
             display: flex;
