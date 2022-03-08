@@ -10,6 +10,10 @@ import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
+import {
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -227,14 +231,18 @@ export default function AccountsNotificationPanelAccounts({
                   />
                   <ul>
                     {accountTotalsByKeyringId.map((accountTotal) => {
-                      const lowerCaseAddress =
-                        accountTotal.address.toLocaleLowerCase()
-                      const sameEVMAddress =
-                        lowerCaseAddress === selectedAccountAddress
+                      const normalizedAddress = normalizeEVMAddress(
+                        accountTotal.address
+                      )
+
+                      const isSelected = sameEVMAddress(
+                        normalizedAddress,
+                        selectedAccountAddress
+                      )
 
                       return (
                         <li
-                          key={lowerCaseAddress}
+                          key={normalizedAddress}
                           // We use these event handlers in leiu of :hover so that we can prevent child hovering
                           // from affecting the hover state of this li.
                           onMouseOver={(e) => {
@@ -252,19 +260,19 @@ export default function AccountsNotificationPanelAccounts({
                           <button
                             type="button"
                             onClick={() => {
-                              updateCurrentAccount(lowerCaseAddress)
+                              updateCurrentAccount(normalizedAddress)
                             }}
                           >
                             <SharedAccountItemSummary
-                              key={lowerCaseAddress}
+                              key={normalizedAddress}
                               accountTotal={accountTotal}
-                              isSelected={sameEVMAddress}
+                              isSelected={isSelected}
                             >
                               <AccountItemOptionsMenu
                                 accountTotal={accountTotal}
                                 address={accountTotal.address}
-                                isSelected={sameEVMAddress}
-                                hideMenu={sameEVMAddress}
+                                isSelected={isSelected}
+                                hideMenu={isSelected}
                               />
                             </SharedAccountItemSummary>
                           </button>
