@@ -41,6 +41,7 @@ export interface KeyringMetadata {
 interface SerializedKeyringData {
   keyrings: SerializedHDKeyring[]
   metadata: { [keyringId: string]: KeyringMetadata }
+  hiddenAccounts: { [address: HexString]: boolean }
 }
 
 interface Events extends ServiceLifecycleEvents {
@@ -187,11 +188,13 @@ export default class KeyringService extends BaseService<Events> {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
 
-        Object.entries(plainTextVault.metadata).forEach(
-          ([keyringId, metadata]) => {
-            this.#keyringMetadata[keyringId] = metadata
-          }
-        )
+        this.#keyringMetadata = {
+          ...plainTextVault.metadata,
+        }
+
+        this.#hiddenAccounts = {
+          ...plainTextVault.hiddenAccounts,
+        }
 
         this.emitKeyrings()
       }
@@ -591,11 +594,13 @@ export default class KeyringService extends BaseService<Events> {
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
       const keyringMetadata = this.#keyringMetadata
+      const hiddenAccounts = this.#hiddenAccounts
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
       const vault = await encryptVault(
         {
           keyrings: serializedKeyrings,
           metadata: keyringMetadata,
+          hiddenAccounts,
         },
         this.#cachedKey
       )
