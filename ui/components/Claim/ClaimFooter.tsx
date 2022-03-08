@@ -13,9 +13,10 @@ import React, {
   ReactElement,
   SetStateAction,
   useCallback,
+  useEffect,
   useMemo,
 } from "react"
-import { Redirect, useHistory } from "react-router-dom"
+import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
@@ -75,13 +76,15 @@ export default function ClaimFooter({
     }
   }, [buttonText, step, advanceStep, dispatch, history])
 
+  useEffect(() => {
+    if (claimed[currentAccount.address]) {
+      showSuccess()
+    }
+  }, [claimed, showSuccess, currentAccount])
+
   const handleProgressStepClick = (s: number) => {
     setStep(s)
     dispatch(setClaimStep(s))
-  }
-
-  if (claimed[currentAccount.address]) {
-    showSuccess()
   }
 
   return (
