@@ -6,46 +6,35 @@ import SharedProgressIndicator from "../../components/Shared/SharedProgressIndic
 const steps = [
   {
     image: {
-      width: 273,
-      height: 245.06,
-      fileName: "illustration_onboarding_welcome",
-      extraStyles: `margin-top: 25px;`,
+      width: 267.15,
+      height: 153.33,
+      fileName: "onboarding/graphic_different",
+      extraStyles: `margin-top: 78px;`,
     },
-    title: "Welcome to Tally!",
-    body: "The community owned & operated wallet.",
+    title: "Tally is different",
+    body: "Tally is the first community-owned wallet for Web3 and DeFi. If you own TALLY tokens, you are an owner.",
     buttonCopy: "Continue",
   },
   {
     image: {
-      width: 267,
-      height: 251,
-      fileName: "illustration_onboarding_dao",
-      extraStyles: ``,
+      width: 359.65,
+      height: 343.17,
+      fileName: "onboarding/graphic_tally_token",
+      extraStyles: `margin-top: -12px;`,
     },
-    title: "Tally is a DAO",
-    body: `That means Tally is owned by our users. And all profits go straight to the community.`,
+    title: "The TALLY token",
+    body: `You can earn TALLY in many ways! Check out  the Earn and Swap tabs.`,
     buttonCopy: "Continue",
   },
   {
     image: {
-      width: 244.22,
-      height: 247.24,
-      fileName: "illustration_onboarding_community_edition",
-      extraStyles: `margin-top: 21px;`,
+      width: 330,
+      height: 277,
+      fileName: "onboarding/graphic_airdrop",
+      extraStyles: `margin-top: 0px; margin-right: 0px;`,
     },
-    title: "Test Responsibly",
-    body: `Tally is a work in progress! This Community Edition includes limited features and may still have bugs.`,
-    buttonCopy: "Continue",
-  },
-  {
-    image: {
-      width: 267,
-      height: 236.6,
-      fileName: "illustration_onboarding_default",
-      extraStyles: `margin-top: 21px;`,
-    },
-    title: "Tally set as default",
-    body: `Tally will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
+    title: "TALLY token drop",
+    body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
     buttonCopy: "Get started",
   },
 ]
@@ -67,7 +56,7 @@ export default function OnboardingInfoIntro(): ReactElement {
       <div className="bottom_part">
         <div className="bottom_content">
           <SharedProgressIndicator
-            numberOfSteps={4}
+            numberOfSteps={steps.length}
             activeStep={activeStep}
             onProgressStepClicked={(step) => {
               setActiveStep(step)

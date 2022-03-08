@@ -24,10 +24,15 @@ export function truncateDecimalAmount(
 }
 
 export function sameEVMAddress(
-  address1: string | Buffer | undefined,
-  address2: string | Buffer | undefined
+  address1: string | Buffer | undefined | null,
+  address2: string | Buffer | undefined | null
 ): boolean {
-  if (typeof address1 === "undefined" || typeof address2 === "undefined") {
+  if (
+    typeof address1 === "undefined" ||
+    typeof address2 === "undefined" ||
+    address1 === null ||
+    address2 === null
+  ) {
     return false
   }
   return normalizeHexAddress(address1) === normalizeHexAddress(address2)
@@ -125,4 +130,15 @@ export const numberTo32BytesHex = (value: string, decimals: number): string => {
 
 export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
   return ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
+}
+
+/**
+ * Converts a string of hexidecimals bytes to ascii text
+ */
+export const hexToAscii = (hex_: string) => {
+  const hex = hex_.toString() // force conversion
+  let str = ""
+  for (let i = 0; i < hex.length; i += 2)
+    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16))
+  return str.replace("\x00", "")
 }

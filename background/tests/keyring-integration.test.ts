@@ -10,6 +10,7 @@ import KeyringService, {
 } from "../services/keyring"
 import { KeyringTypes } from "../types"
 import { EIP1559TransactionRequest } from "../networks"
+import { ETHEREUM } from "../constants"
 
 const originalCrypto = global.crypto
 beforeEach(() => {
@@ -94,7 +95,7 @@ describe("KeyringService when uninitialized", () => {
   describe("and locked", () => {
     it("won't import or create accounts", async () => {
       await expect(
-        service.importKeyring(validMnemonics.metamask[0])
+        service.importKeyring(validMnemonics.metamask[0], "import")
       ).rejects.toThrow("KeyringService must be unlocked.")
 
       await Promise.all(
@@ -108,7 +109,10 @@ describe("KeyringService when uninitialized", () => {
 
     it("won't sign transactions", async () => {
       await expect(
-        service.signTransaction("0x0", validTransactionRequests.simple)
+        service.signTransaction(
+          { address: "0x0", network: ETHEREUM },
+          validTransactionRequests.simple
+        )
       ).rejects.toThrow("KeyringService must be unlocked.")
     })
   })
@@ -121,7 +125,7 @@ describe("KeyringService when uninitialized", () => {
     it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
       async (mnemonic) => {
-        return expect(service.importKeyring(mnemonic)).resolves
+        return expect(service.importKeyring(mnemonic, "import")).resolves
       }
     )
 
@@ -182,7 +186,7 @@ describe("KeyringService when initialized", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "))
+    await service.importKeyring(mnemonic.join(" "), "import")
   })
 
   it("will return keyring IDs and addresses", async () => {
@@ -196,7 +200,7 @@ describe("KeyringService when initialized", () => {
     })
   })
 
-  it.only("will derive a new address", async () => {
+  it("will derive a new address", async () => {
     const [
       {
         id,
@@ -227,7 +231,10 @@ describe("KeyringService when initialized", () => {
     }
 
     await expect(
-      service.signTransaction(address, transactionWithFrom)
+      service.signTransaction(
+        { address, network: ETHEREUM },
+        transactionWithFrom
+      )
     ).resolves.toMatchObject({
       from: expect.stringMatching(new RegExp(address, "i")), // case insensitive match
       r: expect.anything(),
@@ -252,7 +259,10 @@ describe("KeyringService when initialized", () => {
     expect(goodUnlockResult).toEqual(true)
 
     await expect(
-      service.signTransaction(address, transactionWithFrom)
+      service.signTransaction(
+        { address, network: ETHEREUM },
+        transactionWithFrom
+      )
     ).resolves.toBeDefined()
   })
 })
@@ -308,7 +318,7 @@ describe("KeyringService when saving keyrings", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "))
+    await service.importKeyring(mnemonic.join(" "), "import")
 
     expect(localStorageCalls.shift()).toMatchObject({
       tallyVaults: expect.objectContaining({
@@ -334,7 +344,7 @@ describe("KeyringService when saving keyrings", () => {
     })
   })
 
-  it.only("loads encrypted data at instantiation time", async () => {
+  it("loads encrypted data at instantiation time", async () => {
     localStorage = {
       tallyVaults: {
         version: 1,
@@ -342,10 +352,10 @@ describe("KeyringService when saving keyrings", () => {
           {
             timeSaved: 1635201991098,
             vault: {
-              salt: "XeQ9825jVp7rCq6f2vRySunT/G7Q4rbCcrWxKc/o6KiRCx27eyrQYHciGz4YB3wYCh6Po1liuffN7GIYqkxWJw==",
-              initializationVector: "7MJ1ur79CzKwgVAXXcJmQA==",
+              salt: "cf1U5D4p8XdhVHAr3SaLE5pz8IdsOkWu9+bWgwlPySQRZThr5dsfD1QNmFroGnGn2Fh102ovm41vfFFb5Y/80A==",
+              initializationVector: "M4PB1noDXQFoF8Lp4BwevQ==",
               cipherText:
-                "0bi2msjv2+3zVt2Tjd40i7BNfAuMgbomzCOuce2/l5oiyxsTcqOb871xdDYIvh2g7uHnRXC+BSbopA4xoXpRn/uh4Tjcu8R0dZxsCxCBRAiXVu1RLFojAdhsUwuUZuHn7nhGmu9mrLNKrVh8lFmshYfjtFMgiUFjAIkzEwWvVDvVT0PWVZghg+KXrUd+i3ymVRHYnvz2nZ91fYa3TBIP27ohTxSrNGyccz63Njqk7fCVNACSEXMC7Uqment1h/YpIYG8IGDTfo7/7kz8dSvBQlPlTSgOnC4O9Bey0UEj0LAZXur/i6EyJUxQWlWIXN6is5tEDfWFunrjRmbeqpQBMrPhlhUbGNfbvid5bTGHsgO2Kz9d3w==",
+                "krZ97jlfucMCq7u3TEy0skshtAC9z3cK8V0bZiQz6Nuk75RO//FBmNW3dQ9CzaMxpoQ4MUchA4e2xz9YjpCFmOWZqUJ9ESjGM348KIBW+VRB8YKTIWlvqB/nGsfd1UTUqtyElrUKvryO5o3AzNAVG8onRNR7ngXXB7K8PXXrtQGikoHmhrv+lu+WzVVE+tM/jvi71rQkSEveOX8u1MA5A/Gyow/7tOWCL6WY5a2tFdYffIwAPgtI1R+XVw5HmreBNiD4t46U7qALihcHVqcX9D/yJx8dP9XrKylyiF5u89qm0tKomZYJhpzE6yWPOjMHFyOwvTbJxxbhiXAKIdF2BsA6UCc/L1gbk8aVhyjVnOjyCNPjWcKPPDRD+Cfy9I6L+lTvWghHKrv2WykPtTne/XjxkgYCt2wkqgjm9Tl3dpFtigz8pBmkg+KkuEna",
             },
           },
         ],
@@ -355,8 +365,8 @@ describe("KeyringService when saving keyrings", () => {
     const storedKeyrings: Keyring[] = []
 
     const service = await startKeyringService()
-    service.emitter.on("keyrings", (keyrings) => {
-      storedKeyrings.push(...keyrings)
+    service.emitter.on("keyrings", (keyringEvent) => {
+      storedKeyrings.push(...keyringEvent.keyrings)
       return Promise.resolve()
     })
     await service.unlock(testPassword)
@@ -370,8 +380,8 @@ describe("KeyringService when saving keyrings", () => {
 
     expect(storedKeyrings[0]).toMatchObject({
       type: KeyringTypes.mnemonicBIP39S256,
-      id: "0x0f38729e",
-      addresses: ["0xf34d8078c80d4be6ff928ff794ab65aa535ead4c"],
+      id: "0x77555a3b",
+      addresses: ["0x3c10745391dfae50df6dc0ee17281f34bbda2fbf"],
     })
   })
 })
@@ -409,7 +419,7 @@ describe("Keyring service when autolocking", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "))
+    await service.importKeyring(mnemonic.join(" "), "import")
   })
 
   it("will autolock after the keyring idle time but not sooner", async () => {
@@ -441,13 +451,16 @@ describe("Keyring service when autolocking", () => {
           from: address,
         }
 
-        await service.signTransaction(address, transactionWithFrom)
+        await service.signTransaction(
+          { address, network: ETHEREUM },
+          transactionWithFrom
+        )
       },
     },
     {
       action: "importing a keyring",
       call: async () => {
-        await service.importKeyring(validMnemonics.metamask[0])
+        await service.importKeyring(validMnemonics.metamask[0], "import")
       },
     },
     {

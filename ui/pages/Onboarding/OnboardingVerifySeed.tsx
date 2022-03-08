@@ -19,7 +19,9 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
           size="medium"
           type="primary"
           onClick={async () => {
-            await dispatch(importKeyring({ mnemonic: mnemonic.join(" ") }))
+            await dispatch(
+              importKeyring({ mnemonic: mnemonic.join(" "), source: "newSeed" })
+            )
             history.push("/")
           }}
         >
@@ -148,7 +150,7 @@ export default function OnboardingVerifySeed(): ReactElement {
               </div>
               <div className="column dashes">- - - -</div>
               <div className="column words">
-                {isSelected.slice(posOne, posTwo).map((item, index) => (
+                {isSelected.slice(posOne, posTwo).map((item) => (
                   <div className="button_spacing" key={item}>
                     <SharedButton
                       type="deemphasizedWhite"

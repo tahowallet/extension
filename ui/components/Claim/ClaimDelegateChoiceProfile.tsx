@@ -8,7 +8,7 @@ export default function ClaimDelegateChoiceProfile(props: {
   const { name, delegate } = props
   return (
     <div className="wrap">
-      <div className="label">Refered by</div>
+      <div className="label">Referred by</div>
       <div className="ref_block">
         <div className="icon" />
         {name}

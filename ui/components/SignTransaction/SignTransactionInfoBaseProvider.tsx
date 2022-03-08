@@ -1,5 +1,5 @@
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
-import { TransactionDescription } from "ethers/lib/utils"
+import { TransactionAnnotation } from "@tallyho/tally-background/services/enrichment"
 import { ReactElement, ReactNode } from "react"
 
 export interface SignTransactionInfo {
@@ -9,9 +9,13 @@ export interface SignTransactionInfo {
   confirmButtonLabel: ReactNode
 }
 
-export interface SignTransactionInfoProviderProps {
+export interface SignTransactionInfoProviderProps<
+  T extends TransactionAnnotation | undefined =
+    | TransactionAnnotation
+    | undefined
+> {
   transactionDetails: EIP1559TransactionRequest
-  parsedTx: TransactionDescription | undefined
+  annotation: T
   inner: (info: SignTransactionInfo) => ReactElement
 }
 

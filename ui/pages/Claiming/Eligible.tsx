@@ -32,8 +32,7 @@ export default function Eligible(): ReactElement {
     return {
       delegates: state.claim.delegates,
       DAOs: state.claim.DAOs,
-      claimAmountHex:
-        state.claim?.eligibility && state.claim?.eligibility.earnings,
+      claimAmountHex: state.claim?.eligibility?.earnings,
     }
   })
 

@@ -44,4 +44,33 @@ export const BITCOIN: Network = {
   family: "BTC",
 }
 
-export const NETWORKS = [ETHEREUM, BITCOIN]
+export const EVM_MAIN_NETWORKS = [ETHEREUM]
+
+export const EVM_TEST_NETWORKS = [ROPSTEN, RINKEBY, GOERLI, KOVAN]
+
+const EVM_NETWORKS: EVMNetwork[] = EVM_MAIN_NETWORKS.concat(EVM_TEST_NETWORKS)
+
+// A lot of code currently relies on chain id uniqueness per EVM network;
+// explode if that is not maintained.
+if (
+  new Set(EVM_NETWORKS.map(({ chainID }) => chainID)).size < EVM_NETWORKS.length
+) {
+  throw new Error("Duplicate chain ID in EVM networks.")
+}
+
+export const EVM_NETWORKS_BY_CHAIN_ID: { [chainID: string]: EVMNetwork } =
+  EVM_NETWORKS.reduce(
+    (agg, network) => ({
+      ...agg,
+      [network.chainID]: network,
+    }),
+    {}
+  )
+
+export const NETWORKS = [BITCOIN].concat(EVM_NETWORKS)
+
+// A lot of code currently relies on network name uniqueness; explode if that
+// is not maintained.
+if (new Set(NETWORKS.map(({ name }) => name)).size < NETWORKS.length) {
+  throw new Error("Duplicate chain name in networks.")
+}

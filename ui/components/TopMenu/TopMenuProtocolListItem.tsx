@@ -35,7 +35,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
           }
           .status {
             height: 17px;
-            color: #22c480;
+            color: var(--success);
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -86,7 +86,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             line-height: 16px;
           }
           .select .icon_wrap {
-            border: 2px solid #22c480;
+            border: 2px solid var(--success);
           }
           .select .left {
             margin-left: 0px;
