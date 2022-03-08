@@ -24,19 +24,20 @@ function TopMenuProfileTooltip(props: {
           position: absolute;
           z-index: 999999999;
           cursor: pointer;
-          font-size: 18px;
+          font-size: 16px;
+          line-height: 24px;
           bottom: -35px;
           right: 0;
           background-color: var(--green-80);
-          padding: 10px;
-          border-radius: 10px;
+          padding: 8px;
+          border-radius: 8px;
         }
         .icon {
           mask-image: url("./images/copy@2x.png");
           mask-size: cover;
-          width: 24px;
-          height: 24px;
-          margin-left: 10px;
+          width: 16px;
+          height: 16px;
+          margin-left: 8px;
           display: inline-block;
           background-color: #ffffff;
         }
