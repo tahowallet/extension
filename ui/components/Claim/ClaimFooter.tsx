@@ -13,7 +13,6 @@ import React, {
   ReactElement,
   SetStateAction,
   useCallback,
-  useEffect,
   useMemo,
 } from "react"
 import { useHistory } from "react-router-dom"
@@ -76,11 +75,9 @@ export default function ClaimFooter({
     }
   }, [buttonText, step, advanceStep, dispatch, history])
 
-  useEffect(() => {
-    if (claimed[currentAccount.address]) {
-      showSuccess()
-    }
-  }, [claimed, showSuccess, currentAccount])
+  if (claimed[currentAccount.address]) {
+    showSuccess()
+  }
 
   const handleProgressStepClick = (s: number) => {
     setStep(s)
