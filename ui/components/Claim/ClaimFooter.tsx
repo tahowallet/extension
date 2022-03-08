@@ -13,10 +13,9 @@ import React, {
   ReactElement,
   SetStateAction,
   useCallback,
-  useEffect,
   useMemo,
 } from "react"
-import { useHistory } from "react-router-dom"
+import { Redirect, useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
@@ -76,15 +75,14 @@ export default function ClaimFooter({
     }
   }, [buttonText, step, advanceStep, dispatch, history])
 
-  useEffect(() => {
-    if (claimed[currentAccount.address]) {
-      showSuccess()
-    }
-  }, [claimed, showSuccess, currentAccount])
-
   const handleProgressStepClick = (s: number) => {
     setStep(s)
     dispatch(setClaimStep(s))
+  }
+
+  if (claimed[currentAccount.address]) {
+    showSuccess()
+    return <Redirect to="/" />
   }
 
   return (
@@ -96,7 +94,12 @@ export default function ClaimFooter({
           numberOfSteps={buttonText.length}
         />
       </div>
-      <SharedButton type="primary" size="medium" onClick={handleClick}>
+      <SharedButton
+        type="primary"
+        size="medium"
+        onClick={handleClick}
+        isDisabled={isCurrentlyClaiming}
+      >
         {buttonText[step - 1]}
       </SharedButton>
       <style jsx>
