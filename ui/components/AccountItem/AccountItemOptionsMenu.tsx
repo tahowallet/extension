@@ -31,7 +31,8 @@ export default function AccountItemOptionsMenu({
         size="custom"
         customSize="336px"
         isOpen={showAddressRemoveConfirm}
-        close={() => {
+        close={(e) => {
+          e?.stopPropagation()
           setShowAddressRemoveConfirm(false)
         }}
       >
