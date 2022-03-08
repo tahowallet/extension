@@ -6,7 +6,7 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 
-interface AccountItemOptionsMenuProps {
+type AccountItemOptionsMenuProps = {
   hideMenu: boolean
   accountTotal: AccountTotal
   address: HexString
