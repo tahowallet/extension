@@ -197,8 +197,7 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   5: (prevState: any) => {
     const { ...newState } = prevState
-
-    newState.keyring.keyringMetadata = {}
+    newState.keyrings.keyringMetadata = {}
 
     return newState
   },
