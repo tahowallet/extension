@@ -9,13 +9,11 @@ import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
   address: HexString
-  isSelected: boolean
 }
 
 export default function AccountItemOptionsMenu({
   accountTotal,
   address,
-  isSelected,
 }: AccountItemOptionsMenuProps): ReactElement {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
@@ -44,7 +42,6 @@ export default function AccountItemOptionsMenu({
           <AccountItemRemovalConfirm
             address={address}
             account={accountTotal}
-            isSelected={isSelected}
             close={() => setShowAddressRemoveConfirm(false)}
           />
         </div>

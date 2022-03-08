@@ -14,7 +14,6 @@ import { useBackgroundSelector } from "../../hooks"
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
   address: HexString
-  isSelected: boolean
   close: () => void
 }
 
@@ -38,7 +37,6 @@ const LoudWarning = (
 export default function AccountItemRemovalConfirm({
   account,
   address,
-  isSelected,
   close,
 }: AccountItemRemovalConfirmProps): ReactElement {
   const dispatch = useDispatch()
@@ -54,7 +52,7 @@ export default function AccountItemRemovalConfirm({
           <li className="standard_width">
             <SharedAccountItemSummary
               accountTotal={account}
-              isSelected={isSelected}
+              isSelected={false}
             />
           </li>
         </li>
