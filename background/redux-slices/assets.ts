@@ -1,14 +1,16 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
-import { AnyAsset, PricePoint } from "../assets"
+import { AnyAsset, PricePoint, SmartContractFungibleAsset } from "../assets"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 
-type SingleAssetState = AnyAsset & {
+type AssetPriceInfo = {
   prices: PricePoint[]
   recentPrices: {
     [assetSymbol: string]: PricePoint
   }
 }
+
+type SingleAssetState = AnyAsset & AssetPriceInfo
 
 export type AssetsState = SingleAssetState[]
 
@@ -138,11 +140,32 @@ export default assetsSlice.reducer
 
 const selectAssetsState = (state: AssetsState) => state
 const selectAssetSymbol = (_: AssetsState, assetSymbol: string) => assetSymbol
+const selectAssetContract = (_: AssetsState, assetContract: string) =>
+  assetContract
+const selectAssetChainId = (_: AssetsState, _2: string, assetChainId: string) =>
+  assetChainId
 const selectPairedAssetSymbol = (
   _: AssetsState,
   _2: string,
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
+
+export const selectAssetViaContract = createSelector(
+  [selectAssetsState, selectAssetContract, selectAssetChainId],
+  (state, contractAddress, chainId) => {
+    return state.find(
+      (asset): asset is SmartContractFungibleAsset & AssetPriceInfo => {
+        if ("contractAddress" in asset) {
+          return (
+            asset.contractAddress === contractAddress &&
+            asset.homeNetwork.chainID === chainId
+          )
+        }
+        return false
+      }
+    )
+  }
+)
 
 /**
  * Selects a particular asset price point given the asset symbol and the paired

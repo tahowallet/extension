@@ -2,9 +2,11 @@ import {
   isProbablyHexString,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
+import { selectAssetViaContract } from "@tallyho/tally-background/redux-slices/assets"
 import { SignTypedDataRequest } from "@tallyho/tally-background/redux-slices/signing"
 import dayjs from "dayjs"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
 import SharedButton from "../Shared/SharedButton"
 
@@ -15,7 +17,17 @@ type SignTypedDataInfoProps = {
 export default function SignTypedDataInfo({
   typedDataRequest,
 }: SignTypedDataInfoProps): ReactElement {
-  const { message } = typedDataRequest.typedData
+  const { typedData } = typedDataRequest
+  const { message } = typedData
+  const { verifyingContract, chainId } = typedData.domain
+
+  const assets = useBackgroundSelector((state) => state.assets)
+
+  const correspondingAsset =
+    verifyingContract && chainId
+      ? selectAssetViaContract(assets, verifyingContract, String(chainId))
+      : undefined
+
   const keys = Object.keys(typedDataRequest.typedData.message)
   return (
     <div className="messages">
@@ -46,6 +58,17 @@ export default function SignTypedDataInfo({
                   {/* No children desired */}
                 </SharedButton>
               </div>
+            </div>
+          )
+        }
+        if (key === "value") {
+          const formattedValue = correspondingAsset
+            ? Number(value) / 10 ** correspondingAsset.decimals
+            : value
+          return (
+            <div key={key} className="message">
+              <div className="key">{capitalize(key)}</div>
+              <div className="value">{`${formattedValue} ${typedDataRequest.typedData.domain.name}`}</div>
             </div>
           )
         }
