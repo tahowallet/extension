@@ -3,6 +3,7 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { SignTypedDataRequest } from "@tallyho/tally-background/redux-slices/signing"
+import dayjs from "dayjs"
 import React, { ReactElement } from "react"
 import capitalize from "../../utils/capitalize"
 import SharedButton from "../Shared/SharedButton"
@@ -44,6 +45,22 @@ export default function SignTypedDataInfo({
                 >
                   {/* No children desired */}
                 </SharedButton>
+              </div>
+            </div>
+          )
+        }
+        if (
+          // matches uniswap & 0x expiration field
+          ["deadline", "expiry"].includes(key) &&
+          typeof value === "number" &&
+          // weak check for unix seconds timestamp
+          String(value).length === 10
+        ) {
+          return (
+            <div key={key} className="message">
+              <div className="key">{capitalize(key)}</div>
+              <div className="value">
+                {dayjs.unix(value).format("DD MMM YYYY")}
               </div>
             </div>
           )
