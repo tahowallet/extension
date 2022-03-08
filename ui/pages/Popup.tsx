@@ -73,7 +73,7 @@ export function Main(): ReactElement {
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const isNotOnKeyringRelatedPage =
       routeHistoryEntities[routeHistoryEntities.length - 1].pathname !==
-        "/signTransaction" &&
+        "/sign-transaction" &&
       !routeHistoryEntities[routeHistoryEntities.length - 1].pathname.includes(
         "/keyring/"
       )
