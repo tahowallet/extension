@@ -32,7 +32,7 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     title: "Import",
     icon: "./images/imported@2x.png",
   },
-  [AccountType.NewSeed]: {
+  [AccountType.Internal]: {
     title: "Tally",
     icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
   },
@@ -171,7 +171,7 @@ export default function AccountsNotificationPanelAccounts({
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
   const accountTypes = [
-    AccountType.NewSeed,
+    AccountType.Internal,
     AccountType.Imported,
     AccountType.ReadOnly,
   ]
@@ -211,7 +211,7 @@ export default function AccountsNotificationPanelAccounts({
                     accountType={accountType}
                     walletNumber={idx + 1}
                     onClickAddAddress={
-                      accountType === "imported" || accountType === "newSeed"
+                      accountType === "imported" || accountType === "internal"
                         ? () => {
                             if (accountTotalsByKeyringId[0].keyringId) {
                               dispatch(
@@ -261,7 +261,7 @@ export default function AccountsNotificationPanelAccounts({
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-          linkTo="/onboarding/addWallet"
+          linkTo="/onboarding/add-wallet"
         >
           Add Wallet
         </SharedButton>

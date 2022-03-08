@@ -20,7 +20,10 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
           type="primary"
           onClick={async () => {
             await dispatch(
-              importKeyring({ mnemonic: mnemonic.join(" "), source: "newSeed" })
+              importKeyring({
+                mnemonic: mnemonic.join(" "),
+                source: "internal",
+              })
             )
             history.push("/")
           }}
