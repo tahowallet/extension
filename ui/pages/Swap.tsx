@@ -246,7 +246,7 @@ export default function Swap(): ReactElement {
       })
     )
 
-    history.push("/signTransaction")
+    history.push("/sign-transaction")
   }
 
   const updateSwapData = useCallback(
