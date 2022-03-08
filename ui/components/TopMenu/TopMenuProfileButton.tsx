@@ -4,7 +4,6 @@ import React, { ReactElement, useState, useRef } from "react"
 import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
-import SharedButton from "../Shared/SharedButton"
 
 const TOOLTIP_DELAY = 1000
 
@@ -15,26 +14,34 @@ function TopMenuProfileTooltip(props: {
   const { shortenedAddress, copyAddress } = props
 
   return (
-    <div className="tooltip">
-      <SharedButton
-        type="deemphasizedWhite"
-        size="small"
-        icon="copy"
-        iconSize="large"
-        iconPosition="right"
-        onClick={copyAddress}
-      >
-        {shortenedAddress}
-      </SharedButton>
+    <button type="button" className="tooltip" onClick={copyAddress}>
+      {shortenedAddress}
+      <span className="icon" />
       <style jsx>{`
         .tooltip {
+          display: flex;
+          align-items: center;
           position: absolute;
-          bottom: -25px;
-          right: 0;
           z-index: 999999999;
+          cursor: pointer;
+          font-size: 18px;
+          bottom: -35px;
+          right: 0;
+          background-color: var(--green-80);
+          padding: 10px;
+          border-radius: 10px;
+        }
+        .icon {
+          mask-image: url("./images/copy@2x.png");
+          mask-size: cover;
+          width: 24px;
+          height: 24px;
+          margin-left: 10px;
+          display: inline-block;
+          background-color: #ffffff;
         }
       `}</style>
-    </div>
+    </button>
   )
 }
 
