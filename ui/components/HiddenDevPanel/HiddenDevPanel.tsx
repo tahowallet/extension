@@ -15,7 +15,7 @@ export default function HiddenDevPanel(): ReactElement {
           icon="arrow_right"
           iconSize="large"
           onClick={() => {
-            history.push("/onboarding/infoIntro")
+            history.push("/onboarding/info-intro")
           }}
         >
           Enter Onboarding

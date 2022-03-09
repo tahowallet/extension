@@ -291,6 +291,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
     params: RPCRequest["params"]
   ): Promise<unknown> {
     try {
+      let walletAddress
+      let signDataPopupPromise
       switch (method) {
         case "eth_requestAccounts":
         case "eth_accounts":
@@ -301,9 +303,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTypedData_v4":
           // When its signTypedData the params[0] should be the walletAddress
           // eslint-disable-next-line no-case-declarations
-          const walletAddress = params[0] as HexString
+          walletAddress = params[0] as HexString
           // eslint-disable-next-line no-case-declarations
-          const signDataPopupPromise = ProviderBridgeService.showExtensionPopup(
+          signDataPopupPromise = ProviderBridgeService.showExtensionPopup(
             AllowedQueryParamPage.signData
           )
           if (
@@ -316,7 +318,25 @@ export default class ProviderBridgeService extends BaseService<Events> {
             )
           }
           throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+        case "eth_sign":
+        case "personal_sign":
+          // eslint-disable-next-line no-case-declarations
+          walletAddress = params[1] as HexString
 
+          // eslint-disable-next-line no-case-declarations
+          signDataPopupPromise = ProviderBridgeService.showExtensionPopup(
+            AllowedQueryParamPage.personalSignData
+          )
+          if (
+            sameEVMAddress(walletAddress, enablingPermission.accountAddress)
+          ) {
+            return await this.routeSafeRequest(
+              method,
+              params,
+              signDataPopupPromise
+            )
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
         case "eth_signTransaction":
         case "eth_sendTransaction":
           // We are monsters and aren't breaking a method out quite yet.
