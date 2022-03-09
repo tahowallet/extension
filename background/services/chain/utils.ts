@@ -15,12 +15,16 @@ import {
   ConfirmedEVMTransaction,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { getEthereumNetwork } from "../../lib/utils"
+import { USE_MAINNET_FORK } from "../../features/features"
+import { FORK } from "../../constants"
 
 /**
  * Parse a block as returned by a polling provider.
  */
-export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
+export function blockFromEthersBlock(
+  network: EVMNetwork,
+  gethResult: EthersBlock
+): AnyEVMBlock {
   return {
     hash: gethResult.hash,
     blockHeight: gethResult.number,
@@ -34,7 +38,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
     difficulty: 0n,
     timestamp: gethResult.timestamp,
     baseFeePerGas: gethResult.baseFeePerGas?.toBigInt(),
-    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
+    network,
   }
 }
 
@@ -42,6 +46,7 @@ export function blockFromEthersBlock(gethResult: EthersBlock): AnyEVMBlock {
  * Parse a block as returned by a websocket provider subscription.
  */
 export function blockFromWebsocketBlock(
+  network: EVMNetwork,
   incomingGethResult: unknown
 ): AnyEVMBlock {
   const gethResult = incomingGethResult as {
@@ -62,7 +67,7 @@ export function blockFromWebsocketBlock(
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)
       : undefined,
-    network: getEthereumNetwork(), // TODO the network should be passed as an argument to this function instead
+    network,
   }
 }
 
@@ -129,7 +134,7 @@ export function ethersTransactionFromSignedTransaction(
     from: tx.from,
     data: tx.input || "",
     type: tx.type,
-    chainId: parseInt(tx.network.chainID, 10),
+    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
@@ -150,9 +155,16 @@ export function enrichTransactionWithReceipt(
   receipt: EthersTransactionReceipt
 ): ConfirmedEVMTransaction {
   const gasUsed = receipt.gasUsed.toBigInt()
+
   return {
     ...transaction,
     gasUsed,
+    gasPrice: receipt.effectiveGasPrice.toBigInt(),
+    logs: receipt.logs.map(({ address, data, topics }) => ({
+      contractAddress: address,
+      data,
+      topics,
+    })),
     status:
       receipt.status ??
       // Pre-Byzantium transactions require a guesswork approach or an

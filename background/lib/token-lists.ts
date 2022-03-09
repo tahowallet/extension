@@ -1,15 +1,16 @@
 import { TokenList } from "@uniswap/token-lists"
 
-import { getEthereumNetwork, normalizeEVMAddress } from "./utils"
 import {
-  AssetMetadata,
   FungibleAsset,
-  isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
   TokenListAndReference,
 } from "../assets"
 import { isValidUniswapTokenListResponse } from "./validate"
 import { EVMNetwork } from "../networks"
+import {
+  findClosestAssetIndex,
+  prioritizedAssetSimilarityKeys,
+} from "./asset-similarity"
 
 export async function fetchAndValidateTokenList(
   url: string
@@ -59,7 +60,7 @@ function tokenListToFungibleAssetsForNetwork(
         name: tokenMetadata.name,
         symbol: tokenMetadata.symbol,
         decimals: tokenMetadata.decimals,
-        homeNetwork: getEthereumNetwork(),
+        homeNetwork: network,
         contractAddress: tokenMetadata.address,
       }
     })
@@ -67,89 +68,67 @@ function tokenListToFungibleAssetsForNetwork(
 
 /**
  * Merges the given asset lists into a single deduplicated array.
+ *
+ * Note that currently, two smart contract assets that are the same but don't
+ * share a contract address (e.g., a token A that points to a contract address
+ * and a token A that points to a proxy A's contract address) will not be
+ * considered the same for merging purposes.
  */
 export function mergeAssets<T extends FungibleAsset>(
   ...assetLists: T[][]
 ): T[] {
   function tokenReducer(
-    seenAssetsBy: {
-      contractAddressAndNetwork: {
-        [contractAddressAndNetwork: string]: SmartContractFungibleAsset
-      }
-      symbol: { [symbol: string]: T }
+    seenAssetsBySimilarityKey: {
+      [similarityKey: string]: T[]
     },
     asset: T
   ) {
-    const updatedAssetsBy = {
-      contractAddressAndNetwork: { ...seenAssetsBy.contractAddressAndNetwork },
-      symbol: { ...seenAssetsBy.symbol },
-    }
+    const updatedSeenAssetsBySimilarityKey = { ...seenAssetsBySimilarityKey }
 
-    if (isSmartContractFungibleAsset(asset)) {
-      const normalizedContractAddressAndNetwork =
-        `${normalizeEVMAddress(asset.contractAddress)}-${
-          asset.homeNetwork.chainID
-        }` ?? asset.homeNetwork.name
-      const existingAsset =
-        updatedAssetsBy.contractAddressAndNetwork[
-          normalizedContractAddressAndNetwork
-        ]
+    const similarityKeys = prioritizedAssetSimilarityKeys(asset)
 
-      if (typeof existingAsset !== "undefined") {
-        updatedAssetsBy.contractAddressAndNetwork[
-          normalizedContractAddressAndNetwork
-        ] = {
-          ...existingAsset,
-          metadata: {
-            ...existingAsset.metadata,
-            ...asset.metadata,
-            tokenLists:
-              existingAsset.metadata?.tokenLists?.concat(
-                asset.metadata?.tokenLists ?? []
-              ) ?? [],
-          },
-        }
-      } else {
-        updatedAssetsBy.contractAddressAndNetwork[
-          normalizedContractAddressAndNetwork
-        ] = asset
-      }
-    } else if (asset.symbol in updatedAssetsBy.symbol) {
-      const original = updatedAssetsBy.symbol[asset.symbol]
-      updatedAssetsBy.symbol[asset.symbol] = {
-        ...original,
+    // For now, only use the highest-priority similarity key with no fallback.
+    const referenceKey = similarityKeys[0]
+    // Initialize if needed.
+    updatedSeenAssetsBySimilarityKey[referenceKey] ??= []
+
+    // For each key, determine where a close asset match exists.
+    const matchingAssetIndex = findClosestAssetIndex(
+      asset,
+      updatedSeenAssetsBySimilarityKey[referenceKey]
+    )
+
+    if (typeof matchingAssetIndex !== "undefined") {
+      // Merge the matching asset with this new one.
+      const matchingAsset =
+        updatedSeenAssetsBySimilarityKey[referenceKey][matchingAssetIndex]
+
+      updatedSeenAssetsBySimilarityKey[referenceKey][matchingAssetIndex] = {
+        ...matchingAsset,
         metadata: {
-          ...original.metadata,
+          ...matchingAsset.metadata,
           ...asset.metadata,
           tokenLists:
-            original.metadata?.tokenLists?.concat(
+            matchingAsset.metadata?.tokenLists?.concat(
               asset.metadata?.tokenLists ?? []
             ) ?? [],
         },
       }
     } else {
-      updatedAssetsBy.symbol[asset.symbol] = asset
+      updatedSeenAssetsBySimilarityKey[referenceKey].push(asset)
     }
 
-    return updatedAssetsBy
+    return updatedSeenAssetsBySimilarityKey
   }
 
-  const mergedAssetsBy = assetLists.flat().reduce(tokenReducer, {
-    contractAddressAndNetwork: {},
-    symbol: {},
-  })
-  const mergedAssets = Object.values(mergedAssetsBy.symbol).concat(
-    // Because the inputs to the function conform to T[], if T is not a subtype
-    // of SmartContractFungibleAsset, this will be an empty array. As such, we
-    // can safely do this cast.
-    Object.values(mergedAssetsBy.contractAddressAndNetwork) as unknown as T[]
-  )
+  const mergedAssetsBy = assetLists.flat().reduce(tokenReducer, {})
+  const mergedAssets = Object.values(mergedAssetsBy).flat()
 
-  return mergedAssets.sort((a, b) =>
-    (a.metadata?.tokenLists?.length || 0) >
-    (b.metadata?.tokenLists?.length || 0)
-      ? 1
-      : -1
+  // Sort the merged assets by the number of token lists they appear in.
+  return mergedAssets.sort(
+    (a, b) =>
+      (a.metadata?.tokenLists?.length || 0) -
+      (b.metadata?.tokenLists?.length || 0)
   )
 }
 

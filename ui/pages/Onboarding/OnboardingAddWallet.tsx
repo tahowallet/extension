@@ -2,8 +2,8 @@ import React, { ReactElement } from "react"
 import {
   HIDE_ADD_SEED,
   HIDE_CREATE_PHRASE,
-  HIDE_IMPORT_LEDGER,
 } from "@tallyho/tally-background/features/features"
+import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedButton from "../../components/Shared/SharedButton"
 
@@ -26,7 +26,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
           <SharedButton
             type="tertiary"
             size="medium"
-            linkTo="/onboarding/viewOnlyWallet"
+            linkTo="/onboarding/view-only-wallet"
           >
             Preview an address
           </SharedButton>
@@ -39,15 +39,13 @@ export default function OnboardingStartTheHunt(): ReactElement {
             <SharedButton
               type="tertiary"
               size="medium"
-              linkTo="/onboarding/importMetamask"
+              linkTo="/onboarding/import-metamask"
             >
-              Import MetaMask
+              Import recovery phrase
             </SharedButton>
           </li>
         )}
-        {HIDE_IMPORT_LEDGER ? (
-          <></>
-        ) : (
+        {isLedgerSupported && (
           <li className="option standard_width">
             <div className="icon ledger_icon" />
             <SharedButton
@@ -72,7 +70,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
               <SharedButton
                 type="secondary"
                 size="medium"
-                linkTo="/onboarding/onboardingInterstitialCreatePhrase"
+                linkTo="/onboarding/onboarding-interstitial-create-phrase"
               >
                 Create new wallet
               </SharedButton>

@@ -15,7 +15,7 @@ export default function ClaimReferralByUser({
         <div className="highlight">{Math.floor(claimAmount * 0.05)}</div> TALLY!
       </div>
       <div className="description">
-        You were refered by somebody, and to reward that you each get 463 TALLY
+        You were referred by somebody, and to reward that you each get 463 TALLY
       </div>
       <ClaimDelegateChoiceProfile name="henryboldi.eth" />
       <style jsx>

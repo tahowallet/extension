@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useRef } from "react"
+import React, { ReactElement, useState, useRef, useEffect } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
@@ -13,6 +13,8 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features/features"
+import { runtime } from "webextension-polyfill"
+import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -57,6 +59,16 @@ function transformLocation(inputLocation: Location): Location {
   }
 }
 
+function useConnectPopupMonitor() {
+  useEffect(() => {
+    const port = runtime.connect(undefined, { name: popupMonitorPortName })
+
+    return () => {
+      port.disconnect()
+    }
+  }, [])
+}
+
 export function Main(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -66,14 +78,14 @@ export function Main(): ReactElement {
   const [showTabBar, setShowTabBar] = useState(true)
   const renderCount = useRef(0)
 
-  const routeHistoryEntries = useBackgroundSelector((state) => {
-    return state.ui.routeHistoryEntries
-  })
+  const routeHistoryEntries = useBackgroundSelector(
+    (state) => state.ui.routeHistoryEntries
+  )
 
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const isNotOnKeyringRelatedPage =
       routeHistoryEntities[routeHistoryEntities.length - 1].pathname !==
-        "/signTransaction" &&
+        "/sign-transaction" &&
       !routeHistoryEntities[routeHistoryEntities.length - 1].pathname.includes(
         "/keyring/"
       )
@@ -96,6 +108,8 @@ export function Main(): ReactElement {
       dispatch(setRouteHistoryEntries(entries))
     }
   }
+
+  useConnectPopupMonitor()
 
   return (
     <>
@@ -187,12 +201,6 @@ export function Main(): ReactElement {
       <>
         <style jsx global>
           {`
-            body {
-              width: 384px;
-              height: 594px;
-              scrollbar-width: none;
-            }
-
             ::-webkit-scrollbar {
               width: 0px;
               background: transparent;
