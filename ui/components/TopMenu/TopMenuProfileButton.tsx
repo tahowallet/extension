@@ -4,47 +4,9 @@ import React, { ReactElement, useState, useRef } from "react"
 import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
+import TopMenuProfileTooltip from "./TopMenuProfileTooltip"
 
 const TOOLTIP_DELAY = 1000
-
-function TopMenuProfileTooltip(props: {
-  copyAddress: () => void
-  shortenedAddress?: string
-}): ReactElement {
-  const { shortenedAddress, copyAddress } = props
-
-  return (
-    <button type="button" className="tooltip" onClick={copyAddress}>
-      {shortenedAddress}
-      <span className="icon" />
-      <style jsx>{`
-        .tooltip {
-          display: flex;
-          align-items: center;
-          position: absolute;
-          z-index: 999999999;
-          cursor: pointer;
-          font-size: 16px;
-          line-height: 24px;
-          bottom: -35px;
-          right: 0;
-          background-color: var(--green-80);
-          padding: 8px;
-          border-radius: 8px;
-        }
-        .icon {
-          mask-image: url("./images/copy@2x.png");
-          mask-size: cover;
-          width: 16px;
-          height: 16px;
-          margin-left: 8px;
-          display: inline-block;
-          background-color: #ffffff;
-        }
-      `}</style>
-    </button>
-  )
-}
 
 export default function TopMenuProfileButton(props: {
   onClick?: () => void
@@ -57,13 +19,6 @@ export default function TopMenuProfileButton(props: {
   const timerRef = useRef<number | undefined>(undefined)
 
   const { onClick } = props
-
-  const copyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address)
-      dispatch(setSnackbarMessage("Copied!"))
-    }
-  }
 
   const showTooltip = () => {
     timerRef.current = window.setTimeout(
@@ -78,6 +33,14 @@ export default function TopMenuProfileButton(props: {
   const handleClick = () => {
     hideTooltip()
     onClick?.()
+  }
+
+  const copyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address)
+      hideTooltip()
+      dispatch(setSnackbarMessage("Address copied to clipboard"))
+    }
   }
 
   return (
@@ -102,10 +65,7 @@ export default function TopMenuProfileButton(props: {
         )}
       </button>
       {shouldDisplayTooltip && (
-        <TopMenuProfileTooltip
-          shortenedAddress={shortenedAddress}
-          copyAddress={copyAddress}
-        />
+        <TopMenuProfileTooltip copyAddress={copyAddress} />
       )}
       <style jsx>
         {`
