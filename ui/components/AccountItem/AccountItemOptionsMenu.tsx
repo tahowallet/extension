@@ -102,7 +102,6 @@ export default function AccountItemOptionsMenu({
             background-size: cover;
             width: 4px;
             height: 20px;
-            margin-left: 16px;
             border: 10px solid transparent;
           }
           .close_button {

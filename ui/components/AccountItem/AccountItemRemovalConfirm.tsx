@@ -6,6 +6,8 @@ import {
 import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
+import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { ETHEREUM } from "@tallyho/tally-background/constants"
 import SharedButton from "../Shared/SharedButton"
 import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
@@ -41,6 +43,10 @@ export default function AccountItemRemovalConfirm({
 }: AccountItemRemovalConfirmProps): ReactElement {
   const dispatch = useDispatch()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
+  const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
+    selectedAddress: state.ui.selectedAccount.address,
+    accountsData: state.account.accountsData,
+  }))
   const onlyOneAddressVisible = keyring?.addresses.length === 1
   return (
     <div className="remove_address_option">
@@ -77,6 +83,19 @@ export default function AccountItemRemovalConfirm({
           onClick={(e) => {
             e.stopPropagation()
             dispatch(removeAccount(address))
+            if (selectedAddress === address) {
+              const newAddress = Object.keys(accountsData).find(
+                (accountAddress) => accountAddress !== address
+              )
+              if (newAddress) {
+                dispatch(
+                  setSelectedAccount({
+                    address: newAddress,
+                    network: ETHEREUM,
+                  })
+                )
+              }
+            }
             close()
           }}
         >

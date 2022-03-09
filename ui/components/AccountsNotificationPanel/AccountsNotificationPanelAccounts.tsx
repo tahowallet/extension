@@ -268,14 +268,10 @@ export default function AccountsNotificationPanelAccounts({
                               accountTotal={accountTotal}
                               isSelected={isSelected}
                             >
-                              {isSelected ? (
-                                <></>
-                              ) : (
-                                <AccountItemOptionsMenu
-                                  accountTotal={accountTotal}
-                                  address={accountTotal.address}
-                                />
-                              )}
+                              <AccountItemOptionsMenu
+                                accountTotal={accountTotal}
+                                address={accountTotal.address}
+                              />
                             </SharedAccountItemSummary>
                           </button>
                         </li>

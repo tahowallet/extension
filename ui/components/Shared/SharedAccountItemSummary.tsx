@@ -21,39 +21,42 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
 
   return (
     <li className="standard_width">
-      <div className="left">
-        {isSelected ? (
-          <div className="avatar_selected_outline">
-            <div className="avatar" />
-          </div>
-        ) : (
-          <div className="avatar" />
-        )}
-
-        <div className="info">
-          <div className="address_name">
-            {typeof name === "undefined" ? shortenedAddress : name}
-          </div>
-          <div className="address">
-            {typeof name !== "undefined" ? shortenedAddress : ""}
-          </div>
-        </div>
-      </div>
-      <div className="right">
-        <div className="balance_status">
-          {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
-            <SharedLoadingSpinner size="small" />
-          ) : (
-            <div className="balance">
-              <span className="lighter">$</span>
-              {localizedTotalMainCurrencyAmount}
-            </div>
-          )}
+      <div className="summary">
+        <div className="left">
           {isSelected ? (
-            <div className="connected_status">Connected</div>
-          ) : null}
+            <div className="avatar_selected_outline">
+              <div className="avatar" />
+            </div>
+          ) : (
+            <div className="avatar" />
+          )}
+
+          <div className="info">
+            <div className="address_name">
+              {typeof name === "undefined" ? shortenedAddress : name}
+            </div>
+            <div className="address">
+              {typeof name !== "undefined" ? shortenedAddress : ""}
+            </div>
+          </div>
+        </div>
+        <div className="right">
+          <div className="balance_status">
+            {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
+              <SharedLoadingSpinner size="small" />
+            ) : (
+              <div className="balance">
+                <span className="lighter">$</span>
+                {localizedTotalMainCurrencyAmount}
+              </div>
+            )}
+            {isSelected ? (
+              <div className="connected_status">Connected</div>
+            ) : null}
+          </div>
         </div>
       </div>
+
       {children}
 
       <style jsx>{`
@@ -62,7 +65,14 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           justify-content: space-between;
           align-items: center;
           margin: 0 auto;
-          width: 336px;
+          height: 52px;
+        }
+        .summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 0 auto;
+          flex-grow: 2;
           height: 52px;
         }
         .avatar {
