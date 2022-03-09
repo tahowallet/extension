@@ -78,7 +78,7 @@ export default function AccountItemRemovalConfirm({
           Cancel
         </SharedButton>
         <SharedButton
-          type={onlyOneAddressVisible ? "warning" : "primary"}
+          type="primary"
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
