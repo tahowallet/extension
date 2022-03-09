@@ -16,6 +16,11 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
 
+  const contractAddress =
+    "contractAddress" in assetAmount.asset
+      ? assetAmount.asset.contractAddress
+      : undefined
+
   return (
     <li>
       <Link
@@ -23,10 +28,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           pathname: "/singleAsset",
           state: {
             symbol: assetAmount.asset.symbol,
-            contractAddress:
-              "contractAddress" in assetAmount.asset
-                ? assetAmount.asset.contractAddress
-                : undefined,
+            contractAddress,
           },
         }}
       >
@@ -58,7 +60,18 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            <span className="icon_send_asset" />
+            {!contractAddress && (
+              <Link
+                to={{
+                  pathname: "/send",
+                  state: {
+                    symbol: assetAmount.asset.symbol,
+                    contractAddress,
+                  },
+                }}
+                className="asset_list_item_icon_send_asset"
+              />
+            )}
           </div>
         </div>
       </Link>
@@ -117,12 +130,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             letter-spacing: 0.42px;
             line-height: 16px;
           }
-          .icon_send_asset {
-            background: url("./images/send_asset.svg");
-            background-size: 12px 12px;
-            width: 12px;
-            height: 12px;
-          }
           .icon_swap_asset {
             background: url("./images/swap_asset.svg");
             background-size: 12px 12px;
@@ -134,6 +141,20 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             width: 48px;
             justify-content: flex-end;
             margin-right: 16px;
+          }
+        `}
+      </style>
+      <style jsx global>
+        {`
+          .asset_list_item_icon_send_asset {
+            mask-image: url("./images/send_asset.svg");
+            mask-size: cover;
+            background-color: var(--green-60);
+            width: 12px;
+            height: 12px;
+          }
+          .asset_list_item_icon_send_asset:hover {
+            background-color: var(--trophy-gold);
           }
         `}
       </style>
