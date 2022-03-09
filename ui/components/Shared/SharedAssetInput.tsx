@@ -200,13 +200,14 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           }
           .divider {
             width: 384px;
+            height: 0;
             border-bottom: 1px solid var(--hunter-green);
             margin-top: 15px;
           }
           .assets_list {
             display: block;
             overflow: scroll;
-            height: calc(100% - 98px);
+            height: calc(100% - 140px);
             width: 100%;
           }
         `}
