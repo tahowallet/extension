@@ -6,7 +6,7 @@ import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 import TopMenuProfileTooltip from "./TopMenuProfileTooltip"
 
-const TOOLTIP_DELAY = 1000
+const TOOLTIP_DELAY = 500
 
 export default function TopMenuProfileButton(props: {
   onClick?: () => void
