@@ -11,6 +11,7 @@ import {
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
+  FungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -18,7 +19,7 @@ import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-po
 import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { CompleteSmartContractFungibleAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
@@ -69,13 +70,17 @@ export default function Swap(): ReactElement {
 
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
-  // TODO Expand these to fungible assets by supporting direct ETH swaps,
-  // TODO then filter by the current chain.
-
+  // TODO We're special-casing ETH here in an odd way. Going forward, we should
+  // filter by current chain and better handle network-native base assets
   const ownedSellAssetAmounts =
     accountBalances?.assetAmounts.filter(
-      (assetAmount): assetAmount is CompleteSmartContractFungibleAssetAmount =>
-        isSmartContractFungibleAsset(assetAmount.asset)
+      (
+        assetAmount
+      ): assetAmount is CompleteAssetAmount<
+        SmartContractFungibleAsset | FungibleAsset
+      > =>
+        isSmartContractFungibleAsset(assetAmount.asset) ||
+        assetAmount.asset.symbol === "ETH"
     ) ?? []
 
   const buyAssets = useBackgroundSelector((state) => {
@@ -172,8 +177,10 @@ export default function Swap(): ReactElement {
     selectInProgressApprovalContract
   )
   const isApprovalInProgress =
+    sellAsset &&
+    "contractAddress" in sellAsset &&
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
-    normalizeEVMAddress(sellAsset?.contractAddress || "0x")
+      normalizeEVMAddress(sellAsset?.contractAddress || "0x")
 
   const [sellAmountLoading, setSellAmountLoading] = useState(false)
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
@@ -231,7 +238,7 @@ export default function Swap(): ReactElement {
       })
     )
 
-    history.push("/signTransaction")
+    history.push("/sign-transaction")
   }
 
   const updateSwapData = useCallback(
@@ -239,8 +246,8 @@ export default function Swap(): ReactElement {
       requestedQuote: "buy" | "sell",
       amount: string,
       // Fixed asset in the swap.
-      fixedAsset?: SmartContractFungibleAsset | undefined,
-      quoteAsset?: SmartContractFungibleAsset | undefined
+      fixedAsset?: SmartContractFungibleAsset | FungibleAsset | undefined,
+      quoteAsset?: SmartContractFungibleAsset | FungibleAsset | undefined
     ): Promise<void> => {
       if (requestedQuote === "sell") {
         setBuyAmount("")
@@ -335,7 +342,7 @@ export default function Swap(): ReactElement {
   }, [latestQuoteState])
 
   const updateSellAsset = useCallback(
-    (asset: SmartContractFungibleAsset) => {
+    (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setSellAsset(asset)
       // Updating the sell asset quotes the new sell asset against the existing
       // buy amount.
@@ -344,7 +351,7 @@ export default function Swap(): ReactElement {
     [buyAmount, updateSwapData]
   )
   const updateBuyAsset = useCallback(
-    (asset: SmartContractFungibleAsset) => {
+    (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setBuyAsset(asset)
       // Updating the buy asset quotes the new buy asset against the existing
       // sell amount.
@@ -409,11 +416,11 @@ export default function Swap(): ReactElement {
             <></>
           )}
         </SharedSlideUpMenu>
-        <div className="standard_width">
+        <div className="standard_width swap_wrap">
           <SharedActivityHeader label="Swap Assets" activity="swap" />
           <div className="form">
             <div className="form_input">
-              <SharedAssetInput
+              <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={sellAmount}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
@@ -433,7 +440,7 @@ export default function Swap(): ReactElement {
               Switch Assets
             </button>
             <div className="form_input">
-              <SharedAssetInput
+              <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={buyAmount}
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
@@ -502,6 +509,9 @@ export default function Swap(): ReactElement {
       </CorePage>
       <style jsx>
         {`
+          .swap_wrap {
+            margin-top: -9px;
+          }
           .network_fee_group {
             display: flex;
             margin-bottom: 29px;
