@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useRef } from "react"
+import React, { ReactElement, useState, useRef, useEffect } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
@@ -13,6 +13,8 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features/features"
+import { runtime } from "webextension-polyfill"
+import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -57,6 +59,16 @@ function transformLocation(inputLocation: Location): Location {
   }
 }
 
+function useConnectPopupMonitor() {
+  useEffect(() => {
+    const port = runtime.connect(undefined, { name: popupMonitorPortName })
+
+    return () => {
+      port.disconnect()
+    }
+  }, [])
+}
+
 export function Main(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -96,6 +108,8 @@ export function Main(): ReactElement {
       dispatch(setRouteHistoryEntries(entries))
     }
   }
+
+  useConnectPopupMonitor()
 
   return (
     <>
