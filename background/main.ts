@@ -866,14 +866,18 @@ export default class Main extends BaseService<never> {
         setDeviceConnectionStatus({
           deviceID: id,
           status: "available",
-          isBlindSigner: metadata.ethereumBlindSigner,
+          isArbitraryDataSigningEnabled: metadata.isArbitraryDataSigningEnabled,
         })
       )
     })
 
     this.ledgerService.emitter.on("disconnected", ({ id }) => {
       this.store.dispatch(
-        setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
+        setDeviceConnectionStatus({
+          deviceID: id,
+          status: "disconnected",
+          isArbitraryDataSigningEnabled: false /* dummy */,
+        })
       )
     })
 

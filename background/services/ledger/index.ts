@@ -51,7 +51,7 @@ const TestedProductId = (productId: number): boolean => {
 
 type MetaData = {
   ethereumVersion: string
-  ethereumBlindSigner: boolean
+  isArbitraryDataSigningEnabled: boolean
 }
 
 export type ConnectedDevice = {
@@ -193,7 +193,7 @@ export default class LedgerService extends BaseService<Events> {
         type,
         metadata: {
           ethereumVersion: appData.version,
-          ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
         },
       })
 
@@ -208,7 +208,7 @@ export default class LedgerService extends BaseService<Events> {
           accountIDs: [idDerviationPath],
           metadata: {
             ethereumVersion: appData.version,
-            ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+            isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
           },
         })
       }

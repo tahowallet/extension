@@ -32,7 +32,8 @@ export function useSigningLedgerState(
 
     switch (device.status) {
       case "available":
-        if (txHasData && !device.isBlindSigner) return "activate-blind-signing"
+        if (txHasData && !device.isArbitraryDataSigningEnabled)
+          return "activate-blind-signing"
         return "available"
       case "busy":
         return "busy"
