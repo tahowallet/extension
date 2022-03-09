@@ -1156,6 +1156,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+
+    uiSliceEmitter.on("refreshBackgroundPage", async () => {
+      window.location.reload()
+    })
   }
 
   connectTelemetryService(): void {
