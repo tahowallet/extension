@@ -91,12 +91,14 @@ const swapSlice = createSlice({
 const {
   setLatestQuoteRequest,
   setInProgressApprovalContract: setApprovalInProgress,
+} = swapSlice.actions
+
+export const {
+  setFinalSwapQuote,
+  clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
 
-export { clearApprovalInProgress }
-
-export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
