@@ -1,6 +1,7 @@
 import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
+import { SignTypedDataRequest } from "../../redux-slices/signing"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
 
@@ -75,4 +76,31 @@ export type EnrichedEVMTransactionSignatureRequest =
 
 export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
   annotation?: TransactionAnnotation
+}
+
+export type TypedDataField = {
+  value: string
+  type: "address" | "string"
+}
+
+export type UniswapSignTypedDataAnnotation = {
+  source: "uniswap"
+  owner: string
+  spender: string
+  value: string
+  nonce: string
+  expiry: string
+  _assetName?: string
+}
+
+export type GenericSignTypedDataAnnotation = {
+  source: "unknown"
+}
+
+export type SignTypedDataAnnotation =
+  | UniswapSignTypedDataAnnotation
+  | GenericSignTypedDataAnnotation
+
+export type EnrichedEIP712SignTypedDataRequest = SignTypedDataRequest & {
+  annotation?: SignTypedDataAnnotation
 }

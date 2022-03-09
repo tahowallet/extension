@@ -19,8 +19,15 @@ import BaseService from "../base"
 import {
   EnrichedEVMTransaction,
   EnrichedEVMTransactionSignatureRequest,
+  SignTypedDataAnnotation,
   TransactionAnnotation,
+  EnrichedEIP712SignTypedDataRequest,
 } from "./types"
+import { SignTypedDataRequest } from "../../redux-slices/signing"
+import {
+  enrichUniswapSignTypedDataRequest,
+  isUniswapSignTypedDataRequest,
+} from "./utils"
 
 export * from "./types"
 
@@ -30,6 +37,7 @@ interface Events extends ServiceLifecycleEvents {
     forAccounts: string[]
   }
   enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
+  enrichedEIP712SignTypedDataRequest: EnrichedEIP712SignTypedDataRequest
 }
 
 /**
@@ -265,6 +273,29 @@ export default class EnrichmentService extends BaseService<Events> {
     )
 
     return enrichedTxSignatureRequest
+  }
+
+  enrichSignTypedDataRequest(
+    signTypedDataRequest: SignTypedDataRequest
+  ): EnrichedEIP712SignTypedDataRequest {
+    let annotation: SignTypedDataAnnotation = {
+      source: "unknown",
+    }
+    if (isUniswapSignTypedDataRequest(signTypedDataRequest)) {
+      annotation = enrichUniswapSignTypedDataRequest(signTypedDataRequest)
+    }
+
+    const enrichedSignTypedDataRequest = {
+      ...signTypedDataRequest,
+      annotation,
+    }
+
+    this.emitter.emit(
+      "enrichedEIP712SignTypedDataRequest",
+      enrichedSignTypedDataRequest
+    )
+
+    return enrichedSignTypedDataRequest
   }
 
   async enrichTransaction(
