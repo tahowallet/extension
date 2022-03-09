@@ -35,7 +35,7 @@ export type Keyring = {
 }
 
 export interface KeyringMetadata {
-  source: "import" | "newSeed"
+  source: "import" | "internal"
 }
 
 interface SerializedKeyringData {
@@ -311,7 +311,7 @@ export default class KeyringService extends BaseService<Events> {
    */
   async importKeyring(
     mnemonic: string,
-    source: "import" | "newSeed",
+    source: "import" | "internal",
     path?: string
   ): Promise<string> {
     this.requireUnlocked()
@@ -320,10 +320,7 @@ export default class KeyringService extends BaseService<Events> {
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
-    this.#keyringMetadata = {
-      ...this.#keyringMetadata,
-      [newKeyring.id]: { source },
-    }
+    this.#keyringMetadata[newKeyring.id] = { source }
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
@@ -526,7 +523,7 @@ export default class KeyringService extends BaseService<Events> {
       const keyrings = this.getKeyrings()
       this.emitter.emit("keyrings", {
         keyrings,
-        keyringMetadata: this.#keyringMetadata,
+        keyringMetadata: { ...this.#keyringMetadata },
       })
     }
   }
@@ -541,7 +538,7 @@ export default class KeyringService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
-      const keyringMetadata = this.#keyringMetadata
+      const keyringMetadata = { ...this.#keyringMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
       const vault = await encryptVault(
         {

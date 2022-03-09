@@ -85,7 +85,7 @@ export function Main(): ReactElement {
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const isNotOnKeyringRelatedPage =
       routeHistoryEntities[routeHistoryEntities.length - 1].pathname !==
-        "/signTransaction" &&
+        "/sign-transaction" &&
       !routeHistoryEntities[routeHistoryEntities.length - 1].pathname.includes(
         "/keyring/"
       )
@@ -201,12 +201,6 @@ export function Main(): ReactElement {
       <>
         <style jsx global>
           {`
-            body {
-              width: 384px;
-              height: 594px;
-              scrollbar-width: none;
-            }
-
             ::-webkit-scrollbar {
               width: 0px;
               background: transparent;
