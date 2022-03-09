@@ -23,13 +23,13 @@ jobs:
         cache: "yarn"
     - run: yarn install --frozen-lockfile
     - name: Dev build
-      if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/release-') }}
+      if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/release-')
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
         BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
     - name: Production build
-      if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-') }}
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
