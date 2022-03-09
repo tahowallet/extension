@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
@@ -44,18 +44,37 @@ function BalanceReloader(): ReactElement {
 
   const [isSpinning, setIsSpinning] = useState(false)
 
+  // 0 = never
+  const [timeWhenLastReloaded, setTimeWhenLastReloaded] = useLocalStorage(
+    "timeWhenLastReloaded",
+    "0"
+  )
+
+  const loadingTimeMs = 15000
+  const timeGapBetweenRunningReloadMs = 60000 * 2
+
   return (
     <button
       type="button"
       disabled={isSpinning}
       className={classNames("reload", { spinning: isSpinning })}
       onClick={() => {
+        const currentTime = new Date().getTime()
         setIsSpinning(true)
-        dispatch(refreshBackgroundPage())
+
+        // Appear to spin regardless if too recent. Only refresh
+        // background page if timeGapBetweenRunningReloadMs is met.
+        if (
+          Number(timeWhenLastReloaded) + timeGapBetweenRunningReloadMs <
+          currentTime
+        ) {
+          setTimeWhenLastReloaded(`${currentTime}`)
+          dispatch(refreshBackgroundPage())
+        }
         setTimeout(() => {
           setIsSpinning(false)
           window.location.reload()
-        }, 15000)
+        }, loadingTimeMs)
       }}
     >
       <style jsx>{`
