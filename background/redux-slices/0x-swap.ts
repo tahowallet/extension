@@ -95,10 +95,14 @@ const swapSlice = createSlice({
 const {
   setLatestQuoteRequest,
   setInProgressApprovalContract: setApprovalInProgress,
+} = swapSlice.actions
+
+export const {
+  setFinalSwapQuote,
+  clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
 
-export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
@@ -312,9 +316,9 @@ export const approveTransfer = createBackgroundAsyncThunk(
       logger.debug("Approval transaction mined", receipt)
     } catch (error) {
       logger.error("Approval transaction failed: ", error)
+    } finally {
+      dispatch(clearApprovalInProgress())
     }
-
-    dispatch(clearApprovalInProgress())
   }
 )
 
