@@ -178,7 +178,7 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 isDisabled={hasError}
-                linkTo={!isApproved ? "/signTransaction" : "/signData"}
+                linkTo={!isApproved ? "/sign-transaction" : "/sign-data"}
                 onClick={!isApproved ? approve : enable}
               >
                 {!isApproved ? "Approve" : "Enable"}
