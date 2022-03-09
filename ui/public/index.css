@@ -49,6 +49,12 @@ body {
   background-color: var(--hunter-green);
 }
 
+body.popup {
+  width: 384px;
+  height: 594px;
+  scrollbar-width: none;
+}
+
 a {
   text-decoration: none;
 }

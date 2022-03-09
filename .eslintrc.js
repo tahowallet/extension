@@ -1,6 +1,13 @@
 // This is a non-ESM JS file, so this rule can't be followed.
 /* eslint-disable @typescript-eslint/no-var-requires */
 const {
+  rules: {
+    "@typescript-eslint/naming-convention":
+      airbnbTypeScriptNamingConventionRules,
+  },
+} = require("eslint-config-airbnb-typescript/lib/shared")
+
+const {
   rules: { "no-param-reassign": airbnbNoParamReassignRules },
 } = require("eslint-config-airbnb-base/rules/best-practices")
 /* eslint-enable @typescript-eslint/no-var-requires */
@@ -28,6 +35,22 @@ module.exports = {
     // The rule is also mostly irrelevant to this codebase due to TypeScript
     // usage (where .tsx is required).
     "react/jsx-filename-extension": [0],
+    "@typescript-eslint/naming-convention": [
+      ...airbnbTypeScriptNamingConventionRules,
+      // Allow underscore-only identifiers to indicate ignored positional variables.
+      {
+        selector: "variable",
+        format: null,
+        filter: {
+          regex: "^_+$",
+          match: true,
+        },
+        custom: {
+          regex: "^_+$",
+          match: true,
+        },
+      },
+    ],
     // TypeScript allows us to declare props that are non-optional internally
     // but are interpreted as optional externally if they have defaultProps
     // defined; the following two adjustments disable eslint-plugin-react
@@ -70,7 +93,12 @@ module.exports = {
       },
     ],
   },
-  ignorePatterns: ["dist/", "extension-reload.js", "**/validate/*.js"],
+  ignorePatterns: [
+    "dist/",
+    "extension-reload.js",
+    "**/validate/*.js",
+    "**/local-chain/**",
+  ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     project: "./.tsconfig-eslint.json",
