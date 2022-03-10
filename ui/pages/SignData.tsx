@@ -85,7 +85,7 @@ export default function SignData({
   const signatureRequestSource =
     typedDataRequest.annotation?.source !== "unknown"
       ? typedDataRequest.annotation?.source
-      : "A dapp is requesting your signature"
+      : ""
 
   return (
     <section>
@@ -99,9 +99,12 @@ export default function SignData({
         <div className="sign_block">
           <div className="container">
             <div className="label header">
-              {internal ? "Your signature is required" : signatureRequestSource}
+              {internal
+                ? "Your signature is required"
+                : "A dapp is requesting your signature"}
             </div>
             <div className="divider" />
+            <span className="source">{capitalize(signatureRequestSource)}</span>
             <div className="divider" />
             {keys.length > 2 ? (
               <SignTypedDataInfo typedDataRequest={typedDataRequest} />
@@ -152,6 +155,12 @@ export default function SignData({
             background-color: var(--green-95);
             z-index: 5;
           }
+          .source {
+            padding: 20px 0;
+            font-weight: 500;
+            font-size: 16px;
+            line-height: 24px;
+          }
           .title {
             color: var(--trophy-gold);
             font-size: 36px;
@@ -190,9 +199,12 @@ export default function SignData({
           }
           .label {
             color: var(--green-40);
+            font-weight: 500;
+            font-size: 16px;
+            line-height: 24px;
           }
           .header {
-            padding: 16px 0;
+            padding: 17px 0;
           }
           .message {
             display: flex;
@@ -232,7 +244,6 @@ export default function SignData({
           }
           .container {
             display: flex;
-            margin: 20px 0;
             flex-direction: column;
             align-items: center;
           }

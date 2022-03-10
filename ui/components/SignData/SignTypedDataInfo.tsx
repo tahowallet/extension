@@ -67,13 +67,16 @@ export default function SignTypedDataInfo({
           .messages {
             display: flex;
             flex-flow: column;
+            font-weight: 500;
             width: 100%;
-            padding-top: 16px;
+            padding: 16px 0;
           }
           .message {
             display: flex;
             justify-content: space-between;
-            padding: 6px 16px;
+            padding-top: 8px;
+            padding-right: 16px;
+            padding-left: 16px;
           }
           .value {
             color: #ccd3d3;
