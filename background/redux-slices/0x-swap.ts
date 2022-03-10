@@ -87,9 +87,8 @@ const swapSlice = createSlice({
   },
 })
 
-const {
-  setInProgressApprovalContract: setApprovalInProgress,
-} = swapSlice.actions
+const { setInProgressApprovalContract: setApprovalInProgress } =
+  swapSlice.actions
 
 export const {
   setFinalSwapQuote,
