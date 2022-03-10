@@ -1,3 +1,4 @@
+import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
@@ -275,14 +276,29 @@ export default class EnrichmentService extends BaseService<Events> {
     return enrichedTxSignatureRequest
   }
 
-  enrichSignTypedDataRequest(
+  async enrichSignTypedDataRequest(
     signTypedDataRequest: SignTypedDataRequest
-  ): EnrichedSignTypedDataRequest {
+  ): Promise<EnrichedSignTypedDataRequest> {
     let annotation: SignTypedDataAnnotation = {
       source: "unknown",
     }
     if (isUniswapSignTypedDataRequest(signTypedDataRequest)) {
-      annotation = enrichUniswapSignTypedDataRequest(signTypedDataRequest)
+      const assets = await this.indexingService.getAssetsToTrack()
+      const correspondingAsset = assets.find((asset) => {
+        if (signTypedDataRequest.typedData.domain.verifyingContract) {
+          return (
+            normalizeHexAddress(asset.contractAddress) ===
+            normalizeHexAddress(
+              signTypedDataRequest.typedData.domain.verifyingContract
+            )
+          )
+        }
+        return false
+      })
+      annotation = enrichUniswapSignTypedDataRequest(
+        signTypedDataRequest,
+        correspondingAsset
+      )
     }
 
     const enrichedSignTypedDataRequest = {

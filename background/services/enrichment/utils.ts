@@ -1,7 +1,9 @@
+import dayjs from "dayjs"
 import { UniswapSignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SignTypedDataRequest } from "../signing/types"
 import { truncateAddress } from "../../lib/utils"
+import { SmartContractFungibleAsset } from "../../assets"
 
 export const ENRICHABLE_CONTRACTS: { [k: string]: string } = {
   "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "Uniswap",
@@ -30,19 +32,28 @@ export function isUniswapSignTypedDataRequest(
 }
 
 export function enrichUniswapSignTypedDataRequest(
-  signTypedDataRequest: SignTypedDataRequest
+  signTypedDataRequest: SignTypedDataRequest,
+  asset: SmartContractFungibleAsset | undefined
 ): UniswapSignTypedDataAnnotation {
+  // If we have a corresponding asset - use known decimals to display a human-friendly
+  // amount e.g. 10 USDC.  Otherwise just display the value e.g. 10000000
+  const value = asset
+    ? `${
+        Number(signTypedDataRequest.typedData.message.value) /
+        10 ** asset?.decimals
+      } ${asset.symbol}`
+    : (signTypedDataRequest.typedData.message.value as string)
+
   return {
     source: "uniswap",
-    owner: truncateAddress(
-      signTypedDataRequest.typedData.message.owner as string
-    ),
-    spender: truncateAddress(
-      signTypedDataRequest.typedData.message.spender as string
-    ),
-    value: signTypedDataRequest.typedData.message.value as string,
-    _assetName: signTypedDataRequest.typedData.domain.name,
-    nonce: signTypedDataRequest.typedData.message.nonce as string,
-    expiry: signTypedDataRequest.typedData.message.deadline as string,
+    displayFields: {
+      owner: signTypedDataRequest.typedData.message.owner as string,
+      spender: signTypedDataRequest.typedData.message.spender as string,
+      value,
+      nonce: signTypedDataRequest.typedData.message.nonce as string,
+      expiry: dayjs
+        .unix(Number(signTypedDataRequest.typedData.message.deadline))
+        .format("DD MMM YYYY"),
+    },
   }
 }

@@ -81,6 +81,12 @@ export default function SignData({
     await dispatch(rejectDataSignature())
     history.goBack()
   }
+
+  const signatureRequestSource =
+    typedDataRequest.annotation?.source !== "unknown"
+      ? typedDataRequest.annotation?.source
+      : "A dapp is requesting your signature"
+
   return (
     <section>
       <SignTransactionNetworkAccountInfoTopBar
@@ -93,9 +99,7 @@ export default function SignData({
         <div className="sign_block">
           <div className="container">
             <div className="label header">
-              {internal
-                ? "Your signature is required"
-                : "A dapp is requesting your signature"}
+              {internal ? "Your signature is required" : signatureRequestSource}
             </div>
             <div className="divider" />
             <div className="divider" />

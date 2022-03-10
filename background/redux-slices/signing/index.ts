@@ -11,6 +11,7 @@ import {
   SigningState,
 } from "./types"
 import { createBackgroundAsyncThunk } from "../utils"
+import { EnrichedSignTypedDataRequest } from "../../services/enrichment"
 
 export const signingSliceEmitter = new Emittery<Events>()
 
@@ -109,7 +110,7 @@ const signingSlice = createSlice({
     }),
     typedDataRequest: (
       state,
-      { payload }: { payload: SignTypedDataRequest }
+      { payload }: { payload: EnrichedSignTypedDataRequest }
     ) => ({
       ...state,
       typedDataRequest: payload,

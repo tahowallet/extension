@@ -85,12 +85,13 @@ export type TypedDataField = {
 
 export type UniswapSignTypedDataAnnotation = {
   source: "uniswap"
-  owner: string
-  spender: string
-  value: string
-  nonce: string
-  expiry: string
-  _assetName?: string
+  displayFields: {
+    owner: string
+    spender: string
+    value: string
+    nonce: string
+    expiry: string
+  }
 }
 
 export type GenericSignTypedDataAnnotation = {
@@ -102,5 +103,5 @@ export type SignTypedDataAnnotation =
   | GenericSignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
-  annotation?: SignTypedDataAnnotation
+  annotation: SignTypedDataAnnotation
 }
