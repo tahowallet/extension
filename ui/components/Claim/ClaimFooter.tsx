@@ -5,9 +5,7 @@ import {
   setClaimStep,
   signTokenDelegationData,
   selectCurrentlyClaiming,
-  selectClaimed,
 } from "@tallyho/tally-background/redux-slices/claim"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import React, {
   Dispatch,
   ReactElement,
@@ -38,9 +36,7 @@ export default function ClaimFooter({
 
   const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
   const isDelegationSigned = useBackgroundSelector(selectIsDelegationSigned)
-  const claimed = useBackgroundSelector(selectClaimed)
   const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
 
   const lastStepButtonText = useMemo(() => {
     if (selectedDelegate.address !== undefined && !isDelegationSigned) {
@@ -63,6 +59,9 @@ export default function ClaimFooter({
     [lastStepButtonText]
   )
 
+  if (isCurrentlyClaiming) {
+    showSuccess()
+  }
   const handleClick = useCallback(async () => {
     if (buttonText[step - 1] === "Sign Delegation") {
       dispatch(signTokenDelegationData())
@@ -74,10 +73,6 @@ export default function ClaimFooter({
       advanceStep()
     }
   }, [buttonText, step, advanceStep, dispatch, history])
-
-  if (claimed[currentAccount.address]) {
-    showSuccess()
-  }
 
   const handleProgressStepClick = (s: number) => {
     setStep(s)

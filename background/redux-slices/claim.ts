@@ -51,6 +51,7 @@ interface ClaimingState {
   expiry: number | undefined
   claimStep: number
   currentlyClaiming: boolean
+  claimError: { [address: HexString]: boolean }
 }
 
 const newBalanceTree = new BalanceTree(eligibles)
@@ -112,6 +113,7 @@ const initialState = {
   nonce: undefined,
   expiry: undefined,
   currentlyClaiming: false,
+  claimError: {},
 } as ClaimingState
 
 const claimingSlice = createSlice({
@@ -136,11 +138,15 @@ const claimingSlice = createSlice({
     resetStep: (immerState) => {
       immerState.claimStep = 1
     },
+    claimError: (immerState, { payload }: { payload: HexString }) => {
+      immerState.claimError[payload] = true
+    },
     currentlyClaiming: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyClaiming = payload
     },
     claimed: (immerState, { payload }: { payload: HexString }) => {
       immerState.claimed[payload] = true
+      immerState.claimError[payload] = false
     },
     saveSignature: (
       state,
@@ -172,6 +178,7 @@ export const {
   claimed,
   resetStep,
   resetSignature,
+  claimError,
 } = claimingSlice.actions
 
 export default claimingSlice.reducer
@@ -201,14 +208,16 @@ export const claimRewards = createBackgroundAsyncThunk(
     const distributorContract = await getDistributorContract()
 
     const confirmReceipt = async (response: Promise<TransactionResponse>) => {
-      const awaited = await response
-      const receipt = await awaited.wait()
+      const result = await response
+      const receipt = await result.wait()
       if (receipt.status === 1) {
         dispatch(currentlyClaiming(false))
         dispatch(claimed(normalizeEVMAddress(account)))
         return account
       }
-      return ethers.constants.AddressZero
+      dispatch(currentlyClaiming(false))
+      dispatch(dispatch(claimError(normalizeEVMAddress(account))))
+      return null
     }
 
     try {
@@ -316,6 +325,11 @@ export const selectIsDelegationSigned = createSelector(
 export const selectClaimed = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
   (claimState: ClaimingState) => claimState.claimed
+)
+
+export const selectClaimError = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) => claimState.claimError
 )
 
 export const selectCurrentlyClaiming = createSelector(

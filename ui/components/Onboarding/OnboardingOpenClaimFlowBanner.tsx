@@ -5,42 +5,76 @@ import {
   toFixedPointNumber,
   fixedPointNumberToString,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccount,
+  selectCurrentAccountSigningMethod,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
+import {
+  selectClaimError,
+  selectCurrentlyClaiming,
+} from "@tallyho/tally-background/redux-slices/claim"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
-function IneligibleCTAContent({
+function EligibleCTAContent({
   currentAccountSigningMethod,
   claimAmount,
+  isCurrentlyClaiming,
+  claimError,
 }: {
   currentAccountSigningMethod: SigningMethod | null
   claimAmount: string
+  isCurrentlyClaiming: boolean
+  claimError: boolean
 }) {
+  const getComponentToDisplay = () => {
+    if (isCurrentlyClaiming) {
+      return <div className="claiming">Claiming...</div>
+    }
+    if (claimError) {
+      return (
+        <div className="claimError">
+          Something went wrong, please try claiming again.
+        </div>
+      )
+    }
+    return (
+      <div className="claimable_woohoo">
+        {currentAccountSigningMethod
+          ? "Wohoo! You can claim"
+          : "Upgrade your wallet to claim"}
+      </div>
+    )
+  }
   return (
     <>
       <div>
         <img className="image" src="./images/claim.png" alt="" />
       </div>
-      <div className="claimable">
-        <div className="claimable_woohoo">
-          {currentAccountSigningMethod
-            ? "Wohoo! You can claim"
-            : "Upgrade your wallet to claim"}
-        </div>
+      <div
+        className={classNames("claimable", {
+          isCurrentlyClaiming: "left",
+        })}
+      >
+        {getComponentToDisplay()}
         <div>
           <span className="claimable_amount">{claimAmount}</span> TALLY
         </div>
       </div>
-      <Link
-        to="/eligible"
-        className={classNames({
-          no_click: !currentAccountSigningMethod,
-        })}
-      >
-        <div className="link_content">{">"}</div>
-      </Link>
+      {!isCurrentlyClaiming ? (
+        <Link
+          to="/eligible"
+          className={classNames({
+            no_click: !currentAccountSigningMethod,
+          })}
+        >
+          <div className="link_content">{">"}</div>
+        </Link>
+      ) : (
+        <></>
+      )}
       <style>
         {`
           .image {
@@ -57,6 +91,15 @@ function IneligibleCTAContent({
             color: var(--green-40);
             font-size: 14px;
             width: 190px;
+          }
+          .left {
+            justify-self: flex-start;
+          }
+          .claiming{
+            color: var(--trophy-gold);
+          }
+          .claimError{
+            color: var(--error);
           }
           .claimable_amount {
             font-family: Quincy CF;
@@ -84,7 +127,7 @@ function IneligibleCTAContent({
   )
 }
 
-function EligibleCTAContent({
+function IneligibleCTAContent({
   handleCloseBanner,
 }: {
   handleCloseBanner: () => void
@@ -178,6 +221,11 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
     selectCurrentAccountSigningMethod
   )
 
+  const claimError = useBackgroundSelector(selectClaimError)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
+
   const [showOrHide, setShowOrHide] = useLocalStorage(
     "showOrHideOnboardingClaimFlowBanner",
     "show"
@@ -191,14 +239,16 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
         upgrade: !currentAccountSigningMethod,
       })}
     >
-      <div className="banner">
+      <div className={classNames("banner", { left: isCurrentlyClaiming })}>
         {claimAmount !== "0" ? (
-          <IneligibleCTAContent
+          <EligibleCTAContent
             currentAccountSigningMethod={currentAccountSigningMethod}
             claimAmount={claimAmount}
+            isCurrentlyClaiming={isCurrentlyClaiming}
+            claimError={claimError[currentAccount.address]}
           />
         ) : (
-          <EligibleCTAContent
+          <IneligibleCTAContent
             handleCloseBanner={() => {
               setShowOrHide("hide")
             }}
@@ -219,6 +269,10 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             margin-bottom: 20px;
             justify-content: space-between;
             align-items: center;
+          }
+          .left {
+            justify-content: flex-start;
+            gap: 20px;
           }
         `}
       </style>
