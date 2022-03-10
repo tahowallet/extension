@@ -20,9 +20,9 @@ import {
 } from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH, MINUTE } from "../../constants"
+import { ETH, FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { HIDE_IMPORT_LEDGER } from "../../features/features"
+import { HIDE_IMPORT_LEDGER, USE_MAINNET_FORK } from "../../features/features"
 import { AddressOnNetwork } from "../../accounts"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
@@ -320,10 +320,7 @@ export default class KeyringService extends BaseService<Events> {
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
-    this.#keyringMetadata = {
-      ...this.#keyringMetadata,
-      [newKeyring.id]: { source },
-    }
+    this.#keyringMetadata[newKeyring.id] = { source }
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
@@ -444,7 +441,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network,
+      network: USE_MAINNET_FORK ? FORK : network,
     }
     if (HIDE_IMPORT_LEDGER) {
       this.emitter.emit("signedTx", signedTx)
@@ -526,7 +523,7 @@ export default class KeyringService extends BaseService<Events> {
       const keyrings = this.getKeyrings()
       this.emitter.emit("keyrings", {
         keyrings,
-        keyringMetadata: this.#keyringMetadata,
+        keyringMetadata: { ...this.#keyringMetadata },
       })
     }
   }
@@ -541,7 +538,7 @@ export default class KeyringService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
-      const keyringMetadata = this.#keyringMetadata
+      const keyringMetadata = { ...this.#keyringMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
       const vault = await encryptVault(
         {
