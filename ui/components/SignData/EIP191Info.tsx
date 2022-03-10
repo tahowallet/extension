@@ -1,5 +1,5 @@
 import React from "react"
-import { SignDataRequest } from "@tallyho/tally-background/redux-slices/signing"
+import { SignDataRequest } from "@tallyho/tally-background/redux-slices/signing/types"
 
 const EIP191Info: React.FC<{
   signingData: SignDataRequest["signingData"]

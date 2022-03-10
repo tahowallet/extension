@@ -21,7 +21,7 @@ import {
   EnrichedEVMTransactionSignatureRequest,
   SignTypedDataAnnotation,
   TransactionAnnotation,
-  EnrichedEIP712SignTypedDataRequest,
+  EnrichedSignTypedDataRequest,
 } from "./types"
 import { SignTypedDataRequest } from "../signing/types"
 import {
@@ -37,7 +37,7 @@ interface Events extends ServiceLifecycleEvents {
     forAccounts: string[]
   }
   enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
-  enrichedEIP712SignTypedDataRequest: EnrichedEIP712SignTypedDataRequest
+  enrichedEIP712SignTypedDataRequest: EnrichedSignTypedDataRequest
 }
 
 /**
@@ -277,7 +277,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
   enrichSignTypedDataRequest(
     signTypedDataRequest: SignTypedDataRequest
-  ): EnrichedEIP712SignTypedDataRequest {
+  ): EnrichedSignTypedDataRequest {
     let annotation: SignTypedDataAnnotation = {
       source: "unknown",
     }

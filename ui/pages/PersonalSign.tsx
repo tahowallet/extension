@@ -5,9 +5,11 @@ import {
   rejectDataSignature,
   signData,
   selectSigningData,
+} from "@tallyho/tally-background/redux-slices/signing"
+import {
   SignDataMessageType,
   EIP4361Data,
-} from "@tallyho/tally-background/redux-slices/signing"
+} from "@tallyho/tally-background/redux-slices/signing/types"
 import { useHistory } from "react-router-dom"
 import { EIP191Info, EIP4361Info } from "../components/SignData"
 import SharedButton from "../components/Shared/SharedButton"

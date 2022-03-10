@@ -1,43 +1,18 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { SiweMessage } from "siwe"
-import { EnrichedEIP712SignTypedDataRequest } from "../services/enrichment/types"
-import { SigningMethod, SignTypedDataRequest } from "../services/signing/types"
-import { EIP191Data, EIP712TypedData, HexString } from "../types"
-import { createBackgroundAsyncThunk } from "./utils"
-
-export enum SignDataMessageType {
-  EIP191 = 0,
-  EIP4361 = 1,
-}
-
-// can add more types to this in the future
-export type ExpectedSigningData = EIP191Data | EIP4361Data
-
-export type Events = {
-  requestSignTypedData: {
-    typedData: EIP712TypedData
-    account: HexString
-    signingMethod: SigningMethod
-  }
-  requestSignData: {
-    signingData: ExpectedSigningData
-    messageType: SignDataMessageType
-    rawSigningData: string
-    account: HexString
-  }
-  signatureRejected: never
-}
+import { SignTypedDataRequest } from "../../services/signing/types"
+import {
+  EIP4361Data,
+  Events,
+  ExpectedSigningData,
+  SignDataMessageType,
+  SignDataRequest,
+  SigningState,
+} from "./types"
+import { createBackgroundAsyncThunk } from "../utils"
 
 export const signingSliceEmitter = new Emittery<Events>()
-
-export type SigningState = {
-  signedTypedData: string | undefined
-  typedDataRequest: EnrichedEIP712SignTypedDataRequest | undefined
-
-  signedData: string | undefined
-  signDataRequest: SignDataRequest | undefined
-}
 
 export const initialState: SigningState = {
   typedDataRequest: undefined,
@@ -45,31 +20,6 @@ export const initialState: SigningState = {
 
   signedData: undefined,
   signDataRequest: undefined,
-}
-
-export type EIP712DomainType = {
-  name?: string
-  version?: string
-  chainId?: number
-  verifyingContract?: HexString
-}
-
-// spec found https://eips.ethereum.org/EIPS/eip-4361
-export interface EIP4361Data {
-  domain: string
-  address: string
-  version: string
-  chainId: number
-  nonce: string
-  expiration?: string
-  statement?: string
-}
-
-export type SignDataRequest = {
-  account: string
-  rawSigningData: string
-  signingData: ExpectedSigningData
-  messageType: SignDataMessageType
 }
 
 export const signTypedData = createBackgroundAsyncThunk(

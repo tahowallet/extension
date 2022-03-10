@@ -101,6 +101,6 @@ export type SignTypedDataAnnotation =
   | UniswapSignTypedDataAnnotation
   | GenericSignTypedDataAnnotation
 
-export type EnrichedEIP712SignTypedDataRequest = SignTypedDataRequest & {
+export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
   annotation?: SignTypedDataAnnotation
 }

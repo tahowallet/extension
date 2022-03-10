@@ -18,7 +18,9 @@ import {
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
-import { SignDataRequest, parseSigningData } from "../../redux-slices/signing"
+import { parseSigningData } from "../../redux-slices/signing"
+import { SignDataRequest } from "../../redux-slices/signing/types"
+
 import { SignTypedDataRequest } from "../signing/types"
 import { hexToAscii } from "../../lib/utils"
 
