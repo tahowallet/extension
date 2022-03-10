@@ -442,7 +442,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
 
     this.currentProvider = this.providerCreators[this.currentProviderIndex]()
-    this.resubscribe()
+    await this.resubscribe()
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
