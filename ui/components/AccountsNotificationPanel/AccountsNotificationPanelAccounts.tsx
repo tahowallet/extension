@@ -253,7 +253,10 @@ export default function AccountsNotificationPanelAccounts({
                             e.currentTarget.style.backgroundColor =
                               "var(--hunter-green)"
                           }}
-                          onMouseLeave={(e) => {
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                          onBlur={(e) => {
                             e.currentTarget.style.backgroundColor = ""
                           }}
                         >
