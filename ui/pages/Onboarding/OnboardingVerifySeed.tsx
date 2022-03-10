@@ -246,7 +246,7 @@ export default function OnboardingVerifySeed(): ReactElement {
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
-            width: 52px;
+            width: 95px;
             height: 25px;
             position: absolute;
             left: 0px;
