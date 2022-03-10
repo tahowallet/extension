@@ -117,7 +117,7 @@ export default function SwapTransactionSettingsChooser({
           <FeeSettingsText />
         </span>
         <span className="label">
-          Tally fee for the DAO
+          Tally Ho fee for the DAO
           <div className="info">{SWAP_FEE * 100}%</div>
         </span>
       </div>

@@ -1,36 +1,42 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
-import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
+import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLedgersConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
-import { SigningLedgerState } from "./useSigningLedgerState"
+import { useSigningLedgerState } from "./useSigningLedgerState"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
-  children,
-  signingLedgerState,
-  isWaitingForHardware,
+  detailPanel,
+  reviewPanel,
+  extraPanel,
   confirmButtonLabel,
   handleConfirm,
   handleReject,
+  isTransactionSigning,
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
-  children: ReactNode
-  signingLedgerState: SigningLedgerState | null
-  isWaitingForHardware: boolean
+  detailPanel: ReactNode
+  reviewPanel: ReactNode
+  extraPanel: ReactNode
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
+  isTransactionSigning: boolean
 }): ReactElement {
+  const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
-  const [panelNumber, setPanelNumber] = useState(0)
+
+  const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
+
+  const isLedgerSigning = signingMethod?.type === "ledger"
+  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   return (
     <section>
@@ -40,7 +46,9 @@ export default function SignTransactionContainer({
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
-      <div className="primary_info_card standard_width">{children}</div>
+      <div className="primary_info_card standard_width">
+        {isWaitingForHardware ? reviewPanel : detailPanel}
+      </div>
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
@@ -48,12 +56,7 @@ export default function SignTransactionContainer({
         </div>
       ) : (
         <>
-          <SharedPanelSwitcher
-            setPanelNumber={setPanelNumber}
-            panelNumber={panelNumber}
-            panelNames={["Details"]}
-          />
-          {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
+          {extraPanel}
           <div className="footer_actions">
             <SharedButton
               iconSize="large"
@@ -63,17 +66,32 @@ export default function SignTransactionContainer({
             >
               Reject
             </SharedButton>
-            {signerAccountTotal.signingMethod ? (
-              <SharedButton
-                type="primary"
-                iconSize="large"
-                size="large"
-                onClick={handleConfirm}
-                showLoadingOnClick
-              >
-                {confirmButtonLabel}
-              </SharedButton>
-            ) : (
+            {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
+            {signerAccountTotal.signingMethod &&
+              (signerAccountTotal.signingMethod.type === "ledger" &&
+              signingLedgerState !== "available" ? (
+                <SharedButton
+                  type="primary"
+                  iconSize="large"
+                  size="large"
+                  onClick={() => {
+                    setSlideUpOpen(true)
+                  }}
+                >
+                  Check Ledger
+                </SharedButton>
+              ) : (
+                <SharedButton
+                  type="primary"
+                  iconSize="large"
+                  size="large"
+                  onClick={handleConfirm}
+                  showLoadingOnClick
+                >
+                  {confirmButtonLabel}
+                </SharedButton>
+              ))}
+            {!signerAccountTotal.signingMethod && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>
@@ -94,6 +112,9 @@ export default function SignTransactionContainer({
           <SignTransactionWrongLedgerConnected
             signerAccountTotal={signerAccountTotal}
           />
+        )}
+        {signingLedgerState === "multiple-ledgers-connected" && (
+          <SignTransactionMultipleLedgersConnected />
         )}
         {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>

@@ -46,6 +46,12 @@ body {
   background-color: var(--hunter-green);
 }
 
+body.popup {
+  width: 384px;
+  height: 594px;
+  scrollbar-width: none;
+}
+
 a {
   text-decoration: none;
 }
@@ -124,4 +130,11 @@ label {
 .hide {
   opacity: 0;
   pointer-events: none;
+}
+
+.divider {
+  width: 80%;
+  height: 2px;
+  opacity: 60%;
+  background-color: var(--green-120);
 }

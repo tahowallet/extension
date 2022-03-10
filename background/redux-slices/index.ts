@@ -25,8 +25,8 @@ const mainReducer = combineReducers({
   transactionConstruction: transactionConstructionReducer,
   ui: uiReducer,
   dappPermission: dappPermissionReducer,
-  ...(HIDE_IMPORT_LEDGER ? {} : { ledger: ledgerReducer }),
   signing: signingReducer,
+  ...(HIDE_IMPORT_LEDGER ? {} : { ledger: ledgerReducer }),
   ...(HIDE_EARN_PAGE ? {} : { earn: earnReducer }),
 })
 
