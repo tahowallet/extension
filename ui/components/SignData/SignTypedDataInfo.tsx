@@ -37,20 +37,16 @@ export default function SignTypedDataInfo({
               <div className="key">{capitalize(key)}</div>
               <div className="value">
                 {truncateAddress(value)}{" "}
-                <SharedButton
-                  type="tertiaryGray"
-                  size="medium"
-                  icon="external"
-                  customHeight="100%"
-                  iconSize="secondaryMedium"
+                <button
                   onClick={() => {
                     window
                       .open(`https://etherscan.io/address/${value}`, "_blank")
                       ?.focus()
                   }}
-                >
-                  {/* No children desired */}
-                </SharedButton>
+                  type="button"
+                  aria-label="View Address on Etherscan"
+                  className="icon_external"
+                />
               </div>
             </div>
           )
@@ -70,6 +66,15 @@ export default function SignTypedDataInfo({
             font-weight: 500;
             width: 100%;
             padding: 16px 0;
+          }
+          .icon_external {
+            mask-image: url("./images/new-tab-s@2.png");
+            mask-size: 16px 16px;
+            width: 16px;
+            margin-left: 4px;
+            font-weight: bold;
+            height: 16px;
+            background-color: var(--trophy-gold);
           }
           .message {
             display: flex;
