@@ -27,10 +27,10 @@ export default function RemoveAddressLabel({
             flexDirection: row;
             align-items: center;
             color: var(--error);
-            font-size: 18px;
+            font-size: 16px;
             height: 100%;
             line-height 24px;
-            font-weight: bold;
+            font-weight: 500;
             width: 100%;
           }
           .hover:hover {

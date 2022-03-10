@@ -98,48 +98,55 @@ export default function AccountItemOptionsMenu({
       <style jsx>
         {`
           .icon_settings {
-            background: url("./images/more_dots@2x.png") center no-repeat;
-            background-size: cover;
+            mask-image: url("./images/more_dots@2x.png");
+            mask-repeat: no-repeat;
+            mask-position: center;
+            background-color: var(--green-60);
+            mask-size: 20%;
             width: 4px;
             height: 20px;
             border: 10px solid transparent;
           }
-          .close_button {
-            height: 62px;
+          .icon_settings:hover {
+            background-color: var(--green-40);
           }
           .remove_address_button {
             flex-grow: 2;
-            height: 62px;
           }
           .options {
             position: absolute;
             right: 8;
             border-radius: 4px;
-            height: 42px;
             background-color: var(--green-120);
             display: flex;
             align-items: center;
             flex-direction: row;
             justify-content: space-between;
             width: 212px;
-            padding: 10px;
             border-radius: 4px;
           }
           .option {
             display: flex;
+            line-height: 24px;
+            padding: 14px;
             flex-direction: row;
             width: 100%;
             align-items: center;
+            height: 100%;
+            cursor: default;
             justify-content: space-between;
           }
           .icon_close {
             mask-image: url("./images/close.svg");
             mask-size: cover;
+            margin-right -2px;
             width: 11px;
             height: 11px;
-            margin-right: 5px;
-            background-color: var(--green-20);
+            background-color: var(--green-40);
             z-index: 1;
+          }
+          .icon_close:hover {
+            background-color: var(--green-20);
           }
         `}
       </style>
