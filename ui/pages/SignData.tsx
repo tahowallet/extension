@@ -104,7 +104,13 @@ export default function SignData({
                 : "A dapp is requesting your signature"}
             </div>
             <div className="divider" />
-            <span className="source">{capitalize(signatureRequestSource)}</span>
+            {signatureRequestSource ? (
+              <span className="source">
+                {capitalize(signatureRequestSource)}
+              </span>
+            ) : (
+              <></>
+            )}
             <div className="divider" />
             {keys.length > 2 ? (
               <SignTypedDataInfo typedDataRequest={typedDataRequest} />
