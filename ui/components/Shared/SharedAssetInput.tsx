@@ -20,6 +20,32 @@ import SharedAssetItem, {
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 
+// List of symbols we want to display first.  Lower array index === higher priority.
+// For now we just prioritize somewhat popular assets that we are able to load an icon for.
+const SYMBOL_PRIORITY_LIST = [
+  "UST",
+  "KEEP",
+  "ENS",
+  "CRV",
+  "FTM",
+  "GRT",
+  "BAL",
+  "MATIC",
+  "NU",
+  "AMP",
+  "BNT",
+  "COMP",
+  "UMA",
+  "WLTC",
+  "CVC",
+]
+
+const symbolPriority = Object.fromEntries(
+  SYMBOL_PRIORITY_LIST.map((symbol, idx) => [
+    symbol,
+    SYMBOL_PRIORITY_LIST.length - idx,
+  ])
+)
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
   assets: AnyAssetWithOptionalAmount<AssetType>[]
   setSelectedAssetAndClose: (
@@ -28,12 +54,22 @@ interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
 }
 
 // Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
-// the current locale.
-function assetAlphabeticSorter<
+// the current locale.  Symbols passed into the symbolList will take priority
+// over alphabetical sorting.
+function prioritizedAssetAlphabeticSorter<
   AssetType extends AnyAsset,
   T extends AnyAssetWithOptionalAmount<AssetType>
->({ asset: { symbol } }: T, { asset: { symbol: symbol2 } }: T) {
-  return symbol.localeCompare(symbol2)
+>({ asset: { symbol: symbol1 } }: T, { asset: { symbol: symbol2 } }: T) {
+  const firstSymbolPriority = symbolPriority[symbol1] ?? 0
+  const secondSymbolPriority = symbolPriority[symbol2] ?? 0
+  if (firstSymbolPriority > secondSymbolPriority) {
+    return -1
+  }
+  if (firstSymbolPriority < secondSymbolPriority) {
+    return 1
+  }
+
+  return symbol1.localeCompare(symbol2)
 }
 
 // Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
@@ -100,7 +136,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
 
   const sortedFilteredAssets = filteredAssets.sort(
     searchTerm.trim() === ""
-      ? assetAlphabeticSorter
+      ? prioritizedAssetAlphabeticSorter
       : assetAlphabeticSorterWithFilter(searchTerm.trim())
   )
 
@@ -125,6 +161,10 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       </div>
       <div className="divider" />
+      <div className="coming_soon_notice">
+        <div className="notice_icon" />
+        ETH coming soon
+      </div>
       <ul className="assets_list">
         {sortedFilteredAssets.map((assetWithOptionalAmount) => {
           const { asset } = assetWithOptionalAmount
@@ -143,6 +183,24 @@ function SelectAssetMenuContent<T extends AnyAsset>(
       </ul>
       <style jsx>
         {`
+          .coming_soon_notice {
+            display: flex;
+            color: var(--attention);
+            font-size: 14px;
+            font-weight: 400;
+            margin-left: 25px;
+            padding-top: 13px;
+            padding-bottom: 12px;
+            align-items: center;
+          }
+          .notice_icon {
+            mask-image: url("./images/warning@2x.png");
+            background-color: var(--attention);
+            mask-size: 15px 14px;
+            width: 15px;
+            height: 14px;
+            margin-right: 6px;
+          }
           .search_label {
             height: 20px;
             color: var(--green-60);
@@ -178,13 +236,14 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           }
           .divider {
             width: 384px;
+            height: 0;
             border-bottom: 1px solid var(--hunter-green);
             margin-top: 15px;
           }
           .assets_list {
             display: block;
             overflow: scroll;
-            height: calc(100% - 98px);
+            height: calc(100% - 140px);
             width: 100%;
           }
         `}
