@@ -2,7 +2,11 @@ import React, { ReactElement, useState } from "react"
 import { useHistory, Redirect } from "react-router-dom"
 import classNames from "classnames"
 
-export default function SharedBackButton(): ReactElement {
+export default function SharedBackButton({
+  onClick,
+}: {
+  onClick?: () => void
+}): ReactElement {
   const historyPre: unknown = useHistory()
   const [redirect, setRedirect] = useState(false)
   const history = historyPre as {
@@ -25,10 +29,14 @@ export default function SharedBackButton(): ReactElement {
     <button
       type="button"
       className={classNames({
-        hide: history.entries.length <= 1,
+        hide: !onClick ?? history.entries.length <= 1,
       })}
       onClick={() => {
-        setRedirect(true)
+        if (onClick) {
+          onClick()
+        } else {
+          setRedirect(true)
+        }
       }}
     >
       <div className="icon_chevron_left" />
