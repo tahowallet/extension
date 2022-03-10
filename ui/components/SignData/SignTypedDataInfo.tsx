@@ -1,11 +1,10 @@
 import React, { ReactElement } from "react"
 import {
-  isProbablyHexString,
+  isProbablyEthereumAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
 import capitalize from "../../utils/capitalize"
-import SharedButton from "../Shared/SharedButton"
 
 type SignTypedDataInfoProps = {
   typedDataRequest: EnrichedSignTypedDataRequest
@@ -31,12 +30,12 @@ export default function SignTypedDataInfo({
       </div>
       {keys.map((key) => {
         const value = fieldsToDisplay[key]
-        if (typeof value === "string" && isProbablyHexString(value)) {
+        if (typeof value === "string" && isProbablyEthereumAddress(value)) {
           return (
             <div key={key} className="message">
               <div className="key">{capitalize(key)}</div>
               <div className="value">
-                {truncateAddress(value)}{" "}
+                {value.endsWith(".eth") ? value : truncateAddress(value)}{" "}
                 <button
                   onClick={() => {
                     window

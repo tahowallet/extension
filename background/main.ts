@@ -313,12 +313,13 @@ export default class Main extends BaseService<never> {
       preferenceService,
       chainService
     )
+    const nameService = NameService.create(chainService)
     const enrichmentService = EnrichmentService.create(
       chainService,
-      indexingService
+      indexingService,
+      nameService
     )
     const keyringService = KeyringService.create()
-    const nameService = NameService.create(chainService)
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(

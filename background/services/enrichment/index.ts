@@ -30,6 +30,7 @@ import {
   isUniswapSignTypedDataRequest,
 } from "./utils"
 import { ETHEREUM } from "../../constants"
+import { NameService } from ".."
 
 export * from "./types"
 
@@ -58,19 +59,25 @@ export default class EnrichmentService extends BaseService<Events> {
    * startService() is called and resolved.
    * @param indexingService - Required for token metadata and currency
    * @param chainService - Required for chain interactions.
+   * @param nameService - Required for name lookups.
    * @returns A new, initializing EnrichmentService
    */
   static create: ServiceCreatorFunction<
     Events,
     EnrichmentService,
-    [Promise<ChainService>, Promise<IndexingService>]
-  > = async (chainService, indexingService) => {
-    return new this(await chainService, await indexingService)
+    [Promise<ChainService>, Promise<IndexingService>, Promise<NameService>]
+  > = async (chainService, indexingService, nameService) => {
+    return new this(
+      await chainService,
+      await indexingService,
+      await nameService
+    )
   }
 
   private constructor(
     private chainService: ChainService,
-    private indexingService: IndexingService
+    private indexingService: IndexingService,
+    private nameService: NameService
   ) {
     super({})
   }
@@ -301,8 +308,9 @@ export default class EnrichmentService extends BaseService<Events> {
           return false
         }
       )
-      annotation = enrichUniswapSignTypedDataRequest(
+      annotation = await enrichUniswapSignTypedDataRequest(
         signTypedDataRequest,
+        this.nameService,
         correspondingAsset
       )
     }

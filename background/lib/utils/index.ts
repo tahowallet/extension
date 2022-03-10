@@ -111,7 +111,11 @@ export function getEthereumNetwork(): EVMNetwork {
   return ETHEREUM
 }
 
-export function isProbablyHexString(str: string): str is HexString {
+export function isProbablyEthereumAddress(str: string): str is HexString {
+  if (str.endsWith(".eth")) {
+    return true
+  }
+
   if (normalizeHexAddress(str).startsWith("0x") && str.length === 42) {
     return true
   }
