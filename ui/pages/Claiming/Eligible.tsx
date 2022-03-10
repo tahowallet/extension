@@ -17,6 +17,8 @@ import ClaimReview from "../../components/Claim/ClaimReview"
 import ClaimFooter from "../../components/Claim/ClaimFooter"
 import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalContent"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
+import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
 
 export default function Eligible(): ReactElement {
   const [account, setAccount] = useState("")
@@ -119,7 +121,19 @@ export default function Eligible(): ReactElement {
             backToChoose={() => {
               setStep(step - 1)
             }}
+        <div className="top_bar standard_width">
+          <SharedBackButton
+            onClick={
+              step > 1
+                ? () => {
+                    setStep(step - 1)
+                  }
+                : undefined
+            }
           />
+          <div className="profile_wrap">
+            <TopMenuProfileButton />
+          </div>
         </div>
         <footer>
           <ClaimFooter
