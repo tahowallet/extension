@@ -10,6 +10,7 @@ import {
   EIP1193_ERROR_CODES,
   isTallyConfigPayload,
 } from "@tallyho/provider-bridge-shared"
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
@@ -22,6 +23,7 @@ import {
   checkPermissionSignTransaction,
 } from "./authorization"
 import showExtensionPopup from "./show-popup"
+import { HexString } from "../../types"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -299,7 +301,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTypedData_v1":
         case "eth_signTypedData_v3":
         case "eth_signTypedData_v4":
-          checkPermissionSignTypedData(params, enablingPermission)
+          checkPermissionSignTypedData(
+            params[0] as HexString,
+            enablingPermission
+          )
 
           return await this.routeSafeRequest(
             method,
@@ -308,7 +313,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           )
         case "eth_sign":
         case "personal_sign":
-          checkPermissionSign(params, enablingPermission)
+          checkPermissionSign(params[1] as HexString, enablingPermission)
 
           return await this.routeSafeRequest(
             method,
@@ -317,7 +322,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
           )
         case "eth_signTransaction":
         case "eth_sendTransaction":
-          checkPermissionSignTransaction(params, enablingPermission)
+          checkPermissionSignTransaction(
+            params[0] as EthersTransactionRequest,
+            enablingPermission
+          )
 
           return await this.routeSafeRequest(
             method,
