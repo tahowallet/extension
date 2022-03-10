@@ -63,9 +63,12 @@ export default function AccountItemOptionsMenu({
       />
 
       {showOptionsMenu && (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <ul
           ref={optionsMenuRef}
           className="options"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
           onMouseOver={(e) => e.stopPropagation()}
           onFocus={(e) => e.stopPropagation()}
         >
@@ -116,6 +119,7 @@ export default function AccountItemOptionsMenu({
           .options {
             position: absolute;
             right: 8;
+            cursor: default;
             border-radius: 4px;
             background-color: var(--green-120);
             display: flex;
