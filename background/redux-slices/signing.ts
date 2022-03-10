@@ -1,6 +1,8 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { SiweMessage } from "siwe"
+import { EnrichedEIP712SignTypedDataRequest } from "../services/enrichment/types"
+import { SigningMethod, SignTypedDataRequest } from "../services/signing/types"
 import { EIP191Data, EIP712TypedData, HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -27,15 +29,11 @@ export type Events = {
   signatureRejected: never
 }
 
-export type SigningMethod =
-  | { type: "keyring" }
-  | { type: "ledger"; deviceID: string; path: string }
-
 export const signingSliceEmitter = new Emittery<Events>()
 
 export type SigningState = {
   signedTypedData: string | undefined
-  typedDataRequest: SignTypedDataRequest | undefined
+  typedDataRequest: EnrichedEIP712SignTypedDataRequest | undefined
 
   signedData: string | undefined
   signDataRequest: SignDataRequest | undefined
@@ -54,12 +52,6 @@ export type EIP712DomainType = {
   version?: string
   chainId?: number
   verifyingContract?: HexString
-}
-
-export type SignTypedDataRequest = {
-  account: string
-  typedData: EIP712TypedData
-  signingMethod: SigningMethod
 }
 
 // spec found https://eips.ethereum.org/EIPS/eip-4361

@@ -1,4 +1,4 @@
-import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
+import { SigningMethod } from "@tallyho/tally-background/services/signing/types"
 import { useBackgroundSelector } from "../../hooks"
 
 export type SigningLedgerState =

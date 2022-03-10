@@ -1,9 +1,9 @@
 import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
-import { SignTypedDataRequest } from "../../redux-slices/signing"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
+import { SignTypedDataRequest } from "../signing/types"
 
 export type BaseTransactionAnnotation = {
   /**

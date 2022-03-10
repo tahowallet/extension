@@ -72,14 +72,14 @@ import {
   rejectDataSignature,
   clearSigningState,
   signedTypedData,
-  SigningMethod,
   signedData as signedDataAction,
   signingSliceEmitter,
-  SignTypedDataRequest,
   SignDataRequest,
   typedDataRequest,
   signDataRequest,
 } from "./redux-slices/signing"
+
+import { SigningMethod, SignTypedDataRequest } from "./services/signing/types"
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
@@ -1002,7 +1002,9 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        this.store.dispatch(typedDataRequest(payload))
+        const enrichedsignTypedDataRequest =
+          this.enrichmentService.enrichSignTypedDataRequest(payload)
+        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
 
         const clear = () => {
           if (HIDE_IMPORT_LEDGER) {

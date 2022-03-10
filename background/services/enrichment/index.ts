@@ -23,7 +23,7 @@ import {
   TransactionAnnotation,
   EnrichedEIP712SignTypedDataRequest,
 } from "./types"
-import { SignTypedDataRequest } from "../../redux-slices/signing"
+import { SignTypedDataRequest } from "../signing/types"
 import {
   enrichUniswapSignTypedDataRequest,
   isUniswapSignTypedDataRequest,

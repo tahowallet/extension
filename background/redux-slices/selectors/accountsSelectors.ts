@@ -18,7 +18,7 @@ import {
 import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
-import { SigningMethod } from "../signing"
+import { SigningMethod } from "../../services/signing/types"
 import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,

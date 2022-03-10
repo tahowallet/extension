@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { SigningMethod } from "../signing"
+import { SigningMethod } from "../../services/signing/types"
 import { selectKeyringSigningAddresses } from "./keyringsSelectors"
 import { selectLedgerSigningMethodEntries } from "./ledgerSelectors"
 import { selectCurrentAccount } from "./uiSelectors"

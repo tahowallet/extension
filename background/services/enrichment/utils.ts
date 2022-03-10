@@ -1,6 +1,6 @@
 import { UniswapSignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
-import { SignTypedDataRequest } from "../../redux-slices/signing"
+import { SignTypedDataRequest } from "../signing/types"
 import { truncateAddress } from "../../lib/utils"
 
 export const ENRICHABLE_CONTRACTS: { [k: string]: string } = {

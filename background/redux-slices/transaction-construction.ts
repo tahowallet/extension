@@ -19,7 +19,7 @@ import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../services/enrichment"
-import { SigningMethod } from "./signing"
+import { SigningMethod } from "../services/signing/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 

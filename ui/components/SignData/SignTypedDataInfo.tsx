@@ -3,7 +3,7 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { selectAssetViaContract } from "@tallyho/tally-background/redux-slices/assets"
-import { SignTypedDataRequest } from "@tallyho/tally-background/redux-slices/signing"
+import { SignTypedDataRequest } from "@tallyho/tally-background/services/signing/types"
 import dayjs from "dayjs"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
