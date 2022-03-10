@@ -33,7 +33,7 @@ export const selectSourcesByAddress = createSelector(
     keyrings,
     keyringMetadata
   ): {
-    [keyringId: string]: "import" | "newSeed"
+    [keyringId: string]: "import" | "internal"
   } =>
     Object.fromEntries(
       keyrings

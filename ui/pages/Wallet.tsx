@@ -36,7 +36,7 @@ export default function Wallet(): ReactElement {
 
   // If an account doesn't exist, display onboarding
   if (!hasAccounts) {
-    return <Redirect to="/onboarding/infoIntro" />
+    return <Redirect to="/onboarding/info-intro" />
   }
 
   return (
