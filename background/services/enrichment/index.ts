@@ -29,6 +29,7 @@ import {
   enrichUniswapSignTypedDataRequest,
   isUniswapSignTypedDataRequest,
 } from "./utils"
+import { ETHEREUM } from "../../constants"
 
 export * from "./types"
 
@@ -283,18 +284,23 @@ export default class EnrichmentService extends BaseService<Events> {
       source: "unknown",
     }
     if (isUniswapSignTypedDataRequest(signTypedDataRequest)) {
-      const assets = await this.indexingService.getAssetsToTrack()
-      const correspondingAsset = assets.find((asset) => {
-        if (signTypedDataRequest.typedData.domain.verifyingContract) {
-          return (
-            normalizeHexAddress(asset.contractAddress) ===
-            normalizeHexAddress(
-              signTypedDataRequest.typedData.domain.verifyingContract
+      const assets = await this.indexingService.getCachedAssets(ETHEREUM)
+      const correspondingAsset = assets.find(
+        (asset): asset is SmartContractFungibleAsset => {
+          if (
+            signTypedDataRequest.typedData.domain.verifyingContract &&
+            "contractAddress" in asset
+          ) {
+            return (
+              normalizeHexAddress(asset.contractAddress) ===
+              normalizeHexAddress(
+                signTypedDataRequest.typedData.domain.verifyingContract
+              )
             )
-          )
+          }
+          return false
         }
-        return false
-      })
+      )
       annotation = enrichUniswapSignTypedDataRequest(
         signTypedDataRequest,
         correspondingAsset
