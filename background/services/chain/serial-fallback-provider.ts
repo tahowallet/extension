@@ -267,51 +267,32 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return
     }
 
-    try {
-      await this.subscribe(
-        "filteredNewFullPendingTransactionsSubscriptionID",
-        ["alchemy_filteredNewFullPendingTransactions", { address }],
-        async (result: unknown) => {
-          // TODO use proper provider string
-          // handle incoming transactions for an account
-          try {
-            const transaction = transactionFromAlchemyWebsocketTransaction(
-              result,
+    const alchemySubscription =
+      await this.alchemySubscribeFullPendingTransactions(
+        { address, network },
+        handler
+      )
+
+    if (alchemySubscription === "unsupported") {
+      // Fall back on a standard pending transaction subscription if the
+      // Alchemy version is unsupported.
+      this.on("pending", async (transactionHash: unknown) => {
+        try {
+          if (typeof transactionHash === "string") {
+            const transaction = transactionFromEthersTransaction(
+              await this.getTransaction(transactionHash),
               network
             )
 
             handler(transaction)
-          } catch (error) {
-            logger.error(
-              `Error handling incoming pending transaction: ${result}`,
-              error
-            )
           }
+        } catch (innerError) {
+          logger.error(
+            `Error handling incoming pending transaction hash: ${transactionHash}`,
+            innerError
+          )
         }
-      )
-    } catch (error) {
-      const errorString = String(error)
-      if (errorString.match(/unsupported subscription/i)) {
-        // Fall back on a standard pending transaction subscription if the
-        // Alchemy version is unsupported.
-        this.on("pending", async (transactionHash: unknown) => {
-          try {
-            if (typeof transactionHash === "string") {
-              const transaction = transactionFromEthersTransaction(
-                await this.getTransaction(transactionHash),
-                network
-              )
-
-              handler(transaction)
-            }
-          } catch (innerError) {
-            logger.error(
-              `Error handling incoming pending transaction hash: ${transactionHash}`,
-              innerError
-            )
-          }
-        })
-      }
+      })
     }
   }
 
@@ -563,5 +544,48 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     return this.currentBackoff.backoffMs
+  }
+
+  /**
+   * Attempts to subscribe to full pending transactions in an Alchemy-specific
+   * way. Returns `subscribed` if the subscription succeeded, or `unsupported`
+   * if the underlying provider did not support Alchemy-specific subscriptions.
+   */
+  private async alchemySubscribeFullPendingTransactions(
+    { address, network }: AddressOnNetwork,
+    handler: (pendingTransaction: AnyEVMTransaction) => void
+  ): Promise<"subscribed" | "unsupported"> {
+    try {
+      await this.subscribe(
+        "filteredNewFullPendingTransactionsSubscriptionID",
+        ["alchemy_filteredNewFullPendingTransactions", { address }],
+        async (result: unknown) => {
+          // TODO use proper provider string
+          // handle incoming transactions for an account
+          try {
+            const transaction = transactionFromAlchemyWebsocketTransaction(
+              result,
+              network
+            )
+
+            handler(transaction)
+          } catch (error) {
+            logger.error(
+              `Error handling incoming pending transaction: ${result}`,
+              error
+            )
+          }
+        }
+      )
+
+      return "subscribed"
+    } catch (error) {
+      const errorString = String(error)
+      if (errorString.match(/unsupported subscription/i)) {
+        return "unsupported"
+      }
+
+      throw error
+    }
   }
 }
