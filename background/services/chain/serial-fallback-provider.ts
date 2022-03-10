@@ -141,7 +141,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Override the core `perform` method to handle disconnects and other errors
+   * Override the core `send` method to handle disconnects and other errors
    * that should trigger retries. Ethers already does internal retrying, but
    * this retry methodology eventually falls back on another provider, handles
    * WebSocket disconnects, and restores subscriptions where
@@ -204,6 +204,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
               await this.reconnectProvider()
             }
 
+            logger.debug("Retrying", method, params)
             return this.send(method, params)
           })
         }
@@ -460,7 +461,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // Chain promises to serially resubscribe.
       //
       // TODO If anything fails along the way, it should yield the same kind of
-      // TODO backoff as a regular `perform`.
+      // TODO backoff as a regular `send`.
       await this.subscriptions.reduce(
         (previousPromise, { tag, param, processFunc }) =>
           previousPromise.then(() =>
