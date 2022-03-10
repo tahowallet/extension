@@ -44,7 +44,7 @@ export default function OnboardingInfoIntro(): ReactElement {
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
   if (redirectToAddWallet) {
-    return <Redirect push to="/onboarding/addWallet" />
+    return <Redirect push to="/onboarding/add-wallet" />
   }
 
   return (

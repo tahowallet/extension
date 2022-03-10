@@ -11,7 +11,14 @@ import SharedModal from "../Shared/SharedModal"
 import SharedSelect from "../Shared/SharedSelect"
 
 // TODO make this network specific
-const initialDerivationPaths: { value: string; label: string }[] = [
+const initialDerivationPaths: {
+  value: string
+  label: string
+}[] = [
+  {
+    value: "m/44'/60'/x'/0/0",
+    label: "Ledger Live",
+  },
   {
     value: "m/44'/60'/0'/0",
     label: "Ethereum",

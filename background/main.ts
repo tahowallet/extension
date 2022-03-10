@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill"
+import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
@@ -62,6 +62,7 @@ import {
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
+  rejectTransactionSignature,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -71,6 +72,7 @@ import {
 } from "./redux-slices/dapp-permission"
 import logger from "./lib/logger"
 import {
+  rejectDataSignature,
   clearSigningState,
   signedTypedData,
   SigningMethod,
@@ -87,6 +89,7 @@ import {
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
+import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -109,7 +112,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 4
+const REDUX_STATE_VERSION = 5
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -196,6 +199,13 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       // Add new networks slice data.
       networks,
     }
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  5: (prevState: any) => {
+    const { ...newState } = prevState
+    newState.keyrings.keyringMetadata = {}
+
+    return newState
   },
 }
 
@@ -286,6 +296,8 @@ const initializeStore = (preloadedState = {}, main: Main) =>
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
+
+export const popupMonitorPortName = "popup-monitor"
 
 // TODO Rename ReduxService or CoordinationService, move to services/, etc.
 export default class Main extends BaseService<never> {
@@ -549,6 +561,10 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(
       clearTransactionState(TransactionConstructionStatus.Idle)
     )
+
+    this.store.dispatch(clearApprovalInProgress())
+
+    this.connectPopupMonitor()
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -1177,5 +1193,19 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  private connectPopupMonitor() {
+    runtime.onConnect.addListener((port) => {
+      if (port.name !== popupMonitorPortName) return
+      port.onDisconnect.addListener(() => {
+        this.onPopupDisconnected()
+      })
+    })
+  }
+
+  private onPopupDisconnected() {
+    this.store.dispatch(rejectTransactionSignature())
+    this.store.dispatch(rejectDataSignature())
   }
 }
