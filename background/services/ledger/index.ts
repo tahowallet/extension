@@ -469,18 +469,14 @@ export default class LedgerService extends BaseService<Events> {
       accountData.path,
       Buffer.from(message).toString("hex")
     )
-    this.emitter.emit(
-      "signedData",
-      joinSignature({
-        r: `0x${signature.r}`,
-        s: `0x${signature.s}`,
-        v: signature.v,
-      })
-    )
-    return joinSignature({
+
+    const signatureHex = joinSignature({
       r: `0x${signature.r}`,
       s: `0x${signature.s}`,
       v: signature.v,
     })
+    this.emitter.emit("signedData", signatureHex)
+
+    return signatureHex
   }
 }
