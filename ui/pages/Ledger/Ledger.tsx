@@ -29,13 +29,18 @@ export default function Ledger(): ReactElement {
   const devices = useBackgroundSelector((state) => state.ledger.devices)
   const device = deviceID === null ? null : devices[deviceID] ?? null
 
+  const usbDeviceCount = useBackgroundSelector(
+    (state) => state.ledger.usbDeviceCount
+  )
+
   const dispatch = useBackgroundDispatch()
   const connectionError = phase === "2-connect" && !device && !connecting
   return (
     <BrowserTabContainer>
       {(phase === "0-prepare" || connectionError) && (
         <LedgerPrepare
-          showWarning={connectionError}
+          initialScreen={phase === "0-prepare"}
+          deviceCount={usbDeviceCount}
           onContinue={async () => {
             setPhase("1-request")
             try {

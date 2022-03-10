@@ -3,34 +3,43 @@ import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 
 export default function LedgerPrepare({
-  showWarning,
   onContinue,
+  initialScreen,
+  deviceCount,
 }: {
-  showWarning: boolean
   onContinue: () => void
+  initialScreen: boolean
+  deviceCount: number
 }): ReactElement {
-  const buttonLabel = showWarning ? "Try Again" : "Continue"
+  const buttonLabel = initialScreen ? "Continue" : "Try Again"
+  const subHeadingVerb = initialScreen ? "start" : "retry"
+  const warningText =
+    deviceCount === 0
+      ? "No Ledger device is connected"
+      : "Multiple Ledgers are connected"
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-      heading="Before we get started"
-      subHeading="Make sure you take these 3 steps before we start"
+      heading={initialScreen ? "Before we get started" : "Check your Ledger"}
+      subHeading={`Make sure you take these 3 steps before we ${subHeadingVerb}`}
     >
-      {showWarning ? (
+      {!initialScreen && deviceCount !== 1 ? (
         <div className="steps">
-          <div className="warning error">
+          <div className="box error">
             <span className="block_icon" />
-            No Ledger device is connected
+            {warningText}
           </div>
-          <div className="warning">
-            Please follow the steps below and <br /> click on Try Again!
+          <div className="box">
+            <p className="highlight_text">
+              Please follow the steps below and click on Try Again!
+            </p>
           </div>
         </div>
       ) : (
         <></>
       )}
       <ol className="steps">
-        <li>Plug in Ledger</li>
+        <li>Plug in a single Ledger</li>
         <li>Enter pin to unlock</li>
         <li>Open Ethereum App</li>
       </ol>
@@ -75,22 +84,27 @@ export default function LedgerPrepare({
         .block_icon {
           width: 24px;
           height: 24px;
-          margin: 8px;
+          margin-right: 8px;
           background: no-repeat center / cover url("./images/block_icon@2x.png");
         }
 
-        .warning {
+        .box {
           display: flex;
-          align-items: center;
-          text-align: center;
-          justify-content: center;
-          padding: 16px;
+          padding: 6px;
         }
 
         .error {
           color: var(--error);
           font-weight: 600;
           font-size: 18px;
+        }
+
+        .highlight_text {
+          padding-left: 28px;
+          margin: 0.25rem;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--green-40);
         }
       `}</style>
     </LedgerPanelContainer>
