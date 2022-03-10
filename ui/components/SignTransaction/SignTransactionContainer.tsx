@@ -4,6 +4,7 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
+import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLedgersConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
 import { useSigningLedgerState } from "./useSigningLedgerState"
@@ -77,7 +78,7 @@ export default function SignTransactionContainer({
                     setSlideUpOpen(true)
                   }}
                 >
-                  Connect Ledger
+                  Check Ledger
                 </SharedButton>
               ) : (
                 <SharedButton
@@ -111,6 +112,9 @@ export default function SignTransactionContainer({
           <SignTransactionWrongLedgerConnected
             signerAccountTotal={signerAccountTotal}
           />
+        )}
+        {signingLedgerState === "multiple-ledgers-connected" && (
+          <SignTransactionMultipleLedgersConnected />
         )}
         {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>

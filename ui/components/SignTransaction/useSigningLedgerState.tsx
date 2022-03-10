@@ -6,6 +6,7 @@ export type SigningLedgerState =
   | "wrong-ledger-connected"
   | "busy"
   | "available"
+  | "multiple-ledgers-connected"
 
 export function useSigningLedgerState(
   signingMethod: SigningMethod | null
@@ -19,6 +20,7 @@ export function useSigningLedgerState(
       (device) => device.status !== "disconnected"
     )
     if (connectedDevices.length === 0) return "no-ledger-connected"
+    if (state.ledger.usbDeviceCount > 1) return "multiple-ledgers-connected"
 
     const device = state.ledger.devices[deviceID]
     switch (device.status) {

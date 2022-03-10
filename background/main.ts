@@ -83,6 +83,7 @@ import {
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
+  setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
@@ -863,6 +864,10 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
       )
+    })
+
+    this.ledgerService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
+      this.store.dispatch(setUsbDeviceCount({ usbDeviceCount }))
     })
   }
 
