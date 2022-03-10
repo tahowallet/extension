@@ -7,6 +7,7 @@ import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
+import SignTransactionRawDataPanel from "./SignTransactionRawDataPanel"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
 import { SigningLedgerState } from "./useSigningLedgerState"
 
@@ -51,9 +52,10 @@ export default function SignTransactionContainer({
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
             panelNumber={panelNumber}
-            panelNames={["Details"]}
+            panelNames={["Details", "Raw data"]}
           />
-          {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
+          {panelNumber === 0 && <SignTransactionDetailPanel />}
+          {panelNumber === 1 && <SignTransactionRawDataPanel />}
           <div className="footer_actions">
             <SharedButton
               iconSize="large"
@@ -116,7 +118,8 @@ export default function SignTransactionContainer({
         {`
           section {
             width: 100%;
-            height: 100%;
+            height: calc(100% - 80px);
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
