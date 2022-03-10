@@ -177,10 +177,9 @@ export default function SignTransactionSpendAssetInfoProvider({
             ) : (
               <>
                 <span
-                  className={classNames(
-                    { spend_amount: true },
-                    { has_error: approvalLimitString === null }
-                  )}
+                  className={classNames("spend_amount", {
+                    has_error: approvalLimitString === null,
+                  })}
                 >
                   {approvalLimitDisplayValue}
                 </span>
@@ -257,7 +256,7 @@ export default function SignTransactionSpendAssetInfoProvider({
                 line-height: 24px;
               }
               .spend_amount.has_error {
-                color: #d64045;
+                color: var(--error);
               }
               .spacer {
                 margin-bottom: 18px;
