@@ -13,7 +13,7 @@ import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selector
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useAreKeyringsUnlocked,
+  useIsSigningMethodLocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
@@ -62,12 +62,11 @@ export default function SignTransaction({
 
   const signingMethod = signerAccountTotal?.signingMethod ?? null
 
-  const needsKeyrings = signingMethod?.type === "keyring"
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
-  const isWaitingForKeyrings = needsKeyrings && !areKeyringsUnlocked
+  const isLocked = useIsSigningMethodLocked(signingMethod)
 
   useEffect(() => {
-    if (!isWaitingForKeyrings && isTransactionSigned && isTransactionSigning) {
+    if (isLocked) return
+    if (isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
@@ -87,7 +86,7 @@ export default function SignTransaction({
     history,
     isTransactionSigned,
     isTransactionSigning,
-    isWaitingForKeyrings,
+    isLocked,
     location.state,
     shouldBroadcastOnSign,
     signedTransaction,
@@ -99,9 +98,7 @@ export default function SignTransaction({
     }
   }, [history, isTransactionMissingOrRejected])
 
-  if (isWaitingForKeyrings) {
-    return <></>
-  }
+  if (isLocked) return <></>
 
   if (
     typeof transactionDetails === "undefined" ||
