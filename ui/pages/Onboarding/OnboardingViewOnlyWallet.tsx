@@ -58,10 +58,10 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
         <div className="wordmark" />
       </div>
       <div className="content">
-        <h1 className="serif_header">Explore Tally</h1>
+        <h1 className="serif_header">Explore Tally Ho!</h1>
         <div className="subtitle">
           Add an Ethereum address or ENS name to view an existing wallet in
-          Tally.
+          Tally Ho.
         </div>
         <form
           onSubmit={(event) => {
@@ -83,7 +83,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             showLoadingOnClick={!!errorMessage}
             isFormSubmit
           >
-            Explore Tally
+            Explore Tally Ho!
           </SharedButton>
         </form>
       </div>
@@ -97,7 +97,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
-            width: 52px;
+            width: 95px;
             height: 25px;
             position: absolute;
             left: 0px;
