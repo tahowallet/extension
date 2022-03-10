@@ -505,7 +505,9 @@ export default class KeyringService extends BaseService<Events> {
     const keyring = await this.#findKeyring(account)
     try {
       const signature = await keyring.signMessage(account, signingData)
-      this.emitter.emit("signedData", signature)
+      if (HIDE_IMPORT_LEDGER) {
+        this.emitter.emit("signedData", signature)
+      }
       return signature
     } catch (error) {
       throw new Error("Signing data failed")
