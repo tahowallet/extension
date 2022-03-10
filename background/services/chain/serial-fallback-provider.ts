@@ -520,14 +520,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         providerIndex,
         backoffMs: BASE_BACKOFF_MS,
         backoffCount: 0,
-        lastBackoffTime: 0,
+        lastBackoffTime: Date.now(),
       }
     } else if (Date.now() - lastBackoffTime > COOLDOWN_PERIOD) {
       this.currentBackoff = {
         providerIndex,
         backoffMs: BASE_BACKOFF_MS,
         backoffCount: 0,
-        lastBackoffTime: 0,
+        lastBackoffTime: Date.now(),
       }
     } else {
       // The next backoff slot starts at the current minimum backoff and
