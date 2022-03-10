@@ -34,84 +34,69 @@ interface ProviderManager {
 export default class AssetDataHelper {
   constructor(private providerTracker: ProviderManager) {}
 
-  private withProviderForNetwork<T>(
-    network: EVMNetwork,
-    handler: (provider: SerialFallbackProvider) => T
-  ): T | undefined {
-    const provider = this.providerTracker.providerForNetwork(network)
-
-    if (typeof provider === "undefined") {
-      logger.error(
-        `Tried to find provider for ${network.chainID} but none exists.`
-      )
-
-      return undefined
-    }
-
-    return handler(provider)
-  }
-
   async getTokenBalances(
     addressOnNetwork: AddressOnNetwork,
     smartContractAddresses?: HexString[]
   ): Promise<SmartContractAmount[]> {
-    return (
-      (await this.withProviderForNetwork(
-        addressOnNetwork.network,
-        async (provider) => {
-          try {
-            // FIXME Allow arbitrary providers?
-            if (
-              provider.currentProvider instanceof AlchemyWebSocketProvider ||
-              provider.currentProvider instanceof AlchemyProvider
-            ) {
-              return await getAlchemyTokenBalances(
-                provider.currentProvider,
-                addressOnNetwork,
-                smartContractAddresses
-              )
-            }
-          } catch (error) {
-            logger.debug(
-              "Problem resolving asset balances via Alchemy helper; network " +
-                "may not support it.",
-              error
-            )
-          }
-
-          return []
-        }
-      )) ?? []
+    const provider = this.providerTracker.providerForNetwork(
+      addressOnNetwork.network
     )
+    if (typeof provider === "undefined") {
+      return []
+    }
+
+    try {
+      // FIXME Allow arbitrary providers?
+      if (
+        provider.currentProvider instanceof AlchemyWebSocketProvider ||
+        provider.currentProvider instanceof AlchemyProvider
+      ) {
+        return await getAlchemyTokenBalances(
+          provider.currentProvider,
+          addressOnNetwork,
+          smartContractAddresses
+        )
+      }
+    } catch (error) {
+      logger.debug(
+        "Problem resolving asset balances via Alchemy helper; network " +
+          "may not support it.",
+        error
+      )
+    }
+
+    return []
   }
 
   async getTokenMetadata(
     tokenSmartContract: SmartContract
   ): Promise<SmartContractFungibleAsset | undefined> {
-    return this.withProviderForNetwork(
-      tokenSmartContract.homeNetwork,
-      async (provider) => {
-        try {
-          if (
-            provider.currentProvider instanceof AlchemyWebSocketProvider ||
-            provider.currentProvider instanceof AlchemyProvider
-          ) {
-            return await getAlchemyTokenMetadata(
-              provider.currentProvider,
-              tokenSmartContract
-            )
-          }
-        } catch (error) {
-          logger.debug(
-            "Problem resolving asset metadata via Alchemy helper; network may " +
-              "not support it. Falling back to standard lookup.",
-            error
-          )
-        }
-
-        return getERC20Metadata(provider, tokenSmartContract)
-      }
+    const provider = this.providerTracker.providerForNetwork(
+      tokenSmartContract.homeNetwork
     )
+    if (typeof provider === "undefined") {
+      return undefined
+    }
+
+    try {
+      if (
+        provider.currentProvider instanceof AlchemyWebSocketProvider ||
+        provider.currentProvider instanceof AlchemyProvider
+      ) {
+        return await getAlchemyTokenMetadata(
+          provider.currentProvider,
+          tokenSmartContract
+        )
+      }
+    } catch (error) {
+      logger.debug(
+        "Problem resolving asset metadata via Alchemy helper; network may " +
+          "not support it. Falling back to standard lookup.",
+        error
+      )
+    }
+
+    return getERC20Metadata(provider, tokenSmartContract)
   }
 
   /**
@@ -123,33 +108,37 @@ export default class AssetDataHelper {
     startBlock: number,
     endBlock?: number
   ): Promise<AssetTransfer[]> {
-    return (
-      this.withProviderForNetwork(
-        addressOnNetwork.network,
-        async (provider) => {
-          try {
-            if (
-              provider.currentProvider instanceof AlchemyWebSocketProvider ||
-              provider.currentProvider instanceof AlchemyProvider
-            ) {
-              return await getAlchemyAssetTransfers(
-                provider.currentProvider,
-                addressOnNetwork,
-                startBlock,
-                endBlock
-              )
-            }
-          } catch (error) {
-            logger.warn(
-              "Problem resolving asset transfers via Alchemy helper; network may " +
-                "not support it.",
-              error
-            )
-          }
-
-          return []
-        }
-      ) ?? []
+    const provider = this.providerTracker.providerForNetwork(
+      addressOnNetwork.network
     )
+    if (typeof provider === "undefined") {
+      return []
+    }
+
+    try {
+      if (
+        provider.currentProvider instanceof AlchemyWebSocketProvider ||
+        provider.currentProvider instanceof AlchemyProvider
+      ) {
+        return await getAlchemyAssetTransfers(
+          provider.currentProvider,
+          addressOnNetwork,
+          startBlock,
+          endBlock
+        )
+      }
+    } catch (error) {
+      logger.warn(
+        "Problem resolving asset transfers via Alchemy helper; network may " +
+          "not support it.",
+        error
+      )
+
+      // Rethrow as consumers like ChainService need the exception to manage
+      // retries. Eventually we may want retries to be handled here.
+      throw error
+    }
+
+    return []
   }
 }
