@@ -134,19 +134,19 @@ export default function SignData({
           type="secondary"
           onClick={handleReject}
         >
-          Reject
+          <span className="button_label">Reject</span>
         </SharedButton>
         {signerAccountTotal.accountType === AccountType.ReadOnly ? (
           <span className="no-signing">Read-only accounts cannot sign</span>
         ) : (
           <SharedButton
-            type="primary"
+            type="primaryGreen"
             iconSize="large"
             size="large"
             onClick={handleConfirm}
             showLoadingOnClick
           >
-            Sign
+            <span className="button_label">Confirm</span>
           </SharedButton>
         )}
       </div>
@@ -227,6 +227,9 @@ export default function SignData({
           }
           .key {
             color: var(--green-40);
+          }
+          .button_label {
+            font-size: 20px;
           }
           .divider {
             width: 80%;
