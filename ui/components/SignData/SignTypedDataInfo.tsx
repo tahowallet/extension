@@ -34,7 +34,9 @@ export default function SignTypedDataInfo({
             <div key={key} className="message">
               <div className="key">{capitalize(key)}</div>
               <div className="value">
-                {value.endsWith(".eth") ? value : truncateAddress(value)}{" "}
+                <span>
+                  {value.endsWith(".eth") ? value : truncateAddress(value)}
+                </span>
                 <button
                   onClick={() => {
                     window
