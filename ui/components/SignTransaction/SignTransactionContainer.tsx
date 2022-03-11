@@ -54,8 +54,8 @@ export default function SignTransactionContainer({
             panelNumber={panelNumber}
             panelNames={["Details", "Raw data"]}
           />
-          {panelNumber === 0 && <SignTransactionDetailPanel />}
-          {panelNumber === 1 && <SignTransactionRawDataPanel />}
+          {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
+          {panelNumber === 1 ? <SignTransactionRawDataPanel /> : null}
           <div className="footer_actions">
             <SharedButton
               iconSize="large"

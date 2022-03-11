@@ -14,7 +14,7 @@ export default function SignTransactionRawDataPanel(): ReactElement {
   const { input } = transactionDetails
 
   const copyData = () => {
-    navigator.clipboard.writeText(input || "")
+    navigator.clipboard.writeText(input ?? "")
     dispatch(setSnackbarMessage("Raw data copied to clipboard"))
   }
 
