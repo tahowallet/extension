@@ -17,8 +17,6 @@ import delegates from "../static/delegates.json"
 import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
-import BalanceTree from "../lib/balance-tree"
-import eligibles from "../static/eligibles.json"
 import { HOUR } from "../constants"
 
 export interface DAO {
@@ -54,49 +52,14 @@ interface ClaimingState {
   claimError: { [address: HexString]: boolean }
 }
 
-const newBalanceTree = new BalanceTree(eligibles)
-
-const findIndexAndBalance = (address: string) => {
-  const index = eligibles.findIndex(
-    (el) => normalizeEVMAddress(address) === normalizeEVMAddress(el.address)
-  )
-  const balance = eligibles[index].earnings
-  return { index, balance }
-}
-
 const getDistributorContract = async () => {
   const distributorContractAddress =
-    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2" // Change distributor address here
+    "0x0817B18070cb2B102aBe1eeE909A8bFAB46C7863" // VoteWithFriends contract address
   const distributor = await getContract(
     distributorContractAddress,
     DISTRIBUTOR_ABI
   )
   return distributor
-}
-
-const getProof = (
-  index: number | BigNumber,
-  account: string,
-  amount: BigNumber
-) => {
-  return newBalanceTree.getProof(index, account, amount)
-}
-
-const verifyProof = (
-  index: number,
-  account: HexString,
-  balance: HexString,
-  merkleProof: Buffer[]
-) => {
-  const root = newBalanceTree.getRoot()
-  const exists = BalanceTree.verifyProof(
-    index,
-    account,
-    BigNumber.from(balance),
-    merkleProof,
-    root
-  )
-  return exists
 }
 
 const initialState = {
@@ -194,16 +157,13 @@ export const claimRewards = createBackgroundAsyncThunk(
 
     const referralCode = claim.selectedDAO
     const delegate = claim.selectedDelegate
-    const { signature } = claim
+    const { signature, eligibility } = claim
 
-    const { index, balance } = await findIndexAndBalance(account)
-
-    const merkleProof = getProof(index, account, BigNumber.from(balance))
+    if (!eligibility) {
+      return ethers.constants.AddressZero
+    }
 
     dispatch(currentlyClaiming(true))
-
-    // the below line is used to verify if a merkleProof is in the merkle tree
-    // const validMerkleProof = verifyProof(index, account, balance, merkleProof)
 
     const distributorContract = await getDistributorContract()
 
@@ -223,24 +183,25 @@ export const claimRewards = createBackgroundAsyncThunk(
     try {
       if (claim.selectedDAO === null && delegate === null) {
         const tx = distributorContract.claim(
-          index,
+          eligibility.index,
           account,
-          balance,
-          merkleProof
+          eligibility.amount,
+          eligibility.proof
         )
+        tx.gasLimit = BigNumber.from(300000) // for mainnet fork only
         const response = signer.sendTransaction(tx)
         confirmReceipt(response)
       }
 
       if (referralCode !== null && delegate === null) {
         const tx = distributorContract.claimWithCommunityCode(
-          index,
+          eligibility.index,
           account,
-          balance,
-          merkleProof,
+          eligibility.amount,
+          eligibility.proof,
           referralCode.address
         )
-
+        tx.gasLimit = BigNumber.from(300000) // for mainnet fork only
         const response = signer.sendTransaction(tx)
         confirmReceipt(response)
       }
@@ -249,14 +210,15 @@ export const claimRewards = createBackgroundAsyncThunk(
         const { nonce, expiry } = claim
         const tx =
           await distributorContract.populateTransaction.voteWithFriends(
-            index,
+            BigNumber.from(eligibility.index),
             account,
-            balance,
-            merkleProof,
+            BigNumber.from(eligibility.amount),
+            eligibility.proof,
             referralCode.address,
             delegate.address,
             { nonce, expiry, r, s, v }
           )
+        tx.gasLimit = BigNumber.from(300000) // for mainnet fork only
         const response = signer.sendTransaction(tx)
         confirmReceipt(response)
       }
