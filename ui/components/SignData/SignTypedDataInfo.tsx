@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import {
-  isProbablyEthereumAddress,
+  isProbablyEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
@@ -30,7 +30,7 @@ export default function SignTypedDataInfo({
       </div>
       {keys.map((key) => {
         const value = fieldsToDisplay[key]
-        if (typeof value === "string" && isProbablyEthereumAddress(value)) {
+        if (typeof value === "string" && isProbablyEVMAddress(value)) {
           return (
             <div key={key} className="message">
               <div className="key">{capitalize(key)}</div>
