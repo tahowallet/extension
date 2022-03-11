@@ -3,7 +3,7 @@ import { Claim, Eligible } from "./types"
 
 const defaultClaim: Claim = {
   eligibles: eligibles.map((item): Eligible => {
-    return { ...item, earnings: BigInt(item.earnings) }
+    return { ...item, amount: BigInt(item.amount) }
   }),
 }
 
