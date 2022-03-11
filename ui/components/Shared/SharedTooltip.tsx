@@ -1,11 +1,46 @@
 import React, { ReactElement, useState } from "react"
 
+type VeriticalPosition = "top" | "bottom"
+type HorizontalPosition = "left" | "center" | "right"
+
 interface Props {
+  verticalPosition?: VeriticalPosition
+  horizontalPosition?: HorizontalPosition
+  width?: number
   children: React.ReactNode
 }
 
+function getHorizontalPosition(horizontal: HorizontalPosition, width?: number) {
+  switch (horizontal) {
+    case "center":
+      return width ? `right: -${width / 2 + 8}px;` : ""
+    case "left":
+      return "right: 0;"
+    case "right":
+      return "left: 0;"
+    default:
+      return ""
+  }
+}
+
+function getVerticalPosition(vertical: VeriticalPosition) {
+  switch (vertical) {
+    case "bottom":
+      return "top: 16px; margin-top: 5px;"
+    case "top":
+      return "bottom: 16px; margin-bottom: 5px;"
+    default:
+      return ""
+  }
+}
+
 export default function SharedTooltip(props: Props): ReactElement {
-  const { children } = props
+  const {
+    children,
+    verticalPosition = "bottom",
+    horizontalPosition = "right",
+    width,
+  } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
@@ -25,6 +60,7 @@ export default function SharedTooltip(props: Props): ReactElement {
           .tooltip_wrap {
             width: fit-content;
             display: inline-block;
+            position: relative;
             margin-left: 8px;
             z-index: 20;
           }
@@ -36,8 +72,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             display: block;
           }
           .tooltip {
-            margin-top: 10px;
-            max-width: 213px;
+            width: ${width ? `${width}px` : "auto"};
             position: absolute;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
@@ -48,6 +83,8 @@ export default function SharedTooltip(props: Props): ReactElement {
             line-height: 20px;
             border-radius: 3px;
             padding: 12px;
+            ${getVerticalPosition(verticalPosition)}
+            ${getHorizontalPosition(horizontalPosition, width)}
           }
         `}
       </style>
