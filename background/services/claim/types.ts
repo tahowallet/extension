@@ -1,7 +1,10 @@
+import { HexString } from "../../types"
+
 export interface Eligible {
-  address: string
-  earnings: BigInt
-  reasons: string
+  index: HexString
+  account: HexString
+  amount: BigInt
+  proof: HexString[]
 }
 
 export interface Claim {
