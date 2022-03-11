@@ -1,4 +1,5 @@
 import { EnrichedSignTypedDataRequest } from "../../services/enrichment"
+import { SigningMethod } from "../../services/signing/types"
 import { EIP191Data, EIP712TypedData, HexString } from "../../types"
 
 export enum SignDataMessageType {
@@ -24,10 +25,6 @@ export type Events = {
   signatureRejected: never
 }
 
-export type SigningMethod =
-  | { type: "keyring" }
-  | { type: "ledger"; deviceID: string; path: string }
-
 export type SigningState = {
   signedTypedData: string | undefined
   typedDataRequest: EnrichedSignTypedDataRequest | undefined
@@ -41,12 +38,6 @@ export type EIP712DomainType = {
   version?: string
   chainId?: number
   verifyingContract?: HexString
-}
-
-export type SignTypedDataRequest = {
-  account: string
-  typedData: EIP712TypedData
-  signingMethod: SigningMethod
 }
 
 // spec found https://eips.ethereum.org/EIPS/eip-4361
