@@ -20,9 +20,9 @@ import {
 } from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH, MINUTE } from "../../constants"
+import { ETH, FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { HIDE_IMPORT_LEDGER } from "../../features/features"
+import { HIDE_IMPORT_LEDGER, USE_MAINNET_FORK } from "../../features/features"
 import { AddressOnNetwork } from "../../accounts"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
@@ -41,6 +41,7 @@ export interface KeyringMetadata {
 interface SerializedKeyringData {
   keyrings: SerializedHDKeyring[]
   metadata: { [keyringId: string]: KeyringMetadata }
+  hiddenAccounts: { [address: HexString]: boolean }
 }
 
 interface Events extends ServiceLifecycleEvents {
@@ -76,6 +77,8 @@ export default class KeyringService extends BaseService<Events> {
   #keyrings: HDKeyring[] = []
 
   #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
+
+  #hiddenAccounts: { [address: HexString]: boolean } = {}
 
   /**
    * The last time a keyring took an action that required the service to be
@@ -185,11 +188,13 @@ export default class KeyringService extends BaseService<Events> {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
 
-        Object.entries(plainTextVault.metadata).forEach(
-          ([keyringId, metadata]) => {
-            this.#keyringMetadata[keyringId] = metadata
-          }
-        )
+        this.#keyringMetadata = {
+          ...plainTextVault.metadata,
+        }
+
+        this.#hiddenAccounts = {
+          ...plainTextVault.hiddenAccounts,
+        }
 
         this.emitKeyrings()
       }
@@ -319,15 +324,15 @@ export default class KeyringService extends BaseService<Events> {
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
-    this.#keyrings.push(newKeyring)
-    this.#keyringMetadata = {
-      ...this.#keyringMetadata,
-      [newKeyring.id]: { source },
-    }
-    newKeyring.addAddressesSync(1)
-    await this.persistKeyrings()
 
-    this.emitter.emit("address", newKeyring.getAddressesSync()[0])
+    if (this.#keyrings.some((kr) => kr.id === newKeyring.id)) {
+      return newKeyring.id
+    }
+    this.#keyrings.push(newKeyring)
+    const [address] = newKeyring.addAddressesSync(1)
+    this.#keyringMetadata[newKeyring.id] = { source }
+    await this.persistKeyrings()
+    this.emitter.emit("address", address)
     this.emitKeyrings()
     return newKeyring.id
   }
@@ -344,7 +349,11 @@ export default class KeyringService extends BaseService<Events> {
       // Reconsider, or explicitly track which keyrings have been generated vs
       // imported as well as their strength
       type: KeyringTypes.mnemonicBIP39S256,
-      addresses: [...kr.getAddressesSync()],
+      addresses: [
+        ...kr
+          .getAddressesSync()
+          .filter((address) => this.#hiddenAccounts[address] !== true),
+      ],
       id: kr.id,
     }))
   }
@@ -363,13 +372,53 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Keyring not found.")
     }
 
-    const [newAddress] = keyring.addAddressesSync(1)
+    const keyringAddresses = keyring.getAddressesSync()
+
+    // If There are any hidden addresses, show those first before adding new ones.
+    const newAddress =
+      keyringAddresses.find(
+        (address) => this.#hiddenAccounts[address] === true
+      ) ?? keyring.addAddressesSync(1)[0]
+
+    this.#hiddenAccounts[newAddress] = false
+
     await this.persistKeyrings()
 
     this.emitter.emit("address", newAddress)
     this.emitKeyrings()
 
     return newAddress
+  }
+
+  async hideAccount(address: HexString): Promise<void> {
+    this.#hiddenAccounts[address] = true
+    const keyring = await this.#findKeyring(address)
+    const keyringAddresses = await keyring.getAddresses()
+    if (
+      keyringAddresses.every(
+        (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true
+      )
+    ) {
+      keyringAddresses.forEach((keyringAddress) => {
+        delete this.#hiddenAccounts[keyringAddress]
+      })
+      this.#removeKeyring(keyring.id)
+    }
+    this.emitKeyrings()
+  }
+
+  #removeKeyring(keyringId: string): HDKeyring[] {
+    const filteredKeyrings = this.#keyrings.filter(
+      (keyring) => keyring.id !== keyringId
+    )
+
+    if (filteredKeyrings.length === this.#keyrings.length) {
+      throw new Error(
+        `Attempting to remove keyring that does not exist. id: (${keyringId})`
+      )
+    }
+    this.#keyrings = filteredKeyrings
+    return filteredKeyrings
   }
 
   /**
@@ -444,7 +493,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network,
+      network: USE_MAINNET_FORK ? FORK : network,
     }
     if (HIDE_IMPORT_LEDGER) {
       this.emitter.emit("signedTx", signedTx)
@@ -508,7 +557,9 @@ export default class KeyringService extends BaseService<Events> {
     const keyring = await this.#findKeyring(account)
     try {
       const signature = await keyring.signMessage(account, signingData)
-      this.emitter.emit("signedData", signature)
+      if (HIDE_IMPORT_LEDGER) {
+        this.emitter.emit("signedData", signature)
+      }
       return signature
     } catch (error) {
       throw new Error("Signing data failed")
@@ -526,7 +577,7 @@ export default class KeyringService extends BaseService<Events> {
       const keyrings = this.getKeyrings()
       this.emitter.emit("keyrings", {
         keyrings,
-        keyringMetadata: this.#keyringMetadata,
+        keyringMetadata: { ...this.#keyringMetadata },
       })
     }
   }
@@ -541,12 +592,14 @@ export default class KeyringService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
-      const keyringMetadata = this.#keyringMetadata
+      const hiddenAccounts = { ...this.#hiddenAccounts }
+      const keyringMetadata = { ...this.#keyringMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
       const vault = await encryptVault(
         {
           keyrings: serializedKeyrings,
           metadata: keyringMetadata,
+          hiddenAccounts,
         },
         this.#cachedKey
       )

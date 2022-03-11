@@ -16,8 +16,8 @@ export default function OnboardingStartTheHunt(): ReactElement {
       </div>
       <h1 className="serif_header">Add Wallet</h1>
       <div className="subtitle subtitle_hunt">
-        Let&apos;s set Tally up with a wallet. Select with what wallet you would
-        like to continue.
+        Let&apos;s set Tally Ho up with a wallet. Select with what wallet you
+        would like to continue.
       </div>
       <ul>
         <li className="label_small">Use an existing wallet</li>
@@ -95,7 +95,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
-            width: 52px;
+            width: 95px;
             height: 25px;
             position: absolute;
             left: 0px;

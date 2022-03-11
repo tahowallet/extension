@@ -1,16 +1,17 @@
 import Transport from "@ledgerhq/hw-transport"
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
-import eip55 from "eip55"
 import { DeviceModelId } from "@ledgerhq/devices"
 import {
   serialize,
   UnsignedTransaction,
   parse as parseRawTransaction,
 } from "@ethersproject/transactions"
-import { TypedDataUtils } from "eth-sig-util"
-import { bufferToHex } from "ethereumjs-util"
-import { joinSignature } from "ethers/lib/utils"
+import {
+  joinSignature,
+  _TypedDataEncoder,
+  getAddress as ethersGetAddress,
+} from "ethers/lib/utils"
 import {
   EIP1559TransactionRequest,
   EVMNetwork,
@@ -84,7 +85,7 @@ export const idDerviationPath = "44'/60'/0'/0/0"
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
-  const address = eip55.encode(derivedIdentifiers.address)
+  const address = ethersGetAddress(derivedIdentifiers.address)
   return address
 }
 
@@ -420,18 +421,11 @@ export default class LedgerService extends BaseService<Events> {
       }
 
       const eth = new Eth(this.transport)
-      const hashedDomain = TypedDataUtils.hashStruct(
-        "EIP712Domain",
-        typedData.domain,
-        typedData.types,
-        true
-      )
-      const hashedMessage = TypedDataUtils.hashStruct(
-        typedData.primaryType,
-        typedData.message,
-        typedData.types,
-        true
-      )
+      const { EIP712Domain, ...typesForSigning } = typedData.types
+      const hashedDomain = _TypedDataEncoder.hashDomain(typedData.domain)
+      const hashedMessage = _TypedDataEncoder
+        .from(typesForSigning)
+        .hash(typedData.message)
 
       const accountData = await this.db.getAccountByAddress(account)
 
@@ -439,8 +433,8 @@ export default class LedgerService extends BaseService<Events> {
 
       const signature = await eth.signEIP712HashedMessage(
         path,
-        bufferToHex(hashedDomain),
-        bufferToHex(hashedMessage)
+        hashedDomain,
+        hashedMessage
       )
 
       this.emitter.emit(
@@ -487,10 +481,28 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Uninitialized Ledger ID!")
     }
 
+    const accountData = await this.db.getAccountByAddress(address)
+
+    if (!accountData) {
+      throw new Error(
+        `Address "${address}" doesn't have corresponding derivation path!`
+      )
+    }
+
     const eth = new Eth(this.transport)
 
-    const signature = await eth.signPersonalMessage(address, message)
-    this.emitter.emit("signedData", joinSignature(signature))
-    return joinSignature(signature)
+    const signature = await eth.signPersonalMessage(
+      accountData.path,
+      Buffer.from(message).toString("hex")
+    )
+
+    const signatureHex = joinSignature({
+      r: `0x${signature.r}`,
+      s: `0x${signature.s}`,
+      v: signature.v,
+    })
+    this.emitter.emit("signedData", signatureHex)
+
+    return signatureHex
   }
 }

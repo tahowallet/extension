@@ -1,4 +1,4 @@
-// Global config for all babel-affected Tally packages.
+// Global config for all babel-affected Tally Ho packages.
 module.exports = {
   plugins: ["styled-jsx/babel"],
   presets: [

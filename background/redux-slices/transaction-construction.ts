@@ -1,11 +1,13 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
+import { FORK } from "../constants"
 import {
   EXPRESS,
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
 } from "../constants/network-fees"
+import { USE_MAINNET_FORK } from "../features/features"
 
 import {
   BlockEstimate,
@@ -96,6 +98,10 @@ export const updateTransactionOptions = createBackgroundAsyncThunk(
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
   async (request: SignatureRequest) => {
+    if (USE_MAINNET_FORK) {
+      request.transaction.chainID = FORK.chainID
+    }
+
     await emitter.emit("requestSignature", request)
   }
 )
