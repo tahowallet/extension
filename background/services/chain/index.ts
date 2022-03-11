@@ -111,7 +111,9 @@ interface Events extends ServiceLifecycleEvents {
  *   case a service needs to interact with a network directly.
  */
 export default class ChainService extends BaseService<Events> {
-  providers: { [networkName: string]: SerialFallbackProvider }
+  providers: { evm: { [networkName: string]: SerialFallbackProvider } } = {
+    evm: {},
+  }
 
   subscribedAccounts: {
     account: string
@@ -193,24 +195,26 @@ export default class ChainService extends BaseService<Events> {
       ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
       : [ETHEREUM]
 
-    this.providers = Object.fromEntries(
-      this.supportedNetworks.map((network) => [
-        network.name,
-        new SerialFallbackProvider(
-          network,
-          () =>
-            new AlchemyWebSocketProvider(
-              getNetwork(Number(network.chainID)),
-              ALCHEMY_KEY
-            ),
-          () =>
-            new AlchemyProvider(
-              getNetwork(Number(network.chainID)),
-              ALCHEMY_KEY
-            )
-        ),
-      ])
-    )
+    this.providers = {
+      evm: Object.fromEntries(
+        this.supportedNetworks.map((network) => [
+          network.chainID,
+          new SerialFallbackProvider(
+            network,
+            () =>
+              new AlchemyWebSocketProvider(
+                getNetwork(Number(network.chainID)),
+                ALCHEMY_KEY
+              ),
+            () =>
+              new AlchemyProvider(
+                getNetwork(Number(network.chainID)),
+                ALCHEMY_KEY
+              )
+          ),
+        ])
+      ),
+    }
 
     this.subscribedAccounts = []
     this.subscribedNetworks = []
@@ -238,6 +242,7 @@ export default class ChainService extends BaseService<Events> {
             const block = blockFromEthersBlock(network, result)
             await this.db.addBlock(block)
           }),
+
           this.subscribeToNewHeads(network),
         ])
         if (network.chainID !== ETHEREUM.chainID) {
@@ -281,7 +286,7 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers[network.name]
+    return this.providers.evm[network.chainID]
   }
 
   /**
@@ -694,7 +699,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async send(method: string, params: unknown[]): Promise<unknown> {
-    return this.providers[ETHEREUM.name].send(method, params)
+    return this.providerForNetworkOrThrow(ETHEREUM).send(method, params)
   }
 
   /* *****************
@@ -865,7 +870,9 @@ export default class ChainService extends BaseService<Events> {
     toHandle.forEach(async ({ hash, firstSeen }) => {
       try {
         // TODO make this multi network
-        const result = await this.providers[ETHEREUM.name].getTransaction(hash)
+        const result = await this.providers.evm[ETHEREUM.name].getTransaction(
+          hash
+        )
 
         const transaction = transactionFromEthersTransaction(result, network)
 
