@@ -5,6 +5,7 @@ import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
 import { RefObject, useState, useEffect, useRef } from "react"
+import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()
@@ -44,6 +45,14 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   })
 
   return keyringStatus === "unlocked"
+}
+
+export function useIsSigningMethodLocked(
+  signingMethod: SigningMethod | null
+): boolean {
+  const needsKeyrings = signingMethod?.type === "keyring"
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
+  return needsKeyrings && !areKeyringsUnlocked
 }
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
@@ -150,4 +159,19 @@ export function useDelayContentChange<T>(
   }
 
   return delayedContent
+}
+
+export function useLocalStorage(
+  key: string,
+  initialValue: string
+): [string, React.Dispatch<React.SetStateAction<string>>] {
+  const [value, setValue] = useState(() => {
+    return localStorage.getItem(key) || initialValue
+  })
+
+  useEffect(() => {
+    localStorage.setItem(key, value)
+  }, [key, value])
+
+  return [value, setValue]
 }

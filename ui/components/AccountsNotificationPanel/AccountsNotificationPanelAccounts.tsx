@@ -38,7 +38,7 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/imported@2x.png",
   },
   [AccountType.Internal]: {
-    title: "Tally",
+    title: "Tally Ho",
     icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
   },
   [AccountType.Ledger]: {
