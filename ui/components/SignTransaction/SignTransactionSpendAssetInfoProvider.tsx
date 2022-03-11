@@ -18,11 +18,13 @@ import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
 import React, { ReactElement, useState } from "react"
 import { useDispatch } from "react-redux"
+import classNames from "classnames"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
+import SharedTooltip from "../Shared/SharedTooltip"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
@@ -127,7 +129,19 @@ export default function SignTransactionSpendAssetInfoProvider({
             )}
           </span>
           <form onSubmit={(event) => event.preventDefault()}>
-            <span className="speed_limit_label">Spend limit</span>
+            <div className="spend_limit_header">
+              <span className="spend_limit_label">Spend limit</span>
+              <SharedTooltip width={250}>
+                <p className="spend_limit_tooltip">
+                  Spend limit is the amount of funds from a particular asset,
+                  that you allow a contract to spend.
+                </p>
+                <p className="spend_limit_tooltip">
+                  Infinite tx has the drawback that if the contract is
+                  mailicous, it can steal all your funds.
+                </p>
+              </SharedTooltip>
+            </div>
             {changing ? (
               <div>
                 <SharedInput
@@ -162,7 +176,11 @@ export default function SignTransactionSpendAssetInfoProvider({
               </div>
             ) : (
               <>
-                <span className="spend_amount">
+                <span
+                  className={classNames("spend_amount", {
+                    has_error: approvalLimitString === null,
+                  })}
+                >
                   {approvalLimitDisplayValue}
                 </span>
                 <SharedButton
@@ -212,11 +230,21 @@ export default function SignTransactionSpendAssetInfoProvider({
                 margin-bottom: 16px;
                 text-align: center;
               }
-              .speed_limit_label {
+              .spend_limit_header {
+                display: flex;
+                justify-content: center;
+              }
+              .spend_limit_label {
                 color: var(--green-40);
                 font-size: 14px;
                 line-height: 16px;
                 margin-bottom: 4px;
+              }
+              .spend_limit_tooltip {
+                margin: 0 0 5px;
+              }
+              .spend_limit_tooltip:last-child {
+                margin-bottom: 0;
               }
               .change_limit_actions {
                 display: flex;
@@ -226,6 +254,9 @@ export default function SignTransactionSpendAssetInfoProvider({
                 color: #fff;
                 font-size: 16px;
                 line-height: 24px;
+              }
+              .spend_amount.has_error {
+                color: var(--error);
               }
               .spacer {
                 margin-bottom: 18px;
