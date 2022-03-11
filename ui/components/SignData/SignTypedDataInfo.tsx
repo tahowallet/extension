@@ -20,8 +20,7 @@ export default function SignTypedDataInfo({
       ? annotation.displayFields
       : typedData.message
 
-  // We display the source inside of SignData if it is available
-  const keys = Object.keys(fieldsToDisplay).filter((key) => key !== "source")
+  const keys = Object.keys(fieldsToDisplay)
   return (
     <div className="messages">
       <div className="message">
