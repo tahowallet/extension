@@ -1,10 +1,8 @@
 import browser, { Runtime } from "webextension-polyfill"
-import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
   AllowedQueryParamPage,
-  AllowedQueryParamPageType,
   PortRequestEvent,
   PortResponseEvent,
   EIP1193Error,
@@ -12,14 +10,20 @@ import {
   EIP1193_ERROR_CODES,
   isTallyConfigPayload,
 } from "@tallyho/provider-bridge-shared"
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
+import {
+  checkPermissionSignTypedData,
+  checkPermissionSign,
+  checkPermissionSignTransaction,
+} from "./authorization"
+import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
-import { sameEVMAddress } from "../../lib/utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -219,9 +223,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     permissionRequest: PermissionRequest
   ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
-    await ProviderBridgeService.showExtensionPopup(
-      AllowedQueryParamPage.dappPermission
-    )
+    await showExtensionPopup(AllowedQueryParamPage.dappPermission)
 
     return new Promise((resolve) => {
       this.#pendingPermissionsRequests[permissionRequest.origin] = resolve
@@ -291,8 +293,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     params: RPCRequest["params"]
   ): Promise<unknown> {
     try {
-      let walletAddress
-      let signDataPopupPromise
       switch (method) {
         case "eth_requestAccounts":
         case "eth_accounts":
@@ -301,66 +301,37 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTypedData_v1":
         case "eth_signTypedData_v3":
         case "eth_signTypedData_v4":
-          // When its signTypedData the params[0] should be the walletAddress
-          // eslint-disable-next-line no-case-declarations
-          walletAddress = params[0] as HexString
-          // eslint-disable-next-line no-case-declarations
-          signDataPopupPromise = ProviderBridgeService.showExtensionPopup(
-            AllowedQueryParamPage.signData
+          checkPermissionSignTypedData(
+            params[0] as HexString,
+            enablingPermission
           )
-          if (
-            sameEVMAddress(walletAddress, enablingPermission.accountAddress)
-          ) {
-            return await this.routeSafeRequest(
-              method,
-              params,
-              signDataPopupPromise
-            )
-          }
-          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+
+          return await this.routeSafeRequest(
+            method,
+            params,
+            showExtensionPopup(AllowedQueryParamPage.signData)
+          )
         case "eth_sign":
         case "personal_sign":
-          // eslint-disable-next-line no-case-declarations
-          walletAddress = params[1] as HexString
+          checkPermissionSign(params[1] as HexString, enablingPermission)
 
-          // eslint-disable-next-line no-case-declarations
-          signDataPopupPromise = ProviderBridgeService.showExtensionPopup(
-            AllowedQueryParamPage.personalSignData
+          return await this.routeSafeRequest(
+            method,
+            params,
+            showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
-          if (
-            sameEVMAddress(walletAddress, enablingPermission.accountAddress)
-          ) {
-            return await this.routeSafeRequest(
-              method,
-              params,
-              signDataPopupPromise
-            )
-          }
-          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
         case "eth_signTransaction":
         case "eth_sendTransaction":
-          // We are monsters and aren't breaking a method out quite yet.
-          // eslint-disable-next-line no-case-declarations
-          const transactionRequest = params[0] as EthersTransactionRequest
-          // eslint-disable-next-line no-case-declarations
-          const signTransactionPopupPromise =
-            ProviderBridgeService.showExtensionPopup(
-              AllowedQueryParamPage.signTransaction
-            )
+          checkPermissionSignTransaction(
+            params[0] as EthersTransactionRequest,
+            enablingPermission
+          )
 
-          if (
-            sameEVMAddress(
-              transactionRequest.from,
-              enablingPermission.accountAddress
-            )
-          ) {
-            return await this.routeSafeRequest(
-              method,
-              params,
-              signTransactionPopupPromise
-            )
-          }
-          throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+          return await this.routeSafeRequest(
+            method,
+            params,
+            showExtensionPopup(AllowedQueryParamPage.signTransaction)
+          )
 
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -373,22 +344,5 @@ export default class ProviderBridgeService extends BaseService<Events> {
       logger.log("error processing request", error)
       return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
     }
-  }
-
-  private static async showExtensionPopup(
-    url: AllowedQueryParamPageType
-  ): Promise<browser.Windows.Window> {
-    const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
-    const popupWidth = 384
-    const popupHeight = 600
-    return browser.windows.create({
-      url: `${browser.runtime.getURL("popup.html")}?page=${url}`,
-      type: "popup",
-      left: left + width - popupWidth,
-      top,
-      width: popupWidth,
-      height: popupHeight,
-      focused: true,
-    })
   }
 }

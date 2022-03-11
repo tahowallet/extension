@@ -1,7 +1,7 @@
-# Tally Background
+# Tally Ho Background
 
-The Tally Background package can effectively be considered the background script for the
-Tally extension. It is designed to connect to external data providers including
+The Tally Ho Background package can effectively be considered the background script for the
+Tally Ho extension. It is designed to connect to external data providers including
 Ethereum nodes, as well as specific providers like Alchemy and Blocknative that
 may enable specific functionality beyond the standard node functions. It constructs
 a data model in the form of a [Redux](https://redux.js.org) store, which is
@@ -80,7 +80,7 @@ The following diagram describes the flow of data and events at a high level:
 
 ## Public API
 
-The only public API of the Tally Background package is what is exported directly on
+The only public API of the Tally Ho Background package is what is exported directly on
 [`index.ts`](./index.ts). No submodule API is considered public, and all such
 APIs are subject to arbitrary change without warning. Any API from a child
 module that is meant for public consumption is re-exported in `index.ts`.

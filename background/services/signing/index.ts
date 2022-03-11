@@ -11,6 +11,8 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { SigningMethod } from "../../redux-slices/signing"
+import { USE_MAINNET_FORK } from "../../features/features"
+import { FORK } from "../../constants"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
@@ -134,11 +136,29 @@ export default class SigningService extends BaseService<Events> {
     }
   }
 
+  async removeAccount(
+    address: HexString,
+    signingMethod: SigningMethod
+  ): Promise<void> {
+    switch (signingMethod.type) {
+      case "keyring":
+        await this.keyringService.hideAccount(address)
+        break
+      case "ledger":
+        // @TODO Implement removal of ledger accounts.
+        break
+      default:
+        throw new Error("Unknown signingMethod type.")
+    }
+  }
+
   async signTransaction(
     transactionRequest: EIP1559TransactionRequest,
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
-    const network = this.chainService.resolveNetwork(transactionRequest)
+    const network = USE_MAINNET_FORK
+      ? FORK
+      : this.chainService.resolveNetwork(transactionRequest)
     if (typeof network === "undefined") {
       throw new Error(`Unknown chain ID ${transactionRequest.chainID}.`)
     }
