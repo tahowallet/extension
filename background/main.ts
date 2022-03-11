@@ -559,6 +559,13 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  async removeAccount(
+    address: HexString,
+    signingMethod: SigningMethod
+  ): Promise<void> {
+    await this.signingService.removeAccount(address, signingMethod)
+  }
+
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(
@@ -854,9 +861,13 @@ export default class Main extends BaseService<never> {
   async connectLedgerService(): Promise<void> {
     this.store.dispatch(resetLedgerState())
 
-    this.ledgerService.emitter.on("connected", ({ id }) => {
+    this.ledgerService.emitter.on("connected", ({ id, metadata }) => {
       this.store.dispatch(
-        setDeviceConnectionStatus({ deviceID: id, status: "available" })
+        setDeviceConnectionStatus({
+          deviceID: id,
+          status: "available",
+          isBlindSigner: metadata.ethereumBlindSigner,
+        })
       )
     })
 

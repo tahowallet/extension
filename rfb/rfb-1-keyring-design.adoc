@@ -1,11 +1,11 @@
 :toc: macro
 
-= RFC 1: Keyring Design
+= RFB 1: Keyring Design
 
 == Background
 
-The Tally wallet allows users to both view data associated with an account of
-theirs, and sign transactions on behalf of that account using private key
+The Tally Ho wallet allows users to both view data associated with an account
+of theirs, and sign transactions on behalf of that account using private key
 material. Users can set up new accounts rooted in fresh private key material,
 and accounts can derive many addresses via derivation paths as specified in
 BIP33.
@@ -17,8 +17,8 @@ abstraction that is safe and functional.
 
 === Goal
 
-The keyring is the core key management abstraction used by the Tally wallet. It
-is responsible for managing, securing access to, and protecting a user's
+The keyring is the core key management abstraction used by the Tally Ho wallet.
+It is responsible for managing, securing access to, and protecting a user's
 private key material, as well as exposing access to the public aspects of that
 private key material.
 
@@ -53,7 +53,7 @@ derivation, signing, and related wallet work is done entirely by
 http://ethers.io[Ethers]. 
 
 Mnemonic management is done by the https://www.npmjs.com/package/bip39[bip39]
-package. Tally ``HDKeyring``s currently support any BIP39 mnemonics and
+package. Tally Ho ``HDKeyring``s currently support any BIP39 mnemonics and
 mnemonic generation for any strength supported by the bip39 package.
 
 Serialization of keyrings includes version information to allow for future
@@ -63,10 +63,10 @@ in order to protect the underlying mnemonic (and therefore private key).
 
 ==== Service
 
-===== Tally Services Abstraction
+===== Tally Ho Services Abstraction
 
-Tally services are runtime singletons that are charged with managing a single
-slice of functionality for the extension. They manage data storage and
+Tally Ho services are runtime singletons that are charged with managing a
+single slice of functionality for the extension. They manage data storage and
 interactions with other services, as well as maintaining internal state.
 Triggering a service’s functionality is currently done by invoking a method on
 the service; for example, the KeyringService has an unlock method that is used
@@ -80,7 +80,7 @@ Once a service is created, it can be started and stopped. Currently services
 can only walk through their lifecycle once, so once a service is stopped, it
 can no longer be restarted.
 
-Tally services communicate data outwards in two ways:
+Tally Ho services communicate data outwards in two ways:
 
 * All services have a set of events they may broadcast. These are expected to
   be viewable by any external entity, and should only carry public (to the rest

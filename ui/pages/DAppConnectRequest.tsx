@@ -9,8 +9,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/dapp-permission"
 
 import SharedButton from "../components/Shared/SharedButton"
-import SharedPanelAccountItem from "../components/Shared/SharedPanelAccountItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import SharedAccountItemSummary from "../components/Shared/SharedAccountItemSummary"
 
 function RequestingDAppBlock(props: {
   title: string
@@ -120,10 +120,9 @@ export default function DAppConnectRequest(): ReactElement {
         </div>
         <div className="icon_connection" />
         <div className="connection_destination">
-          <SharedPanelAccountItem
+          <SharedAccountItemSummary
             key={permission.accountAddress}
             accountTotal={currentAccountTotal}
-            hideMenu
           />
         </div>
         <ul className="permissions_list">
