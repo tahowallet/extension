@@ -1,11 +1,12 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
-import React, { ReactNode, useEffect } from "react"
+import { useEffect } from "react"
 
-export default function ClaimReferrerProvider({
-  children,
-}: {
-  children: ReactNode
-}): JSX.Element {
+/**
+ * By mounting this component, the claim referrer is pulled from the website local storage.
+ * This implemented by loading a hidden iframe which points to `/_referral-bridge.html`,
+ * which in turn invokes `tally_setClaimReferrer` with the data from the local storage.
+ */
+export default function ClaimReferralBridge(): null {
   useEffect(() => {
     if (WEBSITE_ORIGIN === null) {
       throw new Error(`Missing env variable 'WEBSITE_ORIGIN'`)
@@ -22,5 +23,5 @@ export default function ClaimReferrerProvider({
     }
   }, [])
 
-  return <>{children}</>
+  return null
 }
