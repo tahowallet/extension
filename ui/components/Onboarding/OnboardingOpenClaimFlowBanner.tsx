@@ -1,10 +1,7 @@
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import classNames from "classnames"
-import {
-  toFixedPointNumber,
-  fixedPointNumberToString,
-} from "@tallyho/tally-background/lib/fixed-point"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import {
   selectCurrentAccount,
   selectCurrentAccountSigningMethod,
@@ -209,12 +206,13 @@ function IneligibleCTAContent({
 
 export default function OnboardingOpenClaimFlowBanner(): ReactElement {
   const claimAmount = useBackgroundSelector((state) =>
-    fixedPointNumberToString(
-      toFixedPointNumber(
-        Number(state.claim?.eligibility?.earnings) || 0,
-        tallyTokenDecimalDigits
-      )
-    )
+    fromFixedPointNumber(
+      {
+        amount: BigInt(Number(state.claim?.eligibility?.amount || 0n)) || 0n,
+        decimals: tallyTokenDecimalDigits,
+      },
+      0
+    ).toString()
   )
 
   const currentAccountSigningMethod = useBackgroundSelector(

@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import {
   chooseDAO,
   selectClaimSelections,
@@ -72,9 +72,8 @@ function DAOButton(props: {
 export default function ClaimReferral(props: {
   DAOs: DAO[]
   claimAmount: number
-  claimAmountWithBonus: number
 }): ReactElement {
-  const { DAOs, claimAmount, claimAmountWithBonus } = props
+  const { DAOs, claimAmount } = props
   const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
 
   return (
@@ -82,7 +81,7 @@ export default function ClaimReferral(props: {
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
         Get a bonus of
-        <div className="highlight">{Math.floor(claimAmountWithBonus)}</div>
+        <div className="highlight">{(claimAmount * 0.05).toFixed(2)}</div>
         TALLY!
       </div>
       <div className="description">

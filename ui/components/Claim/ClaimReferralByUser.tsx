@@ -12,7 +12,8 @@ export default function ClaimReferralByUser({
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
         Get a bonus of
-        <div className="highlight">{Math.floor(claimAmount * 0.05)}</div> TALLY!
+        <div className="highlight">{(claimAmount * 0.05).toFixed(2)}</div>{" "}
+        TALLY!
       </div>
       <div className="description">
         You were referred by somebody, and to reward that you each get 463 TALLY
