@@ -54,7 +54,7 @@ interface ClaimingState {
 
 const getDistributorContract = async () => {
   const distributorContractAddress =
-    "0x0817B18070cb2B102aBe1eeE909A8bFAB46C7863" // VoteWithFriends contract address
+    "0x55Ef3968731DdA6125FF1545acB94303052c955D" // VoteWithFriends contract address
   const distributor = await getContract(
     distributorContractAddress,
     DISTRIBUTOR_ABI
