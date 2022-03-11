@@ -5,10 +5,14 @@ export default function SignTransactionSlideUpContentLayout({
   title,
   helpMessage,
   steps,
+  onRefreshClick,
+  onHelpClick,
 }: {
   title: ReactNode
   helpMessage: ReactNode
   steps: ReactNode[]
+  onRefreshClick?: () => void
+  onHelpClick?: () => void
 }): ReactElement {
   return (
     <div className="container">
@@ -22,16 +26,10 @@ export default function SignTransactionSlideUpContentLayout({
         </ol>
       </div>
       <div className="footer_actions">
-        <SharedButton
-          type="tertiaryGray"
-          size="small"
-          onClick={() => {
-            /* TODO */
-          }}
-        >
+        <SharedButton type="tertiaryGray" size="small" onClick={onHelpClick}>
           I need help
         </SharedButton>
-        <SharedButton type="primary" size="medium">
+        <SharedButton type="primary" size="medium" onClick={onRefreshClick}>
           Refresh
         </SharedButton>
       </div>
