@@ -23,7 +23,8 @@ export default function SignTransactionRawDataPanel(): ReactElement {
       <SharedButton
         type="tertiary"
         icon="copy"
-        size="small"
+        size="medium"
+        iconSize="secondaryMedium"
         iconPosition="left"
         onClick={copyData}
       >
