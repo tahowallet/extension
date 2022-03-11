@@ -9,10 +9,11 @@ import { HexString } from "../types"
 import {
   AssetTransfer,
   FungibleAsset,
+  SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../assets"
 import { ETH } from "../constants"
-import { AnyEVMTransaction, EVMNetwork } from "../networks"
+import { AnyEVMTransaction, EVMNetwork, SmartContract } from "../networks"
 import {
   isValidAlchemyAssetTransferResponse,
   isValidAlchemyTokenBalanceResponse,
@@ -134,9 +135,9 @@ export async function getAssetTransfers(
  */
 export async function getTokenBalances(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  address: HexString,
+  { address, network }: AddressOnNetwork,
   tokens?: HexString[]
-): Promise<{ contractAddress: string; amount: bigint }[]> {
+): Promise<SmartContractAmount[]> {
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
     address,
     tokens || "DEFAULT_TOKENS",
@@ -173,7 +174,10 @@ export async function getTokenBalances(
           balance = balance.substring(0, 66)
         }
         return {
-          contractAddress: tokenBalance.contractAddress,
+          smartContract: {
+            contractAddress: tokenBalance.contractAddress,
+            homeNetwork: network,
+          },
           amount: BigInt(balance),
         }
       })
@@ -187,27 +191,24 @@ export async function getTokenBalances(
  * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
  *
  * @param provider an Alchemy ethers provider
- * @param contractAddressOnNetwork the address of the token smart contract
- *        whose metadata should be returned, with network information; note
- *        that the passed provider should be for the same network, or results
- *        are unpredictable.
+ * @param smartContract The information on the token smart contract whose
+ *        metadata should be returned; note that the passed provider should be
+ *        for the same network, or results are undefined.
  */
 export async function getTokenMetadata(
-  // FIXME Track provider + network similarly to address + network.
   provider: AlchemyProvider | AlchemyWebSocketProvider,
-  contractAddressOnNetwork: AddressOnNetwork
-): Promise<SmartContractFungibleAsset | null> {
-  const { address: contractAddress, network } = contractAddressOnNetwork
-
+  { contractAddress, homeNetwork }: SmartContract
+): Promise<SmartContractFungibleAsset | undefined> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
     contractAddress,
   ])
   if (!isValidAlchemyTokenMetadataResponse(json)) {
     logger.warn(
       "Alchemy token metadata response didn't validate, did the API change?",
-      json
+      json,
+      isValidAlchemyTokenMetadataResponse.errors
     )
-    return null
+    throw new Error("Alchemy token metadata response didn't validate.")
   }
   return {
     decimals: json.decimals,
@@ -217,7 +218,7 @@ export async function getTokenMetadata(
       tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
-    homeNetwork: network, // TODO make multi-network friendly
+    homeNetwork,
     contractAddress,
   }
 }
@@ -227,7 +228,6 @@ export async function getTokenMetadata(
  */
 export function transactionFromAlchemyWebsocketTransaction(
   websocketTx: unknown,
-  asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
   // These are the props we expect here.
@@ -273,7 +273,7 @@ export function transactionFromAlchemyWebsocketTransaction(
       tx.type !== undefined
         ? (BigNumber.from(tx.type).toNumber() as AnyEVMTransaction["type"])
         : 0,
-    asset,
+    asset: network.baseAsset,
     network,
   }
 }

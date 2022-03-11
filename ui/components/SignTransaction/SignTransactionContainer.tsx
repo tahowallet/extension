@@ -2,6 +2,8 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
+import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
 import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLedgersConnected"
@@ -115,6 +117,9 @@ export default function SignTransactionContainer({
         )}
         {signingLedgerState === "multiple-ledgers-connected" && (
           <SignTransactionMultipleLedgersConnected />
+        )}
+        {signingLedgerState === "activate-blind-signing" && (
+          <SignTransactionLedgerActivateBlindSigning />
         )}
         {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>

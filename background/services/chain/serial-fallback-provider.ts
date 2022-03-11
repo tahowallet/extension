@@ -7,6 +7,10 @@ import {
 } from "@ethersproject/providers"
 import { MINUTE } from "../../constants"
 import logger from "../../lib/logger"
+import { AnyEVMTransaction, EVMNetwork } from "../../networks"
+import { AddressOnNetwork } from "../../accounts"
+import { transactionFromEthersTransaction } from "./utils"
+import { transactionFromAlchemyWebsocketTransaction } from "../../lib/alchemy"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 150
@@ -90,7 +94,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  private currentProvider: JsonRpcProvider
+  currentProvider: JsonRpcProvider
 
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
@@ -122,6 +126,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }[] = []
 
   constructor(
+    // Internal network type useful for helper calls, but not exposed to avoid
+    // clashing with Ethers's own `network` stuff.
+    private evmNetwork: EVMNetwork,
     firstProviderCreator: () => WebSocketProvider,
     ...remainingProviderCreators: (() => JsonRpcProvider)[]
   ) {
@@ -134,7 +141,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Override the core `perform` method to handle disconnects and other errors
+   * Override the core `send` method to handle disconnects and other errors
    * that should trigger retries. Ethers already does internal retrying, but
    * this retry methodology eventually falls back on another provider, handles
    * WebSocket disconnects, and restores subscriptions where
@@ -197,6 +204,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
               await this.reconnectProvider()
             }
 
+            logger.debug("Retrying", method, params)
             return this.send(method, params)
           })
         }
@@ -213,25 +221,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
-  private async disconnectCurrentProvider() {
-    logger.debug(
-      "Disconnecting current provider; websocket: ",
-      this.currentProvider instanceof WebSocketProvider,
-      "."
-    )
-    if (this.currentProvider instanceof WebSocketProvider) {
-      this.currentProvider.destroy()
-    } else {
-      // For non-WebSocket providers, kill all subscriptions so the listeners
-      // won't fire; the next provider will pick them up. We could lose events
-      // in between, but if we're considering the current provider dead, let's
-      // assume we would lose them anyway.
-      this.eventSubscriptions.forEach(({ eventName }) =>
-        this.removeAllListeners(eventName)
-      )
-    }
-  }
-
+  /**
+   * Exposes direct WebSocket subscription by JSON-RPC method. Takes immediate
+   * effect if the current underlying provider is a WebSocketProvider. If it is
+   * not, queues the subscription up for when a WebSocketProvider can connect.
+   */
   async subscribe(
     tag: string,
     param: Array<unknown>,
@@ -255,9 +249,59 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return this.currentProvider.detectNetwork()
   }
 
-  // Overriding internal functionality here to support event listener
-  // restoration on reconnect.
-  // eslint-disable-next-line no-underscore-dangle
+  /**
+   * Subscribe to pending transactions that have been resolved to a full
+   * transaction object; uses optimized paths when the provider supports it,
+   * otherwise subscribes to pending transaction hashes and manually resolves
+   * them with a transaction lookup.
+   */
+  async subscribeFullPendingTransactions(
+    { address, network }: AddressOnNetwork,
+    handler: (pendingTransaction: AnyEVMTransaction) => void
+  ): Promise<void> {
+    if (this.evmNetwork.chainID !== network.chainID) {
+      logger.error(
+        `Tried to subscribe to pending transactions for chain id ` +
+          `${network.chainID} but provider was on ` +
+          `${this.evmNetwork.chainID}`
+      )
+      return
+    }
+
+    const alchemySubscription =
+      await this.alchemySubscribeFullPendingTransactions(
+        { address, network },
+        handler
+      )
+
+    if (alchemySubscription === "unsupported") {
+      // Fall back on a standard pending transaction subscription if the
+      // Alchemy version is unsupported.
+      this.on("pending", async (transactionHash: unknown) => {
+        try {
+          if (typeof transactionHash === "string") {
+            const transaction = transactionFromEthersTransaction(
+              await this.getTransaction(transactionHash),
+              network
+            )
+
+            handler(transaction)
+          }
+        } catch (innerError) {
+          logger.error(
+            `Error handling incoming pending transaction hash: ${transactionHash}`,
+            innerError
+          )
+        }
+      })
+    }
+  }
+
+  /**
+   * Behaves the same as the `JsonRpcProvider` `on` method, but also trakcs the
+   * event subscription so that an underlying provider failure will not prevent
+   * it from firing.
+   */
   on(eventName: EventType, listener: Listener): this {
     this.eventSubscriptions.push({
       eventName,
@@ -270,6 +314,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return this
   }
 
+  /**
+   * Behaves the same as the `JsonRpcProvider` `once` method, but also trakcs
+   * the event subscription so that an underlying provider failure will not
+   * prevent it from firing.
+   */
   once(eventName: EventType, listener: Listener): this {
     const adjustedListener = this.listenerWithCleanup(eventName, listener)
 
@@ -321,6 +370,35 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
+   * Handles any cleanup needed for the current provider.
+   *
+   * Useful especially for when a non-WebSocket provider is tracking events,
+   * which are done via polling. In these cases, if the provider became
+   * available again, even if it was no longer the current provider, it would
+   * start calling its event handlers again; disconnecting in this way
+   * unsubscribes all those event handlers so they can be attached to the new
+   * current provider.
+   */
+  private async disconnectCurrentProvider() {
+    logger.debug(
+      "Disconnecting current provider; websocket: ",
+      this.currentProvider instanceof WebSocketProvider,
+      "."
+    )
+    if (this.currentProvider instanceof WebSocketProvider) {
+      this.currentProvider.destroy()
+    } else {
+      // For non-WebSocket providers, kill all subscriptions so the listeners
+      // won't fire; the next provider will pick them up. We could lose events
+      // in between, but if we're considering the current provider dead, let's
+      // assume we would lose them anyway.
+      this.eventSubscriptions.forEach(({ eventName }) =>
+        this.removeAllListeners(eventName)
+      )
+    }
+  }
+
+  /**
    * Wraps an Ethers listener function meant to only be invoked once with
    * cleanup to ensure it won't be resubscribed in case of a provider switch.
    */
@@ -364,11 +442,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
 
     this.currentProvider = this.providerCreators[this.currentProviderIndex]()
-    this.resubscribe()
+    await this.resubscribe()
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
 
+  /**
+   * Resubscribes existing WebSocket subscriptions (if the current provider is
+   * a `WebSocketProvider`) and regular Ethers subscriptions (for all
+   * providers).
+   */
   private async resubscribe() {
     logger.debug("Resubscribing subscriptions...")
 
@@ -378,7 +461,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // Chain promises to serially resubscribe.
       //
       // TODO If anything fails along the way, it should yield the same kind of
-      // TODO backoff as a regular `perform`.
+      // TODO backoff as a regular `send`.
       await this.subscriptions.reduce(
         (previousPromise, { tag, param, processFunc }) =>
           previousPromise.then(() =>
@@ -416,7 +499,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * index is new, starts with the base backoff; if the provider index is
    * unchanged, computes a jittered exponential backoff. If the current
    * provider has already exceeded its maximum retries, returns undefined to
-   * signal the provider should be considered dead for the time being.
+   * signal that the provider should be considered dead for the time being.
    *
    * Backoffs respect a cooldown time after which they reset down to the base
    * backoff time.
@@ -437,14 +520,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         providerIndex,
         backoffMs: BASE_BACKOFF_MS,
         backoffCount: 0,
-        lastBackoffTime: 0,
+        lastBackoffTime: Date.now(),
       }
     } else if (Date.now() - lastBackoffTime > COOLDOWN_PERIOD) {
       this.currentBackoff = {
         providerIndex,
         backoffMs: BASE_BACKOFF_MS,
         backoffCount: 0,
-        lastBackoffTime: 0,
+        lastBackoffTime: Date.now(),
       }
     } else {
       // The next backoff slot starts at the current minimum backoff and
@@ -462,5 +545,48 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     return this.currentBackoff.backoffMs
+  }
+
+  /**
+   * Attempts to subscribe to full pending transactions in an Alchemy-specific
+   * way. Returns `subscribed` if the subscription succeeded, or `unsupported`
+   * if the underlying provider did not support Alchemy-specific subscriptions.
+   */
+  private async alchemySubscribeFullPendingTransactions(
+    { address, network }: AddressOnNetwork,
+    handler: (pendingTransaction: AnyEVMTransaction) => void
+  ): Promise<"subscribed" | "unsupported"> {
+    try {
+      await this.subscribe(
+        "filteredNewFullPendingTransactionsSubscriptionID",
+        ["alchemy_filteredNewFullPendingTransactions", { address }],
+        async (result: unknown) => {
+          // TODO use proper provider string
+          // handle incoming transactions for an account
+          try {
+            const transaction = transactionFromAlchemyWebsocketTransaction(
+              result,
+              network
+            )
+
+            handler(transaction)
+          } catch (error) {
+            logger.error(
+              `Error handling incoming pending transaction: ${result}`,
+              error
+            )
+          }
+        }
+      )
+
+      return "subscribed"
+    } catch (error) {
+      const errorString = String(error)
+      if (errorString.match(/unsupported subscription/i)) {
+        return "unsupported"
+      }
+
+      throw error
+    }
   }
 }
