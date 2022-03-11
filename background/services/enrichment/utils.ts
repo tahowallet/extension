@@ -3,7 +3,7 @@ import { UniswapSignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SignTypedDataRequest } from "../signing/types"
 import { SmartContractFungibleAsset } from "../../assets"
-import { NameService } from ".."
+import NameService from "../name"
 
 export const ENRICHABLE_CONTRACTS: { [k: string]: string } = {
   "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "Uniswap",

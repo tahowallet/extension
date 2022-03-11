@@ -15,6 +15,7 @@ import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
+import NameService from "../name"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import {
@@ -30,7 +31,6 @@ import {
   isUniswapSignTypedDataRequest,
 } from "./utils"
 import { ETHEREUM } from "../../constants"
-import { NameService } from ".."
 
 export * from "./types"
 
