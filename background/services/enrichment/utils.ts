@@ -36,16 +36,18 @@ export async function enrichUniswapSignTypedDataRequest(
   nameService: NameService,
   asset: SmartContractFungibleAsset | undefined
 ): Promise<UniswapSignTypedDataAnnotation> {
+  const { message, domain } = signTypedDataRequest.typedData
+  const { value } = message
   // If we have a corresponding asset - use known decimals to display a human-friendly
   // amount e.g. 10 USDC.  Otherwise just display the value e.g. 10000000
-  const value = asset
-    ? `${
-        Number(signTypedDataRequest.typedData.message.value) /
-        10 ** asset?.decimals
-      } ${asset.symbol}`
-    : (signTypedDataRequest.typedData.message.value as string)
+  const formattedValue = asset
+    ? `${Number(value) / 10 ** asset?.decimals} ${asset.symbol}`
+    : (value as string)
 
-  const { owner, spender, nonce } = signTypedDataRequest.typedData.message as {
+  // We only need to add the token if we're not able to properly format the value above
+  const token = formattedValue === value ? domain.name : null
+
+  const { owner, spender, nonce } = message as {
     [key: string]: string
   }
 
@@ -59,11 +61,10 @@ export async function enrichUniswapSignTypedDataRequest(
     displayFields: {
       owner: ownerName ?? owner,
       spender: spenderName ?? spender,
-      value,
+      value: formattedValue,
+      ...(token ? { token } : {}),
       nonce,
-      expiry: dayjs
-        .unix(Number(signTypedDataRequest.typedData.message.deadline))
-        .format("DD MMM YYYY"),
+      expiry: dayjs.unix(Number(message.deadline)).format("DD MMM YYYY"),
     },
   }
 }

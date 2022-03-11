@@ -91,6 +91,7 @@ export type UniswapSignTypedDataAnnotation = {
     value: string
     nonce: string
     expiry: string
+    token?: string
   }
 }
 
