@@ -559,6 +559,13 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  async removeAccount(
+    address: HexString,
+    signingMethod: SigningMethod
+  ): Promise<void> {
+    await this.signingService.removeAccount(address, signingMethod)
+  }
+
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(
