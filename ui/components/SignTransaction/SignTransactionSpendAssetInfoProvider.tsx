@@ -131,7 +131,7 @@ export default function SignTransactionSpendAssetInfoProvider({
           <form onSubmit={(event) => event.preventDefault()}>
             <div className="spend_limit_header">
               <span className="spend_limit_label">Spend limit</span>
-              <SharedTooltip horizontalPosition="center" width={250}>
+              <SharedTooltip width={250}>
                 <p className="spend_limit_tooltip">
                   Spend limit is the amount of funds from a particular asset,
                   that you allow a contract to spend.

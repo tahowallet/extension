@@ -1,26 +1,15 @@
 import React, { ReactElement, useState } from "react"
 
 type VeriticalPosition = "top" | "bottom"
-type HorizontalPosition = "left" | "center" | "right"
 
 interface Props {
   verticalPosition?: VeriticalPosition
-  horizontalPosition?: HorizontalPosition
-  width?: number
+  width: number
   children: React.ReactNode
 }
 
-function getHorizontalPosition(horizontal: HorizontalPosition, width?: number) {
-  switch (horizontal) {
-    case "center":
-      return width ? `right: -${width / 2 + 8}px;` : ""
-    case "left":
-      return "right: 0;"
-    case "right":
-      return "left: 0;"
-    default:
-      return ""
-  }
+function getHorizontalPosition(width: number) {
+  return `right: -${width / 2 + 4}px;`
 }
 
 function getVerticalPosition(vertical: VeriticalPosition) {
@@ -35,12 +24,7 @@ function getVerticalPosition(vertical: VeriticalPosition) {
 }
 
 export default function SharedTooltip(props: Props): ReactElement {
-  const {
-    children,
-    verticalPosition = "bottom",
-    horizontalPosition = "right",
-    width,
-  } = props
+  const { children, verticalPosition = "bottom", width } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
@@ -72,7 +56,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             display: block;
           }
           .tooltip {
-            width: ${width ? `${width}px` : "auto"};
+            width: ${width}px;
             position: absolute;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
@@ -84,7 +68,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             border-radius: 3px;
             padding: 12px;
             ${getVerticalPosition(verticalPosition)}
-            ${getHorizontalPosition(horizontalPosition, width)}
+            ${getHorizontalPosition(width)}
           }
         `}
       </style>
