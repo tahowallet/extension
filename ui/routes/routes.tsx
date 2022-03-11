@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
 import SignData from "../pages/SignData"
+import PersonalSign from "../pages/PersonalSign"
 import OnboardingSaveSeed from "../pages/Onboarding/OnboardingSaveSeed"
 import OnboardingVerifySeed from "../pages/Onboarding/OnboardingVerifySeed"
 import OnboardingImportMetamask from "../pages/Onboarding/OnboardingImportMetamask"
@@ -55,46 +56,53 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/onboarding/importMetamask",
+    path: "/onboarding/import-metamask",
     Component: (): ReactElement => <OnboardingImportMetamask nextPage="/" />,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/onboarding/viewOnlyWallet",
+    path: "/onboarding/view-only-wallet",
     Component: OnboardingViewOnlyWallet,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/onboarding/infoIntro",
+    path: "/onboarding/info-intro",
     Component: OnboardingInfoIntro,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/onboarding/addWallet",
+    path: "/onboarding/add-wallet",
     Component: OnboardingAddWallet,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/signTransaction",
+    path: "/sign-transaction",
     Component: SignTransaction,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/signData",
+    path: "/sign-data",
     Component: SignData,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
+  },
+  {
+    path: "/personal-sign",
+    Component: PersonalSign,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: true,
   },
   {
     path: "/overview",
@@ -139,28 +147,28 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/dappPermission",
+    path: "/dapp-permission",
     Component: DAppPermissionRequest,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/onboarding/saveSeed",
+    path: "/onboarding/save-seed",
     Component: OnboardingSaveSeed,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/onboarding/verifySeed",
+    path: "/onboarding/verify-seed",
     Component: OnboardingVerifySeed,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/onboarding/onboardingInterstitialCreatePhrase",
+    path: "/onboarding/onboarding-interstitial-create-phrase",
     Component: OnboardingInterstitialCreatePhrase,
     hasTabBar: false,
     hasTopBar: false,

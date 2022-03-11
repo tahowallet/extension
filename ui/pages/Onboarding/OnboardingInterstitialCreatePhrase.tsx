@@ -13,7 +13,7 @@ export default function OnboardingInterstitialCreatePhrase(): ReactElement {
     async function generateThenContinue() {
       if (areKeyringsUnlocked) {
         await dispatch(generateNewKeyring())
-        history.push("/onboarding/saveSeed")
+        history.push("/onboarding/save-seed")
       }
     },
     [areKeyringsUnlocked, dispatch, history]

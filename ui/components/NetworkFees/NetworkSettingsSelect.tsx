@@ -275,11 +275,11 @@ export default function NetworkSettingsSelect({
             border-radius: 4px;
           }
           .option.active {
-            border: 1px solid #22c480;
             box-shadow: var(--shadow);
+            border: 1px solid var(--success);
           }
           .option.active .name {
-            color: #22c480;
+            color: var(--success);
           }
           .option_left,
           .option_right {
@@ -314,7 +314,7 @@ export default function NetworkSettingsSelect({
             color: var(--green-40);
           }
           .currentlySelected {
-            color: #22c480;
+            color: var(--success);
             opacity: 0.8;
             font-size: 10px;
           }

@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill"
+import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
@@ -23,7 +23,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, HexString, KeyringTypes } from "./types"
+import { EIP712TypedData, EIP191Data, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/claim/types"
@@ -34,7 +34,6 @@ import {
   updateAccountBalance,
   updateENSName,
   updateENSAvatar,
-  AccountType,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
@@ -63,6 +62,7 @@ import {
   clearTransactionState,
   selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
+  rejectTransactionSignature,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -72,12 +72,16 @@ import {
 } from "./redux-slices/dapp-permission"
 import logger from "./lib/logger"
 import {
+  rejectDataSignature,
   clearSigningState,
   signedTypedData,
   SigningMethod,
+  signedData as signedDataAction,
   signingSliceEmitter,
   SignTypedDataRequest,
+  SignDataRequest,
   typedDataRequest,
+  signDataRequest,
 } from "./redux-slices/signing"
 import {
   resetLedgerState,
@@ -85,7 +89,8 @@ import {
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
-import { SignatureResponse } from "./services/signing"
+import { clearApprovalInProgress } from "./redux-slices/0x-swap"
+import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -107,7 +112,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 4
+const REDUX_STATE_VERSION = 5
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -194,6 +199,13 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       // Add new networks slice data.
       networks,
     }
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  5: (prevState: any) => {
+    const { ...newState } = prevState
+    newState.keyrings.keyringMetadata = {}
+
+    return newState
   },
 }
 
@@ -284,6 +296,8 @@ const initializeStore = (preloadedState = {}, main: Main) =>
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
+
+export const popupMonitorPortName = "popup-monitor"
 
 // TODO Rename ReduxService or CoordinationService, move to services/, etc.
 export default class Main extends BaseService<never> {
@@ -547,6 +561,10 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(
       clearTransactionState(TransactionConstructionStatus.Idle)
     )
+
+    this.store.dispatch(clearApprovalInProgress())
+
+    this.connectPopupMonitor()
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -744,6 +762,22 @@ export default class Main extends BaseService<never> {
         }
       }
     )
+    signingSliceEmitter.on(
+      "requestSignData",
+      async ({
+        rawSigningData,
+        account,
+      }: {
+        rawSigningData: EIP191Data
+        account: HexString
+      }) => {
+        const signedData = await this.keyringService.personalSign({
+          signingData: rawSigningData,
+          account,
+        })
+        this.store.dispatch(signedDataAction(signedData))
+      }
+    )
 
     // Set up initial state.
     const existingAccounts = await this.chainService.getAccountsToTrack()
@@ -905,9 +939,12 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setKeyringToVerify(generated))
     })
 
-    keyringSliceEmitter.on("importKeyring", async ({ mnemonic, path }) => {
-      await this.keyringService.importKeyring(mnemonic, path)
-    })
+    keyringSliceEmitter.on(
+      "importKeyring",
+      async ({ mnemonic, path, source }) => {
+        await this.keyringService.importKeyring(mnemonic, source, path)
+      }
+    )
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
@@ -935,7 +972,7 @@ export default class Main extends BaseService<never> {
           )
         }
 
-        const handleAndClear = (response: SignatureResponse) => {
+        const handleAndClear = (response: TXSignatureResponse) => {
           clear()
           switch (response.type) {
             case "success-tx":
@@ -1027,6 +1064,39 @@ export default class Main extends BaseService<never> {
         } else {
           this.signingService.emitter.on("signingDataResponse", handleAndClear)
         }
+        signingSliceEmitter.on("signatureRejected", rejectAndClear)
+      }
+    )
+    this.internalEthereumProviderService.emitter.on(
+      "signDataRequest",
+      async ({
+        payload,
+        resolver,
+        rejecter,
+      }: {
+        payload: SignDataRequest
+        resolver: (result: string | PromiseLike<string>) => void
+        rejecter: () => void
+      }) => {
+        this.store.dispatch(signDataRequest(payload))
+
+        const resolveAndClear = (signature: string) => {
+          this.keyringService.emitter.off("signedData", resolveAndClear)
+          signingSliceEmitter.off(
+            "signatureRejected",
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            rejectAndClear
+          )
+          resolver(signature)
+        }
+
+        const rejectAndClear = () => {
+          this.keyringService.emitter.off("signedData", resolveAndClear)
+          signingSliceEmitter.off("signatureRejected", rejectAndClear)
+          rejecter()
+        }
+
+        this.keyringService.emitter.on("signedData", resolveAndClear)
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
@@ -1127,5 +1197,19 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  private connectPopupMonitor() {
+    runtime.onConnect.addListener((port) => {
+      if (port.name !== popupMonitorPortName) return
+      port.onDisconnect.addListener(() => {
+        this.onPopupDisconnected()
+      })
+    })
+  }
+
+  private onPopupDisconnected() {
+    this.store.dispatch(rejectTransactionSignature())
+    this.store.dispatch(rejectDataSignature())
   }
 }

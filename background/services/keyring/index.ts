@@ -11,12 +11,18 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import { HexString, KeyringTypes, EIP712TypedData, UNIXTime } from "../../types"
+import {
+  HexString,
+  KeyringTypes,
+  EIP191Data,
+  EIP712TypedData,
+  UNIXTime,
+} from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH, MINUTE } from "../../constants"
+import { ETH, FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { HIDE_IMPORT_LEDGER } from "../../features/features"
+import { HIDE_IMPORT_LEDGER, USE_MAINNET_FORK } from "../../features/features"
 import { AddressOnNetwork } from "../../accounts"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
@@ -28,9 +34,23 @@ export type Keyring = {
   addresses: string[]
 }
 
+export interface KeyringMetadata {
+  source: "import" | "internal"
+}
+
+interface SerializedKeyringData {
+  keyrings: SerializedHDKeyring[]
+  metadata: { [keyringId: string]: KeyringMetadata }
+}
+
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
-  keyrings: Keyring[]
+  keyrings: {
+    keyrings: Keyring[]
+    keyringMetadata: {
+      [keyringId: string]: KeyringMetadata
+    }
+  }
   address: string
   // TODO message was signed
   signedTx: SignedEVMTransaction
@@ -54,6 +74,8 @@ export default class KeyringService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
 
   #keyrings: HDKeyring[] = []
+
+  #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
 
   /**
    * The last time a keyring took an action that required the service to be
@@ -145,9 +167,9 @@ export default class KeyringService extends BaseService<Events> {
           password,
           currentEncryptedVault.salt
         )
-        let plainTextVault: SerializedHDKeyring[]
+        let plainTextVault: SerializedKeyringData
         try {
-          plainTextVault = await decryptVault<SerializedHDKeyring[]>(
+          plainTextVault = await decryptVault<SerializedKeyringData>(
             currentEncryptedVault,
             saltedKey
           )
@@ -158,9 +180,16 @@ export default class KeyringService extends BaseService<Events> {
         }
         // hooray! vault is loaded, import any serialized keyrings
         this.#keyrings = []
-        plainTextVault.forEach((kr) => {
+        this.#keyringMetadata = {}
+        plainTextVault.keyrings.forEach((kr) => {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
+
+        Object.entries(plainTextVault.metadata).forEach(
+          ([keyringId, metadata]) => {
+            this.#keyringMetadata[keyringId] = metadata
+          }
+        )
 
         this.emitKeyrings()
       }
@@ -188,6 +217,7 @@ export default class KeyringService extends BaseService<Events> {
     this.lastOutsideActivity = undefined
     this.#cachedKey = null
     this.#keyrings = []
+    this.#keyringMetadata = {}
     this.emitter.emit("locked", true)
     this.emitKeyrings()
   }
@@ -279,19 +309,23 @@ export default class KeyringService extends BaseService<Events> {
    * @param mnemonic - a seed phrase
    * @returns The string ID of the new keyring.
    */
-  async importKeyring(mnemonic: string, path?: string): Promise<string> {
+  async importKeyring(
+    mnemonic: string,
+    source: "import" | "internal",
+    path?: string
+  ): Promise<string> {
     this.requireUnlocked()
 
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
     this.#keyrings.push(newKeyring)
+    this.#keyringMetadata[newKeyring.id] = { source }
     newKeyring.addAddressesSync(1)
     await this.persistKeyrings()
 
     this.emitter.emit("address", newKeyring.getAddressesSync()[0])
     this.emitKeyrings()
-
     return newKeyring.id
   }
 
@@ -407,7 +441,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: ETH,
-      network,
+      network: USE_MAINNET_FORK ? FORK : network,
     }
     if (HIDE_IMPORT_LEDGER) {
       this.emitter.emit("signedTx", signedTx)
@@ -451,16 +485,46 @@ export default class KeyringService extends BaseService<Events> {
     }
   }
 
+  /**
+   * Sign data based on EIP-191 with the usage of personal_sign method,
+   * more information about the EIP can be found at https://eips.ethereum.org/EIPS/eip-191
+   *
+   * @param signingData - the data to be signed
+   * @param account - signers account address
+   */
+
+  async personalSign({
+    signingData,
+    account,
+  }: {
+    signingData: EIP191Data
+    account: HexString
+  }): Promise<string> {
+    this.requireUnlocked()
+    // find the keyring using a linear search
+    const keyring = await this.#findKeyring(account)
+    try {
+      const signature = await keyring.signMessage(account, signingData)
+      this.emitter.emit("signedData", signature)
+      return signature
+    } catch (error) {
+      throw new Error("Signing data failed")
+    }
+  }
+
   // //////////////////
   // PRIVATE METHODS //
   // //////////////////
 
   private emitKeyrings() {
     if (this.locked()) {
-      this.emitter.emit("keyrings", [])
+      this.emitter.emit("keyrings", { keyrings: [], keyringMetadata: {} })
     } else {
       const keyrings = this.getKeyrings()
-      this.emitter.emit("keyrings", keyrings)
+      this.emitter.emit("keyrings", {
+        keyrings,
+        keyringMetadata: { ...this.#keyringMetadata },
+      })
     }
   }
 
@@ -474,8 +538,15 @@ export default class KeyringService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
+      const keyringMetadata = { ...this.#keyringMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(serializedKeyrings, this.#cachedKey)
+      const vault = await encryptVault(
+        {
+          keyrings: serializedKeyrings,
+          metadata: keyringMetadata,
+        },
+        this.#cachedKey
+      )
       await writeLatestEncryptedVault(vault)
     }
   }

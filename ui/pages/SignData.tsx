@@ -99,7 +99,6 @@ export default function SignData({
                 : "A dapp is requesting your signature"}
             </div>
             <div className="divider" />
-            <div className="header">{domain.name}</div>
             <div className="divider" />
             {keys.length > 2 ? (
               <div className="messages">

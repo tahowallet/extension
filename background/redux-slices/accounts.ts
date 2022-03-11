@@ -17,6 +17,7 @@ export const enum AccountType {
   ReadOnly = "read-only",
   Imported = "imported",
   Ledger = "ledger",
+  Internal = "internal",
 }
 
 const availableDefaultNames = [

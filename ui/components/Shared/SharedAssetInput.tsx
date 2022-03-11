@@ -125,7 +125,11 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       </div>
       <div className="divider" />
-      <ul>
+      <div className="coming_soon_notice">
+        <div className="notice_icon" />
+        ETH coming soon
+      </div>
+      <ul className="assets_list">
         {sortedFilteredAssets.map((assetWithOptionalAmount) => {
           const { asset } = assetWithOptionalAmount
           return (
@@ -143,6 +147,24 @@ function SelectAssetMenuContent<T extends AnyAsset>(
       </ul>
       <style jsx>
         {`
+          .coming_soon_notice {
+            display: flex;
+            color: var(--attention);
+            font-size: 14px;
+            font-weight: 400;
+            margin-left: 25px;
+            padding-top: 13px;
+            padding-bottom: 12px;
+            align-items: center;
+          }
+          .notice_icon {
+            mask-image: url("./images/warning@2x.png");
+            background-color: var(--attention);
+            mask-size: 15px 14px;
+            width: 15px;
+            height: 14px;
+            margin-right: 6px;
+          }
           .search_label {
             height: 20px;
             color: var(--green-60);
@@ -180,7 +202,12 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             width: 384px;
             border-bottom: 1px solid var(--hunter-green);
             margin-top: 15px;
-            margin-bottom: 8.5px;
+          }
+          .assets_list {
+            display: block;
+            overflow: scroll;
+            height: calc(100% - 98px);
+            width: 100%;
           }
         `}
       </style>
