@@ -12,7 +12,7 @@ export default function SignDataDetailPanel(): ReactElement {
 
   const typedDataRequestSource =
     typedDataRequest.annotation?.source !== "unknown"
-      ? typedDataRequest.annotation?.source
+      ? capitalize(typedDataRequest.annotation.source)
       : domain.name
 
   const keys = Object.keys(message)

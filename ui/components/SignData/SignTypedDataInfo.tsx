@@ -25,7 +25,7 @@ export default function SignTypedDataInfo({
     <div className="messages">
       <div className="message">
         <div className="key">Type</div>
-        <div className="light">{typedData.primaryType}</div>
+        <div className="value">{typedData.primaryType}</div>
       </div>
       {keys.map((key) => {
         const value = fieldsToDisplay[key]
@@ -89,6 +89,7 @@ export default function SignTypedDataInfo({
             flex-direction: row;
             justify-content: flex-end;
             align-items: center;
+            color: var(--green-20);
           }
           .key {
             color: var(--green-40);
