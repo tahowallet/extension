@@ -65,10 +65,10 @@ export default function ClaimFooter({
   const handleClick = useCallback(async () => {
     if (buttonText[step - 1] === "Sign Delegation") {
       dispatch(signTokenDelegationData())
-      history.push("/signData")
+      history.push("/sign-data")
     } else if (buttonText[step - 1] === "Claim") {
       dispatch(claimRewards())
-      history.push("/signTransaction")
+      history.push("/sign-transaction")
     } else {
       advanceStep()
     }
