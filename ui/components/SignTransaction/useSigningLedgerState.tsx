@@ -6,6 +6,8 @@ export type SigningLedgerState =
   | "wrong-ledger-connected"
   | "busy"
   | "available"
+  | "multiple-ledgers-connected"
+  | "activate-blind-signing"
 
 export function useSigningLedgerState(
   signingMethod: SigningMethod | null
@@ -19,10 +21,18 @@ export function useSigningLedgerState(
       (device) => device.status !== "disconnected"
     )
     if (connectedDevices.length === 0) return "no-ledger-connected"
+    if (state.ledger.usbDeviceCount > 1) return "multiple-ledgers-connected"
+
+    const txHasData =
+      state.transactionConstruction.transactionRequest?.input !== null &&
+      state.transactionConstruction.transactionRequest?.input !== undefined &&
+      state.transactionConstruction.transactionRequest?.input.length > 0
 
     const device = state.ledger.devices[deviceID]
+
     switch (device.status) {
       case "available":
+        if (txHasData && !device.isBlindSigner) return "activate-blind-signing"
         return "available"
       case "busy":
         return "busy"

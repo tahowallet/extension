@@ -111,9 +111,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_signTypedData_v3":
       case "eth_signTypedData_v4":
         return this.signTypedData({
-          account: params[0],
+          account: params[0] as string,
           typedData: JSON.parse(params[1] as string),
-        } as SignTypedDataRequest)
+        })
       case "eth_chainId":
         return this.chainService.ethereumNetwork.chainID
       case "eth_blockNumber":
@@ -183,16 +183,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         )
       case "eth_sign": // --- important wallet methods ---
       case "personal_sign":
-        // eslint-disable-next-line no-case-declarations
-        const asciiSigningData = hexToAscii(params[0] as string)
-        // eslint-disable-next-line no-case-declarations
-        const parsedInfo = parseSigningData(asciiSigningData)
         return this.signData({
-          account: params[1],
-          signingData: parsedInfo.data,
-          messageType: parsedInfo.type,
-          rawSigningData: asciiSigningData,
-        } as SignDataRequest)
+          hexData: params[0] as string,
+          account: params[1] as string,
+        })
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
@@ -259,10 +253,24 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async signData(params: SignDataRequest) {
+  private async signData({
+    hexData,
+    account,
+  }: {
+    hexData: string
+    account: string
+  }) {
+    const asciiData = hexToAscii(hexData)
+    const { data, type } = parseSigningData(asciiData)
+
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signDataRequest", {
-        payload: params,
+        payload: {
+          account,
+          signingData: data,
+          messageType: type,
+          rawSigningData: asciiData,
+        },
         resolver: resolve,
         rejecter: reject,
       })

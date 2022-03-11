@@ -9,6 +9,7 @@ import {
   SignDataMessageType,
   SignDataRequest,
   SigningState,
+  SignOperation,
 } from "./types"
 import { createBackgroundAsyncThunk } from "../utils"
 import { EnrichedSignTypedDataRequest } from "../../services/enrichment"
@@ -25,8 +26,11 @@ export const initialState: SigningState = {
 
 export const signTypedData = createBackgroundAsyncThunk(
   "signing/signTypedData",
-  async (data: SignTypedDataRequest) => {
-    const { account, typedData, signingMethod } = data
+  async (data: SignOperation<SignTypedDataRequest>) => {
+    const {
+      request: { account, typedData },
+      signingMethod,
+    } = data
 
     await signingSliceEmitter.emit("requestSignTypedData", {
       typedData,
@@ -38,13 +42,17 @@ export const signTypedData = createBackgroundAsyncThunk(
 
 export const signData = createBackgroundAsyncThunk(
   "signing/signData",
-  async (data: SignDataRequest) => {
-    const { account, signingData, rawSigningData, messageType } = data
+  async (data: SignOperation<SignDataRequest>) => {
+    const {
+      request: { account, signingData, rawSigningData, messageType },
+      signingMethod,
+    } = data
     await signingSliceEmitter.emit("requestSignData", {
       rawSigningData,
       signingData,
       account,
       messageType,
+      signingMethod,
     })
   }
 )

@@ -21,6 +21,7 @@ export type Events = {
     messageType: SignDataMessageType
     rawSigningData: string
     account: HexString
+    signingMethod: SigningMethod
   }
   signatureRejected: never
 }
@@ -56,4 +57,9 @@ export type SignDataRequest = {
   rawSigningData: string
   signingData: ExpectedSigningData
   messageType: SignDataMessageType
+}
+
+export interface SignOperation<T> {
+  request: T
+  signingMethod: SigningMethod
 }
