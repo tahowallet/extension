@@ -1,8 +1,8 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.12.0",
-  "description": "Tally, the community owned and operated Web3 wallet.",
+  "version": "0.12.1",
+  "description": "Tally Ho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",

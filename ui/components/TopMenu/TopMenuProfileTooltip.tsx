@@ -7,7 +7,7 @@ export default function TopMenuProfileTooltip(props: {
 
   return (
     <button type="button" className="tooltip" onClick={copyAddress}>
-      <span className="tooltip_label">Copy to clipboard</span>
+      <span className="tooltip_label">Copy address</span>
       <span className="tooltip_icon" />
       <style jsx>{`
         .tooltip {

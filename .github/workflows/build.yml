@@ -22,27 +22,20 @@ jobs:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
     - run: yarn install --frozen-lockfile
-    - name: Build artifacts for verification
-      if: github.ref != 'refs/heads/main'
+    - name: Dev build
+      if: github.ref != 'refs/heads/main' && !startsWith(github.head_ref, 'release-')
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
         BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
-    - name: Upload build on PRs
-      if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
-      with:
-        name: pr-extension-builds
-        path: dist/*.zip        
-    - name: Build artifacts for upload
-      if: github.ref == 'refs/heads/main'
+    - name: Production build
+      if: github.ref == 'refs/heads/main' || startsWith(github.head_ref, 'release-')
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
         ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
-    - name: Upload build on main
-      if: github.ref == 'refs/heads/main'
+    - name: Upload build asset
       uses: actions/upload-artifact@v2
       with:
         name: extension-builds

@@ -5,63 +5,74 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 interface Props {
-  isSelected: boolean
+  isSelected?: boolean
   accountTotal: AccountTotal
-  hideMenu: boolean
+  children?: React.ReactNode
 }
 
-export default function SharedPanelAccountItem(props: Props): ReactElement {
-  const { isSelected, hideMenu, accountTotal: account } = props
+export default function SharedAccountItemSummary(props: Props): ReactElement {
+  const { isSelected, accountTotal, children } = props
   const {
     shortenedAddress,
     name,
     avatarURL,
     localizedTotalMainCurrencyAmount,
-  } = account
+  } = accountTotal
 
   return (
     <li className="standard_width">
-      <div className="left">
-        {isSelected ? (
-          <div className="avatar_selected_outline">
-            <div className="avatar" />
-          </div>
-        ) : (
-          <div className="avatar" />
-        )}
-
-        <div className="info">
-          <div className="address_name">
-            {typeof name === "undefined" ? shortenedAddress : name}
-          </div>
-          <div className="address">
-            {typeof name !== "undefined" ? shortenedAddress : ""}
-          </div>
-        </div>
-      </div>
-      <div className="right">
-        <div className="balance_status">
-          {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
-            <SharedLoadingSpinner size="small" />
-          ) : (
-            <div className="balance">
-              <span className="lighter">$</span>
-              {localizedTotalMainCurrencyAmount}
-            </div>
-          )}
+      <div className="summary">
+        <div className="left">
           {isSelected ? (
-            <div className="connected_status">Connected</div>
-          ) : null}
+            <div className="avatar_selected_outline">
+              <div className="avatar" />
+            </div>
+          ) : (
+            <div className="avatar" />
+          )}
+
+          <div className="info">
+            <div className="address_name">
+              {typeof name === "undefined" ? shortenedAddress : name}
+            </div>
+            <div className="address">
+              {typeof name !== "undefined" ? shortenedAddress : ""}
+            </div>
+          </div>
         </div>
-        {!hideMenu && <div className="icon_settings" />}
+        <div className="right">
+          <div className="balance_status">
+            {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
+              <SharedLoadingSpinner size="small" />
+            ) : (
+              <div className="balance">
+                <span className="lighter">$</span>
+                {localizedTotalMainCurrencyAmount}
+              </div>
+            )}
+            {isSelected ? (
+              <div className="connected_status">Connected</div>
+            ) : null}
+          </div>
+        </div>
       </div>
+
+      {children}
+
       <style jsx>{`
         li {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin: 0 auto;
-          width: 336px;
+          height: 52px;
+        }
+        .summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 0 auto;
+          flex-grow: 2;
           height: 52px;
         }
         .avatar {
@@ -87,10 +98,7 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         .left {
           display: flex;
           align-items: center;
-        }
-        .avatar {
-          width: 48px;
-          height: 48px;
+          padding-left: 4px;
         }
         .address_name {
           color: #fff;
@@ -119,23 +127,16 @@ export default function SharedPanelAccountItem(props: Props): ReactElement {
         .lighter {
           color: var(--green-40);
         }
-        .icon_settings {
-          background: url("./images/more_dots@2x.png") center no-repeat;
-          background-size: cover;
-          width: 4px;
-          height: 20px;
-          margin-left: 16px;
-        }
         .right {
           display: flex;
           align-items: center;
+          padding-right: 4px;
         }
       `}</style>
     </li>
   )
 }
 
-SharedPanelAccountItem.defaultProps = {
+SharedAccountItemSummary.defaultProps = {
   isSelected: false,
-  hideMenu: false,
 }

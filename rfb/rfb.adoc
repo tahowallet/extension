@@ -1,6 +1,6 @@
 :toc: macro
 
-= RFC ##: RFC Title (number should be unique with respect to pending and existing RFCs)
+= RFB ##: RFB Title (number should be unique with respect to pending and existing RFBs)
 
 :icons: font
 :numbered:
@@ -8,7 +8,7 @@ toc::[]
 
 == Background
 
-Why do we want to do the thing this RFC describes?
+Why do we want to do the thing this RFB describes?
 
 === Current Functionality
 
@@ -28,9 +28,9 @@ outcomes would be handy.
 === Implementation
 
 How will we achieve it? Examples of how the implementation will be used could be
-useful. Flow diagrams can also be useful here. If an RFC is meant to define
+useful. Flow diagrams can also be useful here. If an RFB is meant to define
 requirements rather than implementation, this section can be left for a future
-RFC.
+RFB.
 
 === Limitations
 

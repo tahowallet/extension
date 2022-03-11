@@ -22,7 +22,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, EIP191Data, HexString, KeyringTypes } from "./types"
+import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AddressOnNetwork, NameOnNetwork } from "./accounts"
 
@@ -83,6 +83,7 @@ import {
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
+  setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
@@ -558,6 +559,13 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  async removeAccount(
+    address: HexString,
+    signingMethod: SigningMethod
+  ): Promise<void> {
+    await this.signingService.removeAccount(address, signingMethod)
+  }
+
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(
@@ -751,17 +759,12 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignData",
-      async ({
-        rawSigningData,
-        account,
-      }: {
-        rawSigningData: EIP191Data
-        account: HexString
-      }) => {
-        const signedData = await this.keyringService.personalSign({
-          signingData: rawSigningData,
+      async ({ rawSigningData, account, signingMethod }) => {
+        const signedData = await this.signingService.signData(
           account,
-        })
+          rawSigningData,
+          signingMethod
+        )
         this.store.dispatch(signedDataAction(signedData))
       }
     )
@@ -868,6 +871,10 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
       )
+    })
+
+    this.ledgerService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
+      this.store.dispatch(setUsbDeviceCount({ usbDeviceCount }))
     })
   }
 
@@ -1067,23 +1074,54 @@ export default class Main extends BaseService<never> {
       }) => {
         this.store.dispatch(signDataRequest(payload))
 
-        const resolveAndClear = (signature: string) => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
+        const clear = () => {
+          if (HIDE_IMPORT_LEDGER) {
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.keyringService.emitter.off("signedData", resolveAndClear)
+          } else {
+            this.signingService.emitter.off(
+              "personalSigningResponse",
+              // eslint-disable-next-line @typescript-eslint/no-use-before-define
+              handleAndClear
+            )
+          }
           signingSliceEmitter.off(
             "signatureRejected",
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
-          resolver(signature)
+        }
+
+        const handleAndClear = (response: SignatureResponse) => {
+          clear()
+          switch (response.type) {
+            case "success-data":
+              resolver(response.signedData)
+              break
+            default:
+              rejecter()
+              break
+          }
+        }
+
+        const resolveAndClear = (signedData: string) => {
+          clear()
+          resolver(signedData)
         }
 
         const rejectAndClear = () => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
-          signingSliceEmitter.off("signatureRejected", rejectAndClear)
+          clear()
           rejecter()
         }
 
-        this.keyringService.emitter.on("signedData", resolveAndClear)
+        if (HIDE_IMPORT_LEDGER) {
+          this.keyringService.emitter.on("signedData", resolveAndClear)
+        } else {
+          this.signingService.emitter.on(
+            "personalSigningResponse",
+            handleAndClear
+          )
+        }
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
@@ -1165,6 +1203,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+
+    uiSliceEmitter.on("refreshBackgroundPage", async () => {
+      window.location.reload()
+    })
   }
 
   connectTelemetryService(): void {
