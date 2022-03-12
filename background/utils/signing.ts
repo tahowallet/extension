@@ -1,3 +1,4 @@
+import { TypedDataField } from "@ethersproject/abstract-signer"
 import { SiweMessage } from "siwe"
 
 import { EIP191Data, EIP712TypedData, HexString } from "../types"
@@ -41,6 +42,21 @@ export type SignDataRequest = {
 export enum SignDataMessageType {
   EIP191 = 0,
   EIP4361 = 1,
+}
+
+type EIP2612Message = {
+  owner: HexString
+  spender: HexString
+  value: number
+  nonce: number
+  deadline: number
+}
+
+export type EIP2612TypedData = {
+  domain: EIP712DomainType
+  types: Record<string, TypedDataField[]>
+  message: EIP2612Message
+  primaryType: "Permit"
 }
 
 const checkEIP4361: (message: string) => EIP4361Data | undefined = (

@@ -3,7 +3,8 @@ import { EIP2612SignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
-import { EIP2612TypedData, EIP712TypedData } from "../../types"
+import { EIP712TypedData } from "../../types"
+import { EIP2612TypedData } from "../../utils/signing"
 
 export const ENRICHABLE_CONTRACT_NAMES: { [contractAddress: string]: string } =
   {
@@ -18,6 +19,7 @@ export function isEIP2612TypedData(
     if (
       // Must be on main chain
       typedData.domain.chainId === Number(ETHEREUM.chainID) &&
+      typedData.primaryType === "Permit" &&
       // Must have all expected fields
       // @TODO use AJV validation
       ["owner", "spender", "value", "nonce", "deadline"].every(
