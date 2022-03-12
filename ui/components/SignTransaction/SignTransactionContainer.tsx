@@ -127,7 +127,8 @@ export default function SignTransactionContainer({
         {`
           section {
             width: 100%;
-            height: 100%;
+            height: calc(100% - 80px);
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
