@@ -40,7 +40,7 @@ interface Events extends ServiceLifecycleEvents {
     forAccounts: string[]
   }
   enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
-  enrichedEIP712SignTypedDataRequest: EnrichedSignTypedDataRequest
+  enrichedSignTypedDataRequest: EnrichedSignTypedDataRequest
 }
 
 /**
@@ -321,7 +321,7 @@ export default class EnrichmentService extends BaseService<Events> {
     }
 
     this.emitter.emit(
-      "enrichedEIP712SignTypedDataRequest",
+      "enrichedSignTypedDataRequest",
       enrichedSignTypedDataRequest
     )
 
