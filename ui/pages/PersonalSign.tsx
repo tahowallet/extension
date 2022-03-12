@@ -8,7 +8,7 @@ import {
   signData,
   selectSigningData,
 } from "@tallyho/tally-background/redux-slices/signing"
-import { SignDataMessageType } from "@tallyho/tally-background/redux-slices/signing/types"
+import { SignDataMessageType } from "@tallyho/tally-background/utils/signing"
 import { useHistory } from "react-router-dom"
 import {
   useBackgroundDispatch,

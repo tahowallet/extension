@@ -25,7 +25,7 @@ import {
   TransactionAnnotation,
   EnrichedSignTypedDataRequest,
 } from "./types"
-import { SignTypedDataRequest } from "../signing/types"
+import { SignTypedDataRequest } from "../../utils/signing"
 import {
   enrichEIP2612SignTypedDataRequest,
   isEIP2612SignTypedDataRequest,

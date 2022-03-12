@@ -3,7 +3,7 @@ import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
-import { SignTypedDataRequest } from "../signing/types"
+import { SignTypedDataRequest } from "../../utils/signing"
 
 export type BaseTransactionAnnotation = {
   /**

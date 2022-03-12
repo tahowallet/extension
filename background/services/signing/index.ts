@@ -12,7 +12,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { USE_MAINNET_FORK } from "../../features/features"
 import { FORK } from "../../constants"
-import { SigningMethod } from "./types"
+import { SigningMethod } from "../../utils/signing"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {

@@ -1,4 +1,4 @@
-import { SigningMethod } from "@tallyho/tally-background/services/signing/types"
+import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { useBackgroundSelector } from "../../hooks"
 
 export type SigningLedgerState =

@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { EIP2612SignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
-import { SignTypedDataRequest } from "../signing/types"
+import { SignTypedDataRequest } from "../../utils/signing"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
 

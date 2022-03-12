@@ -5,7 +5,7 @@ import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
 import { RefObject, useState, useEffect, useRef } from "react"
-import { SigningMethod } from "@tallyho/tally-background/services/signing/types"
+import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()

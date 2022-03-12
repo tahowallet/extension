@@ -77,9 +77,12 @@ import {
   typedDataRequest,
   signDataRequest,
 } from "./redux-slices/signing"
-import { SignDataRequest } from "./redux-slices/signing/types"
 
-import { SigningMethod, SignTypedDataRequest } from "./services/signing/types"
+import {
+  SigningMethod,
+  SignTypedDataRequest,
+  SignDataRequest,
+} from "./utils/signing"
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
