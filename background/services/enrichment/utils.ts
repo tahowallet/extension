@@ -7,6 +7,7 @@ import NameService from "../name"
 
 export const ENRICHABLE_CONTRACT_NAMES: { [contractAddress: string]: string } =
   {
+    // Uniswap v2 Router
     "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "🦄 Uniswap",
   }
 
@@ -18,11 +19,15 @@ export function isEIP2612SignTypedDataRequest(
       // Must be on main chain
       signTypedDataRequest.typedData.domain.chainId ===
         Number(ETHEREUM.chainID) &&
-      // Must be a recognized contract
+      // Must be a recognized contract (Not necessarily a
+      // required check).  Do we want to still format the data
+      // when the message matches EIP-2612 and maybe display something
+      // like "Unrecognized Dapp" instead of the dapp name?
       !!ENRICHABLE_CONTRACT_NAMES[
         signTypedDataRequest.typedData.message.spender
       ] &&
       // Must have all expected fields
+      // @TODO use AJV validation
       ["owner", "spender", "value", "nonce", "deadline"].every(
         (key) => key in signTypedDataRequest.typedData.message
       )
