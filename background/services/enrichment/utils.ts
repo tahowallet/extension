@@ -1,15 +1,16 @@
 import dayjs from "dayjs"
-import { UniswapSignTypedDataAnnotation } from "./types"
+import { EIP2612SignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SignTypedDataRequest } from "../signing/types"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
 
-export const ENRICHABLE_CONTRACTS: { [k: string]: string } = {
-  "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "Uniswap",
-}
+export const ENRICHABLE_CONTRACT_NAMES: { [contractAddress: string]: string } =
+  {
+    "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "🦄 Uniswap",
+  }
 
-export function isUniswapSignTypedDataRequest(
+export function isEIP2612SignTypedDataRequest(
   signTypedDataRequest: SignTypedDataRequest
 ): boolean {
   if (typeof signTypedDataRequest.typedData.message.spender === "string") {
@@ -17,9 +18,10 @@ export function isUniswapSignTypedDataRequest(
       // Must be on main chain
       signTypedDataRequest.typedData.domain.chainId ===
         Number(ETHEREUM.chainID) &&
-      // Must match Uniswap contract
-      ENRICHABLE_CONTRACTS[signTypedDataRequest.typedData.message.spender] ===
-        "Uniswap" &&
+      // Must be a recognized contract
+      !!ENRICHABLE_CONTRACT_NAMES[
+        signTypedDataRequest.typedData.message.spender
+      ] &&
       // Must have all expected fields
       ["owner", "spender", "value", "nonce", "deadline"].every(
         (key) => key in signTypedDataRequest.typedData.message
@@ -31,11 +33,11 @@ export function isUniswapSignTypedDataRequest(
   return false
 }
 
-export async function enrichUniswapSignTypedDataRequest(
+export async function enrichEIP2612SignTypedDataRequest(
   signTypedDataRequest: SignTypedDataRequest,
   nameService: NameService,
   asset: SmartContractFungibleAsset | undefined
-): Promise<UniswapSignTypedDataAnnotation> {
+): Promise<EIP2612SignTypedDataAnnotation> {
   const { message, domain } = signTypedDataRequest.typedData
   const { value } = message
   // If we have a corresponding asset - use known decimals to display a human-friendly
@@ -57,10 +59,12 @@ export async function enrichUniswapSignTypedDataRequest(
   ])
 
   return {
-    source: "uniswap",
+    type: "EIP-2612",
+    source: ENRICHABLE_CONTRACT_NAMES[spender],
     displayFields: {
       owner: ownerName ?? owner,
       spender: spenderName ?? spender,
+      tokenContract: domain.verifyingContract || "unknown",
       value: formattedValue,
       ...(token ? { token } : {}),
       nonce,

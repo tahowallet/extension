@@ -27,8 +27,8 @@ import {
 } from "./types"
 import { SignTypedDataRequest } from "../signing/types"
 import {
-  enrichUniswapSignTypedDataRequest,
-  isUniswapSignTypedDataRequest,
+  enrichEIP2612SignTypedDataRequest,
+  isEIP2612SignTypedDataRequest,
 } from "./utils"
 import { ETHEREUM } from "../../constants"
 
@@ -288,9 +288,9 @@ export default class EnrichmentService extends BaseService<Events> {
     signTypedDataRequest: SignTypedDataRequest
   ): Promise<EnrichedSignTypedDataRequest> {
     let annotation: SignTypedDataAnnotation = {
-      source: "unknown",
+      type: "unrecognized",
     }
-    if (isUniswapSignTypedDataRequest(signTypedDataRequest)) {
+    if (isEIP2612SignTypedDataRequest(signTypedDataRequest)) {
       const assets = await this.indexingService.getCachedAssets(ETHEREUM)
       const correspondingAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset => {
@@ -308,7 +308,7 @@ export default class EnrichmentService extends BaseService<Events> {
           return false
         }
       )
-      annotation = await enrichUniswapSignTypedDataRequest(
+      annotation = await enrichEIP2612SignTypedDataRequest(
         signTypedDataRequest,
         this.nameService,
         correspondingAsset

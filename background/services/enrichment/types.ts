@@ -83,10 +83,12 @@ export type TypedDataField = {
   type: "address" | "string"
 }
 
-export type UniswapSignTypedDataAnnotation = {
-  source: "uniswap"
+export type EIP2612SignTypedDataAnnotation = {
+  type: "EIP-2612"
+  source: string
   displayFields: {
     owner: string
+    tokenContract: string
     spender: string
     value: string
     nonce: string
@@ -95,13 +97,13 @@ export type UniswapSignTypedDataAnnotation = {
   }
 }
 
-export type GenericSignTypedDataAnnotation = {
-  source: "unknown"
+export type UnrecognizedSignTypedDataAnnotation = {
+  type: "unrecognized"
 }
 
 export type SignTypedDataAnnotation =
-  | UniswapSignTypedDataAnnotation
-  | GenericSignTypedDataAnnotation
+  | EIP2612SignTypedDataAnnotation
+  | UnrecognizedSignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
   annotation: SignTypedDataAnnotation

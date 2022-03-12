@@ -6,12 +6,14 @@ import capitalize from "../utils/capitalize"
 
 export default function SignDataDetailPanel(): ReactElement {
   const typedDataRequest = useBackgroundSelector(selectTypedData)
-  if (typeof typedDataRequest === "undefined") return <></>
+  if (typeof typedDataRequest === "undefined") {
+    return <></>
+  }
 
   const { domain, message } = typedDataRequest.typedData
 
   const typedDataRequestSource =
-    typedDataRequest.annotation?.source !== "unknown"
+    typedDataRequest.annotation?.type !== "unrecognized"
       ? capitalize(typedDataRequest.annotation.source)
       : domain.name
 
