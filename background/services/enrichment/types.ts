@@ -91,7 +91,7 @@ export type EIP2612SignTypedDataAnnotation = {
     tokenContract: string
     spender: string
     value: string
-    nonce: string
+    nonce: number
     expiry: string
     token?: string
   }

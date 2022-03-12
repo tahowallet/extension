@@ -26,10 +26,7 @@ import {
   EnrichedSignTypedDataRequest,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
-import {
-  enrichEIP2612SignTypedDataRequest,
-  isEIP2612SignTypedDataRequest,
-} from "./utils"
+import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
 import { ETHEREUM } from "../../constants"
 
 export * from "./types"
@@ -290,26 +287,25 @@ export default class EnrichmentService extends BaseService<Events> {
     let annotation: SignTypedDataAnnotation = {
       type: "unrecognized",
     }
-    if (isEIP2612SignTypedDataRequest(signTypedDataRequest)) {
+    const { typedData } = signTypedDataRequest
+    if (isEIP2612TypedData(typedData)) {
       const assets = await this.indexingService.getCachedAssets(ETHEREUM)
       const correspondingAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset => {
           if (
-            signTypedDataRequest.typedData.domain.verifyingContract &&
+            typedData.domain.verifyingContract &&
             "contractAddress" in asset
           ) {
             return (
               normalizeHexAddress(asset.contractAddress) ===
-              normalizeHexAddress(
-                signTypedDataRequest.typedData.domain.verifyingContract
-              )
+              normalizeHexAddress(typedData.domain.verifyingContract)
             )
           }
           return false
         }
       )
       annotation = await enrichEIP2612SignTypedDataRequest(
-        signTypedDataRequest,
+        typedData,
         this.nameService,
         correspondingAsset
       )

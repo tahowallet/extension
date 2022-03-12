@@ -1,9 +1,9 @@
 import dayjs from "dayjs"
 import { EIP2612SignTypedDataAnnotation } from "./types"
 import { ETHEREUM } from "../../constants"
-import { SignTypedDataRequest } from "../../utils/signing"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
+import { EIP2612TypedData, EIP712TypedData } from "../../types"
 
 export const ENRICHABLE_CONTRACT_NAMES: { [contractAddress: string]: string } =
   {
@@ -11,25 +11,17 @@ export const ENRICHABLE_CONTRACT_NAMES: { [contractAddress: string]: string } =
     "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "🦄 Uniswap",
   }
 
-export function isEIP2612SignTypedDataRequest(
-  signTypedDataRequest: SignTypedDataRequest
-): boolean {
-  if (typeof signTypedDataRequest.typedData.message.spender === "string") {
+export function isEIP2612TypedData(
+  typedData: EIP712TypedData
+): typedData is EIP2612TypedData {
+  if (typeof typedData.message.spender === "string") {
     if (
       // Must be on main chain
-      signTypedDataRequest.typedData.domain.chainId ===
-        Number(ETHEREUM.chainID) &&
-      // Must be a recognized contract (Not necessarily a
-      // required check).  Do we want to still format the data
-      // when the message matches EIP-2612 and maybe display something
-      // like "Unrecognized Dapp" instead of the dapp name?
-      !!ENRICHABLE_CONTRACT_NAMES[
-        signTypedDataRequest.typedData.message.spender
-      ] &&
+      typedData.domain.chainId === Number(ETHEREUM.chainID) &&
       // Must have all expected fields
       // @TODO use AJV validation
       ["owner", "spender", "value", "nonce", "deadline"].every(
-        (key) => key in signTypedDataRequest.typedData.message
+        (key) => key in typedData.message
       )
     ) {
       return true
@@ -39,24 +31,20 @@ export function isEIP2612SignTypedDataRequest(
 }
 
 export async function enrichEIP2612SignTypedDataRequest(
-  signTypedDataRequest: SignTypedDataRequest,
+  typedData: EIP2612TypedData,
   nameService: NameService,
   asset: SmartContractFungibleAsset | undefined
 ): Promise<EIP2612SignTypedDataAnnotation> {
-  const { message, domain } = signTypedDataRequest.typedData
-  const { value } = message
+  const { message, domain } = typedData
+  const { value, owner, spender, nonce } = message
   // If we have a corresponding asset - use known decimals to display a human-friendly
   // amount e.g. 10 USDC.  Otherwise just display the value e.g. 10000000
   const formattedValue = asset
     ? `${Number(value) / 10 ** asset?.decimals} ${asset.symbol}`
-    : (value as string)
+    : `${value}`
 
   // We only need to add the token if we're not able to properly format the value above
-  const token = formattedValue === value ? domain.name : null
-
-  const { owner, spender, nonce } = message as {
-    [key: string]: string
-  }
+  const token = formattedValue === `${value}` ? domain.name : null
 
   const [ownerName, spenderName] = await Promise.all([
     await nameService.lookUpName(owner, ETHEREUM, false),

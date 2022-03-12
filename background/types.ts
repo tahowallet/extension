@@ -60,11 +60,26 @@ export type EIP712DomainType = {
   verifyingContract?: HexString
 }
 
-export type EIP712TypedData = {
+export type EIP712TypedData<T = Record<string, unknown>> = {
   domain: EIP712DomainType
   types: Record<string, TypedDataField[]>
-  message: Record<string, unknown>
+  message: T
   primaryType: string
+}
+
+type EIP2612Message = {
+  owner: HexString
+  spender: HexString
+  value: number
+  nonce: number
+  deadline: number
+}
+
+export type EIP2612TypedData = {
+  domain: EIP712DomainType
+  types: Record<string, TypedDataField[]>
+  message: EIP2612Message
+  primaryType: "Permit"
 }
 
 export type EIP191Data = string
