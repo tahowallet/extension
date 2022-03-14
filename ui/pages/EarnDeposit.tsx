@@ -1,15 +1,16 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
+  ApprovalTargetAllowance,
   approveApprovalTarget,
   checkApprovalTargetApproval,
   permitVaultDeposit,
-  selectApprovalTargetApprovals,
+  selectCurrentlyApproving,
 } from "@tallyho/tally-background/redux-slices/earn"
 
 import { AnyAsset } from "@tallyho/tally-background/assets"
 import { HexString } from "@tallyho/tally-background/types"
-import { useLocation } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 
@@ -26,49 +27,52 @@ export default function EarnDeposit(): ReactElement {
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
   const [deposited, setDeposited] = useState(false)
+  const [allowance, setAllowance] = useState(0)
   const [availableRewards, setAvailableRewards] = useState("21,832")
 
   const dispatch = useBackgroundDispatch()
+
+  const history = useHistory()
 
   const { asset } = useLocation().state as {
     asset: AnyAsset & { contractAddress: HexString }
   }
 
+  const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
+
   const showWithdrawalModal = () => {
     setWithdrawalSlideupVisible(true)
   }
+
+  useEffect(() => {
+    const getApprovalAmount = async () => {
+      const approvedAmount = (await dispatch(
+        checkApprovalTargetApproval(asset.contractAddress)
+      )) as unknown as ApprovalTargetAllowance
+      setAllowance(approvedAmount.allowance)
+    }
+    const allowanceGreaterThanAmount = allowance >= Number(amount)
+    setIsApproved(allowanceGreaterThanAmount)
+    getApprovalAmount()
+  }, [asset.contractAddress, dispatch, allowance, amount])
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
 
-  // We currently assume that the approval held by ApprovalTarget is infinite and users wont decrease it themselves.
-  const approvals = useBackgroundSelector(selectApprovalTargetApprovals)
-
-  const isTokenApproved = () => {
-    if (!isApproved) {
-      const allowanceIndex = approvals?.findIndex(
-        (approval) => approval.contractAddress === asset.contractAddress
-      )
-      if (allowanceIndex !== -1) {
-        setIsApproved(true)
-      }
-    }
-  }
-
-  isTokenApproved()
-
   const approve = () => {
     dispatch(approveApprovalTarget(asset.contractAddress))
+    history.push("/sign-transaction")
   }
 
   const enable = () => {
     dispatch(
       permitVaultDeposit({
         vaultContractAddress: asset.contractAddress,
-        amount: 2000n,
+        amount: "2000",
       })
     )
+    history.push("/sign-data")
   }
 
   const deposit = () => {
@@ -84,9 +88,32 @@ export default function EarnDeposit(): ReactElement {
     setAvailableRewards("0")
   }
 
-  useEffect(() => {
-    dispatch(checkApprovalTargetApproval(asset.contractAddress))
-  }, [dispatch, asset.contractAddress])
+  const handleAmountChange = (
+    value: string,
+    errorMessage: string | undefined
+  ) => {
+    setAmount(value)
+    const allowanceGreaterThanAmount = allowance >= Number(value)
+    setIsApproved(allowanceGreaterThanAmount)
+    if (errorMessage) {
+      setHasError(true)
+    } else {
+      setHasError(false)
+    }
+  }
+
+  const depositButtonText = useMemo(() => {
+    if (isApproved) {
+      return "Enable"
+    }
+    if (isCurrentlyApproving) {
+      return "Approving..."
+    }
+    if (!isApproved) {
+      return "Approve"
+    }
+    return "Deposit"
+  }, [isApproved, isCurrentlyApproving])
 
   return (
     <>
@@ -160,14 +187,9 @@ export default function EarnDeposit(): ReactElement {
           <SharedAssetInput
             assetsAndAmounts={combinedData.assets}
             label="Deposit asset"
-            onAmountChange={(value, errorMessage) => {
-              setAmount(value)
-              if (errorMessage) {
-                setHasError(true)
-              } else {
-                setHasError(false)
-              }
-            }}
+            onAmountChange={(value, errorMessage) =>
+              handleAmountChange(value, errorMessage)
+            }
             selectedAsset={asset}
             amount={amount}
             disableDropdown
@@ -177,14 +199,19 @@ export default function EarnDeposit(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                isDisabled={hasError}
+                isDisabled={hasError || amount === "" || isCurrentlyApproving}
                 linkTo={!isApproved ? "/sign-transaction" : "/sign-data"}
                 onClick={!isApproved ? approve : enable}
               >
-                {!isApproved ? "Approve" : "Enable"}
+                {depositButtonText}
               </SharedButton>
             ) : (
-              <SharedButton type="primary" size="large" onClick={deposit}>
+              <SharedButton
+                type="primary"
+                size="large"
+                onClick={deposit}
+                isDisabled={amount === ""}
+              >
                 {!deposited ? "Deposit" : "Deposit more"}
               </SharedButton>
             )}
