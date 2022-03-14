@@ -12,7 +12,6 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
@@ -57,6 +56,9 @@ export default function SignTransactionSpendAssetInfoProvider({
   const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
     null
   )
+
+  const [hasError, setHasError] = useState(false)
+
   const changing = approvalLimitInput !== null
 
   const handleChangeClick = () => {
@@ -83,7 +85,7 @@ export default function SignTransactionSpendAssetInfoProvider({
       decimalAmount === undefined ||
       (decimalAmount !== null && decimalAmount.amount < 0n)
     ) {
-      dispatch(setSnackbarMessage("Invalid amount"))
+      setHasError(true)
       return
     }
 
@@ -148,13 +150,20 @@ export default function SignTransactionSpendAssetInfoProvider({
                   label=""
                   value={approvalLimitInput}
                   placeholder={approvalLimitString ?? ""}
-                  onChange={setApprovalLimitInput}
+                  onChange={(value) => {
+                    setApprovalLimitInput(value)
+                    setHasError(false)
+                  }}
+                  errorMessage={hasError ? `Invalid amount` : undefined}
                   autoSelect
                 />
-                <div className="change_limit_actions">
+                <div
+                  className={classNames("change_limit_actions", {
+                    has_error: hasError,
+                  })}
+                >
                   <SharedButton
                     size="small"
-                    isFormSubmit
                     type="tertiary"
                     onClick={handleCancelClick}
                   >
@@ -249,6 +258,9 @@ export default function SignTransactionSpendAssetInfoProvider({
               .change_limit_actions {
                 display: flex;
                 justify-content: space-between;
+              }
+              .change_limit_actions.has_error {
+                margin-top: 24px;
               }
               .spend_amount {
                 color: #fff;
