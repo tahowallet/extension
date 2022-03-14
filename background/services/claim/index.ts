@@ -1,6 +1,4 @@
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
-import { Eligible } from "./types"
-import { getOrCreateDB, ClaimDatabase } from "./db"
 import BaseService from "../base"
 
 interface Events extends ServiceLifecycleEvents {
