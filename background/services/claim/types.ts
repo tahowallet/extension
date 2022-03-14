@@ -4,6 +4,8 @@ export interface Eligible {
   reasons: string
 }
 
-export interface Claim {
-  eligibles: Eligible[]
+export interface IPFSLinkItem {
+  Hash: { "/": string }
+  Name: string
+  Tsize: number
 }
