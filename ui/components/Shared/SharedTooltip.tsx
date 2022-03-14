@@ -25,6 +25,8 @@ export default function SharedTooltip(props: Props): ReactElement {
           .tooltip_wrap {
             width: fit-content;
             display: inline-block;
+            position: relative;
+            vertical-align: middle;
             margin-left: 8px;
             z-index: 20;
           }

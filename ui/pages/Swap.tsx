@@ -39,7 +39,9 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
+import SwapRewardsNotification from "../components/Swap/SwapRewardsNotification"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -438,6 +440,7 @@ export default function Swap(): ReactElement {
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <SharedActivityHeader label="Swap Assets" activity="swap" />
+          <SwapRewardsNotification />
           <div className="form">
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
@@ -478,10 +481,11 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              <SwapTransactionSettingsChooser
+              <SwapRewardsCard />
+              {/* <SwapTransactionSettingsChooser
                 swapTransactionSettings={swapTransactionSettings}
                 onSwapTransactionSettingsSave={setSwapTransactionSettings}
-              />
+              /> */}
             </div>
             <div className="footer standard_width_padded">
               {
