@@ -20,10 +20,12 @@ import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { sameEVMAddress } from "../../lib/utils"
+import { WEBSITE_ORIGIN } from "../../constants/website"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: Record<string, PermissionRequest>
+  setClaimReferrer: string
 }
 
 /**
@@ -124,6 +126,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
       }
+    } else if (event.request.method === "tally_setClaimReferrer") {
+      const referrer = event.request.params[0]
+      if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
+        logger.warn(`invalid 'setClaimReferrer' request`)
+        return
+      }
+
+      this.emitter.emit("setClaimReferrer", String(referrer))
+
+      response.result = null
     } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
