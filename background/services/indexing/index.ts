@@ -81,8 +81,7 @@ export default class IndexingService extends BaseService<Events> {
     super({
       tokens: {
         schedule: {
-          delayInMinutes: 1,
-          periodInMinutes: 30,
+          periodInMinutes: 1,
         },
         handler: () => this.handleTokenAlarm(),
         runAtStart: true,

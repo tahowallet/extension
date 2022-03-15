@@ -266,7 +266,7 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers[network.name]
+    return this.providers[network.name.toLowerCase()]
   }
 
   /**
