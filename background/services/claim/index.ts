@@ -9,7 +9,6 @@ const IPFSHTTPGatewayPrefix = "https://ipfs.io/ipfs/"
 const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
 
 /*
- * Binary search to find which segment file to look in.
  * For context, the eligibility data is split up into files:
  * claim-0x90F79bf6EB2c4f870365E785982E1f101E93b906.ndjson
  * claim-0x9eef87f4c08d8934cb2a3309df4dec5635338115.ndjson
@@ -19,47 +18,28 @@ const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
  * ...
  * To find which file to look in, we reference claim-index.json
  */
-function findIndexOfPartToLookIn(
-  addressEligibilityPartGlossary: string[],
-  targetAddressNumber: number
-) {
-  const n = addressEligibilityPartGlossary.length
-  let start = 0
-  let end = n - 1
-
-  while (start <= end) {
-    const mid = Math.floor((start + end) / 2)
-    const current = Number(addressEligibilityPartGlossary[mid])
-
-    if (current === targetAddressNumber) {
-      return mid
-    }
-    if (current < targetAddressNumber) {
-      start = mid + 1
-    } else {
-      end = mid - 1
-    }
-  }
-  return end + 1
-}
-
 async function getFileHashProspect(targetAddress: string) {
+  const numericTargetAddress = BigInt(targetAddress)
+
   const IPFSFileDirectory = await fetch(
     `${IPFSHTTPGet}${IPFSFileDirectoryIPFSHash}`
   )
   const partGlossary = await fetch(
     `${IPFSHTTPGatewayPrefix}${partGlossaryIPFSHash}`
   )
+
   const IPFSFileDirectoryJson = await IPFSFileDirectory.json()
   const partGlossaryJson = await partGlossary.json()
 
-  const fileIndex = findIndexOfPartToLookIn(
-    partGlossaryJson.map((item: { startAddress: string; file: string }) => {
-      return item.startAddress
-    }),
-    Number(targetAddress)
-  )
-  const inClaimFileName = partGlossaryJson[fileIndex].file
+  const fileIndex =
+    partGlossaryJson
+      .map((item: { startAddress: string; file: string }) => {
+        return item.startAddress
+      })
+      .findIndex((startAddress: string) => {
+        return BigInt(startAddress ?? 0) > numericTargetAddress
+      }) - 1
+  const inClaimFileName = partGlossaryJson[fileIndex]?.file
 
   const IPFSHashForFoundFile = IPFSFileDirectoryJson.Links.find(
     (linkItem: IPFSLinkItem) => {
@@ -67,7 +47,7 @@ async function getFileHashProspect(targetAddress: string) {
     }
   )
 
-  return IPFSHashForFoundFile.Hash["/"]
+  return IPFSHashForFoundFile?.Hash["/"]
 }
 
 async function getClaimFromFileHash(targetAddress: string, hash: string) {
