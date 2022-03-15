@@ -52,6 +52,10 @@ export default function SignTransaction({
     }
     return undefined
   })
+  const isTransactionMissingOrRejected = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.status === TransactionConstructionStatus.Idle
+  )
 
   const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
   const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
@@ -92,6 +96,12 @@ export default function SignTransaction({
     signerAccountTotal?.signingMethod ?? null
   )
 
+  useEffect(() => {
+    if (isTransactionMissingOrRejected) {
+      history.goBack()
+    }
+  }, [history, isTransactionMissingOrRejected])
+
   if (isWaitingForKeyrings) {
     return <></>
   }
@@ -108,7 +118,6 @@ export default function SignTransaction({
 
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
-    history.goBack()
   }
   const handleConfirm = async () => {
     if (
