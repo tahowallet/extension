@@ -181,6 +181,22 @@ components/
       ...
 ```
 
+#### Adding a new signer
+
+Adding a new signer in this structure involves a few parts:
+
+- Adding any service and redux logic specific to the signer (e.g. see
+  `LedgerService`, `redux-slices/ledger.ts`).
+- Adding the appropriate frame and signing component flows to the `Signer/`
+  subdirectory above, as illustrated in the high-level examples below.
+- Adding an entry to `frameComponentForSigner` (see below) mapping the
+  new signer type to its frame component.
+- Adding proper routing to connect signing actions in the UI to the
+  `SigningService` and signer-specific service.
+
+These should all consist almost entirely of light routing code or
+signer-specific code.
+
 #### High-level component code
 
 `background/redux-slices/signing/index.tsx`
