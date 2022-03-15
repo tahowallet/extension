@@ -37,7 +37,7 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
-import { setEligibility } from "./redux-slices/claim"
+import { setEligibility, setReferrer } from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -1116,6 +1116,10 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(initializeAllowedPages(allowedPages))
       }
     )
+
+    this.providerBridgeService.emitter.on("setClaimReferrer", (referral) => {
+      this.store.dispatch(setReferrer(referral))
+    })
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await this.providerBridgeService.grantPermission(permission)
