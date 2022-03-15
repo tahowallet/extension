@@ -15,9 +15,9 @@ function getHorizontalPosition(width: number) {
 function getVerticalPosition(vertical: VeriticalPosition) {
   switch (vertical) {
     case "bottom":
-      return "top: 16px; margin-top: 5px;"
+      return "top: 25px;"
     case "top":
-      return "bottom: 16px; margin-bottom: 5px;"
+      return "bottom: 25px;"
     default:
       return ""
   }
@@ -47,6 +47,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             position: relative;
             vertical-align: middle;
             margin-left: 8px;
+            padding 5px 0;
             z-index: 20;
           }
           .info_icon {

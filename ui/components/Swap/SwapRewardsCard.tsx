@@ -10,7 +10,7 @@ export default function SwapRewardsCard(): ReactElement {
         <p className="text">
           This week, 240,000 DOGGO tokens will be equally shared as Swap
           Rewards.
-          <SharedTooltip>
+          <SharedTooltip width={150} verticalPosition="top">
             <p className="tooltip">
               {`Tally rewards it's users that use swap everyweek. A council decides
           weekly prizes and who is eligible.`}
