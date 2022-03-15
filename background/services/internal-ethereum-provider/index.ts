@@ -195,7 +195,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           rawSigningData: asciiSigningData,
         } as SignDataRequest)
       case "eth_estimateGas":
-        return BigNumber.from(5000000)
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":

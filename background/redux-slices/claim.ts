@@ -1,5 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
-import { BigNumber, ethers, Signature, utils } from "ethers"
+import { BigNumber, Signature, utils } from "ethers"
 import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { Eligible } from "../services/claim/types"
 
@@ -18,6 +18,7 @@ import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { HOUR } from "../constants"
+import { USE_MAINNET_FORK } from "../features/features"
 
 export interface DAO {
   address: string
@@ -148,19 +149,17 @@ export default claimingSlice.reducer
 
 export const claimRewards = createBackgroundAsyncThunk(
   "claim/distributorClaim",
-  async (_, { getState, dispatch }): Promise<string> => {
-    const state = getState()
-    const { claim } = state as { claim: ClaimingState }
+  async (claimState: ClaimingState, { dispatch }) => {
     const provider = getProvider()
     const signer = provider.getSigner()
     const account = await signer.getAddress()
 
-    const referralCode = claim.selectedDAO
-    const delegate = claim.selectedDelegate
-    const { signature, eligibility } = claim
+    const referralCode = claimState.selectedDAO
+    const delegate = claimState.selectedDelegate
+    const { signature, eligibility } = claimState
 
     if (!eligibility) {
-      return ethers.constants.AddressZero
+      return
     }
 
     dispatch(currentlyClaiming(true))
@@ -173,58 +172,58 @@ export const claimRewards = createBackgroundAsyncThunk(
       if (receipt.status === 1) {
         dispatch(currentlyClaiming(false))
         dispatch(claimed(normalizeEVMAddress(account)))
-        return account
+        return
       }
       dispatch(currentlyClaiming(false))
       dispatch(dispatch(claimError(normalizeEVMAddress(account))))
-      return null
+      throw new Error("Could not claim")
     }
 
-    try {
-      if (claim.selectedDAO === null && delegate === null) {
-        const tx = distributorContract.claim(
-          eligibility.index,
-          account,
-          eligibility.amount,
-          eligibility.proof
-        )
-        tx.gasLimit = BigNumber.from(300000) // for mainnet fork only
-        const response = signer.sendTransaction(tx)
-        confirmReceipt(response)
-      }
+    let claimTransaction
+    if (claimState.selectedDAO === null && delegate === null) {
+      claimTransaction = await distributorContract.populateTransaction.claim(
+        eligibility.index,
+        account,
+        eligibility.amount,
+        eligibility.proof
+      )
+    }
 
-      if (referralCode !== null && delegate === null) {
-        const tx = distributorContract.claimWithCommunityCode(
+    if (referralCode !== null && delegate === null) {
+      claimTransaction =
+        await distributorContract.populateTransaction.claimWithCommunityCode(
           eligibility.index,
           account,
           eligibility.amount,
           eligibility.proof,
           referralCode.address
         )
-        tx.gasLimit = BigNumber.from(300000) // for mainnet fork only
-        const response = signer.sendTransaction(tx)
-        confirmReceipt(response)
+    }
+    if (signature && referralCode !== null && delegate !== null) {
+      const { r, s, v } = signature
+      const { nonce, expiry } = claimState
+      claimTransaction =
+        await distributorContract.populateTransaction.voteWithFriends(
+          BigNumber.from(eligibility.index),
+          account,
+          BigNumber.from(eligibility.amount),
+          eligibility.proof,
+          referralCode.address,
+          delegate.address,
+          { nonce, expiry, r, s, v }
+        )
+    }
+    if (claimTransaction) {
+      if (USE_MAINNET_FORK) {
+        claimTransaction.gasLimit = BigNumber.from(350000) // for mainnet fork only
       }
-      if (signature && referralCode !== null && delegate !== null) {
-        const { r, s, v } = signature
-        const { nonce, expiry } = claim
-        const tx =
-          await distributorContract.populateTransaction.voteWithFriends(
-            BigNumber.from(eligibility.index),
-            account,
-            BigNumber.from(eligibility.amount),
-            eligibility.proof,
-            referralCode.address,
-            delegate.address,
-            { nonce, expiry, r, s, v }
-          )
-        tx.gasLimit = BigNumber.from(300000) // for mainnet fork only
-        const response = signer.sendTransaction(tx)
-        confirmReceipt(response)
+      try {
+        const response = signer.sendTransaction(claimTransaction)
+        await confirmReceipt(response)
+      } catch {
+        dispatch(currentlyClaiming(false))
+        dispatch(dispatch(claimError(normalizeEVMAddress(account))))
       }
-      return ethers.constants.AddressZero
-    } catch {
-      return Promise.reject()
     }
   }
 )

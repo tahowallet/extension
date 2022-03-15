@@ -593,9 +593,6 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
-    if (USE_MAINNET_FORK) {
-      return BigInt(300000)
-    }
     const estimate = await this.providers.ethereum.estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
