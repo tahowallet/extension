@@ -1,11 +1,30 @@
 import React, { ReactElement, useState } from "react"
 
+type VeriticalPosition = "top" | "bottom"
+
 interface Props {
+  verticalPosition?: VeriticalPosition
+  width: number
   children: React.ReactNode
 }
 
+function getHorizontalPosition(width: number) {
+  return `right: -${width / 2 + 4}px;`
+}
+
+function getVerticalPosition(vertical: VeriticalPosition) {
+  switch (vertical) {
+    case "bottom":
+      return "top: 16px; margin-top: 5px;"
+    case "top":
+      return "bottom: 16px; margin-bottom: 5px;"
+    default:
+      return ""
+  }
+}
+
 export default function SharedTooltip(props: Props): ReactElement {
-  const { children } = props
+  const { children, verticalPosition = "bottom", width } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
@@ -38,8 +57,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             display: block;
           }
           .tooltip {
-            margin-top: 10px;
-            max-width: 213px;
+            width: ${width}px;
             position: absolute;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
@@ -50,6 +68,8 @@ export default function SharedTooltip(props: Props): ReactElement {
             line-height: 20px;
             border-radius: 3px;
             padding: 12px;
+            ${getVerticalPosition(verticalPosition)}
+            ${getHorizontalPosition(width)}
           }
         `}
       </style>
