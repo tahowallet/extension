@@ -1,3 +1,4 @@
+import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
@@ -7,13 +8,13 @@ export default function ClaimReferralByUser({
 }: {
   claimAmount: number
 }): ReactElement {
+  const amountWithBonus = formatCurrencyAmount("USD", claimAmount * 0.05, 2)
   return (
     <div className="wrap standard_width">
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
         Get a bonus of
-        <div className="highlight">{(claimAmount * 0.05).toFixed(2)}</div>{" "}
-        TALLY!
+        <div className="highlight">{amountWithBonus}</div> TALLY!
       </div>
       <div className="description">
         You were referred by somebody, and to reward that you each get 463 TALLY
