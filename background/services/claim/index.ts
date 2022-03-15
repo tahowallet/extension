@@ -72,28 +72,38 @@ async function getFileHashProspect(targetAddress: string) {
 
 async function getClaimFromFileHash(targetAddress: string, hash: string) {
   const res = await fetch(`${IPFSHTTPGatewayPrefix}${hash}`)
-
   let claim
   const reader = res?.body?.getReader()
   let result
-  const decoder = new TextDecoder("utf8")
-  while (!result?.done) {
-    // Seems reasonable to await inside of the while loop
-    // with the idea of avoiding reading everything.
-    // eslint-disable-next-line no-await-in-loop
-    result = await reader?.read()
-    const chunk = decoder
-      .decode(result?.value, { stream: true })
-      .split(/[\r\n]/)
-      .filter((chunkSegment) => chunkSegment.length > 0)
-      .map((chunkSegment) => JSON.parse(chunkSegment))
+  const decoder = new TextDecoder()
+  if (typeof reader !== "undefined") {
+    let unfinishedLine = ""
+    const searchString = `"account":"${targetAddress}"`
+    result = await reader.read()
 
-    const foundClaim = chunk.find((item) => {
-      return item.account === targetAddress
-    })
-    if (foundClaim) {
-      claim = foundClaim
-      break
+    while (!result.done) {
+      const currentChunk =
+        unfinishedLine + decoder.decode(result.value, { stream: true })
+
+      if (currentChunk.includes(searchString)) {
+        const lines = currentChunk.split(/[\r\n]/)
+
+        // Last entry is definitionally after the last newline.
+        // Could be empty if the chunk ends on a newline.
+        unfinishedLine = lines.pop() || ""
+
+        const matchingClaim = lines
+          .map((claimEntry) => JSON.parse(claimEntry))
+          .find((claimEntry) => claimEntry.account === targetAddress)
+        if (matchingClaim) {
+          claim = matchingClaim
+          break
+        }
+      }
+      // Seems reasonable to await inside of the while loop
+      // with the idea of avoiding reading everything.
+      // eslint-disable-next-line no-await-in-loop
+      result = await reader.read()
     }
   }
   return claim
