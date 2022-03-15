@@ -22,6 +22,7 @@ export type UIState = {
   settings: { hideDust: boolean; defaultWallet: boolean }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
+  hideSwapRewardsNotification: boolean
 }
 
 export type Events = {
@@ -41,6 +42,7 @@ export const initialState: UIState = {
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
   snackbarMessage: "",
+  hideSwapRewardsNotification: false,
 }
 
 const uiSlice = createSlice({
@@ -56,6 +58,13 @@ const uiSlice = createSlice({
         defaultWallet: immerState.settings?.defaultWallet,
       }
     },
+    toggleHideSwapRewardsNotification: (
+      state,
+      { payload: shouldHideSwapRewards }: { payload: boolean }
+    ): UIState => ({
+      ...state,
+      hideSwapRewardsNotification: shouldHideSwapRewards,
+    }),
     setShowingActivityDetail: (
       state,
       { payload: transactionID }: { payload: string | null }
@@ -107,6 +116,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  toggleHideSwapRewardsNotification,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -156,4 +166,9 @@ export const selectSnackbarMessage = createSelector(
 export const selectDefaultWallet = createSelector(
   selectSettings,
   (settings) => settings?.defaultWallet
+)
+
+export const selectHideSwapRewardsNotification = createSelector(
+  selectUI,
+  (ui) => ui.hideSwapRewardsNotification
 )
