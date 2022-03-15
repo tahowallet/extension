@@ -71,10 +71,10 @@ A few terms are used below and are worth defining:
 
 This RFB focuses on a scalable approach to architecting the UI flow for
 signing, irrespective of whether it is transaction or message data being
-signed. It does not speak to the intraction between transaction and message
+signed. It does not speak to the interaction between transaction and message
 data, nor to the handling of multiple pending signing requests (something that
 has been informally referred to as "transaction queueing"), which is treated as
-an orthogonal concern.
+an orthogonal concern (see [Limitations](#limitations)).
 
 To allow the flow to support many different types of signers, this RFB proposes
 structuring all UI signing flows into two distinct phases:
@@ -95,24 +95,24 @@ wallet interactions).
 
 As mentioned in the background section, though these phases are distinct, the
 UI flow is such that we may want to provide signer-specific hints in the UI
-while the user is still in the understanding/analysis phase of the flow; this
+while the user is still in the understanding/analysis phase of the flow. This
 can be achieved with a clear delineation between the UI components controlled
-by the signer and those controlled by the data rendering section.
+by the signer and those controlled by the data rendering concerns.
 
 ### Goal
 
 Once this refactor is complete, the intent is to have a clear separation
 between data understanding concerns and signer-specific concerns, and to
-provide infrastructure for contributors to add support for new signer types as
-needed. The signer-specific areas of the code will need to control the
-frame of the signing action (the UI around the signature data) while the user
-is in the analysis phase and, once the user has initiated signing, the full UI.
+provide infrastructure for contributors to add UI support for new signer types
+as needed. The signer-specific areas of the code will need to control the frame
+of the signing action (the UI around the signature data) while the user is in
+the analysis phase and, once the user has initiated signing, the full UI.
 
 New signer types may need their own redux slices, their own component flows
 once the user moves to sign, and even their own onboarding/connection
 management flows. The outcome of this refactor should allow these to live
-independently of each other, and to minimize the leakage between a signer that
-requires one set of functionality on a signer that does not.
+independently of each other, and to minimize the leakage between the details of
+signer-specific functionalities.
 
 ### Implementation
 
@@ -199,9 +199,9 @@ signer-specific code.
 
 #### High-level component code
 
-Below, the high-level component code for the components at each successive
-level of hierarchy are presented as illustrative examples of how the code
-flow might work.
+Below, the high-level code for the components at each successive level of
+hierarchy is presented as a set of illustrative examples of how the code flow
+should work.
 
 `background/redux-slices/signing/index.tsx`
 
@@ -225,7 +225,8 @@ type SigningRequest =
 /**
  * Details regarding a signature request, resolved for a signer ahead of time
  * based on the type of signature, the account whose signature is being
- * requested, and the network on which that signature is taking place.
+ * requested, and the network on which that signature is taking place; see
+ * `resolveSignatureDetails`.
  */
 type ResolvedSignatureDetails = {
   signer: AccountSigner
@@ -254,9 +255,7 @@ type SigningFrameProps<T extends SigningRequest> = ResolvedSignatureDetails & {
  * subdirectories should conform to this signature, enforced by the
  * frameComponentForSigner lookup.
  */
-type SigningFrame = (props: SigningFrameProps) => ReactElement
-
-type SigningProps = SigningRequest
+export type SigningFrame = (props: SigningFrameProps) => ReactElement
 
 // Takes a signing request and resolves the signer that should be used to sign
 // it and the details of signing data for user presentation.
@@ -272,6 +271,8 @@ function resolveSignatureDetails(request: SigningRequest): ResolvedSignatureDeta
 // The explicit prop and component types ease the concern around forwarding
 // unintended props. Disable the rule for the rest of the file accordingly.
 // eslint-disable react/jsx-props-no-spreading
+
+type SigningProps = SigningRequest
 
 /**
  * The Signing component is an umbrella component that renders all
@@ -291,7 +292,7 @@ export function Signing(props: SigningProps): ReactElement {
 
   // Not shown: bail if signer account total is unresolved
 
-  const SigningFrameComponent = frameComponentForSigner[signer]
+  const SigningFrameComponent = frameComponentForSigner[signer] // see Signer/index.ts
 
   return (
     <section>
@@ -366,15 +367,15 @@ export function SignerBaseFrame({
 }
 ```
 
-A sample of using `SignerBaseFrame` and the simplest flow that frames this would
-be the keyring frame:
+The keyring flow provides the simplest example of using `SignerBaseFrame`:
 
-`Signing/Signer/SignerKeyringFrame.ts`
+`Signing/Signer/SignerKeyring/SignerKeyringFrame.ts`
 
 ```typescript
 export function SignerKeyringFrame({
   children,
   request,
+  signActionCreator,
   rejectActionCreator,
   signingAction,
 }: SigningFrameProps): ReactElement {
@@ -386,7 +387,11 @@ export function SignerKeyringFrame({
 
   return (
     <>
-      {isSigning ? <SignerKeyringSigning request={request} /> : <></>}
+      {isSigning ? (
+        <SignerKeyringSigning signActionCreator={signActionCreator} />
+      ) : (
+        <></>
+      )}
       <SignerBaseFrame
         signingAction={signingAction}
         onReject={() => dispatch(rejectActionCreator())}
@@ -399,11 +404,11 @@ export function SignerKeyringFrame({
 }
 ```
 
-`Signing/Signer/SignerKeyringSigning.ts`
+`Signing/Signer/SignerKeyring/SignerKeyringSigning.ts`
 
 ```typescript
 export function SignerKeyringSigning({
-  request: SigningRequest,
+  signActionCreator: ActionCreatorWithoutPayload,
 }): ReactElement {
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
   const [signingInitiated, setSigningInitiated] = useState(false)
@@ -411,7 +416,7 @@ export function SignerKeyringSigning({
   // Initiate signing once keyring is ready.
   useEffect(() => {
     if (!signingInitiated && keyringStatus === "unlocked") {
-      dispatch(signData(request))
+      dispatch(signActionCreator())
 
       setSigningInitiated(true)
     }
@@ -433,7 +438,7 @@ export function SignerKeyringSigning({
 Finally, Ledger construction would be more complex as it needs to represent
 more states:
 
-`Signing/Signer/SignerLedgerFrame.ts`
+`Signing/Signer/SignerLedger/SignerLedgerFrame.ts`
 
 ```typescript
 export function SignerLedgerFrame({
@@ -442,13 +447,17 @@ export function SignerLedgerFrame({
   signer,
   signingAction,
   signActionCreator,
-  handleReject
+  rejectActionCreator
 }: SigningFrameProps): ReactElement {
   const [isSigning, setIsSigning] = useState(false)
   const ledgerState = useSigningLedgerState(signer)
 
   const handleConfirm = useCallback(() => {
     setIsSigning(true)
+  })
+
+  const handleReject = useCallback(() => {
+    dispatch(rejectActionCreator())
   })
 
   // ...
@@ -498,7 +507,7 @@ export function SignerLedgerFrame({
 }
 ```
 
-`Signing/Signer/SignerLedgerSigning.ts`
+`Signing/Signer/SignerLedger/SignerLedgerSigning.ts`
 
 ```typescript
 export function SignerLedgerSigning({
@@ -528,8 +537,8 @@ export function SignerLedgerSigning({
 
 #### Similarities to current approach
 
-A few things are similar in the proposed factoring above to what is currently
-happening for transactions, but differ in specific ways:
+There are strong similarities between the proposed code above and what is
+currently happening for transactions, with a few notable differences:
 
 - The details resolver (`resolveSignatureDetails` and its delegates) is similar to the
   `SignTransactionInfoProvider`, but is deliberately oriented towards resolving data,
@@ -556,11 +565,12 @@ Keychain unlocking in particular diverges somewhat from the current functioning:
   chooses to sign). This aligns keychain signing with what is expected to
   happen in other signers, which generally don't block on signer availability
   until the user explicitly takes signing action. It was discussed briefly [in
-  GitHub](#move-keychain-unlock).
+  GitHub](#move-keychain-unlock), and more extensively offline with the design
+  team.
 - Keychain unlock is moved to be directly internal to the signing flow, and
   framed by the top-level `Signing` frame (which lists the network and
-  account). This shift in particular should be checked with the design team
-  before executing on it.
+  account). This shift should be checked with the design team before executing
+  on it.
 
 ### Limitations
 
@@ -581,9 +591,9 @@ types of signatures that can be produced:
 
 At times, transactions can depend on message signatures. As one example,
 EIP-2612 specifies a message structure whose signature authorizes the movement
-of funds on behalf of a user by a specified spender. Notably, however, this is
-not a guaranteed fact, and other tools like Sign In with Ethereum produce
-signatures that aren't necessarily ever used for on-chain actions.
+of funds on behalf of a user by a specified spender. Notably, this dependency
+is not always present, and other tools like Sign In with Ethereum produce
+signatures that aren't necessarily used for on-chain actions.
 
 This RFB focuses specifically on the question of how to structure UI component
 flow to accommodate different types of signers, but _does not_ look at how
@@ -591,10 +601,10 @@ different signature types should flow between each other.
 
 ## Related Links
 
+- [EIP-191: Signed Data Standard](eip191)
 - [EIP-712: Ethereum typed structured data hashing and signing](eip712)
 - <a name="move-keychain-unlock"></a>[GH comment: Intent to move keychain unlock step](https://github.com/tallycash/extension/pull/899#discussion_r792667593)
 - [GH comment: early structural flow suggestion](https://github.com/tallycash/extension/pull/932#pullrequestreview-873498285)
 
 [eip712]: https://eips.ethereum.org/EIPS/eip-712
 [eip191]: https://eips.ethereum.org/EIPS/eip-191
-[ui-chrome]: https://en.wikipedia.org/wiki/Graphical_user_interface#User_interface_and_interaction_design
