@@ -1,10 +1,18 @@
-import React, { ReactElement, useState } from "react"
+import {
+  selectHideSwapRewardsNotification,
+  toggleHideSwapRewardsNotification,
+} from "@tallyho/tally-background/redux-slices/ui"
+import React, { ReactElement } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import SharedIcon from "../Shared/SharedIcon"
 
 export default function SwapRewardsNotification(): ReactElement {
-  const [wasClosed, setWasClosed] = useState(false)
+  const dispatch = useDispatch()
+  const hideSwapRewardsNotification = useSelector(
+    selectHideSwapRewardsNotification
+  )
 
-  if (wasClosed) return <></>
+  if (hideSwapRewardsNotification) return <></>
 
   return (
     <div className="notification_container">
@@ -19,7 +27,7 @@ export default function SwapRewardsNotification(): ReactElement {
         icon="close"
         width={11}
         color="var(--green-40)"
-        onClick={() => setWasClosed(true)}
+        onClick={() => dispatch(toggleHideSwapRewardsNotification(true))}
         customStyles={`
             margin-left: auto;
             margin-right: 4px;
