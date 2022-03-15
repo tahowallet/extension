@@ -106,7 +106,12 @@ async function getClaimFromFileHash(targetAddress: string, hash: string) {
       result = await reader.read()
     }
   }
-  return claim
+
+  return (
+    claim ?? {
+      amount: 0,
+    }
+  )
 }
 
 interface Events extends ServiceLifecycleEvents {
@@ -137,11 +142,11 @@ export default class ClaimService extends BaseService<Events> {
 
   async getEligibility(address: string): Promise<Eligible> {
     const fileHash = await getFileHashProspect(address)
-    const { account, amount } = await getClaimFromFileHash(address, fileHash)
+    const { amount } = await getClaimFromFileHash(address, fileHash)
 
     // TEMP: Place into current structure to avoid conflict with claim slice PR
     const claim = {
-      address: account,
+      address,
       earnings: BigInt(amount),
       reasons: "",
     }
