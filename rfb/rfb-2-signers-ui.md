@@ -17,6 +17,14 @@ versions of the data being signed (for user clarity and security) and allowing
 access to underlying data and, for transactions, transaction details such as
 network fees.
 
+Signing should present the user with a complete view of the data they are going
+to sign---whether a transaction or a message---and then take them through
+whatever steps the particular signer requires to complete the signature
+process, allowing the user to cancel the signature at their discretion. In
+certain cases, the UI may present signer-specific hints very early in the
+process, as with the Ledger flow indicating whether a Ledger is connected when
+the user is still reviewing the transaction.
+
 ### Current Functionality
 
 The initial community edition release of Tally Ho featured a single way to add
@@ -26,25 +34,53 @@ for them with private key material. The community edition also supported a
 single signing action, signing a transaction for submission to the Ethereum
 blockchain.
 
-In the intervening time, three areas of this have started to evolve. First, the
-ability to maintain key materials outside of HDKeyrings has been added, primarily
-using Ledger hardware wallets. Second, the types of signing have expanded, with
-the addition of personal message and typed data signing. Finally, the ability to
-sign data meant for chains other than Ethereum mainnet is on the horizon.
+In the intervening time, three areas of this flow have started to evolve.
+First, the ability to maintain key materials outside of HDKeyrings has been
+added, primarily using Ledger hardware wallets. Second, the types of signing
+have expanded, with the addition of personal message and typed data signing.
+Finally, the ability to sign data meant for chains other than Ethereum mainnet
+is on the horizon.
 
-The current version of the signing flow has largely evolved organically from a
-basic flow for single-transaction signing, with limited refactoring along the
-way to retrofit support for Ledger, whose behavior is quite different from
-HDKeyrings, and signing typed data, whose characteristics are similar but whose
-outcome is not.
+The current version of the signing flow has evolved organically from a basic
+flow for single-transaction signing by an in-memory keyring, with limited
+refactoring along the way to retrofit support for Ledger, whose behavior is
+quite different from keyrings, and signing typed data, whose characteristics
+are similar to transaction signing but whose outcome has some notable
+differences.
+
+### Terms
+
+A few terms are used below and are worth defining:
+
+- **Signer**: An entity that can receive a request to sign certain data, and
+  either succeed or fail to sign that data. The entity can be in-memory, or
+  can be a facade over an out-of-memory interaction like an external device,
+  network-connected application, or other non-local signing-capable entity.
+- **Keyring**: An in-memory signer that keeps key material inside the wallet,
+  and persists it in encrypted fashion.
+- **Remote signer**: Used in this RFB to generally refer to a signer that is
+  outside the memory space of the extension; may be remote via USB, the
+  internet, or even air gap/QR code.
+- **Personal message signing**: Signing of unstructured plain text messages,
+  specified by [EIP-191](eip191). Unstructured messages are prefixed by a
+  special string.
+- **Typed data signing**: Signing of structured data that includes type
+  information, specified by [EIP-712](eip712).
 
 ## Proposal
+
+This RFB focuses on a scalable approach to architecting the UI flow for
+signing, irrespective of whether it is transaction or message data being
+signed. It does not speak to the intraction between transaction and message
+data, nor to the handling of multiple pending signing requests (something that
+has been informally referred to as "transaction queueing"), which is treated as
+an orthogonal concern.
 
 To allow the flow to support many different types of signers, this RFB proposes
 structuring all UI signing flows into two distinct phases:
 
 - Signature data understanding and analysis.
-- Signer interaction.
+- Interaction with the underlying signer.
 
 The first phase is focused specifically on allowing the user to understand and
 analyze the contents of the message or transaction being signed, as well as,
@@ -57,21 +93,392 @@ hardware wallet connections) to data presentation (e.g. QR code generation for
 air-gapped wallet data transfer) to network interactions (e.g. WalletConnect
 wallet interactions).
 
+As mentioned in the background section, though these phases are distinct, the
+UI flow is such that we may want to provide signer-specific hints in the UI
+while the user is still in the understanding/analysis phase of the flow; this
+can be achieved with a clear delineation between the UI components controlled
+by the signer and those controlled by the data rendering section.
+
 ### Goal
 
 Once this refactor is complete, the intent is to have a clear separation
-between data understanding concerns and signer-specific concerns, and to provide
-infrastructure for contributors to add support for new signer types as needed.
+between data understanding concerns and signer-specific concerns, and to
+provide infrastructure for contributors to add support for new signer types as
+needed. The signer-specific areas of the code will need to control the
+frame of the signing action (the UI around the signature data) while the user
+is in the analysis phase and, once the user has initiated signing, the full UI.
 
 New signer types may need their own redux slices, their own component flows
 once the user moves to sign, and even their own onboarding/connection
-management flows. The outcome should allow these to live independently of each
-other, and to minimize the leakage between a signer that requires one set of
-functionality on a signer that does not.
+management flows. The outcome of this refactor should allow these to live
+independently of each other, and to minimize the leakage between a signer that
+requires one set of functionality on a signer that does not.
 
 ### Implementation
 
-TBD
+At a high level, the implementation splits the UI into several distinct
+components, which are structured as follows in the UI:
+
+```
+/-Signing------------
+|   common header   |
+|/-SignerFrame------|
+|| --------------- ||
+||  signer header  ||
+|| --------------- ||
+||                 ||
+|| /-SigningData-\ ||
+||                 ||
+|| --------------- ||
+||  signer footer  ||
+|| --------------- ||
+---------------------
+```
+
+The `Signing` component is charged with resolving the appropriate
+`SigningData`, which renders the UI for analysis of transaction or message
+data, as well as the `SignerFrame`, which is the frame component specific to
+the signer that will sign the data.
+
+The `SignerFrame` is given complete control over the presented data except for
+the shared header. The signing data UI is passed to it as child element data.
+The frame must show the signing data before taking further action. Once the
+user clicks an action in the frame footer (typically `Sign`, if the frame
+supports it), the frame should present any additional UI that is required for
+actual signing. As one example, once the user requests to sign a transaction
+with a Ledger, the transaction data is rendered in a way that looks more like
+what is displayed on the Ledger screen so the user can more easily compare data
+on the wallet to data on the Ledger.
+
+#### Proposed file structure
+
+The structure of the files presented below separates the high-level signing
+components from the signer components. Signer components are further separated
+by the type of signer. Entry points and common components can exist at the top
+level under `Signing/` and `Signer/`.
+
+```
+components/
+  Signing/
+    index.tsx
+    SigningData/
+      SigningData.tsx
+      SigningDataTransaction/
+        ...
+      SigningDataMessage/
+        ...
+    Signer/
+      SignerBaseFrame.tsx
+      SignerReadOnly/
+        SignerReadOnlyFrame.tsx
+        SignerReadOnlySigning.tsx
+      SignerKeyring/
+        SignerKeyringFrame.tsx
+        SignerKeyringSigning.tsx
+      SignerLedger/
+        SignerLedgerFrame.tsx
+        SignerLedgerSigning.tsx
+      ...
+```
+
+#### High-level component code
+
+`background/redux-slices/signing/index.tsx`
+
+```typescript
+type SigningRequest =
+  | {
+      // A separate RFB, or a refactoring for this one, could unify this with
+      // SignOperation and replace SigningRequest with SignOperation.
+      transactionRequest: TransactionRequest
+      broadcastOnSign: boolean
+    }
+  | {
+      signingOperation: AnySignOperation // SignOperation<T> cannot be used here, consider subtypes
+    }
+```
+
+`Signing/index.tsx`
+
+```typescript
+type SigningProps = SigningRequest
+
+// Takes a signing request and resolves the signer that should be used to sign
+// it and the rendered signing data for user presentation.
+function resolveSignatureDetails(request: SigningRequest): {
+  signer: AccountSigner,
+  renderedSigningData: ReactElement
+} {
+  if ("transactionRequest" in request) {
+    return resolveTransactionSignatureDetails(request) // from SigningDataTransaction/index.ts
+  } else {
+    return resolveDataSignatureDetails(request) // from SigningDataMessage/index.ts
+  }
+}
+
+// Signing acts as a dispatcher, so prop spreading is a good tradeoff.
+// The explicit prop and component types ease the concern around forwarding
+// unintended props. Disable the rule for the rest of the file accordingly.
+// eslint-disable react/jsx-props-no-spreading
+
+/**
+ * The Signing component is an umbrella component that renders all
+ * signing-related UI. It handles choosing the correct UI to present the data
+ * being signed to the user, as well as the correct UI for the signer executing
+ * the actual signature, and delegates control of the UI to the signer.
+ */
+export function Signing(props: SigningProps): ReactElement {
+  const { signer, renderedSigningData } = resolveSignatureDetails(props)
+  const signerAccountTotal = useBackgroundSelector((state) => {
+    if (typeof signer !== "undefined") {
+      return getAccountTotal(state, signer.accountID)
+    }
+    return undefined
+  })
+
+  // bail if signer account total is unresolved
+
+  const SigningFrameComponent = frameComponentForSigner[signer]
+
+  // Should be specific to the type of data.
+  const handleReject = async () => {
+    await dispatch(rejectTransactionSignature())
+  }
+
+  return (
+    <section>
+      <SignTransactionNetworkAccountInfoTopBar accountTotal={signerAccountTotal} />
+      <SigningFrameComponent {...props} signer={signer} handleReject={handleReject}>
+        {renderedSigningData}
+      </SigningFrame>
+    </section>
+  )
+}
+```
+
+`Signer/index.ts`
+
+```typescript
+/**
+ * The props passed to a signing frame.
+ */
+type SigningFrameProps<T extends SigningRequest> = {
+  request: T
+  signer: AccountSigner
+  /**
+   * A string that represents what signing this data will achieve. This is
+   * generally resolved by the EnrichmentService; some signers may ignore this
+   * string, others may use it for their confirmation button.
+   */
+  enrichedSignatureAction: string
+  children: ReactElement
+}
+
+/**
+ * The React component type of a signing frame; all *Frame components in
+ * subdirectories should conform to this signature, enforced by the
+ * frameComponentForSigner lookup.
+ */
+type SigningFrame = (props: SigningFrameProps) => ReactElement
+
+/**
+ * For each available signer type, the frame that will wrap the signing data
+ * data and own the signing flow.
+ */
+export const frameComponentForSigner: {
+  [signerType in SignerType]: SigningFrame
+} = {
+  keyring: SignerKeyringFrame,
+  ledger: SignerLedgerFrame,
+  // ... will error if a new SignerType is added without a corresponding frame
+}
+```
+
+Below, `SignerBaseFrame` illustrates one potential way of handling common
+behavior. It may make sense to have this for any signer that presents a
+standard Reject/Sign starting point, and then potentially does more complex
+work afterwards.
+
+`Signer/SignerBaseFrame.ts`
+
+```typescript
+type BaseFrameProps = SigningFrameProps & {
+  handleConfirm: ()=>void
+}
+
+export function SignerBaseFrame({
+  children,
+  enrichedSignatureAction,
+  handleConfirm,
+  handleReject
+}: SigningFrameProps): ReactElement {
+  return (
+    <>
+      {children}
+      <footer>
+        <SharedButton
+          iconSize="large"
+          size="large"
+          type="secondary"
+          onClick={handleReject}
+        >
+          Reject
+        </SharedButton>
+
+        <SharedButton
+          type="primary"
+          iconSize="large"
+          size="large"
+          onClick={handleConfirm}
+          showLoadingOnClick
+        >
+          {enrichedSignatureAction}
+        </SharedButton>
+      <footer>
+    </>
+  )
+}
+```
+
+A sample of using `SignerBaseFrame` and the simplest flow that frames this would
+be the keyring frame:
+
+`Signer/SignerKeyringFrame.ts`
+
+```typescript
+export function SignerKeyringFrame({
+  children,
+  request,
+  enrichedSignatureAction,
+  handleReject,
+}: SigningFrameProps): ReactElement {
+  const [isSigning, setIsSigning] = useState(false)
+
+  const handleConfirm = useCallback(() => {
+    setIsSigning(true)
+  })
+
+  return isSigning ? (
+    <SignerKeyringSigning request={request} />
+  ) : (
+    <SignerBaseFrame handleReject={handleReject} handleConfirm={handleConfirm}>
+      {children}
+    </SignerBaseFrame>
+  )
+}
+```
+
+`Signer/SignerKeyringSigning.ts`
+
+```typescript
+export function SignerKeyringSigning({
+  request: SigningRequest,
+}): ReactElement {
+  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+
+  // In this construction, keyring unlocking isn't done as a route, but in line
+  // in the signing frame.
+  if (keyringStatus === "uninitialized") {
+    return <KeyringSetPassword />
+  }
+  if (keyringStatus === "locked") {
+    return <KeyringUnlock />
+  }
+
+  dispatch(signData(request))
+
+  // Should be visible for a negligible amount of time.
+  return <div>Processing...</div>
+}
+```
+
+Finally, Ledger construction would be more complex as it needs to represent
+more states:
+
+`Signer/SignerLedgerFrame.ts`
+
+```typescript
+export function SignerLedgerFrame({
+  children,
+  request,
+  signer,
+  enrichedSignatureAction,
+  handleReject
+}: SigningFrameProps): ReactElement {
+  const [isSigning, setIsSigning] = useState(false)
+  const ledgerState = useSigningLedgerState(signer)
+
+  const handleConfirm = useCallback(() => {
+    setIsSigning(true)
+  })
+
+  // ...
+
+  return isSigning ?
+      <SignerLedgerSigning request={request} /> :
+      <>
+        <SignerLedgerConnectionStatus signer={signer} />
+        {children}
+        <footer>
+          <SharedButton
+            iconSize="large"
+            size="large"
+            type="secondary"
+            onClick={handleReject}
+          >
+            Reject
+          </SharedButton>
+
+          {signingLedgerState !== "avaiable" ? (
+              <SharedButton
+                type="primary"
+                iconSize="large"
+                size="large"
+                onClick={() => {
+                  setSlideUpOpen(true)
+                }}
+              >
+                Check Ledger
+              </SharedButton>
+            ) : (
+              <SharedButton
+                type="primary"
+                iconSize="large"
+                size="large"
+                onClick={handleConfirm}
+                showLoadingOnClick
+              >
+                {enrichedSignatureAction}
+              </SharedButton>
+            )
+        <footer>
+        <SharedSlideUpMenu ...>
+          <SignerLedgerConnect signer={signer} />
+        <SharedSlideUpMenu>
+      </>
+}
+```
+
+`Signer/SignerLedgerSigning.ts`
+
+```typescript
+export function SignerLedgerSigning({ request: SigningRequest }): ReactElement {
+  return (
+    <>
+      <h1 className="serif_header title">
+        "Awaiting hardware wallet signature"
+      </h1>
+      <div className="primary_info_card standard_width">
+        <SignerLedgerSigningReviewPanel request={request} >
+      </div>
+      <div className="cannot_reject_warning">
+        <span className="block_icon" />
+        Tx can only be Rejected from Ledger
+      </div>
+    </>
+  )
+}
+```
 
 ### Limitations
 
@@ -113,4 +520,10 @@ TBD
 
 ## Related Links
 
-TBD
+- [EIP-712: Ethereum typed structured data hashing and signing](eip712)
+- [GH comment: Intent to move keychain unlock step](https://github.com/tallycash/extension/pull/899#discussion_r792667593)
+- [GH comment: early structural flow suggestion](https://github.com/tallycash/extension/pull/932#pullrequestreview-873498285)
+
+[eip712]: https://eips.ethereum.org/EIPS/eip-712
+[eip191]: https://eips.ethereum.org/EIPS/eip-191
+[ui-chrome]: https://en.wikipedia.org/wiki/Graphical_user_interface#User_interface_and_interaction_design
