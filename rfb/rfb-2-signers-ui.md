@@ -199,13 +199,18 @@ signer-specific code.
 
 #### High-level component code
 
+Below, the high-level component code for the components at each successive
+level of hierarchy are presented as illustrative examples of how the code
+flow might work.
+
 `background/redux-slices/signing/index.tsx`
 
 ```typescript
 type SigningRequest =
   | {
       // A separate RFB, or a refactoring for this one, could unify this with
-      // SignOperation and replace SigningRequest with SignOperation.
+      // SignOperation and potentially replace SigningRequest with
+      // SignOperation.
       transactionRequest: TransactionRequest
       broadcastOnSign: boolean
     }
@@ -217,18 +222,49 @@ type SigningRequest =
 `Signing/index.tsx`
 
 ```typescript
+/**
+ * Details regarding a signature request, resolved for a signer ahead of time
+ * based on the type of signature, the account whose signature is being
+ * requested, and the network on which that signature is taking place.
+ */
+type ResolvedSignatureDetails = {
+  signer: AccountSigner
+  network: EVMNetwork
+  renderedSigningData: ReactElement
+  signActionCreator: ActionCreatorWithoutPayload
+  rejectActionCreator: ActionCreatorWithoutPayload
+}
+
+/**
+ * The props passed to a signing frame.
+ */
+type SigningFrameProps<T extends SigningRequest> = ResolvedSignatureDetails & {
+  request: T
+  signer: AccountSigner
+  /**
+   * A string that represents what signing this data will achieve. Some signers
+   * may ignore this string, others may use it for their confirmation button.
+   */
+  signingAction: string
+  children: ReactElement
+}
+
+/**
+ * The React component type of a signing frame; all *Frame components in
+ * subdirectories should conform to this signature, enforced by the
+ * frameComponentForSigner lookup.
+ */
+type SigningFrame = (props: SigningFrameProps) => ReactElement
+
 type SigningProps = SigningRequest
 
 // Takes a signing request and resolves the signer that should be used to sign
-// it and the rendered signing data for user presentation.
-function resolveSignatureDetails(request: SigningRequest): {
-  signer: AccountSigner,
-  renderedSigningData: ReactElement
-} {
+// it and the details of signing data for user presentation.
+function resolveSignatureDetails(request: SigningRequest): ResolvedSignatureDetails {
   if ("transactionRequest" in request) {
-    return resolveTransactionSignatureDetails(request) // from SigningDataTransaction/index.ts
+    return resolveTransactionSignatureDetails(request) // defined in SigningDataTransaction/index.ts
   } else {
-    return resolveDataSignatureDetails(request) // from SigningDataMessage/index.ts
+    return resolveDataSignatureDetails(request) // defined in SigningDataMessage/index.ts
   }
 }
 
@@ -244,7 +280,8 @@ function resolveSignatureDetails(request: SigningRequest): {
  * the actual signature, and delegates control of the UI to the signer.
  */
 export function Signing(props: SigningProps): ReactElement {
-  const { signer, renderedSigningData } = resolveSignatureDetails(props)
+  const signatureDetails = resolveSignatureDetails(props)
+  const { signer } = signatureDetails
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof signer !== "undefined") {
       return getAccountTotal(state, signer.accountID)
@@ -252,19 +289,14 @@ export function Signing(props: SigningProps): ReactElement {
     return undefined
   })
 
-  // bail if signer account total is unresolved
+  // Not shown: bail if signer account total is unresolved
 
   const SigningFrameComponent = frameComponentForSigner[signer]
-
-  // Should be specific to the type of data.
-  const handleReject = async () => {
-    await dispatch(rejectTransactionSignature())
-  }
 
   return (
     <section>
       <SignTransactionNetworkAccountInfoTopBar accountTotal={signerAccountTotal} />
-      <SigningFrameComponent {...props} signer={signer} handleReject={handleReject}>
+      <SigningFrameComponent {...{ ...props, ...signatureDetails }}>
         {renderedSigningData}
       </SigningFrame>
     </section>
@@ -272,31 +304,9 @@ export function Signing(props: SigningProps): ReactElement {
 }
 ```
 
-`Signer/index.ts`
+`Signing/Signer/index.ts`
 
 ```typescript
-/**
- * The props passed to a signing frame.
- */
-type SigningFrameProps<T extends SigningRequest> = {
-  request: T
-  signer: AccountSigner
-  /**
-   * A string that represents what signing this data will achieve. This is
-   * generally resolved by the EnrichmentService; some signers may ignore this
-   * string, others may use it for their confirmation button.
-   */
-  enrichedSignatureAction: string
-  children: ReactElement
-}
-
-/**
- * The React component type of a signing frame; all *Frame components in
- * subdirectories should conform to this signature, enforced by the
- * frameComponentForSigner lookup.
- */
-type SigningFrame = (props: SigningFrameProps) => ReactElement
-
 /**
  * For each available signer type, the frame that will wrap the signing data
  * data and own the signing flow.
@@ -315,7 +325,7 @@ behavior. It may make sense to have this for any signer that presents a
 standard Reject/Sign starting point, and then potentially does more complex
 work afterwards.
 
-`Signer/SignerBaseFrame.ts`
+`Signing/Signer/SignerBaseFrame.ts`
 
 ```typescript
 type BaseFrameProps = SigningFrameProps & {
@@ -324,9 +334,9 @@ type BaseFrameProps = SigningFrameProps & {
 
 export function SignerBaseFrame({
   children,
-  enrichedSignatureAction,
-  handleConfirm,
-  handleReject
+  signingAction,
+  onConfirm,
+  onReject
 }: SigningFrameProps): ReactElement {
   return (
     <>
@@ -336,7 +346,7 @@ export function SignerBaseFrame({
           iconSize="large"
           size="large"
           type="secondary"
-          onClick={handleReject}
+          onClick={onReject}
         >
           Reject
         </SharedButton>
@@ -345,10 +355,10 @@ export function SignerBaseFrame({
           type="primary"
           iconSize="large"
           size="large"
-          onClick={handleConfirm}
+          onClick={onConfirm}
           showLoadingOnClick
         >
-          {enrichedSignatureAction}
+          {signingAction}
         </SharedButton>
       <footer>
     </>
@@ -359,14 +369,14 @@ export function SignerBaseFrame({
 A sample of using `SignerBaseFrame` and the simplest flow that frames this would
 be the keyring frame:
 
-`Signer/SignerKeyringFrame.ts`
+`Signing/Signer/SignerKeyringFrame.ts`
 
 ```typescript
 export function SignerKeyringFrame({
   children,
   request,
-  enrichedSignatureAction,
-  handleReject,
+  rejectActionCreator,
+  signingAction,
 }: SigningFrameProps): ReactElement {
   const [isSigning, setIsSigning] = useState(false)
 
@@ -374,23 +384,38 @@ export function SignerKeyringFrame({
     setIsSigning(true)
   })
 
-  return isSigning ? (
-    <SignerKeyringSigning request={request} />
-  ) : (
-    <SignerBaseFrame handleReject={handleReject} handleConfirm={handleConfirm}>
-      {children}
-    </SignerBaseFrame>
+  return (
+    <>
+      {isSigning ? <SignerKeyringSigning request={request} /> : <></>}
+      <SignerBaseFrame
+        signingAction={signingAction}
+        onReject={() => dispatch(rejectActionCreator())}
+        onConfirm={handleConfirm}
+      >
+        {children}
+      </SignerBaseFrame>
+    </>
   )
 }
 ```
 
-`Signer/SignerKeyringSigning.ts`
+`Signing/Signer/SignerKeyringSigning.ts`
 
 ```typescript
 export function SignerKeyringSigning({
   request: SigningRequest,
 }): ReactElement {
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const [signingInitiated, setSigningInitiated] = useState(false)
+
+  // Initiate signing once keyring is ready.
+  useEffect(() => {
+    if (!signingInitiated && keyringStatus === "unlocked") {
+      dispatch(signData(request))
+
+      setSigningInitiated(true)
+    }
+  }, [keyringStatus, signingInitiated, setSigningInitiated])
 
   // In this construction, keyring unlocking isn't done as a route, but in line
   // in the signing frame.
@@ -401,24 +426,22 @@ export function SignerKeyringSigning({
     return <KeyringUnlock />
   }
 
-  dispatch(signData(request))
-
-  // Should be visible for a negligible amount of time.
-  return <div>Processing...</div>
+  return <></>
 }
 ```
 
 Finally, Ledger construction would be more complex as it needs to represent
 more states:
 
-`Signer/SignerLedgerFrame.ts`
+`Signing/Signer/SignerLedgerFrame.ts`
 
 ```typescript
 export function SignerLedgerFrame({
   children,
   request,
   signer,
-  enrichedSignatureAction,
+  signingAction,
+  signActionCreator,
   handleReject
 }: SigningFrameProps): ReactElement {
   const [isSigning, setIsSigning] = useState(false)
@@ -431,7 +454,7 @@ export function SignerLedgerFrame({
   // ...
 
   return isSigning ?
-      <SignerLedgerSigning request={request} /> :
+      <SignerLedgerSigning request={request} signActionCreator={signActionCreator} /> :
       <>
         <SignerLedgerConnectionStatus signer={signer} />
         {children}
@@ -464,7 +487,7 @@ export function SignerLedgerFrame({
                 onClick={handleConfirm}
                 showLoadingOnClick
               >
-                {enrichedSignatureAction}
+                {signingAction}
               </SharedButton>
             )
         <footer>
@@ -475,10 +498,17 @@ export function SignerLedgerFrame({
 }
 ```
 
-`Signer/SignerLedgerSigning.ts`
+`Signing/Signer/SignerLedgerSigning.ts`
 
 ```typescript
-export function SignerLedgerSigning({ request: SigningRequest }): ReactElement {
+export function SignerLedgerSigning({
+  request: SigningRequest,
+  signActionCreator: ActionCreatorWithoutPayload
+}): ReactElement {
+  useEffect(() => {
+    dispatch(signActionCreator())
+  }, [])
+
   return (
     <>
       <h1 className="serif_header title">
