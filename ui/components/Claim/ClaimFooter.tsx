@@ -6,6 +6,10 @@ import {
   signTokenDelegationData,
   selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  clearTransactionState,
+  TransactionConstructionStatus,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, {
   Dispatch,
   ReactElement,
@@ -37,6 +41,7 @@ export default function ClaimFooter({
   const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
   const isDelegationSigned = useBackgroundSelector(selectIsDelegationSigned)
   const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
+  const claimState = useBackgroundSelector((state) => state.claim)
 
   const lastStepButtonText = useMemo(() => {
     if (selectedDelegate.address !== undefined && !isDelegationSigned) {
@@ -63,16 +68,19 @@ export default function ClaimFooter({
     showSuccess()
   }
   const handleClick = useCallback(async () => {
+    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
+    // FIXME proper transaction queueing is in effect.
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     if (buttonText[step - 1] === "Sign Delegation") {
       dispatch(signTokenDelegationData())
       history.push("/sign-data")
     } else if (buttonText[step - 1] === "Claim") {
-      dispatch(claimRewards())
+      dispatch(claimRewards(claimState))
       history.push("/sign-transaction")
     } else {
       advanceStep()
     }
-  }, [buttonText, step, advanceStep, dispatch, history])
+  }, [buttonText, step, advanceStep, dispatch, history, claimState])
 
   const handleProgressStepClick = (s: number) => {
     setStep(s)
