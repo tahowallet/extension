@@ -155,7 +155,7 @@ on the wallet to data on the Ledger.
 The structure of the files presented below separates the high-level signing
 components from the signer components. Signer components are further separated
 by the type of signer. Entry points and common components can exist at the top
-level under `Signing/` and `Signer/`.
+level under `Signing/`, `SigningData/` and `Signer/`.
 
 ```
 components/
@@ -526,12 +526,49 @@ export function SignerLedgerSigning({
 }
 ```
 
+#### Similarities to current approach
+
+A few things are similar in the proposed factoring above to what is currently
+happening for transactions, but differ in specific ways:
+
+- The details resolver (`resolveSignatureDetails` and its delegates) is similar to the
+  `SignTransactionInfoProvider`, but is deliberately oriented towards resolving data,
+  and thus not structured as a component but as a plain function. Instead,
+  component-related decisions are left to the signer frame.
+- The `Signing` container behaves similarly to the `SignTransactionContainer`,
+  but, as with the details resolver, leaves things like the review panel to the
+  signer frame.
+- Much of the conditional logic that handles Ledger is left entirely to the
+  Ledger frame instead of being entwined with the shared transaction analysis
+  logic. As a specific example, the `reviewPanel` used in the current
+  transaction signing flow is left to the Ledger frame, which can render a
+  review panel that closely maps to what the user will see on their Ledger.
+  This panel's function is substantially different from the analysis components
+  used by the user to confirm the transaction being signed _does what they
+  expect_, and is instead focused on helping the user confirm that the
+  transaction in the wallet is the same one they are signing on their hardware
+  device.
+
+Keychain unlocking in particular diverges somewhat from the current functioning:
+
+- The flow of keychain unlock moves from the beginning of the signing flow
+  (before transaction data is presented) to the end of it (once the user
+  chooses to sign). This aligns keychain signing with what is expected to
+  happen in other signers, which generally don't block on signer availability
+  until the user explicitly takes signing action. It was discussed briefly [in
+  GitHub](#move-keychain-unlock).
+- Keychain unlock is moved to be directly internal to the signing flow, and
+  framed by the top-level `Signing` frame (which lists the network and
+  account). This shift in particular should be checked with the design team
+  before executing on it.
+
 ### Limitations
 
-This RFB deliberately does not address certain internal complexities of the
-signing flow that are separate from the data-signer separation mentioned above.
-
 #### Different Categories of Signing
+
+This RFB deliberately does not address certain internal complexities of the
+signing flow that are separate from the data-signer separation mentioned above,
+as below.
 
 When considering wallet signing, it is useful to distinguish between two different
 types of signatures that can be produced:
@@ -552,22 +589,10 @@ This RFB focuses specifically on the question of how to structure UI component
 flow to accommodate different types of signers, but _does not_ look at how
 different signature types should flow between each other.
 
-### Proof of Concept
-
-RBD
-
-## Future Work (optional)
-
-TBD
-
-## Open Questions (optional)
-
-TBD
-
 ## Related Links
 
 - [EIP-712: Ethereum typed structured data hashing and signing](eip712)
-- [GH comment: Intent to move keychain unlock step](https://github.com/tallycash/extension/pull/899#discussion_r792667593)
+- <a name="move-keychain-unlock"></a>[GH comment: Intent to move keychain unlock step](https://github.com/tallycash/extension/pull/899#discussion_r792667593)
 - [GH comment: early structural flow suggestion](https://github.com/tallycash/extension/pull/932#pullrequestreview-873498285)
 
 [eip712]: https://eips.ethereum.org/EIPS/eip-712
