@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { EARN_COMING_SOON } from "@tallyho/tally-background/features/features"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
 import SignData from "../pages/SignData"
@@ -121,7 +122,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/earn",
-    Component: ComingSoon ?? Earn,
+    Component: EARN_COMING_SOON ? ComingSoon : Earn,
     hasTabBar: true,
     hasTopBar: true,
     persistOnClose: true,
