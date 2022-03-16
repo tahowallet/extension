@@ -1,7 +1,9 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
-import { HOUR } from "../constants"
+import { AnyAsset } from "../assets"
+import { HOUR, doggoTokenDecimalDigits } from "../constants"
+import { USE_MAINNET_FORK } from "../features/features"
 import { ERC20_ABI } from "../lib/erc20"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
@@ -22,13 +24,28 @@ export type ApprovalTargetAllowance = {
 }
 
 export type PendingReward = {
-  vault: HexString
-  pendingAmount: BigInt
+  vaultAddress: HexString
+  pendingAmount: number
 }
 
 export type DepositedVault = {
-  vault: HexString
+  vaultAddress: HexString
   depositedAmount: BigInt
+}
+
+export type LockedValue = {
+  vaultAddress: HexString
+  lockedValue: bigint
+  vaultTokenSymbol: string
+  asset: AnyAsset
+}
+
+export type AvailableVault = {
+  name: string
+  symbol: string
+  contractAddress: HexString
+  wantToken: HexString
+  active: boolean
 }
 
 export type EarnState = {
@@ -36,29 +53,58 @@ export type EarnState = {
   approvalTargetAllowances: ApprovalTargetAllowance[]
   depositedVaults: DepositedVault[]
   pendingRewards: PendingReward[]
+  lockedAmounts: LockedValue[]
+  availableVaults: AvailableVault[]
   currentlyDepositing: boolean
   currentlyApproving: boolean
   depositError: boolean
+  inputAmount: string
 }
 
 export type Signature = {
-  r: string
-  s: string
-  v: number
+  r: string | undefined
+  s: string | undefined
+  v: number | undefined
 }
 
 export const initialState: EarnState = {
   signature: {
-    r: "",
-    s: "",
-    v: 0,
+    r: undefined,
+    s: undefined,
+    v: undefined,
   },
   approvalTargetAllowances: [],
   depositedVaults: [],
   pendingRewards: [],
+  lockedAmounts: [],
+  availableVaults: [
+    {
+      name: "WBTC",
+      symbol: "WBTC",
+      contractAddress: "0x5D1aB585B7d05d81F07E8Ff33998f2f11647B46e",
+      wantToken: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      active: true,
+    } as AnyAsset & {
+      contractAddress: HexString
+      active: boolean
+      wantToken: HexString
+    },
+    {
+      name: "USDT",
+      symbol: "USDT",
+      contractAddress: "0x362Db3b1F85154a537CEf5e2a3D87D56d71DF823",
+      active: true,
+      wantToken: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    } as AnyAsset & {
+      contractAddress: HexString
+      active: boolean
+      wantToken: HexString
+    },
+  ],
   currentlyDepositing: false,
   currentlyApproving: false,
   depositError: false,
+  inputAmount: "",
 }
 
 export type EIP712DomainType = {
@@ -109,7 +155,7 @@ export const vaultWithdraw = createBackgroundAsyncThunk(
   }
 )
 
-export const claimRewards = createBackgroundAsyncThunk(
+export const claimVaultRewards = createBackgroundAsyncThunk(
   "earn/clamRewards",
   async (vaultContractAddress: HexString) => {
     const provider = getProvider()
@@ -139,17 +185,41 @@ const earnSlice = createSlice({
       ...state,
       signature: { r, s, v },
     }),
+    clearSignature: (state) => ({
+      ...state,
+      signature: { r: undefined, s: undefined, v: undefined },
+    }),
     currentlyDepositing: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyDepositing = payload
     },
     currentlyApproving: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyApproving = payload
     },
+    inputAmount: (state, { payload }: { payload: string }) => {
+      return {
+        ...state,
+        inputAmount: payload,
+      }
+    },
     deposited: (
       immerState,
-      { payload }: { payload: { vault: HexString; depositedAmount: BigInt } }
+      {
+        payload,
+      }: { payload: { vaultAddress: HexString; depositedAmount: BigInt } }
     ) => {
       immerState.depositedVaults.push(payload)
+    },
+    earnedAmounts: (state, { payload }: { payload: PendingReward[] }) => {
+      return {
+        ...state,
+        pendingRewards: payload,
+      }
+    },
+    lockedAmounts: (state, { payload }: { payload: LockedValue[] }) => {
+      return {
+        ...state,
+        lockedAmounts: payload,
+      }
     },
     withdrawn: (
       state,
@@ -158,7 +228,7 @@ const earnSlice = createSlice({
       return {
         ...state,
         depositedVaults: state.depositedVaults.map((vault) =>
-          vault.vault === payload.vault
+          vault.vaultAddress === payload.vault
             ? { ...vault, depositedAmount: payload.depositedAmount }
             : vault
         ),
@@ -193,6 +263,10 @@ export const {
   deposited,
   withdrawn,
   depositError,
+  earnedAmounts,
+  lockedAmounts,
+  inputAmount,
+  clearSignature,
 } = earnSlice.actions
 
 export default earnSlice.reducer
@@ -242,6 +316,9 @@ export const vaultDeposit = createBackgroundAsyncThunk(
         earn.signature.s,
         earn.signature.v
       )
+    if (USE_MAINNET_FORK) {
+      depositTransactionData.gasLimit = BigNumber.from(350000) // for mainnet fork only
+    }
     const response = signer.sendTransaction(depositTransactionData)
     const result = await response
     const receipt = await result.wait()
@@ -249,13 +326,71 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(currentlyDepositing(false))
       dispatch(
         deposited({
-          vault: normalizeEVMAddress(vaultContractAddress),
+          vaultAddress: normalizeEVMAddress(vaultContractAddress),
           depositedAmount: amount,
         })
       )
     }
     dispatch(currentlyDepositing(false))
     dispatch(dispatch(depositError(true)))
+  }
+)
+
+export const updateEarnedOnDepositedPools = createBackgroundAsyncThunk(
+  "earn/updateEarnedOnDepositedPools",
+  async (_, { getState, dispatch }) => {
+    const currentState = getState()
+    const { earn } = currentState as { earn: EarnState }
+    const { depositedVaults } = earn
+    const provider = getProvider()
+    const signer = provider.getSigner()
+    const account = signer.getAddress()
+
+    const pendingAmounts = depositedVaults.map(async (vault) => {
+      const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
+      const earned: BigNumber = await vaultContract.earned(account)
+      return {
+        vaultAddress: vault.vaultAddress,
+        pendingAmount: fromFixedPointNumber(
+          { amount: earned.toBigInt(), decimals: doggoTokenDecimalDigits },
+          0
+        ),
+      }
+    })
+
+    const amounts = await Promise.all(pendingAmounts)
+    dispatch(earnedAmounts(amounts))
+    return amounts
+  }
+)
+
+export const updateLockedValues = createBackgroundAsyncThunk(
+  "earn/updateLockedValues",
+  async (_, { getState, dispatch }) => {
+    const currentState = getState()
+    const { earn } = currentState as { earn: EarnState }
+    const { availableVaults } = earn
+
+    const locked = availableVaults.map(async (vault) => {
+      const wantTokenContract = await getContract(vault.wantToken, ERC20_ABI)
+      const lockedValue: BigNumber = await wantTokenContract.balanceOf(
+        vault.contractAddress
+      )
+      return {
+        vaultAddress: vault.contractAddress,
+        vaultTokenSymbol: vault.symbol,
+        lockedValue: lockedValue.toBigInt(),
+        asset: {
+          contractAddress: vault.wantToken,
+          name: vault.name,
+          symbol: vault.symbol,
+        } as AnyAsset,
+      }
+    })
+    // TODO Convert below to be showing $ value rather than BigNumber
+    const amounts = await Promise.all(locked)
+    dispatch(lockedAmounts(amounts))
+    return amounts
   }
 )
 
@@ -277,6 +412,9 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
         ethers.constants.MaxUint256
       )
     try {
+      if (USE_MAINNET_FORK) {
+        approvalTransactionData.gasLimit = BigNumber.from(350000) // for mainnet fork only
+      }
       const tx = await signer.sendTransaction(approvalTransactionData)
       await tx.wait()
       const { r, s, v } = tx
@@ -358,6 +496,8 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const timestamp = await getCurrentTimestamp()
     const signatureDeadline = timestamp + 12 * HOUR
 
+    const nonceValue = await getNonce()
+
     const types = {
       Message: [
         {
@@ -370,7 +510,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
         },
         {
           name: "value",
-          type: "string",
+          type: "uint256",
         },
         {
           name: "nonce",
@@ -392,7 +532,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
       owner: signerAddress,
       spender: vaultContractAddress,
       value: amount,
-      nonce: getNonce(),
+      nonce: nonceValue,
       deadline: signatureDeadline,
     }
 
@@ -424,4 +564,43 @@ export const selectCurrentlyApproving = createSelector(
 export const selectCurrentlyDepositing = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => earnState.currentlyDepositing
+)
+
+export const selectAvailableVaults = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) => earnState.availableVaults
+)
+
+// TODO This should include a maincurrency value for each element in the array
+export const selectLockedValues = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) => earnState.lockedAmounts
+)
+
+// TODO This should return a maincurrency value
+export const selectTotalLockedValue = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) =>
+    earnState.lockedAmounts.reduce((total, vault) => {
+      return total + Number(vault.lockedValue)
+    }, 0)
+)
+
+export const selectIsSignatureAvailable = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) => {
+    if (
+      typeof earnState.signature.r !== "undefined" &&
+      typeof earnState.signature.v !== "undefined" &&
+      typeof earnState.signature.s !== "undefined"
+    ) {
+      return true
+    }
+    return false
+  }
+)
+
+export const selectEarnInputAmount = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) => earnState.inputAmount
 )
