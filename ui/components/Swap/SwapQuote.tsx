@@ -18,6 +18,7 @@ import SwapTransactionSettingsChooser, {
   SwapTransactionSettings,
 } from "./SwapTransactionSettingsChooser"
 import { useBackgroundDispatch } from "../../hooks"
+import SharedIcon from "../Shared/SharedIcon"
 
 type Props = {
   sellAsset: FungibleAsset
@@ -80,7 +81,22 @@ export default function SwapQuote({
           asset={sellAsset}
           amount={sellAmount}
         />
-        <span className="icon_switch" />
+        <SharedIcon
+          type="background"
+          icon="switch@2x.png"
+          width={40}
+          height={32}
+          color="var(--green-95)"
+          customStyles={`
+            background-size: 20px 20px;
+            border-radius: 4px;
+            border: 3px solid var(--hunter-green);
+            margin-left: -11px;
+            margin-right: -11px;
+            z-index: 5;
+            flex-grow: 1;
+            flex-shrink: 0;`}
+        />
         <SwapQuoteAssetCard
           label="You receive"
           asset={buyAsset}
@@ -134,20 +150,6 @@ export default function SwapQuote({
             flex-direction: column;
             justify-content: space-between;
             margin-top: 24px;
-          }
-          .icon_switch {
-            background: url("./images/switch@2x.png") center no-repeat;
-            background-size: 20px 20px;
-            width: 40px;
-            height: 32px;
-            border-radius: 4px;
-            border: 3px solid var(--hunter-green);
-            background-color: var(--green-95);
-            margin-left: -11px;
-            margin-right: -11px;
-            z-index: 5;
-            flex-grow: 1;
-            flex-shrink: 0;
           }
           .quote_cards {
             display: flex;
