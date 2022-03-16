@@ -169,3 +169,5 @@ export type AsyncThunkFulfillmentType<T> = T extends Pick<
 >
   ? Returned
   : never
+
+export const noopAction = createBackgroundAsyncThunk("noop", () => {})
