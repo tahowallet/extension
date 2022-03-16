@@ -46,17 +46,16 @@ export default function SignTransaction({
       transactionConstruction.broadcastOnSign ?? false
   )
 
-  const isTransactionMissingOrRejected = useBackgroundSelector(
-    ({ transactionConstruction }) =>
-      transactionConstruction.status === TransactionConstructionStatus.Idle
-  )
-
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
       return getAccountTotal(state, transactionDetails.from)
     }
     return undefined
   })
+  const isTransactionMissingOrRejected = useBackgroundSelector(
+    ({ transactionConstruction }) =>
+      transactionConstruction.status === TransactionConstructionStatus.Idle
+  )
 
   const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
   const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
@@ -91,17 +90,17 @@ export default function SignTransaction({
     signedTransaction,
   ])
 
-  useEffect(() => {
-    if (isTransactionMissingOrRejected) {
-      history.goBack()
-    }
-  }, [history, isTransactionMissingOrRejected])
-
   const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
 
   const signingLedgerState = useSigningLedgerState(
     signerAccountTotal?.signingMethod ?? null
   )
+
+  useEffect(() => {
+    if (isTransactionMissingOrRejected) {
+      history.goBack()
+    }
+  }, [history, isTransactionMissingOrRejected])
 
   if (isWaitingForKeyrings) {
     return <></>

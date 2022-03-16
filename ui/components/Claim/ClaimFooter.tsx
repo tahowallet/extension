@@ -1,8 +1,15 @@
 import {
   claimRewards,
   selectClaimSelections,
+  selectIsDelegationSigned,
+  setClaimStep,
   signTokenDelegationData,
+  selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  clearTransactionState,
+  TransactionConstructionStatus,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, {
   Dispatch,
   ReactElement,
@@ -28,49 +35,73 @@ export default function ClaimFooter({
   advanceStep,
   showSuccess,
 }: ClaimFooterProps): ReactElement {
-  const buttonText = useMemo(
-    () => ["Get started", "Continue", "Continue", "Continue", "Claim"],
-    []
-  )
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
 
   const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
+  const isDelegationSigned = useBackgroundSelector(selectIsDelegationSigned)
+  const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
+  const claimState = useBackgroundSelector((state) => state.claim)
 
+  const lastStepButtonText = useMemo(() => {
+    if (selectedDelegate.address !== undefined && !isDelegationSigned) {
+      return "Sign Delegation"
+    }
+    if (isCurrentlyClaiming) {
+      return "Claiming..."
+    }
+    return "Claim"
+  }, [isCurrentlyClaiming, isDelegationSigned, selectedDelegate.address])
+
+  const buttonText = useMemo(
+    () => [
+      "Get started",
+      "Continue",
+      "Continue",
+      "Continue",
+      lastStepButtonText,
+    ],
+    [lastStepButtonText]
+  )
+
+  if (isCurrentlyClaiming) {
+    showSuccess()
+  }
   const handleClick = useCallback(async () => {
-    if (buttonText[step - 1] === "Claim") {
-      if (selectedDelegate) {
-        dispatch(signTokenDelegationData())
-        history.push("/signData")
-        return
-      }
-      dispatch(claimRewards())
-      history.push("/signTransaction")
-      // showSuccess()
+    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
+    // FIXME proper transaction queueing is in effect.
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    if (buttonText[step - 1] === "Sign Delegation") {
+      dispatch(signTokenDelegationData())
+      history.push("/sign-data")
+    } else if (buttonText[step - 1] === "Claim") {
+      dispatch(claimRewards(claimState))
+      history.push("/sign-transaction")
     } else {
       advanceStep()
     }
-  }, [
-    buttonText,
-    step,
-    // showSuccess,
-    advanceStep,
-    selectedDelegate,
-    dispatch,
-    history,
-  ])
+  }, [buttonText, step, advanceStep, dispatch, history, claimState])
+
+  const handleProgressStepClick = (s: number) => {
+    setStep(s)
+    dispatch(setClaimStep(s))
+  }
 
   return (
     <footer>
       <div className="steps">
         <SharedProgressIndicator
           activeStep={step}
-          onProgressStepClicked={(s) => setStep(s)}
+          onProgressStepClicked={(s) => handleProgressStepClick(s)}
           numberOfSteps={buttonText.length}
         />
       </div>
-
-      <SharedButton type="primary" size="medium" onClick={handleClick}>
+      <SharedButton
+        type="primary"
+        size="medium"
+        onClick={handleClick}
+        isDisabled={isCurrentlyClaiming}
+      >
         {buttonText[step - 1]}
       </SharedButton>
       <style jsx>

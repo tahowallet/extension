@@ -9,7 +9,7 @@ export class ClaimDatabase extends Dexie {
     super("tally/claim")
 
     this.version(1).stores({
-      claim: "&address",
+      claim: "&account",
     })
 
     this.on("populate", (tx: Transaction) => {
@@ -17,10 +17,10 @@ export class ClaimDatabase extends Dexie {
     })
   }
 
-  async getClaim(address: string): Promise<Eligible> {
+  async getClaim(account: string): Promise<Eligible> {
     // Replace this with logic for user selected address
     const result = await this.claim.get({
-      address,
+      account,
     })
 
     // TODO: Clean up this type

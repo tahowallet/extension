@@ -1,12 +1,9 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
-import {
-  toFixedPointNumber,
-  multiplyByFloat,
-  convertFixedPointNumber,
-} from "@tallyho/tally-background/lib/fixed-point"
-import { Redirect } from "react-router-dom"
-import { useBackgroundSelector } from "../../hooks"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
+import { advanceClaimStep } from "@tallyho/tally-background/redux-slices/claim"
+import { Redirect, useHistory } from "react-router-dom"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
 import ClaimReferral from "../../components/Claim/ClaimReferral"
 import ClaimReferralByUser from "../../components/Claim/ClaimReferralByUser"
@@ -16,9 +13,31 @@ import ClaimReview from "../../components/Claim/ClaimReview"
 import ClaimFooter from "../../components/Claim/ClaimFooter"
 import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalContent"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
+import { tallyTokenDecimalDigits } from "../../utils/constants"
 
 export default function Eligible(): ReactElement {
-  const [step, setStep] = useState(1)
+  const dispatch = useBackgroundDispatch()
+  const { delegates, DAOs, claimAmount, claimStep } = useBackgroundSelector(
+    (state) => {
+      return {
+        delegates: state.claim.delegates,
+        DAOs: state.claim.DAOs,
+        claimAmount:
+          state.claim?.eligibility &&
+          fromFixedPointNumber(
+            {
+              amount: BigInt(Number(state.claim?.eligibility?.amount)) || 0n,
+              decimals: tallyTokenDecimalDigits,
+            },
+            0
+          ),
+        claimStep: state.claim.claimStep,
+      }
+    }
+  )
+
+  const history = useHistory()
+  const [step, setStep] = useState(claimStep)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
   const { accountData } = useBackgroundSelector(
@@ -27,14 +46,6 @@ export default function Eligible(): ReactElement {
   const hasAccounts = useBackgroundSelector(
     (state) => Object.keys(state.account.accountsData).length > 0
   )
-
-  const { delegates, DAOs, claimAmountHex } = useBackgroundSelector((state) => {
-    return {
-      delegates: state.claim.delegates,
-      DAOs: state.claim.DAOs,
-      claimAmountHex: state.claim?.eligibility?.earnings,
-    }
-  })
 
   if (!hasAccounts) {
     return <Redirect to="/onboarding/infoIntro" />
@@ -46,26 +57,20 @@ export default function Eligible(): ReactElement {
 
   const advanceStep = () => {
     setStep(step + 1)
+    if (step < 5) {
+      dispatch(advanceClaimStep())
+    }
   }
 
   const BONUS_PERCENT = 0.05
-  if (!claimAmountHex) return <></>
+  if (!claimAmount) return <></>
 
-  const fixedPointClaimEarnings = toFixedPointNumber(Number(claimAmountHex), 18)
+  const claimAmountWithBonus = claimAmount + claimAmount * BONUS_PERCENT
 
-  const fixedPointClaimEarningsWithBonus = {
-    amount:
-      fixedPointClaimEarnings.amount +
-      multiplyByFloat(fixedPointClaimEarnings, BONUS_PERCENT),
-    decimals: fixedPointClaimEarnings.decimals,
+  const handleSuccessModalClose = () => {
+    setShowSuccessStep(false)
+    history.push("/")
   }
-
-  const claimAmount = Number(
-    convertFixedPointNumber(fixedPointClaimEarnings, 0).amount
-  )
-  const claimAmountWithBonus = Number(
-    convertFixedPointNumber(fixedPointClaimEarningsWithBonus, 0).amount
-  )
 
   return (
     <div className="wrap">
@@ -75,9 +80,7 @@ export default function Eligible(): ReactElement {
 
       <SharedSlideUpMenu
         isOpen={showSuccessStep}
-        close={() => {
-          setShowSuccessStep(false)
-        }}
+        close={handleSuccessModalClose}
         size="large"
       >
         <ClaimSuccessModalContent />
@@ -93,11 +96,7 @@ export default function Eligible(): ReactElement {
           style={{ marginLeft: -384 * (step - 1) }}
         >
           <ClaimIntro claimAmount={claimAmount} />
-          <ClaimReferral
-            DAOs={DAOs}
-            claimAmount={claimAmount}
-            claimAmountWithBonus={claimAmountWithBonus}
-          />
+          <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
           <ClaimReferralByUser claimAmount={claimAmount} />
           <ClaimDelegate
             delegates={delegates}

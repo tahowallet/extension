@@ -1,5 +1,6 @@
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
+import { BigNumber } from "ethers"
 
 import {
   EIP1193Error,
@@ -119,7 +120,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.chainService.ethereumNetwork.chainID
       case "eth_blockNumber":
       case "eth_call":
-      case "eth_estimateGas":
       case "eth_feeHistory":
       case "eth_gasPrice":
       case "eth_getBalance":
@@ -194,6 +194,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           messageType: parsedInfo.type,
           rawSigningData: asciiSigningData,
         } as SignDataRequest)
+      case "eth_estimateGas":
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":

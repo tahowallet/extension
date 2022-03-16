@@ -50,6 +50,7 @@ import type {
 } from "../enrichment"
 import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
+import { USE_MAINNET_FORK } from "../../features/features"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -595,6 +596,7 @@ export default class ChainService extends BaseService<Events> {
     const estimate = await this.providers.ethereum.estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
+
     // Add 10% more gas as a safety net
     const uppedEstimate = estimate.add(estimate.div(10))
     return BigInt(uppedEstimate.toString())
