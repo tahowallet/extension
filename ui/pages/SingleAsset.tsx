@@ -93,21 +93,25 @@ export default function SingleAsset(): ReactElement {
                 symbol={asset?.symbol}
               />
               <span className="asset_name">{symbol}</span>
-              <SharedTooltip
-                width={155}
-                IconComponent={() => (
-                  <a
-                    className="new_tab_link"
-                    href="https://etherscan.io/token/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="icon_new_tab" />
-                  </a>
-                )}
-              >
-                View asset on Etherscan
-              </SharedTooltip>
+              {contractAddress ? (
+                <SharedTooltip
+                  width={155}
+                  IconComponent={() => (
+                    <a
+                      className="new_tab_link"
+                      href={`https://etherscan.io/token/${contractAddress}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <div className="icon_new_tab" />
+                    </a>
+                  )}
+                >
+                  View asset on Etherscan
+                </SharedTooltip>
+              ) : (
+                <></>
+              )}
             </div>
             <div className="balance">{localizedDecimalAmount}</div>
             {typeof localizedMainCurrencyAmount !== "undefined" ? (
