@@ -14,7 +14,8 @@ import {
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
 } from "../../networks"
-import { FungibleAsset } from "../../assets"
+import { USE_MAINNET_FORK } from "../../features/features"
+import { FORK } from "../../constants"
 
 /**
  * Parse a block as returned by a polling provider.
@@ -132,7 +133,7 @@ export function ethersTransactionFromSignedTransaction(
     from: tx.from,
     data: tx.input || "",
     type: tx.type,
-    chainId: parseInt(tx.network.chainID, 10),
+    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
@@ -183,7 +184,6 @@ export function transactionFromEthersTransaction(
     blockNumber?: number
     type?: number | null
   },
-  asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
@@ -210,7 +210,7 @@ export function transactionFromEthersTransaction(
     blockHash: tx.blockHash || null,
     blockHeight: tx.blockNumber || null,
     network,
-    asset,
+    asset: network.baseAsset,
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {

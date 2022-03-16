@@ -13,6 +13,10 @@ import SharedSelect, { Option } from "../Shared/SharedSelect"
 // TODO make this network specific
 const initialDerivationPaths: Option[] = [
   {
+    value: "m/44'/60'/x'/0/0",
+    label: "Ledger Live",
+  },
+  {
     value: "m/44'/60'/0'/0",
     label: "Ethereum",
   },

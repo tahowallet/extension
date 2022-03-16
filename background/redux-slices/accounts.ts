@@ -17,7 +17,7 @@ export const enum AccountType {
   ReadOnly = "read-only",
   Imported = "imported",
   Ledger = "ledger",
-  NewSeed = "newSeed",
+  Internal = "internal",
 }
 
 const availableDefaultNames = [
@@ -144,6 +144,22 @@ const accountSlice = createSlice({
             ...state,
             accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
           }
+    },
+    deleteAccount: (
+      state,
+      { payload: accountToRemove }: { payload: string }
+    ) => {
+      if (!state.accountsData[accountToRemove]) {
+        return state
+      }
+      // Immutably remove the account passed in
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const { [accountToRemove]: _, ...withoutAccountToRemove } =
+        state.accountsData
+      return {
+        ...state,
+        accountsData: withoutAccountToRemove,
+      }
     },
     updateAccountBalance: (
       immerState,
@@ -283,5 +299,13 @@ export const addAccountByName = createBackgroundAsyncThunk(
   "account/addAccountByName",
   async (nameNetwork: NameOnNetwork, { extra: { main } }) => {
     await main.addAccountByName(nameNetwork)
+  }
+)
+
+export const removeAccount = createBackgroundAsyncThunk(
+  "account/removeAccount",
+  async (address: HexString, { dispatch, extra: { main } }) => {
+    dispatch(accountSlice.actions.deleteAccount(address))
+    main.removeAccount(address, { type: "keyring" })
   }
 )

@@ -10,13 +10,18 @@ import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
-import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
+import {
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../hooks"
+import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
+import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 
 type WalletTypeInfo = {
   title: string
@@ -32,8 +37,8 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     title: "Import",
     icon: "./images/imported@2x.png",
   },
-  [AccountType.NewSeed]: {
-    title: "Tally",
+  [AccountType.Internal]: {
+    title: "Tally Ho",
     icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
   },
   [AccountType.Ledger]: {
@@ -171,7 +176,7 @@ export default function AccountsNotificationPanelAccounts({
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
   const accountTypes = [
-    AccountType.NewSeed,
+    AccountType.Internal,
     AccountType.Imported,
     AccountType.ReadOnly,
   ]
@@ -211,7 +216,7 @@ export default function AccountsNotificationPanelAccounts({
                     accountType={accountType}
                     walletNumber={idx + 1}
                     onClickAddAddress={
-                      accountType === "imported" || accountType === "newSeed"
+                      accountType === "imported" || accountType === "internal"
                         ? () => {
                             if (accountTotalsByKeyringId[0].keyringId) {
                               dispatch(
@@ -226,24 +231,51 @@ export default function AccountsNotificationPanelAccounts({
                   />
                   <ul>
                     {accountTotalsByKeyringId.map((accountTotal) => {
-                      const lowerCaseAddress =
-                        accountTotal.address.toLocaleLowerCase()
+                      const normalizedAddress = normalizeEVMAddress(
+                        accountTotal.address
+                      )
+
+                      const isSelected = sameEVMAddress(
+                        normalizedAddress,
+                        selectedAccountAddress
+                      )
+
                       return (
-                        <li key={lowerCaseAddress}>
+                        <li
+                          key={normalizedAddress}
+                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                          // from affecting the hover state of this li.
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => {
-                              updateCurrentAccount(lowerCaseAddress)
+                              updateCurrentAccount(normalizedAddress)
                             }}
                           >
-                            <SharedPanelAccountItem
-                              key={lowerCaseAddress}
+                            <SharedAccountItemSummary
+                              key={normalizedAddress}
                               accountTotal={accountTotal}
-                              isSelected={
-                                lowerCaseAddress === selectedAccountAddress
-                              }
-                              hideMenu
-                            />
+                              isSelected={isSelected}
+                            >
+                              <AccountItemOptionsMenu
+                                accountTotal={accountTotal}
+                                address={accountTotal.address}
+                              />
+                            </SharedAccountItemSummary>
                           </button>
                         </li>
                       )
@@ -261,7 +293,7 @@ export default function AccountsNotificationPanelAccounts({
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-          linkTo="/onboarding/addWallet"
+          linkTo="/onboarding/add-wallet"
         >
           Add Wallet
         </SharedButton>
@@ -280,9 +312,6 @@ export default function AccountsNotificationPanelAccounts({
             width: 100%;
             box-sizing: border-box;
             padding: 8px 0px 8px 24px;
-          }
-          li:hover {
-            background-color: var(--hunter-green);
           }
           footer {
             width: 100%;

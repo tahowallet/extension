@@ -19,6 +19,7 @@
   --white: #faf8f1;
 
   --error: #e84855;
+  --error-80: #f18c8f;
   --error-20: #e9cfcf;
 
   --success: #22c480;
@@ -44,6 +45,12 @@ body {
   color: #fff;
   font-size: 16px;
   background-color: var(--hunter-green);
+}
+
+body.popup {
+  width: 384px;
+  height: 594px;
+  scrollbar-width: none;
 }
 
 a {
@@ -132,4 +139,3 @@ label {
   opacity: 60%;
   background-color: var(--green-120);
 }
-

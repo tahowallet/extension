@@ -174,7 +174,7 @@ export default function Send(): ReactElement {
                 hasError
               }
               linkTo={{
-                pathname: "/signTransaction",
+                pathname: "/sign-transaction",
                 state: {
                   redirectTo: {
                     path: "/singleAsset",
