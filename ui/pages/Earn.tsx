@@ -1,37 +1,49 @@
-import { AnyAsset } from "@tallyho/tally-background/assets"
-import { HexString } from "@tallyho/tally-background/types"
+import {
+  AvailableVault,
+  selectAvailableVaults,
+  selectLockedValues,
+  selectTotalLockedValue,
+  updateEarnedOnDepositedPools,
+  updateLockedValues,
+} from "@tallyho/tally-background/redux-slices/earn"
 
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 type EarnCardProps = {
-  asset: (AnyAsset & { contractAddress: HexString }) | undefined
+  vault: AvailableVault
 }
 
-function EarnCard({ asset }: EarnCardProps) {
+function EarnCard({ vault }: EarnCardProps) {
+  const lockedValues = useBackgroundSelector(selectLockedValues)
+  const currentVault = lockedValues.find(
+    (lockedValue) => lockedValue.vaultAddress === vault?.contractAddress
+  )
+
   return (
     <Link
       to={{
         pathname: "/earn/deposit",
         state: {
-          asset,
+          vault,
         },
       }}
       className="earn"
     >
       <div className="card">
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" symbol={asset?.symbol} />
+          <SharedAssetIcon size="large" symbol={vault?.symbol} />
         </div>
-        <span className="token_name">{asset?.symbol}</span>
+        <span className="token_name">{vault?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
         <span className="apy_percent">250%</span>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
-          <div className="tvl">$22.800.322</div>
+          <div className="tvl">${Number(currentVault?.lockedValue)}</div>
         </div>
         <div className="divider" />
         <div className="info">
@@ -135,18 +147,14 @@ function EarnCard({ asset }: EarnCardProps) {
 export default function Earn(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
-  const assets = [
-    {
-      name: "Dai Token",
-      symbol: "DAI",
-      contractAddress: "0x6b175474e89094c44da98b954eedeac495271d0f",
-    } as AnyAsset & { contractAddress: HexString },
-    {
-      name: "Keep",
-      symbol: "KEEP",
-      contractAddress: "0x85eee30c52b0b379b046fb0f85f4f3dc3009afec",
-    } as AnyAsset & { contractAddress: HexString },
-  ]
+  const dispatch = useBackgroundDispatch()
+  const availableVaults = useBackgroundSelector(selectAvailableVaults)
+  const totalTVL = useBackgroundSelector(selectTotalLockedValue)
+
+  useEffect(() => {
+    dispatch(updateEarnedOnDepositedPools())
+    dispatch(updateLockedValues())
+  }, [dispatch])
 
   return (
     <>
@@ -154,7 +162,8 @@ export default function Earn(): ReactElement {
         <div className="left">
           <div className="pre_title">Total value locked</div>
           <div className="balance">
-            <span className="currency_sign">$</span>23,928,292
+            <span className="currency_sign">$</span>
+            {totalTVL || "0"}
           </div>
         </div>
         <div className="right" />
@@ -167,9 +176,9 @@ export default function Earn(): ReactElement {
       {panelNumber === 0 ? (
         <section className="standard_width">
           <ul className="cards_wrap">
-            {assets.map((asset) => (
+            {availableVaults?.map((vault) => (
               <li>
-                <EarnCard asset={asset} />
+                <EarnCard vault={vault} />
               </li>
             ))}
           </ul>
