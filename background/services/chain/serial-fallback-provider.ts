@@ -43,8 +43,8 @@ function waitAnd<T, E extends Promise<T>>(
  * ms to back off before making the next attempt.
  */
 function backedOffMs(backoffCount: number): number {
-  const backoffSlotStart = BASE_BACKOFF_MS ** backoffCount
-  const backoffSlotEnd = BASE_BACKOFF_MS ** (backoffCount + 1)
+  const backoffSlotStart = BASE_BACKOFF_MS ** Math.sqrt(backoffCount)
+  const backoffSlotEnd = BASE_BACKOFF_MS ** Math.sqrt(backoffCount + 1)
 
   return backoffSlotStart + Math.random() * (backoffSlotEnd - backoffSlotStart)
 }
@@ -54,9 +54,7 @@ function backedOffMs(backoffCount: number): number {
  * either closing or already closed. Ethers does not provide direct access to
  * this information, nor does it attempt to reconnect in these cases.
  */
-function isClosedOrClosingWebSocketProvider(
-  provider: JsonRpcProvider
-): boolean {
+function isNotConnectedWebSocketProvider(provider: JsonRpcProvider): boolean {
   if (provider instanceof WebSocketProvider) {
     // Digging into the innards of Ethers here because there's no
     // other way to get access to the WebSocket connection situation.
@@ -65,7 +63,8 @@ function isClosedOrClosingWebSocketProvider(
 
     return (
       webSocket.readyState === WebSocket.CLOSING ||
-      webSocket.readyState === WebSocket.CLOSED
+      webSocket.readyState === WebSocket.CLOSED ||
+      webSocket.readyState === WebSocket.CONNECTING
     )
   }
 
@@ -149,11 +148,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   async send(method: string, params: unknown): Promise<unknown> {
     try {
-      if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
+      if (isNotConnectedWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
         throw new Error("WebSocket is already in CLOSING")
       }
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return await this.currentProvider.send(method, params as any)
     } catch (error) {
@@ -199,8 +197,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             params
           )
 
-          return await waitAnd(backoff, async () => {
-            if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
+          return waitAnd(5_000, async () => {
+            if (isNotConnectedWebSocketProvider(this.currentProvider)) {
               await this.reconnectProvider()
             }
 
@@ -431,6 +429,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * has been somehow set out of range, resets it to 0.
    */
   private async reconnectProvider() {
+    this.disconnectCurrentProvider()
     if (this.currentProviderIndex >= this.providerCreators.length) {
       this.currentProviderIndex = 0
     }
@@ -455,6 +454,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async resubscribe() {
     logger.debug("Resubscribing subscriptions...")
 
+    if (isNotConnectedWebSocketProvider(this.currentProvider)) {
+      logger.debug("Attempting to resubscribe while websocket is disconnected")
+      return
+    }
     if (this.currentProvider instanceof WebSocketProvider) {
       const provider = this.currentProvider as WebSocketProvider
 
