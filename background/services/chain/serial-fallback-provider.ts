@@ -5,6 +5,7 @@ import {
   Listener,
   WebSocketProvider,
 } from "@ethersproject/providers"
+import { Logger } from "ethers/lib/utils"
 import { MINUTE } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
@@ -384,6 +385,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       "."
     )
     if (this.currentProvider instanceof WebSocketProvider) {
+      const disconnectedError = Logger.globalLogger().makeError(
+        "WebSocket is already in CLOSING",
+        Logger.errors.SERVER_ERROR
+      )
+      // eslint-disable-next-line no-underscore-dangle
+      Object.values(this.currentProvider._requests).forEach((r) =>
+        r.callback(disconnectedError, null)
+      )
       this.currentProvider.destroy()
     } else {
       // For non-WebSocket providers, kill all subscriptions so the listeners
