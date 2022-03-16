@@ -141,6 +141,7 @@ export default function SignTransaction({
           reviewPanel={textualInfoBlock}
           extraPanel={<SignTransactionPanelSwitcher />}
           isTransactionSigning={isTransactionSigning}
+          isArbitraryDataSigningRequired={!!transactionDetails.input}
         />
       )}
     </SignTransactionInfoProvider>

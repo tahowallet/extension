@@ -73,6 +73,7 @@ export default function SignData(): ReactElement {
       reviewPanel={<SignDataDetailPanel />}
       isTransactionSigning={isTransactionSigning}
       extraPanel={null}
+      isArbitraryDataSigningRequired={false}
     />
   )
 }
