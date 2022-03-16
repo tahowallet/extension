@@ -198,7 +198,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             params
           )
 
-          return waitAnd(5_000, async () => {
+          return waitAnd(backoff, async () => {
             if (isNotConnectedWebSocketProvider(this.currentProvider)) {
               await this.reconnectProvider()
             }
