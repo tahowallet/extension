@@ -14,7 +14,7 @@ export default function LedgerImportDone({
         <>
           Congratulations!
           <br />
-          You can open Tally now.
+          You can open Tally Ho now.
         </>
       }
       subHeading="Selected accounts were succesfully connected."

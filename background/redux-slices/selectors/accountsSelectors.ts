@@ -19,6 +19,10 @@ import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 import { truncateAddress } from "../../lib/utils"
 import { selectAddressSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../signing"
+import {
+  selectKeyringsByAddresses,
+  selectSourcesByAddress,
+} from "./keyringsSelectors"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -171,6 +175,7 @@ export type AccountTotal = {
   address: string
   shortenedAddress: string
   accountType: AccountType
+  keyringId: string | null
   signingMethod: SigningMethod | null
   name?: string
   avatarURL?: string
@@ -187,34 +192,61 @@ const signingMethodTypeToAccountType: Record<
   ledger: AccountType.Ledger,
 }
 
+const getAccountType = (
+  address: string,
+  signingMethod: SigningMethod,
+  addressSources: {
+    [address: string]: "import" | "internal"
+  }
+): AccountType => {
+  if (signingMethod == null) {
+    return AccountType.ReadOnly
+  }
+  if (signingMethodTypeToAccountType[signingMethod.type] === "ledger") {
+    return AccountType.Ledger
+  }
+  if (addressSources[address] === "import") {
+    return AccountType.Imported
+  }
+  return AccountType.Internal
+}
+
 export const selectAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectAddressSigningMethods,
+  selectKeyringsByAddresses,
+  selectSourcesByAddress,
   selectMainCurrencySymbol,
   (
     accounts,
     assets,
     signingAccounts,
+    keyringsByAddresses,
+    sourcesByAddress,
     mainCurrencySymbol
   ): CategorizedAccountTotals => {
     // TODO: here
+
     return Object.entries(accounts.accountsData)
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
         const signingMethod = signingAccounts[address] ?? null
+        const keyringId = keyringsByAddresses[address]?.id
 
-        const accountType =
-          signingMethod === null
-            ? AccountType.ReadOnly
-            : signingMethodTypeToAccountType[signingMethod.type]
+        const accountType = getAccountType(
+          address,
+          signingMethod,
+          sourcesByAddress
+        )
 
         if (accountData === "loading") {
           return {
             address,
             shortenedAddress,
             accountType,
+            keyringId,
             signingMethod,
           }
         }
@@ -251,6 +283,7 @@ export const selectAccountTotalsByCategory = createSelector(
           address,
           shortenedAddress,
           accountType,
+          keyringId,
           signingMethod,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,

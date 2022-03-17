@@ -4,7 +4,7 @@
      src="./github_cover@2x.png"
      width="630" />
 
-[Tally](https://blog.tally.cash/a-community-owned-wallet-for-the-new-internet/)
+[Tally Ho](https://blog.tally.cash/a-community-owned-wallet-for-the-new-internet/)
 is a community owned and operated Web3 wallet, built as a
 [browser extension](https://browserext.github.io/browserext/).
 
@@ -18,7 +18,7 @@ spirit of community ownership.
 
 We can do better.
 
-Tally will be
+Tally Ho will be
 
 - Fairly launched ⚖️
 - Sustainably aligned with users 🤲
@@ -126,9 +126,21 @@ Before committing code to this repository or a fork/branch that you intend to
 submit for inclusion, please make sure you've installed the pre-commit hooks
 by running `pre-commit install`. The macOS setup script does this for you.
 
+#### Local mainnet fork setup for development
+
+For more detailed description see `./dev-utils/local-chain/README.md`
+
+Quick Start:
+
+```
+$ cd dev-utils/local-chain
+$ yarn install
+$ yarn start
+```
+
 ### Commit signing
 
-Commits on the Tally repository are all required to be signed.
+Commits on the Tally Ho repository are all required to be signed.
 No PR will be merged if it has unsigned commits. See the
 [GitHub documentation on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 to get it set up.

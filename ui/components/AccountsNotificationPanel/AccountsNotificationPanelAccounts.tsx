@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
+  AccountTotal,
   selectAccountTotalsByCategory,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -9,13 +10,18 @@ import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
-import SharedPanelAccountItem from "../Shared/SharedPanelAccountItem"
+import {
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../hooks"
+import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
+import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 
 type WalletTypeInfo = {
   title: string
@@ -28,8 +34,12 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {
-    title: "Full access",
+    title: "Import",
     icon: "./images/imported@2x.png",
+  },
+  [AccountType.Internal]: {
+    title: "Tally Ho",
+    icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
   },
   [AccountType.Ledger]: {
     title: "Full access via Ledger", // FIXME: check copy against UI specs
@@ -40,9 +50,11 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
 function WalletTypeHeader({
   accountType,
   onClickAddAddress,
+  walletNumber,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
+  walletNumber?: number
 }) {
   const { title, icon } = walletTypeDetails[accountType]
   const history = useHistory()
@@ -53,7 +65,7 @@ function WalletTypeHeader({
       <header className="wallet_title">
         <h2 className="left">
           <div className="icon" />
-          {title}
+          {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
         </h2>
         {onClickAddAddress ? (
           <div className="right">
@@ -143,10 +155,6 @@ export default function AccountsNotificationPanelAccounts({
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
-  const firstKeyringId = useBackgroundSelector((state) => {
-    return state.keyrings.keyrings[0]?.id
-  })
-
   const updateCurrentAccount = (address: string) => {
     setPendingSelectedAddress(address)
     dispatch(
@@ -167,7 +175,11 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
-  const accountTypes = [AccountType.Imported, AccountType.ReadOnly]
+  const accountTypes = [
+    AccountType.Internal,
+    AccountType.Imported,
+    AccountType.ReadOnly,
+  ]
 
   if (!HIDE_IMPORT_LEDGER) {
     accountTypes.push(AccountType.Ledger)
@@ -180,48 +192,98 @@ export default function AccountsNotificationPanelAccounts({
         .map((accountType) => {
           // Known-non-null due to above filter.
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const accountTypeTotals = accountTotals[accountType]!
+          const accountTotalsByType = accountTotals[accountType]!.reduce(
+            (acc, accountTypeTotal) => {
+              if (accountTypeTotal.keyringId) {
+                acc[accountTypeTotal.keyringId] ??= []
+                // Known-non-null due to above ??=
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                acc[accountTypeTotal.keyringId].push(accountTypeTotal)
+              } else {
+                acc.readOnly ??= []
+                acc.readOnly.push(accountTypeTotal)
+              }
+              return acc
+            },
+            {} as { [keyringId: string]: AccountTotal[] }
+          )
 
-          return (
-            <section key={accountType}>
-              <WalletTypeHeader
-                accountType={accountType}
-                onClickAddAddress={
-                  accountType === "imported"
-                    ? () => {
-                        if (firstKeyringId) {
-                          dispatch(deriveAddress(firstKeyringId))
-                        }
-                      }
-                    : undefined
-                }
-              />
-              <ul>
-                {accountTypeTotals.map((accountTotal) => {
-                  const lowerCaseAddress =
-                    accountTotal.address.toLocaleLowerCase()
-                  return (
-                    <li key={lowerCaseAddress}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateCurrentAccount(lowerCaseAddress)
-                        }}
-                      >
-                        <SharedPanelAccountItem
-                          key={lowerCaseAddress}
-                          accountTotal={accountTotal}
-                          isSelected={
-                            lowerCaseAddress === selectedAccountAddress
+          return Object.values(accountTotalsByType).map(
+            (accountTotalsByKeyringId, idx) => {
+              return (
+                <section key={accountType}>
+                  <WalletTypeHeader
+                    accountType={accountType}
+                    walletNumber={idx + 1}
+                    onClickAddAddress={
+                      accountType === "imported" || accountType === "internal"
+                        ? () => {
+                            if (accountTotalsByKeyringId[0].keyringId) {
+                              dispatch(
+                                deriveAddress(
+                                  accountTotalsByKeyringId[0].keyringId
+                                )
+                              )
+                            }
                           }
-                          hideMenu
-                        />
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
+                        : undefined
+                    }
+                  />
+                  <ul>
+                    {accountTotalsByKeyringId.map((accountTotal) => {
+                      const normalizedAddress = normalizeEVMAddress(
+                        accountTotal.address
+                      )
+
+                      const isSelected = sameEVMAddress(
+                        normalizedAddress,
+                        selectedAccountAddress
+                      )
+
+                      return (
+                        <li
+                          key={normalizedAddress}
+                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                          // from affecting the hover state of this li.
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateCurrentAccount(normalizedAddress)
+                            }}
+                          >
+                            <SharedAccountItemSummary
+                              key={normalizedAddress}
+                              accountTotal={accountTotal}
+                              isSelected={isSelected}
+                            >
+                              <AccountItemOptionsMenu
+                                accountTotal={accountTotal}
+                                address={accountTotal.address}
+                              />
+                            </SharedAccountItemSummary>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )
+            }
           )
         })}
       <footer>
@@ -231,7 +293,7 @@ export default function AccountsNotificationPanelAccounts({
           icon="plus"
           iconSize="medium"
           iconPosition="left"
-          linkTo="/onboarding/addWallet"
+          linkTo="/onboarding/add-wallet"
         >
           Add Wallet
         </SharedButton>
@@ -250,9 +312,6 @@ export default function AccountsNotificationPanelAccounts({
             width: 100%;
             box-sizing: border-box;
             padding: 8px 0px 8px 24px;
-          }
-          li:hover {
-            background-color: var(--hunter-green);
           }
           footer {
             width: 100%;

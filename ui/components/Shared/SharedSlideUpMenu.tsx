@@ -13,7 +13,9 @@ const SLIDE_TRANSITION_MS = 445
 
 interface Props {
   isOpen: boolean
-  close: () => void
+  close: (
+    e: MouseEvent | TouchEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => void
   children: React.ReactNode
   customSize?: string
   size: SharedSlideUpMenuSize
@@ -60,7 +62,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         <button
           type="button"
           className="icon_close"
-          onClick={close}
+          onClick={(e) => {
+            close(e)
+          }}
           aria-label="Close menu"
         />
         {displayChildren}

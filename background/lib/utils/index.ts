@@ -167,3 +167,14 @@ export function isValidAddress(address: string, network: Network): boolean {
   // TODO Add bitcoin address checksum
   return utils.isAddress(address)
 }
+
+/**
+ * Converts a string of hexidecimals bytes to ascii text
+ */
+export const hexToAscii = (hex_: string) => {
+  const hex = hex_.toString() // force conversion
+  let str = ""
+  for (let i = 0; i < hex.length; i += 2)
+    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16))
+  return str.replace("\x00", "")
+}

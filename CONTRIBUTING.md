@@ -1,10 +1,10 @@
-# Tally Contribution Guide
+# Tally Ho Contribution Guide
 
 👍🎉 First off, thanks for taking the time to contribute! 🎉👍 Contributions
 are welcome from anyone on the internet, and even the smallest of fixes are
 appreciated!
 
-The following is a set of guidelines for contributing to Tally and its
+The following is a set of guidelines for contributing to Tally Ho and its
 packages. These are mostly guidelines, not rules. Use your best judgment, and
 feel free to propose changes to this document in a pull request. While the team
 works towards a first release, bigger contributions will be slow-rolled or
@@ -13,8 +13,8 @@ to them very soon! More below.
 
 ## Deciding What to Work On
 
-Tally is currently being built by a core team in collaboration with a community
-on the [Tally Community Discord server](https://chat.tally.cash). **Discord is
+Tally Ho is currently being built by a core team in collaboration with a community
+on the [Tally Ho Community Discord server](https://chat.tally.cash). **Discord is
 the right place to start discussions on new features and bugs.** The community
 on Discord, led by a few designated folks will help to funnel these into
 well-organized GitHub issues for features and bugs, as well as organize folks
@@ -23,7 +23,7 @@ will be charged with reviewing, critiquing, and ultimately merging new work.
 
 ### Short term: Limited Review
 
-In Q4 2021/Q1 2022, Tally is in a heads down sprint to a series of initial
+In Q4 2021/Q1 2022, Tally Ho is in a heads down sprint to a series of initial
 releases. This means PRs with feature contributions _may_ get closed because
 the team does not have time to review them properly. We still deeply appreciate
 these contributions, and are not planning on forgetting them! When PRs are
@@ -69,14 +69,14 @@ code base.
 
 ### Commit Signing
 
-Commits on the Tally repository are all required to be signed. No PR will be
+Commits on the Tally Ho repository are all required to be signed. No PR will be
 merged if it has unsigned commits. See the [GitHub documentation on commit
 signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 to get it set up.
 
 ### Continuous Integration
 
-Tally uses GitHub Actions for continuous integration. All Actions jobs
+Tally Ho uses GitHub Actions for continuous integration. All Actions jobs
 (including tests, linting) must be green to merge a PR.
 
 ### Pre-commit

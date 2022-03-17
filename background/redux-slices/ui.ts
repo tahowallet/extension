@@ -27,6 +27,7 @@ export type UIState = {
 export type Events = {
   snackbarMessage: string
   newDefaultWalletValue: boolean
+  refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
 }
 
@@ -133,6 +134,13 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     await emitter.emit("newSelectedAccount", addressNetwork)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
+  }
+)
+
+export const refreshBackgroundPage = createBackgroundAsyncThunk(
+  "ui/refreshBackgroundPage",
+  async () => {
+    await emitter.emit("refreshBackgroundPage", null)
   }
 )
 

@@ -18,7 +18,12 @@ import {
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
-import { SignTypedDataRequest } from "../../redux-slices/signing"
+import {
+  SignTypedDataRequest,
+  SignDataRequest,
+  parseSigningData,
+} from "../../redux-slices/signing"
+import { hexToAscii } from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -48,6 +53,7 @@ type Events = ServiceLifecycleEvents & {
     SignedEVMTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
+  signDataRequest: DAppRequestEvent<SignDataRequest, string>
   // connect
   // disconnet
   // account change
@@ -106,12 +112,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_signTypedData_v3":
       case "eth_signTypedData_v4":
         return this.signTypedData({
-          account: params[0],
+          account: params[0] as string,
           typedData: JSON.parse(params[1] as string),
-        } as SignTypedDataRequest)
+        })
       case "eth_chainId":
         return this.chainService.ethereumNetwork.chainID
-
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
@@ -178,6 +183,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           )
         )
       case "eth_sign": // --- important wallet methods ---
+      case "personal_sign":
+        return this.signData({
+          hexData: params[0] as string,
+          account: params[1] as string,
+        })
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
@@ -189,7 +199,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_getWork":
       case "eth_hashrate":
       case "eth_mining":
-      case "eth_personalSign":
       case "eth_submitHashrate":
       case "eth_submitWork":
       case "metamask_accountsChanged":
@@ -239,6 +248,30 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signTypedDataRequest", {
         payload: params,
+        resolver: resolve,
+        rejecter: reject,
+      })
+    })
+  }
+
+  private async signData({
+    hexData,
+    account,
+  }: {
+    hexData: string
+    account: string
+  }) {
+    const asciiData = hexToAscii(hexData)
+    const { data, type } = parseSigningData(asciiData)
+
+    return new Promise<string>((resolve, reject) => {
+      this.emitter.emit("signDataRequest", {
+        payload: {
+          account,
+          signingData: data,
+          messageType: type,
+          rawSigningData: asciiData,
+        },
         resolver: resolve,
         rejecter: reject,
       })

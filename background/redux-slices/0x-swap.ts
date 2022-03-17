@@ -3,7 +3,7 @@ import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { SmartContractFungibleAsset } from "../assets"
+import { FungibleAsset, SmartContractFungibleAsset } from "../assets"
 import logger from "../lib/logger"
 import {
   isValidSwapPriceResponse,
@@ -15,8 +15,8 @@ import { ERC20_ABI } from "../lib/erc20"
 import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
 
 interface SwapAssets {
-  sellAsset: SmartContractFungibleAsset
-  buyAsset: SmartContractFungibleAsset
+  sellAsset: SmartContractFungibleAsset | FungibleAsset
+  buyAsset: SmartContractFungibleAsset | FungibleAsset
 }
 
 type SwapAmount =
@@ -46,6 +46,10 @@ export interface SwapState {
 export const initialState: SwapState = {
   inProgressApprovalContract: undefined,
 }
+
+// The magic string used by the 0x API to signify we're dealing with ETH rather
+// than an ERC-20
+const ZEROX_ETH_SIGNIFIER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 
 const swapSlice = createSlice({
   name: "0x-swap",
@@ -91,10 +95,14 @@ const swapSlice = createSlice({
 const {
   setLatestQuoteRequest,
   setInProgressApprovalContract: setApprovalInProgress,
+} = swapSlice.actions
+
+export const {
+  setFinalSwapQuote,
+  clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
 } = swapSlice.actions
 
-export const { setFinalSwapQuote, clearSwapQuote } = swapSlice.actions
 export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
@@ -132,10 +140,15 @@ function build0xUrlFromSwapRequest(
     "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals
   )
 
-  // When available, use smart contract addresses. Once non-smart contract
-  // assets are added (e.g., ETH), switch to `.symbol` for those.
-  const sellToken = assets.sellAsset.contractAddress
-  const buyToken = assets.buyAsset.contractAddress
+  // When available, use smart contract addresses.
+  const sellToken =
+    "contractAddress" in assets.sellAsset
+      ? assets.sellAsset.contractAddress
+      : assets.sellAsset.symbol
+  const buyToken =
+    "contractAddress" in assets.buyAsset
+      ? assets.buyAsset.contractAddress
+      : assets.buyAsset.symbol
 
   // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
@@ -233,20 +246,24 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
     const quote = apiData
 
-    // Check if we have to approve the asset we want to swap.
-    const assetContract = new ethers.Contract(
-      quote.sellTokenAddress,
-      ERC20_ABI,
-      signer
-    )
-
-    const existingAllowance: BigNumber =
-      await assetContract.callStatic.allowance(
-        await signer.getAddress(),
-        quote.allowanceTarget
+    let needsApproval = false
+    // If we aren't selling ETH, check whether we need an approval to swap
+    // TODO Handle other non-ETH base assets
+    if (quote.sellTokenAddress !== ZEROX_ETH_SIGNIFIER) {
+      const assetContract = new ethers.Contract(
+        quote.sellTokenAddress,
+        ERC20_ABI,
+        signer
       )
 
-    const needsApproval = existingAllowance.lt(quote.sellAmount)
+      const existingAllowance: BigNumber =
+        await assetContract.callStatic.allowance(
+          await signer.getAddress(),
+          quote.allowanceTarget
+        )
+
+      needsApproval = existingAllowance.lt(quote.sellAmount)
+    }
 
     dispatch(setLatestQuoteRequest(quoteRequest))
 
@@ -299,9 +316,9 @@ export const approveTransfer = createBackgroundAsyncThunk(
       logger.debug("Approval transaction mined", receipt)
     } catch (error) {
       logger.error("Approval transaction failed: ", error)
+    } finally {
+      dispatch(clearApprovalInProgress())
     }
-
-    dispatch(clearApprovalInProgress())
   }
 )
 

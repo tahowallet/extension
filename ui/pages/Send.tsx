@@ -209,7 +209,7 @@ export default function Send(): ReactElement {
               size="large"
               isDisabled={Number(amount) === 0 || !!addressError || hasError}
               linkTo={{
-                pathname: "/signTransaction",
+                pathname: "/sign-transaction",
                 state: {
                   redirectTo: {
                     path: "/singleAsset",

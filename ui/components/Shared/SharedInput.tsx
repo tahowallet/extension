@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
 import { useRunOnFirstRender } from "../../hooks"
 
@@ -13,6 +13,8 @@ interface Props {
   onChange?: (value: string) => void
   onFocus?: () => void
   errorMessage?: string
+  autoFocus?: boolean
+  autoSelect?: boolean
 }
 
 export default function SharedInput(props: Props): ReactElement {
@@ -27,7 +29,19 @@ export default function SharedInput(props: Props): ReactElement {
     onFocus,
     value,
     errorMessage,
+    autoFocus = false,
+    autoSelect = false,
   } = props
+
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus()
+  }, [autoFocus])
+
+  useEffect(() => {
+    if (autoSelect) inputRef.current?.select()
+  }, [autoSelect])
 
   useRunOnFirstRender(() => {
     if (defaultValue) {
@@ -52,6 +66,7 @@ export default function SharedInput(props: Props): ReactElement {
         className={classNames({
           error: errorMessage,
         })}
+        ref={inputRef}
       />
       <label htmlFor={id}>{label}</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}

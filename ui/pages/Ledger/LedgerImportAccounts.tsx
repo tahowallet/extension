@@ -33,9 +33,14 @@ function usePageData({
   const paths: string[] = []
 
   const firstIndex = pageIndex * addressesPerPage
-  const lastIndex = (pageIndex + 1) * addressesPerPage
-  for (let i = firstIndex; i < lastIndex; i += 1) {
-    paths.push(`${parentPath}/${i}`)
+  const lastIndex = (pageIndex + 1) * addressesPerPage - 1
+  for (let i = firstIndex; i <= lastIndex; i += 1) {
+    if (parentPath.includes("x")) {
+      const formattedString = parentPath.slice().replace("x", `${i}`)
+      paths.push(formattedString)
+    } else {
+      paths.push(`${parentPath}/${i}`)
+    }
   }
 
   const items = paths.map((path) => {
