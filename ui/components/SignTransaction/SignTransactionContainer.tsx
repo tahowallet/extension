@@ -1,36 +1,44 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
-import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
+import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
+import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLedgersConnected"
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
-import { SigningLedgerState } from "./useSigningLedgerState"
+import { useSigningLedgerState } from "./useSigningLedgerState"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
   title,
-  children,
-  signingLedgerState,
-  isWaitingForHardware,
+  detailPanel,
+  reviewPanel,
+  extraPanel,
   confirmButtonLabel,
   handleConfirm,
   handleReject,
+  isTransactionSigning,
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
-  children: ReactNode
-  signingLedgerState: SigningLedgerState | null
-  isWaitingForHardware: boolean
+  detailPanel: ReactNode
+  reviewPanel: ReactNode
+  extraPanel: ReactNode
   confirmButtonLabel: ReactNode
   handleConfirm: () => void
   handleReject: () => void
+  isTransactionSigning: boolean
 }): ReactElement {
+  const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
-  const [panelNumber, setPanelNumber] = useState(0)
+
+  const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
+
+  const isLedgerSigning = signingMethod?.type === "ledger"
+  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   return (
     <section>
@@ -40,7 +48,9 @@ export default function SignTransactionContainer({
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
-      <div className="primary_info_card standard_width">{children}</div>
+      <div className="primary_info_card standard_width">
+        {isWaitingForHardware ? reviewPanel : detailPanel}
+      </div>
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
@@ -48,12 +58,7 @@ export default function SignTransactionContainer({
         </div>
       ) : (
         <>
-          <SharedPanelSwitcher
-            setPanelNumber={setPanelNumber}
-            panelNumber={panelNumber}
-            panelNames={["Details"]}
-          />
-          {panelNumber === 0 ? <SignTransactionDetailPanel /> : null}
+          {extraPanel}
           <div className="footer_actions">
             <SharedButton
               iconSize="large"
@@ -75,7 +80,7 @@ export default function SignTransactionContainer({
                     setSlideUpOpen(true)
                   }}
                 >
-                  Connect Ledger
+                  Check Ledger
                 </SharedButton>
               ) : (
                 <SharedButton
@@ -110,13 +115,20 @@ export default function SignTransactionContainer({
             signerAccountTotal={signerAccountTotal}
           />
         )}
+        {signingLedgerState === "multiple-ledgers-connected" && (
+          <SignTransactionMultipleLedgersConnected />
+        )}
+        {signingLedgerState === "activate-blind-signing" && (
+          <SignTransactionLedgerActivateBlindSigning />
+        )}
         {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>
       <style jsx>
         {`
           section {
             width: 100%;
-            height: 100%;
+            height: calc(100% - 80px);
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;

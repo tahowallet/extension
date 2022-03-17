@@ -19,12 +19,14 @@ export interface LedgerDeviceState {
   /** Accounts by path */
   accounts: Record<string, LedgerAccountState>
   status: LedgerConnectionStatus // FIXME: this should not be persisted
+  isBlindSigner?: boolean
 }
 
 export type LedgerState = {
   currentDeviceID: string | null
   /** Devices by ID */
   devices: Record<string, LedgerDeviceState>
+  usbDeviceCount: number
 }
 
 export type Events = {
@@ -51,6 +53,7 @@ export type Events = {
 export const initialState: LedgerState = {
   currentDeviceID: null,
   devices: {},
+  usbDeviceCount: 0,
 }
 
 const ledgerSlice = createSlice({
@@ -77,6 +80,7 @@ const ledgerSlice = createSlice({
         id: deviceID,
         accounts: {},
         status: "available",
+        isBlindSigner: false,
       }
     },
     setCurrentDevice: (
@@ -89,8 +93,14 @@ const ledgerSlice = createSlice({
     setDeviceConnectionStatus: (
       immerState,
       {
-        payload: { deviceID, status },
-      }: { payload: { deviceID: string; status: LedgerConnectionStatus } }
+        payload: { deviceID, status, isBlindSigner },
+      }: {
+        payload: {
+          deviceID: string
+          status: LedgerConnectionStatus
+          isBlindSigner?: boolean
+        }
+      }
     ) => {
       if (
         immerState.currentDeviceID === deviceID &&
@@ -98,10 +108,12 @@ const ledgerSlice = createSlice({
       ) {
         immerState.currentDeviceID = null
       }
-
       const device = immerState.devices[deviceID]
       if (!device) return
       device.status = status
+
+      if (typeof isBlindSigner === "undefined") return
+      device.isBlindSigner = isBlindSigner
     },
     addLedgerAccount: (
       immerState,
@@ -172,11 +184,21 @@ const ledgerSlice = createSlice({
       if (!account) return
       if (account.balance === null) account.balance = balance
     },
+    setUsbDeviceCount: (
+      immerState,
+      { payload: { usbDeviceCount } }: { payload: { usbDeviceCount: number } }
+    ) => {
+      immerState.usbDeviceCount = usbDeviceCount
+    },
   },
 })
 
-export const { resetLedgerState, setDeviceConnectionStatus, addLedgerAccount } =
-  ledgerSlice.actions
+export const {
+  resetLedgerState,
+  setDeviceConnectionStatus,
+  addLedgerAccount,
+  setUsbDeviceCount,
+} = ledgerSlice.actions
 
 export default ledgerSlice.reducer
 
@@ -199,9 +221,13 @@ export const fetchAddress = createBackgroundAsyncThunk(
     { deviceID, path }: { deviceID: string; path: string },
     { dispatch, extra: { main } }
   ) => {
-    dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
-    const address = await main.deriveLedgerAddress(path) // FIXME: deviceID is ignored
-    dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
+    try {
+      dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
+      const address = await main.deriveLedgerAddress(path) // FIXME: deviceID is ignored
+      dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
+    } catch (err) {
+      dispatch(ledgerSlice.actions.resetLedgerState())
+    }
   }
 )
 

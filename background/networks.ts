@@ -32,7 +32,7 @@ export type Network = {
  * networks.
  */
 export type NetworkSpecific = {
-  homeNetwork: Network
+  homeNetwork: AnyNetwork
 }
 
 /**
@@ -50,6 +50,11 @@ export type EVMNetwork = Network & {
   chainID: string
   family: "EVM"
 }
+
+/**
+ * Union type that allows narrowing to particular network subtypes.
+ */
+export type AnyNetwork = EVMNetwork
 
 /**
  * An EVM-style block identifier, including difficulty, block height, and
@@ -282,4 +287,19 @@ export type BlockEstimate = {
    * likelihood of inclusion.
    */
   maxFeePerGas: bigint
+}
+
+/**
+ * Tests whether two networks should be considered the same. Verifies family,
+ * chainID, and name.
+ */
+export function sameNetwork(
+  network1: AnyNetwork,
+  network2: AnyNetwork
+): boolean {
+  return (
+    network1.family === network2.family &&
+    network1.chainID === network2.chainID &&
+    network1.name === network2.name
+  )
 }

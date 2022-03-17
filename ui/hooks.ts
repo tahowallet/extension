@@ -5,6 +5,8 @@ import { useHistory } from "react-router-dom"
 
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
 import { RefObject, useState, useEffect, useRef } from "react"
+import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
+import { noopAction } from "@tallyho/tally-background/redux-slices/utils"
 
 export const useBackgroundDispatch = (): BackgroundDispatch =>
   useDispatch<BackgroundDispatch>()
@@ -44,6 +46,14 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   })
 
   return keyringStatus === "unlocked"
+}
+
+export function useIsSigningMethodLocked(
+  signingMethod: SigningMethod | null
+): boolean {
+  const needsKeyrings = signingMethod?.type === "keyring"
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
+  return needsKeyrings && !areKeyringsUnlocked
 }
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
@@ -165,4 +175,19 @@ export function useLocalStorage(
   }, [key, value])
 
   return [value, setValue]
+}
+
+/**
+ * Returns true once all pending redux updates scheduled before the first render
+ * (if any) have been applied, and false otherwise.
+ */
+export function useIsBackgroundSettled(): boolean {
+  const [settled, setSettled] = useState(false)
+  const dispatch = useBackgroundDispatch()
+  useEffect(() => {
+    Promise.resolve(dispatch(noopAction())).then(() => {
+      setSettled(true)
+    })
+  })
+  return settled
 }
