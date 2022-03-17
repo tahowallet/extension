@@ -61,6 +61,7 @@ const gasOptionFromEstimate = (
           2
         )
       : undefined
+  const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
 
   return {
     confidence: `${confidence}`,
@@ -69,7 +70,7 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
-    dollarValue: feeAssetAmount?.localizedMainCurrencyAmount ?? "-",
+    dollarValue: dollarValue ? `$${dollarValue}` : "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     price,
@@ -161,13 +162,16 @@ export default function NetworkSettingsSelect({
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
       let gasLimit = networkSettings.suggestedGasLimit
-      try {
-        gasLimit = BigInt(networkSettings.gasLimit)
-      } catch (error) {
-        logger.debug(
-          "Failed to parse network settings gas limit",
-          networkSettings.gasLimit
-        )
+
+      if (networkSettings.gasLimit !== "") {
+        try {
+          gasLimit = BigInt(networkSettings.gasLimit)
+        } catch (error) {
+          logger.debug(
+            "Failed to parse network settings gas limit",
+            networkSettings.gasLimit
+          )
+        }
       }
 
       if (
@@ -236,7 +240,7 @@ export default function NetworkSettingsSelect({
             </div>
             <div className="option_right">
               <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-              <div className="subtext">${option.dollarValue}</div>
+              <div className="subtext">{option.dollarValue}</div>
             </div>
           </button>
         )
