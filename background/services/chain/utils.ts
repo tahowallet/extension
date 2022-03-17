@@ -14,7 +14,6 @@ import {
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
 } from "../../networks"
-import { FungibleAsset } from "../../assets"
 import { USE_MAINNET_FORK } from "../../features/features"
 import { FORK } from "../../constants"
 
@@ -185,7 +184,6 @@ export function transactionFromEthersTransaction(
     blockNumber?: number
     type?: number | null
   },
-  asset: FungibleAsset,
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
@@ -212,7 +210,7 @@ export function transactionFromEthersTransaction(
     blockHash: tx.blockHash || null,
     blockHeight: tx.blockNumber || null,
     network,
-    asset,
+    asset: network.baseAsset,
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {

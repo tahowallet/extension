@@ -51,6 +51,7 @@ body:
       label: Version
       description: What version of the extension are you running?
       options:
+        - Community Edition v0.12.1
         - Community Edition v0.12.0
         - Community Edition v0.11.2
         - Community Edition v0.11.1

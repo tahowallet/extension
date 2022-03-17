@@ -11,8 +11,8 @@ const steps = [
       fileName: "onboarding/graphic_different",
       extraStyles: `margin-top: 78px;`,
     },
-    title: "Tally is different",
-    body: "Tally is the first community-owned wallet for Web3 and DeFi. If you own TALLY tokens, you are an owner.",
+    title: "Welcome to Tally Ho!",
+    body: "The community owned & operated wallet.",
     buttonCopy: "Continue",
   },
   {
@@ -22,8 +22,8 @@ const steps = [
       fileName: "onboarding/graphic_tally_token",
       extraStyles: `margin-top: -12px;`,
     },
-    title: "The TALLY token",
-    body: `You can earn TALLY in many ways! Check out  the Earn and Swap tabs.`,
+    title: "Tally Ho! is a DAO",
+    body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
     buttonCopy: "Continue",
   },
   {
@@ -33,8 +33,19 @@ const steps = [
       fileName: "onboarding/graphic_airdrop",
       extraStyles: `margin-top: 0px; margin-right: 0px;`,
     },
-    title: "TALLY token drop",
-    body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
+    title: "Test Responsibly",
+    body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
+    buttonCopy: "Continue",
+  },
+  {
+    image: {
+      width: 267,
+      height: 236.6,
+      fileName: "illustration_onboarding_default",
+      extraStyles: `margin-top: 21px;`,
+    },
+    title: "TallyHo set as default",
+    body: `TallyHo will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
     buttonCopy: "Get started",
   },
 ]

@@ -23,7 +23,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, EIP191Data, HexString, KeyringTypes } from "./types"
+import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/claim/types"
@@ -37,7 +37,7 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
-import { setEligibility } from "./redux-slices/claim"
+import { setEligibility, setReferrer } from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -86,6 +86,7 @@ import {
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
+  setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
@@ -571,6 +572,13 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  async removeAccount(
+    address: HexString,
+    signingMethod: SigningMethod
+  ): Promise<void> {
+    await this.signingService.removeAccount(address, signingMethod)
+  }
+
   async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
     try {
       const address = await this.nameService.lookUpEthereumAddress(
@@ -764,17 +772,12 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignData",
-      async ({
-        rawSigningData,
-        account,
-      }: {
-        rawSigningData: EIP191Data
-        account: HexString
-      }) => {
-        const signedData = await this.keyringService.personalSign({
-          signingData: rawSigningData,
+      async ({ rawSigningData, account, signingMethod }) => {
+        const signedData = await this.signingService.signData(
           account,
-        })
+          rawSigningData,
+          signingMethod
+        )
         this.store.dispatch(signedDataAction(signedData))
       }
     )
@@ -871,9 +874,13 @@ export default class Main extends BaseService<never> {
   async connectLedgerService(): Promise<void> {
     this.store.dispatch(resetLedgerState())
 
-    this.ledgerService.emitter.on("connected", ({ id }) => {
+    this.ledgerService.emitter.on("connected", ({ id, metadata }) => {
       this.store.dispatch(
-        setDeviceConnectionStatus({ deviceID: id, status: "available" })
+        setDeviceConnectionStatus({
+          deviceID: id,
+          status: "available",
+          isBlindSigner: metadata.ethereumBlindSigner,
+        })
       )
     })
 
@@ -881,6 +888,10 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
       )
+    })
+
+    this.ledgerService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
+      this.store.dispatch(setUsbDeviceCount({ usbDeviceCount }))
     })
   }
 
@@ -1080,23 +1091,54 @@ export default class Main extends BaseService<never> {
       }) => {
         this.store.dispatch(signDataRequest(payload))
 
-        const resolveAndClear = (signature: string) => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
+        const clear = () => {
+          if (HIDE_IMPORT_LEDGER) {
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            this.keyringService.emitter.off("signedData", resolveAndClear)
+          } else {
+            this.signingService.emitter.off(
+              "personalSigningResponse",
+              // eslint-disable-next-line @typescript-eslint/no-use-before-define
+              handleAndClear
+            )
+          }
           signingSliceEmitter.off(
             "signatureRejected",
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
-          resolver(signature)
+        }
+
+        const handleAndClear = (response: SignatureResponse) => {
+          clear()
+          switch (response.type) {
+            case "success-data":
+              resolver(response.signedData)
+              break
+            default:
+              rejecter()
+              break
+          }
+        }
+
+        const resolveAndClear = (signedData: string) => {
+          clear()
+          resolver(signedData)
         }
 
         const rejectAndClear = () => {
-          this.keyringService.emitter.off("signedData", resolveAndClear)
-          signingSliceEmitter.off("signatureRejected", rejectAndClear)
+          clear()
           rejecter()
         }
 
-        this.keyringService.emitter.on("signedData", resolveAndClear)
+        if (HIDE_IMPORT_LEDGER) {
+          this.keyringService.emitter.on("signedData", resolveAndClear)
+        } else {
+          this.signingService.emitter.on(
+            "personalSigningResponse",
+            handleAndClear
+          )
+        }
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
@@ -1116,6 +1158,10 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(initializeAllowedPages(allowedPages))
       }
     )
+
+    this.providerBridgeService.emitter.on("setClaimReferrer", (referral) => {
+      this.store.dispatch(setReferrer(referral))
+    })
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await this.providerBridgeService.grantPermission(permission)
@@ -1179,6 +1225,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+
+    uiSliceEmitter.on("refreshBackgroundPage", async () => {
+      window.location.reload()
+    })
   }
 
   async connectClaimService(): Promise<void> {

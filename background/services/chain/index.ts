@@ -1,7 +1,6 @@
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
-  BaseProvider,
   TransactionReceipt,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
@@ -22,10 +21,6 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import {
-  getAssetTransfers,
-  transactionFromAlchemyWebsocketTransaction,
-} from "../../lib/alchemy"
 import { ETH } from "../../constants/currencies"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -51,6 +46,7 @@ import type {
 import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import { USE_MAINNET_FORK } from "../../features/features"
+import AssetDataHelper from "./asset-data-helper"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -158,6 +154,8 @@ export default class ChainService extends BaseService<Events> {
 
   ethereumNetwork: EVMNetwork
 
+  assetData: AssetDataHelper
+
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService
@@ -198,6 +196,7 @@ export default class ChainService extends BaseService<Events> {
     // TODO set up for each relevant network
     this.providers = {
       ethereum: new SerialFallbackProvider(
+        this.ethereumNetwork,
         () =>
           new AlchemyWebSocketProvider(
             getNetwork(Number(this.ethereumNetwork.chainID)),
@@ -214,6 +213,8 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = { ethereum: [] }
+
+    this.assetData = new AssetDataHelper(this)
   }
 
   async internalStartService(): Promise<void> {
@@ -259,6 +260,14 @@ export default class ChainService extends BaseService<Events> {
             })
         )
     )
+  }
+
+  /**
+   * Finds a provider for the given network, or returns undefined if no such
+   * provider exists.
+   */
+  providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
+    return this.providers[network.name.toLowerCase()]
   }
 
   /**
@@ -543,11 +552,7 @@ export default class ChainService extends BaseService<Events> {
     }
     // TODO make proper use of the network
     const gethResult = await this.providers.ethereum.getTransaction(txHash)
-    const newTransaction = transactionFromEthersTransaction(
-      gethResult,
-      ETH,
-      network
-    )
+    const newTransaction = transactionFromEthersTransaction(gethResult, network)
 
     if (!newTransaction.blockHash && !newTransaction.blockHeight) {
       this.subscribeToTransactionConfirmation(network, newTransaction)
@@ -790,9 +795,7 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     this.checkNetwork(addressOnNetwork.network)
 
-    // TODO only works on Ethereum today
-    const assetTransfers = await getAssetTransfers(
-      this.providers.ethereum as unknown as AlchemyWebSocketProvider,
+    const assetTransfers = await this.assetData.getAssetTransfers(
       addressOnNetwork,
       Number(startBlock),
       Number(endBlock)
@@ -846,11 +849,7 @@ export default class ChainService extends BaseService<Events> {
         // TODO make this multi network
         const result = await this.providers.ethereum.getTransaction(hash)
 
-        const transaction = transactionFromEthersTransaction(
-          result,
-          ETH,
-          network
-        )
+        const transaction = transactionFromEthersTransaction(result, network)
 
         // TODO make this provider specific
         await this.saveTransaction(transaction, "alchemy")
@@ -1022,19 +1021,11 @@ export default class ChainService extends BaseService<Events> {
 
     // TODO look up provider network properly
     const provider = this.providers.ethereum
-    await provider.subscribe(
-      "filteredNewFullPendingTransactionsSubscriptionID",
-      ["alchemy_filteredNewFullPendingTransactions", { address }],
-      async (result: unknown) => {
-        // TODO use proper provider string
+    await provider.subscribeFullPendingTransactions(
+      { address, network },
+      async (transaction) => {
         // handle incoming transactions for an account
         try {
-          const transaction = transactionFromAlchemyWebsocketTransaction(
-            result,
-            ETH,
-            network
-          )
-
           const normalizedFromAddress = normalizeEVMAddress(transaction.from)
 
           // If this is an EVM chain, we're tracking the from address's
@@ -1060,10 +1051,11 @@ export default class ChainService extends BaseService<Events> {
           // Wait for confirmation/receipt information.
           this.subscribeToTransactionConfirmation(network, transaction)
         } catch (error) {
-          logger.error(`Error saving tx: ${result}`, error)
+          logger.error(`Error saving tx: ${transaction}`, error)
         }
       }
     )
+
     this.subscribedAccounts.push({
       account: address,
       provider,
