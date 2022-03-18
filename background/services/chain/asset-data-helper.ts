@@ -17,7 +17,9 @@ import { AddressOnNetwork } from "../../accounts"
 import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
-import { getMetadata as getERC20Metadata } from "../../lib/erc20"
+import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
+import { USE_MAINNET_FORK } from "../../features/features"
+import { FORK } from "../../constants"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -65,6 +67,29 @@ export default class AssetDataHelper {
       )
     }
 
+    // Load balances of tokens on the mainnet fork
+    if (USE_MAINNET_FORK) {
+      const signer = provider.getSigner()
+      const signerAddress = await signer.getAddress()
+      const tokens = [
+        "0x2eD9D339899CD5f1E4a3B131F467E76549E8Eab0",
+        "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
+        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+      ]
+      const balances = tokens.map(async (token) => {
+        const balance = await getBalance(provider, token, signerAddress)
+        return {
+          smartContract: {
+            contractAddress: token,
+            homeNetwork: FORK,
+          },
+          amount: BigInt(balance.toString()),
+        }
+      })
+      const resolvedBalances = Promise.all(balances)
+      return resolvedBalances
+    }
     return []
   }
 
