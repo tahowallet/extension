@@ -13,6 +13,7 @@ import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selector
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
+  useIsBackgroundSettled,
   useIsSigningMethodLocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
@@ -30,6 +31,7 @@ export default function SignTransaction({
 }): ReactElement {
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
+  const isBackgroundSettled = useIsBackgroundSettled()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const isTransactionDataReady = useBackgroundSelector(
@@ -46,10 +48,11 @@ export default function SignTransaction({
       transactionConstruction.broadcastOnSign ?? false
   )
 
-  const isTransactionMissingOrRejected = useBackgroundSelector(
-    ({ transactionConstruction }) =>
-      transactionConstruction.status === TransactionConstructionStatus.Idle
-  )
+  const isTransactionMissingOrRejected =
+    useBackgroundSelector(
+      ({ transactionConstruction }) =>
+        transactionConstruction.status === TransactionConstructionStatus.Idle
+    ) && isBackgroundSettled
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
