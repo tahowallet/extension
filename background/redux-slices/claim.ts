@@ -9,7 +9,6 @@ import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
 import {
   getContract,
   getCurrentTimestamp,
-  getNonce,
   getProvider,
 } from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
@@ -19,6 +18,7 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { HOUR } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
+import { ERC2612_INTERFACE } from "../lib/erc20"
 
 export interface DAO {
   address: string
@@ -56,7 +56,7 @@ interface ClaimingState {
 
 const getDistributorContract = async () => {
   const distributorContractAddress =
-    "0x55Ef3968731DdA6125FF1545acB94303052c955D" // VoteWithFriends contract address
+    "0x1E33A61bdBE9E4B4c4B0e27ea858f43e22Cf703F" // VoteWithFriends contract address
   const distributor = await getContract(
     distributorContractAddress,
     DISTRIBUTOR_ABI
@@ -153,6 +153,28 @@ export const {
 
 export default claimingSlice.reducer
 
+export const checkAlreadyClaimed = createBackgroundAsyncThunk(
+  "claim/checkAlreadyClaimed",
+  async (
+    {
+      claimState,
+      accountAddress,
+    }: { claimState: ClaimingState; accountAddress: HexString },
+    { dispatch }
+  ) => {
+    const { eligibility } = claimState
+    const distributorContract = await getDistributorContract()
+    if (!eligibility) {
+      return false
+    }
+    const alreadyClaimed = await distributorContract.isClaimed(
+      eligibility.index
+    )
+    dispatch(claimed(accountAddress))
+    return alreadyClaimed
+  }
+)
+
 export const claimRewards = createBackgroundAsyncThunk(
   "claim/distributorClaim",
   async (claimState: ClaimingState, { dispatch }) => {
@@ -167,10 +189,9 @@ export const claimRewards = createBackgroundAsyncThunk(
     if (!eligibility) {
       return
     }
+    const distributorContract = await getDistributorContract()
 
     dispatch(currentlyClaiming(true))
-
-    const distributorContract = await getDistributorContract()
 
     const confirmReceipt = async (response: Promise<TransactionResponse>) => {
       const result = await response
@@ -239,6 +260,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
   async (_, { getState, dispatch }) => {
     const provider = getProvider()
     const signer = provider.getSigner()
+    const address = await signer.getAddress()
 
     const state = getState()
     const { claim } = state as { claim: ClaimingState }
@@ -246,10 +268,15 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
     const delegatee = claim.selectedDelegate?.address
 
     if (delegatee) {
-      const nonce = await getNonce()
+      const TallyTokenContract = await getContract(
+        "0xE3709cde1eaFF5297035306C3D42E3cC8812ffa9",
+        ERC2612_INTERFACE
+      )
+      const nonce = await TallyTokenContract.nonces(address)
+
       const timestamp = await getCurrentTimestamp()
 
-      const expiry = timestamp + 12 * HOUR
+      const expiry = timestamp + 12 * (HOUR / 1000)
       const types = {
         Delegation: [
           { name: "delegatee", type: "address" },
