@@ -39,7 +39,7 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
   [AccountType.Internal]: {
     title: "Tally Ho",
-    icon: "./images/tally_avatar.svg", // FIXME: Icon is cut off - we should get a better one
+    icon: "./images/tally_avatar.svg",
   },
   [AccountType.Ledger]: {
     title: "Full access via Ledger", // FIXME: check copy against UI specs
