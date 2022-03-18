@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference types="styled-jsx" />
 
 // Although you would expect this file to be unnecessary, removing it will
