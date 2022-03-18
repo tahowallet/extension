@@ -1,8 +1,8 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
-import SharedButton from "../Shared/SharedButton"
 import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import SharedButton from "../Shared/SharedButton"
 
 interface DetailRowItemProps {
   label: string
