@@ -49,6 +49,7 @@ import {
   setDefaultWallet,
   setSelectedAccount,
   setNewSelectedAccount,
+  setSnackbarMessage,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -639,6 +640,12 @@ export default class Main extends BaseService<never> {
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
+    })
+
+    this.chainService.emitter.on("transactionSent", () => {
+      this.store.dispatch(
+        setSnackbarMessage("Transaction signed, broadcasting...")
+      )
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
