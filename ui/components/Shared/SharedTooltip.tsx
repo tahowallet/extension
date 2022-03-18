@@ -6,6 +6,7 @@ interface Props {
   verticalPosition?: VeriticalPosition
   width: number
   children: React.ReactNode
+  IconComponent?: () => ReactElement
 }
 
 function getHorizontalPosition(width: number) {
@@ -24,7 +25,7 @@ function getVerticalPosition(vertical: VeriticalPosition) {
 }
 
 export default function SharedTooltip(props: Props): ReactElement {
-  const { children, verticalPosition = "bottom", width } = props
+  const { children, verticalPosition = "bottom", width, IconComponent } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
@@ -37,7 +38,7 @@ export default function SharedTooltip(props: Props): ReactElement {
         setIsShowingTooltip(false)
       }}
     >
-      <div className="info_icon" />
+      {IconComponent ? <IconComponent /> : <div className="info_icon" />}
       {isShowingTooltip ? <div className="tooltip">{children}</div> : null}
       <style jsx>
         {`
