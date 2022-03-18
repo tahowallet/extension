@@ -84,44 +84,57 @@ type Events = ServiceLifecycleEvents & {
 export const idDerviationPath = "44'/60'/0'/0/0"
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
-  const derivedIdentifiers = await eth.getAddress(path)
-  const address = ethersGetAddress(derivedIdentifiers.address)
-  return address
+  // eslint-disable-next-line no-useless-catch
+  try {
+    const derivedIdentifiers = await eth.getAddress(path)
+    const address = ethersGetAddress(derivedIdentifiers.address)
+    return address
+  } catch (e) {
+    // eslint-disable-next-line no-debugger
+    debugger
+    throw e
+  }
 }
 
 async function generateLedgerId(
   transport: Transport,
   eth: Eth
 ): Promise<[string | undefined, LedgerType]> {
-  let extensionDeviceType = LedgerType.UNKNOWN
+  // let extensionDeviceType = LedgerType.UNKNOWN
 
-  if (!transport.deviceModel) {
-    throw new Error("Missing device model descriptor!")
-  }
+  // if (!transport.deviceModel) {
+  //   throw new Error("Missing device model descriptor!")
+  // }
 
-  switch (transport.deviceModel.id) {
-    case DeviceModelId.nanoS:
-      extensionDeviceType = LedgerType.LEDGER_NANO_S
-      break
-    case DeviceModelId.nanoX:
-      extensionDeviceType = LedgerType.LEDGER_NANO_X
-      break
-    default:
-      extensionDeviceType = LedgerType.UNKNOWN
-  }
+  // switch (transport.deviceModel.id) {
+  //   case DeviceModelId.nanoS:
+  //     extensionDeviceType = LedgerType.LEDGER_NANO_S
+  //     break
+  //   case DeviceModelId.nanoX:
+  //     extensionDeviceType = LedgerType.LEDGER_NANO_X
+  //     break
+  //   default:
+  //     extensionDeviceType = LedgerType.UNKNOWN
+  // }
 
-  if (extensionDeviceType === LedgerType.UNKNOWN) {
-    return [undefined, extensionDeviceType]
-  }
+  // if (extensionDeviceType === LedgerType.UNKNOWN) {
+  //   return [undefined, extensionDeviceType]
+  // }
+
+  // if (extensionDeviceType === LedgerType.UNKNOWN) {
+  //   return [undefined, extensionDeviceType]
+  // }
 
   const address = await deriveAddressOnLedger(idDerviationPath, eth)
 
-  return [address, extensionDeviceType]
+  return [address, LedgerType.LEDGER_NANO_S]
 }
 
 function getTransport(): Promise<Transport> {
   const isChrome =
     /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
+
+  // console.log("isChrome?", isChrome)
 
   if (isChrome) {
     return TransportWebUSB.create()
@@ -171,16 +184,20 @@ export default class LedgerService extends BaseService<Events> {
 
   async onConnection(productId: number): Promise<void> {
     return this.runSerialized(async () => {
-      if (!TestedProductId(productId)) {
-        return
-      }
+      // if (!TestedProductId(productId)) {
+      //   return
+      // }
 
-      this.transport = await getTransport()
+      if (!this.transport) {
+        this.transport = await getTransport()
+      }
+      this.transport.setScrambleKey("w0w")
 
       if (!this.transport) {
         throw new Error("Where Lambo?")
       }
-
+      // eslint-disable-next-line no-debugger
+      debugger
       const eth = new Eth(this.transport)
 
       const [id, type] = await generateLedgerId(this.transport, eth)
@@ -223,10 +240,10 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
-    this.emitter.emit(
-      "usbDeviceCount",
-      (await navigator.usb.getDevices()).length
-    )
+    // this.emitter.emit(
+    //   "usbDeviceCount",
+    //   (await navigator.usb.getDevices()).length
+    // )
     if (!TestedProductId(event.device.productId)) {
       return
     }
@@ -235,10 +252,10 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   #handleUSBDisconnect = async (event: USBConnectionEvent): Promise<void> => {
-    this.emitter.emit(
-      "usbDeviceCount",
-      (await navigator.usb.getDevices()).length
-    )
+    // this.emitter.emit(
+    //   "usbDeviceCount",
+    //   (await navigator.usb.getDevices()).length
+    // )
     if (!this.#currentLedgerId) {
       return
     }
@@ -256,28 +273,33 @@ export default class LedgerService extends BaseService<Events> {
 
     this.refreshConnectedLedger()
 
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+    // navigator.usb.addEventListener("connect", this.#handleUSBConnect)
+    // navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
   }
 
   protected async internalStopService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
-    navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
+    // navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
+    // navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
-    const usbDeviceArray = await navigator.usb.getDevices()
+    if (TransportWebAuthn.isSupported) {
+      this.transport = await TransportWebAuthn.create()
+      this.transport?.setScrambleKey("w0w")
+      this.emitter.emit("usbDeviceCount", 1)
 
-    this.emitter.emit("usbDeviceCount", usbDeviceArray.length)
-
-    if (usbDeviceArray.length === 0 || usbDeviceArray.length > 1) {
-      return null // Nasty things may happen when we've got zero or multiple choices
-    }
-
-    if (usbDeviceArray.length === 1) {
-      await this.onConnection(usbDeviceArray[0].productId)
+      await this.onConnection(0)
+    } else {
+      // const usbDeviceArray = await navigator.usb.getDevices()
+      // this.emitter.emit("usbDeviceCount", usbDeviceArray.length)
+      // if (usbDeviceArray.length === 0 || usbDeviceArray.length > 1) {
+      //   return null // Nasty things may happen when we've got zero or multiple choices
+      // }
+      // if (usbDeviceArray.length === 1) {
+      //   await this.onConnection(usbDeviceArray[0].productId)
+      // }
     }
 
     return this.#currentLedgerId
