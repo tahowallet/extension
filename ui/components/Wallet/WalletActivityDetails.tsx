@@ -2,6 +2,7 @@ import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
+import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
 
 interface DetailRowItemProps {
   label: string
@@ -135,7 +136,7 @@ export default function WalletActivityDetails(
         <div className="icon_transfer" />
         <DestinationCard
           label="To"
-          address={activityItem.to || "(Contract creation)"}
+          address={getRecipient(activityItem) || "(Contract creation)"}
         />
       </div>
       <ul>

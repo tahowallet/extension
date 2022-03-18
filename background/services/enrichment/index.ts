@@ -161,7 +161,7 @@ export default class EnrichmentService extends BaseService<Events> {
           timestamp: resolvedTime,
           type: "asset-transfer",
           transactionLogoURL,
-          senderAddress: erc20Tx.args.from ?? transaction.to,
+          senderAddress: erc20Tx.args.from ?? transaction.from,
           recipientAddress: erc20Tx.args.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
