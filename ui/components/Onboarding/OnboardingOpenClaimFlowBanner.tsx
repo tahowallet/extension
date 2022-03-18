@@ -8,6 +8,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
 import {
+  selectClaimed,
   selectClaimError,
   selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
@@ -221,6 +222,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
 
   const claimError = useBackgroundSelector(selectClaimError)
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
+  const claimed = useBackgroundSelector(selectClaimed)
 
   const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
 
@@ -229,7 +231,14 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
     "show"
   )
 
-  if (claimAmount === "0" && showOrHide === "hide") return <></>
+  const hideOnboardingClaimBanner =
+    currentAccount.address in claimed && !isCurrentlyClaiming
+
+  if (
+    (claimAmount === "0" && showOrHide === "hide") ||
+    hideOnboardingClaimBanner
+  )
+    return <></>
 
   return (
     <div
