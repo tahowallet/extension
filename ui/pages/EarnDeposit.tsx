@@ -11,7 +11,12 @@ import {
   selectEarnInputAmount,
   selectIsSignatureAvailable,
   selectLockedValues,
+  vaultDeposit,
 } from "@tallyho/tally-background/redux-slices/earn"
+import {
+  clearTransactionState,
+  TransactionConstructionStatus,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -70,7 +75,8 @@ export default function EarnDeposit(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const approve = () => {
+  const approve = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(approveApprovalTarget(vault.wantToken))
     history.push("/sign-transaction")
   }
@@ -86,8 +92,16 @@ export default function EarnDeposit(): ReactElement {
     history.push("/sign-data")
   }
 
-  const deposit = () => {
-    setDeposited(true)
+  const deposit = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(
+      vaultDeposit({
+        vaultContractAddress: vault.contractAddress,
+        amount,
+        tokenAddress: vault.wantToken,
+      })
+    )
+    history.push("/sign-transaction")
   }
 
   const withdraw = () => {

@@ -5,7 +5,7 @@ import { AnyAsset } from "../assets"
 import { HOUR, doggoTokenDecimalDigits } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
 import { ERC20_ABI } from "../lib/erc20"
-import { fromFixedPointNumber } from "../lib/fixed-point"
+import { fromFixedPointNumber, toFixedPoint } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
 import VAULT_ABI from "../lib/vault"
 import { EIP712TypedData, HexString } from "../types"
@@ -277,10 +277,11 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     {
       vaultContractAddress,
       amount,
+      tokenAddress,
     }: {
-      tokenContractAddress: HexString
       vaultContractAddress: HexString
-      amount: BigInt
+      amount: string
+      tokenAddress: HexString
     },
     { getState, dispatch }
   ) => {
@@ -292,29 +293,28 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     const { earn } = state as { earn: EarnState }
 
     const vaultContract = await getContract(vaultContractAddress, VAULT_ABI)
-    const doggoTokenContract = await getContract(
-      DOGGO_TOKEN_CONTRACT,
-      ERC20_ABI
-    )
+    const tokenContract = await getContract(tokenAddress, ERC20_ABI)
 
     const timestamp = await getCurrentTimestamp()
-    const signatureDeadline = timestamp + 12 * HOUR
+    // ! cleanup
+    const signatureDeadline = BigInt(timestamp) + BigInt(12) * BigInt(HOUR)
 
-    const amountPermitted = doggoTokenContract.allowance(
+    const amountPermitted = await tokenContract.allowance(
       signerAddress,
       APPROVAL_TARGET_CONTRACT_ADDRESS
     )
 
     const depositTransactionData =
       await vaultContract.populateTransaction.depositWithApprovalTarget(
-        amount,
+        // ! remove hardcoded decimal
+        toFixedPoint(Number(amount), 6),
         signerAddress,
         signerAddress,
         amountPermitted,
         signatureDeadline,
+        earn.signature.v,
         earn.signature.r,
-        earn.signature.s,
-        earn.signature.v
+        earn.signature.s
       )
     if (USE_MAINNET_FORK) {
       depositTransactionData.gasLimit = BigNumber.from(350000) // for mainnet fork only
@@ -327,7 +327,8 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(
         deposited({
           vaultAddress: normalizeEVMAddress(vaultContractAddress),
-          depositedAmount: amount,
+          // ! remove hardcoded decimal
+          depositedAmount: toFixedPoint(Number(amount), 6),
         })
       )
     }
@@ -531,7 +532,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const message = {
       owner: signerAddress,
       spender: vaultContractAddress,
-      value: amount,
+      value: toFixedPoint(Number(amount), 6), // ! REMOVE HARDCODED DECIMAL
       nonce: nonceValue,
       deadline: signatureDeadline,
     }
