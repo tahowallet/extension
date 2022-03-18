@@ -51,6 +51,7 @@ interface ClaimingState {
   claimStep: number
   currentlyClaiming: boolean
   claimError: { [address: HexString]: boolean }
+  referrer: string | null
 }
 
 const getDistributorContract = async () => {
@@ -63,7 +64,7 @@ const getDistributorContract = async () => {
   return distributor
 }
 
-const initialState = {
+const initialState: ClaimingState = {
   status: "idle",
   claimed: {},
   distributor: {},
@@ -78,6 +79,7 @@ const initialState = {
   expiry: undefined,
   currentlyClaiming: false,
   claimError: {},
+  referrer: null,
 } as ClaimingState
 
 const claimingSlice = createSlice({
@@ -128,6 +130,9 @@ const claimingSlice = createSlice({
       immerState.nonce = undefined
       immerState.expiry = undefined
     },
+    setReferrer: (immerState, { payload: referrer }: { payload: string }) => {
+      immerState.referrer = referrer
+    },
   },
 })
 
@@ -143,6 +148,7 @@ export const {
   resetStep,
   resetSignature,
   claimError,
+  setReferrer,
 } = claimingSlice.actions
 
 export default claimingSlice.reducer

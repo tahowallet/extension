@@ -7,6 +7,8 @@ export interface Eligible {
   proof: HexString[]
 }
 
-export interface Claim {
-  eligibles: Eligible[]
+export interface IPFSLinkItem {
+  Hash: { "/": string }
+  Name: string
+  Tsize: number
 }

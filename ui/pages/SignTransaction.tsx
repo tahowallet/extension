@@ -13,11 +13,12 @@ import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selector
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useAreKeyringsUnlocked,
+  useIsBackgroundSettled,
+  useIsSigningMethodLocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
-import { useSigningLedgerState } from "../components/SignTransaction/useSigningLedgerState"
+import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
 
 export default function SignTransaction({
   location,
@@ -30,6 +31,7 @@ export default function SignTransaction({
 }): ReactElement {
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
+  const isBackgroundSettled = useIsBackgroundSettled()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const isTransactionDataReady = useBackgroundSelector(
@@ -46,25 +48,28 @@ export default function SignTransaction({
       transactionConstruction.broadcastOnSign ?? false
   )
 
+  const isTransactionMissingOrRejected =
+    useBackgroundSelector(
+      ({ transactionConstruction }) =>
+        transactionConstruction.status === TransactionConstructionStatus.Idle
+    ) && isBackgroundSettled
+
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
       return getAccountTotal(state, transactionDetails.from)
     }
     return undefined
   })
-  const isTransactionMissingOrRejected = useBackgroundSelector(
-    ({ transactionConstruction }) =>
-      transactionConstruction.status === TransactionConstructionStatus.Idle
-  )
-
-  const needsKeyrings = signerAccountTotal?.signingMethod?.type === "keyring"
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
-  const isWaitingForKeyrings = needsKeyrings && !areKeyringsUnlocked
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
+  const signingMethod = signerAccountTotal?.signingMethod ?? null
+
+  const isLocked = useIsSigningMethodLocked(signingMethod)
+
   useEffect(() => {
-    if (!isWaitingForKeyrings && isTransactionSigned && isTransactionSigning) {
+    if (isLocked) return
+    if (isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
         dispatch(broadcastSignedTransaction(signedTransaction))
       }
@@ -84,17 +89,11 @@ export default function SignTransaction({
     history,
     isTransactionSigned,
     isTransactionSigning,
-    isWaitingForKeyrings,
+    isLocked,
     location.state,
     shouldBroadcastOnSign,
     signedTransaction,
   ])
-
-  const isLedgerSigning = signerAccountTotal?.signingMethod?.type === "ledger"
-
-  const signingLedgerState = useSigningLedgerState(
-    signerAccountTotal?.signingMethod ?? null
-  )
 
   useEffect(() => {
     if (isTransactionMissingOrRejected) {
@@ -102,11 +101,8 @@ export default function SignTransaction({
     }
   }, [history, isTransactionMissingOrRejected])
 
-  if (isWaitingForKeyrings) {
-    return <></>
-  }
+  if (isLocked) return <></>
 
-  const signingMethod = signerAccountTotal?.signingMethod ?? null
   if (
     typeof transactionDetails === "undefined" ||
     typeof signerAccountTotal === "undefined"
@@ -135,22 +131,20 @@ export default function SignTransaction({
     }
   }
 
-  const isWaitingForHardware = isLedgerSigning && isTransactionSigning
-
   return (
     <SignTransactionInfoProvider>
       {({ title, infoBlock, textualInfoBlock, confirmButtonLabel }) => (
         <SignTransactionContainer
           signerAccountTotal={signerAccountTotal}
-          signingLedgerState={signingLedgerState}
           title={title}
-          isWaitingForHardware={isWaitingForHardware}
           confirmButtonLabel={confirmButtonLabel}
           handleConfirm={handleConfirm}
           handleReject={handleReject}
-        >
-          {isWaitingForHardware ? textualInfoBlock : infoBlock}
-        </SignTransactionContainer>
+          detailPanel={infoBlock}
+          reviewPanel={textualInfoBlock}
+          extraPanel={<SignTransactionPanelSwitcher />}
+          isTransactionSigning={isTransactionSigning}
+        />
       )}
     </SignTransactionInfoProvider>
   )
