@@ -118,6 +118,9 @@ export default function NetworkSettingsSelect({
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
   )
+  const [gasLimitErrorMessage, setGasLimitErrorMessage] = useState<
+    string | undefined
+  >(undefined)
 
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
@@ -161,18 +164,8 @@ export default function NetworkSettingsSelect({
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
-      let gasLimit = networkSettings.suggestedGasLimit
-
-      if (networkSettings.gasLimit !== "") {
-        try {
-          gasLimit = BigInt(networkSettings.gasLimit)
-        } catch (error) {
-          logger.debug(
-            "Failed to parse network settings gas limit",
-            networkSettings.gasLimit
-          )
-        }
-      }
+      const gasLimit =
+        networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
       if (
         typeof instant !== "undefined" &&
@@ -212,12 +205,20 @@ export default function NetworkSettingsSelect({
   }, [updateGasOptions])
 
   const setGasLimit = (newGasLimit: string) => {
-    // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
-    // FIXME entry as possible.
-    onNetworkSettingsChange({
-      ...networkSettings,
-      gasLimit: newGasLimit,
-    })
+    try {
+      const parsedGasLimit = BigInt(newGasLimit)
+      if (parsedGasLimit >= 0n) {
+        setGasLimitErrorMessage(undefined)
+        onNetworkSettingsChange({
+          ...networkSettings,
+          gasLimit: parsedGasLimit,
+        })
+      } else {
+        setGasLimitErrorMessage("Invalid Gas Limit")
+      }
+    } catch (error) {
+      logger.debug("Failed to parse network settings gas limit", newGasLimit)
+    }
   }
 
   return (
@@ -249,12 +250,13 @@ export default function NetworkSettingsSelect({
         <div className="limit">
           <SharedInput
             id="gasLimit"
-            value={networkSettings.gasLimit}
+            value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"
+            errorMessage={gasLimitErrorMessage}
           />
         </div>
         <div className="max_fee">
