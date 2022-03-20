@@ -22,63 +22,63 @@ export default function Trezor(): ReactElement {
     <BrowserTabContainer>
       {(phase === "0-prepare" || connectionError) && (
         <TrezorPrepare
-        onContinue={async () => {
-          setPhase("1-request")
+          onContinue={async () => {
+            setPhase("1-request")
 
-          // I'm doing something wrong here. Calling TrezorConnect.init() and then TrezorConnect.manifest()
-          // does not seem to work: "no manifest specified"
-          // Calling TrezorConnect.manifest() only is fine, but the popup is closed :-/
-          /* 
-            console.log("trezor: init");
-            TrezorConnect.init({
-              //connectSrc: "https://localhost:8088/",
-              lazyLoad: false, // this param will prevent iframe injection until TrezorConnect.method will be called
-              manifest: {
-                email: "pablo@anche.no",
-                appUrl: "https://tally.cash",
-              },
-              popup: false,
+            // I'm doing something wrong here. Calling TrezorConnect.init() and then TrezorConnect.manifest()
+            // does not seem to work: "no manifest specified"
+            // Calling TrezorConnect.manifest() only is fine, but the popup is closed :-/
+            /* 
+              console.log("trezor: init");
+              TrezorConnect.init({
+                //connectSrc: "https://localhost:8088/",
+                lazyLoad: false, // this param will prevent iframe injection until TrezorConnect.method will be called
+                manifest: {
+                  email: "pablo@anche.no",
+                  appUrl: "https://tally.cash",
+                },
+                popup: false,
+              })
+            */
+
+            console.log("trezor: manifest");
+            TrezorConnect.manifest({
+              email: "pablo@anche.no",
+              appUrl: "https://tally.cash",
             })
-          */
 
-          console.log("trezor: manifest");
-          TrezorConnect.manifest({
-            email: "pablo@anche.no",
-            appUrl: "https://tally.cash",
-          })
+            // This opens https://connect.trezor.io/8/popup.html
+            // however the popup is closed after some seconds without leaving the possibility to enter your pin.
+            //
+            // The javascript console logs the following lines:
+            //
+            // 127.0.0.1:21325/acquire/1/null:1 "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+            // 127.0.0.1:21325/release/4:1 "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+            // 127.0.0.1:21325/listen:1 "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+            //
+            // So it might be related to some problem with the trezor bridge?
+            const result2 = await TrezorConnect.ethereumGetAddress({
+              path: idDerivationPath
+            })
 
-          // This opens https://connect.trezor.io/8/popup.html
-          // however the popup is closed after some seconds without leaving the possibility to enter your pin.
-          //
-          // The javascript console logs the following lines:
-          //
-          // 127.0.0.1:21325/acquire/1/null:1 "Failed to load resource: the server responded with a status of 400 (Bad Request)"
-          // 127.0.0.1:21325/release/4:1 "Failed to load resource: the server responded with a status of 400 (Bad Request)"
-          // 127.0.0.1:21325/listen:1 "Failed to load resource: net::ERR_CONNECTION_REFUSED"
-          //
-          // So it might be related to some problem with the trezor bridge?
-          const result2 = await TrezorConnect.ethereumGetAddress({
-            path: idDerivationPath
-          })
+            console.log(result2)
+            if (!result2.success) {
+              throw new Error(result2.payload.error)
+            }
 
-          console.log(result2)
-          if (!result2.success) {
-            throw new Error(result2.payload.error)
-          }
 
-          
-          /*
-          setPhase("2-connect")
-          setConnecting(true)
-          try {
-            await dispatch(connectTrezor())
-          } finally {
-            setConnecting(false)
-          }
-          */
-        }}
-      />
-        
+            /*
+            setPhase("2-connect")
+            setConnecting(true)
+            try {
+              await dispatch(connectTrezor())
+            } finally {
+              setConnecting(false)
+            }
+            */
+          }}
+        />
+
       )}
       {phase === "1-request" && <LedgerConnectPopup />}
       {phase === "2-connect" && !device && connecting && (
