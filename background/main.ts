@@ -911,10 +911,10 @@ export default class Main extends BaseService<never> {
   }
 
   async connectTrezorService(): Promise<void> {
-    //this.store.dispatch(resetLedgerState())
+    // this.store.dispatch(resetLedgerState())
 
     this.trezorService.emitter.on("connected", ({ id, metadata }) => {
-      logger.info("Got Trezor connected event " + id + " | " + metadata)
+      logger.info("Got Trezor connected event ", id, " | ", metadata)
       this.store.dispatch(
         setDeviceConnectionStatus({
           deviceID: id,
@@ -925,14 +925,14 @@ export default class Main extends BaseService<never> {
     })
 
     this.trezorService.emitter.on("disconnected", ({ id }) => {
-      logger.info("Got Trezor disconnected event " + id)
+      logger.info("Got Trezor disconnected event ", id)
       this.store.dispatch(
         setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
       )
     })
 
     this.trezorService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
-      logger.info("Got Trezor usbDeviceCount event " + usbDeviceCount)
+      logger.info("Got Trezor usbDeviceCount event ", usbDeviceCount)
     })
   }
 

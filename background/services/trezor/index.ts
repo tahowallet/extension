@@ -70,7 +70,7 @@ export const idDerivationPath = "m44'/60'/0'/0/0"
 
 async function deriveAddressOnTrezor(path: string) {
   const result = await TrezorConnect.ethereumGetAddress({
-    path
+    path,
   })
 
   if (!result.success) {
@@ -178,7 +178,7 @@ export default class TrezorService extends BaseService<Events> {
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length
     )
-    logger.info("Emitted usbDeviceCount " + event.device.productId)
+    logger.info("Emitted usbDeviceCount ", event.device.productId)
     this.onConnection(event.device.productId)
   }
 
@@ -454,8 +454,8 @@ export default class TrezorService extends BaseService<Events> {
 
       // This functionality is separate from trezor-connect, as it requires @metamask/eth-sig-utils,
       // which is a large JavaScript dependency
-      //const transformTypedDataPlugin = require("trezor-connect/lib/plugins/ethereum/typedData.js");
-      //const {domain_separator_hash, message_hash} = transformTypedDataPlugin(eip712Data, true);
+      // const transformTypedDataPlugin = require("trezor-connect/lib/plugins/ethereum/typedData.js");
+      // const {domain_separator_hash, message_hash} = transformTypedDataPlugin(eip712Data, true);
 
       /*
       const result = await TrezorConnect.ethereumSignTypedData({
@@ -510,7 +510,7 @@ export default class TrezorService extends BaseService<Events> {
     })
 
     if (!result.success) {
-      //throw new Error(result.payload.error)
+      // throw new Error(result.payload.error)
       throw new Error("Error on ethereumSignMessage (trezor)")
     }
 
