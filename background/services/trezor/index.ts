@@ -5,7 +5,6 @@ import {
   parse as parseRawTransaction,
 } from "@ethersproject/transactions"
 import {
-  joinSignature,
   _TypedDataEncoder,
   getAddress as ethersGetAddress,
 } from "ethers/lib/utils"
@@ -71,7 +70,7 @@ export const idDerivationPath = "m44'/60'/0'/0/0"
 
 async function deriveAddressOnTrezor(path: string) {
   const result = await TrezorConnect.ethereumGetAddress({
-    path: idDerivationPath,
+    path
   })
 
   if (!result.success) {
@@ -129,7 +128,7 @@ export default class TrezorService extends BaseService<Events> {
 
       if (!result.success) {
         throw new Error("Error getPublicKey on trezor")
-        //throw new Error(result.payload.error)
+        // throw new Error(result.payload.error)
       }
       const id = result.payload.publicKey
 
@@ -138,8 +137,7 @@ export default class TrezorService extends BaseService<Events> {
       }
       const type = TrezorType.TREZOR_ONE
 
-      //const appData = await eth.getAppConfiguration()
-
+      // const appData = await eth.getAppConfiguration()
       // What does appData.version return ???
       // const version = appData.version
       const fakeVersion = "1.0"
@@ -180,7 +178,7 @@ export default class TrezorService extends BaseService<Events> {
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length
     )
-    console.log("Emitted usbDeviceCount " + event.device.productId)
+    logger.info("Emitted usbDeviceCount " + event.device.productId)
     this.onConnection(event.device.productId)
   }
 
@@ -250,7 +248,8 @@ export default class TrezorService extends BaseService<Events> {
         }
 
         const accountAddress = normalizeEVMAddress(
-          await deriveAddressOnTrezor(accountID)
+          // TODO: await deriveAddressOnTrezor(accountID)
+          await deriveAddressOnTrezor(idDerivationPath)
         )
 
         this.emitter.emit("address", {

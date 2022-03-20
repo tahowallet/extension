@@ -914,7 +914,7 @@ export default class Main extends BaseService<never> {
     //this.store.dispatch(resetLedgerState())
 
     this.trezorService.emitter.on("connected", ({ id, metadata }) => {
-      console.log("Got Trezor connected event " + id + " | " + metadata)
+      logger.info("Got Trezor connected event " + id + " | " + metadata)
       this.store.dispatch(
         setDeviceConnectionStatus({
           deviceID: id,
@@ -925,14 +925,14 @@ export default class Main extends BaseService<never> {
     })
 
     this.trezorService.emitter.on("disconnected", ({ id }) => {
-      console.log("Got Trezor disconnected event " + id)
+      logger.info("Got Trezor disconnected event " + id)
       this.store.dispatch(
         setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
       )
     })
 
     this.trezorService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
-      console.log("Got Trezor usbDeviceCount event " + usbDeviceCount)
+      logger.info("Got Trezor usbDeviceCount event " + usbDeviceCount)
     })
   }
 
