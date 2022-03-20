@@ -41,7 +41,7 @@ export default function Trezor(): ReactElement {
               })
             */
 
-            console.log("trezor: manifest");
+            console.log("trezor: manifest")
             TrezorConnect.manifest({
               email: "pablo@anche.no",
               appUrl: "https://tally.cash",
@@ -58,14 +58,13 @@ export default function Trezor(): ReactElement {
             //
             // So it might be related to some problem with the trezor bridge?
             const result2 = await TrezorConnect.ethereumGetAddress({
-              path: idDerivationPath
+              path: idDerivationPath,
             })
 
             console.log(result2)
             if (!result2.success) {
               throw new Error(result2.payload.error)
             }
-
 
             /*
             setPhase("2-connect")
@@ -78,7 +77,6 @@ export default function Trezor(): ReactElement {
             */
           }}
         />
-
       )}
       {phase === "1-request" && <LedgerConnectPopup />}
       {phase === "2-connect" && !device && connecting && (
@@ -87,8 +85,8 @@ export default function Trezor(): ReactElement {
           heading="Connecting..."
         />
       )}
-      {phase === "2-connect" && device && (
-        console.log(phase)
+      {
+        phase === "2-connect" && device && console.log(phase)
         /*
           <LedgerImportAccounts
             device={device}
@@ -97,7 +95,7 @@ export default function Trezor(): ReactElement {
             }}
           />
         */
-      )}
+      }
       {phase === "3-done" && (
         <LedgerImportDone
           onClose={() => {
