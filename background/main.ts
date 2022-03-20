@@ -340,8 +340,8 @@ export default class Main extends BaseService<never> {
       : SigningService.create(keyringService, ledgerService, chainService)
 
     const trezorService = HIDE_IMPORT_TREZOR
-    ? (Promise.resolve(null) as unknown as Promise<TrezorService>)
-    : TrezorService.create()
+      ? (Promise.resolve(null) as unknown as Promise<TrezorService>)
+      : TrezorService.create()
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -453,7 +453,6 @@ export default class Main extends BaseService<never> {
      * with attached Trezor device
      */
     private trezorService: TrezorService
-
   ) {
     super({
       initialLoadWaitExpired: {

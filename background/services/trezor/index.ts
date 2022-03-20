@@ -122,7 +122,6 @@ export default class TrezorService extends BaseService<Events> {
   // TODO: Remove unused productId
   async onConnection(productId: number): Promise<void> {
     return this.runSerialized(async () => {
-
       const result = await TrezorConnect.getPublicKey({
         path: idDerivationPath,
         coin: "eth",
@@ -341,7 +340,6 @@ export default class TrezorService extends BaseService<Events> {
         });
         */
 
-
         if (!result.success) {
           // throw new Error(result.payload.error)
           throw new Error("Error TrezorConnect.ethereumSignTransaction")
@@ -435,25 +433,25 @@ export default class TrezorService extends BaseService<Events> {
         types: {
           EIP712Domain: [
             {
-              name: 'name',
-              type: 'string',
+              name: "name",
+              type: "string",
             },
           ],
           Message: [
             {
               name: "Best Wallet",
-              type: "string"
-            }
-          ]
+              type: "string",
+            },
+          ],
         },
         primaryType: "Message",
         domain: {
-          name: 'example.trezor.io',
+          name: "example.trezor.io",
         },
         message: {
-            "Best Wallet": "Trezor Model T",
+          "Best Wallet": "Trezor Model T",
         },
-      };
+      }
 
       // This functionality is separate from trezor-connect, as it requires @metamask/eth-sig-utils,
       // which is a large JavaScript dependency
