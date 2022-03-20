@@ -19,6 +19,7 @@ import {
   TelemetryService,
   ServiceCreatorFunction,
   LedgerService,
+  TrezorService,
   SigningService,
 } from "./services"
 
@@ -86,7 +87,7 @@ import {
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
-import { HIDE_IMPORT_LEDGER } from "./features/features"
+import { HIDE_IMPORT_LEDGER, HIDE_IMPORT_TREZOR } from "./features/features"
 import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 
@@ -338,6 +339,10 @@ export default class Main extends BaseService<never> {
       ? (Promise.resolve(null) as unknown as Promise<SigningService>)
       : SigningService.create(keyringService, ledgerService, chainService)
 
+    const trezorService = HIDE_IMPORT_TREZOR
+    ? (Promise.resolve(null) as unknown as Promise<TrezorService>)
+    : TrezorService.create()
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -375,7 +380,8 @@ export default class Main extends BaseService<never> {
       await providerBridgeService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await trezorService
     )
   }
 
@@ -440,7 +446,14 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    /**
+     * A promise to the Trezor service, handling the communication
+     * with attached Trezor device
+     */
+    private trezorService: TrezorService
+
   ) {
     super({
       initialLoadWaitExpired: {
@@ -502,6 +515,10 @@ export default class Main extends BaseService<never> {
       servicesToBeStarted.push(this.signingService.startService())
     }
 
+    if (!HIDE_IMPORT_TREZOR) {
+      servicesToBeStarted.push(this.trezorService.startService())
+    }
+
     await Promise.all(servicesToBeStarted)
   }
 
@@ -523,6 +540,10 @@ export default class Main extends BaseService<never> {
       servicesToBeStopped.push(this.signingService.stopService())
     }
 
+    if (!HIDE_IMPORT_TREZOR) {
+      servicesToBeStopped.push(this.trezorService.stopService())
+    }
+
     await Promise.all(servicesToBeStopped)
     await super.internalStopService()
   }
@@ -540,6 +561,10 @@ export default class Main extends BaseService<never> {
     if (!HIDE_IMPORT_LEDGER) {
       this.connectLedgerService()
       this.connectSigningService()
+    }
+
+    if (!HIDE_IMPORT_TREZOR) {
+      this.connectTrezorService()
     }
 
     await this.connectChainService()
@@ -622,6 +647,10 @@ export default class Main extends BaseService<never> {
 
   async connectLedger(): Promise<string | null> {
     return this.ledgerService.refreshConnectedLedger()
+  }
+
+  async connectTrezor(): Promise<string | null> {
+    return this.trezorService.refreshConnectedTrezor()
   }
 
   async getAccountEthBalanceUncached(address: string): Promise<bigint> {
@@ -879,6 +908,32 @@ export default class Main extends BaseService<never> {
 
     this.ledgerService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
       this.store.dispatch(setUsbDeviceCount({ usbDeviceCount }))
+    })
+  }
+
+  async connectTrezorService(): Promise<void> {
+    //this.store.dispatch(resetLedgerState())
+
+    this.trezorService.emitter.on("connected", ({ id, metadata }) => {
+      console.log("Got Trezor connected event " + id + " | " + metadata)
+      this.store.dispatch(
+        setDeviceConnectionStatus({
+          deviceID: id,
+          status: "available",
+          isBlindSigner: metadata.ethereumBlindSigner,
+        })
+      )
+    })
+
+    this.trezorService.emitter.on("disconnected", ({ id }) => {
+      console.log("Got Trezor disconnected event " + id)
+      this.store.dispatch(
+        setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
+      )
+    })
+
+    this.trezorService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
+      console.log("Got Trezor usbDeviceCount event " + usbDeviceCount)
     })
   }
 
