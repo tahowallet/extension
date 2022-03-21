@@ -81,7 +81,7 @@ export default function SignTransaction({
           location.state.redirectTo.state
         )
       } else {
-        history.push("/")
+        history.goBack()
       }
     }
   }, [
