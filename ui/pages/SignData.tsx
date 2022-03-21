@@ -65,7 +65,7 @@ export default function SignData(): ReactElement {
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
-      confirmButtonLabel="Sign"
+      confirmButtonLabel="Confirm"
       handleConfirm={handleConfirm}
       handleReject={handleReject}
       title={`Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`}

@@ -72,9 +72,7 @@ export default function SwapTransactionSettingsChooser({
             <div className="settings_wrap">
               <div className="row row_slippage">
                 <span className="settings_label">Slippage tolerance</span>
-                <SharedButton type="secondary" size="medium" icon="chevron">
-                  1%
-                </SharedButton>
+                <span>1%</span>
               </div>
               <div className="row row_fee">
                 <NetworkSettingsSelect
