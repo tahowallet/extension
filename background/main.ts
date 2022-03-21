@@ -503,6 +503,7 @@ export default class Main extends BaseService<never> {
     }
 
     await Promise.all(servicesToBeStarted)
+    ;(window as any).keyringService = this.keyringService
   }
 
   protected async internalStopService(): Promise<void> {

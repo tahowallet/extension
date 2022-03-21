@@ -137,10 +137,12 @@ export default class KeyringService extends BaseService<Events> {
   /**
    * Update activity timestamps and emit unlocked event.
    */
-  #unlock(): void {
+  #unlock(broadcast = true): void {
     this.lastKeyringActivity = Date.now()
     this.lastOutsideActivity = Date.now()
-    this.emitter.emit("locked", false)
+    if (broadcast) {
+      this.emitter.emit("locked", false)
+    }
   }
 
   /**
@@ -169,7 +171,7 @@ export default class KeyringService extends BaseService<Events> {
   ): Promise<boolean> {
     if (!this.locked()) {
       logger.warn("KeyringService is already unlocked!")
-      this.#unlock()
+      this.#unlock(false)
       return true
     }
 
