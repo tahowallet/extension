@@ -1,3 +1,4 @@
+import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
@@ -14,13 +15,19 @@ import { sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
+import NameService from "../name"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import {
   EnrichedEVMTransaction,
   EnrichedEVMTransactionSignatureRequest,
+  SignTypedDataAnnotation,
   TransactionAnnotation,
+  EnrichedSignTypedDataRequest,
 } from "./types"
+import { SignTypedDataRequest } from "../../utils/signing"
+import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
+import { ETHEREUM } from "../../constants"
 
 export * from "./types"
 
@@ -30,6 +37,7 @@ interface Events extends ServiceLifecycleEvents {
     forAccounts: string[]
   }
   enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
+  enrichedSignTypedDataRequest: EnrichedSignTypedDataRequest
 }
 
 /**
@@ -48,19 +56,25 @@ export default class EnrichmentService extends BaseService<Events> {
    * startService() is called and resolved.
    * @param indexingService - Required for token metadata and currency
    * @param chainService - Required for chain interactions.
+   * @param nameService - Required for name lookups.
    * @returns A new, initializing EnrichmentService
    */
   static create: ServiceCreatorFunction<
     Events,
     EnrichmentService,
-    [Promise<ChainService>, Promise<IndexingService>]
-  > = async (chainService, indexingService) => {
-    return new this(await chainService, await indexingService)
+    [Promise<ChainService>, Promise<IndexingService>, Promise<NameService>]
+  > = async (chainService, indexingService, nameService) => {
+    return new this(
+      await chainService,
+      await indexingService,
+      await nameService
+    )
   }
 
   private constructor(
     private chainService: ChainService,
-    private indexingService: IndexingService
+    private indexingService: IndexingService,
+    private nameService: NameService
   ) {
     super({})
   }
@@ -265,6 +279,49 @@ export default class EnrichmentService extends BaseService<Events> {
     )
 
     return enrichedTxSignatureRequest
+  }
+
+  async enrichSignTypedDataRequest(
+    signTypedDataRequest: SignTypedDataRequest
+  ): Promise<EnrichedSignTypedDataRequest> {
+    let annotation: SignTypedDataAnnotation = {
+      type: "unrecognized",
+    }
+    const { typedData } = signTypedDataRequest
+    if (isEIP2612TypedData(typedData)) {
+      const assets = await this.indexingService.getCachedAssets(ETHEREUM)
+      const correspondingAsset = assets.find(
+        (asset): asset is SmartContractFungibleAsset => {
+          if (
+            typedData.domain.verifyingContract &&
+            "contractAddress" in asset
+          ) {
+            return (
+              normalizeHexAddress(asset.contractAddress) ===
+              normalizeHexAddress(typedData.domain.verifyingContract)
+            )
+          }
+          return false
+        }
+      )
+      annotation = await enrichEIP2612SignTypedDataRequest(
+        typedData,
+        this.nameService,
+        correspondingAsset
+      )
+    }
+
+    const enrichedSignTypedDataRequest = {
+      ...signTypedDataRequest,
+      annotation,
+    }
+
+    this.emitter.emit(
+      "enrichedSignTypedDataRequest",
+      enrichedSignTypedDataRequest
+    )
+
+    return enrichedSignTypedDataRequest
   }
 
   async enrichTransaction(
