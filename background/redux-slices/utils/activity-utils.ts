@@ -1,6 +1,15 @@
 import { convertToEth, weiToGwei } from "../../lib/utils"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 
+export function getRecipient(activityItem: ActivityItem): string | undefined {
+  const { annotation } = activityItem
+
+  if (annotation?.type === "asset-transfer") {
+    return annotation.recipientAddress
+  }
+  return activityItem.to
+}
+
 function ethTransformer(
   value: string | number | bigint | null | undefined
 ): string {
