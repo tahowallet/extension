@@ -4,15 +4,60 @@ import {
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
 import {
+  selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { ETH } from "@tallyho/tally-background/constants"
+import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
+import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { PricePoint } from "@tallyho/tally-background/assets"
 import React, { ReactElement } from "react"
+import { getGasLimit } from "@tallyho/tally-background/redux-slices/utils/transacation-utils"
 import { useBackgroundSelector } from "../../hooks"
 
-export default function FeeSettingsText(): ReactElement {
+const getFeeDollarValue = (
+  currencyPrize: PricePoint | undefined,
+  networkSettings: {
+    gasLimit: string
+    suggestedGasLimit: bigint | undefined
+    values: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
+  }
+) => {
+  const {
+    values: { maxFeePerGas, maxPriorityFeePerGas },
+  } = networkSettings
+
+  const gasLimit = getGasLimit(networkSettings)
+
+  if (!gasLimit) return null
+
+  const { localizedMainCurrencyAmount } =
+    enrichAssetAmountWithMainCurrencyValues(
+      {
+        asset: ETH,
+        amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
+      },
+      currencyPrize,
+      2
+    )
+
+  return localizedMainCurrencyAmount
+}
+
+export default function FeeSettingsText({
+  showDollarValue = false,
+}: {
+  showDollarValue?: boolean
+}): ReactElement {
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const selectedFeeType = useBackgroundSelector(selectFeeType)
+  const networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
+  const mainCurrencyPricePoint = useBackgroundSelector(
+    selectMainCurrencyPricePoint
+  )
+
+  const dollarValue = getFeeDollarValue(mainCurrencyPricePoint, networkSettings)
 
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
@@ -27,11 +72,22 @@ export default function FeeSettingsText(): ReactElement {
         )
       : ""
 
+  if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
+
+  const gweiValue = `${estimatedGweiAmount} Gwei`
+
+  if (!showDollarValue || !dollarValue) return <div>~{gweiValue}</div>
+
   return (
     <div>
-      {typeof estimatedFeesPerGas !== "undefined"
-        ? `~${estimatedGweiAmount} Gwei`
-        : "Unknown"}
+      ~${dollarValue}
+      <span className="fee_gwei">({gweiValue})</span>
+      <style jsx>{`
+        .fee_gwei {
+          color: var(--green-60);
+          margin-left: 5px;
+        }
+      `}</style>
     </div>
   )
 }

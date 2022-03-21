@@ -10,7 +10,7 @@ export default function FeeSettingsButton({
 }: FeeSettingsButtonProps): ReactElement {
   return (
     <button className="settings" type="button" onClick={onClick}>
-      <FeeSettingsText />
+      <FeeSettingsText showDollarValue />
       <img className="settings_image" src="./images/cog@2x.png" alt="" />
       <style jsx>
         {`

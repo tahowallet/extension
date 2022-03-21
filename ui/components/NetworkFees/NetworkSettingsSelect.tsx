@@ -12,7 +12,7 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import logger from "@tallyho/tally-background/lib/logger"
+import { getGasLimit } from "@tallyho/tally-background/redux-slices/utils/transacation-utils"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
@@ -161,18 +161,10 @@ export default function NetworkSettingsSelect({
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
-      let gasLimit = networkSettings.suggestedGasLimit
-
-      if (networkSettings.gasLimit !== "") {
-        try {
-          gasLimit = BigInt(networkSettings.gasLimit)
-        } catch (error) {
-          logger.debug(
-            "Failed to parse network settings gas limit",
-            networkSettings.gasLimit
-          )
-        }
-      }
+      const gasLimit = getGasLimit({
+        suggestedGasLimit: networkSettings.suggestedGasLimit,
+        gasLimit: networkSettings.gasLimit,
+      })
 
       if (
         typeof instant !== "undefined" &&
