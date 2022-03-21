@@ -221,7 +221,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .assets_list {
             display: block;
             overflow: scroll;
-            height: calc(100% - 140px);
+            height: calc(100% - 96px);
             width: 100%;
           }
         `}
