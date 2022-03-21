@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference types="styled-jsx" />
 
 // Although you would expect this file to be unnecessary, removing it will
@@ -10,11 +9,11 @@ interface Window {
     isTally: boolean
     on: (
       eventName: string | symbol,
-      listener: (...args: any[]) => void
+      listener: (...args: unknown[]) => void
     ) => unknown
     removeListener: (
       eventName: string | symbol,
-      listener: (...args: any[]) => void
+      listener: (...args: unknown[]) => void
     ) => unknown
   }
   ethereum?: {
@@ -22,11 +21,11 @@ interface Window {
     isTally?: boolean
     on?: (
       eventName: string | symbol,
-      listener: (...args: any[]) => void
+      listener: (...args: unknown[]) => void
     ) => unknown
     removeListener?: (
       eventName: string | symbol,
-      listener: (...args: any[]) => void
+      listener: (...args: unknown[]) => void
     ) => unknown
     autoRefreshOnNetworkChange?: boolean
   }
@@ -35,11 +34,11 @@ interface Window {
     isTally?: boolean
     on?: (
       eventName: string | symbol,
-      listener: (...args: any[]) => void
+      listener: (...args: unknown[]) => void
     ) => unknown
     removeListener?: (
       eventName: string | symbol,
-      listener: (...args: any[]) => void
+      listener: (...args: unknown[]) => void
     ) => unknown
     autoRefreshOnNetworkChange?: boolean
   }
