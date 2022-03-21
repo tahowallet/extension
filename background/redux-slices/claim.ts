@@ -54,9 +54,11 @@ interface ClaimingState {
   referrer: string | null
 }
 
+export const TALLY_TOKEN_ADDRESS = "0x7EE7c993FBAD3AAFf795973ee14ff2034311a966"
+const VOTE_WITH_FRIENDS_ADDRESS = "0x5Bcccd16e8239E4D1A7a98Cf582df8f3a335375D"
+
 const getDistributorContract = async () => {
-  const distributorContractAddress =
-    "0x1E33A61bdBE9E4B4c4B0e27ea858f43e22Cf703F" // VoteWithFriends contract address
+  const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
   const distributor = await getContract(
     distributorContractAddress,
     DISTRIBUTOR_ABI
@@ -70,7 +72,7 @@ const initialState: ClaimingState = {
   distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
-  eligibility: null,
+  eligibility: {},
   delegates,
   DAOs,
   claimStep: 1,
@@ -170,7 +172,9 @@ export const checkAlreadyClaimed = createBackgroundAsyncThunk(
     const alreadyClaimed = await distributorContract.isClaimed(
       eligibility.index
     )
-    dispatch(claimed(accountAddress))
+    if (alreadyClaimed) {
+      dispatch(claimed(accountAddress))
+    }
     return alreadyClaimed
   }
 )
@@ -269,10 +273,12 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
 
     if (delegatee) {
       const TallyTokenContract = await getContract(
-        "0xE3709cde1eaFF5297035306C3D42E3cC8812ffa9",
+        TALLY_TOKEN_ADDRESS,
         ERC2612_INTERFACE
       )
-      const nonce = await TallyTokenContract.nonces(address)
+
+      const nonce: BigNumber = await TallyTokenContract.nonces(address)
+      const nonceValue = Number(nonce)
 
       const timestamp = await getCurrentTimestamp()
 
@@ -290,7 +296,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
       }
       const message = {
         delegatee,
-        nonce,
+        nonce: nonceValue,
         expiry,
       }
       // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
@@ -300,7 +306,11 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
       const signature = utils.splitSignature(tx)
 
       dispatch(
-        claimingSlice.actions.saveSignature({ signature, nonce, expiry })
+        claimingSlice.actions.saveSignature({
+          signature,
+          nonce: nonceValue,
+          expiry,
+        })
       )
     }
   }
