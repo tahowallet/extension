@@ -11,6 +11,7 @@ import KeyringService, {
 import { KeyringTypes } from "../types"
 import { EIP1559TransactionRequest } from "../networks"
 import { ETHEREUM } from "../constants"
+import logger from "../lib/logger"
 
 const originalCrypto = global.crypto
 beforeEach(() => {
@@ -264,6 +265,15 @@ describe("KeyringService when initialized", () => {
         transactionWithFrom
       )
     ).resolves.toBeDefined()
+  })
+
+  it("successfully unlocks already unlocked wallet", async () => {
+    jest.spyOn(logger, "warn").mockImplementation((arg) => {
+      // We should log if we try to unlock an unlocked keyring
+      expect(arg).toEqual("KeyringService is already unlocked!")
+    })
+    expect(service.locked()).toEqual(false)
+    expect(await service.unlock(testPassword)).toEqual(true)
   })
 })
 
