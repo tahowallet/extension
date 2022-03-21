@@ -231,8 +231,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
     "show"
   )
 
-  const hideOnboardingClaimBanner =
-    currentAccount.address in claimed && !isCurrentlyClaiming
+  const hideOnboardingClaimBanner = currentAccount.address in claimed
 
   if (
     (claimAmount === "0" && showOrHide === "hide") ||
