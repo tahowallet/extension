@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { SigningMethod } from "../signing"
+import { SigningMethod } from "../../utils/signing"
 
 // For consistency with similar modules:
 // eslint-disable-next-line import/prefer-default-export

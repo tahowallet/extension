@@ -9,6 +9,7 @@ interface Props {
   id?: string
   type:
     | "primary"
+    | "primaryGreen"
     | "secondary"
     | "tertiary"
     | "tertiaryWhite"
@@ -76,6 +77,7 @@ export default function SharedButton(props: Props): ReactElement {
         { large: size === "large" },
         { small: size === "small" },
         { secondary: type === "secondary" },
+        { primaryGreen: type === "primaryGreen" },
         { disabled: isDisabled },
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
@@ -272,6 +274,10 @@ export default function SharedButton(props: Props): ReactElement {
             padding: 0 12px;
             height: 32px;
             font-size: 16px;
+          }
+          .primaryGreen {
+            color: var(--hunter-green);
+            background-color: var(--trophy-gold);
           }
           .warning {
             background-color: var(--attention);

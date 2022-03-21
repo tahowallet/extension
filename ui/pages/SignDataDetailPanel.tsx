@@ -1,13 +1,21 @@
 import { selectTypedData } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement } from "react"
+import SignTypedDataInfo from "../components/SignData/SignTypedDataInfo"
 import { useBackgroundSelector } from "../hooks"
 import capitalize from "../utils/capitalize"
 
 export default function SignDataDetailPanel(): ReactElement {
   const typedDataRequest = useBackgroundSelector(selectTypedData)
-  if (typeof typedDataRequest === "undefined") return <></>
+  if (typeof typedDataRequest === "undefined") {
+    return <></>
+  }
 
   const { domain, message } = typedDataRequest.typedData
+
+  const typedDataRequestSource =
+    typedDataRequest.annotation?.type !== "unrecognized"
+      ? capitalize(typedDataRequest.annotation.source)
+      : domain.name
 
   const keys = Object.keys(message)
 
@@ -25,17 +33,10 @@ export default function SignDataDetailPanel(): ReactElement {
           </div>
           <div className="divider" />
           {/* FIXME: `domain.name` was removed as part of personal sign implementation. Why? */}
-          <div className="header">{domain.name}</div>
+          <div className="source">{typedDataRequestSource}</div>
           <div className="divider" />
           {keys.length > 2 ? (
-            <div className="messages">
-              {keys.map((key) => (
-                <div key={key} className="message">
-                  <div className="key">{capitalize(key)}</div>
-                  <div className="value light">{`${message[key]}`}</div>
-                </div>
-              ))}
-            </div>
+            <SignTypedDataInfo typedDataRequest={typedDataRequest} />
           ) : (
             <>
               {keys.map((key) => (
@@ -58,15 +59,18 @@ export default function SignDataDetailPanel(): ReactElement {
         }
         .label {
           color: var(--green-40);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
         }
         .header {
           padding: 16px 0;
         }
-        .messages {
-          display: flex;
-          flex-flow: column;
-          width: 100%;
-          padding-top: 16px;
+        .source {
+          padding: 20px 0;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
         }
         .message {
           display: flex;
@@ -106,7 +110,6 @@ export default function SignDataDetailPanel(): ReactElement {
         }
         .container {
           display: flex;
-          margin: 20px 0;
           flex-direction: column;
           align-items: center;
         }
