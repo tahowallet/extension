@@ -4,7 +4,7 @@ import { BigNumber, ethers } from "ethers"
 import { AnyAsset } from "../assets"
 import { HOUR, doggoTokenDecimalDigits } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
-import { ERC20_ABI } from "../lib/erc20"
+import { ERC20_ABI, ERC2612_INTERFACE } from "../lib/erc20"
 import { fromFixedPointNumber, toFixedPoint } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
 import VAULT_ABI from "../lib/vault"
@@ -293,21 +293,23 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     const { earn } = state as { earn: EarnState }
 
     const vaultContract = await getContract(vaultContractAddress, VAULT_ABI)
-    const tokenContract = await getContract(tokenAddress, ERC20_ABI)
 
     const timestamp = await getCurrentTimestamp()
+
+    const TokenContract = await getContract(tokenAddress, ERC2612_INTERFACE)
+
+    const decimals: BigNumber = await TokenContract.decimals()
     // ! cleanup
     const signatureDeadline = BigInt(timestamp) + BigInt(12) * BigInt(HOUR)
 
-    const amountPermitted = await tokenContract.allowance(
+    const amountPermitted = await TokenContract.allowance(
       signerAddress,
       APPROVAL_TARGET_CONTRACT_ADDRESS
     )
 
     const depositTransactionData =
       await vaultContract.populateTransaction.depositWithApprovalTarget(
-        // ! remove hardcoded decimal
-        toFixedPoint(Number(amount), 6),
+        toFixedPoint(Number(amount), decimals.toNumber()),
         signerAddress,
         signerAddress,
         amountPermitted,
@@ -327,8 +329,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(
         deposited({
           vaultAddress: normalizeEVMAddress(vaultContractAddress),
-          // ! remove hardcoded decimal
-          depositedAmount: toFixedPoint(Number(amount), 6),
+          depositedAmount: toFixedPoint(Number(amount), decimals.toNumber()),
         })
       )
     }
@@ -483,9 +484,11 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     {
       vaultContractAddress,
       amount,
+      tokenAddress,
     }: {
       vaultContractAddress: HexString
       amount: string
+      tokenAddress: HexString
     },
     { dispatch }
   ) => {
@@ -497,7 +500,10 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const timestamp = await getCurrentTimestamp()
     const signatureDeadline = timestamp + 12 * HOUR
 
-    const nonceValue = await getNonce()
+    const TokenContract = await getContract(tokenAddress, ERC2612_INTERFACE)
+    const nonceValue = await TokenContract.nonces(signerAddress)
+
+    const decimals: BigNumber = await TokenContract.decimals()
 
     const types = {
       Message: [
@@ -532,7 +538,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const message = {
       owner: signerAddress,
       spender: vaultContractAddress,
-      value: toFixedPoint(Number(amount), 6), // ! REMOVE HARDCODED DECIMAL
+      value: toFixedPoint(Number(amount), decimals.toNumber()),
       nonce: nonceValue,
       deadline: signatureDeadline,
     }

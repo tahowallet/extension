@@ -86,6 +86,7 @@ export default function EarnDeposit(): ReactElement {
     dispatch(
       permitVaultDeposit({
         vaultContractAddress: vault.contractAddress,
+        tokenAddress: vault.wantToken,
         amount,
       })
     )

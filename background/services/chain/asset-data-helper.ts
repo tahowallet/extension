@@ -72,7 +72,6 @@ export default class AssetDataHelper {
       const signer = provider.getSigner()
       const signerAddress = await signer.getAddress()
       const tokens = [
-        "0x2eD9D339899CD5f1E4a3B131F467E76549E8Eab0",
         "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
         "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
         "0x514910771AF9Ca656af840dff83E8264EcF986CA",
