@@ -488,7 +488,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           }
           .max {
             margin-left: 8px; // space to balance
-            color: #d08e39;
+            color: var(--trophy-gold);
             cursor: pointer;
           }
           .asset_wrap {
