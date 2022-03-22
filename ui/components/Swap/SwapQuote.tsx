@@ -63,7 +63,10 @@ export default function SwapQuote({
           gasPrice,
       })
     )
-    history.push("/sign-transaction")
+
+    history.push("/sign-transaction", {
+      redirectTo: { path: "/" },
+    })
   }, [
     finalQuote,
     dispatch,
