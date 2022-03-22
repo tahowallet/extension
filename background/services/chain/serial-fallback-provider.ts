@@ -1,4 +1,3 @@
-import { Network } from "@ethersproject/networks"
 import {
   EventType,
   JsonRpcProvider,
@@ -175,7 +174,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           await this.send(method, params)
         })
       }
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return await this.currentProvider.send(method, params as any)
     } catch (error) {
@@ -265,10 +263,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           "will not work until a WebSocket provider connects."
       )
     }
-  }
-
-  async detectNetwork(): Promise<Network> {
-    return this.currentProvider.detectNetwork()
   }
 
   /**
