@@ -60,11 +60,12 @@ export default function SignTransactionSignInfoProvider({
             ) : (
               <>
                 <div className="label">Send to</div>
-                {annotation?.type == 'contract-interaction' && annotation.displayFields?.contractName ? (
+                {annotation?.type === "contract-interaction" &&
+                annotation.displayFields?.contractName ? (
                   <div className="send_to_ens">
                     {annotation.displayFields.contractName}
                   </div>
-                ): null}
+                ) : null}
                 <div className="send_to">
                   {truncateAddress(transactionDetails.to)}
                 </div>
