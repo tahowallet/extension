@@ -453,6 +453,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * has been somehow set out of range, resets it to 0.
    */
   private async reconnectProvider() {
+    await this.disconnectCurrentProvider()
     if (this.currentProviderIndex >= this.providerCreators.length) {
       this.currentProviderIndex = 0
     }
@@ -464,7 +465,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
 
     this.currentProvider = this.providerCreators[this.currentProviderIndex]()
-    await this.resubscribe()
+    await this.resubscribe(this.currentProvider)
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
@@ -473,18 +474,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * Resubscribes existing WebSocket subscriptions (if the current provider is
    * a `WebSocketProvider`) and regular Ethers subscriptions (for all
    * providers).
+   * @param provider The provider to use to resubscribe
+   * @returns A boolean indicating if websocket subscription was successful or not
    */
-  private async resubscribe() {
+  private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
     logger.debug("Resubscribing subscriptions...")
 
-    if (this.currentProvider instanceof WebSocketProvider) {
-      const provider = this.currentProvider as WebSocketProvider
+    if (provider instanceof WebSocketProvider) {
+      const websocketProvider = provider as WebSocketProvider
 
       if (
         isClosedOrClosingWebSocketProvider(provider) ||
         websocketProviderIsConnecting(provider)
       ) {
-        return
+        return false
       }
 
       // Chain promises to serially resubscribe.
@@ -498,29 +501,51 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
               // eslint-disable-next-line no-underscore-dangle
-              provider._subscribe(tag, param, processFunc)
+              websocketProvider._subscribe(tag, param, processFunc)
             )
           ),
         Promise.resolve()
-      )
-    } else if (this.subscriptions.length > 0) {
-      logger.warn(
-        `Cannot resubscribe ${this.subscriptions.length} subscription(s) ` +
-          `as the current provider is not a WebSocket provider; waiting ` +
-          `until a WebSocket provider connects to restore subscriptions ` +
-          `properly.`
       )
     }
 
     this.eventSubscriptions.forEach(({ eventName, listener, once }) => {
       if (once) {
-        this.currentProvider.once(eventName, listener)
+        provider.once(eventName, listener)
       } else {
-        this.currentProvider.on(eventName, listener)
+        provider.on(eventName, listener)
       }
     })
+    if (!(provider instanceof WebSocketProvider)) {
+      if (this.subscriptions.length > 0) {
+        logger.warn(
+          `Cannot resubscribe ${this.subscriptions.length} subscription(s) ` +
+            `as the current provider is not a WebSocket provider; waiting ` +
+            `until a WebSocket provider connects to restore subscriptions ` +
+            `properly.`
+        )
+        // intentionally not awaited
+        this.periodicallyReconnectToPrimaryProvider()
+      }
+      return false
+    }
 
     logger.debug("Subscriptions resubscribed...")
+    return true
+  }
+
+  private async periodicallyReconnectToPrimaryProvider(): Promise<unknown> {
+    return waitAnd(5_000, async () => {
+      console.log("attempting to resubscribe to ws")
+      const primaryProvider = this.providerCreators[0]()
+      const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
+      if (!subscriptionsSuccessful) {
+        await this.periodicallyReconnectToPrimaryProvider()
+        return
+      }
+      // only set if subscriptions are successful
+      this.currentProvider = primaryProvider
+      this.currentProviderIndex = 0
+    })
   }
 
   /**
