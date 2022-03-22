@@ -117,7 +117,11 @@ export default function SignTransactionSpendAssetInfoProvider({
           <div className="spend_destination_icons">
             <div className="site_icon" />
             <div className="asset_icon_wrap">
-              <SharedAssetIcon size="large" symbol={asset.symbol} />
+              <SharedAssetIcon
+                size="large"
+                symbol={asset.symbol}
+                logoURL={asset.metadata?.logoURL}
+              />
             </div>
           </div>
           <span className="site">Smart Contract Interaction</span>
