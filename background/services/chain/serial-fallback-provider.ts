@@ -177,7 +177,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (isConnectingWebSocketProvider(this.currentProvider)) {
-        // If the websocket is still connecting, wait 100ms and try to send again.
+        // If the websocket is still connecting, wait and try to send again.
         return await waitAnd(WAIT_BEFORE_SEND_AGAIN, async () =>
           this.send(method, params)
         )
@@ -525,7 +525,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             `until a WebSocket provider connects to restore subscriptions ` +
             `properly.`
         )
-        // intentionally not awaited
+        // Intentionally not awaited - This starts off a recursive reconnect loop
+        // that keeps trying to reconnect until successful.
         this.attemptToReconnectToPrimaryProvider()
       }
       return false
