@@ -118,9 +118,6 @@ export default function NetworkSettingsSelect({
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
   )
-  const [gasLimitErrorMessage, setGasLimitErrorMessage] = useState<
-    string | undefined
-  >(undefined)
 
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
@@ -208,13 +205,10 @@ export default function NetworkSettingsSelect({
     try {
       const parsedGasLimit = BigInt(newGasLimit)
       if (parsedGasLimit >= 0n) {
-        setGasLimitErrorMessage(undefined)
         onNetworkSettingsChange({
           ...networkSettings,
           gasLimit: parsedGasLimit,
         })
-      } else {
-        setGasLimitErrorMessage("Invalid Gas Limit")
       }
     } catch (error) {
       logger.debug("Failed to parse network settings gas limit", newGasLimit)
@@ -256,7 +250,6 @@ export default function NetworkSettingsSelect({
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"
-            errorMessage={gasLimitErrorMessage}
           />
         </div>
         <div className="max_fee">
