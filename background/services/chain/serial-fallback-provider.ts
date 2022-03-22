@@ -77,8 +77,10 @@ function isClosedOrClosingWebSocketProvider(
  * Returns true if the given provider is using a WebSocket AND the WebSocket is
  * connecting. Ethers does not provide direct access to this information.
  */
-function websocketProviderIsConnecting(provider: JsonRpcProvider): boolean {
+function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
   if (provider instanceof WebSocketProvider) {
+    // Digging into the innards of Ethers here because there's no
+    // other way to get access to the WebSocket connection situation.
     // eslint-disable-next-line no-underscore-dangle
     const webSocket = provider._websocket as WebSocket
     return webSocket.readyState === WebSocket.CONNECTING
@@ -169,10 +171,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         throw new Error("WebSocket is already in CLOSING")
       }
 
-      if (websocketProviderIsConnecting(this.currentProvider)) {
-        return await waitAnd(100, async () => {
-          await this.send(method, params)
-        })
+      if (isConnectingWebSocketProvider(this.currentProvider)) {
+        // If the websocket is still connecting, wait 100ms and try to send again.
+        return await waitAnd(100, async () => this.send(method, params))
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return await this.currentProvider.send(method, params as any)
@@ -474,15 +475,15 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
     logger.debug("Resubscribing subscriptions...")
 
+    if (
+      isClosedOrClosingWebSocketProvider(provider) ||
+      isConnectingWebSocketProvider(provider)
+    ) {
+      return false
+    }
+
     if (provider instanceof WebSocketProvider) {
       const websocketProvider = provider as WebSocketProvider
-
-      if (
-        isClosedOrClosingWebSocketProvider(provider) ||
-        websocketProviderIsConnecting(provider)
-      ) {
-        return false
-      }
 
       // Chain promises to serially resubscribe.
       //
