@@ -1,8 +1,6 @@
-import classNames from "classnames"
 import React, { ReactElement } from "react"
 
 type Props = {
-  type: "mask" | "background"
   icon: string
   width: number
   height?: number
@@ -15,7 +13,6 @@ type Props = {
 
 export default function SharedIcon(props: Props): ReactElement {
   const {
-    type,
     icon,
     width,
     height = width,
@@ -28,26 +25,15 @@ export default function SharedIcon(props: Props): ReactElement {
 
   return (
     <button
-      className={classNames("icon", {
-        mask: type === "mask",
-        background: type === "background",
-      })}
+      className="icon"
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
     >
       <style jsx>{`
-        .mask {
+        .icon {
           mask-image: url("./images/${icon}");
           mask-size: cover;
-        }
-        .background {
-          background-image: url("./images/${icon}");
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-        }
-        .icon {
           width: ${width}px;
           height: ${height}px;
           cursor: ${onClick ? "pointer" : "auto"};

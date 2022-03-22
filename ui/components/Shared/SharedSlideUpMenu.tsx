@@ -61,7 +61,6 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         ref={isOpen ? slideUpMenuRef : null}
       >
         <SharedIcon
-          type="mask"
           icon="close.svg"
           width={12}
           color="var(--green-20)"
