@@ -18,11 +18,12 @@ import {
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
+
 import {
   SignTypedDataRequest,
   SignDataRequest,
   parseSigningData,
-} from "../../redux-slices/signing"
+} from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC

@@ -111,6 +111,17 @@ export function getEthereumNetwork(): EVMNetwork {
   return ETHEREUM
 }
 
+export function isProbablyEVMAddress(str: string): str is HexString {
+  if (str.endsWith(".eth")) {
+    return true
+  }
+
+  if (normalizeHexAddress(str).startsWith("0x") && str.length === 42) {
+    return true
+  }
+  return false
+}
+
 export function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-5)}`
 }
@@ -135,7 +146,7 @@ export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
 /**
  * Converts a string of hexidecimals bytes to ascii text
  */
-export const hexToAscii = (hex_: string) => {
+export const hexToAscii = (hex_: string): string => {
   const hex = hex_.toString() // force conversion
   let str = ""
   for (let i = 0; i < hex.length; i += 2)
