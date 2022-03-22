@@ -195,7 +195,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async notifyContentScriptsAboutAddressChange(newAddress?: string) {
+  async notifyContentScriptsAboutAddressChange(
+    newAddress?: string
+  ): Promise<void> {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
