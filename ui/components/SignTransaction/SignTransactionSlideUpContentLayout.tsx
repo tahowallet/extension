@@ -1,19 +1,20 @@
+import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, ReactNode } from "react"
+import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
 export default function SignTransactionSlideUpContentLayout({
   title,
   helpMessage,
   steps,
-  onRefreshClick,
   onHelpClick,
 }: {
   title: ReactNode
   helpMessage: ReactNode
   steps: ReactNode[]
-  onRefreshClick?: () => void
   onHelpClick?: () => void
 }): ReactElement {
+  const dispatch = useBackgroundDispatch()
   return (
     <div className="container">
       <div className="title">{title}</div>
@@ -29,7 +30,11 @@ export default function SignTransactionSlideUpContentLayout({
         <SharedButton type="tertiaryGray" size="small" onClick={onHelpClick}>
           I need help
         </SharedButton>
-        <SharedButton type="primary" size="medium" onClick={onRefreshClick}>
+        <SharedButton
+          type="primary"
+          size="medium"
+          onClick={() => dispatch(connectLedger())}
+        >
           Refresh
         </SharedButton>
       </div>
