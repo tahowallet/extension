@@ -1,18 +1,22 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { SiweMessage } from "siwe"
-import { EIP191Data, EIP712TypedData, HexString } from "../types"
+import {
+  ExpectedSigningData,
+  SignDataMessageType,
+  SignDataRequest,
+  SigningMethod,
+  SignTypedDataRequest,
+} from "../utils/signing"
 import { createBackgroundAsyncThunk } from "./utils"
+import { EnrichedSignTypedDataRequest } from "../services/enrichment"
+import { EIP712TypedData, HexString } from "../types"
 
-export enum SignDataMessageType {
-  EIP191 = 0,
-  EIP4361 = 1,
+type SignOperation<T> = {
+  request: T
+  signingMethod: SigningMethod
 }
 
-// can add more types to this in the future
-export type ExpectedSigningData = EIP191Data | EIP4361Data
-
-export type Events = {
+type Events = {
   requestSignTypedData: {
     typedData: EIP712TypedData
     account: HexString
@@ -28,15 +32,11 @@ export type Events = {
   signatureRejected: never
 }
 
-export type SigningMethod =
-  | { type: "keyring" }
-  | { type: "ledger"; deviceID: string; path: string }
-
 export const signingSliceEmitter = new Emittery<Events>()
 
-export type SigningState = {
+type SigningState = {
   signedTypedData: string | undefined
-  typedDataRequest: SignTypedDataRequest | undefined
+  typedDataRequest: EnrichedSignTypedDataRequest | undefined
 
   signedData: string | undefined
   signDataRequest: SignDataRequest | undefined
@@ -48,41 +48,6 @@ export const initialState: SigningState = {
 
   signedData: undefined,
   signDataRequest: undefined,
-}
-
-export type EIP712DomainType = {
-  name?: string
-  version?: string
-  chainId?: number
-  verifyingContract?: HexString
-}
-
-export type SignTypedDataRequest = {
-  account: string
-  typedData: EIP712TypedData
-}
-
-// spec found https://eips.ethereum.org/EIPS/eip-4361
-export interface EIP4361Data {
-  domain: string
-  address: string
-  version: string
-  chainId: number
-  nonce: string
-  expiration?: string
-  statement?: string
-}
-
-export type SignDataRequest = {
-  account: string
-  rawSigningData: string
-  signingData: ExpectedSigningData
-  messageType: SignDataMessageType
-}
-
-export interface SignOperation<T> {
-  request: T
-  signingMethod: SigningMethod
 }
 
 export const signTypedData = createBackgroundAsyncThunk(
@@ -118,56 +83,6 @@ export const signData = createBackgroundAsyncThunk(
   }
 )
 
-const checkEIP4361: (message: string) => EIP4361Data | undefined = (
-  message
-) => {
-  try {
-    const siweMessage = new SiweMessage(message)
-    return {
-      domain: siweMessage.domain,
-      address: siweMessage.address,
-      statement: siweMessage.statement,
-      version: siweMessage.version,
-      chainId: siweMessage.chainId,
-      expiration: siweMessage.expirationTime,
-      nonce: siweMessage.nonce,
-    }
-  } catch (err) {
-    // console.error(err)
-  }
-
-  return undefined
-}
-
-/**
- * Takes a string and parses the string into a ExpectedSigningData Type
- *
- * EIP4361 standard can be found https://eips.ethereum.org/EIPS/eip-4361
- */
-export const parseSigningData: (signingData: string) => {
-  data: ExpectedSigningData
-  type: SignDataMessageType
-} = (signingData) => {
-  const data = checkEIP4361(signingData)
-  if (data) {
-    return {
-      data,
-      type: SignDataMessageType.EIP4361,
-    }
-  }
-
-  // data = checkOtherType(lines)
-  // if (!!data) {
-  // return data
-  // }
-
-  // add additional checks for any other types to add in the future
-  return {
-    data: signingData,
-    type: SignDataMessageType.EIP191,
-  }
-}
-
 const signingSlice = createSlice({
   name: "signing",
   initialState,
@@ -179,7 +94,7 @@ const signingSlice = createSlice({
     }),
     typedDataRequest: (
       state,
-      { payload }: { payload: SignTypedDataRequest }
+      { payload }: { payload: EnrichedSignTypedDataRequest }
     ) => ({
       ...state,
       typedDataRequest: payload,

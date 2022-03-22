@@ -10,9 +10,9 @@ import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { SigningMethod } from "../../redux-slices/signing"
 import { USE_MAINNET_FORK } from "../../features/features"
 import { FORK } from "../../constants"
+import { SigningMethod } from "../../utils/signing"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
