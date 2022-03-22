@@ -1,4 +1,4 @@
-import { Compilation, Compiler } from "webpack"
+import { Compilation, Compiler, sources } from "webpack"
 
 const PLUGIN_NAME = "RuntimeDefine"
 const WINDOW_PROVIDER_FILENAME = "window-provider.js"
@@ -32,14 +32,14 @@ export default class InjectWindowProvider {
               // eslint-disable-next-line no-underscore-dangle
               assets[PROVIDER_BRIDGE_FILENAME].source() as string
 
-            // @ts-expect-error this exist
             // eslint-disable-next-line no-underscore-dangle,no-param-reassign
-            assets[PROVIDER_BRIDGE_FILENAME]._children[0]._value =
+            assets[PROVIDER_BRIDGE_FILENAME] = new sources.RawSource(
               providerBridgeSource.replace(
                 // eslint-disable-next-line no-useless-escape
                 `\"@@@WINDOW_PROVIDER@@@\"`,
                 windowProviderSource
               )
+            )
 
             // eslint-disable-next-line no-param-reassign
             delete assets[WINDOW_PROVIDER_FILENAME]
