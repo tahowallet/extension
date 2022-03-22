@@ -50,7 +50,7 @@ export function connectProviderBridge(): void {
   port.postMessage({ request: { method: "tally_getConfig" } })
 }
 
-export async function injectTallyWindowProvider(): Promise<void> {
+export function injectTallyWindowProvider(): void {
   try {
     // This will be replaced by the InjectWindowProvider webpack plugin
     const windowProviderSource = "@@@WINDOW_PROVIDER@@@"
