@@ -478,6 +478,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (this.currentProvider instanceof WebSocketProvider) {
       const provider = this.currentProvider as WebSocketProvider
 
+      if (
+        isClosedOrClosingWebSocketProvider(provider) ||
+        websocketProviderIsConnecting(provider)
+      ) {
+        return
+      }
+
       // Chain promises to serially resubscribe.
       //
       // TODO If anything fails along the way, it should yield the same kind of
