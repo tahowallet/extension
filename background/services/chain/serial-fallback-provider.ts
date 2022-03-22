@@ -73,6 +73,20 @@ function isClosedOrClosingWebSocketProvider(
 }
 
 /**
+ * Returns true if the given provider is using a WebSocket AND the WebSocket is
+ * connecting. Ethers does not provide direct access to this information.
+ */
+function websocketProviderIsConnecting(provider: JsonRpcProvider): boolean {
+  if (provider instanceof WebSocketProvider) {
+    // eslint-disable-next-line no-underscore-dangle
+    const webSocket = provider._websocket as WebSocket
+    return webSocket.readyState === WebSocket.CONNECTING
+  }
+
+  return false
+}
+
+/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of providers in case previous ones fail.
  *
