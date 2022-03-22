@@ -16,8 +16,10 @@ import { transactionFromAlchemyWebsocketTransaction } from "../../lib/alchemy"
 const BASE_BACKOFF_MS = 150
 // Reset backoffs after 5 minutes.
 const COOLDOWN_PERIOD = 5 * MINUTE
-// Retry 3 times before falling back to the next provider.
-const MAX_RETRIES = 3
+// Retry 8 times before falling back to the next provider.
+// This generally results in a wait time of around 30 seconds before falling back since we
+// usually have multiple requests going out at once.
+const MAX_RETRIES = 8
 
 /**
  * Wait the given number of ms, then run the provided function. Returns a
@@ -43,8 +45,8 @@ function waitAnd<T, E extends Promise<T>>(
  * ms to back off before making the next attempt.
  */
 function backedOffMs(backoffCount: number): number {
-  const backoffSlotStart = BASE_BACKOFF_MS ** backoffCount
-  const backoffSlotEnd = BASE_BACKOFF_MS ** (backoffCount + 1)
+  const backoffSlotStart = BASE_BACKOFF_MS * 2 ** backoffCount
+  const backoffSlotEnd = BASE_BACKOFF_MS * 2 ** (backoffCount + 1)
 
   return backoffSlotStart + Math.random() * (backoffSlotEnd - backoffSlotStart)
 }
