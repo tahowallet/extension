@@ -30,12 +30,16 @@ export type ContractDeployment = BaseTransactionAnnotation & {
 
 export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
+  displayFields?: {
+    contractName?: string
+  }
 }
 
 export type AssetApproval = BaseTransactionAnnotation & {
   type: "asset-approval"
   assetAmount: AnyAssetAmount<SmartContractFungibleAsset> & AssetDecimalAmount
   spenderAddress: HexString
+  spenderName?: string
 }
 
 export type AssetTransfer = BaseTransactionAnnotation & {

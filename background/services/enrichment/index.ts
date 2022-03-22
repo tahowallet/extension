@@ -144,10 +144,14 @@ export default class EnrichmentService extends BaseService<Events> {
           ),
         }
       } else {
+        const toName = await this.nameService.lookUpName(transaction.to, ETHEREUM, false);
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
           type: "contract-interaction",
+          displayFields: {
+            contractName: toName
+          }
         }
       }
     } else {
@@ -190,11 +194,13 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx &&
         erc20Tx.name === "approve"
       ) {
+        const spenderName = await this.nameService.lookUpName(erc20Tx.args.spender, ETHEREUM, false);
         txAnnotation = {
           timestamp: resolvedTime,
           type: "asset-approval",
           transactionLogoURL,
           spenderAddress: erc20Tx.args.spender, // TODO ingest address
+          spenderName: spenderName,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
               asset: matchingFungibleAsset,
@@ -204,6 +210,7 @@ export default class EnrichmentService extends BaseService<Events> {
           ),
         }
       } else {
+        const toName = await this.nameService.lookUpName(transaction.to, ETHEREUM, false);
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
@@ -212,6 +219,9 @@ export default class EnrichmentService extends BaseService<Events> {
           // non-specific; the UI can choose to use it or not, but if we know the
           // address has an associated logo it's worth passing on.
           transactionLogoURL,
+          displayFields: {
+            contractName: toName
+          }
         }
       }
     }
