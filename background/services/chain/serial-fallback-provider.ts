@@ -16,7 +16,8 @@ const BASE_BACKOFF_MS = 150
 // Reset backoffs after 5 minutes.
 const COOLDOWN_PERIOD = 5 * MINUTE
 // Retry 8 times before falling back to the next provider.
-// This generally results in a wait time of around 30 seconds before falling back since we
+// This generally results in a wait time of around 30 seconds (with a maximum time
+// of 76.5 seconds for 8 completely serial requests) before falling back since we
 // usually have multiple requests going out at once.
 const MAX_RETRIES = 8
 // Wait 15 seconds between primary provider reconnect attempts.
