@@ -11,7 +11,7 @@ import {
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
-import { sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
@@ -122,6 +122,8 @@ export default class EnrichmentService extends BaseService<Events> {
       transaction.input === "0x" ||
       typeof transaction.input === "undefined"
     ) {
+      const toName = await this.nameService.lookUpName(transaction.to, ETHEREUM)
+
       // This is _almost certainly_ not a contract interaction, move on. Note that
       // a simple ETH send to a contract address can still effectively be a
       // contract interaction (because it calls the fallback function on the
@@ -134,6 +136,7 @@ export default class EnrichmentService extends BaseService<Events> {
           timestamp: resolvedTime,
           type: "asset-transfer",
           senderAddress: transaction.from,
+          recipientName: toName,
           recipientAddress: transaction.to, // TODO ingest address
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
@@ -144,11 +147,6 @@ export default class EnrichmentService extends BaseService<Events> {
           ),
         }
       } else {
-        const toName = await this.nameService.lookUpName(
-          transaction.to,
-          ETHEREUM,
-          false
-        )
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
@@ -176,6 +174,11 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx &&
         (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
       ) {
+        const toName = await this.nameService.lookUpName(
+          erc20Tx.args.to,
+          ETHEREUM
+        )
+
         // We have an ERC-20 transfer
         txAnnotation = {
           timestamp: resolvedTime,
@@ -183,6 +186,7 @@ export default class EnrichmentService extends BaseService<Events> {
           transactionLogoURL,
           senderAddress: erc20Tx.args.from ?? transaction.from,
           recipientAddress: erc20Tx.args.to, // TODO ingest address
+          recipientName: toName,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
               asset: matchingFungibleAsset,
@@ -198,9 +202,9 @@ export default class EnrichmentService extends BaseService<Events> {
       ) {
         const spenderName = await this.nameService.lookUpName(
           erc20Tx.args.spender,
-          ETHEREUM,
-          false
+          ETHEREUM
         )
+
         txAnnotation = {
           timestamp: resolvedTime,
           type: "asset-approval",
@@ -218,9 +222,9 @@ export default class EnrichmentService extends BaseService<Events> {
       } else {
         const toName = await this.nameService.lookUpName(
           transaction.to,
-          ETHEREUM,
-          false
+          ETHEREUM
         )
+
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
@@ -238,6 +242,34 @@ export default class EnrichmentService extends BaseService<Events> {
     if ("logs" in transaction && typeof transaction.logs !== "undefined") {
       const assets = await this.indexingService.getCachedAssets(network)
 
+      const erc20TransferLogs = parseLogsForERC20Transfers(transaction.logs)
+
+      // Look up transfer log names, then flatten to an address -> name map.
+      const namesByAddress = Object.fromEntries(
+        (
+          await Promise.allSettled(
+            [
+              ...new Set(
+                ...erc20TransferLogs.map(
+                  ({ recipientAddress }) => recipientAddress
+                )
+              ),
+            ].map(
+              async (address) =>
+                [
+                  normalizeEVMAddress(address),
+                  await this.nameService.lookUpName(address, ETHEREUM),
+                ] as const
+            )
+          )
+        )
+          .filter(
+            (result): result is PromiseFulfilledResult<[string, string]> =>
+              result.status === "fulfilled" && result.value[1] !== undefined
+          )
+          .map(({ value }) => value)
+      )
+
       const subannotations = parseLogsForERC20Transfers(
         transaction.logs
       ).flatMap<TransactionAnnotation>(
@@ -248,6 +280,9 @@ export default class EnrichmentService extends BaseService<Events> {
               isSmartContractFungibleAsset(asset) &&
               sameEVMAddress(asset.contractAddress, contractAddress)
           )
+
+          const recipientName =
+            namesByAddress[normalizeEVMAddress(recipientAddress)]
 
           return typeof matchingFungibleAsset !== "undefined"
             ? [
@@ -262,6 +297,7 @@ export default class EnrichmentService extends BaseService<Events> {
                   ),
                   senderAddress,
                   recipientAddress,
+                  recipientName,
                   timestamp: resolvedTime,
                 },
               ]
