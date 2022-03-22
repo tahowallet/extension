@@ -203,12 +203,19 @@ export default function NetworkSettingsSelect({
 
   const setGasLimit = (newGasLimit: string) => {
     try {
-      const parsedGasLimit = BigInt(newGasLimit)
-      if (parsedGasLimit >= 0n) {
+      if (newGasLimit.trim() === "") {
         onNetworkSettingsChange({
           ...networkSettings,
-          gasLimit: parsedGasLimit,
+          gasLimit: undefined,
         })
+      } else {
+        const parsedGasLimit = BigInt(newGasLimit)
+        if (parsedGasLimit >= 0n) {
+          onNetworkSettingsChange({
+            ...networkSettings,
+            gasLimit: parsedGasLimit,
+          })
+        }
       }
     } catch (error) {
       logger.debug("Failed to parse network settings gas limit", newGasLimit)
