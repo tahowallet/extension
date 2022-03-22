@@ -7,6 +7,8 @@ import {
 
 const windowOriginAtLoadTime = window.location.origin
 
+const INJECTED_WINDOW_PROVIDER_SOURCE = "@@@WINDOW_PROVIDER@@@"
+
 export function connectProviderBridge(): void {
   const port = browser.runtime.connect({ name: EXTERNAL_PORT_NAME })
   // TODO: internal provider state
@@ -52,9 +54,6 @@ export function connectProviderBridge(): void {
 
 export function injectTallyWindowProvider(): void {
   try {
-    // This will be replaced by the InjectWindowProvider webpack plugin
-    const windowProviderSource = "@@@WINDOW_PROVIDER@@@"
-
     const container = document.head || document.documentElement
     const scriptTag = document.createElement("script")
     // this makes the script loading blocking which is good for us
@@ -64,10 +63,9 @@ export function injectTallyWindowProvider(): void {
     // need to decode the encodes string so it can be used as a source code
     // in non optimised builds the source is a multi line string > `` was used
     // but ${ needs to be escaped separatly otherwise it breaks the ``
-    scriptTag.textContent = decodeURI(windowProviderSource).replaceAll(
-      "\\${",
-      "${"
-    )
+    scriptTag.textContent = decodeURI(
+      INJECTED_WINDOW_PROVIDER_SOURCE
+    ).replaceAll("\\${", "${")
 
     // TODO: fill in the provider state for window-provider
     container.insertBefore(scriptTag, container.children[0])

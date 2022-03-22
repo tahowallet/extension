@@ -17,9 +17,8 @@ export default class InjectWindowProvider {
           },
           (assets) => {
             let windowProviderSource =
-              // @ts-expect-error this exist
               // eslint-disable-next-line no-underscore-dangle
-              assets[WINDOW_PROVIDER_FILENAME]._children[0]._value
+              assets[WINDOW_PROVIDER_FILENAME].source() as string
 
             // need to encode so it can be used as a string
             // in non optimised builds the source is a multi line string > `` needs to be used
@@ -30,9 +29,8 @@ export default class InjectWindowProvider {
             )
             windowProviderSource = `\`${windowProviderSource}\``
             const providerBridgeSource =
-              // @ts-expect-error this exist
               // eslint-disable-next-line no-underscore-dangle
-              assets[PROVIDER_BRIDGE_FILENAME]._children[0]._value
+              assets[PROVIDER_BRIDGE_FILENAME].source() as string
 
             // @ts-expect-error this exist
             // eslint-disable-next-line no-underscore-dangle,no-param-reassign
