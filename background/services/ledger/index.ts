@@ -51,7 +51,7 @@ const TestedProductId = (productId: number): boolean => {
 
 type MetaData = {
   ethereumVersion: string
-  ethereumBlindSigner: boolean
+  isArbitraryDataSigningEnabled: boolean
 }
 
 export type ConnectedDevice = {
@@ -120,13 +120,21 @@ async function generateLedgerId(
 }
 
 /**
- * The LedgerService is responsible for maintaining the connection
- * with a Ledger device.
+ * The LedgerService is responsible for exposing the functionality of
+ * Ledger devices in a digestible form by other services
  *
- * The main purpose for this service is to keep track of all previously
- * connected Ledgers' derived identifiers and make show an unified interface
- * to the most common operation (ie. signing)
- * - xxx
+ * To do so, it does:
+ *   - serialize the calls to the critical resource (ie. Ledger)
+ *   - acts when a paired device is (dis-)connected
+ *   - supports address derivation from BIP32 paths
+ *   - supports transaction signing
+ *   - supports typed data signing
+ *   - maps the successfully onboarded addresses to their derivation paths
+ *
+ * Known issues
+ *   - this service's kryptonite is having multiple browser-paired Ledgers
+ *     connected to the computer. In that case the Wallet doesn't know
+ *     which device will respond to its requests
  */
 export default class LedgerService extends BaseService<Events> {
   #currentLedgerId: string | null = null
@@ -185,7 +193,7 @@ export default class LedgerService extends BaseService<Events> {
         type,
         metadata: {
           ethereumVersion: appData.version,
-          ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
         },
       })
 
@@ -200,7 +208,7 @@ export default class LedgerService extends BaseService<Events> {
           accountIDs: [idDerviationPath],
           metadata: {
             ethereumVersion: appData.version,
-            ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+            isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
           },
         })
       }

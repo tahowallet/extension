@@ -39,12 +39,14 @@ export default function SignTransactionSignInfoProvider({
     )
   )
 
-  const completeTransactionAssetAmount =
-    enrichAssetAmountWithMainCurrencyValues(
-      transactionAssetAmount,
-      baseAssetPricePoint,
-      2
-    )
+  const {
+    localizedDecimalAmount: ethValue,
+    localizedMainCurrencyAmount: dollarValue,
+  } = enrichAssetAmountWithMainCurrencyValues(
+    transactionAssetAmount,
+    baseAssetPricePoint,
+    2
+  )
 
   return (
     <SignTransactionBaseInfoProvider
@@ -75,11 +77,10 @@ export default function SignTransactionSignInfoProvider({
             <div className="spend_amount_label">Spend Amount</div>
             <div className="spend_amount">
               <div className="eth_value">
-                {completeTransactionAssetAmount.localizedDecimalAmount}
+                {ethValue} {network.baseAsset.symbol}
               </div>
               <div className="main_currency_value">
-                {completeTransactionAssetAmount.localizedMainCurrencyAmount ??
-                  "-"}
+                {dollarValue ? `$${dollarValue}` : "-"}
               </div>
             </div>
           </div>
@@ -131,10 +132,7 @@ export default function SignTransactionSignInfoProvider({
       textualInfoBlock={
         <TransactionDetailContainer>
           <TransactionDetailItem name="Type" value="Sign" />
-          <TransactionDetailItem
-            name="Spend amount"
-            value={completeTransactionAssetAmount.localizedDecimalAmount}
-          />
+          <TransactionDetailItem name="Spend amount" value={ethValue} />
           <TransactionDetailItem
             name="To:"
             value={
