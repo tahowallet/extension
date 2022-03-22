@@ -71,7 +71,9 @@ export default function SignTransactionSignInfoProvider({
           <div className="container">
             <div className="spend_amount_label">Spend Amount</div>
             <div className="spend_amount">
-              <div className="eth_value">{ethValue} ETH</div>
+              <div className="eth_value">
+                {ethValue} {network.baseAsset.symbol}
+              </div>
               <div className="main_currency_value">
                 {dollarValue ? `$${dollarValue}` : "-"}
               </div>
