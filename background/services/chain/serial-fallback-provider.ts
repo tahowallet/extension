@@ -524,7 +524,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             `properly.`
         )
         // intentionally not awaited
-        this.periodicallyReconnectToPrimaryProvider()
+        this.attemptToReconnectToPrimaryProvider()
       }
       return false
     }
@@ -533,18 +533,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return true
   }
 
-  private async periodicallyReconnectToPrimaryProvider(): Promise<unknown> {
-    return waitAnd(5_000, async () => {
-      console.log("attempting to resubscribe to ws")
+  private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
+    // Attempt to reconnect to primary provider every 15 seconds
+    return waitAnd(15_000, async () => {
       const primaryProvider = this.providerCreators[0]()
-      const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
-      if (!subscriptionsSuccessful) {
-        await this.periodicallyReconnectToPrimaryProvider()
-        return
-      }
-      // only set if subscriptions are successful
-      this.currentProvider = primaryProvider
-      this.currentProviderIndex = 0
+      // Give the provider 2 seconds to establish websocket connection
+      return waitAnd(2_000, async (): Promise<unknown> => {
+        const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
+        if (!subscriptionsSuccessful) {
+          await this.attemptToReconnectToPrimaryProvider()
+          return
+        }
+        // only set if subscriptions are successful
+        this.currentProvider = primaryProvider
+        this.currentProviderIndex = 0
+      })
     })
   }
 
