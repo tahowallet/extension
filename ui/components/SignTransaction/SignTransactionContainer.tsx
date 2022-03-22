@@ -73,7 +73,7 @@ export default function SignTransactionContainer({
               (signerAccountTotal.signingMethod.type === "ledger" &&
               signingLedgerState !== "available" ? (
                 <SharedButton
-                  type="primary"
+                  type="primaryGreen"
                   iconSize="large"
                   size="large"
                   onClick={() => {
@@ -84,7 +84,7 @@ export default function SignTransactionContainer({
                 </SharedButton>
               ) : (
                 <SharedButton
-                  type="primary"
+                  type="primaryGreen"
                   iconSize="large"
                   size="large"
                   onClick={handleConfirm}

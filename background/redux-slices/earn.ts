@@ -4,7 +4,7 @@ import { BigNumber, ethers } from "ethers"
 import { HOUR } from "../constants"
 import { ERC20_ABI } from "../lib/erc20"
 import VAULT_ABI from "../lib/vault"
-import { EIP712TypedData, HexString } from "../types"
+import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   getContract,
@@ -51,11 +51,6 @@ export type PermitRequest = {
   nonce: BigNumber
   deadline: BigNumber
   spender: HexString
-}
-
-export type SignTypedDataRequest = {
-  account: string
-  typedData: EIP712TypedData
 }
 
 // once testnet contracts are deployed we should replace this
