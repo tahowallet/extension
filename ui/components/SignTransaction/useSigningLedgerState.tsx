@@ -2,12 +2,14 @@ import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { useBackgroundSelector } from "../../hooks"
 
 export type SigningLedgerState =
-  | "no-ledger-connected"
-  | "wrong-ledger-connected"
-  | "busy"
-  | "available"
-  | "multiple-ledgers-connected"
-  | "activate-blind-signing"
+  | {
+      state:
+        | "no-ledger-connected"
+        | "wrong-ledger-connected"
+        | "busy"
+        | "multiple-ledgers-connected"
+    }
+  | { state: "available"; arbitraryDataEnabled: boolean }
 
 export function useSigningLedgerState(
   signingMethod: SigningMethod | null
@@ -20,24 +22,22 @@ export function useSigningLedgerState(
     const connectedDevices = Object.values(state.ledger.devices).filter(
       (device) => device.status !== "disconnected"
     )
-    if (connectedDevices.length === 0) return "no-ledger-connected"
-    if (state.ledger.usbDeviceCount > 1) return "multiple-ledgers-connected"
-
-    const txHasData =
-      state.transactionConstruction.transactionRequest?.input !== null &&
-      state.transactionConstruction.transactionRequest?.input !== undefined &&
-      state.transactionConstruction.transactionRequest?.input.length > 0
+    if (connectedDevices.length === 0) return { state: "no-ledger-connected" }
+    if (state.ledger.usbDeviceCount > 1)
+      return { state: "multiple-ledgers-connected" }
 
     const device = state.ledger.devices[deviceID]
 
     switch (device.status) {
       case "available":
-        if (txHasData && !device.isBlindSigner) return "activate-blind-signing"
-        return "available"
+        return {
+          state: "available",
+          arbitraryDataEnabled: device.isArbitraryDataSigningEnabled ?? false,
+        }
       case "busy":
-        return "busy"
+        return { state: "busy" }
       case "disconnected":
-        return "wrong-ledger-connected"
+        return { state: "wrong-ledger-connected" }
       default:
         throw new Error("unreachable")
     }
