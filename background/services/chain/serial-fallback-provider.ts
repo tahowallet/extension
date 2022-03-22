@@ -168,6 +168,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         throw new Error("WebSocket is already in CLOSING")
       }
 
+      if (websocketProviderIsConnecting(this.currentProvider)) {
+        return await waitAnd(100, async () => {
+          await this.send(method, params)
+        })
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return await this.currentProvider.send(method, params as any)
     } catch (error) {
