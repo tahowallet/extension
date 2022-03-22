@@ -642,12 +642,6 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSent", () => {
-      this.store.dispatch(
-        setSnackbarMessage("Transaction signed, broadcasting...")
-      )
-    })
-
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
@@ -692,7 +686,17 @@ export default class Main extends BaseService<never> {
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
       async (transaction: SignedEVMTransaction) => {
-        this.chainService.broadcastSignedTransaction(transaction)
+        try {
+          await this.chainService.broadcastSignedTransaction(transaction)
+          this.store.dispatch(
+            setSnackbarMessage("Transaction signed, broadcasting...")
+          )
+        } catch (e) {
+          // Error logging is handled inside of `broadcastSignedTransaction`.
+          this.store.dispatch(
+            setSnackbarMessage("Transaction failed to broadcast.")
+          )
+        }
       }
     )
 
