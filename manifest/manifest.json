@@ -34,9 +34,6 @@
     "default_popup": "popup.html"
   },
   "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
-  "externally_connectable": {
-    "ids": []
-  },
   "background": {
     "persistent": true,
     "scripts": ["background.js", "background-ui.js"]
