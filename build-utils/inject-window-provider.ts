@@ -17,18 +17,16 @@ export default class InjectWindowProvider {
           },
           (assets) => {
             let windowProviderSource =
-              // eslint-disable-next-line no-underscore-dangle
-              assets[WINDOW_PROVIDER_FILENAME].source() as string
+              assets[WINDOW_PROVIDER_FILENAME].source().toString()
 
             // need to encode so it can be used as a string
             // in non optimised builds the source is a multi line string > `` needs to be used
             // but ${ needs to be escaped separatly otherwise it breaks the ``
             windowProviderSource = JSON.stringify(windowProviderSource)
             const providerBridgeSource =
-              // eslint-disable-next-line no-underscore-dangle
-              assets[PROVIDER_BRIDGE_FILENAME].source() as string
+              assets[PROVIDER_BRIDGE_FILENAME].source().toString()
 
-            // eslint-disable-next-line no-underscore-dangle,no-param-reassign
+            // eslint-disable-next-line no-param-reassign
             assets[PROVIDER_BRIDGE_FILENAME] = new sources.RawSource(
               providerBridgeSource.replace(
                 // eslint-disable-next-line no-useless-escape
