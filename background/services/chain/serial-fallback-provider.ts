@@ -555,6 +555,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           await this.attemptToReconnectToPrimaryProvider()
           return
         }
+        // Cleanup the subscriptions on the backup provider.
+        await this.disconnectCurrentProvider()
         // only set if subscriptions are successful
         this.currentProvider = primaryProvider
         this.currentProviderIndex = 0
