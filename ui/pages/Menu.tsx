@@ -102,11 +102,7 @@ export default function Menu(): ReactElement {
             Give feedback!
           </SharedButton>
           <div className="version">
-            Version: {process.env.VERSION ?? `<unknown>`} (
-            {new Date(
-              process.env.GIT_COMMIT_DATE ?? "invalid date"
-            ).toLocaleDateString(undefined, { dateStyle: "medium" })}
-            )
+            Version: {process.env.VERSION ?? `<unknown>`}
           </div>
         </div>
       </section>

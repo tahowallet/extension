@@ -60,10 +60,10 @@ export type EIP712DomainType = {
   verifyingContract?: HexString
 }
 
-export type EIP712TypedData = {
+export type EIP712TypedData<T = Record<string, unknown>> = {
   domain: EIP712DomainType
   types: Record<string, TypedDataField[]>
-  message: Record<string, unknown>
+  message: T
   primaryType: string
 }
 
