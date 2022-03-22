@@ -4,7 +4,7 @@ import {
   Listener,
   WebSocketProvider,
 } from "@ethersproject/providers"
-import { MINUTE } from "../../constants"
+import { MINUTE, SECOND } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
@@ -19,7 +19,12 @@ const COOLDOWN_PERIOD = 5 * MINUTE
 // This generally results in a wait time of around 30 seconds before falling back since we
 // usually have multiple requests going out at once.
 const MAX_RETRIES = 8
-
+// Wait 15 seconds between primary provider reconnect attempts.
+const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 15 * SECOND
+// Wait 2 seconds after a primary provider is created before resubscribing.
+const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
+// Wait 100ms before attempting another send if a websocket provider is still connecting.
+const WAIT_BEFORE_SEND_AGAIN = 100
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -173,7 +178,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       if (isConnectingWebSocketProvider(this.currentProvider)) {
         // If the websocket is still connecting, wait 100ms and try to send again.
-        return await waitAnd(100, async () => this.send(method, params))
+        return await waitAnd(WAIT_BEFORE_SEND_AGAIN, async () =>
+          this.send(method, params)
+        )
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return await this.currentProvider.send(method, params as any)
@@ -530,10 +537,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
     // Attempt to reconnect to primary provider every 15 seconds
-    return waitAnd(15_000, async () => {
+    return waitAnd(PRIMARY_PROVIDER_RECONNECT_INTERVAL, async () => {
       const primaryProvider = this.providerCreators[0]()
-      // Give the provider 2 seconds to establish websocket connection
-      return waitAnd(2_000, async (): Promise<unknown> => {
+      // We need to wait before attempting to resubscribe of the primaryProvider's
+      // websocket connection will almost always still be in a CONNECTING state when
+      // resubscribing.
+      return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
         const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
         if (!subscriptionsSuccessful) {
           await this.attemptToReconnectToPrimaryProvider()
