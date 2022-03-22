@@ -540,6 +540,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
     // Attempt to reconnect to primary provider every 15 seconds
     return waitAnd(PRIMARY_PROVIDER_RECONNECT_INTERVAL, async () => {
+      if (this.currentProviderIndex === 0) {
+        // If we are already connected to the primary provider - don't resubscribe
+        // and stop attempting to reconnect.
+        return null
+      }
       const primaryProvider = this.providerCreators[0]()
       // We need to wait before attempting to resubscribe of the primaryProvider's
       // websocket connection will almost always still be in a CONNECTING state when
