@@ -108,6 +108,10 @@ export default function SignTransactionSpendAssetInfoProvider({
     )
   }
 
+  const spenderAddressSpan = (
+    <span title={spenderAddress}>{truncateAddress(spenderAddress)}</span>
+  )
+
   return (
     <SignTransactionBaseInfoProvider
       title="Approve asset spend"
@@ -124,7 +128,16 @@ export default function SignTransactionSpendAssetInfoProvider({
               />
             </div>
           </div>
-          <span className="site">Smart Contract Interaction</span>
+          <span className="site">
+            Approve{" "}
+            {annotation.spenderName === undefined ? (
+              spenderAddressSpan
+            ) : (
+              <>
+                {annotation.spenderName} ({spenderAddressSpan})
+              </>
+            )}
+          </span>
           <span className="spending_label">
             {asset.symbol ? (
               `Spend ${
