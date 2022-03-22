@@ -23,11 +23,7 @@ export default class InjectWindowProvider {
             // need to encode so it can be used as a string
             // in non optimised builds the source is a multi line string > `` needs to be used
             // but ${ needs to be escaped separatly otherwise it breaks the ``
-            windowProviderSource = encodeURI(windowProviderSource).replaceAll(
-              "${",
-              "\\${"
-            )
-            windowProviderSource = `\`${windowProviderSource}\``
+            windowProviderSource = JSON.stringify(windowProviderSource)
             const providerBridgeSource =
               // eslint-disable-next-line no-underscore-dangle
               assets[PROVIDER_BRIDGE_FILENAME].source() as string

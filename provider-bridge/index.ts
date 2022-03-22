@@ -63,9 +63,7 @@ export function injectTallyWindowProvider(): void {
     // need to decode the encodes string so it can be used as a source code
     // in non optimised builds the source is a multi line string > `` was used
     // but ${ needs to be escaped separatly otherwise it breaks the ``
-    scriptTag.textContent = decodeURI(
-      INJECTED_WINDOW_PROVIDER_SOURCE
-    ).replaceAll("\\${", "${")
+    scriptTag.textContent = INJECTED_WINDOW_PROVIDER_SOURCE
 
     // TODO: fill in the provider state for window-provider
     container.insertBefore(scriptTag, container.children[0])
