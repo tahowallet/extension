@@ -221,7 +221,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .assets_list {
             display: block;
             overflow: scroll;
-            height: calc(100% - 140px);
+            height: calc(100% - 96px);
             width: 100%;
           }
         `}
@@ -488,7 +488,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           }
           .max {
             margin-left: 8px; // space to balance
-            color: #d08e39;
+            color: var(--trophy-gold);
             cursor: pointer;
           }
           .asset_wrap {

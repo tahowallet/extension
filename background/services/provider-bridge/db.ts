@@ -68,7 +68,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     })
   }
 
-  async getAllPermission() {
+  async getAllPermission(): Promise<Record<string, PermissionRequest>> {
     return this.dAppPermissions
       .toArray()
       .then((permissionsArray) =>
@@ -82,7 +82,10 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return this.dAppPermissions.put(permission)
   }
 
-  async deletePermission(origin: string, accountAddress: string) {
+  async deletePermission(
+    origin: string,
+    accountAddress: string
+  ): Promise<number> {
     return this.dAppPermissions.where({ origin, accountAddress }).delete()
   }
 

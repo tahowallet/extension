@@ -3,6 +3,7 @@ import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
+import { SignTypedDataRequest } from "../../utils/signing"
 
 export type BaseTransactionAnnotation = {
   /**
@@ -75,4 +76,35 @@ export type EnrichedEVMTransactionSignatureRequest =
 
 export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
   annotation?: TransactionAnnotation
+}
+
+export type TypedDataField = {
+  value: string
+  type: "address" | "string"
+}
+
+export type EIP2612SignTypedDataAnnotation = {
+  type: "EIP-2612"
+  source: string
+  displayFields: {
+    owner: string
+    tokenContract: string
+    spender: string
+    value: string
+    nonce: number
+    expiry: string
+    token?: string
+  }
+}
+
+export type UnrecognizedSignTypedDataAnnotation = {
+  type: "unrecognized"
+}
+
+export type SignTypedDataAnnotation =
+  | EIP2612SignTypedDataAnnotation
+  | UnrecognizedSignTypedDataAnnotation
+
+export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
+  annotation: SignTypedDataAnnotation
 }
