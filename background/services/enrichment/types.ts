@@ -30,9 +30,7 @@ export type ContractDeployment = BaseTransactionAnnotation & {
 
 export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
-  displayFields?: {
-    contractName?: string
-  }
+  contractName?: string
 }
 
 export type AssetApproval = BaseTransactionAnnotation & {

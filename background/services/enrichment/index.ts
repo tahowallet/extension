@@ -153,9 +153,7 @@ export default class EnrichmentService extends BaseService<Events> {
         txAnnotation = {
           timestamp: resolvedTime,
           type: "contract-interaction",
-          displayFields: {
-            contractName: toName,
-          },
+          contractName: toName,
         }
       }
     } else {
@@ -231,9 +229,7 @@ export default class EnrichmentService extends BaseService<Events> {
           // non-specific; the UI can choose to use it or not, but if we know the
           // address has an associated logo it's worth passing on.
           transactionLogoURL,
-          displayFields: {
-            contractName: toName,
-          },
+          contractName: toName,
         }
       }
     }
