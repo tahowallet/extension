@@ -7,7 +7,7 @@ import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../components/Shared/SharedButton"
 
-const accountCreateType = [
+const accountCreateButtonInfos = [
   {
     title: "Add exising accounts",
     items: [
@@ -64,7 +64,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
         />
       </div>
       <ul className="standard_width">
-        {accountCreateType.map((creationSection) => {
+        {accountCreateButtonInfos.map((creationSection) => {
           return (
             <>
               <li className="label_small">{creationSection.title}</li>
