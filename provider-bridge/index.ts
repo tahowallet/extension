@@ -52,21 +52,23 @@ export function connectProviderBridge(): void {
 
 export async function injectTallyWindowProvider(): Promise<void> {
   try {
-    const windowProviderSourceResponse = await fetch(
-      browser.runtime.getURL("window-provider.js")
-    )
-    const windowProviderSource = await windowProviderSourceResponse.text()
+    // This will be replaced by the InjectWindowProvider webpack plugin
+    const windowProviderSource = "@@@WINDOW_PROVIDER@@@"
 
     const container = document.head || document.documentElement
     const scriptTag = document.createElement("script")
     // this makes the script loading blocking which is good for us
     // bc we want to load before anybody has a chance to temper w/ the window obj
     scriptTag.setAttribute("async", "false")
-    // TODO: put env flag here so only dev env has sourcemap
-    scriptTag.textContent = windowProviderSource.replace(
-      "window-provider.js.map",
-      browser.runtime.getURL("window-provider.js.map")
+
+    // need to decode the encodes string so it can be used as a source code
+    // in non optimised builds the source is a multi line string > `` was used
+    // but ${ needs to be escaped separatly otherwise it breaks the ``
+    scriptTag.textContent = decodeURI(windowProviderSource).replaceAll(
+      "\\${",
+      "${"
     )
+
     // TODO: fill in the provider state for window-provider
     container.insertBefore(scriptTag, container.children[0])
   } catch (e) {
