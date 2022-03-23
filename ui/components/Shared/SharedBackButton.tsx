@@ -29,7 +29,7 @@ export default function SharedBackButton({
     <button
       type="button"
       className={classNames({
-        hide: !onClick ?? history.entries.length <= 1,
+        hide: !onClick && history.entries.length <= 1,
       })}
       onClick={() => {
         if (onClick) {
