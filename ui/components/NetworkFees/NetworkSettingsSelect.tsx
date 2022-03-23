@@ -161,18 +161,8 @@ export default function NetworkSettingsSelect({
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
-      let gasLimit = networkSettings.suggestedGasLimit
-
-      if (networkSettings.gasLimit !== "") {
-        try {
-          gasLimit = BigInt(networkSettings.gasLimit)
-        } catch (error) {
-          logger.debug(
-            "Failed to parse network settings gas limit",
-            networkSettings.gasLimit
-          )
-        }
-      }
+      const gasLimit =
+        networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
       if (
         typeof instant !== "undefined" &&
@@ -212,12 +202,24 @@ export default function NetworkSettingsSelect({
   }, [updateGasOptions])
 
   const setGasLimit = (newGasLimit: string) => {
-    // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
-    // FIXME entry as possible.
-    onNetworkSettingsChange({
-      ...networkSettings,
-      gasLimit: newGasLimit,
-    })
+    try {
+      if (newGasLimit.trim() === "") {
+        onNetworkSettingsChange({
+          ...networkSettings,
+          gasLimit: undefined,
+        })
+      } else {
+        const parsedGasLimit = BigInt(newGasLimit)
+        if (parsedGasLimit >= 0n) {
+          onNetworkSettingsChange({
+            ...networkSettings,
+            gasLimit: parsedGasLimit,
+          })
+        }
+      }
+    } catch (error) {
+      logger.debug("Failed to parse network settings gas limit", newGasLimit)
+    }
   }
 
   return (
@@ -249,7 +251,7 @@ export default function NetworkSettingsSelect({
         <div className="limit">
           <SharedInput
             id="gasLimit"
-            value={networkSettings.gasLimit}
+            value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
             label="Gas limit"
@@ -277,9 +279,10 @@ export default function NetworkSettingsSelect({
             margin: 8px 0;
             cursor: pointer;
             border-radius: 4px;
+            border: 1px solid transparent;
           }
           .option.active {
-            border: 1px solid var(--success);
+            border-color: var(--success);
             box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);
