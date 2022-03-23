@@ -41,7 +41,11 @@ export default function SharedAddress({
   }, [address, dispatch])
 
   return (
-    <button type="button" onClick={copyAddress} title={address}>
+    <button
+      type="button"
+      onClick={copyAddress}
+      title={`Copy address:\n${address}`}
+    >
       {primaryText}
       {name === undefined || nameSourceSystem === undefined ? (
         <></>
