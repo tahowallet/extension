@@ -146,15 +146,20 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       </style>
       <style jsx global>
         {`
-          .asset_list_item_icon_send_asset {
-            mask-image: url("./images/send_asset.svg");
+          .asset_list_item_icon {
             mask-size: cover;
             background-color: var(--green-60);
             width: 12px;
             height: 12px;
           }
-          .asset_list_item_icon_send_asset:hover {
+          .wallet_asset_list_item:hover .asset_list_item_icon:not(:hover) {
+            background-color: var(--green-40);
+          }
+          .asset_list_item_icon:hover {
             background-color: var(--trophy-gold);
+          }
+          .asset_list_item_icon_send_asset {
+            mask-image: url("./images/send_asset.svg");
           }
         `}
       </style>
