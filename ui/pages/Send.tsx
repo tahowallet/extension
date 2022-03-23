@@ -37,7 +37,7 @@ export default function Send(): ReactElement {
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(ETH)
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
-  const [gasLimit, setGasLimit] = useState("")
+  const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)
   const [hasError, setHasError] = useState(false)
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
@@ -93,7 +93,7 @@ export default function Send(): ReactElement {
       to: destinationAddress,
       // eslint-disable-next-line no-underscore-dangle
       value: BigInt(utils.parseEther(amount?.toString())._hex),
-      gasLimit: BigInt(gasLimit),
+      gasLimit,
     }
     return dispatch(updateTransactionOptions(transaction))
   }
