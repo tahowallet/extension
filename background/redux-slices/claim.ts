@@ -54,8 +54,8 @@ interface ClaimingState {
   referrer: string | null
 }
 
-export const TALLY_TOKEN_ADDRESS = "0x7EE7c993FBAD3AAFf795973ee14ff2034311a966"
-const VOTE_WITH_FRIENDS_ADDRESS = "0x5Bcccd16e8239E4D1A7a98Cf582df8f3a335375D"
+export const TALLY_TOKEN_ADDRESS = "0xcA962030f55004688cF119ED2791C297983534Ca"
+const VOTE_WITH_FRIENDS_ADDRESS = "0xfC9956a16d9af460bef987201da413288dCd62fF"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
