@@ -13,6 +13,7 @@ import OnboardingInterstitialCreatePhrase from "../pages/Onboarding/OnboardingIn
 import Overview from "../pages/Overview"
 import SingleAsset from "../pages/SingleAsset"
 import Earn from "../pages/Earn"
+import ComingSoon from "../pages/ComingSoon"
 import EarnDeposit from "../pages/EarnDeposit"
 import Menu from "../pages/Menu"
 import Send from "../pages/Send"
@@ -120,7 +121,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/earn",
-    Component: Earn,
+    Component: ComingSoon ?? Earn,
     hasTabBar: true,
     hasTopBar: true,
     persistOnClose: true,

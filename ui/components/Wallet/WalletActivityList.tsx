@@ -49,9 +49,9 @@ export default function WalletActivityList({
   if (!activities || activities.length === 0)
     return (
       <span>
-        Tally will populate your historical activity over time; this may take an
-        hour or more for accounts that have been active for a long time. For new
-        accounts, new activity will show up here.
+        Tally Ho will populate your historical activity over time; this may take
+        an hour or more for accounts that have been active for a long time. For
+        new accounts, new activity will show up here.
         <style jsx>{`
           span {
             width: 316px;

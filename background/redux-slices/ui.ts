@@ -22,11 +22,13 @@ export type UIState = {
   settings: { hideDust: boolean; defaultWallet: boolean }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
+  hideSwapRewardsNotification: boolean
 }
 
 export type Events = {
   snackbarMessage: string
   newDefaultWalletValue: boolean
+  refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
 }
 
@@ -41,6 +43,7 @@ export const initialState: UIState = {
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
   snackbarMessage: "",
+  hideSwapRewardsNotification: false,
 }
 
 const uiSlice = createSlice({
@@ -56,6 +59,13 @@ const uiSlice = createSlice({
         defaultWallet: immerState.settings?.defaultWallet,
       }
     },
+    toggleHideSwapRewardsNotification: (
+      state,
+      { payload: shouldHideSwapRewards }: { payload: boolean }
+    ): UIState => ({
+      ...state,
+      hideSwapRewardsNotification: shouldHideSwapRewards,
+    }),
     setShowingActivityDetail: (
       state,
       { payload: transactionID }: { payload: string | null }
@@ -107,6 +117,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  toggleHideSwapRewardsNotification,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -136,6 +147,13 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
   }
 )
 
+export const refreshBackgroundPage = createBackgroundAsyncThunk(
+  "ui/refreshBackgroundPage",
+  async () => {
+    await emitter.emit("refreshBackgroundPage", null)
+  }
+)
+
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
@@ -156,4 +174,9 @@ export const selectSnackbarMessage = createSelector(
 export const selectDefaultWallet = createSelector(
   selectSettings,
   (settings) => settings?.defaultWallet
+)
+
+export const selectHideSwapRewardsNotification = createSelector(
+  selectUI,
+  (ui) => ui.hideSwapRewardsNotification
 )

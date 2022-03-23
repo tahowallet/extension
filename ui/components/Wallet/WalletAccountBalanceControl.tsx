@@ -1,11 +1,112 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import classNames from "classnames"
+import { useDispatch } from "react-redux"
+import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
+
+function ReadOnlyNotice(): ReactElement {
+  return (
+    <div className="notice_wrap">
+      <div className="icon_eye" />
+      Read-only mode
+      <style jsx>{`
+        .notice_wrap {
+          width: 177px;
+          height: 40px;
+          background: rgba(238, 178, 24, 0.1);
+          border-radius: 2px;
+          margin-top: 6px;
+          font-weight: 500;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          border-left: solid 2px var(--attention);
+        }
+        .icon_eye {
+          background: url("./images/eye@2x.png");
+          background-size: cover;
+          width: 24px;
+          height: 24px;
+          margin: 0px 7px 0px 10px;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function BalanceReloader(): ReactElement {
+  const dispatch = useDispatch()
+
+  const [isSpinning, setIsSpinning] = useState(false)
+
+  // 0 = never
+  const [timeWhenLastReloaded, setTimeWhenLastReloaded] = useLocalStorage(
+    "timeWhenLastReloaded",
+    "0"
+  )
+
+  const loadingTimeMs = 15000
+  const timeGapBetweenRunningReloadMs = 60000 * 2
+
+  return (
+    <button
+      type="button"
+      disabled={isSpinning}
+      className={classNames("reload", { spinning: isSpinning })}
+      onClick={() => {
+        const currentTime = new Date().getTime()
+        setIsSpinning(true)
+
+        // Appear to spin regardless if too recent. Only refresh
+        // background page if timeGapBetweenRunningReloadMs is met.
+        if (
+          Number(timeWhenLastReloaded) + timeGapBetweenRunningReloadMs <
+          currentTime
+        ) {
+          setTimeWhenLastReloaded(`${currentTime}`)
+          dispatch(refreshBackgroundPage())
+        }
+        setTimeout(() => {
+          setIsSpinning(false)
+          window.location.reload()
+        }, loadingTimeMs)
+      }}
+    >
+      <style jsx>{`
+        .reload {
+          mask-image: url("./images/reload@2x.png");
+          mask-size: cover;
+          background-color: #fff;
+          width: 17px;
+          height: 17px;
+          margin-left: 10px;
+        }
+        .reload:hover {
+          background-color: var(--trophy-gold);
+        }
+        .reload:disabled {
+          pointer-events: none;
+        }
+        .spinning {
+          animation: spin 1s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+        }
+        .spinning:hover {
+          background-color: #fff;
+        }
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </button>
+  )
+}
 
 interface Props {
   balance?: string
@@ -53,6 +154,7 @@ export default function WalletAccountBalanceControl(
           >
             <span className="dollar_sign">$</span>
             {balance ?? 0}
+            {!shouldIndicateLoading && <BalanceReloader />}
           </span>
         </span>
         <div className="balance_actions">

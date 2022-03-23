@@ -116,6 +116,16 @@ export type AnyAsset =
   | FungibleAsset
   | SmartContractFungibleAsset
 
+/**
+ * An amount associated with a smart contract; used to carry information like
+ * per-account smart contract asset balances when full asset information isn't
+ * available.
+ */
+export type SmartContractAmount = {
+  smartContract: SmartContract
+  amount: bigint
+}
+
 /*
  * The primary type representing amounts in fungible asset transactions.
  */
