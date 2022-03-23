@@ -279,9 +279,10 @@ export default function NetworkSettingsSelect({
             margin: 8px 0;
             cursor: pointer;
             border-radius: 4px;
+            border: 1px solid transparent;
           }
           .option.active {
-            border: 1px solid var(--success);
+            border-color: var(--success);
             box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);

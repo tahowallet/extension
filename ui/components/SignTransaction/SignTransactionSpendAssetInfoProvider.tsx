@@ -108,6 +108,10 @@ export default function SignTransactionSpendAssetInfoProvider({
     )
   }
 
+  const spenderAddressSpan = (
+    <span title={spenderAddress}>{truncateAddress(spenderAddress)}</span>
+  )
+
   return (
     <SignTransactionBaseInfoProvider
       title="Approve asset spend"
@@ -117,10 +121,23 @@ export default function SignTransactionSpendAssetInfoProvider({
           <div className="spend_destination_icons">
             <div className="site_icon" />
             <div className="asset_icon_wrap">
-              <SharedAssetIcon size="large" symbol={asset.symbol} />
+              <SharedAssetIcon
+                size="large"
+                symbol={asset.symbol}
+                logoURL={asset.metadata?.logoURL}
+              />
             </div>
           </div>
-          <span className="site">Smart Contract Interaction</span>
+          <span className="site">
+            Approve{" "}
+            {annotation.spenderName === undefined ? (
+              spenderAddressSpan
+            ) : (
+              <>
+                {annotation.spenderName} ({spenderAddressSpan})
+              </>
+            )}
+          </span>
           <span className="spending_label">
             {asset.symbol ? (
               `Spend ${
