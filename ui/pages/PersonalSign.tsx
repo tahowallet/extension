@@ -75,6 +75,7 @@ export default function PersonalSignData(): ReactElement {
       reviewPanel={<PersonalSignDetailPanel />}
       isTransactionSigning={isTransactionSigning}
       extraPanel={null}
+      isArbitraryDataSigningRequired={!!signingDataRequest.signingData}
     />
   )
 }
