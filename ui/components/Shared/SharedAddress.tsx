@@ -44,7 +44,7 @@ export default function SharedAddress({
     <button
       type="button"
       onClick={copyAddress}
-      title={`Copy address:\n${address}`}
+      title={`Copy to clipboard:\n${address}`}
     >
       {primaryText}
       {name === undefined || nameSourceSystem === undefined ? (
