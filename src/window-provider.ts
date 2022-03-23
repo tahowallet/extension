@@ -16,3 +16,6 @@ window.tally = new TallyWindowProvider({
     window.removeEventListener("message", fn, false),
   origin: window.location.origin,
 })
+// If there are no other wallets around, we set the rules!
+// This is needed for websites that immediately check the presence of `window.ethereum`
+window.ethereum ??= window.tally
