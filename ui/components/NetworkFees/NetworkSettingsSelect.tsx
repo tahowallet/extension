@@ -61,6 +61,7 @@ const gasOptionFromEstimate = (
           2
         )
       : undefined
+  const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
 
   return {
     confidence: `${confidence}`,
@@ -69,7 +70,7 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
-    dollarValue: feeAssetAmount?.localizedMainCurrencyAmount ?? "-",
+    dollarValue: dollarValue ? `$${dollarValue}` : "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     price,
@@ -160,15 +161,8 @@ export default function NetworkSettingsSelect({
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
-      let gasLimit = networkSettings.suggestedGasLimit
-      try {
-        gasLimit = BigInt(networkSettings.gasLimit)
-      } catch (error) {
-        logger.debug(
-          "Failed to parse network settings gas limit",
-          networkSettings.gasLimit
-        )
-      }
+      const gasLimit =
+        networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
       if (
         typeof instant !== "undefined" &&
@@ -208,12 +202,24 @@ export default function NetworkSettingsSelect({
   }, [updateGasOptions])
 
   const setGasLimit = (newGasLimit: string) => {
-    // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
-    // FIXME entry as possible.
-    onNetworkSettingsChange({
-      ...networkSettings,
-      gasLimit: newGasLimit,
-    })
+    try {
+      if (newGasLimit.trim() === "") {
+        onNetworkSettingsChange({
+          ...networkSettings,
+          gasLimit: undefined,
+        })
+      } else {
+        const parsedGasLimit = BigInt(newGasLimit)
+        if (parsedGasLimit >= 0n) {
+          onNetworkSettingsChange({
+            ...networkSettings,
+            gasLimit: parsedGasLimit,
+          })
+        }
+      }
+    } catch (error) {
+      logger.debug("Failed to parse network settings gas limit", newGasLimit)
+    }
   }
 
   return (
@@ -236,7 +242,7 @@ export default function NetworkSettingsSelect({
             </div>
             <div className="option_right">
               <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-              <div className="subtext">${option.dollarValue}</div>
+              <div className="subtext">{option.dollarValue}</div>
             </div>
           </button>
         )
@@ -245,7 +251,7 @@ export default function NetworkSettingsSelect({
         <div className="limit">
           <SharedInput
             id="gasLimit"
-            value={networkSettings.gasLimit}
+            value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
             label="Gas limit"

@@ -8,7 +8,6 @@ import logger from "./logger"
 import { HexString } from "../types"
 import {
   AssetTransfer,
-  FungibleAsset,
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../assets"

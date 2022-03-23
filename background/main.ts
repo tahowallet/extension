@@ -49,6 +49,7 @@ import {
   setDefaultWallet,
   setSelectedAccount,
   setNewSelectedAccount,
+  setSnackbarMessage,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -72,14 +73,17 @@ import {
   rejectDataSignature,
   clearSigningState,
   signedTypedData,
-  SigningMethod,
   signedData as signedDataAction,
   signingSliceEmitter,
-  SignTypedDataRequest,
-  SignDataRequest,
   typedDataRequest,
   signDataRequest,
 } from "./redux-slices/signing"
+
+import {
+  SigningMethod,
+  SignTypedDataRequest,
+  SignDataRequest,
+} from "./utils/signing"
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
@@ -235,7 +239,6 @@ function migrateReduxState(
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
-
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -315,12 +318,13 @@ export default class Main extends BaseService<never> {
       preferenceService,
       chainService
     )
+    const nameService = NameService.create(chainService)
     const enrichmentService = EnrichmentService.create(
       chainService,
-      indexingService
+      indexingService,
+      nameService
     )
     const keyringService = KeyringService.create()
-    const nameService = NameService.create(chainService)
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
@@ -641,6 +645,12 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
+    this.chainService.emitter.on("transactionSent", () => {
+      this.store.dispatch(
+        setSnackbarMessage("Transaction signed, broadcasting...")
+      )
+    })
+
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
@@ -866,14 +876,18 @@ export default class Main extends BaseService<never> {
         setDeviceConnectionStatus({
           deviceID: id,
           status: "available",
-          isBlindSigner: metadata.ethereumBlindSigner,
+          isArbitraryDataSigningEnabled: metadata.isArbitraryDataSigningEnabled,
         })
       )
     })
 
     this.ledgerService.emitter.on("disconnected", ({ id }) => {
       this.store.dispatch(
-        setDeviceConnectionStatus({ deviceID: id, status: "disconnected" })
+        setDeviceConnectionStatus({
+          deviceID: id,
+          status: "disconnected",
+          isArbitraryDataSigningEnabled: false /* dummy */,
+        })
       )
     })
 
@@ -1014,7 +1028,9 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        this.store.dispatch(typedDataRequest(payload))
+        const enrichedsignTypedDataRequest =
+          await this.enrichmentService.enrichSignTypedDataRequest(payload)
+        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
 
         const clear = () => {
           if (HIDE_IMPORT_LEDGER) {
