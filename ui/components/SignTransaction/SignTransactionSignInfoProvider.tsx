@@ -19,6 +19,7 @@ import SignTransactionBaseInfoProvider, {
 
 export default function SignTransactionSignInfoProvider({
   transactionDetails,
+  annotation,
   inner,
 }: SignTransactionInfoProviderProps): ReactElement {
   const { network } = useBackgroundSelector(selectCurrentAddressNetwork)
@@ -61,6 +62,10 @@ export default function SignTransactionSignInfoProvider({
             ) : (
               <>
                 <div className="label">Send to</div>
+                {annotation?.type === "contract-interaction" &&
+                annotation.contractName ? (
+                  <div className="send_to_name">{annotation.contractName}</div>
+                ) : null}
                 <div className="send_to">
                   {truncateAddress(transactionDetails.to)}
                 </div>
