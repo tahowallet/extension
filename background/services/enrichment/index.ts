@@ -270,9 +270,7 @@ export default class EnrichmentService extends BaseService<Events> {
           .map(({ value }) => value)
       )
 
-      const subannotations = parseLogsForERC20Transfers(
-        transaction.logs
-      ).flatMap<TransactionAnnotation>(
+      const subannotations = erc20TransferLogs.flatMap<TransactionAnnotation>(
         ({ contractAddress, amount, senderAddress, recipientAddress }) => {
           // See if the address matches a fungible asset.
           const matchingFungibleAsset = assets.find(
@@ -281,6 +279,8 @@ export default class EnrichmentService extends BaseService<Events> {
               sameEVMAddress(asset.contractAddress, contractAddress)
           )
 
+          // Try to find a resolved name for the recipient; we should probably
+          // do this for the sender as well, but one thing at a time.
           const recipientName =
             namesByAddress[normalizeEVMAddress(recipientAddress)]
 
