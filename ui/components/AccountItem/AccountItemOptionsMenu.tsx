@@ -24,7 +24,7 @@ export default function AccountItemOptionsMenu({
   })
 
   return (
-    <>
+    <div className="options_menu_warp">
       <SharedSlideUpMenu
         size="custom"
         customSize="336px"
@@ -100,6 +100,9 @@ export default function AccountItemOptionsMenu({
       )}
       <style jsx>
         {`
+          .options_menu_warp {
+            position: relative;
+          }
           .icon_settings {
             mask-image: url("./images/more_dots@2x.png");
             mask-repeat: no-repeat;
@@ -118,7 +121,7 @@ export default function AccountItemOptionsMenu({
           }
           .options {
             position: absolute;
-            right: 8;
+            right: 6;
             cursor: default;
             border-radius: 4px;
             background-color: var(--green-120);
@@ -128,6 +131,8 @@ export default function AccountItemOptionsMenu({
             justify-content: space-between;
             width: 212px;
             border-radius: 4px;
+            height: 52px;
+            margin-top: -46px;
           }
           .option {
             display: flex;
@@ -154,6 +159,6 @@ export default function AccountItemOptionsMenu({
           }
         `}
       </style>
-    </>
+    </div>
   )
 }
