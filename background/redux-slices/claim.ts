@@ -72,7 +72,7 @@ const initialState: ClaimingState = {
   distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
-  eligibility: {},
+  eligibility: null,
   delegates,
   DAOs,
   claimStep: 1,
