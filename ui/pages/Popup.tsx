@@ -105,7 +105,9 @@ export function Main(): ReactElement {
         }, [])
         .reverse()
 
-      dispatch(setRouteHistoryEntries(entries))
+      if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
+        dispatch(setRouteHistoryEntries(entries))
+      }
     }
   }
 
