@@ -4,6 +4,7 @@ import {
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
 import {
+  NetworkFeeSettings,
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
@@ -13,24 +14,18 @@ import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-sl
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import React, { ReactElement } from "react"
-import { getGasLimit } from "@tallyho/tally-background/redux-slices/utils/transacation-utils"
 import { useBackgroundSelector } from "../../hooks"
 
 const getFeeDollarValue = (
-  currencyPrize: PricePoint | undefined,
-  networkSettings: {
-    gasLimit: string
-    suggestedGasLimit: bigint | undefined
-    values: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
-  }
-) => {
+  currencyPrice: PricePoint | undefined,
+  networkSettings: NetworkFeeSettings
+): string | undefined => {
   const {
     values: { maxFeePerGas, maxPriorityFeePerGas },
   } = networkSettings
+  const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
-  const gasLimit = getGasLimit(networkSettings)
-
-  if (!gasLimit) return null
+  if (!gasLimit) return undefined
 
   const { localizedMainCurrencyAmount } =
     enrichAssetAmountWithMainCurrencyValues(
@@ -38,7 +33,7 @@ const getFeeDollarValue = (
         asset: ETH,
         amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
       },
-      currencyPrize,
+      currencyPrice,
       2
     )
 
@@ -57,8 +52,6 @@ export default function FeeSettingsText({
     selectMainCurrencyPricePoint
   )
 
-  const dollarValue = getFeeDollarValue(mainCurrencyPricePoint, networkSettings)
-
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
     typeof selectedFeeType !== "undefined"
@@ -75,6 +68,7 @@ export default function FeeSettingsText({
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
 
   const gweiValue = `${estimatedGweiAmount} Gwei`
+  const dollarValue = getFeeDollarValue(mainCurrencyPricePoint, networkSettings)
 
   if (!showDollarValue || !dollarValue) return <div>~{gweiValue}</div>
 
