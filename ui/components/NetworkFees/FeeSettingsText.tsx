@@ -9,7 +9,6 @@ import {
   selectEstimatedFeesPerGas,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ETH } from "@tallyho/tally-background/constants"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
@@ -25,12 +24,13 @@ const getFeeDollarValue = (
   } = networkSettings
   const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
-  if (!gasLimit) return undefined
+  if (!gasLimit || !currencyPrice) return undefined
 
+  const [asset] = currencyPrice.pair
   const { localizedMainCurrencyAmount } =
     enrichAssetAmountWithMainCurrencyValues(
       {
-        asset: ETH,
+        asset,
         amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
       },
       currencyPrice,
@@ -40,11 +40,7 @@ const getFeeDollarValue = (
   return localizedMainCurrencyAmount
 }
 
-export default function FeeSettingsText({
-  showDollarValue = false,
-}: {
-  showDollarValue?: boolean
-}): ReactElement {
+export default function FeeSettingsText(): ReactElement {
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const selectedFeeType = useBackgroundSelector(selectFeeType)
   const networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
@@ -70,7 +66,7 @@ export default function FeeSettingsText({
   const gweiValue = `${estimatedGweiAmount} Gwei`
   const dollarValue = getFeeDollarValue(mainCurrencyPricePoint, networkSettings)
 
-  if (!showDollarValue || !dollarValue) return <div>~{gweiValue}</div>
+  if (!dollarValue) return <div>~{gweiValue}</div>
 
   return (
     <div>
