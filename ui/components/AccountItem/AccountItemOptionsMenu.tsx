@@ -121,7 +121,8 @@ export default function AccountItemOptionsMenu({
           }
           .options {
             position: absolute;
-            right: 6;
+            right: 6px;
+            top: -6px;
             cursor: default;
             border-radius: 4px;
             background-color: var(--green-120);
@@ -131,8 +132,6 @@ export default function AccountItemOptionsMenu({
             justify-content: space-between;
             width: 212px;
             border-radius: 4px;
-            height: 52px;
-            margin-top: -46px;
           }
           .option {
             display: flex;
