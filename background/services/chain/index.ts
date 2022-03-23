@@ -614,12 +614,12 @@ export default class ChainService extends BaseService<Events> {
   async broadcastSignedTransaction(
     transaction: SignedEVMTransaction
   ): Promise<void> {
-    // TODO make proper use of tx.network to choose provider
-    const serialized = utils.serializeTransaction(
-      ethersTransactionFromSignedTransaction(transaction),
-      { r: transaction.r, s: transaction.s, v: transaction.v }
-    )
     try {
+      // TODO make proper use of tx.network to choose provider
+      const serialized = utils.serializeTransaction(
+        ethersTransactionFromSignedTransaction(transaction),
+        { r: transaction.r, s: transaction.s, v: transaction.v }
+      )
       await Promise.all([
         this.providers.ethereum.sendTransaction(serialized).catch((error) => {
           logger.debug(
