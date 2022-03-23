@@ -9,7 +9,6 @@ import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
 import {
   getContract,
   getCurrentTimestamp,
-  getNonce,
   getProvider,
 } from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
@@ -19,6 +18,7 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { HOUR } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
+import { ERC2612_INTERFACE } from "../lib/erc20"
 
 export interface DAO {
   address: string
@@ -54,9 +54,11 @@ interface ClaimingState {
   referrer: string | null
 }
 
+export const TALLY_TOKEN_ADDRESS = "0xcA962030f55004688cF119ED2791C297983534Ca"
+const VOTE_WITH_FRIENDS_ADDRESS = "0xfC9956a16d9af460bef987201da413288dCd62fF"
+
 const getDistributorContract = async () => {
-  const distributorContractAddress =
-    "0x55Ef3968731DdA6125FF1545acB94303052c955D" // VoteWithFriends contract address
+  const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
   const distributor = await getContract(
     distributorContractAddress,
     DISTRIBUTOR_ABI
@@ -153,6 +155,30 @@ export const {
 
 export default claimingSlice.reducer
 
+export const checkAlreadyClaimed = createBackgroundAsyncThunk(
+  "claim/checkAlreadyClaimed",
+  async (
+    {
+      claimState,
+      accountAddress,
+    }: { claimState: ClaimingState; accountAddress: HexString },
+    { dispatch }
+  ) => {
+    const { eligibility } = claimState
+    const distributorContract = await getDistributorContract()
+    if (!eligibility) {
+      return false
+    }
+    const alreadyClaimed = await distributorContract.isClaimed(
+      eligibility.index
+    )
+    if (alreadyClaimed) {
+      dispatch(claimed(accountAddress))
+    }
+    return alreadyClaimed
+  }
+)
+
 export const claimRewards = createBackgroundAsyncThunk(
   "claim/distributorClaim",
   async (claimState: ClaimingState, { dispatch }) => {
@@ -167,10 +193,9 @@ export const claimRewards = createBackgroundAsyncThunk(
     if (!eligibility) {
       return
     }
+    const distributorContract = await getDistributorContract()
 
     dispatch(currentlyClaiming(true))
-
-    const distributorContract = await getDistributorContract()
 
     const confirmReceipt = async (response: Promise<TransactionResponse>) => {
       const result = await response
@@ -239,6 +264,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
   async (_, { getState, dispatch }) => {
     const provider = getProvider()
     const signer = provider.getSigner()
+    const address = await signer.getAddress()
 
     const state = getState()
     const { claim } = state as { claim: ClaimingState }
@@ -246,10 +272,17 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
     const delegatee = claim.selectedDelegate?.address
 
     if (delegatee) {
-      const nonce = await getNonce()
+      const TallyTokenContract = await getContract(
+        TALLY_TOKEN_ADDRESS,
+        ERC2612_INTERFACE
+      )
+
+      const nonce: BigNumber = await TallyTokenContract.nonces(address)
+      const nonceValue = Number(nonce)
+
       const timestamp = await getCurrentTimestamp()
 
-      const expiry = timestamp + 12 * HOUR
+      const expiry = timestamp + 12 * (HOUR / 1000)
       const types = {
         Delegation: [
           { name: "delegatee", type: "address" },
@@ -263,7 +296,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
       }
       const message = {
         delegatee,
-        nonce,
+        nonce: nonceValue,
         expiry,
       }
       // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
@@ -273,7 +306,11 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
       const signature = utils.splitSignature(tx)
 
       dispatch(
-        claimingSlice.actions.saveSignature({ signature, nonce, expiry })
+        claimingSlice.actions.saveSignature({
+          signature,
+          nonce: nonceValue,
+          expiry,
+        })
       )
     }
   }
