@@ -59,8 +59,14 @@ export default function SharedAddress({
         </>
       )}
       <style jsx>{`
+        button {
+          transition: 300ms color;
+        }
         button :last-child {
           top: 3px;
+        }
+        button:hover {
+          color: var(--gold-80);
         }
         .name_source_tooltip {
           margin: 0;
