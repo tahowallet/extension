@@ -18,6 +18,7 @@ import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-sl
 import {
   AnyAsset,
   FungibleAsset,
+  isFungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -93,7 +94,11 @@ export default function Swap(): ReactElement {
     // Some type massaging needed to remind TypeScript how these types fit
     // together.
     const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(isSmartContractFungibleAsset)
+    return knownAssets.filter(
+      (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
+        isSmartContractFungibleAsset(asset) ||
+        (isFungibleAsset(asset) && asset.symbol === "ETH")
+    )
   })
 
   const {
