@@ -97,6 +97,8 @@ export default function Swap(): ReactElement {
     return knownAssets.filter(
       (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
         isSmartContractFungibleAsset(asset) ||
+        // Explicity add ETH even though it is not an ERC-20 token
+        // @TODO change as part of multi-network refactor.
         (isFungibleAsset(asset) && asset.symbol === "ETH")
     )
   })
