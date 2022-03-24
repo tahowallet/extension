@@ -21,7 +21,7 @@ import SignTransactionBaseInfoProvider, {
 
 export default function SignTransactionTransferInfoProvider({
   transactionDetails,
-  annotation: { assetAmount, recipientAddress },
+  annotation: { assetAmount, recipientAddress, recipientName },
   inner,
 }: SignTransactionInfoProviderProps & {
   annotation: TransactionAnnotation & { type: "asset-transfer" }
@@ -37,6 +37,10 @@ export default function SignTransactionTransferInfoProvider({
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
 
+  const recipientAddressSpan = (
+    <span title={recipientAddress}>{truncateAddress(recipientAddress)}</span>
+  )
+
   return (
     <SignTransactionBaseInfoProvider
       title="Sign Transfer"
@@ -45,7 +49,15 @@ export default function SignTransactionTransferInfoProvider({
         <div className="sign_block">
           <div className="container">
             <div className="label">Send to</div>
-            <div className="send_to">{truncateAddress(recipientAddress)}</div>
+            <div className="send_to">
+              {recipientName !== undefined ? (
+                <>
+                  {recipientName} ({recipientAddressSpan})
+                </>
+              ) : (
+                recipientAddressSpan
+              )}
+            </div>
           </div>
           <div className="divider" />
           <div className="container">

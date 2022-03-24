@@ -44,6 +44,7 @@ export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipientAddress: HexString
+  recipientName: HexString | undefined
   senderAddress: HexString
 }
 
