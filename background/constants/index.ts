@@ -26,5 +26,7 @@ export const DAY = 24 * HOUR
 export const COMMUNITY_MULTISIG_ADDRESS =
   "0x99b36fDbC582D113aF36A21EBa06BFEAb7b9bE12"
 
+export const MAINNET_WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+
 export * from "./currencies"
 export * from "./networks"
