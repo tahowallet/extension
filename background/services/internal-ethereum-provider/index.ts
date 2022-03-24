@@ -25,6 +25,7 @@ import {
   parseSigningData,
 } from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
+import { ethers } from "ethers"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -117,7 +118,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           typedData: JSON.parse(params[1] as string),
         })
       case "eth_chainId":
-        return this.chainService.ethereumNetwork.chainID
+        return ethers.utils.hexlify(
+          Number(this.chainService.ethereumNetwork.chainID)
+        )
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
