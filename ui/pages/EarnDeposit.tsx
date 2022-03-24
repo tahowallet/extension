@@ -5,18 +5,21 @@ import {
   approveApprovalTarget,
   AvailableVault,
   checkApprovalTargetApproval,
+  claimVaultRewards,
   inputAmount,
   permitVaultDeposit,
   selectCurrentlyApproving,
   selectEarnInputAmount,
   selectIsSignatureAvailable,
-  selectLockedValues,
   vaultDeposit,
+  vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
 import {
   clearTransactionState,
   TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
+import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -37,47 +40,59 @@ export default function EarnDeposit(): ReactElement {
   const [isApproved, setIsApproved] = useState(false)
   const [isEnabled, setIsEnabled] = useState(false)
   const [deposited, setDeposited] = useState(false)
-  const [allowance, setAllowance] = useState(0)
-  const [availableRewards, setAvailableRewards] = useState("21,832")
 
   const dispatch = useBackgroundDispatch()
 
   const history = useHistory()
 
   const { vault } = useLocation().state as {
-    vault: AvailableVault
+    vault: AvailableVault & {
+      localValueTotalDeposited: string | undefined
+      localValueUserDeposited: string | undefined
+    }
   }
-  const lockedValues = useBackgroundSelector(selectLockedValues)
-  const lockedValue = lockedValues.find(
-    (locked) => locked.vaultAddress === vault?.contractAddress
-  )
-
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
   const signatureAvailable = useBackgroundSelector(selectIsSignatureAvailable)
 
-  const showWithdrawalModal = () => {
-    setWithdrawalSlideupVisible(true)
+  const pendingRewards = fromFixedPointNumber(
+    { amount: vault.pendingRewards, decimals: doggoTokenDecimalDigits },
+    2
+  )
+
+  if (
+    typeof vault.localValueUserDeposited !== "undefined" &&
+    Number(vault.localValueUserDeposited) > 0 &&
+    deposited === false
+  ) {
+    setDeposited(true)
   }
 
   useEffect(() => {
-    const getApprovalAmount = async () => {
-      const approvedAmount = (await dispatch(
-        checkApprovalTargetApproval(vault.wantToken)
-      )) as unknown as ApprovalTargetAllowance
-      setAllowance(approvedAmount.allowance)
+    const checkApproval = async () => {
+      const getApprovalAmount = async () => {
+        const approvedAmount = (await dispatch(
+          checkApprovalTargetApproval(vault?.asset?.contractAddress)
+        )) as unknown as ApprovalTargetAllowance
+        return approvedAmount.allowance
+      }
+      const allowance = await getApprovalAmount()
+      const allowanceGreaterThanAmount = allowance >= Number(amount)
+      setIsApproved(allowanceGreaterThanAmount)
     }
-    const allowanceGreaterThanAmount = allowance >= Number(amount)
-    setIsApproved(allowanceGreaterThanAmount)
-    getApprovalAmount()
-  }, [vault.wantToken, dispatch, allowance, amount])
+    checkApproval()
+  }, [vault?.asset?.contractAddress, dispatch, amount, isCurrentlyApproving])
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
 
+  const showWithdrawalModal = () => {
+    setWithdrawalSlideupVisible(true)
+  }
+
   const approve = async () => {
     await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-    dispatch(approveApprovalTarget(vault.wantToken))
+    dispatch(approveApprovalTarget(vault.asset.contractAddress))
     history.push("/sign-transaction")
   }
 
@@ -85,8 +100,8 @@ export default function EarnDeposit(): ReactElement {
     setIsEnabled(true)
     dispatch(
       permitVaultDeposit({
-        vaultContractAddress: vault.contractAddress,
-        tokenAddress: vault.wantToken,
+        vault,
+        tokenAddress: vault.asset.contractAddress,
         amount,
       })
     )
@@ -97,21 +112,30 @@ export default function EarnDeposit(): ReactElement {
     await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(
       vaultDeposit({
-        vaultContractAddress: vault.contractAddress,
+        vault,
         amount,
-        tokenAddress: vault.wantToken,
+        tokenAddress: vault.asset.contractAddress,
       })
     )
     history.push("/sign-transaction")
   }
 
-  const withdraw = () => {
+  const withdraw = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(
+      vaultWithdraw({
+        vault,
+      })
+    )
     setDeposited(false)
     setWithdrawalSlideupVisible(false)
+    history.push("/sign-transaction")
   }
 
-  const claimRewards = () => {
-    setAvailableRewards("0")
+  const claimRewards = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(claimVaultRewards(vault.vaultAddress))
+    history.push("/sign-transaction")
   }
 
   const handleAmountChange = (
@@ -120,8 +144,6 @@ export default function EarnDeposit(): ReactElement {
   ) => {
     setAmount(value)
     dispatch(inputAmount(value))
-    const allowanceGreaterThanAmount = allowance >= Number(value)
-    setIsApproved(allowanceGreaterThanAmount)
     if (errorMessage) {
       setHasError(true)
     } else {
@@ -143,7 +165,7 @@ export default function EarnDeposit(): ReactElement {
     if (isCurrentlyApproving === true) {
       return "Approving..."
     }
-    return "Approve"
+    return "Approve Approval Target"
   }
 
   return (
@@ -154,8 +176,8 @@ export default function EarnDeposit(): ReactElement {
           <li className="row header">
             <div className="type">VAULT</div>
             <div className="center">
-              <SharedAssetIcon size="large" symbol={vault.symbol} />
-              <h1 className="asset_name">{vault.symbol}</h1>
+              <SharedAssetIcon size="large" symbol={vault?.asset.symbol} />
+              <h1 className="asset_name">{vault?.asset.symbol}</h1>
             </div>
             <div>
               <a href="www.onet.pl" target="_blank">
@@ -172,7 +194,7 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
-            <div className="amount">${Number(lockedValue?.lockedValue)}</div>
+            <div className="amount">${vault.localValueTotalDeposited}</div>
           </li>
           <li className="row">
             <div className="label">Rewards</div>
@@ -182,19 +204,21 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </li>
         </ul>
-        {deposited ? (
+        {deposited || pendingRewards > 0 ? (
           <div className="wrapper">
             <li className="row">
               <div className="label">Deposited amount</div>
               <div className="amount">
-                27,834 <span className="token">{vault.symbol}</span>
+                {vault.localValueUserDeposited}
+                <span className="token">{vault?.asset.symbol}</span>
               </div>
             </li>
             <div className="divider" />
             <li className="row">
               <div className="label">Available rewards</div>
               <div className="amount">
-                {availableRewards} <span className="token">TALLY</span>
+                {pendingRewards}
+                <span className="token">TALLY</span>
               </div>
             </li>
             <li className="row claim">
@@ -222,9 +246,9 @@ export default function EarnDeposit(): ReactElement {
               handleAmountChange(value, errorMessage)
             }
             selectedAsset={{
-              name: vault.name,
-              symbol: vault.symbol,
-              contractAddress: vault.wantToken,
+              name: vault.asset.name,
+              symbol: vault.asset.symbol,
+              contractAddress: vault.asset.contractAddress,
             }}
             amount={amount}
             disableDropdown
@@ -296,14 +320,15 @@ export default function EarnDeposit(): ReactElement {
                 <li className="row">
                   <div className="label">Deposited amount</div>
                   <div className="amount">
-                    27,834 <span className="token">Curve ibGBP</span>
+                    {vault.localValueUserDeposited}
+                    <span className="token">{vault.asset.symbol}</span>
                   </div>
                 </li>
                 <div className="divider" />
                 <li className="row">
                   <div className="label">Available rewards</div>
                   <div className="amount">
-                    {availableRewards} <span className="token">TALLY</span>
+                    {pendingRewards} <span className="token">TALLY</span>
                   </div>
                 </li>
               </div>
@@ -390,6 +415,7 @@ export default function EarnDeposit(): ReactElement {
             background-color: var(--trophy-gold);
           }
           .token {
+            margin-left: 8px;
             font-size: 14px;
           }
           .divider {
