@@ -162,7 +162,6 @@ export default function TopMenu(): ReactElement {
               margin-bottom: 6px;
               z-index: inherit;
             }
-            }
             .profile_group {
               display: flex;
               align-items: center;
