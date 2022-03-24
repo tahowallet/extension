@@ -52,7 +52,7 @@ function EligibleCTAContent({
         <img className="image" src="./images/claim@2x.png" alt="" />
       </div>
       <div
-        className={classNames("claimable", {
+        className={classNames("claimable_container", {
           isCurrentlyClaiming: "left",
         })}
       >
@@ -87,7 +87,7 @@ function EligibleCTAContent({
             top: -3px;
             left: 1px;
           }
-          .claimable {
+          .claimable_container {
             display: flex;
             flex-flow: column;
             position: relative;
