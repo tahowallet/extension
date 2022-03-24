@@ -1,6 +1,5 @@
 import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
 import { USD } from "@tallyho/tally-background/constants"
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import { selectCurrentAddressNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {

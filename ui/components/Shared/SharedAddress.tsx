@@ -29,7 +29,7 @@ type SharedAddressProps = {
 export default function SharedAddress({
   name,
   address,
-  nameResolverSystem: nameSourceSystem,
+  nameResolverSystem,
 }: SharedAddressProps): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -47,13 +47,13 @@ export default function SharedAddress({
       title={`Copy to clipboard:\n${address}`}
     >
       {primaryText}
-      {name === undefined || nameSourceSystem === undefined ? (
+      {name === undefined || nameResolverSystem === undefined ? (
         <></>
       ) : (
         <>
           <SharedTooltip width={130}>
             <p className="name_source_tooltip">
-              Resolved using {nameSourceSystem}
+              Resolved using {nameResolverSystem}
             </p>
           </SharedTooltip>{" "}
         </>

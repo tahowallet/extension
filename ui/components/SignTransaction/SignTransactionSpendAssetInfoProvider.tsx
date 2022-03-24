@@ -7,10 +7,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import {
-  isMaxUint256,
-  truncateAddress,
-} from "@tallyho/tally-background/lib/utils"
+import { isMaxUint256 } from "@tallyho/tally-background/lib/utils"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
