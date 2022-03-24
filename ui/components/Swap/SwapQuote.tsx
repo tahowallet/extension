@@ -114,9 +114,9 @@ export default function SwapQuote({
           </div>
         ))}
       </div>
-      <div className="approve_button center_horizontal">
+      <div className="confirm_button center_horizontal">
         <SharedButton type="primary" size="large" onClick={handleApproveClick}>
-          Approve Swap
+          Confirm Swap
         </SharedButton>
       </div>
       <style jsx>
@@ -182,7 +182,7 @@ export default function SwapQuote({
             padding: 0px 16px;
             box-sizing: border-box;
           }
-          .approve_button {
+          .confirm_button {
             width: fit-content;
             margin-top: 36px;
           }
