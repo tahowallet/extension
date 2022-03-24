@@ -13,13 +13,13 @@ const accountCreateButtonInfos = [
     items: [
       {
         label: "Import recovery phrase",
-        icon: "./images/metamask_icon@2x.png",
+        icon: "./images/add_wallet/import.svg",
         url: "/onboarding/import-metamask",
-        featureFlag: HIDE_ADD_SEED,
+        featureFlag: !HIDE_ADD_SEED,
       },
       {
         label: "Connect to Ledger",
-        icon: "./images/ledger_icon@2x.png",
+        icon: "./images/add_wallet/ledger.svg",
         onClick: () => {
           window.open("/tab.html#/ledger", "_blank")?.focus()
           window.close()
@@ -28,7 +28,7 @@ const accountCreateButtonInfos = [
       },
       {
         label: "Read-only address",
-        icon: "./images/preview_icon@2x.png",
+        icon: "./images/add_wallet/preview.svg",
         url: "/onboarding/view-only-wallet",
         featureFlag: true,
       },
@@ -39,13 +39,87 @@ const accountCreateButtonInfos = [
     items: [
       {
         label: "Create new wallet",
-        icon: "./images/tally_circle_icon@2x.png",
+        icon: "./images/add_wallet/create_tally.svg",
         url: "/onboarding/onboarding-interstitial-create-phrase",
-        featureFlag: HIDE_CREATE_PHRASE,
+        featureFlag: !HIDE_CREATE_PHRASE,
       },
     ],
   },
 ]
+
+function AddWalletRow({
+  icon,
+  url,
+  children,
+  onClick,
+}: {
+  icon: string
+  children: React.ReactNode
+  url?: string
+  onClick?: () => void
+}) {
+  return (
+    <li>
+      <SharedButton
+        type="unstyled"
+        size="medium"
+        linkTo={url}
+        onClick={onClick}
+      >
+        <div className="option standard_width">
+          <div className="left">
+            <img
+              className="icon preview_icon"
+              src={icon}
+              alt={`${icon} icon`}
+            />
+            {children}
+          </div>
+
+          <div className="icon_chevron_right" />
+        </div>
+      </SharedButton>
+      <style jsx>{`
+        .icon_chevron_right {
+          mask-image: url("./images/chevron_right@2x.png");
+          mask-size: cover;
+          background-color: var(--green-40);
+          width: 16px;
+          height: 16px;
+        }
+        .left {
+          display: flex;
+          align-items: center;
+        }
+        .option {
+          display: flex;
+          height: 64px;
+          border-radius: 16px;
+          background-color: var(--green-95);
+          align-items: center;
+          padding: 16px;
+          box-sizing: border-box;
+          margin-bottom: 24px;
+          color: var(--green-40);
+          font-size: 18px;
+          font-weight: 600;
+          line-height: 24px;
+          justify-content: space-between;
+        }
+        .option:hover {
+          background-color: var(--green-80);
+        }
+        .icon {
+          width: 32px;
+          height: 32px;
+          background-color: var(--gold-20);
+          border-radius: 8px;
+          margin-right: 10px;
+        }
+      `}</style>
+    </li>
+  )
+}
 
 export default function OnboardingStartTheHunt(): ReactElement {
   const history = useHistory()
@@ -63,48 +137,46 @@ export default function OnboardingStartTheHunt(): ReactElement {
           }}
         />
       </div>
-      <ul className="standard_width">
+      <div className="button_sections_wrap">
         {accountCreateButtonInfos.map((creationSection) => {
           return (
-            <>
-              <li className="label_small">{creationSection.title}</li>
-              {creationSection.items.map((addWalletAction) => {
-                return (
-                  <SharedButton
-                    type="unstyled"
-                    size="medium"
-                    linkTo={addWalletAction.url}
-                    onClick={addWalletAction.onClick}
-                  >
-                    <li className="option standard_width">
-                      <div className="left">
-                        <img
-                          className="icon preview_icon"
-                          src={addWalletAction.icon}
-                          alt={`${addWalletAction.label} icon`}
-                        />
-
-                        {addWalletAction.label}
-                      </div>
-
-                      <div className="icon_chevron_right" />
-                    </li>
-                  </SharedButton>
-                )
-              })}
-            </>
+            <section>
+              <h2>{creationSection.title}</h2>
+              <ul>
+                {creationSection.items.map(
+                  ({ label, icon, url, featureFlag, onClick }) =>
+                    featureFlag ? (
+                      <AddWalletRow icon={icon} url={url} onClick={onClick}>
+                        {label}
+                      </AddWalletRow>
+                    ) : (
+                      <></>
+                    )
+                )}
+              </ul>
+            </section>
           )
         })}
-      </ul>
+      </div>
+
       <style jsx>
         {`
-          section {
-            padding-top: 15px;
+          section,
+          ul {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+          }
+          .start_wrap {
+            padding-top: 15px;
             background-color: var(--hunter-green);
+          }
+          .button_sections_wrap {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
           }
           .top {
             display: flex;
@@ -119,7 +191,8 @@ export default function OnboardingStartTheHunt(): ReactElement {
             font-weight: 500;
             line-height: 32px;
           }
-          .label_small {
+          h2 {
+            width: 100%;
             margin-bottom: 16px;
             display: block;
             color: var(--green-40);
@@ -128,45 +201,7 @@ export default function OnboardingStartTheHunt(): ReactElement {
             display: flex;
             align-items: center;
           }
-          .option {
-            display: flex;
-            height: 64px;
-            border-radius: 16px;
-            background-color: var(--green-95);
-            align-items: center;
-            padding: 16px;
-            box-sizing: border-box;
-            margin-bottom: 24px;
-            color: var(--green-40);
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 24px;
-            justify-content: space-between;
-          }
-          .option:hover {
-            background-color: var(--green-80);
-          }
-          .icon {
-            width: 32px;
-            height: 32px;
-            background-color: var(--gold-20);
-            border-radius: 8px;
-            margin-right: 10px;
-          }
-          .label_small:last-of-type {
-            margin-top: 70px;
-          }
-          .icon_chevron_right {
-            mask-image: url("./images/chevron_right@2x.png");
-            mask-size: cover;
-            background-color: var(--green-40);
-            width: 16px;
-            height: 16px;
-          }
-          .left {
-            display: flex;
-            align-items: center;
-          }
+
           .icon_close {
             mask-image: url("./images/close.svg");
             mask-size: cover;
