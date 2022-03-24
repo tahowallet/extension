@@ -39,7 +39,6 @@ interface ClaimingState {
   claimed: {
     [address: HexString]: boolean
   }
-  distributor: HexString
   delegates: Delegate[]
   eligibility: Eligible | null
   DAOs: DAO[]
@@ -69,7 +68,6 @@ const getDistributorContract = async () => {
 const initialState: ClaimingState = {
   status: "idle",
   claimed: {},
-  distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
   eligibility: null,
@@ -127,10 +125,14 @@ const claimingSlice = createSlice({
       nonce,
       expiry,
     }),
-    resetSignature: (immerState) => {
+    resetClaimFlow: (immerState) => {
       immerState.signature = undefined
+      immerState.selectedDAO = null
+      immerState.selectedDelegate = null
+      immerState.claimStep = 1
       immerState.nonce = undefined
       immerState.expiry = undefined
+      immerState.referrer = null
     },
     setReferrer: (immerState, { payload: referrer }: { payload: string }) => {
       immerState.referrer = referrer
@@ -148,7 +150,7 @@ export const {
   setClaimStep,
   claimed,
   resetStep,
-  resetSignature,
+  resetClaimFlow,
   claimError,
   setReferrer,
 } = claimingSlice.actions
@@ -203,6 +205,7 @@ export const claimRewards = createBackgroundAsyncThunk(
       if (receipt.status === 1) {
         dispatch(currentlyClaiming(false))
         dispatch(claimed(normalizeEVMAddress(account)))
+        dispatch(resetClaimFlow())
         return
       }
       dispatch(currentlyClaiming(false))
