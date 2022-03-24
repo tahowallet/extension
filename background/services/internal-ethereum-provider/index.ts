@@ -6,6 +6,7 @@ import {
   EIP1193_ERROR_CODES,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
+import { ethers } from "ethers"
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -25,7 +26,6 @@ import {
   parseSigningData,
 } from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
-import { ethers } from "ethers"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
