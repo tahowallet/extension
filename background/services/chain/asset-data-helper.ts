@@ -69,15 +69,16 @@ export default class AssetDataHelper {
 
     // Load balances of tokens on the mainnet fork
     if (USE_MAINNET_FORK) {
-      const signer = provider.getSigner()
-      const signerAddress = await signer.getAddress()
       const tokens = [
         "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-        "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+        "0x7EE7c993FBAD3AAFf795973ee14ff2034311a966", // DOGGO
       ]
       const balances = tokens.map(async (token) => {
-        const balance = await getBalance(provider, token, signerAddress)
+        const balance = await getBalance(
+          provider,
+          token,
+          addressOnNetwork.address
+        )
         return {
           smartContract: {
             contractAddress: token,
