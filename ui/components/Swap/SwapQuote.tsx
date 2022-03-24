@@ -116,7 +116,7 @@ export default function SwapQuote({
       </div>
       <div className="approve_button center_horizontal">
         <SharedButton type="primary" size="large" onClick={handleApproveClick}>
-          Execute Swap
+          Approve Swap
         </SharedButton>
       </div>
       <style jsx>
