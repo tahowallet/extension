@@ -119,7 +119,8 @@ export default function Swap(): ReactElement {
   const {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
-  } = savedQuoteRequest ?? {
+  } = (!locationAsset && savedQuoteRequest) || {
+    // ^ If coming from an asset item swap button, let the UI start fresh
     assets: { sellAsset: locationAsset },
   }
 
