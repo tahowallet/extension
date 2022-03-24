@@ -259,7 +259,6 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 isDisabled={hasError || amount === "" || isCurrentlyApproving}
-                linkTo="/sign-transaction"
                 onClick={approve}
               >
                 {approveButtonText()}

@@ -71,7 +71,7 @@ export const initialState: EarnState = {
         contractAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
         decimals: 6,
       },
-      vaultAddress: "0xBfAF0E71db32EdE62BB4D43b362a9d3E5F19a9a2",
+      vaultAddress: "0x6575a8E8Ca0FD1Fb974419AE1f9128cCb1055209",
       yearnVault: "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
       userDeposited: 0n,
       totalDeposited: 0n,
@@ -107,7 +107,7 @@ export type SignTypedDataRequest = {
 }
 
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
-  "0x35613d0bF1a18e8E95181322cd5C60B9dD7Af2A8"
+  "0x76465982fD8070FC74c91FD4CFfC7eb56Fc6b03a"
 
 const earnSlice = createSlice({
   name: "earn",
