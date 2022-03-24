@@ -21,7 +21,7 @@ export default function ClaimReferralByUser({
         <div className="highlight">{amountWithBonus}</div> TALLY!
       </div>
       <div className="description">
-        You were referred by somebody, and to reward that you each get 463 TALLY
+        {`You were referred by somebody, and to reward that you each get ${amountWithBonus} TALLY`}
       </div>
       <ClaimReferralBridge />
       <ClaimDelegateChoiceProfile name={referrer ?? "henryboldi.eth"} />
