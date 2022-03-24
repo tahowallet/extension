@@ -1,19 +1,17 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
+import { parseUnits } from "ethers/lib/utils"
 import { AnyAsset } from "../assets"
-import { HOUR, doggoTokenDecimalDigits } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
-import { ERC20_ABI, ERC2612_INTERFACE } from "../lib/erc20"
-import { fromFixedPointNumber, toFixedPoint } from "../lib/fixed-point"
-import { normalizeEVMAddress } from "../lib/utils"
+import { ERC20_ABI } from "../lib/erc20"
+import { fromFixedPointNumber } from "../lib/fixed-point"
 import VAULT_ABI from "../lib/vault"
+import APPROVAL_TARGET_ABI from "../lib/approvalTarget"
 import { EIP712TypedData, HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   getContract,
-  getCurrentTimestamp,
-  getNonce,
   getProvider,
   getSignerAddress,
 } from "./utils/contract-utils"
@@ -23,36 +21,26 @@ export type ApprovalTargetAllowance = {
   allowance: number
 }
 
-export type PendingReward = {
-  vaultAddress: HexString
-  pendingAmount: number
-}
-
-export type DepositedVault = {
-  vaultAddress: HexString
-  depositedAmount: BigInt
-}
-
 export type LockedValue = {
   vaultAddress: HexString
   lockedValue: bigint
   vaultTokenSymbol: string
-  asset: AnyAsset
+  asset: AnyAsset & { contractAddress: string }
 }
 
 export type AvailableVault = {
-  name: string
-  symbol: string
-  contractAddress: HexString
-  wantToken: HexString
+  vaultAddress: HexString
   active: boolean
+  userDeposited: bigint
+  totalDeposited: bigint
+  yearnVault: HexString
+  asset: AnyAsset & { contractAddress: string; decimals: number }
+  pendingRewards: bigint
 }
 
 export type EarnState = {
   signature: Signature
   approvalTargetAllowances: ApprovalTargetAllowance[]
-  depositedVaults: DepositedVault[]
-  pendingRewards: PendingReward[]
   lockedAmounts: LockedValue[]
   availableVaults: AvailableVault[]
   currentlyDepositing: boolean
@@ -74,31 +62,21 @@ export const initialState: EarnState = {
     v: undefined,
   },
   approvalTargetAllowances: [],
-  depositedVaults: [],
-  pendingRewards: [],
   lockedAmounts: [],
   availableVaults: [
     {
-      name: "WBTC",
-      symbol: "WBTC",
-      contractAddress: "0x5D1aB585B7d05d81F07E8Ff33998f2f11647B46e",
-      wantToken: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      asset: {
+        name: "USDT",
+        symbol: "USDT",
+        contractAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        decimals: 6,
+      },
+      vaultAddress: "0xBfAF0E71db32EdE62BB4D43b362a9d3E5F19a9a2",
+      yearnVault: "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+      userDeposited: 0n,
+      totalDeposited: 0n,
+      pendingRewards: 0n,
       active: true,
-    } as AnyAsset & {
-      contractAddress: HexString
-      active: boolean
-      wantToken: HexString
-    },
-    {
-      name: "USDT",
-      symbol: "USDT",
-      contractAddress: "0x362Db3b1F85154a537CEf5e2a3D87D56d71DF823",
-      active: true,
-      wantToken: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    } as AnyAsset & {
-      contractAddress: HexString
-      active: boolean
-      wantToken: HexString
     },
   ],
   currentlyDepositing: false,
@@ -129,50 +107,7 @@ export type SignTypedDataRequest = {
 }
 
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
-  "0x9a7E392264500e46AAe5277C99d3CD381269cb9B"
-
-const DOGGO_TOKEN_CONTRACT = "0x2eD9D339899CD5f1E4a3B131F467E76549E8Eab0"
-
-export const vaultWithdraw = createBackgroundAsyncThunk(
-  "earn/vaultWithdraw",
-  async ({
-    vaultContractAddress,
-    amount,
-  }: {
-    vaultContractAddress: HexString
-    amount: BigNumber
-  }) => {
-    const provider = getProvider()
-    const signer = provider.getSigner()
-
-    const vaultContract = await getContract(vaultContractAddress, VAULT_ABI)
-
-    const signedWithdrawTransaction = await signer.signTransaction(
-      await vaultContract.functions["withdraw(uint256)"](amount)
-    )
-
-    provider.sendTransaction(signedWithdrawTransaction)
-  }
-)
-
-export const claimVaultRewards = createBackgroundAsyncThunk(
-  "earn/clamRewards",
-  async (vaultContractAddress: HexString) => {
-    const provider = getProvider()
-    const signer = provider.getSigner()
-
-    const vaultContract = new ethers.Contract(
-      vaultContractAddress,
-      VAULT_ABI,
-      signer
-    )
-    const signedGetRewardsTx = await signer.signTransaction(
-      await vaultContract.functions.getReward()
-    )
-
-    provider.sendTransaction(signedGetRewardsTx)
-  }
-)
+  "0x35613d0bF1a18e8E95181322cd5C60B9dD7Af2A8"
 
 const earnSlice = createSlice({
   name: "earn",
@@ -201,36 +136,41 @@ const earnSlice = createSlice({
         inputAmount: payload,
       }
     },
-    deposited: (
-      immerState,
+    earnedOnVault: (
+      state,
+      { payload }: { payload: { vault: HexString; amount: bigint } }
+    ) => {
+      return {
+        ...state,
+        availableVaults: state.availableVaults.map((availableVault) =>
+          availableVault.vaultAddress === payload.vault
+            ? { ...availableVault, pendingRewards: payload.amount }
+            : availableVault
+        ),
+      }
+    },
+    lockedAmounts: (
+      state,
       {
         payload,
-      }: { payload: { vaultAddress: HexString; depositedAmount: BigInt } }
-    ) => {
-      immerState.depositedVaults.push(payload)
-    },
-    earnedAmounts: (state, { payload }: { payload: PendingReward[] }) => {
-      return {
-        ...state,
-        pendingRewards: payload,
+      }: {
+        payload: {
+          vault: AvailableVault
+          userLockedValue: bigint
+          totalTVL: bigint
+        }
       }
-    },
-    lockedAmounts: (state, { payload }: { payload: LockedValue[] }) => {
-      return {
-        ...state,
-        lockedAmounts: payload,
-      }
-    },
-    withdrawn: (
-      state,
-      { payload }: { payload: { vault: HexString; depositedAmount: BigInt } }
     ) => {
       return {
         ...state,
-        depositedVaults: state.depositedVaults.map((vault) =>
-          vault.vaultAddress === payload.vault
-            ? { ...vault, depositedAmount: payload.depositedAmount }
-            : vault
+        availableVaults: state.availableVaults.map((availableVault) =>
+          availableVault.vaultAddress === payload.vault.vaultAddress
+            ? {
+                ...availableVault,
+                userDeposited: payload.userLockedValue,
+                totalDeposited: payload.totalTVL,
+              }
+            : availableVault
         ),
       }
     },
@@ -260,10 +200,8 @@ export const {
   saveAllowance,
   currentlyDepositing,
   currentlyApproving,
-  deposited,
-  withdrawn,
+  earnedOnVault,
   depositError,
-  earnedAmounts,
   lockedAmounts,
   inputAmount,
   clearSignature,
@@ -271,15 +209,63 @@ export const {
 
 export default earnSlice.reducer
 
+export const updateLockedValues = createBackgroundAsyncThunk(
+  "earn/updateLockedValues",
+  async (_, { getState, dispatch }) => {
+    const currentState = getState()
+    const { earn } = currentState as { earn: EarnState }
+    const { availableVaults } = earn
+    const provider = getProvider()
+    const signer = provider.getSigner()
+    const account = signer.getAddress()
+
+    availableVaults.map(async (vault) => {
+      const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
+      const userLockedValue: BigNumber = await vaultContract.balanceOf(account)
+      const yearnVaultContract = await getContract(vault.yearnVault, VAULT_ABI)
+      const totalTVL: BigNumber = await yearnVaultContract.balanceOf(
+        vault.vaultAddress
+      )
+      dispatch(
+        lockedAmounts({
+          vault,
+          userLockedValue: userLockedValue.toBigInt(),
+          totalTVL: totalTVL.toBigInt(),
+        })
+      )
+      return {
+        ...vault,
+        userDeposited: userLockedValue.toBigInt(),
+        totalDeposited: totalTVL.toBigInt(),
+      }
+    })
+  }
+)
+
+export const vaultWithdraw = createBackgroundAsyncThunk(
+  "earn/vaultWithdraw",
+  async ({ vault }: { vault: AvailableVault }, { dispatch }) => {
+    const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
+
+    // TODO Support partial withdrawal
+    // const withdrawAmount = parseUnits(amount, vault.asset.decimals)
+
+    const tx = await vaultContract.functions["withdraw()"]()
+    const receipt = await tx.wait()
+    if (receipt.status === 1) {
+      dispatch(updateLockedValues())
+    }
+  }
+)
+
 export const vaultDeposit = createBackgroundAsyncThunk(
   "signing/vaultDeposit",
   async (
     {
-      vaultContractAddress,
+      vault,
       amount,
-      tokenAddress,
     }: {
-      vaultContractAddress: HexString
+      vault: AvailableVault
       amount: string
       tokenAddress: HexString
     },
@@ -292,107 +278,75 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     const state = getState()
     const { earn } = state as { earn: EarnState }
 
-    const vaultContract = await getContract(vaultContractAddress, VAULT_ABI)
+    const { signature } = earn
 
-    const timestamp = await getCurrentTimestamp()
+    const { vaultAddress } = vault
 
-    const TokenContract = await getContract(tokenAddress, ERC2612_INTERFACE)
+    const depositAmount = parseUnits(amount, vault.asset.decimals)
 
-    const decimals: BigNumber = await TokenContract.decimals()
-    // ! cleanup
-    const signatureDeadline = BigInt(timestamp) + BigInt(12) * BigInt(HOUR)
-
-    const amountPermitted = await TokenContract.allowance(
-      signerAddress,
-      APPROVAL_TARGET_CONTRACT_ADDRESS
-    )
+    const vaultContract = await getContract(vaultAddress, VAULT_ABI)
 
     const depositTransactionData =
       await vaultContract.populateTransaction.depositWithApprovalTarget(
-        toFixedPoint(Number(amount), decimals.toNumber()),
+        depositAmount,
         signerAddress,
         signerAddress,
-        amountPermitted,
-        signatureDeadline,
-        earn.signature.v,
-        earn.signature.r,
-        earn.signature.s
+        depositAmount,
+        ethers.BigNumber.from(1690792895n), // TODO not sure how to handle, remove hardcode
+        signature.v,
+        signature.r,
+        signature.s
       )
     if (USE_MAINNET_FORK) {
-      depositTransactionData.gasLimit = BigNumber.from(350000) // for mainnet fork only
+      depositTransactionData.gasLimit = BigNumber.from(850000) // for mainnet fork only
     }
-    const response = signer.sendTransaction(depositTransactionData)
-    const result = await response
-    const receipt = await result.wait()
+    const response = await signer.sendTransaction(depositTransactionData)
+    const receipt = await response.wait()
     if (receipt.status === 1) {
       dispatch(currentlyDepositing(false))
-      dispatch(
-        deposited({
-          vaultAddress: normalizeEVMAddress(vaultContractAddress),
-          depositedAmount: toFixedPoint(Number(amount), decimals.toNumber()),
-        })
-      )
+      dispatch(clearSignature())
+      dispatch(updateLockedValues())
     }
+
     dispatch(currentlyDepositing(false))
     dispatch(dispatch(depositError(true)))
   }
 )
 
-export const updateEarnedOnDepositedPools = createBackgroundAsyncThunk(
+export const updateEarnedValues = createBackgroundAsyncThunk(
   "earn/updateEarnedOnDepositedPools",
   async (_, { getState, dispatch }) => {
     const currentState = getState()
     const { earn } = currentState as { earn: EarnState }
-    const { depositedVaults } = earn
+    const { availableVaults } = earn
     const provider = getProvider()
     const signer = provider.getSigner()
     const account = signer.getAddress()
-
-    const pendingAmounts = depositedVaults.map(async (vault) => {
+    availableVaults.forEach(async (vault) => {
       const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
       const earned: BigNumber = await vaultContract.earned(account)
-      return {
-        vaultAddress: vault.vaultAddress,
-        pendingAmount: fromFixedPointNumber(
-          { amount: earned.toBigInt(), decimals: doggoTokenDecimalDigits },
-          0
-        ),
-      }
+      dispatch(
+        earnedOnVault({ vault: vault.vaultAddress, amount: earned.toBigInt() })
+      )
     })
-
-    const amounts = await Promise.all(pendingAmounts)
-    dispatch(earnedAmounts(amounts))
-    return amounts
   }
 )
 
-export const updateLockedValues = createBackgroundAsyncThunk(
-  "earn/updateLockedValues",
-  async (_, { getState, dispatch }) => {
-    const currentState = getState()
-    const { earn } = currentState as { earn: EarnState }
-    const { availableVaults } = earn
+export const claimVaultRewards = createBackgroundAsyncThunk(
+  "earn/clamRewards",
+  async (vaultContractAddress: HexString, { dispatch }) => {
+    const provider = getProvider()
+    const signer = provider.getSigner()
 
-    const locked = availableVaults.map(async (vault) => {
-      const wantTokenContract = await getContract(vault.wantToken, ERC20_ABI)
-      const lockedValue: BigNumber = await wantTokenContract.balanceOf(
-        vault.contractAddress
-      )
-      return {
-        vaultAddress: vault.contractAddress,
-        vaultTokenSymbol: vault.symbol,
-        lockedValue: lockedValue.toBigInt(),
-        asset: {
-          contractAddress: vault.wantToken,
-          name: vault.name,
-          symbol: vault.symbol,
-        } as AnyAsset,
-      }
-    })
-    // TODO Convert below to be showing $ value rather than BigNumber
-    const amounts = await Promise.all(locked)
-    dispatch(lockedAmounts(amounts))
-    return amounts
+    const vaultContract = new ethers.Contract(
+      vaultContractAddress,
+      VAULT_ABI,
+      signer
+    )
+    const tx = await vaultContract.functions["getReward()"]()
+    const response = signer.sendTransaction(tx)
+    await tx.wait(response)
+    dispatch(updateEarnedValues())
   }
 )
 
@@ -419,15 +373,7 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
       }
       const tx = await signer.sendTransaction(approvalTransactionData)
       await tx.wait()
-      const { r, s, v } = tx
-      if (
-        typeof r !== "undefined" &&
-        typeof v !== "undefined" &&
-        typeof s !== "undefined"
-      ) {
-        dispatch(earnSlice.actions.saveSignature({ r, s, v }))
-        dispatch(currentlyApproving(false))
-      }
+      dispatch(currentlyApproving(false))
       return tx
     } catch (error) {
       dispatch(currentlyApproving(false))
@@ -438,43 +384,25 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
 
 export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
   "earn/checkApprovalTargetApproval",
-  async (tokenContractAddress: HexString, { getState, dispatch }) => {
-    const currentState = getState()
-    const { earn } = currentState as { earn: EarnState }
+  async (tokenContractAddress: HexString, { dispatch }) => {
     const assetContract = await getContract(tokenContractAddress, ERC20_ABI)
     const signerAddress = await getSignerAddress()
-
-    const knownAllowanceIndex = earn.approvalTargetAllowances.findIndex(
-      (allowance: ApprovalTargetAllowance) =>
-        allowance.contractAddress === tokenContractAddress
-    )
-    if (knownAllowanceIndex === -1) {
-      try {
-        const allowance: BigNumber = await assetContract.allowance(
-          signerAddress,
-          APPROVAL_TARGET_CONTRACT_ADDRESS
-        )
-        const amount = fromFixedPointNumber(
-          { amount: allowance.toBigInt(), decimals: 18 },
-          2
-        )
-        dispatch(
-          earnSlice.actions.saveAllowance({
-            contractAddress: tokenContractAddress,
-            allowance: amount,
-          })
-        )
-        return {
-          contractAddress: tokenContractAddress,
-          allowance: amount,
-        } as ApprovalTargetAllowance
-      } catch (err) {
-        return undefined
-      }
+    try {
+      const allowance: BigNumber = await assetContract.allowance(
+        signerAddress,
+        APPROVAL_TARGET_CONTRACT_ADDRESS
+      )
+      const amount = fromFixedPointNumber(
+        { amount: allowance.toBigInt(), decimals: 18 },
+        2
+      )
+      return {
+        contractAddress: tokenContractAddress,
+        allowance: amount,
+      } as ApprovalTargetAllowance
+    } catch (err) {
+      return undefined
     }
-    return earn.approvalTargetAllowances.find(
-      (_, i) => i === knownAllowanceIndex
-    )
   }
 )
 
@@ -482,11 +410,11 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
   "earn/permitVaultDeposit",
   async (
     {
-      vaultContractAddress,
+      vault,
       amount,
       tokenAddress,
     }: {
-      vaultContractAddress: HexString
+      vault: AvailableVault
       amount: string
       tokenAddress: HexString
     },
@@ -497,50 +425,36 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const signerAddress = await getSignerAddress()
     const chainID = await signer.getChainId()
 
-    const timestamp = await getCurrentTimestamp()
-    const signatureDeadline = timestamp + 12 * HOUR
+    const depositAmount = parseUnits(amount, vault.asset.decimals)
 
-    const TokenContract = await getContract(tokenAddress, ERC2612_INTERFACE)
-    const nonceValue = await TokenContract.nonces(signerAddress)
-
-    const decimals: BigNumber = await TokenContract.decimals()
-
+    const ApprovalTargetContract = await getContract(
+      APPROVAL_TARGET_CONTRACT_ADDRESS,
+      APPROVAL_TARGET_ABI
+    )
+    const nonceValue = await ApprovalTargetContract.nonces(signerAddress)
     const types = {
-      Message: [
-        {
-          name: "owner",
-          type: "address",
-        },
-        {
-          name: "spender",
-          type: "address",
-        },
-        {
-          name: "value",
-          type: "uint256",
-        },
-        {
-          name: "nonce",
-          type: "uint256",
-        },
-        {
-          name: "deadline",
-          type: "uint256",
-        },
+      PermitAndTransferFrom: [
+        { name: "erc20", type: "address" },
+        { name: "owner", type: "address" },
+        { name: "spender", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" },
       ],
     }
     const domain = {
-      name: "Spend assets with ApprovalTarget",
+      name: "ApprovalTarget",
+      chainId: USE_MAINNET_FORK ? 1337 : chainID,
       version: "1",
-      verifyingContract: vaultContractAddress,
-      chainId: chainID,
+      verifyingContract: APPROVAL_TARGET_CONTRACT_ADDRESS,
     }
     const message = {
+      erc20: tokenAddress,
       owner: signerAddress,
-      spender: vaultContractAddress,
-      value: toFixedPoint(Number(amount), decimals.toNumber()),
+      spender: vault.vaultAddress,
+      value: depositAmount,
       nonce: nonceValue,
-      deadline: signatureDeadline,
+      deadline: ethers.BigNumber.from(1690792895n), // TODO not sure how to handle, remove hardcode
     }
 
     // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
@@ -578,13 +492,11 @@ export const selectAvailableVaults = createSelector(
   (earnState: EarnState) => earnState.availableVaults
 )
 
-// TODO This should include a maincurrency value for each element in the array
 export const selectLockedValues = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => earnState.lockedAmounts
 )
 
-// TODO This should return a maincurrency value
 export const selectTotalLockedValue = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) =>
