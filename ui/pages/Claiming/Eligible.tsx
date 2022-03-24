@@ -135,6 +135,7 @@ export default function Eligible(): ReactElement {
             display: flex;
             flex-flow: column;
             margin-top: 10px;
+            position: relative;
           }
           .background {
             width: 100%;
