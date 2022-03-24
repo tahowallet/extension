@@ -48,7 +48,7 @@ export default function SwapQuote({
 
   const history = useHistory()
 
-  const handleApproveClick = useCallback(async () => {
+  const handleConfirmClick = useCallback(async () => {
     const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
 
     // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
@@ -115,7 +115,7 @@ export default function SwapQuote({
         ))}
       </div>
       <div className="confirm_button center_horizontal">
-        <SharedButton type="primary" size="large" onClick={handleApproveClick}>
+        <SharedButton type="primary" size="large" onClick={handleConfirmClick}>
           Confirm Swap
         </SharedButton>
       </div>
