@@ -68,7 +68,13 @@ function EligibleCTAContent({
             no_click: !currentAccountSigningMethod,
           })}
         >
-          <div className="link_content">{">"}</div>
+          <div className="link_content">
+            <img
+              className="link_icon"
+              src="./images/continue.svg"
+              alt="Claim tokens"
+            />
+          </div>
         </Link>
       ) : (
         <></>
@@ -110,11 +116,17 @@ function EligibleCTAContent({
             height: 74px;
             background-color: var(--trophy-gold);
             border-radius: 8px;
-            color: black;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 18px;
+          }
+          .link_icon {
+            width: 16px;
+            height: 17px;
+          }
+          .link_content:hover {
+            background-color: var(--gold-80);
           }
           .upgrade .link_content {
             background-color: var(--green-80);
