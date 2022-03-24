@@ -49,7 +49,7 @@ function EligibleCTAContent({
   return (
     <>
       <div>
-        <img className="image" src="./images/claim.png" alt="" />
+        <img className="image" src="./images/claim@2x.png" alt="" />
       </div>
       <div
         className={classNames("claimable", {

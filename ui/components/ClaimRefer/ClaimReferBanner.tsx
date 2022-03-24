@@ -6,7 +6,7 @@ export default function ClaimReferBanner(): ReactElement {
     <div className="standard_width">
       <div className="banner">
         <div>
-          <img className="image" src="./images/claim.png" alt="" />
+          <img className="image" src="./images/claim@2x.png" alt="" />
         </div>
         <div className="claimable">
           <div className="claimable_woohoo">Wohoo! You can claim</div>
