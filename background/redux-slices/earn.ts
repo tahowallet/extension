@@ -15,17 +15,12 @@ import {
   getProvider,
   getSignerAddress,
 } from "./utils/contract-utils"
+import { AssetsState, selectAssetPricePoint } from "./assets"
+import { enrichAssetAmountWithMainCurrencyValues } from "./utils/asset-utils"
 
 export type ApprovalTargetAllowance = {
   contractAddress: HexString
   allowance: number
-}
-
-export type LockedValue = {
-  vaultAddress: HexString
-  lockedValue: bigint
-  vaultTokenSymbol: string
-  asset: AnyAsset & { contractAddress: string }
 }
 
 export type AvailableVault = {
@@ -41,7 +36,6 @@ export type AvailableVault = {
 export type EarnState = {
   signature: Signature
   approvalTargetAllowances: ApprovalTargetAllowance[]
-  lockedAmounts: LockedValue[]
   availableVaults: AvailableVault[]
   currentlyDepositing: boolean
   currentlyApproving: boolean
@@ -62,7 +56,6 @@ export const initialState: EarnState = {
     v: undefined,
   },
   approvalTargetAllowances: [],
-  lockedAmounts: [],
   availableVaults: [
     {
       asset: {
@@ -492,19 +485,6 @@ export const selectAvailableVaults = createSelector(
   (earnState: EarnState) => earnState.availableVaults
 )
 
-export const selectLockedValues = createSelector(
-  (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState.lockedAmounts
-)
-
-export const selectTotalLockedValue = createSelector(
-  (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) =>
-    earnState.lockedAmounts.reduce((total, vault) => {
-      return total + Number(vault.lockedValue)
-    }, 0)
-)
-
 export const selectIsSignatureAvailable = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => {
@@ -522,4 +502,41 @@ export const selectIsSignatureAvailable = createSelector(
 export const selectEarnInputAmount = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => earnState.inputAmount
+)
+
+export const selectEnrichedAvailableVaults = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (state: { assets: AssetsState }): AssetsState => state.assets,
+  (earnState: EarnState, assetsState: AssetsState) => {
+    // FIXME make this proper main currency
+    const mainCurrencySymbol = "USD"
+    const vaultsWithMainCurrencyValues = earnState.availableVaults.map(
+      (vault) => {
+        const assetPricePoint = selectAssetPricePoint(
+          assetsState,
+          vault.asset.symbol,
+          mainCurrencySymbol
+        )
+        const userTVL = enrichAssetAmountWithMainCurrencyValues(
+          { amount: vault.userDeposited, asset: vault.asset },
+          assetPricePoint,
+          2
+        )
+        const totalTVL = enrichAssetAmountWithMainCurrencyValues(
+          { amount: vault.totalDeposited, asset: vault.asset },
+          assetPricePoint,
+          2
+        )
+
+        return {
+          ...vault,
+          localValueUserDeposited: userTVL.localizedMainCurrencyAmount,
+          localValueTotalDeposited: totalTVL.localizedMainCurrencyAmount,
+          numberValueUserDeposited: userTVL.mainCurrencyAmount,
+          numberValueTotalDeposited: totalTVL.mainCurrencyAmount,
+        }
+      }
+    )
+    return vaultsWithMainCurrencyValues
+  }
 )
