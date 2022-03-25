@@ -70,18 +70,20 @@ export default function EarnDeposit(): ReactElement {
   )
 
   useEffect(() => {
-    const checkApproval = async () => {
-      const getApprovalAmount = async () => {
-        const approvedAmount = (await dispatch(
-          checkApprovalTargetApproval(vault?.asset?.contractAddress || "0x")
-        )) as unknown as ApprovalTargetAllowance
-        return approvedAmount.allowance
+    if (typeof vault?.asset?.contractAddress !== "undefined") {
+      const checkApproval = async () => {
+        const getApprovalAmount = async () => {
+          const approvedAmount = (await dispatch(
+            checkApprovalTargetApproval(vault.asset.contractAddress)
+          )) as unknown as ApprovalTargetAllowance
+          return approvedAmount.allowance
+        }
+        const allowance = await getApprovalAmount()
+        const allowanceGreaterThanAmount = allowance >= Number(amount)
+        setIsApproved(allowanceGreaterThanAmount)
       }
-      const allowance = await getApprovalAmount()
-      const allowanceGreaterThanAmount = allowance >= Number(amount)
-      setIsApproved(allowanceGreaterThanAmount)
+      checkApproval()
     }
-    checkApproval()
   }, [amount, dispatch, vault?.asset?.contractAddress, account.address])
 
   useEffect(() => {
