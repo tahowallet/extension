@@ -2,7 +2,6 @@ import {
   claimRewards,
   selectClaimSelections,
   selectIsDelegationSigned,
-  setClaimStep,
   signTokenDelegationData,
   selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
@@ -10,13 +9,7 @@ import {
   clearTransactionState,
   TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import React, {
-  Dispatch,
-  ReactElement,
-  SetStateAction,
-  useCallback,
-  useMemo,
-} from "react"
+import React, { ReactElement, useCallback, useMemo } from "react"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
@@ -24,14 +17,12 @@ import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
 
 interface ClaimFooterProps {
   step: number
-  setStep: Dispatch<SetStateAction<number>>
   advanceStep: () => void
   showSuccess: () => void
 }
 
 export default function ClaimFooter({
   step,
-  setStep,
   advanceStep,
   showSuccess,
 }: ClaimFooterProps): ReactElement {
@@ -47,20 +38,11 @@ export default function ClaimFooter({
     if (selectedDelegate.address !== undefined && !isDelegationSigned) {
       return "Sign Delegation"
     }
-    if (isCurrentlyClaiming) {
-      return "Claiming..."
-    }
     return "Claim"
-  }, [isCurrentlyClaiming, isDelegationSigned, selectedDelegate.address])
+  }, [isDelegationSigned, selectedDelegate.address])
 
   const buttonText = useMemo(
-    () => [
-      "Get started",
-      "Continue",
-      "Continue",
-      "Continue",
-      lastStepButtonText,
-    ],
+    () => ["Get started", "Continue", "Continue", lastStepButtonText],
     [lastStepButtonText]
   )
 
@@ -82,19 +64,15 @@ export default function ClaimFooter({
     }
   }, [buttonText, step, advanceStep, dispatch, history, claimState])
 
-  const handleProgressStepClick = (s: number) => {
-    setStep(s)
-    dispatch(setClaimStep(s))
-  }
-
   return (
     <footer>
       <div className="steps">
         {step < 5 && (
           <SharedProgressIndicator
             activeStep={step - 1}
-            onProgressStepClicked={(s) => handleProgressStepClick(s)}
+            onProgressStepClicked={() => {}}
             numberOfSteps={3}
+            noInteraction
           />
         )}
       </div>

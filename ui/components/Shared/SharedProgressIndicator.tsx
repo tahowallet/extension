@@ -5,8 +5,10 @@ export default function SharedProgressIndicator(props: {
   activeStep: number
   numberOfSteps: number
   onProgressStepClicked: (step: number) => void
+  noInteraction?: boolean
 }): ReactElement {
-  const { activeStep, numberOfSteps, onProgressStepClicked } = props
+  const { activeStep, numberOfSteps, onProgressStepClicked, noInteraction } =
+    props
 
   return (
     <div className="indicator_wrap">
@@ -22,6 +24,7 @@ export default function SharedProgressIndicator(props: {
               key={index}
               className={classNames("step", {
                 active: index === activeStep - 1,
+                static: noInteraction,
               })}
               onClick={() => {
                 onProgressStepClicked(index + 1)
@@ -40,6 +43,9 @@ export default function SharedProgressIndicator(props: {
             border-radius: 3px;
             margin: 0px 3px;
             transition: 0.2s ease-in-out;
+          }
+          .static {
+            cursor: default;
           }
           .active {
             width: 16px;
