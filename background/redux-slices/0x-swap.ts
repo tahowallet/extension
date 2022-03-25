@@ -12,7 +12,7 @@ import {
 } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
-import { COMMUNITY_MULTISIG_ADDRESS, MAINNET_WETH_ADDRESS } from "../constants"
+import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -46,14 +46,6 @@ export interface SwapState {
 export const initialState: SwapState = {
   inProgressApprovalContract: undefined,
 }
-
-const is0xWETHWrap = (buyAddress: string, sellAddress: string) => {
-  return buyAddress === MAINNET_WETH_ADDRESS && buyAddress === sellAddress
-}
-
-// The magic string used by the 0x API to signify we're dealing with ETH rather
-// than an ERC-20
-const ZEROX_ETH_SIGNIFIER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 
 const swapSlice = createSlice({
   name: "0x-swap",
@@ -253,15 +245,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     let needsApproval = false
     // If we aren't selling ETH, check whether we need an approval to swap
     // TODO Handle other non-ETH base assets
-    if (
-      quote.sellTokenAddress !== ZEROX_ETH_SIGNIFIER &&
-      // When attempting to wrap ETH into WETH or vice-versa - the 0x api currently erroneously returns the requested quote's
-      // sellTokenAddress to the the buyTokenAddress (WETH's contract address).  We have been told that this will be
-      // addressed in a future update to the api (https://github.com/0xProject/0x-api/pull/850) but until that PR
-      // lands we will need to add the below escape hatch to let us slap ETH <> WETH in-app.
-      // @TODO 5/1 Check if we still need the below code.
-      !is0xWETHWrap(quote.buyTokenAddress, quote.sellTokenAddress)
-    ) {
+    if (quote.allowanceTarget !== ethers.constants.AddressZero) {
       const assetContract = new ethers.Contract(
         quote.sellTokenAddress,
         ERC20_ABI,
