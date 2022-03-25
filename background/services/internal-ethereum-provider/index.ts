@@ -6,7 +6,6 @@ import {
   EIP1193_ERROR_CODES,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
-import { ethers } from "ethers"
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -118,9 +117,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           typedData: JSON.parse(params[1] as string),
         })
       case "eth_chainId":
-        return ethers.utils.hexlify(
-          Number(this.chainService.ethereumNetwork.chainID)
-        )
+        return `0x${BigInt(this.chainService.ethereumNetwork.chainID).toString(
+          16
+        )}`
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
