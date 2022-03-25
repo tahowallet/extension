@@ -99,11 +99,17 @@ export default function EarnDeposit(): ReactElement {
   )
 
   if (
-    typeof vault.localValueUserDeposited !== "undefined" &&
-    Number(vault.localValueUserDeposited) > 0 &&
+    typeof vault.numberValueUserDeposited !== "undefined" &&
+    vault.numberValueUserDeposited > 0 &&
     deposited === false
   ) {
     setDeposited(true)
+  } else if (
+    typeof vault.numberValueUserDeposited !== "undefined" &&
+    vault.numberValueUserDeposited === 0 &&
+    deposited === true
+  ) {
+    setDeposited(false)
   }
 
   const showWithdrawalModal = () => {
