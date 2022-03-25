@@ -645,9 +645,15 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSent", () => {
+    this.chainService.emitter.on("transactionSend", () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
+      )
+    })
+
+    this.chainService.emitter.on("transactionSendFailure", () => {
+      this.store.dispatch(
+        setSnackbarMessage("Transaction failed to broadcast.")
       )
     })
 
