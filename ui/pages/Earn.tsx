@@ -1,15 +1,9 @@
 import {
   AvailableVault,
-  selectAvailableVaults,
+  selectEnrichedAvailableVaults,
   updateEarnedValues,
   updateLockedValues,
 } from "@tallyho/tally-background/redux-slices/earn"
-import {
-  getAssetsState,
-  selectMainCurrencySymbol,
-} from "@tallyho/tally-background/redux-slices/selectors"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
-import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 
 import React, { ReactElement, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
@@ -33,7 +27,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
       to={{
         pathname: "/earn/deposit",
         state: {
-          vault,
+          vaultAddress: vault.vaultAddress,
         },
       }}
       className="earn"
@@ -167,7 +161,9 @@ export default function Earn(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const availableVaults = useBackgroundSelector(selectAvailableVaults)
+  const vaultsWithMainCurrencyValues = useBackgroundSelector(
+    selectEnrichedAvailableVaults
+  )
 
   const isComingSoon = false
 
@@ -175,35 +171,6 @@ export default function Earn(): ReactElement {
     dispatch(updateLockedValues())
     dispatch(updateEarnedValues())
   }, [dispatch])
-
-  const assets = useBackgroundSelector(getAssetsState)
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-
-  const vaultsWithMainCurrencyValues = availableVaults.map((vault) => {
-    const assetPricePoint = selectAssetPricePoint(
-      assets,
-      vault.asset.symbol,
-      mainCurrencySymbol
-    )
-    const userTVL = enrichAssetAmountWithMainCurrencyValues(
-      { amount: vault.userDeposited, asset: vault.asset },
-      assetPricePoint,
-      2
-    )
-    const totalTVL = enrichAssetAmountWithMainCurrencyValues(
-      { amount: vault.totalDeposited, asset: vault.asset },
-      assetPricePoint,
-      2
-    )
-
-    return {
-      ...vault,
-      localValueUserDeposited: userTVL.localizedMainCurrencyAmount,
-      localValueTotalDeposited: totalTVL.localizedMainCurrencyAmount,
-      numberValueUserDeposited: userTVL.mainCurrencyAmount,
-      numberValueTotalDeposited: totalTVL.mainCurrencyAmount,
-    }
-  })
 
   const totalTVL = vaultsWithMainCurrencyValues
     .map((item) => {
@@ -283,7 +250,7 @@ export default function Earn(): ReactElement {
             </div>
           </div>
           <ul className="cards_wrap">
-            {availableVaults.map((asset) => (
+            {vaultsWithMainCurrencyValues.map((asset) => (
               <li>
                 <EarnDepositedCard
                   asset={asset.asset}
