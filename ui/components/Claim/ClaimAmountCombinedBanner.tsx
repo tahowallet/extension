@@ -9,7 +9,7 @@ export default function ClaimAmountCombinedBanner(): ReactElement {
       <div className="claimable">
         <div className="title">Claim + Bonus</div>
         <div className="amount">10,989</div>
-        <div className="currency">TALLY</div>
+        <div className="currency">DOGGO</div>
       </div>
       <style jsx>
         {`

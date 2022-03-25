@@ -58,7 +58,7 @@ function EligibleCTAContent({
       >
         {getComponentToDisplay()}
         <div>
-          <span className="claimable_amount">{claimAmount}</span> TALLY
+          <span className="claimable_amount">{claimAmount}</span> DOGGO
         </div>
       </div>
       {!isCurrentlyClaiming ? (
