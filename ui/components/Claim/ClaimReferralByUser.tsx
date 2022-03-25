@@ -18,10 +18,10 @@ export default function ClaimReferralByUser({
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
         Get a bonus of
-        <div className="highlight">{amountWithBonus}</div> TALLY!
+        <div className="highlight">{amountWithBonus}</div> DOGGO!
       </div>
       <div className="description">
-        You were referred by somebody, and to reward that you each get 463 TALLY
+        {`You were referred by somebody, and to reward that you each get ${amountWithBonus} DOGGO`}
       </div>
       <ClaimReferralBridge />
       <ClaimDelegateChoiceProfile name={referrer ?? "henryboldi.eth"} />

@@ -53,7 +53,7 @@ interface ClaimingState {
   referrer: string | null
 }
 
-export const TALLY_TOKEN_ADDRESS = "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62"
+export const DOGGO_TOKEN_ADDRESS = "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62"
 const VOTE_WITH_FRIENDS_ADDRESS = "0x4301FB587883a78E7A88B92215E3fd0C4D3eBb5b"
 
 const getDistributorContract = async () => {
@@ -279,7 +279,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
 
     if (delegatee) {
       const TallyTokenContract = await getContract(
-        TALLY_TOKEN_ADDRESS,
+        DOGGO_TOKEN_ADDRESS,
         ERC2612_INTERFACE
       )
 

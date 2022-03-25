@@ -84,11 +84,10 @@ export default function ClaimReferral(props: {
       <div className="title">
         Get a bonus of
         <div className="highlight">{amountWithBonus}</div>
-        TALLY!
+        DOGGO!
       </div>
       <div className="description">
-        Select a Project/DAO to share the bonus with! You each receive 463
-        TALLY!
+        {`Select a Project/DAO to share the bonus with! You each receive ${amountWithBonus} DOGGO!`}
       </div>
       <div className="options">
         {DAOs.map(({ address, name, avatar }) => {

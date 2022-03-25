@@ -143,6 +143,7 @@ export default function Eligible(): ReactElement {
             width: 100%;
             display: flex;
             flex-flow: column;
+            position: relative;
           }
           .background {
             width: 100%;

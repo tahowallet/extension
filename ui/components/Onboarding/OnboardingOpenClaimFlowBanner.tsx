@@ -49,16 +49,16 @@ function EligibleCTAContent({
   return (
     <>
       <div>
-        <img className="image" src="./images/claim.png" alt="" />
+        <img className="image" src="./images/claim@2x.png" alt="" />
       </div>
       <div
-        className={classNames("claimable", {
+        className={classNames("claimable_container", {
           isCurrentlyClaiming: "left",
         })}
       >
         {getComponentToDisplay()}
         <div>
-          <span className="claimable_amount">{claimAmount}</span> TALLY
+          <span className="claimable_amount">{claimAmount}</span> DOGGO
         </div>
       </div>
       {!isCurrentlyClaiming ? (
@@ -68,7 +68,13 @@ function EligibleCTAContent({
             no_click: !currentAccountSigningMethod,
           })}
         >
-          <div className="link_content">{">"}</div>
+          <div className="link_content">
+            <img
+              className="link_icon"
+              src="./images/continue.svg"
+              alt="Claim tokens"
+            />
+          </div>
         </Link>
       ) : (
         <></>
@@ -81,7 +87,7 @@ function EligibleCTAContent({
             top: -3px;
             left: 1px;
           }
-          .claimable {
+          .claimable_container {
             display: flex;
             flex-flow: column;
             position: relative;
@@ -110,11 +116,17 @@ function EligibleCTAContent({
             height: 74px;
             background-color: var(--trophy-gold);
             border-radius: 8px;
-            color: black;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 18px;
+          }
+          .link_icon {
+            width: 16px;
+            height: 17px;
+          }
+          .link_content:hover {
+            background-color: var(--gold-80);
           }
           .upgrade .link_content {
             background-color: var(--green-80);
