@@ -39,7 +39,6 @@ interface ClaimingState {
   claimed: {
     [address: HexString]: boolean
   }
-  distributor: HexString
   delegates: Delegate[]
   eligibility: Eligible | null
   DAOs: DAO[]
@@ -54,8 +53,8 @@ interface ClaimingState {
   referrer: string | null
 }
 
-export const TALLY_TOKEN_ADDRESS = "0xcA962030f55004688cF119ED2791C297983534Ca"
-const VOTE_WITH_FRIENDS_ADDRESS = "0xfC9956a16d9af460bef987201da413288dCd62fF"
+export const TALLY_TOKEN_ADDRESS = "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62"
+const VOTE_WITH_FRIENDS_ADDRESS = "0x4301FB587883a78E7A88B92215E3fd0C4D3eBb5b"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
@@ -69,7 +68,6 @@ const getDistributorContract = async () => {
 const initialState: ClaimingState = {
   status: "idle",
   claimed: {},
-  distributor: {},
   selectedDAO: null,
   selectedDelegate: null,
   eligibility: null,
@@ -127,10 +125,15 @@ const claimingSlice = createSlice({
       nonce,
       expiry,
     }),
-    resetSignature: (immerState) => {
+    resetClaimFlow: (immerState) => {
       immerState.signature = undefined
+      immerState.selectedDAO = null
+      immerState.selectedDelegate = null
+      immerState.claimStep = 1
       immerState.nonce = undefined
       immerState.expiry = undefined
+      immerState.referrer = null
+      immerState.currentlyClaiming = false
     },
     setReferrer: (immerState, { payload: referrer }: { payload: string }) => {
       immerState.referrer = referrer
@@ -148,7 +151,7 @@ export const {
   setClaimStep,
   claimed,
   resetStep,
-  resetSignature,
+  resetClaimFlow,
   claimError,
   setReferrer,
 } = claimingSlice.actions
@@ -203,6 +206,7 @@ export const claimRewards = createBackgroundAsyncThunk(
       if (receipt.status === 1) {
         dispatch(currentlyClaiming(false))
         dispatch(claimed(normalizeEVMAddress(account)))
+        dispatch(resetClaimFlow())
         return
       }
       dispatch(currentlyClaiming(false))
