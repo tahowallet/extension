@@ -123,7 +123,7 @@ export function isProbablyEVMAddress(str: string): str is HexString {
 }
 
 export function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-5)}`
+  return `${address.slice(0, 6)}…${address.slice(-5)}`
 }
 
 export const getNumericStringValueFromBigNumber = (
