@@ -14,6 +14,8 @@ import ClaimFooter from "../../components/Claim/ClaimFooter"
 import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalContent"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
+import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
 
 export default function Eligible(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -72,6 +74,19 @@ export default function Eligible(): ReactElement {
     history.push("/")
   }
 
+  const stepsComponents = [
+    <ClaimIntro claimAmount={claimAmount} />,
+    <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />,
+    <ClaimReferralByUser claimAmount={claimAmount} />,
+    <ClaimDelegate delegates={delegates} claimAmount={claimAmountWithBonus} />,
+    <ClaimReview
+      claimAmount={claimAmountWithBonus}
+      backToChoose={() => {
+        setStep(step - 1)
+      }}
+    />,
+  ]
+
   return (
     <div className="wrap">
       {infoModalVisible ? (
@@ -86,67 +101,56 @@ export default function Eligible(): ReactElement {
         <ClaimSuccessModalContent />
       </SharedSlideUpMenu>
 
-      <div
-        className="background"
-        style={{ backgroundPositionX: `${-384 * (step - 1)}px` }}
-      />
+      <div className="background" />
       <div className="eligible">
-        <div
-          className="steps-container"
-          style={{ marginLeft: -384 * (step - 1) }}
-        >
-          <ClaimIntro claimAmount={claimAmount} />
-          <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
-          <ClaimReferralByUser claimAmount={claimAmount} />
-          <ClaimDelegate
-            delegates={delegates}
-            claimAmount={claimAmountWithBonus}
+        <div className="top_bar standard_width">
+          <SharedBackButton
+            onClick={
+              step > 1
+                ? () => {
+                    setStep(step - 1)
+                  }
+                : undefined
+            }
           />
-          <ClaimReview
-            claimAmount={claimAmountWithBonus}
-            backToChoose={() => {
-              setStep(step - 1)
-            }}
-          />
+          <div className="profile_wrap">
+            <TopMenuProfileButton />
+          </div>
         </div>
-        <footer>
-          <ClaimFooter
-            step={step}
-            setStep={setStep}
-            advanceStep={advanceStep}
-            showSuccess={() => {
-              setShowSuccessStep(true)
-            }}
-          />
-        </footer>
+        <div className="steps-container">{stepsComponents[step - 1]}</div>
       </div>
+      <footer>
+        <ClaimFooter
+          step={step}
+          setStep={setStep}
+          advanceStep={advanceStep}
+          showSuccess={() => {
+            setShowSuccessStep(true)
+          }}
+        />
+      </footer>
       <style jsx>
         {`
           .steps-container {
-            display: flex;
-            position: relative;
-            gap: 32px;
             align-self: flex-start;
-            transition: all 0.7s cubic-bezier(0.86, 0, 0.07, 1);
             margin-top: -20px;
+            height: 492px;
+            overflow: scroll;
           }
           .wrap {
             width: 100%;
             display: flex;
             flex-flow: column;
-            margin-top: 10px;
             position: relative;
           }
           .background {
             width: 100%;
-            position: absolute;
             background-image: url("./images/dark_forest@2x.png");
             background-repeat: repeat-x;
             background-position: bottom;
-            height: 307px;
             background-color: var(--green-95);
-            box-shadow: 0px -22px 8px 0px var(--green-95);
-            transition: all 0.7s cubic-bezier(0.86, 0, 0.07, 1);
+            height: 357px;
+            margin-bottom: -357px;
           }
           .eligible {
             display: flex;
@@ -162,12 +166,16 @@ export default function Eligible(): ReactElement {
             padding-top: 7px;
           }
           footer {
-            position: fixed;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
             background-color: var(--hunter-green);
-            padding-top: 15px;
+          }
+          .top_bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .profile_wrap {
+            pointer-events: none;
+            transform: translateY(-5px);
           }
         `}
       </style>

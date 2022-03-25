@@ -90,11 +90,13 @@ export default function ClaimFooter({
   return (
     <footer>
       <div className="steps">
-        <SharedProgressIndicator
-          activeStep={step}
-          onProgressStepClicked={(s) => handleProgressStepClick(s)}
-          numberOfSteps={buttonText.length}
-        />
+        {step < 5 && (
+          <SharedProgressIndicator
+            activeStep={step - 1}
+            onProgressStepClicked={(s) => handleProgressStepClick(s)}
+            numberOfSteps={3}
+          />
+        )}
       </div>
       <SharedButton
         type="primary"
