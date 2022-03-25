@@ -19,8 +19,8 @@ import SharedBackButton from "../../components/Shared/SharedBackButton"
 
 export default function Eligible(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const { delegates, DAOs, claimAmount, claimStep } = useBackgroundSelector(
-    (state) => {
+  const { delegates, DAOs, claimAmount, claimStep, referrer } =
+    useBackgroundSelector((state) => {
       return {
         delegates: state.claim.delegates,
         DAOs: state.claim.DAOs,
@@ -34,9 +34,9 @@ export default function Eligible(): ReactElement {
             0
           ),
         claimStep: state.claim.claimStep,
+        referrer: state.claim.referrer,
       }
-    }
-  )
+    })
 
   const history = useHistory()
   const [step, setStep] = useState(claimStep)
@@ -58,8 +58,8 @@ export default function Eligible(): ReactElement {
   }
 
   const advanceStep = () => {
-    setStep(step + 1)
-    if (step < 5) {
+    if (step < 4) {
+      setStep(step + 1)
       dispatch(advanceClaimStep())
     }
   }
@@ -76,8 +76,11 @@ export default function Eligible(): ReactElement {
 
   const stepsComponents = [
     <ClaimIntro claimAmount={claimAmount} />,
-    <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />,
-    <ClaimReferralByUser claimAmount={claimAmount} />,
+    referrer !== null ? (
+      <ClaimReferralByUser claimAmount={claimAmount} />
+    ) : (
+      <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
+    ),
     <ClaimDelegate delegates={delegates} claimAmount={claimAmountWithBonus} />,
     <ClaimReview
       claimAmount={claimAmountWithBonus}
@@ -122,7 +125,6 @@ export default function Eligible(): ReactElement {
       <footer>
         <ClaimFooter
           step={step}
-          setStep={setStep}
           advanceStep={advanceStep}
           showSuccess={() => {
             setShowSuccessStep(true)
