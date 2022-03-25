@@ -1,16 +1,21 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectAccountAndTimestampedActivities,
+  selectCurrentAccount,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ApprovalTargetAllowance,
   approveApprovalTarget,
-  AvailableVault,
   checkApprovalTargetApproval,
   claimVaultRewards,
   inputAmount,
   permitVaultDeposit,
   selectCurrentlyApproving,
   selectEarnInputAmount,
+  selectEnrichedAvailableVaults,
   selectIsSignatureAvailable,
+  updateEarnedValues,
+  updateLockedValues,
   vaultDeposit,
   vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
@@ -20,6 +25,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
+import { HexString } from "@tallyho/tally-background/types"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -45,14 +51,47 @@ export default function EarnDeposit(): ReactElement {
 
   const history = useHistory()
 
-  const { vault } = useLocation().state as {
-    vault: AvailableVault & {
-      localValueTotalDeposited: string | undefined
-      localValueUserDeposited: string | undefined
-    }
+  const { vaultAddress } = useLocation().state as {
+    vaultAddress: HexString
   }
+
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
   const signatureAvailable = useBackgroundSelector(selectIsSignatureAvailable)
+
+  const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
+  const account = useBackgroundSelector(selectCurrentAccount)
+
+  const vault = enrichedVaults.find(
+    (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
+  )
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const getApprovalAmount = async () => {
+        const approvedAmount = (await dispatch(
+          checkApprovalTargetApproval(vault?.asset?.contractAddress || "0x")
+        )) as unknown as ApprovalTargetAllowance
+        return approvedAmount.allowance
+      }
+      const allowance = await getApprovalAmount()
+      const allowanceGreaterThanAmount = allowance >= Number(amount)
+      setIsApproved(allowanceGreaterThanAmount)
+    }
+    checkApproval()
+  }, [amount, dispatch, vault?.asset?.contractAddress, account.address])
+
+  useEffect(() => {
+    dispatch(updateLockedValues())
+    dispatch(updateEarnedValues())
+  }, [dispatch, account.address])
+
+  if (typeof vault === "undefined") {
+    return <></>
+  }
 
   const pendingRewards = fromFixedPointNumber(
     { amount: vault.pendingRewards, decimals: doggoTokenDecimalDigits },
@@ -66,25 +105,6 @@ export default function EarnDeposit(): ReactElement {
   ) {
     setDeposited(true)
   }
-
-  useEffect(() => {
-    const checkApproval = async () => {
-      const getApprovalAmount = async () => {
-        const approvedAmount = (await dispatch(
-          checkApprovalTargetApproval(vault?.asset?.contractAddress)
-        )) as unknown as ApprovalTargetAllowance
-        return approvedAmount.allowance
-      }
-      const allowance = await getApprovalAmount()
-      const allowanceGreaterThanAmount = allowance >= Number(amount)
-      setIsApproved(allowanceGreaterThanAmount)
-    }
-    checkApproval()
-  }, [vault?.asset?.contractAddress, dispatch, amount, isCurrentlyApproving])
-
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
 
   const showWithdrawalModal = () => {
     setWithdrawalSlideupVisible(true)

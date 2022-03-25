@@ -33,7 +33,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
       to={{
         pathname: "/earn/deposit",
         state: {
-          vault,
+          vaultAddress: vault.vaultAddress,
         },
       }}
       className="earn"
