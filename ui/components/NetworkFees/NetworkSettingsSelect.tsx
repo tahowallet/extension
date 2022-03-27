@@ -12,7 +12,6 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import logger from "@tallyho/tally-background/lib/logger"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
@@ -201,25 +200,8 @@ export default function NetworkSettingsSelect({
     updateGasOptions()
   }, [updateGasOptions])
 
-  const setGasLimit = (newGasLimit: string) => {
-    try {
-      if (newGasLimit.trim() === "") {
-        onNetworkSettingsChange({
-          ...networkSettings,
-          gasLimit: undefined,
-        })
-      } else {
-        const parsedGasLimit = BigInt(newGasLimit)
-        if (parsedGasLimit >= 0n) {
-          onNetworkSettingsChange({
-            ...networkSettings,
-            gasLimit: parsedGasLimit,
-          })
-        }
-      }
-    } catch (error) {
-      logger.debug("Failed to parse network settings gas limit", newGasLimit)
-    }
+  const setGasLimit = (gasLimit: bigint | undefined) => {
+    onNetworkSettingsChange({ ...networkSettings, gasLimit })
   }
 
   return (
@@ -249,11 +231,29 @@ export default function NetworkSettingsSelect({
       })}
       <div className="info">
         <div className="limit">
-          <SharedInput
+          <SharedInput<bigint | undefined>
             id="gasLimit"
             value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
+            parser={(value) => {
+              try {
+                if (value.trim() === "") {
+                  return { state: "parsed", parsed: undefined }
+                }
+                const parsed = BigInt(value)
+                if (parsed < 0n) {
+                  return {
+                    state: "error",
+                    message: "Gas Limit must be greater than 0",
+                  }
+                }
+
+                return { state: "parsed", parsed }
+              } catch (e) {
+                return { state: "error", message: "Gas Limit must be a number" }
+              }
+            }}
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"
