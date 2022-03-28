@@ -71,6 +71,8 @@ export default class AssetDataHelper {
     if (USE_MAINNET_FORK) {
       const tokens = [
         "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
+        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", // WBTC
+        "0x514910771AF9Ca656af840dff83E8264EcF986CA", // LINK
         "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62", // DOGGO
       ]
       const balances = tokens.map(async (token) => {

@@ -243,7 +243,7 @@ export default function Earn(): ReactElement {
           <ul className="cards_wrap">
             {vaultsWithMainCurrencyValues?.map((vault) => (
               <li>
-                <EarnCard vault={vault} isComingSoon={isComingSoon} />
+                <EarnCard vault={vault} isComingSoon={!vault.active} />
               </li>
             ))}
           </ul>
