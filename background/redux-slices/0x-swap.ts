@@ -132,7 +132,7 @@ const gatedHeaders: { [header: string]: string } =
 function build0xUrlFromSwapRequest(
   requestPath: string,
   { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
-  additionalParameters?: Record<string, string>
+  additionalParameters: Record<string, string>
 ): URL {
   const requestUrl = new URL(`https://${zeroXApiBase}/swap/v1${requestPath}`)
   const tradeAmount = utils.parseUnits(
@@ -165,6 +165,13 @@ function build0xUrlFromSwapRequest(
     ...gatedParameters,
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
+    // Do not set buyTokenPercentageFee if swapping to ETH. Currently the 0x
+    // `GET /quote` endpoint does not support a `sellTokenPercentageFee` and
+    // errors when passing in a `buyTokenPercentageFee` when the buy token is
+    // ETH.
+    if (buyToken === "ETH" && parameter === "buyTokenPercentageFee") {
+      return
+    }
     requestUrl.searchParams.set(parameter, value.toString())
   })
 
