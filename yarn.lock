@@ -7977,11 +7977,6 @@ locate-path@^5.0.0:
   dependencies:
     p-locate "^4.1.0"
 
-lodash.assignin@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/lodash.assignin/-/lodash.assignin-4.2.0.tgz#ba8df5fb841eb0a3e8044232b0e263a8dc6a28a2"
-  integrity sha1-uo31+4QesKPoBEIysOJjqNxqKKI=
-
 lodash.clonedeep@4.5.0, lodash.clonedeep@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
@@ -11567,14 +11562,6 @@ webext-options-sync@^2.0.1:
   integrity sha512-y7px8AfTrAMcIRxYcGEu2UVAj18C0H0SYNiF9orD9+p3Q8/r6wbUH0B/OU4g7v6DmvhNtg5XEO1ZUEr+XfYqCA==
   dependencies:
     webext-detect-page "^2.0.5"
-
-webext-redux@^2.1.7:
-  version "2.1.7"
-  resolved "https://registry.yarnpkg.com/webext-redux/-/webext-redux-2.1.7.tgz#b6bb0124b24912ad0b823d4c754eb72ef65d6186"
-  integrity sha512-BGWbr/jbZl26nGN3YpTjAC7cxERCbxSwx8les9mEBALNe+g9fm31Vi5miRpk0cqEo3aGKTQ++SZ9MpNHJWPpCw==
-  dependencies:
-    lodash.assignin "^4.2.0"
-    lodash.clonedeep "^4.5.0"
 
 webextension-polyfill@^0.7.0:
   version "0.7.0"
