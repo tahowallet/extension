@@ -112,9 +112,12 @@ const claimingSlice = createSlice({
     currentlyClaiming: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyClaiming = payload
     },
-    claimed: (immerState, { payload }: { payload: HexString }) => {
-      immerState.claimed[payload] = true
-      immerState.claimError[payload] = false
+    claimed: (
+      immerState,
+      { payload }: { payload: { account: HexString; alreadyClaimed: boolean } }
+    ) => {
+      immerState.claimed[payload.account] = payload.alreadyClaimed
+      immerState.claimError[payload.account] = false
     },
     saveSignature: (
       state,
@@ -177,9 +180,7 @@ export const checkAlreadyClaimed = createBackgroundAsyncThunk(
     const alreadyClaimed = await distributorContract.isClaimed(
       eligibility.index
     )
-    if (alreadyClaimed) {
-      dispatch(claimed(accountAddress))
-    }
+    dispatch(claimed({ account: accountAddress, alreadyClaimed }))
     return alreadyClaimed
   }
 )
@@ -209,7 +210,12 @@ export const claimRewards = createBackgroundAsyncThunk(
       const receipt = await result.wait()
       if (receipt.status === 1) {
         dispatch(currentlyClaiming(false))
-        dispatch(claimed(normalizeEVMAddress(account)))
+        dispatch(
+          claimed({
+            account: normalizeEVMAddress(account),
+            alreadyClaimed: true,
+          })
+        )
         dispatch(resetClaimFlow())
         return
       }
