@@ -5,10 +5,6 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigningMethod,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import {
-  HIDE_SEND_BUTTON,
-  HIDE_SWAP,
-} from "@tallyho/tally-background/features/features"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
   AnyAsset,
@@ -131,44 +127,28 @@ export default function SingleAsset(): ReactElement {
           <div className="right">
             {currentAccountSigningMethod ? (
               <>
-                {!HIDE_SEND_BUTTON && symbol === "ETH" && (
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    icon="send"
-                    linkTo={{
-                      pathname: "/send",
-                      state: {
-                        symbol,
-                        contractAddress:
-                          "contractAddress" in asset
-                            ? asset.contractAddress
-                            : undefined,
-                      },
-                    }}
-                  >
-                    Send
-                  </SharedButton>
-                )}
-                {!HIDE_SWAP && symbol !== "ETH" && (
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    icon="swap"
-                    linkTo={{
-                      pathname: "/swap",
-                      state: {
-                        symbol,
-                        contractAddress:
-                          "contractAddress" in asset
-                            ? asset.contractAddress
-                            : undefined,
-                      },
-                    }}
-                  >
-                    Swap
-                  </SharedButton>
-                )}
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  icon="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: asset,
+                  }}
+                >
+                  Send
+                </SharedButton>
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  icon="swap"
+                  linkTo={{
+                    pathname: "/swap",
+                    state: asset,
+                  }}
+                >
+                  Swap
+                </SharedButton>
               </>
             ) : (
               <></>
