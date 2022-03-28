@@ -114,7 +114,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 5
+const REDUX_STATE_VERSION = 6
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -206,6 +206,13 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   5: (prevState: any) => {
     const { ...newState } = prevState
     newState.keyrings.keyringMetadata = {}
+
+    return newState
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  6: (prevState: any) => {
+    const { ...newState } = prevState
+    newState.ledger.isArbitraryDataSigningEnabled = false
 
     return newState
   },
