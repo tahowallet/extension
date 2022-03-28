@@ -151,7 +151,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           }}
         >
           <div className="portion top">
-            <div className="metamask_onboarding_image" />
+            <div className="illustration_import" />
             <h1 className="serif_header">Import account</h1>
             <div className="info">
               Copy paste or write down a 12 or 24 word secret recovery phrase.
@@ -227,12 +227,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
           margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
         }
-        .metamask_onboarding_image {
+        .illustration_import {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: ${HIDE_IMPORT_DERIVATION_PATH ? "205.3px" : "155px"};
-          height: ${HIDE_IMPORT_DERIVATION_PATH ? "193px" : "145.71"};
-          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "27px" : "23.5px"};
+          width: 106.5px;
+          height: 103.5px;
+          margin-top: 60px;
           margin-bottom: 15px;
         }
         .serif_header {

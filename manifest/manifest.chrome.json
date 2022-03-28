@@ -1,3 +1,6 @@
 {
-  "minimum_chrome_version": "74"
+  "minimum_chrome_version": "74",
+  "externally_connectable": {
+    "ids": []
+  }
 }
