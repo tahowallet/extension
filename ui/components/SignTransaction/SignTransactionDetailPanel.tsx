@@ -5,7 +5,6 @@ import {
   selectTransactionData,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import logger from "@tallyho/tally-background/lib/logger"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
