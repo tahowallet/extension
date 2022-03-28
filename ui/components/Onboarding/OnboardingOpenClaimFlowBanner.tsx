@@ -6,7 +6,7 @@ import {
   fixedPointNumberToString,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
-import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
+import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"

@@ -19,7 +19,7 @@ import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../services/enrichment"
-import { SigningMethod } from "./signing"
+import { SigningMethod } from "../utils/signing"
 
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -32,7 +32,7 @@ export const enum TransactionConstructionStatus {
 
 export type NetworkFeeSettings = {
   feeType: NetworkFeeTypeChosen
-  gasLimit: string
+  gasLimit: bigint | undefined
   suggestedGasLimit: bigint | undefined
   values: {
     maxFeePerGas: bigint
@@ -278,9 +278,9 @@ export const selectDefaultNetworkFeeSettings = createSelector(
       ],
     suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
   }),
-  ({ feeType, selectedFeesPerGas, suggestedGasLimit }) => ({
+  ({ feeType, selectedFeesPerGas, suggestedGasLimit }): NetworkFeeSettings => ({
     feeType,
-    gasLimit: "",
+    gasLimit: undefined,
     suggestedGasLimit,
     values: {
       maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,

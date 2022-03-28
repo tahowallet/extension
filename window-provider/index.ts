@@ -57,22 +57,16 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        if (result.defaultWallet) {
-          // let's set Tally as a default wallet
-          // and bkp any object that maybe using window.ethereum
-          if (window.ethereum) {
-            window.oldEthereum = window.ethereum
+        if (!result.defaultWallet) {
+          // if tally is NOT set to be default wallet
+          // AND window.ethereum was taken
+          if (window.oldEthereum) {
+            // then let's reset window.ethereum to the original value
+            window.ethereum = window.oldEthereum
           }
 
-          window.ethereum = window.tally
-        } else if (window.oldEthereum) {
-          // let's remove tally as a default wallet
-          // and put back whatever it was there before us
-          window.ethereum = window.oldEthereum
-        } else if (window.ethereum?.isTally) {
-          // we were told not to be a default wallet anymore
-          // so in case if we have `window.ethereum` just remove ourselves
-          window.ethereum = undefined
+          // NOTE: we do not remove the TallyWindowProvider from window.ethereum
+          // if there is nothing else that want's to use it.
         }
       } else if (isTallyAccountPayload(result)) {
         this.handleAddressChange.bind(this)(result.address)

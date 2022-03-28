@@ -32,7 +32,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           },
         }}
       >
-        <div className="list_item">
+        <div className="wallet_asset_list_item">
           <div className="left">
             <SharedAssetIcon
               logoURL={assetAmount?.asset?.metadata?.logoURL}
@@ -69,15 +69,25 @@ export default function WalletAssetListItem(props: Props): ReactElement {
                     contractAddress,
                   },
                 }}
-                className="asset_list_item_icon_send_asset"
+                className="asset_list_item_icon asset_list_item_icon_send_asset"
               />
             )}
+            <Link
+              to={{
+                pathname: "/swap",
+                state: {
+                  symbol: assetAmount.asset.symbol,
+                  contractAddress,
+                },
+              }}
+              className="asset_list_item_icon asset_list_item_icon_swap_asset"
+            />
           </div>
         </div>
       </Link>
       <style jsx>
         {`
-          .list_item {
+          .wallet_asset_list_item {
             height: 72px;
             width: 100%;
             border-radius: 16px;
@@ -89,7 +99,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             justify-content: space-between;
             align-items: center;
           }
-          .list_item:hover {
+          .wallet_asset_list_item:hover {
             background-color: var(--green-80);
           }
           .left {
@@ -130,12 +140,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             letter-spacing: 0.42px;
             line-height: 16px;
           }
-          .icon_swap_asset {
-            background: url("./images/swap_asset.svg");
-            background-size: 12px 12px;
-            width: 12px;
-            height: 12px;
-          }
           .right {
             display: flex;
             width: 48px;
@@ -146,15 +150,24 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       </style>
       <style jsx global>
         {`
-          .asset_list_item_icon_send_asset {
-            mask-image: url("./images/send_asset.svg");
+          .asset_list_item_icon {
             mask-size: cover;
             background-color: var(--green-60);
             width: 12px;
             height: 12px;
           }
-          .asset_list_item_icon_send_asset:hover {
+          .wallet_asset_list_item:hover .asset_list_item_icon:not(:hover) {
+            background-color: var(--green-40);
+          }
+          .asset_list_item_icon:hover {
             background-color: var(--trophy-gold);
+          }
+          .asset_list_item_icon_send_asset {
+            mask-image: url("./images/send_asset.svg");
+          }
+          .asset_list_item_icon_swap_asset {
+            mask-image: url("./images/swap_asset.svg");
+            margin-left: 20px;
           }
         `}
       </style>

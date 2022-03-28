@@ -1,8 +1,8 @@
 import {
   EIP4361Data,
-  selectSigningData,
   SignDataMessageType,
-} from "@tallyho/tally-background/redux-slices/signing"
+} from "@tallyho/tally-background/utils/signing"
+import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
 import React from "react"
 import { EIP191Info, EIP4361Info } from "../components/SignData"
 import { useBackgroundSelector } from "../hooks"

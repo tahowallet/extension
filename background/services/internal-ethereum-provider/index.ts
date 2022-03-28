@@ -18,11 +18,12 @@ import {
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
+
 import {
   SignTypedDataRequest,
   SignDataRequest,
   parseSigningData,
-} from "../../redux-slices/signing"
+} from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
@@ -116,7 +117,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           typedData: JSON.parse(params[1] as string),
         })
       case "eth_chainId":
-        return this.chainService.ethereumNetwork.chainID
+        return `0x${BigInt(this.chainService.ethereumNetwork.chainID).toString(
+          16
+        )}`
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
