@@ -1,9 +1,9 @@
-import browser, { runtime } from "webextension-polyfill"
+import { runtime } from "webextension-polyfill"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import { encodeJSON } from "./lib/utils"
 
 import {
   BaseService,
@@ -19,6 +19,7 @@ import {
   ServiceCreatorFunction,
   LedgerService,
   SigningService,
+  ReduxPersistenceService,
 } from "./services"
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
@@ -112,148 +113,13 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-// The version of persisted Redux state the extension is expecting. Any previous
-// state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 5
-
-type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
-
-// An object mapping a version number to a state migration. Each migration for
-// version n is expected to take a state consistent with version n-1, and return
-// state consistent with version n.
-const REDUX_MIGRATIONS: { [version: number]: Migration } = {
-  2: (prevState: Record<string, unknown>) => {
-    // Migrate the old currentAccount SelectedAccount type to a bare
-    // selectedAccount AddressNetwork type. Note the avoidance of imported types
-    // so this migration will work in the future, regardless of other code changes
-    type BroadAddressNetwork = {
-      address: string
-      network: Record<string, unknown>
-    }
-    type OldState = {
-      ui: {
-        currentAccount?: {
-          addressNetwork: BroadAddressNetwork
-          truncatedAddress: string
-        }
-      }
-    }
-    const newState = { ...prevState }
-    const addressNetwork = (prevState as OldState)?.ui?.currentAccount
-      ?.addressNetwork
-    delete (newState as OldState)?.ui?.currentAccount
-    newState.selectedAccount = addressNetwork as BroadAddressNetwork
-    return newState
-  },
-  3: (prevState: Record<string, unknown>) => {
-    const { assets, ...newState } = prevState
-
-    // Clear assets collection; these should be immediately repopulated by the
-    // IndexingService in startService.
-    newState.assets = []
-
-    return newState
-  },
-  4: (prevState: Record<string, unknown>) => {
-    // Migrate the ETH-only block data in store.accounts.blocks[blockHeight] to
-    // a new networks slice. Block data is now network-specific, keyed by EVM
-    // chainID in store.networks.networkData[chainId].blocks
-    type OldState = {
-      account?: {
-        blocks?: { [blockHeight: number]: unknown }
-      }
-    }
-    type NetworkState = {
-      evm: {
-        [chainID: string]: {
-          blockHeight: number | null
-          blocks: {
-            [blockHeight: number]: unknown
-          }
-        }
-      }
-    }
-
-    const oldState = prevState as OldState
-
-    const networks: NetworkState = {
-      evm: {
-        "1": {
-          blocks: { ...oldState.account?.blocks },
-          blockHeight:
-            Math.max(
-              ...Object.keys(oldState.account?.blocks ?? {}).map((s) =>
-                parseInt(s, 10)
-              )
-            ) || null,
-        },
-      },
-    }
-
-    const { blocks, ...oldStateAccountWithoutBlocks } = oldState.account ?? {
-      blocks: undefined,
-    }
-
-    return {
-      ...prevState,
-      // Drop blocks from account slice.
-      account: oldStateAccountWithoutBlocks,
-      // Add new networks slice data.
-      networks,
-    }
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  5: (prevState: any) => {
-    const { ...newState } = prevState
-    newState.keyrings.keyringMetadata = {}
-
-    return newState
-  },
-}
-
-// Migrate a previous version of the Redux state to that expected by the current
-// code base.
-function migrateReduxState(
-  previousState: Record<string, unknown>,
-  previousVersion?: number
-): Record<string, unknown> {
-  const resolvedVersion = previousVersion ?? 1
-  let migratedState: Record<string, unknown> = previousState
-
-  if (resolvedVersion < REDUX_STATE_VERSION) {
-    const outstandingMigrations = Object.entries(REDUX_MIGRATIONS)
-      .sort()
-      .filter(([version]) => parseInt(version, 10) > resolvedVersion)
-      .map(([, migration]) => migration)
-    migratedState = outstandingMigrations.reduce(
-      (state: Record<string, unknown>, migration: Migration) => {
-        return migration(state)
-      },
-      migratedState
-    )
-  }
-
-  return migratedState
-}
-
-const reduxCache: Middleware = (store) => (next) => (action) => {
-  const result = next(action)
-  const state = store.getState()
-  if (process.env.WRITE_REDUX_CACHE === "true") {
-    // Browser extension storage supports JSON natively, despite that we have
-    // to stringify to preserve BigInts
-    browser.storage.local.set({
-      state: encodeJSON(state),
-      version: REDUX_STATE_VERSION,
-    })
-  }
-
-  return result
-}
-
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (preloadedState = {}, main: Main) =>
+const initializeStore = (
+  preloadedState = {},
+  main: Main,
+  reduxCache: Middleware
+) =>
   configureStore({
     preloadedState,
     reducer: rootReducer,
@@ -342,29 +208,13 @@ export default class Main extends BaseService<never> {
       ? (Promise.resolve(null) as unknown as Promise<SigningService>)
       : SigningService.create(keyringService, ledgerService, chainService)
 
+    const reduxPersistenceService = await ReduxPersistenceService.create()
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
-      const { state, version } = await browser.storage.local.get([
-        "state",
-        "version",
-      ])
-
-      if (state) {
-        const restoredState = decodeJSON(state)
-        if (typeof restoredState === "object" && restoredState !== null) {
-          // If someone managed to sneak JSON that decodes to typeof "object"
-          // but isn't a Record<string, unknown>, there is a very large
-          // problem...
-          savedReduxState = migrateReduxState(
-            restoredState as Record<string, unknown>,
-            version || undefined
-          )
-        } else {
-          throw new Error(`Unexpected JSON persisted for state: ${state}`)
-        }
-      }
+      savedReduxState = await reduxPersistenceService.loadState()
     }
 
     return new this(
@@ -379,7 +229,8 @@ export default class Main extends BaseService<never> {
       await providerBridgeService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      reduxPersistenceService
     )
   }
 
@@ -444,7 +295,9 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    reduxPersistenceService: ReduxPersistenceService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -454,7 +307,20 @@ export default class Main extends BaseService<never> {
     })
 
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(savedReduxState, this)
+    this.store = initializeStore(
+      savedReduxState,
+      this,
+      (store) => (next) => (action) => {
+        const result = next(action)
+        const state = store.getState()
+
+        if (process.env.WRITE_REDUX_CACHE === "true") {
+          reduxPersistenceService.saveState(state)
+        }
+
+        return result
+      }
+    )
 
     serveStoreToClients(this.store)
 
