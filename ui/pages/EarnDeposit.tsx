@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import {
-  selectAccountAndTimestampedActivities,
   selectCurrentAccount,
+  selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ApprovalTargetAllowance,
@@ -65,9 +65,7 @@ export default function EarnDeposit(): ReactElement {
     (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
   )
 
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
+  const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
   useEffect(() => {
     if (typeof vault?.asset?.contractAddress !== "undefined") {
@@ -268,7 +266,7 @@ export default function EarnDeposit(): ReactElement {
       {panelNumber === 0 ? (
         <div className="deposit_wrap">
           <SharedAssetInput
-            assetsAndAmounts={combinedData.assets}
+            assetsAndAmounts={accountBalances?.assetAmounts}
             label="Deposit asset"
             onAmountChange={(value, errorMessage) =>
               handleAmountChange(value, errorMessage)
