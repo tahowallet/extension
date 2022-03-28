@@ -15,6 +15,8 @@ import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features/features"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
+import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -39,7 +41,11 @@ const pagePreferences = Object.fromEntries(
   ])
 )
 
-function transformLocation(inputLocation: Location): Location {
+function transformLocation(
+  inputLocation: Location,
+  isTransactionPendingSignature: boolean,
+  keyringStatus: "locked" | "unlocked" | "uninitialized"
+): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
   const params = new URLSearchParams(window.location.search)
@@ -51,6 +57,11 @@ function transformLocation(inputLocation: Location): Location {
     !inputLocation.pathname.includes("/keyring/")
   ) {
     pathname = maybePage
+  }
+
+  if (isTransactionPendingSignature) {
+    pathname =
+      keyringStatus === "unlocked" ? "/sign-transaction" : "/keyring/unlock"
   }
 
   return {
@@ -111,6 +122,11 @@ export function Main(): ReactElement {
     }
   }
 
+  const isTransactionPendingSignature = useBackgroundSelector(
+    selectIsTransactionPendingSignature
+  )
+  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+
   useConnectPopupMonitor()
 
   return (
@@ -122,7 +138,11 @@ export function Main(): ReactElement {
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {
-            const transformedLocation = transformLocation(routeProps.location)
+            const transformedLocation = transformLocation(
+              routeProps.location,
+              isTransactionPendingSignature,
+              keyringStatus
+            )
 
             const normalizedPathname =
               transformedLocation.pathname !== "/wallet"

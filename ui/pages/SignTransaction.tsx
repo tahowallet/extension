@@ -24,8 +24,6 @@ export default function SignTransaction({
   location,
 }: {
   location: {
-    key?: string
-    pathname: string
     state?: { redirectTo: { path: string; state: unknown } }
   }
 }): ReactElement {
@@ -72,16 +70,6 @@ export default function SignTransaction({
     if (isTransactionSigned && isTransactionSigning) {
       if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
         dispatch(broadcastSignedTransaction(signedTransaction))
-      }
-
-      // Request broadcast if not dApp...
-      if (typeof location.state !== "undefined") {
-        history.push(
-          location.state.redirectTo.path,
-          location.state.redirectTo.state
-        )
-      } else {
-        history.goBack()
       }
     }
   }, [

@@ -313,6 +313,12 @@ export const selectTransactionData = createSelector(
   (transactionRequestData) => transactionRequestData
 )
 
+export const selectIsTransactionPendingSignature = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.status,
+  (status) => status === "loaded" || status === "pending"
+)
+
 export const selectIsTransactionLoaded = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.status,
