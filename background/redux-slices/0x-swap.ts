@@ -169,7 +169,10 @@ function build0xUrlFromSwapRequest(
     // `GET /quote` endpoint does not support a `sellTokenPercentageFee` and
     // errors when passing in a `buyTokenPercentageFee` when the buy token is
     // ETH.
-    if (buyToken === "ETH" && parameter === "buyTokenPercentageFee") {
+    if (
+      buyToken === "ETH" &&
+      (parameter === "buyTokenPercentageFee" || parameter === "feeRecipient")
+    ) {
       return
     }
     requestUrl.searchParams.set(parameter, value.toString())
