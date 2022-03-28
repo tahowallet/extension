@@ -191,8 +191,9 @@ export const claimRewards = createBackgroundAsyncThunk(
     const signer = provider.getSigner()
     const account = await signer.getAddress()
 
-    const referralDAOCode = claimState.selectedDAO
-    const referralCode = claimState.referrer
+    const referralAddress =
+      claimState.referrer ?? claimState.selectedDAO?.address
+
     const delegate = claimState.selectedDelegate
     const { signature, eligibility } = claimState
 
@@ -227,22 +228,19 @@ export const claimRewards = createBackgroundAsyncThunk(
       )
     }
 
-    if (
-      (referralCode !== null || referralDAOCode !== null) &&
-      delegate === null
-    ) {
+    if (typeof referralAddress !== "undefined" && delegate === null) {
       claimTransaction =
         await distributorContract.populateTransaction.claimWithCommunityCode(
           eligibility.index,
           account,
           eligibility.amount,
           eligibility.proof,
-          referralCode ?? referralDAOCode?.address
+          referralAddress
         )
     }
     if (
       signature &&
-      (referralCode !== null || referralDAOCode !== null) &&
+      typeof referralAddress !== "undefined" &&
       delegate !== null
     ) {
       const { r, s, v } = signature
@@ -253,7 +251,7 @@ export const claimRewards = createBackgroundAsyncThunk(
           account,
           BigNumber.from(eligibility.amount),
           eligibility.proof,
-          referralCode ?? referralDAOCode?.address,
+          referralAddress,
           delegate.address,
           { nonce, expiry, r, s, v }
         )
