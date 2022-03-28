@@ -1,5 +1,4 @@
 import browser, { runtime } from "webextension-polyfill"
-import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
@@ -93,6 +92,7 @@ import { ETHEREUM } from "./constants"
 import { HIDE_IMPORT_LEDGER } from "./features/features"
 import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import { createAliasMiddleware, serveStoreToClients } from "./utils/redux-proxy"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -276,7 +276,7 @@ const initializeStore = (preloadedState = {}, main: Main) =>
       //
       // Process aliases before all other middleware, and cache the redux store
       // after all middleware gets a chance to run.
-      middleware.unshift(alias(allAliases))
+      middleware.unshift(createAliasMiddleware(allAliases))
       middleware.push(reduxCache)
 
       return middleware
@@ -304,7 +304,7 @@ export const popupMonitorPortName = "popup-monitor"
 export default class Main extends BaseService<never> {
   /**
    * The redux store for the wallet core. Note that the redux store is used to
-   * render the UI (via webext-redux), but it is _not_ the source of truth.
+   * render the UI (via redux-proxy), but it is _not_ the source of truth.
    * Services interact with the various external and internal components and
    * create persisted state, and the redux store is simply a view onto those
    * pieces of canonical state.
@@ -456,30 +456,7 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
-    wrapStore(this.store, {
-      serializer: encodeJSON,
-      deserializer: decodeJSON,
-      dispatchResponder: async (
-        dispatchResult: Promise<unknown>,
-        send: (param: { error: string | null; value: unknown | null }) => void
-      ) => {
-        try {
-          send({
-            error: null,
-            value: encodeJSON(await dispatchResult),
-          })
-        } catch (error) {
-          logger.error(
-            "Error awaiting and dispatching redux store result: ",
-            error
-          )
-          send({
-            error: encodeJSON(error),
-            value: null,
-          })
-        }
-      },
-    })
+    serveStoreToClients(this.store)
 
     this.initializeRedux()
   }

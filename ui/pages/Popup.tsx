@@ -8,7 +8,7 @@ import {
   Location,
 } from "@tallyho/tally-background/redux-slices/ui"
 
-import { Store } from "webext-redux"
+import { Store } from "redux"
 import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"

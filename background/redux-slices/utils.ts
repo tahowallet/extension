@@ -17,11 +17,11 @@ import type Main from "../main"
 // with each other.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * A list of all webext-redux aliases that have been registered globally. These
+ * A list of all redux-proxy aliases that have been registered globally. These
  * are generally updated automatically by helpers like
  * `createBackgroundAsyncThunk` and should rarely need to be touched directly.
  *
- * webext-redux aliases are actions that are only run in the background script,
+ * redux-proxy aliases are actions that are only run in the background script,
  * but can be invoked with a payload in UI and other scripts. Their type and
  * payload is relayed to the background, and the background uses an enriched
  * action creator to turn them into the final intent. They are primarily used
@@ -75,7 +75,7 @@ const asyncThunkProperties = (() => {
  * stores.
  *
  * NOTE: To ensure the action is handled correctly, a central location should
- * add the webext-redux `alias` middleware to the background store, referencing
+ * add the redux-proxy `alias` middleware to the background store, referencing
  * the `allAliases` variable in this module. This variable exposes all async
  * thunks for use with the `alias` middleware.
  *
@@ -135,7 +135,7 @@ export function createBackgroundAsyncThunk<
     options
   )
 
-  // Wrap the top-level action creator to make it compatible with webext-redux.
+  // Wrap the top-level action creator to make it compatible with redux-proxy.
   const webextActionCreator = Object.assign(
     (payload: ThunkArg) => ({
       type: typePrefix,

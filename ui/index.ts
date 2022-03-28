@@ -1,7 +1,7 @@
-import { newProxyStore } from "@tallyho/tally-background"
+import { connectToRemoteStore } from "@tallyho/tally-background/utils/redux-proxy"
 import React, { ComponentType } from "react"
 import ReactDOM from "react-dom"
-import { Store } from "webext-redux"
+import { Store } from "redux"
 import Popup from "./pages/Popup"
 import Tab from "./pages/Tab"
 
@@ -18,7 +18,7 @@ export async function attachUiToRootElement(
     )
   }
 
-  const backgroundStore = await newProxyStore()
+  const backgroundStore = await connectToRemoteStore()
 
   ReactDOM.render(
     React.createElement(component, { store: backgroundStore }),
