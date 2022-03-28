@@ -241,7 +241,7 @@ export default function SharedSelect(props: Props): ReactElement {
           }
 
           .options.show {
-            max-height: 224px;
+            max-height: 140px;
             bottom: 42px;
             opacity: 1;
           }

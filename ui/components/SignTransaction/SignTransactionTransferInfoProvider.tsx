@@ -12,6 +12,7 @@ import { TransactionAnnotation } from "@tallyho/tally-background/services/enrich
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
+import SharedAddress from "../Shared/SharedAddress"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
@@ -21,7 +22,7 @@ import SignTransactionBaseInfoProvider, {
 
 export default function SignTransactionTransferInfoProvider({
   transactionDetails,
-  annotation: { assetAmount, recipientAddress },
+  annotation: { assetAmount, recipientAddress, recipientName },
   inner,
 }: SignTransactionInfoProviderProps & {
   annotation: TransactionAnnotation & { type: "asset-transfer" }
@@ -37,6 +38,10 @@ export default function SignTransactionTransferInfoProvider({
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
 
+  const recipientAddressSpan = (
+    <span title={recipientAddress}>{truncateAddress(recipientAddress)}</span>
+  )
+
   return (
     <SignTransactionBaseInfoProvider
       title="Sign Transfer"
@@ -45,7 +50,9 @@ export default function SignTransactionTransferInfoProvider({
         <div className="sign_block">
           <div className="container">
             <div className="label">Send to</div>
-            <div className="send_to">{truncateAddress(recipientAddress)}</div>
+            <div className="send_to">
+              <SharedAddress address={recipientAddress} name={recipientName} />
+            </div>
           </div>
           <div className="divider" />
           <div className="container">
