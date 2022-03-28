@@ -10,7 +10,10 @@ import {
   HIDE_SWAP,
 } from "@tallyho/tally-background/features/features"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { isSmartContractFungibleAsset } from "@tallyho/tally-background/assets"
+import {
+  AnyAsset,
+  isSmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -19,8 +22,13 @@ import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation<{ symbol: string; contractAddress?: string }>()
-  const { symbol, contractAddress } = location.state
+  const location = useLocation<AnyAsset>()
+  const locationAsset = location.state
+  const { symbol } = locationAsset
+  const contractAddress =
+    "contractAddress" in locationAsset
+      ? locationAsset.contractAddress
+      : undefined
 
   const currentAccountSigningMethod = useBackgroundSelector(
     selectCurrentAccountSigningMethod

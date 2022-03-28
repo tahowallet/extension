@@ -34,7 +34,10 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export default function Send(): ReactElement {
-  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(ETH)
+  const location = useLocation<FungibleAsset>()
+  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
+    location.state ?? ETH
+  )
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)

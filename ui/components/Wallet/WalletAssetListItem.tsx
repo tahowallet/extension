@@ -26,10 +26,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       <Link
         to={{
           pathname: "/singleAsset",
-          state: {
-            symbol: assetAmount.asset.symbol,
-            contractAddress,
-          },
+          state: assetAmount.asset,
         }}
       >
         <div className="wallet_asset_list_item">
@@ -60,18 +57,13 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             </div>
           </div>
           <div className="right">
-            {!contractAddress && (
-              <Link
-                to={{
-                  pathname: "/send",
-                  state: {
-                    symbol: assetAmount.asset.symbol,
-                    contractAddress,
-                  },
-                }}
-                className="asset_list_item_icon asset_list_item_icon_send_asset"
-              />
-            )}
+            <Link
+              to={{
+                pathname: "/send",
+                state: assetAmount.asset,
+              }}
+              className="asset_list_item_icon asset_list_item_icon_send_asset"
+            />
             <Link
               to={{
                 pathname: "/swap",
