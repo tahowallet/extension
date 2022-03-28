@@ -5,6 +5,7 @@ import {
   DAO,
 } from "@tallyho/tally-background/redux-slices/claim"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -76,7 +77,12 @@ export default function ClaimReferral(props: {
 }): ReactElement {
   const { DAOs, claimAmount } = props
   const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
-  const amountWithBonus = formatCurrencyAmount("USD", claimAmount * 0.05, 2)
+  const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
+  const amountWithBonus = formatCurrencyAmount(
+    mainCurrency,
+    claimAmount * 0.05,
+    2
+  )
 
   return (
     <div className="claim standard_width">
