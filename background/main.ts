@@ -610,9 +610,9 @@ export default class Main extends BaseService<never> {
         address,
         network: ETHEREUM,
       }
+      this.store.dispatch(loadAccount(address))
       // eslint-disable-next-line no-await-in-loop
       await this.chainService.addAccountToTrack(addressNetwork)
-      this.store.dispatch(loadAccount(address))
       this.store.dispatch(setNewSelectedAccount(addressNetwork))
     }
   }
@@ -645,9 +645,15 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSent", () => {
+    this.chainService.emitter.on("transactionSend", () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
+      )
+    })
+
+    this.chainService.emitter.on("transactionSendFailure", () => {
+      this.store.dispatch(
+        setSnackbarMessage("Transaction failed to broadcast.")
       )
     })
 
