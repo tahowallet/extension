@@ -1,17 +1,18 @@
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import classNames from "classnames"
-import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import {
   selectCurrentAccount,
   selectCurrentAccountSigningMethod,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { SigningMethod } from "@tallyho/tally-background/redux-slices/signing"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import {
   selectClaimed,
   selectClaimError,
   selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
+
+import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"

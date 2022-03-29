@@ -138,6 +138,7 @@ export default assetsSlice.reducer
 
 const selectAssetsState = (state: AssetsState) => state
 const selectAssetSymbol = (_: AssetsState, assetSymbol: string) => assetSymbol
+
 const selectPairedAssetSymbol = (
   _: AssetsState,
   _2: string,

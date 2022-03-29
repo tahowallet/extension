@@ -11,6 +11,8 @@ import logger from "../../lib/logger"
 import { AddressOnNetwork } from "../../accounts"
 import { SECOND } from "../../constants"
 
+export type NameResolverSystem = "ENS" | "UNS" | "local"
+
 type ResolvedAddressRecord = {
   from: {
     name: DomainName
@@ -18,7 +20,7 @@ type ResolvedAddressRecord = {
   resolved: {
     addressNetwork: AddressOnNetwork
   }
-  system: "ENS" | "UNS"
+  system: NameResolverSystem
 }
 
 type ResolvedNameRecord = {
@@ -29,7 +31,7 @@ type ResolvedNameRecord = {
     name: DomainName
     expiresAt: UNIXTime
   }
-  system: "ENS" | "UNS"
+  system: NameResolverSystem
 }
 
 type ResolvedAvatarRecord = {
@@ -39,7 +41,7 @@ type ResolvedAvatarRecord = {
   resolved: {
     avatar: URL
   }
-  system: "ENS" | "UNS"
+  system: NameResolverSystem
 }
 
 type Events = ServiceLifecycleEvents & {
