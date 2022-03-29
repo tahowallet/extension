@@ -475,7 +475,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
       spender: vault.vaultAddress,
       value: depositAmount,
       nonce: nonceValue,
-      deadline: ethers.BigNumber.from(deadline), // TODO not sure how to handle, remove hardcode
+      deadline: ethers.BigNumber.from(deadline),
     }
 
     // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped

@@ -93,7 +93,7 @@ export default function EarnDeposit(): ReactElement {
         typeof signature?.deadline !== "undefined" &&
         timestamp > signature.deadline
       ) {
-        dispatch(clearSignature)
+        dispatch(clearSignature())
       }
     }
     checkCurrentSignatureDeadline()
