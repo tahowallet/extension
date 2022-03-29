@@ -21,7 +21,7 @@ interface Props<T> {
   errorMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
-  parseAndValidate?: (value: string) => { error: string } | { parsed: T }
+  parseAndValidate?: (value: string) => { parsed: T } | { error: string }
 }
 
 export default function SharedInput<T = string>(props: Props<T>): ReactElement {
