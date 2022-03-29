@@ -16,6 +16,7 @@ interface Props {
     | "tertiaryGray"
     | "deemphasizedWhite"
     | "warning"
+    | "unstyled"
   size: "small" | "medium" | "large"
   icon?: string
   iconSize?: "small" | "medium" | "large" | "secondaryMedium"
@@ -74,6 +75,7 @@ export default function SharedButton(props: Props): ReactElement {
       id={id}
       type={isFormSubmit ? "submit" : "button"}
       className={classNames(
+        type !== "unstyled" && "button",
         { large: size === "large" },
         { small: size === "small" },
         { secondary: type === "secondary" },
@@ -112,7 +114,7 @@ export default function SharedButton(props: Props): ReactElement {
 
       <style jsx>
         {`
-          button {
+          .button {
             height: 40px;
             border-radius: 4px;
             background-color: var(--trophy-gold);
@@ -127,18 +129,18 @@ export default function SharedButton(props: Props): ReactElement {
             text-align: center;
             padding: 0 17px;
           }
-          button:hover {
+          .button:hover {
             background-color: var(--gold-80);
             color: var(--green-95);
           }
-          button:hover .icon_button {
+          .button:hover .icon_button {
             background-color: var(--green-95);
           }
-          button:active {
+          .button:active {
             background-color: var(--trophy-gold);
             color: var(--green-120);
           }
-          button:active .icon_button {
+          .button:active .icon_button {
             background-color: var(--green-120);
           }
           .button_content {
@@ -298,6 +300,9 @@ export default function SharedButton(props: Props): ReactElement {
           .hide_me {
             opacity: 0;
             position: absolute;
+          }
+          .unstyled {
+            unset: all;
           }
         `}
       </style>
