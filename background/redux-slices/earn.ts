@@ -106,21 +106,6 @@ export const initialState: EarnState = {
   inputAmount: "",
 }
 
-export type EIP712DomainType = {
-  name?: string
-  version?: string
-  chainId?: number
-  verifyingContract?: HexString
-}
-
-export type PermitRequest = {
-  account: HexString
-  liquidityTokenAddress: HexString
-  liquidityAmount: BigNumber
-  nonce: BigNumber
-  deadline: BigNumber
-  spender: HexString
-}
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
   "0x76465982fD8070FC74c91FD4CFfC7eb56Fc6b03a"
 
