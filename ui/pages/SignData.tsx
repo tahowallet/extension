@@ -63,13 +63,20 @@ export default function SignData(): ReactElement {
     history.goBack()
   }
 
+  const getTitle = () => {
+    if (typedDataRequest.typedData.primaryType === "PermitAndTransferFrom") {
+      return "Authorize Deposit"
+    }
+    return `Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`
+  }
+
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
       confirmButtonLabel="Confirm"
       handleConfirm={handleConfirm}
       handleReject={handleReject}
-      title={`Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`}
+      title={getTitle()}
       detailPanel={<SignDataDetailPanel />}
       reviewPanel={<SignDataDetailPanel />}
       isTransactionSigning={isTransactionSigning}
