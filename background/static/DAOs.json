@@ -1,32 +1,72 @@
 [
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "Yearn.finance",
-    "avatar": "yearn@2x.png"
+    "name": "Aave",
+    "avatar": "aave_logo@2x.png"
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "OlympusDao",
-    "avatar": "olympusdao@2x.png"
-  },
-  {
-    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "AAVE",
-    "avatar": "aave@2x.png"
+    "name": "DXdao",
+    "avatar": "dxdao_logo@2x.png"
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
     "name": "ENS",
-    "avatar": "ens@2x.png"
+    "avatar": "ens_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "FWB",
+    "avatar": "fwb_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "GitCoin",
+    "avatar": "gitcoin_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Gnosis",
+    "avatar": "gnosis_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "KeeperDAO",
+    "avatar": "keeper_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Pleasr",
+    "avatar": "pleasr_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Raicle",
+    "avatar": "radicle_logo@2x.png"
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
     "name": "SushiSwap",
-    "avatar": "sushiswap@2x.png"
+    "avatar": "sushi_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Synthetix",
+    "avatar": "synthetix_logo@2x.png"
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
     "name": "Uniswap",
-    "avatar": "uniswap@2x.png"
+    "avatar": "uniswap_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Yearn",
+    "avatar": "yearn_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Bankless",
+    "avatar": "bankless_logo@2x.png"
   }
 ]
