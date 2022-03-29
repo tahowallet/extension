@@ -80,7 +80,7 @@ export default function SingleAsset(): ReactElement {
   return (
     <>
       <div className="back_button_wrap standard_width_padded">
-        <SharedBackButton />
+        <SharedBackButton path="/" />
       </div>
       {typeof asset === "undefined" ? (
         <></>
