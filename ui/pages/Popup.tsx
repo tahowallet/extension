@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useRef, useEffect } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
@@ -76,38 +76,25 @@ export function Main(): ReactElement {
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
   const [showTabBar, setShowTabBar] = useState(true)
-  const renderCount = useRef(0)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries
   )
 
+  // See comment above call of saveHistoryEntries
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
-    const isNotOnKeyringRelatedPage =
-      routeHistoryEntities[routeHistoryEntities.length - 1].pathname !==
-        "/sign-transaction" &&
-      !routeHistoryEntities[routeHistoryEntities.length - 1].pathname.includes(
-        "/keyring/"
-      )
+    const entries = routeHistoryEntities
+      .reduce((agg: Partial<Location>[], entity) => {
+        const { ...entityCopy } = entity as Partial<Location>
+        delete entityCopy.hash
+        delete entityCopy.key
+        agg.push(entityCopy)
+        return agg
+      }, [])
+      .reverse()
 
-    // Initial extension load takes two renders because of setting
-    // animation control states. `initialEntries` needs to be a reversed
-    // version of route history entities. Without avoiding the initial load,
-    // entries will keep reversing.
-    if (renderCount.current > 1 && isNotOnKeyringRelatedPage) {
-      const entries = routeHistoryEntities
-        .reduce((agg: Partial<Location>[], entity) => {
-          const { ...entityCopy } = entity as Partial<Location>
-          delete entityCopy.hash
-          delete entityCopy.key
-          agg.push(entityCopy)
-          return agg
-        }, [])
-        .reverse()
-
-      if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
-        dispatch(setRouteHistoryEntries(entries))
-      }
+    if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
+      dispatch(setRouteHistoryEntries(entries))
     }
   }
 
@@ -129,12 +116,19 @@ export function Main(): ReactElement {
                 ? transformedLocation.pathname
                 : "/"
 
+            // `initialEntries` needs to be a reversed version of route history
+            // entities. Without avoiding the initial load, entries will keep reversing.
+            // Given that restoring our route history is a "POP" `history.action`,
+            // by specifying "PUSH" we know that the most recent navigation change is by
+            // the user or explicitly added. That said, we can still certainly "POP" via
+            // history.goBack(). This case is not yet accounted for.
             if (
               PERSIST_UI_LOCATION &&
-              pagePreferences[normalizedPathname].persistOnClose
+              pagePreferences[normalizedPathname].persistOnClose &&
+              routeProps.history.action === "PUSH"
             ) {
               // @ts-expect-error TODO: fix the typing
-              saveHistoryEntries(routeProps?.history?.entries)
+              saveHistoryEntries(routeProps.history.entries)
             }
 
             setAnimationConditions(
@@ -144,7 +138,6 @@ export function Main(): ReactElement {
               setIsDirectionRight
             )
             setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
-            renderCount.current += 1
 
             return (
               <TransitionGroup>
