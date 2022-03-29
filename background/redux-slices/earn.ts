@@ -12,6 +12,7 @@ import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   getContract,
+  getCurrentTimestamp,
   getProvider,
   getSignerAddress,
 } from "./utils/contract-utils"
@@ -47,6 +48,7 @@ export type Signature = {
   r: string | undefined
   s: string | undefined
   v: number | undefined
+  deadline: number | undefined
 }
 
 export const initialState: EarnState = {
@@ -54,6 +56,7 @@ export const initialState: EarnState = {
     r: undefined,
     s: undefined,
     v: undefined,
+    deadline: undefined,
   },
   approvalTargetAllowances: [],
   availableVaults: [
@@ -115,14 +118,19 @@ const earnSlice = createSlice({
   reducers: {
     saveSignature: (
       state,
-      { payload: { r, s, v } }: { payload: Signature }
+      { payload: { r, s, v, deadline } }: { payload: Signature }
     ) => ({
       ...state,
-      signature: { r, s, v },
+      signature: { r, s, v, deadline },
     }),
     clearSignature: (state) => ({
       ...state,
-      signature: { r: undefined, s: undefined, v: undefined },
+      signature: {
+        r: undefined,
+        s: undefined,
+        v: undefined,
+        deadline: undefined,
+      },
     }),
     currentlyDepositing: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyDepositing = payload
@@ -134,6 +142,12 @@ const earnSlice = createSlice({
       return {
         ...state,
         inputAmount: payload,
+      }
+    },
+    clearInputAmount: (state) => {
+      return {
+        ...state,
+        inputAmount: "",
       }
     },
     earnedOnVault: (
@@ -205,6 +219,7 @@ export const {
   lockedAmounts,
   inputAmount,
   clearSignature,
+  clearInputAmount,
 } = earnSlice.actions
 
 export default earnSlice.reducer
@@ -292,7 +307,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
         signerAddress,
         signerAddress,
         depositAmount,
-        ethers.BigNumber.from(1690792895n), // TODO not sure how to handle, remove hardcode
+        ethers.BigNumber.from(signature.deadline),
         signature.v,
         signature.r,
         signature.s
@@ -306,8 +321,10 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(currentlyDepositing(false))
       dispatch(clearSignature())
       dispatch(updateLockedValues())
+      dispatch(clearInputAmount())
     }
-
+    dispatch(clearSignature())
+    dispatch(clearInputAmount())
     dispatch(currentlyDepositing(false))
     dispatch(dispatch(depositError(true)))
   }
@@ -431,6 +448,10 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
       APPROVAL_TARGET_CONTRACT_ADDRESS,
       APPROVAL_TARGET_ABI
     )
+
+    const timestamp = await getCurrentTimestamp()
+    const deadline = timestamp + 12 * 60 * 60
+
     const nonceValue = await ApprovalTargetContract.nonces(signerAddress)
     const types = {
       PermitAndTransferFrom: [
@@ -454,7 +475,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
       spender: vault.vaultAddress,
       value: depositAmount,
       nonce: nonceValue,
-      deadline: ethers.BigNumber.from(1690792895n), // TODO not sure how to handle, remove hardcode
+      deadline: ethers.BigNumber.from(deadline),
     }
 
     // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
@@ -464,7 +485,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const splitSignature = ethers.utils.splitSignature(tx)
     const { r, s, v } = splitSignature
 
-    dispatch(earnSlice.actions.saveSignature({ r, s, v }))
+    dispatch(earnSlice.actions.saveSignature({ r, s, v, deadline }))
   }
 )
 export const selectApprovalTargetApprovals = createSelector(
@@ -492,17 +513,18 @@ export const selectAvailableVaults = createSelector(
   (earnState: EarnState) => earnState.availableVaults
 )
 
-export const selectIsSignatureAvailable = createSelector(
+export const selectSignature = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => {
     if (
       typeof earnState.signature.r !== "undefined" &&
       typeof earnState.signature.v !== "undefined" &&
-      typeof earnState.signature.s !== "undefined"
+      typeof earnState.signature.s !== "undefined" &&
+      typeof earnState.signature.deadline !== "undefined"
     ) {
-      return true
+      return earnState.signature
     }
-    return false
+    return undefined
   }
 )
 
