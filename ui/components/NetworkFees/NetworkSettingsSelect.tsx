@@ -236,7 +236,7 @@ export default function NetworkSettingsSelect({
             value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
-            parser={(value) => {
+            parseAndValidate={(value) => {
               try {
                 if (value.trim() === "") {
                   return { state: "parsed", parsed: undefined }

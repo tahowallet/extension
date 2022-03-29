@@ -21,7 +21,7 @@ interface Props<T> {
   errorMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
-  parser?: (
+  parseAndValidate?: (
     value: string
   ) => { state: "error"; message: string } | { state: "parsed"; parsed: T }
 }
@@ -40,7 +40,7 @@ export default function SharedInput<T = string>(props: Props<T>): ReactElement {
     errorMessage,
     autoFocus = false,
     autoSelect = false,
-    parser,
+    parseAndValidate,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [parserError, setParserError] = useState<string | null>(null)
@@ -62,8 +62,8 @@ export default function SharedInput<T = string>(props: Props<T>): ReactElement {
   const onInputChange: ChangeEventHandler<HTMLInputElement> = ({
     target: { value: inputValue },
   }) => {
-    if (parser) {
-      const result = parser(inputValue)
+    if (parseAndValidate) {
+      const result = parseAndValidate(inputValue)
       if (result.state === "error") {
         setParserError(result.message)
       } else {
