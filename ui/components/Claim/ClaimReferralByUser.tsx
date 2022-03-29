@@ -1,3 +1,5 @@
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
@@ -10,9 +12,17 @@ export default function ClaimReferralByUser({
 }: {
   claimAmount: number
 }): ReactElement {
-  const amountWithBonus = formatCurrencyAmount("USD", claimAmount * 0.05, 2)
+  const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
+  const amountWithBonus = formatCurrencyAmount(
+    mainCurrency,
+    claimAmount * 0.05,
+    2
+  )
   const referrer = useBackgroundSelector((state) => state.claim.referrer)
 
+  if (referrer === null) {
+    return <></>
+  }
   return (
     <div className="wrap standard_width">
       <ClaimAmountBanner amount={claimAmount} />
@@ -24,7 +34,7 @@ export default function ClaimReferralByUser({
         {`You were referred by somebody, and to reward that you each get ${amountWithBonus} DOGGO`}
       </div>
       <ClaimReferralBridge />
-      <ClaimDelegateChoiceProfile name={referrer ?? "henryboldi.eth"} />
+      <ClaimDelegateChoiceProfile name={truncateAddress(referrer)} />
       <style jsx>
         {`
           .wrap {

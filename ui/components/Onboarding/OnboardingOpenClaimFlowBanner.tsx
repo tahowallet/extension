@@ -244,11 +244,11 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
     "show"
   )
 
-  const hideOnboardingClaimBanner = currentAccount.address in claimed
+  const hasAlreadyClaimed = claimed[currentAccount.address]
 
   if (
     (claimAmount === "0" && showOrHide === "hide") ||
-    hideOnboardingClaimBanner
+    typeof hasAlreadyClaimed === "undefined"
   )
     return <></>
 
@@ -259,7 +259,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
       })}
     >
       <div className={classNames("banner", { left: isCurrentlyClaiming })}>
-        {claimAmount !== "0" ? (
+        {claimAmount !== "0" && !hasAlreadyClaimed ? (
           <EligibleCTAContent
             currentAccountSigningMethod={currentAccountSigningMethod}
             claimAmount={claimAmount}

@@ -1,6 +1,5 @@
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { serialize as serializeEthersTransaction } from "@ethersproject/transactions"
-import { BigNumber } from "ethers"
 
 import {
   EIP1193Error,
@@ -195,6 +194,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
       case "wallet_watchAsset":
+      case "eth_estimateGas":
       case "estimateGas": // --- eip1193-bridge only method --
       case "eth_coinbase": // --- MM only methods ---
       case "eth_decrypt":

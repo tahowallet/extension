@@ -112,9 +112,12 @@ const claimingSlice = createSlice({
     currentlyClaiming: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyClaiming = payload
     },
-    claimed: (immerState, { payload }: { payload: HexString }) => {
-      immerState.claimed[payload] = true
-      immerState.claimError[payload] = false
+    claimed: (
+      immerState,
+      { payload }: { payload: { account: HexString; alreadyClaimed: boolean } }
+    ) => {
+      immerState.claimed[payload.account] = payload.alreadyClaimed
+      immerState.claimError[payload.account] = false
     },
     saveSignature: (
       state,
@@ -177,9 +180,7 @@ export const checkAlreadyClaimed = createBackgroundAsyncThunk(
     const alreadyClaimed = await distributorContract.isClaimed(
       eligibility.index
     )
-    if (alreadyClaimed) {
-      dispatch(claimed(accountAddress))
-    }
+    dispatch(claimed({ account: accountAddress, alreadyClaimed }))
     return alreadyClaimed
   }
 )
@@ -191,7 +192,9 @@ export const claimRewards = createBackgroundAsyncThunk(
     const signer = provider.getSigner()
     const account = await signer.getAddress()
 
-    const referralCode = claimState.selectedDAO
+    const referralAddress =
+      claimState.referrer ?? claimState.selectedDAO?.address
+
     const delegate = claimState.selectedDelegate
     const { signature, eligibility } = claimState
 
@@ -207,7 +210,12 @@ export const claimRewards = createBackgroundAsyncThunk(
       const receipt = await result.wait()
       if (receipt.status === 1) {
         dispatch(currentlyClaiming(false))
-        dispatch(claimed(normalizeEVMAddress(account)))
+        dispatch(
+          claimed({
+            account: normalizeEVMAddress(account),
+            alreadyClaimed: true,
+          })
+        )
         dispatch(resetClaimFlow())
         return
       }
@@ -226,17 +234,21 @@ export const claimRewards = createBackgroundAsyncThunk(
       )
     }
 
-    if (referralCode !== null && delegate === null) {
+    if (typeof referralAddress !== "undefined" && delegate === null) {
       claimTransaction =
         await distributorContract.populateTransaction.claimWithCommunityCode(
           eligibility.index,
           account,
           eligibility.amount,
           eligibility.proof,
-          referralCode.address
+          referralAddress
         )
     }
-    if (signature && referralCode !== null && delegate !== null) {
+    if (
+      signature &&
+      typeof referralAddress !== "undefined" &&
+      delegate !== null
+    ) {
       const { r, s, v } = signature
       const { nonce, expiry } = claimState
       claimTransaction =
@@ -245,7 +257,7 @@ export const claimRewards = createBackgroundAsyncThunk(
           account,
           BigNumber.from(eligibility.amount),
           eligibility.proof,
-          referralCode.address,
+          referralAddress,
           delegate.address,
           { nonce, expiry, r, s, v }
         )

@@ -55,6 +55,8 @@ export default function SignData(): ReactElement {
         setIsTransactionSigning(true)
       }
     }
+
+    // We need to send user to the previous page after signing data is completed
     history.goBack()
   }
 
