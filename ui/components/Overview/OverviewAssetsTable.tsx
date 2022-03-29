@@ -23,15 +23,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
       </thead>
       <tbody>
         {assets
-          .sort((a: CompleteAssetAmount, b: CompleteAssetAmount) => {
-            if (
-              a.localizedMainCurrencyAmount &&
-              b.localizedMainCurrencyAmount
-            ) {
-              return (
-                Number(b.localizedMainCurrencyAmount) -
-                Number(a.localizedMainCurrencyAmount)
-              )
+          .sort((a, b) => {
+            if (a.mainCurrencyAmount && b.mainCurrencyAmount) {
+              return b.mainCurrencyAmount - a.mainCurrencyAmount
             }
             return 0
           })
