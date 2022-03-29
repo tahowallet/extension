@@ -16,6 +16,7 @@ import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
+import SharedIcon from "../Shared/SharedIcon"
 
 function EligibleCTAContent({
   currentAccountSigningMethod,
@@ -23,12 +24,14 @@ function EligibleCTAContent({
   isCurrentlyClaiming,
   hasAlreadyClaimed,
   hasError,
+  handleCloseBanner,
 }: {
   currentAccountSigningMethod: SigningMethod | null
   claimAmount: string
   isCurrentlyClaiming: boolean
   hasError: boolean
   hasAlreadyClaimed: boolean
+  handleCloseBanner: () => void
 }) {
   const getComponentToDisplay = () => {
     if (isCurrentlyClaiming) {
@@ -69,7 +72,18 @@ function EligibleCTAContent({
         </div>
       </div>
       {hasAlreadyClaimed ? (
-        <img className="close_icon" src="./images/close.svg" alt="Close" />
+        <SharedIcon
+          icon="close.svg"
+          width={12}
+          color="var(--green-40)"
+          hoverColor="#fff"
+          ariaLabel="Close banner"
+          onClick={handleCloseBanner}
+          customStyles={`
+            align-self: flex-start;
+            margin: 10px 12px;
+          `}
+        />
       ) : (
         <Link
           to="/eligible"
@@ -147,10 +161,6 @@ function EligibleCTAContent({
           .upgrade .link_content {
             background-color: var(--green-80);
           }
-          .close_icon {
-            align-self: flex-start;
-            margin: 12px;
-          }
         `}
       </style>
     </>
@@ -163,21 +173,27 @@ function IneligibleCTAContent({
   handleCloseBanner: () => void
 }) {
   return (
-    <div className="right">
-      <div className="top">
+    <div className="banner_right">
+      <div className="banner_top">
         <p>
           Looks like there are no tokens to claim.
           <br /> Try another address or see other ways to earn
         </p>
 
-        <button
-          type="button"
-          className="icon_close"
+        <SharedIcon
+          icon="close.svg"
+          width={12}
+          color="var(--green-40)"
           onClick={handleCloseBanner}
-          aria-label="Close menu"
+          ariaLabel="Close menu"
+          customStyles={`
+            margin-top: 8px;
+            margin-right: 8px;
+            flex-shrink: 0;
+          `}
         />
       </div>
-      <div className="bottom">
+      <div className="banner_bottom">
         <SharedButton
           type="tertiary"
           size="small"
@@ -198,24 +214,11 @@ function IneligibleCTAContent({
       </div>
       <style>
         {`
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            width: 12px;
-            height: 12px;
-            background-color: var(--green-40);
-            margin-top: 8px;
-            margin-right: 8px;
-            flex-shrink: 0;
-          }
-          .icon_close:hover {
-            background-color: #fff;
-          }
-          .right {
+          .banner_right {
             display: flex;
             flex-direction: column;
           }
-          .top {
+          .banner_top {
             display: flex;
             justify-content: space-between;
           }
@@ -228,7 +231,7 @@ function IneligibleCTAContent({
             margin-bottom: -1px;
             margin-top: 1px;
           }
-          .bottom {
+          .banner_bottom {
             display: flex;
           }
         `}
@@ -258,17 +261,22 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
 
   const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
 
-  const [showOrHide, setShowOrHide] = useLocalStorage(
-    "showOrHideOnboardingClaimFlowBanner",
-    "show"
+  const [isIneligibleVisible, setIsIneligibleVisible] = useLocalStorage(
+    "isIneligibleVisible",
+    "true"
   )
-
-  const hasAlreadyClaimed = claimed[currentAccount.address]
-  const hasError = claimError[currentAccount.address]
+  const [addressFinishedClaiming, setAddressFinishedClaiming] = useLocalStorage(
+    "addressFinishedClaiming",
+    ""
+  )
+  const currentAddress = currentAccount.address
+  const hasAlreadyClaimed = claimed[currentAddress]
+  const hasError = claimError[currentAddress]
   const hasSomethingToClaim = claimAmount !== "0"
 
   if (
-    (!hasSomethingToClaim && showOrHide === "hide") ||
+    addressFinishedClaiming.split(";").includes(currentAddress) ||
+    (!hasSomethingToClaim && isIneligibleVisible === "false") ||
     typeof hasAlreadyClaimed === "undefined"
   )
     return <></>
@@ -283,12 +291,15 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             isCurrentlyClaiming={isCurrentlyClaiming}
             hasAlreadyClaimed={hasAlreadyClaimed}
             hasError={hasError}
+            handleCloseBanner={() =>
+              setAddressFinishedClaiming(
+                `${addressFinishedClaiming};${currentAddress}`
+              )
+            }
           />
         ) : (
           <IneligibleCTAContent
-            handleCloseBanner={() => {
-              setShowOrHide("hide")
-            }}
+            handleCloseBanner={() => setIsIneligibleVisible("false")}
           />
         )}
       </div>
