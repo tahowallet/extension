@@ -21,9 +21,7 @@ interface Props<T> {
   errorMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
-  parseAndValidate?: (
-    value: string
-  ) => { state: "error"; message: string } | { state: "parsed"; parsed: T }
+  parseAndValidate?: (value: string) => { error: string } | { parsed: T }
 }
 
 export default function SharedInput<T = string>(props: Props<T>): ReactElement {
@@ -40,10 +38,10 @@ export default function SharedInput<T = string>(props: Props<T>): ReactElement {
     errorMessage,
     autoFocus = false,
     autoSelect = false,
-    parseAndValidate,
+    parseAndValidate = (v) => ({ parsed: v as unknown as T }),
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [parserError, setParserError] = useState<string | null>(null)
+  const [parserError, setParserError] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus()
@@ -62,16 +60,12 @@ export default function SharedInput<T = string>(props: Props<T>): ReactElement {
   const onInputChange: ChangeEventHandler<HTMLInputElement> = ({
     target: { value: inputValue },
   }) => {
-    if (parseAndValidate) {
-      const result = parseAndValidate(inputValue)
-      if (result.state === "error") {
-        setParserError(result.message)
-      } else {
-        setParserError(null)
-        onChange?.(result.parsed)
-      }
+    const result = parseAndValidate(inputValue)
+    if ("error" in result) {
+      setParserError(result.error)
     } else {
-      onChange?.(value as unknown as T)
+      setParserError(undefined)
+      onChange?.(result.parsed)
     }
   }
 

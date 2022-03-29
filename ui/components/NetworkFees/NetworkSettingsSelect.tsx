@@ -237,21 +237,20 @@ export default function NetworkSettingsSelect({
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
             parseAndValidate={(value) => {
+              if (value.trim() === "") {
+                return { parsed: undefined }
+              }
               try {
-                if (value.trim() === "") {
-                  return { state: "parsed", parsed: undefined }
-                }
                 const parsed = BigInt(value)
                 if (parsed < 0n) {
                   return {
-                    state: "error",
-                    message: "Gas Limit must be greater than 0",
+                    error: "Gas Limit must be greater than 0",
                   }
                 }
 
-                return { state: "parsed", parsed }
+                return { parsed }
               } catch (e) {
-                return { state: "error", message: "Gas Limit must be a number" }
+                return { error: "Gas Limit must be a number" }
               }
             }}
             label="Gas limit"
