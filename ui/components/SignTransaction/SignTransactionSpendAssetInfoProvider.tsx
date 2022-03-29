@@ -7,10 +7,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import {
-  isMaxUint256,
-  truncateAddress,
-} from "@tallyho/tally-background/lib/utils"
+import { isMaxUint256 } from "@tallyho/tally-background/lib/utils"
 import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
@@ -30,6 +27,7 @@ import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
+import SharedAddress from "../Shared/SharedAddress"
 
 export default function SignTransactionSpendAssetInfoProvider({
   transactionDetails,
@@ -108,10 +106,6 @@ export default function SignTransactionSpendAssetInfoProvider({
     )
   }
 
-  const spenderAddressSpan = (
-    <span title={spenderAddress}>{truncateAddress(spenderAddress)}</span>
-  )
-
   return (
     <SignTransactionBaseInfoProvider
       title="Approve asset spend"
@@ -130,18 +124,17 @@ export default function SignTransactionSpendAssetInfoProvider({
           </div>
           <span className="site">
             Approve{" "}
-            {annotation.spenderName === undefined ? (
-              spenderAddressSpan
-            ) : (
-              <>
-                {annotation.spenderName} ({spenderAddressSpan})
-              </>
-            )}
+            <SharedAddress
+              address={spenderAddress}
+              name={annotation.spenderName}
+            />
           </span>
           <span className="spending_label">
             {asset.symbol ? (
               `Spend ${
-                asset.symbol ?? truncateAddress(transactionDetails.to ?? "")
+                asset.symbol ?? (
+                  <SharedAddress address={transactionDetails.to ?? ""} />
+                )
               } tokens`
             ) : (
               <SharedSkeletonLoader />

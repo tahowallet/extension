@@ -1,9 +1,9 @@
 import React, { ReactElement, useState } from "react"
 
-type VeriticalPosition = "top" | "bottom"
+type VerticalPosition = "top" | "bottom"
 
 interface Props {
-  verticalPosition?: VeriticalPosition
+  verticalPosition?: VerticalPosition
   width: number
   children: React.ReactNode
   IconComponent?: () => ReactElement
@@ -13,7 +13,7 @@ function getHorizontalPosition(width: number) {
   return `right: -${width / 2 + 4}px;`
 }
 
-function getVerticalPosition(vertical: VeriticalPosition) {
+function getVerticalPosition(vertical: VerticalPosition) {
   switch (vertical) {
     case "bottom":
       return "top: 16px; margin-top: 5px;"
@@ -44,7 +44,7 @@ export default function SharedTooltip(props: Props): ReactElement {
         {`
           .tooltip_wrap {
             width: fit-content;
-            display: inline-block;
+            display: block;
             position: relative;
             margin-left: 8px;
             z-index: 20;
