@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import { decodeJSON } from "../../lib/utils"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
