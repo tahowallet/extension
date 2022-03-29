@@ -8,7 +8,7 @@ import { ERC20_ABI } from "../lib/erc20"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import VAULT_ABI from "../lib/vault"
 import APPROVAL_TARGET_ABI from "../lib/approvalTarget"
-import { EIP712TypedData, HexString } from "../types"
+import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   getContract,
@@ -121,12 +121,6 @@ export type PermitRequest = {
   deadline: BigNumber
   spender: HexString
 }
-
-export type SignTypedDataRequest = {
-  account: string
-  typedData: EIP712TypedData
-}
-
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
   "0x76465982fD8070FC74c91FD4CFfC7eb56Fc6b03a"
 

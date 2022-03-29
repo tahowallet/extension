@@ -23,22 +23,10 @@ export default function SignTransactionDetailPanel(): ReactElement {
   if (transactionDetails === undefined) return <></>
 
   const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
-    let updatedGasLimit = transactionDetails.gasLimit
-    try {
-      updatedGasLimit = BigInt(networkSetting.gasLimit)
-    } catch (error) {
-      logger.error(
-        "Tried to set non-integer gas limit",
-        networkSetting.gasLimit,
-        "; keeping original",
-        updatedGasLimit
-      )
-    }
-
     dispatch(
       updateTransactionOptions({
         ...transactionDetails,
-        gasLimit: updatedGasLimit,
+        gasLimit: networkSetting.gasLimit ?? transactionDetails.gasLimit,
       })
     )
 

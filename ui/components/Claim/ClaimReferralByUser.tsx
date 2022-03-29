@@ -38,7 +38,7 @@ export default function ClaimReferralByUser({
             line-height: 32px;
             display: flex;
             align-items: center;
-            margin-top: 40px;
+            margin-top: 25px;
             margin-bottom: 11px;
           }
           .description {

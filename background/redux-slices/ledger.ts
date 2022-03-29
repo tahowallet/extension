@@ -19,7 +19,7 @@ export interface LedgerDeviceState {
   /** Accounts by path */
   accounts: Record<string, LedgerAccountState>
   status: LedgerConnectionStatus // FIXME: this should not be persisted
-  isBlindSigner?: boolean
+  isArbitraryDataSigningEnabled?: boolean
 }
 
 export type LedgerState = {
@@ -80,7 +80,7 @@ const ledgerSlice = createSlice({
         id: deviceID,
         accounts: {},
         status: "available",
-        isBlindSigner: false,
+        isArbitraryDataSigningEnabled: false,
       }
     },
     setCurrentDevice: (
@@ -93,12 +93,12 @@ const ledgerSlice = createSlice({
     setDeviceConnectionStatus: (
       immerState,
       {
-        payload: { deviceID, status, isBlindSigner },
+        payload: { deviceID, status, isArbitraryDataSigningEnabled },
       }: {
         payload: {
           deviceID: string
           status: LedgerConnectionStatus
-          isBlindSigner?: boolean
+          isArbitraryDataSigningEnabled: boolean
         }
       }
     ) => {
@@ -112,8 +112,7 @@ const ledgerSlice = createSlice({
       if (!device) return
       device.status = status
 
-      if (typeof isBlindSigner === "undefined") return
-      device.isBlindSigner = isBlindSigner
+      device.isArbitraryDataSigningEnabled = isArbitraryDataSigningEnabled
     },
     addLedgerAccount: (
       immerState,

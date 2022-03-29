@@ -84,6 +84,7 @@ const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressOnNetwork
   accountBalance: AccountBalance
+  transactionSent: HexString
   assetTransfers: {
     addressNetwork: AddressOnNetwork
     assetTransfers: AssetTransfer[]
@@ -625,21 +626,26 @@ export default class ChainService extends BaseService<Events> {
     )
     try {
       await Promise.all([
-        this.providers.ethereum.sendTransaction(serialized).catch((error) => {
-          logger.debug(
-            "Broadcast error caught, saving failed status and releasing nonce...",
-            transaction,
-            error
-          )
-          // Failure to broadcast needs to be registered.
-          this.saveTransaction(
-            { ...transaction, status: 0, error: error.toString() },
-            "alchemy"
-          )
-          this.releaseEVMTransactionNonce(transaction)
+        this.providers.ethereum
+          .sendTransaction(serialized)
+          .then((transactionResponse) => {
+            this.emitter.emit("transactionSent", transactionResponse.hash)
+          })
+          .catch((error) => {
+            logger.debug(
+              "Broadcast error caught, saving failed status and releasing nonce...",
+              transaction,
+              error
+            )
+            // Failure to broadcast needs to be registered.
+            this.saveTransaction(
+              { ...transaction, status: 0, error: error.toString() },
+              "alchemy"
+            )
+            this.releaseEVMTransactionNonce(transaction)
 
-          return Promise.reject(error)
-        }),
+            return Promise.reject(error)
+          }),
         this.subscribeToTransactionConfirmation(
           transaction.network,
           transaction

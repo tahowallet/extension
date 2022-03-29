@@ -180,7 +180,7 @@ const pageList: PageList[] = [
     path: "/eligible",
     Component: Eligible,
     hasTabBar: false,
-    hasTopBar: true,
+    hasTopBar: false,
     persistOnClose: false,
   },
   {

@@ -12,36 +12,28 @@ export default function ClaimAmountBanner({
           <img src="./images/claim@2x.png" alt="" />
         </div>
         <div className="claimable">
-          <div className="claimable_currency">Claiming</div>
           <div className="claimable_amount">{amount}</div>
           <div className="claimable_currency symbol">TALLY</div>
         </div>
       </div>
       <style jsx>
         {`
-          .wrap {
-            width: 100%;
-            transition: all 0.3s;
-            position: relative;
-          }
           .banner {
             width: 100%;
             border-radius: 12px;
             display: flex;
             padding: 0 4px;
             box-sizing: border-box;
-            justify-content: space-between;
             align-items: center;
             padding: 0 17px;
             height: 66px;
             margin: 20px 0 8px 0;
             background-color: var(--hunter-green);
+            justify-content: space-between;
           }
           img {
             width: 89px;
             height: 69.9px;
-            position: relative;
-            top: -4px;
             margin-left: -3px;
           }
           .claimable_amount {
@@ -49,20 +41,20 @@ export default function ClaimAmountBanner({
             font-size: 36px;
             color: var(--success);
             margin-left: 5px;
+            line-height: 27px;
+            display: inline-block;
           }
           .claimable_currency {
             color: var(--green-40);
           }
           .claimable {
-            padding: 0 8px;
-            text-align: right;
             display: flex;
-            align-items: baseline;
-            gap: 4px;
-            font-size: 14px;
+            align-items: flex-end;
           }
           .symbol {
-            color: var(--success);
+            color: var(--green-40);
+            margin-left: 8px;
+            display: inline-block;
           }
         `}
       </style>
