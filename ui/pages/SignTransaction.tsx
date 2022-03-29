@@ -1,56 +1,27 @@
-import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory } from "react-router-dom"
+import React, { ReactElement, useState } from "react"
 import {
-  broadcastSignedTransaction,
   rejectTransactionSignature,
   selectIsTransactionLoaded,
-  selectIsTransactionSigned,
   selectTransactionData,
   signTransaction,
-  TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useIsBackgroundSettled,
   useIsSigningMethodLocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
 import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
 
-export default function SignTransaction({
-  location,
-}: {
-  location: {
-    state?: { redirectTo: { path: string; state: unknown } }
-  }
-}): ReactElement {
-  const history = useHistory()
+export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const isBackgroundSettled = useIsBackgroundSettled()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
-  const signedTransaction = useBackgroundSelector(
-    ({ transactionConstruction }) => transactionConstruction.signedTransaction
-  )
-
-  const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
-
-  const shouldBroadcastOnSign = useBackgroundSelector(
-    ({ transactionConstruction }) =>
-      transactionConstruction.broadcastOnSign ?? false
-  )
-
-  const isTransactionMissingOrRejected =
-    useBackgroundSelector(
-      ({ transactionConstruction }) =>
-        transactionConstruction.status === TransactionConstructionStatus.Idle
-    ) && isBackgroundSettled
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
@@ -64,30 +35,6 @@ export default function SignTransaction({
   const signingMethod = signerAccountTotal?.signingMethod ?? null
 
   const isLocked = useIsSigningMethodLocked(signingMethod)
-
-  useEffect(() => {
-    if (isLocked) return
-    if (isTransactionSigned && isTransactionSigning) {
-      if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
-        dispatch(broadcastSignedTransaction(signedTransaction))
-      }
-    }
-  }, [
-    dispatch,
-    history,
-    isTransactionSigned,
-    isTransactionSigning,
-    isLocked,
-    location.state,
-    shouldBroadcastOnSign,
-    signedTransaction,
-  ])
-
-  useEffect(() => {
-    if (isTransactionMissingOrRejected) {
-      history.goBack()
-    }
-  }, [history, isTransactionMissingOrRejected])
 
   if (isLocked) return <></>
 
