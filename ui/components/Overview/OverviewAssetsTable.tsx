@@ -22,47 +22,60 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         </tr>
       </thead>
       <tbody>
-        {assets.map((asset) => (
-          <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
-            <td>
-              <div className="asset_descriptor">
-                <SharedAssetIcon
-                  size="small"
-                  logoURL={asset?.asset?.metadata?.logoURL}
-                  symbol={asset?.asset?.symbol}
-                />
-                <span className="asset_name">{asset.asset.symbol}</span>
-              </div>
-            </td>
-            <td>
-              {asset.localizedUnitPrice ? (
-                <div>
-                  <span className="lighter_color">$</span>
-                  {asset.localizedUnitPrice}
+        {assets
+          .sort((a: CompleteAssetAmount, b: CompleteAssetAmount) => {
+            if (
+              a.localizedMainCurrencyAmount &&
+              b.localizedMainCurrencyAmount
+            ) {
+              return (
+                Number(b.localizedMainCurrencyAmount) -
+                Number(a.localizedMainCurrencyAmount)
+              )
+            }
+            return 0
+          })
+          .map((asset) => (
+            <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
+              <td>
+                <div className="asset_descriptor">
+                  <SharedAssetIcon
+                    size="small"
+                    logoURL={asset?.asset?.metadata?.logoURL}
+                    symbol={asset?.asset?.symbol}
+                  />
+                  <span className="asset_name">{asset.asset.symbol}</span>
                 </div>
-              ) : (
-                <div className="loading_wrap">
-                  {initializationLoadingTimeExpired ? (
-                    <></>
-                  ) : (
-                    <SharedLoadingSpinner size="small" />
-                  )}
+              </td>
+              <td>
+                {asset.localizedUnitPrice ? (
+                  <div>
+                    <span className="lighter_color">$</span>
+                    {asset.localizedUnitPrice}
+                  </div>
+                ) : (
+                  <div className="loading_wrap">
+                    {initializationLoadingTimeExpired ? (
+                      <></>
+                    ) : (
+                      <SharedLoadingSpinner size="small" />
+                    )}
+                  </div>
+                )}
+              </td>
+              <td>
+                {asset.localizedMainCurrencyAmount && (
+                  <div>
+                    <span className="lighter_color">$</span>
+                    {asset.localizedMainCurrencyAmount}
+                  </div>
+                )}
+                <div className="balance_token_amount">
+                  {asset.localizedDecimalAmount}
                 </div>
-              )}
-            </td>
-            <td>
-              {asset.localizedMainCurrencyAmount && (
-                <div>
-                  <span className="lighter_color">$</span>
-                  {asset.localizedMainCurrencyAmount}
-                </div>
-              )}
-              <div className="balance_token_amount">
-                {asset.localizedDecimalAmount}
-              </div>
-            </td>
-          </tr>
-        ))}
+              </td>
+            </tr>
+          ))}
       </tbody>
       <style jsx>{`
         tr {
