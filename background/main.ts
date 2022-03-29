@@ -610,9 +610,9 @@ export default class Main extends BaseService<never> {
         address,
         network: ETHEREUM,
       }
+      this.store.dispatch(loadAccount(address))
       // eslint-disable-next-line no-await-in-loop
       await this.chainService.addAccountToTrack(addressNetwork)
-      this.store.dispatch(loadAccount(address))
       this.store.dispatch(setNewSelectedAccount(addressNetwork))
     }
   }

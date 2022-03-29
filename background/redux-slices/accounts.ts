@@ -124,8 +124,14 @@ function getOrCreateAccountData(
   account: HexString,
   network: Network,
   existingAccountsCount: number
-): AccountData {
-  if (data === "loading" || !data) {
+): AccountData | undefined {
+  if (typeof data === "undefined") {
+    // data will be unefined when we are trying to get account data
+    // for an account not on any of our keyrings. If this is the case
+    // we definitely do not want to add that account to the wallet.
+    return data
+  }
+  if (data === "loading") {
     return newAccountData(account, network, existingAccountsCount)
   }
   return data
@@ -233,9 +239,12 @@ const accountSlice = createSlice({
         Object.keys(immerState.accountsData).filter((key) => key !== address)
           .length
       )
-      immerState.accountsData[address] = {
-        ...baseAccountData,
-        ens: { ...baseAccountData.ens, name: addressNetworkName.name },
+
+      if (baseAccountData) {
+        immerState.accountsData[address] = {
+          ...baseAccountData,
+          ens: { ...baseAccountData.ens, name: addressNetworkName.name },
+        }
       }
     },
     updateENSAvatar: (
@@ -253,9 +262,14 @@ const accountSlice = createSlice({
         Object.keys(immerState.accountsData).filter((key) => key !== address)
           .length
       )
-      immerState.accountsData[address] = {
-        ...baseAccountData,
-        ens: { ...baseAccountData.ens, avatarURL: addressNetworkAvatar.avatar },
+      if (baseAccountData) {
+        immerState.accountsData[address] = {
+          ...baseAccountData,
+          ens: {
+            ...baseAccountData.ens,
+            avatarURL: addressNetworkAvatar.avatar,
+          },
+        }
       }
     },
   },
