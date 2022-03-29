@@ -8,12 +8,13 @@ import {
   approveApprovalTarget,
   checkApprovalTargetApproval,
   claimVaultRewards,
+  clearSignature,
   inputAmount,
   permitVaultDeposit,
   selectCurrentlyApproving,
   selectEarnInputAmount,
   selectEnrichedAvailableVaults,
-  selectIsSignatureAvailable,
+  selectSignature,
   updateEarnedValues,
   updateLockedValues,
   vaultDeposit,
@@ -26,6 +27,7 @@ import {
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
+import { getCurrentTimestamp } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -56,7 +58,7 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
-  const signatureAvailable = useBackgroundSelector(selectIsSignatureAvailable)
+  const signature = useBackgroundSelector(selectSignature)
 
   const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
   const account = useBackgroundSelector(selectCurrentAccount)
@@ -85,8 +87,24 @@ export default function EarnDeposit(): ReactElement {
   }, [amount, dispatch, vault?.asset?.contractAddress, account.address])
 
   useEffect(() => {
+    const checkCurrentSignatureDeadline = async () => {
+      const timestamp = await getCurrentTimestamp()
+      if (
+        typeof signature?.deadline !== "undefined" &&
+        timestamp > signature.deadline
+      ) {
+        dispatch(clearSignature)
+      }
+    }
+    checkCurrentSignatureDeadline()
+  }, [dispatch, signature?.deadline])
+
+  useEffect(() => {
     dispatch(updateLockedValues())
     dispatch(updateEarnedValues())
+    return () => {
+      dispatch(clearSignature())
+    }
   }, [dispatch, account.address])
 
   if (typeof vault === "undefined") {
@@ -96,6 +114,11 @@ export default function EarnDeposit(): ReactElement {
   const pendingRewards = fromFixedPointNumber(
     { amount: vault.pendingRewards, decimals: doggoTokenDecimalDigits },
     2
+  )
+
+  const userDeposited = fromFixedPointNumber(
+    { amount: vault.userDeposited, decimals: vault.asset.decimals },
+    4
   )
 
   if (
@@ -178,7 +201,7 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const depositButtonText = () => {
-    if (!isEnabled && !signatureAvailable) {
+    if (!isEnabled && typeof signature === "undefined") {
       return "Enable"
     }
     if (deposited) {
@@ -235,7 +258,7 @@ export default function EarnDeposit(): ReactElement {
             <li className="row">
               <div className="label">Deposited amount</div>
               <div className="amount">
-                {vault.localValueUserDeposited}
+                {userDeposited}
                 <span className="token">{vault?.asset.symbol}</span>
               </div>
             </li>
@@ -293,7 +316,11 @@ export default function EarnDeposit(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                onClick={!isEnabled && !signatureAvailable ? enable : deposit}
+                onClick={
+                  !isEnabled && typeof signature === "undefined"
+                    ? enable
+                    : deposit
+                }
                 isDisabled={amount === ""}
               >
                 {depositButtonText()}
@@ -345,7 +372,7 @@ export default function EarnDeposit(): ReactElement {
                 <li className="row">
                   <div className="label">Deposited amount</div>
                   <div className="amount">
-                    {vault.localValueUserDeposited}
+                    {userDeposited}
                     <span className="token">{vault.asset.symbol}</span>
                   </div>
                 </li>
