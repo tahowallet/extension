@@ -22,7 +22,7 @@ export default function ClaimFooter({
   showSuccess,
 }: ClaimFooterProps): ReactElement {
   const buttonText = useMemo(
-    () => ["Get started", "Continue", "Continue", "Continue", "Claim"],
+    () => ["Get started", "Continue", "I'm In", "Continue", "Claim"],
     []
   )
 
