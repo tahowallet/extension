@@ -88,7 +88,7 @@ const initialState: ClaimingState = {
   selectedDelegate: null,
   eligibility: null,
   delegates,
-  DAOs,
+  DAOs: DAOs.sort(() => Math.random() - 0.5),
   referrer: null,
 }
 
