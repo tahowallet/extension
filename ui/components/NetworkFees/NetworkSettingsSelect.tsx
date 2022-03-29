@@ -231,7 +231,7 @@ export default function NetworkSettingsSelect({
       })}
       <div className="info">
         <div className="limit">
-          <SharedInput<bigint | undefined>
+          <SharedInput
             id="gasLimit"
             value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
