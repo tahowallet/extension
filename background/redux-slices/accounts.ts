@@ -120,7 +120,7 @@ function newAccountData(
 }
 
 function getOrCreateAccountData(
-  data: AccountData | "loading" | undefined,
+  data: AccountData | "loading",
   account: HexString,
   network: Network,
   existingAccountsCount: number
@@ -226,6 +226,12 @@ const accountSlice = createSlice({
     ) => {
       // TODO Refactor when accounts are also keyed per network.
       const address = addressNetworkName.address.toLowerCase()
+
+      // No entry means this ENS name isn't being tracked here.
+      if (immerState.accountsData[address] === undefined) {
+        return
+      }
+
       const baseAccountData = getOrCreateAccountData(
         immerState.accountsData[address],
         address,
@@ -246,6 +252,12 @@ const accountSlice = createSlice({
     ) => {
       // TODO Refactor when accounts are also keyed per network.
       const address = addressNetworkAvatar.address.toLowerCase()
+
+      // No entry means this ENS name isn't being tracked here.
+      if (immerState.accountsData[address] === undefined) {
+        return
+      }
+
       const baseAccountData = getOrCreateAccountData(
         immerState.accountsData[address],
         address,
