@@ -20,37 +20,36 @@ function EligibleCTAContent({
   currentAccountSigningMethod,
   claimAmount,
   isCurrentlyClaiming,
-  claimError,
+  hasAlreadyClaimed,
+  hasError,
 }: {
   currentAccountSigningMethod: SigningMethod | null
   claimAmount: string
   isCurrentlyClaiming: boolean
-  claimError: boolean
+  hasError: boolean
+  hasAlreadyClaimed: boolean
 }) {
   const getComponentToDisplay = () => {
     if (isCurrentlyClaiming) {
-      return <div className="claiming">Claiming...</div>
+      return <div className="claim_progress">Claiming...</div>
     }
-    if (claimError) {
-      return (
-        <div className="claimError">
-          Something went wrong, please try claiming again.
-        </div>
-      )
+    if (hasError) {
+      return <div className="claim_error ">Claiming failed. Try again</div>
     }
-    return (
-      <div className="claimable_woohoo">
-        {currentAccountSigningMethod
-          ? "Wohoo! You can claim"
-          : "Upgrade your wallet to claim"}
-      </div>
-    )
+    if (hasAlreadyClaimed) {
+      return <div className="claim_success">Succesfully claimed</div>
+    }
+    if (currentAccountSigningMethod) {
+      return <div>Wohoo! You can claim</div>
+    }
+    return <div>Upgrade your wallet to claim</div>
   }
+
+  const isFirstClaim = !hasAlreadyClaimed && !hasError && !isCurrentlyClaiming
+
   return (
     <>
-      <div>
-        <img className="image" src="./images/claim@2x.png" alt="" />
-      </div>
+      <img className="image" src="./images/claim.svg" alt="" />
       <div
         className={classNames("claimable_container", {
           isCurrentlyClaiming: "left",
@@ -58,17 +57,30 @@ function EligibleCTAContent({
       >
         {getComponentToDisplay()}
         <div>
-          <span className="claimable_amount">{claimAmount}</span> DOGGO
+          <span
+            className={classNames("claimable_amount", {
+              has_highlight: isFirstClaim,
+            })}
+          >
+            {claimAmount}
+          </span>{" "}
+          DOGGO
         </div>
       </div>
-      {!isCurrentlyClaiming ? (
+      {hasAlreadyClaimed ? (
+        <img className="close_icon" src="./images/close.svg" alt="Close" />
+      ) : (
         <Link
           to="/eligible"
           className={classNames({
-            no_click: !currentAccountSigningMethod,
+            no_click: !currentAccountSigningMethod || isCurrentlyClaiming,
           })}
         >
-          <div className="link_content">
+          <div
+            className={classNames("link_content", {
+              disabled: isCurrentlyClaiming,
+            })}
+          >
             <img
               className="link_icon"
               src="./images/continue.svg"
@@ -76,50 +88,53 @@ function EligibleCTAContent({
             />
           </div>
         </Link>
-      ) : (
-        <></>
       )}
       <style>
         {`
           .image {
-            width: 72px;
-            position: relative;
-            top: -3px;
-            left: 1px;
+            height: 100%;
+            margin-right: 15px;
           }
           .claimable_container {
             display: flex;
+            flex-grow: 1;
             flex-flow: column;
             position: relative;
-            top: 4px;
             color: var(--green-40);
             font-size: 14px;
-            width: 190px;
           }
           .left {
             justify-self: flex-start;
           }
-          .claiming{
-            color: var(--trophy-gold);
+          .claim_progress {
+            color: var(--attention);
           }
-          .claimError{
+          .claim_error {
             color: var(--error);
+          }
+          .claim_success {
+            color: var(--success);
           }
           .claimable_amount {
             font-family: Quincy CF;
             font-size: 36px;
             line-height: 38px;
+          }
+          .claimable_amount.has_highlight {
             color: #22c480;
           }
           .link_content {
             width: 40px;
-            height: 74px;
+            height: 100%;
             background-color: var(--trophy-gold);
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 18px;
+          }
+          .link_content.disabled {
+            background-color: var(--green-60);
           }
           .link_icon {
             width: 16px;
@@ -130,6 +145,10 @@ function EligibleCTAContent({
           }
           .upgrade .link_content {
             background-color: var(--green-80);
+          }
+          .close_icon {
+            align-self: flex-start;
+            margin: 12px;
           }
         `}
       </style>
@@ -244,26 +263,25 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
   )
 
   const hasAlreadyClaimed = claimed[currentAccount.address]
+  const hasError = claimError[currentAccount.address]
+  const hasSomethingToClaim = claimAmount !== "0"
 
   if (
-    (claimAmount === "0" && showOrHide === "hide") ||
+    (!hasSomethingToClaim && showOrHide === "hide") ||
     typeof hasAlreadyClaimed === "undefined"
   )
     return <></>
 
   return (
-    <div
-      className={classNames("standard_width", {
-        upgrade: !currentAccountSigningMethod,
-      })}
-    >
-      <div className={classNames("banner", { left: isCurrentlyClaiming })}>
-        {claimAmount !== "0" && !hasAlreadyClaimed ? (
+    <div className="standard_width">
+      <div className="banner">
+        {hasSomethingToClaim ? (
           <EligibleCTAContent
             currentAccountSigningMethod={currentAccountSigningMethod}
             claimAmount={claimAmount}
             isCurrentlyClaiming={isCurrentlyClaiming}
-            claimError={claimError[currentAccount.address]}
+            hasAlreadyClaimed={hasAlreadyClaimed}
+            hasError={hasError}
           />
         ) : (
           <IneligibleCTAContent
@@ -282,15 +300,10 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             border-radius: 16px;
             background-color: var(--green-95);
             display: flex;
-            padding: 0 8px;
+            padding: 8px;
             box-sizing: border-box;
             margin-bottom: 20px;
-            justify-content: space-between;
             align-items: center;
-          }
-          .left {
-            justify-content: flex-start;
-            gap: 20px;
           }
         `}
       </style>
