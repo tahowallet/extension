@@ -2,7 +2,6 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
 import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
@@ -21,6 +20,7 @@ export default function SignTransactionContainer({
   handleConfirm,
   handleReject,
   isTransactionSigning,
+  isArbitraryDataSigningRequired,
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
@@ -31,6 +31,7 @@ export default function SignTransactionContainer({
   handleConfirm: () => void
   handleReject: () => void
   isTransactionSigning: boolean
+  isArbitraryDataSigningRequired: boolean
 }): ReactElement {
   const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
@@ -39,6 +40,15 @@ export default function SignTransactionContainer({
 
   const isLedgerSigning = signingMethod?.type === "ledger"
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
+
+  const isLedgerAvailable = signingLedgerState?.state === "available"
+
+  const mustEnableArbitraryDataSigning =
+    isLedgerAvailable &&
+    isArbitraryDataSigningRequired &&
+    !signingLedgerState.arbitraryDataEnabled
+
+  const canLedgerSign = isLedgerAvailable && !mustEnableArbitraryDataSigning
 
   return (
     <section>
@@ -71,9 +81,9 @@ export default function SignTransactionContainer({
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
             {signerAccountTotal.signingMethod &&
               (signerAccountTotal.signingMethod.type === "ledger" &&
-              signingLedgerState !== "available" ? (
+              !canLedgerSign ? (
                 <SharedButton
-                  type="primary"
+                  type="primaryGreen"
                   iconSize="large"
                   size="large"
                   onClick={() => {
@@ -84,7 +94,7 @@ export default function SignTransactionContainer({
                 </SharedButton>
               ) : (
                 <SharedButton
-                  type="primary"
+                  type="primaryGreen"
                   iconSize="large"
                   size="large"
                   onClick={handleConfirm}
@@ -100,28 +110,28 @@ export default function SignTransactionContainer({
         </>
       )}
       <SharedSlideUpMenu
-        isOpen={isSlideUpOpen && signingLedgerState !== "available"}
+        isOpen={isSlideUpOpen && !canLedgerSign}
         close={() => {
           setSlideUpOpen(false)
         }}
         alwaysRenderChildren
         size="auto"
       >
-        {signingLedgerState === "no-ledger-connected" && (
+        {signingLedgerState?.state === "no-ledger-connected" && (
           <SignTransactionLedgerNotConnected />
         )}
-        {signingLedgerState === "wrong-ledger-connected" && (
+        {signingLedgerState?.state === "wrong-ledger-connected" && (
           <SignTransactionWrongLedgerConnected
             signerAccountTotal={signerAccountTotal}
           />
         )}
-        {signingLedgerState === "multiple-ledgers-connected" && (
+        {signingLedgerState?.state === "multiple-ledgers-connected" && (
           <SignTransactionMultipleLedgersConnected />
         )}
-        {signingLedgerState === "activate-blind-signing" && (
+        {mustEnableArbitraryDataSigning && (
           <SignTransactionLedgerActivateBlindSigning />
         )}
-        {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
+        {signingLedgerState?.state === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>
       <style jsx>
         {`

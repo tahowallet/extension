@@ -1,6 +1,7 @@
 import React, { ReactElement, CSSProperties, useRef } from "react"
 import classNames from "classnames"
 import { useDelayContentChange, useOnClickOutside } from "../../hooks"
+import SharedIcon from "./SharedIcon"
 
 export type SharedSlideUpMenuSize =
   | "auto"
@@ -59,13 +60,22 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         style={{ "--menu-height": menuHeight } as CSSProperties}
         ref={isOpen ? slideUpMenuRef : null}
       >
-        <button
-          type="button"
-          className="icon_close"
+        <SharedIcon
+          icon="close.svg"
+          width={12}
+          color="var(--green-20)"
+          hoverColor="#fff"
+          customStyles={`
+            position: absolute;
+            z-index: 2;
+            position: sticky;
+            top: 0px;
+            right: 24px;
+            float: right;`}
+          ariaLabel="Close menu"
           onClick={(e) => {
             close(e)
           }}
-          aria-label="Close menu"
         />
         {displayChildren}
       </div>
@@ -74,8 +84,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           .slide_up_menu {
             width: 100%;
             height: var(--menu-height);
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow: hidden;
             border-radius: 16px;
             background-color: var(--green-95);
             position: fixed;
@@ -107,22 +116,6 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             opacity: 0;
             visiblity: hidden;
             pointer-events: none;
-          }
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            width: 12px;
-            height: 12px;
-            position: absolute;
-            background-color: var(--green-20);
-            z-index: 2;
-            position: sticky;
-            top: 0px;
-            right: 24px;
-            float: right;
-          }
-          .icon_close:hover {
-            background-color: #fff;
           }
           .large {
             background-color: var(--hunter-green);
