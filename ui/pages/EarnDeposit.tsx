@@ -317,7 +317,7 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 onClick={deposit}
-                isDisabled={amount === ""}
+                isDisabled={hasError || amount === ""}
               >
                 {isDepositPending ? "Depositing..." : "Authorize & Deposit"}
               </SharedButton>
