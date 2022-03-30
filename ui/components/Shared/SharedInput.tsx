@@ -21,10 +21,10 @@ interface Props<T> {
   errorMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
-  parseAndValidate?: (value: string) => { parsed: T } | { error: string }
+  parseAndValidate: (value: string) => { parsed: T } | { error: string }
 }
 
-export default function SharedInput<T = string>(props: Props<T>): ReactElement {
+export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const {
     id,
     label,
@@ -38,7 +38,7 @@ export default function SharedInput<T = string>(props: Props<T>): ReactElement {
     errorMessage,
     autoFocus = false,
     autoSelect = false,
-    parseAndValidate = (v) => ({ parsed: v as unknown as T }),
+    parseAndValidate,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [parserError, setParserError] = useState<string | undefined>(undefined)
@@ -153,7 +153,16 @@ export default function SharedInput<T = string>(props: Props<T>): ReactElement {
   )
 }
 
-SharedInput.defaultProps = {
+SharedTypedInput.defaultProps = {
   type: "text",
   focusedLabelBackgroundColor: "var(--hunter-green)",
+}
+
+export default function SharedInput(props: Props<string>): ReactElement {
+  return SharedTypedInput(props)
+}
+
+SharedInput.defaultProps = {
+  ...SharedTypedInput.defaultProps,
+  parseAndValidate: (v: string) => ({ parsed: v }),
 }
