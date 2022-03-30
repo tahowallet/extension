@@ -11,6 +11,7 @@ import { useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
 import ClaimReferral from "../../components/Claim/ClaimReferral"
 import ClaimReferralByUser from "../../components/Claim/ClaimReferralByUser"
+import ClaimManifesto from "../../components/Claim/ClaimManifesto"
 import ClaimInfoModal from "../../components/Shared/SharedInfoModal"
 import ClaimDelegate from "../../components/Claim/ClaimDelegate"
 import ClaimReview from "../../components/Claim/ClaimReview"
@@ -87,7 +88,8 @@ export default function Eligible(): ReactElement {
       claimAmount={claimAmount}
       claimAmountWithBonus={claimAmountWithBonus}
     />,
-    <ClaimReferralByUser claimAmount={claimAmount} />,
+    <ClaimManifesto claimAmount={claimAmountWithBonus} />,
+    // <ClaimReferralByUser claimAmount={claimAmount} />,
     <ClaimDelegate delegates={delegates} claimAmount={claimAmountWithBonus} />,
     <ClaimReview
       claimAmount={claimAmountWithBonus}
