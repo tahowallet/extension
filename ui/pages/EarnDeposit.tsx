@@ -118,7 +118,6 @@ export default function EarnDeposit(): ReactElement {
 
   useEffect(() => {
     if (inDepositProcess && typeof vault !== "undefined") {
-      dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
       dispatch(
         vaultDeposit({
           vault,
@@ -163,13 +162,11 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const approve = async () => {
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(approveApprovalTarget(vault.asset.contractAddress))
     history.push("/sign-transaction")
   }
 
   const deposit = async () => {
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(
       permitVaultDeposit({
         vault,
@@ -181,7 +178,6 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const withdraw = async () => {
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(
       vaultWithdraw({
         vault,
@@ -193,7 +189,6 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const claimRewards = async () => {
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(claimVaultRewards(vault.vaultAddress))
     history.push("/sign-transaction")
   }
@@ -244,7 +239,9 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
-            <div className="amount">${vault.localValueTotalDeposited}</div>
+            <div className="amount">
+              ${vault.localValueTotalDeposited ?? "0"}
+            </div>
           </li>
           <li className="row">
             <div className="label">Rewards</div>

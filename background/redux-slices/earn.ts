@@ -337,6 +337,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(clearSignature())
       dispatch(updateLockedValues())
       await emitter.emit("earnDeposit", "Asset successfully deposited")
+      return
     }
     await emitter.emit("earnDeposit", "Asset deposit has failed")
     dispatch(clearSignature())
