@@ -153,13 +153,9 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   )
 }
 
-const SHARED_INPUT_DEFAULT_PROPS = {
+SharedTypedInput.defaultProps = {
   type: "text",
   focusedLabelBackgroundColor: "var(--hunter-green)",
-}
-
-SharedTypedInput.defaultProps = {
-  ...SHARED_INPUT_DEFAULT_PROPS,
 }
 
 export default function SharedInput(props: Props<string>): ReactElement {
@@ -167,6 +163,6 @@ export default function SharedInput(props: Props<string>): ReactElement {
 }
 
 SharedInput.defaultProps = {
-  ...SHARED_INPUT_DEFAULT_PROPS,
+  ...SharedTypedInput.defaultProps,
   parseAndValidate: (v: string) => ({ parsed: v }),
 }
