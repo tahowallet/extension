@@ -665,7 +665,7 @@ export default class Main extends BaseService<never> {
       )
     })
 
-    earnSliceEmitter.on("depositSuccessful", (message) => {
+    earnSliceEmitter.on("earnDeposit", (message) => {
       this.store.dispatch(setSnackbarMessage(message))
     })
 
