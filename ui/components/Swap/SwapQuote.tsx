@@ -7,10 +7,6 @@ import {
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { useHistory } from "react-router-dom"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
-import {
-  clearTransactionState,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
