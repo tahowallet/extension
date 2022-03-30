@@ -79,7 +79,7 @@ function expectBase64String(
 
 const mockAlarms = (mock: MockzillaDeep<Browser>) => {
   mock.alarms.create.mock(() => ({}))
-  mock.alarms.onAlarm.addListener.mock((_, __) => ({}))
+  mock.alarms.onAlarm.addListener.mock(() => ({}))
 }
 
 describe("KeyringService when uninitialized", () => {
