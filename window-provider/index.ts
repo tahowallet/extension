@@ -77,7 +77,7 @@ export default class TallyWindowProvider extends EventEmitter {
   }
 
   // deprecated EIP-1193 method
-  async enable() {
+  async enable(): Promise<unknown> {
     return this.request({ method: "eth_requestAccounts" })
   }
 
@@ -207,7 +207,7 @@ export default class TallyWindowProvider extends EventEmitter {
     })
   }
 
-  handleAddressChange(address: Array<string>) {
+  handleAddressChange(address: Array<string>): void {
     if (this.selectedAddress !== address[0]) {
       // eslint-disable-next-line prefer-destructuring
       this.selectedAddress = address[0]

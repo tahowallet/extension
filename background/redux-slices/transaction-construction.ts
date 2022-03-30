@@ -8,6 +8,7 @@ import {
   REGULAR,
 } from "../constants/network-fees"
 import { USE_MAINNET_FORK } from "../features/features"
+import logger from "../lib/logger"
 
 import {
   BlockEstimate,
@@ -47,10 +48,7 @@ export enum NetworkFeeTypeChosen {
 }
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
-  // @TODO Check if this can still be both types
-  transactionRequest?:
-    | EIP1559TransactionRequest
-    | EnrichedEIP1559TransactionRequest
+  transactionRequest?: EnrichedEIP1559TransactionRequest
   signedTransaction?: SignedEVMTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
@@ -103,13 +101,6 @@ export const signTransaction = createBackgroundAsyncThunk(
     }
 
     await emitter.emit("requestSignature", request)
-  }
-)
-
-export const broadcastSignedTransaction = createBackgroundAsyncThunk(
-  "transaction-construction/broadcast",
-  async (transaction: SignedEVMTransaction) => {
-    await emitter.emit("broadcastSignedTransaction", transaction)
   }
 )
 
@@ -252,6 +243,28 @@ export const {
 
 export default transactionSlice.reducer
 
+export const broadcastSignedTransaction = createBackgroundAsyncThunk(
+  "transaction-construction/broadcast",
+  async (transaction: SignedEVMTransaction) => {
+    await emitter.emit("broadcastSignedTransaction", transaction)
+  }
+)
+
+export const transactionSigned = createBackgroundAsyncThunk(
+  "transaction-construction/transaction-signed",
+  async (transaction: SignedEVMTransaction, { dispatch, getState }) => {
+    await dispatch(signed(transaction))
+
+    const { transactionConstruction } = getState() as {
+      transactionConstruction: TransactionConstruction
+    }
+
+    if (transactionConstruction.broadcastOnSign ?? false) {
+      await dispatch(broadcastSignedTransaction(transaction))
+    }
+  }
+)
+
 export const rejectTransactionSignature = createBackgroundAsyncThunk(
   "transaction-construction/reject",
   async (_, { dispatch }) => {
@@ -311,6 +324,12 @@ export const selectTransactionData = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.transactionRequest,
   (transactionRequestData) => transactionRequestData
+)
+
+export const selectIsTransactionPendingSignature = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.status,
+  (status) => status === "loaded" || status === "pending"
 )
 
 export const selectIsTransactionLoaded = createSelector(
