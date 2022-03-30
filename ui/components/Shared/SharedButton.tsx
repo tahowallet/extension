@@ -17,6 +17,7 @@ interface Props {
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
+    | "twitter"
   size: "small" | "medium" | "large"
   icon?: string
   iconSize?: "small" | "medium" | "large" | "secondaryMedium"
@@ -85,7 +86,8 @@ export default function SharedButton(props: Props): ReactElement {
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { deemphasized_white: type === "deemphasizedWhite" },
-        { warning: type === "warning" }
+        { warning: type === "warning" },
+        { twitter: type === "twitter" }
       )}
       onClick={handleClick}
     >
@@ -101,7 +103,7 @@ export default function SharedButton(props: Props): ReactElement {
         })}
       >
         {children}
-        {icon ? (
+        {icon || type === "twitter" ? (
           <span
             className={classNames(
               { icon_button: true },
@@ -232,6 +234,16 @@ export default function SharedButton(props: Props): ReactElement {
           }
           .tertiary:active .icon_button {
             background-color: var(--gold-80);
+          }
+          .twitter,
+          .twitter:hover {
+            background-color: #3a90e9;
+            color: #fff;
+          }
+          .twitter .icon_button,
+          .twitter:hover .icon_button {
+            mask-image: url("./images/twitter.svg");
+            background-color: #fff;
           }
           .white {
             color: #ffffff;

@@ -64,17 +64,18 @@ export default function BonusProgramModalContent(): ReactElement {
         </span>
         <div className="bottom">
           <SharedButton
-            type="primary"
+            type="twitter"
             size="medium"
             iconPosition="left"
-            icon="external_small"
+            iconSize="secondaryMedium"
           >
             Share
           </SharedButton>
           <SharedButton
             type="secondary"
             size="medium"
-            icon="plus"
+            icon="copy"
+            iconSize="secondaryMedium"
             iconPosition="left"
             onClick={copyLink}
           >
@@ -170,8 +171,8 @@ export default function BonusProgramModalContent(): ReactElement {
           }
           .bottom {
             display: flex;
+            justify-content: space-between;
             margin-top: 16px;
-            grid-gap: 19px;
           }
           .public_notice {
             width: 352px;
