@@ -45,6 +45,7 @@ import type {
 } from "../enrichment"
 import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
+import { USE_MAINNET_FORK } from "../../features/features"
 import AssetDataHelper from "./asset-data-helper"
 
 // We can't use destructuring because webpack has to replace all instances of
@@ -599,6 +600,9 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
+    if (USE_MAINNET_FORK) {
+      return 350000n
+    }
     const estimate = await this.providers.ethereum.estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )

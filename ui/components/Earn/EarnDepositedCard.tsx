@@ -8,17 +8,19 @@ export default function EarnDepositedCard({
   asset,
   depositedAmount,
   availableRewards,
+  vaultAddress,
 }: {
   asset: (AnyAsset & { contractAddress: HexString }) | undefined
   depositedAmount: number
   availableRewards: number
+  vaultAddress: HexString
 }): ReactElement {
   return (
     <Link
       to={{
         pathname: "/earn/deposit",
         state: {
-          asset,
+          vaultAddress,
         },
       }}
       className="earn"
@@ -36,7 +38,7 @@ export default function EarnDepositedCard({
         </li>
         <li className="info">
           <span className="amount_type">Deposited amount</span>
-          <span className="amount">{depositedAmount}</span>
+          <span className="amount">${depositedAmount}</span>
         </li>
         <li className="info">
           <span className="amount_type">Available rewards</span>
@@ -47,11 +49,12 @@ export default function EarnDepositedCard({
             width: 352px;
             height: 176px;
             border-radius: 8px;
-            background-color: var(--green-95);
+            background: linear-gradient(var(--green-95) 100%, var(--green-95));
             box-sizing: border-box;
             padding: 16px;
             margin-bottom: 20px;
             margin-top: 30px;
+            transition: all 0.2s ease;
           }
           .card:hover {
             box-shadow: 0px 10px 12px 0px #0014138a;

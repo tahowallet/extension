@@ -29,7 +29,7 @@ const mainReducer = combineReducers({
   claim: claimReducer,
   signing: signingReducer,
   ...(HIDE_IMPORT_LEDGER ? {} : { ledger: ledgerReducer }),
-  ...(HIDE_EARN_PAGE ? {} : { earn: earnReducer }),
+  earn: earnReducer,
 })
 
 export default mainReducer
