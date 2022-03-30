@@ -51,11 +51,7 @@ export default function SwapQuote({
   const handleConfirmClick = useCallback(async () => {
     const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
 
-    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
-    // FIXME proper transaction queueing is in effect.
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-
-    dispatch(
+    await dispatch(
       executeSwap({
         ...quoteWithoutGasPrice,
         gasPrice:
@@ -64,9 +60,7 @@ export default function SwapQuote({
       })
     )
 
-    history.push("/sign-transaction", {
-      redirectTo: { path: "/" },
-    })
+    history.push("/")
   }, [
     finalQuote,
     dispatch,

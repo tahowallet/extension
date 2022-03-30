@@ -81,7 +81,6 @@ function logLabelFromStackEntry(
     return stackEntry
       .split(WEBKIT_GECKO_DELIMITER)[0]
       .split(GECKO_MARKER)
-      .reverse()
       .filter((item) => item.replace(/(?:promise)?</, "").trim() !== "")
       .slice(-2)
       .join(".")

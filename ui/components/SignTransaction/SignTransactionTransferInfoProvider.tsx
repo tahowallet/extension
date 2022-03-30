@@ -1,7 +1,4 @@
-import {
-  truncateAddress,
-  truncateDecimalAmount,
-} from "@tallyho/tally-background/lib/utils"
+import { truncateDecimalAmount } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import {
   getAssetsState,
@@ -37,10 +34,6 @@ export default function SignTransactionTransferInfoProvider({
   const localizedMainCurrencyAmount =
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
-
-  const recipientAddressSpan = (
-    <span title={recipientAddress}>{truncateAddress(recipientAddress)}</span>
-  )
 
   return (
     <SignTransactionBaseInfoProvider

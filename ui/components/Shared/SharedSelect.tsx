@@ -15,7 +15,6 @@ type Props = {
   options: Option[] | string[]
   onChange: (value: string) => void
   defaultIndex?: number
-  placeholder?: string
   label?: string
   placement?: "top" | "bottom"
   triggerLabel?: string
@@ -29,7 +28,6 @@ export default function SharedSelect(props: Props): ReactElement {
     onChange,
     defaultIndex = 0,
     label,
-    placeholder,
     placement = "bottom",
     triggerLabel,
     onTrigger,

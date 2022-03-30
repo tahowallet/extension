@@ -243,18 +243,12 @@ export default function Swap(): ReactElement {
       return
     }
 
-    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
-    // FIXME proper transaction queueing is in effect.
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-
-    dispatch(
+    await dispatch(
       approveTransfer({
         assetContractAddress: sellAsset.contractAddress,
         approvalTarget,
       })
     )
-
-    history.push("/sign-transaction")
   }
 
   const updateSwapData = useCallback(
