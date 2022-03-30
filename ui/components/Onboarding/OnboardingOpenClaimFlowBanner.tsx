@@ -43,10 +43,7 @@ function EligibleCTAContent({
     if (hasAlreadyClaimed) {
       return <div className="claim_success">Succesfully claimed</div>
     }
-    if (currentAccountSigningMethod) {
-      return <div>Wohoo! You can claim</div>
-    }
-    return <div>Upgrade your wallet to claim</div>
+    return <div>Wohoo! You can claim</div>
   }
 
   const isFirstClaim = !hasAlreadyClaimed && !hasError && !isCurrentlyClaiming
@@ -54,11 +51,7 @@ function EligibleCTAContent({
   return (
     <>
       <img className="image" src="./images/claim.svg" alt="" />
-      <div
-        className={classNames("claimable_container", {
-          isCurrentlyClaiming: "left",
-        })}
-      >
+      <div className="claimable_container">
         {getComponentToDisplay()}
         <div>
           <span
@@ -70,6 +63,11 @@ function EligibleCTAContent({
           </span>{" "}
           DOGGO
         </div>
+        {currentAccountSigningMethod ? (
+          <></>
+        ) : (
+          <div>Upgrade above to claim</div>
+        )}
       </div>
       {hasAlreadyClaimed ? (
         <SharedIcon
@@ -93,7 +91,7 @@ function EligibleCTAContent({
         >
           <div
             className={classNames("link_content", {
-              disabled: isCurrentlyClaiming,
+              disabled: !currentAccountSigningMethod || isCurrentlyClaiming,
             })}
           >
             <img
@@ -117,9 +115,6 @@ function EligibleCTAContent({
             position: relative;
             color: var(--green-40);
             font-size: 14px;
-          }
-          .left {
-            justify-self: flex-start;
           }
           .claim_progress {
             color: var(--attention);
