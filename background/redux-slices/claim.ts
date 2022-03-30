@@ -309,7 +309,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
         ],
       }
       const domain = {
-        name: "Tally Token",
+        name: "Doggo Token",
         chainId: 1,
       }
       const message = {
