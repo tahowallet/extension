@@ -12,6 +12,8 @@ import {
   inputAmount,
   permitVaultDeposit,
   selectCurrentlyApproving,
+  selectCurrentlyDepositing,
+  selectDepositingProcess,
   selectEarnInputAmount,
   selectEnrichedAvailableVaults,
   selectSignature,
@@ -46,7 +48,6 @@ export default function EarnDeposit(): ReactElement {
   const [hasError, setHasError] = useState(false)
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
-  const [isEnabled, setIsEnabled] = useState(false)
   const [deposited, setDeposited] = useState(false)
 
   const dispatch = useBackgroundDispatch()
@@ -59,6 +60,8 @@ export default function EarnDeposit(): ReactElement {
 
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
   const signature = useBackgroundSelector(selectSignature)
+  const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
+  const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
 
   const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
   const account = useBackgroundSelector(selectCurrentAccount)
@@ -84,7 +87,13 @@ export default function EarnDeposit(): ReactElement {
       }
       checkApproval()
     }
-  }, [amount, dispatch, vault?.asset?.contractAddress, account.address])
+  }, [
+    amount,
+    dispatch,
+    vault?.asset?.contractAddress,
+    account.address,
+    isCurrentlyApproving,
+  ])
 
   useEffect(() => {
     const checkCurrentSignatureDeadline = async () => {
@@ -106,6 +115,20 @@ export default function EarnDeposit(): ReactElement {
       dispatch(clearSignature())
     }
   }, [dispatch, account.address])
+
+  useEffect(() => {
+    if (inDepositProcess && typeof vault !== "undefined") {
+      dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+      dispatch(
+        vaultDeposit({
+          vault,
+          amount,
+          tokenAddress: vault.asset.contractAddress,
+        })
+      )
+      history.push("/sign-transaction")
+    }
+  }, [amount, dispatch, history, inDepositProcess, vault])
 
   if (typeof vault === "undefined") {
     return <></>
@@ -145,8 +168,8 @@ export default function EarnDeposit(): ReactElement {
     history.push("/sign-transaction")
   }
 
-  const enable = () => {
-    setIsEnabled(true)
+  const deposit = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     dispatch(
       permitVaultDeposit({
         vault,
@@ -155,18 +178,6 @@ export default function EarnDeposit(): ReactElement {
       })
     )
     history.push("/sign-data")
-  }
-
-  const deposit = async () => {
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-    dispatch(
-      vaultDeposit({
-        vault,
-        amount,
-        tokenAddress: vault.asset.contractAddress,
-      })
-    )
-    history.push("/sign-transaction")
   }
 
   const withdraw = async () => {
@@ -200,21 +211,11 @@ export default function EarnDeposit(): ReactElement {
     }
   }
 
-  const depositButtonText = () => {
-    if (!isEnabled && typeof signature === "undefined") {
-      return "Enable"
-    }
-    if (deposited) {
-      return "Deposit more"
-    }
-    return "Deposit"
-  }
-
   const approveButtonText = () => {
     if (isCurrentlyApproving === true) {
       return "Approving..."
     }
-    return "Approve Approval Target"
+    return "Approve asset"
   }
 
   return (
@@ -316,14 +317,10 @@ export default function EarnDeposit(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                onClick={
-                  !isEnabled && typeof signature === "undefined"
-                    ? enable
-                    : deposit
-                }
+                onClick={deposit}
                 isDisabled={amount === ""}
               >
-                {depositButtonText()}
+                {isDepositPending ? "Depositing..." : "Authorize & Deposit"}
               </SharedButton>
             )}
           </div>
