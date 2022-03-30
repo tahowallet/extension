@@ -96,7 +96,7 @@ const claimingSlice = createSlice({
       immerState.eligibility = eligibility
     },
     advanceClaimStep: (immerState) => {
-      if (immerState.claimStep < 4) {
+      if (immerState.claimStep < 5) {
         immerState.claimStep += 1
       }
     },
