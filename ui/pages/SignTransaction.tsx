@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from "react"
+import { useHistory } from "react-router-dom"
 import {
   rejectTransactionSignature,
   selectIsTransactionLoaded,
@@ -18,6 +19,8 @@ import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTran
 export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+
+  const history = useHistory()
 
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -64,6 +67,7 @@ export default function SignTransaction(): ReactElement {
       )
       setIsTransactionSigning(true)
     }
+    history.goBack()
   }
 
   return (

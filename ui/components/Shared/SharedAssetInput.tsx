@@ -498,6 +498,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
             padding: 0px 16px;
             box-sizing: border-box;
           }
