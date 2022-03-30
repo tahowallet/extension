@@ -1,39 +1,52 @@
-import React, { ReactElement, useState } from "react"
-import classNames from "classnames"
-import { AnyAsset } from "@tallyho/tally-background/assets"
-import { HexString } from "@tallyho/tally-background/types"
+import {
+  AvailableVault,
+  selectEnrichedAvailableVaults,
+  updateEarnedValues,
+  updateLockedValues,
+} from "@tallyho/tally-background/redux-slices/earn"
+import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
+
+import React, { ReactElement, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import classNames from "classnames"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import EarnDepositedCard from "../components/Earn/EarnDepositedCard"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
-type AssetProp = {
-  asset: (AnyAsset & { contractAddress: HexString }) | undefined
+type EarnCardProps = {
+  vault: AvailableVault & {
+    localValueTotalDeposited: string | undefined
+    localValueUserDeposited: string | undefined
+  }
   isComingSoon: boolean
 }
 
-function EarnCard({ asset, isComingSoon }: AssetProp) {
+function EarnCard({ vault, isComingSoon }: EarnCardProps) {
   return (
     <Link
       to={{
         pathname: "/earn/deposit",
         state: {
-          asset,
+          vaultAddress: vault.vaultAddress,
         },
       }}
       className="earn"
     >
       <div className={classNames("card", { coming_soon: isComingSoon })}>
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" symbol={asset?.symbol} />
+          <SharedAssetIcon size="large" symbol={vault?.asset?.symbol} />
         </div>
-        <span className="token_name">{asset?.symbol}</span>
+        <span className="token_name">{vault?.asset?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
         <span className="apy_percent">250%</span>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
-          <div className="tvl">$22.800.322</div>
+          <div className="tvl">${vault.localValueTotalDeposited ?? 0}</div>
         </div>
         <div className="divider" />
         <div className="info">
@@ -150,20 +163,45 @@ function EarnCard({ asset, isComingSoon }: AssetProp) {
 export default function Earn(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
-  const assets = [
-    {
-      name: "Dai Token",
-      symbol: "DAI",
-      contractAddress: "0x6b175474e89094c44da98b954eedeac495271d0f",
-    } as AnyAsset & { contractAddress: HexString },
-    {
-      name: "Keep",
-      symbol: "KEEP",
-      contractAddress: "0x85eee30c52b0b379b046fb0f85f4f3dc3009afec",
-    } as AnyAsset & { contractAddress: HexString },
-  ]
+  const dispatch = useBackgroundDispatch()
 
-  const isComingSoon = true
+  const vaultsWithMainCurrencyValues = useBackgroundSelector(
+    selectEnrichedAvailableVaults
+  )
+
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+
+  const isComingSoon = false
+
+  useEffect(() => {
+    dispatch(updateLockedValues())
+    dispatch(updateEarnedValues())
+  }, [dispatch])
+
+  const totalTVL = vaultsWithMainCurrencyValues
+    .map((item) => {
+      return typeof item.numberValueTotalDeposited !== "undefined"
+        ? item.numberValueTotalDeposited
+        : 0
+    })
+    .reduce((prev, curr) => prev + curr, 0)
+
+  const userTVL = vaultsWithMainCurrencyValues
+    .map((item) => {
+      return typeof item.numberValueUserDeposited !== "undefined"
+        ? item.numberValueUserDeposited
+        : 0
+    })
+    .reduce((prev, curr) => prev + curr, 0)
+
+  const userPendingRewards = vaultsWithMainCurrencyValues
+    .map((item) => {
+      return fromFixedPointNumber(
+        { amount: item.pendingRewards, decimals: doggoTokenDecimalDigits },
+        2
+      )
+    })
+    .reduce((prev, curr) => prev + curr, 0)
 
   return (
     <>
@@ -188,7 +226,8 @@ export default function Earn(): ReactElement {
           <div className="left">
             <div className="pre_title">Total value locked</div>
             <div className="balance">
-              <span className="currency_sign">$</span>23,928,292
+              <span className="currency_sign">$</span>
+              {formatCurrencyAmount(mainCurrencySymbol, totalTVL, 2)}
             </div>
           </div>
           <div className="right" />
@@ -202,9 +241,9 @@ export default function Earn(): ReactElement {
       {panelNumber === 0 ? (
         <section className="standard_width">
           <ul className="cards_wrap">
-            {assets.map((asset) => (
+            {vaultsWithMainCurrencyValues?.map((vault) => (
               <li>
-                <EarnCard asset={asset} isComingSoon={isComingSoon} />
+                <EarnCard vault={vault} isComingSoon={!vault.active} />
               </li>
             ))}
           </ul>
@@ -226,20 +265,29 @@ export default function Earn(): ReactElement {
           <div className="your_deposit_heading_info">
             <div className="left">
               <div className="label">Total deposits</div>
-              <div className="amount">$134,928</div>
+              <div className="amount">
+                ${formatCurrencyAmount(mainCurrencySymbol, userTVL, 2)}
+              </div>
             </div>
             <div className="right">
               <div className="label">Total available rewards</div>
-              <div className="amount">~$12,328</div>
+              <div className="amount">{userPendingRewards} DOGGO</div>
             </div>
           </div>
           <ul className="cards_wrap">
-            {assets.map((asset) => (
+            {vaultsWithMainCurrencyValues.map((vault) => (
               <li>
                 <EarnDepositedCard
-                  asset={asset}
-                  depositedAmount={3670}
-                  availableRewards={10243}
+                  vaultAddress={vault.vaultAddress}
+                  asset={vault.asset}
+                  depositedAmount={vault.numberValueUserDeposited || 0}
+                  availableRewards={fromFixedPointNumber(
+                    {
+                      amount: vault.pendingRewards,
+                      decimals: doggoTokenDecimalDigits,
+                    },
+                    2
+                  )}
                 />
               </li>
             ))}

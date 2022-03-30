@@ -42,7 +42,7 @@ export default function ClaimFooter({
   }, [isDelegationSigned, selectedDelegate.address])
 
   const buttonText = useMemo(
-    () => ["Get started", "Continue", "Continue", lastStepButtonText],
+    () => ["Get started", "Continue", "I'm In", "Continue", lastStepButtonText],
     [lastStepButtonText]
   )
 

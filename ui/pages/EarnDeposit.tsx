@@ -1,15 +1,37 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
 import {
+  selectCurrentAccount,
+  selectCurrentAccountBalances,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  ApprovalTargetAllowance,
   approveApprovalTarget,
   checkApprovalTargetApproval,
+  claimVaultRewards,
+  clearSignature,
+  inputAmount,
   permitVaultDeposit,
-  selectApprovalTargetApprovals,
+  selectCurrentlyApproving,
+  selectCurrentlyDepositing,
+  selectDepositingProcess,
+  selectEarnInputAmount,
+  selectEnrichedAvailableVaults,
+  selectSignature,
+  updateEarnedValues,
+  updateLockedValues,
+  vaultDeposit,
+  vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
-
-import { AnyAsset } from "@tallyho/tally-background/assets"
+import {
+  clearTransactionState,
+  TransactionConstructionStatus,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
+import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
-import { useLocation } from "react-router-dom"
+import { getCurrentTimestamp } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
+
+import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 
@@ -20,73 +42,181 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 export default function EarnDeposit(): ReactElement {
+  const storedInput = useBackgroundSelector(selectEarnInputAmount)
   const [panelNumber, setPanelNumber] = useState(0)
-  const [amount, setAmount] = useState("")
+  const [amount, setAmount] = useState(storedInput)
   const [hasError, setHasError] = useState(false)
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
   const [deposited, setDeposited] = useState(false)
-  const [availableRewards, setAvailableRewards] = useState("21,832")
 
   const dispatch = useBackgroundDispatch()
 
-  const { asset } = useLocation().state as {
-    asset: AnyAsset & { contractAddress: HexString }
+  const history = useHistory()
+
+  const { vaultAddress } = useLocation().state as {
+    vaultAddress: HexString
+  }
+
+  const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
+  const signature = useBackgroundSelector(selectSignature)
+  const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
+  const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
+
+  const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
+  const account = useBackgroundSelector(selectCurrentAccount)
+
+  const vault = enrichedVaults.find(
+    (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
+  )
+
+  const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
+
+  useEffect(() => {
+    if (typeof vault?.asset?.contractAddress !== "undefined") {
+      const checkApproval = async () => {
+        const getApprovalAmount = async () => {
+          const approvedAmount = (await dispatch(
+            checkApprovalTargetApproval(vault.asset.contractAddress)
+          )) as unknown as ApprovalTargetAllowance
+          return approvedAmount.allowance
+        }
+        const allowance = await getApprovalAmount()
+        const allowanceGreaterThanAmount = allowance >= Number(amount)
+        setIsApproved(allowanceGreaterThanAmount)
+      }
+      checkApproval()
+    }
+  }, [
+    amount,
+    dispatch,
+    vault?.asset?.contractAddress,
+    account.address,
+    isCurrentlyApproving,
+  ])
+
+  useEffect(() => {
+    const checkCurrentSignatureDeadline = async () => {
+      const timestamp = await getCurrentTimestamp()
+      if (
+        typeof signature?.deadline !== "undefined" &&
+        timestamp > signature.deadline
+      ) {
+        dispatch(clearSignature())
+      }
+    }
+    checkCurrentSignatureDeadline()
+  }, [dispatch, signature?.deadline])
+
+  useEffect(() => {
+    dispatch(updateLockedValues())
+    dispatch(updateEarnedValues())
+    return () => {
+      dispatch(clearSignature())
+    }
+  }, [dispatch, account.address])
+
+  useEffect(() => {
+    if (inDepositProcess && typeof vault !== "undefined") {
+      dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+      dispatch(
+        vaultDeposit({
+          vault,
+          amount,
+          tokenAddress: vault.asset.contractAddress,
+        })
+      )
+      history.push("/sign-transaction")
+    }
+  }, [amount, dispatch, history, inDepositProcess, vault])
+
+  if (typeof vault === "undefined") {
+    return <></>
+  }
+
+  const pendingRewards = fromFixedPointNumber(
+    { amount: vault.pendingRewards, decimals: doggoTokenDecimalDigits },
+    2
+  )
+
+  const userDeposited = fromFixedPointNumber(
+    { amount: vault.userDeposited, decimals: vault.asset.decimals },
+    4
+  )
+
+  if (
+    typeof vault.numberValueUserDeposited !== "undefined" &&
+    vault.numberValueUserDeposited > 0 &&
+    deposited === false
+  ) {
+    setDeposited(true)
+  } else if (
+    typeof vault.numberValueUserDeposited !== "undefined" &&
+    vault.numberValueUserDeposited === 0 &&
+    deposited === true
+  ) {
+    setDeposited(false)
   }
 
   const showWithdrawalModal = () => {
     setWithdrawalSlideupVisible(true)
   }
 
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
+  const approve = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(approveApprovalTarget(vault.asset.contractAddress))
+    history.push("/sign-transaction")
+  }
 
-  // We currently assume that the approval held by ApprovalTarget is infinite and users wont decrease it themselves.
-  const approvals = useBackgroundSelector(selectApprovalTargetApprovals)
+  const deposit = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(
+      permitVaultDeposit({
+        vault,
+        tokenAddress: vault.asset.contractAddress,
+        amount,
+      })
+    )
+    history.push("/sign-data")
+  }
 
-  const isTokenApproved = () => {
-    if (!isApproved) {
-      const allowanceIndex = approvals?.findIndex(
-        (approval) => approval.contractAddress === asset.contractAddress
-      )
-      if (allowanceIndex !== -1) {
-        setIsApproved(true)
-      }
+  const withdraw = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(
+      vaultWithdraw({
+        vault,
+      })
+    )
+    setDeposited(false)
+    setWithdrawalSlideupVisible(false)
+    history.push("/sign-transaction")
+  }
+
+  const claimRewards = async () => {
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    dispatch(claimVaultRewards(vault.vaultAddress))
+    history.push("/sign-transaction")
+  }
+
+  const handleAmountChange = (
+    value: string,
+    errorMessage: string | undefined
+  ) => {
+    setAmount(value)
+    dispatch(inputAmount(value))
+    if (errorMessage) {
+      setHasError(true)
+    } else {
+      setHasError(false)
     }
   }
 
-  isTokenApproved()
-
-  const approve = () => {
-    dispatch(approveApprovalTarget(asset.contractAddress))
+  const approveButtonText = () => {
+    if (isCurrentlyApproving === true) {
+      return "Approving..."
+    }
+    return "Approve asset"
   }
-
-  const enable = () => {
-    dispatch(
-      permitVaultDeposit({
-        vaultContractAddress: asset.contractAddress,
-        amount: 2000n,
-      })
-    )
-  }
-
-  const deposit = () => {
-    setDeposited(true)
-  }
-
-  const withdraw = () => {
-    setDeposited(false)
-    setWithdrawalSlideupVisible(false)
-  }
-
-  const claimRewards = () => {
-    setAvailableRewards("0")
-  }
-
-  useEffect(() => {
-    dispatch(checkApprovalTargetApproval(asset.contractAddress))
-  }, [dispatch, asset.contractAddress])
 
   return (
     <>
@@ -96,8 +226,8 @@ export default function EarnDeposit(): ReactElement {
           <li className="row header">
             <div className="type">VAULT</div>
             <div className="center">
-              <SharedAssetIcon size="large" symbol={asset.symbol} />
-              <h1 className="asset_name">{asset.symbol}</h1>
+              <SharedAssetIcon size="large" symbol={vault?.asset.symbol} />
+              <h1 className="asset_name">{vault?.asset.symbol}</h1>
             </div>
             <div>
               <a href="www.onet.pl" target="_blank">
@@ -114,7 +244,7 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
-            <div className="amount">$20,283,219</div>
+            <div className="amount">${vault.localValueTotalDeposited}</div>
           </li>
           <li className="row">
             <div className="label">Rewards</div>
@@ -124,19 +254,20 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </li>
         </ul>
-        {deposited ? (
+        {deposited || pendingRewards > 0 ? (
           <div className="wrapper">
             <li className="row">
               <div className="label">Deposited amount</div>
               <div className="amount">
-                27,834 <span className="token">{asset.symbol}</span>
+                {userDeposited}
+                <span className="token">{vault?.asset.symbol}</span>
               </div>
             </li>
             <div className="divider" />
             <li className="row">
               <div className="label">Available rewards</div>
               <div className="amount">
-                {availableRewards} <span className="token">DOGGO</span>
+                {pendingRewards} <span className="token">DOGGO</span>
               </div>
             </li>
             <li className="row claim">
@@ -158,34 +289,37 @@ export default function EarnDeposit(): ReactElement {
       {panelNumber === 0 ? (
         <div className="deposit_wrap">
           <SharedAssetInput
-            assetsAndAmounts={combinedData.assets}
+            assetsAndAmounts={accountBalances?.assetAmounts}
             label="Deposit asset"
-            onAmountChange={(value, errorMessage) => {
-              setAmount(value)
-              if (errorMessage) {
-                setHasError(true)
-              } else {
-                setHasError(false)
-              }
+            onAmountChange={(value, errorMessage) =>
+              handleAmountChange(value, errorMessage)
+            }
+            selectedAsset={{
+              name: vault.asset.name,
+              symbol: vault.asset.symbol,
+              contractAddress: vault.asset.contractAddress,
             }}
-            selectedAsset={asset}
             amount={amount}
             disableDropdown
           />
           <div className="confirm">
-            {!isApproved ? (
+            {!isApproved || isCurrentlyApproving ? (
               <SharedButton
                 type="primary"
                 size="large"
-                isDisabled={hasError}
-                linkTo={!isApproved ? "/sign-transaction" : "/sign-data"}
-                onClick={!isApproved ? approve : enable}
+                isDisabled={hasError || amount === "" || isCurrentlyApproving}
+                onClick={approve}
               >
-                {!isApproved ? "Approve" : "Enable"}
+                {approveButtonText()}
               </SharedButton>
             ) : (
-              <SharedButton type="primary" size="large" onClick={deposit}>
-                {!deposited ? "Deposit" : "Deposit more"}
+              <SharedButton
+                type="primary"
+                size="large"
+                onClick={deposit}
+                isDisabled={amount === ""}
+              >
+                {isDepositPending ? "Depositing..." : "Authorize & Deposit"}
               </SharedButton>
             )}
           </div>
@@ -234,14 +368,15 @@ export default function EarnDeposit(): ReactElement {
                 <li className="row">
                   <div className="label">Deposited amount</div>
                   <div className="amount">
-                    27,834 <span className="token">Curve ibGBP</span>
+                    {userDeposited}
+                    <span className="token">{vault.asset.symbol}</span>
                   </div>
                 </li>
                 <div className="divider" />
                 <li className="row">
                   <div className="label">Available rewards</div>
                   <div className="amount">
-                    {availableRewards} <span className="token">DOGGO</span>
+                    {pendingRewards} <span className="token">DOGGO</span>
                   </div>
                 </li>
               </div>
@@ -328,6 +463,7 @@ export default function EarnDeposit(): ReactElement {
             background-color: var(--trophy-gold);
           }
           .token {
+            margin-left: 8px;
             font-size: 14px;
           }
           .divider {

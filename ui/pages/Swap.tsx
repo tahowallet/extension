@@ -18,6 +18,7 @@ import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-sl
 import {
   AnyAsset,
   FungibleAsset,
+  isFungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -27,11 +28,7 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import {
-  clearTransactionState,
-  selectDefaultNetworkFeeSettings,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -71,7 +68,6 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
 
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const history = useHistory()
   const location = useLocation<
     { symbol: string; contractAddress?: string } | undefined
   >()
@@ -95,7 +91,13 @@ export default function Swap(): ReactElement {
     // Some type massaging needed to remind TypeScript how these types fit
     // together.
     const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(isSmartContractFungibleAsset)
+    return knownAssets.filter(
+      (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
+        isSmartContractFungibleAsset(asset) ||
+        // Explicity add ETH even though it is not an ERC-20 token
+        // @TODO change as part of multi-network refactor.
+        (isFungibleAsset(asset) && asset.symbol === "ETH")
+    )
   })
 
   const {
@@ -238,18 +240,12 @@ export default function Swap(): ReactElement {
       return
     }
 
-    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
-    // FIXME proper transaction queueing is in effect.
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-
-    dispatch(
+    await dispatch(
       approveTransfer({
         assetContractAddress: sellAsset.contractAddress,
         approvalTarget,
       })
     )
-
-    history.push("/sign-transaction")
   }
 
   const updateSwapData = useCallback(

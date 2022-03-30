@@ -1,23 +1,30 @@
-import React, { ReactElement, useEffect, useRef } from "react"
+import React, {
+  ChangeEventHandler,
+  ReactElement,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import classNames from "classnames"
 import { useRunOnFirstRender } from "../../hooks"
 
-interface Props {
+interface Props<T> {
   id?: string
   label: string
   focusedLabelBackgroundColor: string
-  defaultValue?: string
+  defaultValue?: T
   placeholder?: string
   type: "password" | "text" | "number"
   value?: string | number | undefined
-  onChange?: (value: string) => void
+  onChange?: (value: T) => void
   onFocus?: () => void
   errorMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
+  parseAndValidate: (value: string) => { parsed: T } | { error: string }
 }
 
-export default function SharedInput(props: Props): ReactElement {
+export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const {
     id,
     label,
@@ -31,9 +38,10 @@ export default function SharedInput(props: Props): ReactElement {
     errorMessage,
     autoFocus = false,
     autoSelect = false,
+    parseAndValidate,
   } = props
-
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const [parserError, setParserError] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus()
@@ -49,6 +57,18 @@ export default function SharedInput(props: Props): ReactElement {
     }
   })
 
+  const onInputChange: ChangeEventHandler<HTMLInputElement> = ({
+    target: { value: inputValue },
+  }) => {
+    const result = parseAndValidate(inputValue)
+    if ("error" in result) {
+      setParserError(result.error)
+    } else {
+      setParserError(undefined)
+      onChange?.(result.parsed)
+    }
+  }
+
   return (
     <>
       <input
@@ -61,7 +81,7 @@ export default function SharedInput(props: Props): ReactElement {
         }
         value={value}
         spellCheck={false}
-        onChange={(event) => onChange?.(event.target.value)}
+        onChange={onInputChange}
         onFocus={onFocus}
         className={classNames({
           error: errorMessage,
@@ -70,6 +90,7 @@ export default function SharedInput(props: Props): ReactElement {
       />
       <label htmlFor={id}>{label}</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}
+      {parserError && <div className="error_message">{parserError}</div>}
       <style jsx>
         {`
           input {
@@ -132,7 +153,16 @@ export default function SharedInput(props: Props): ReactElement {
   )
 }
 
-SharedInput.defaultProps = {
+SharedTypedInput.defaultProps = {
   type: "text",
   focusedLabelBackgroundColor: "var(--hunter-green)",
+}
+
+export default function SharedInput(props: Props<string>): ReactElement {
+  return SharedTypedInput(props)
+}
+
+SharedInput.defaultProps = {
+  ...SharedTypedInput.defaultProps,
+  parseAndValidate: (v: string) => ({ parsed: v }),
 }

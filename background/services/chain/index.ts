@@ -45,6 +45,7 @@ import type {
 } from "../enrichment"
 import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
+import { USE_MAINNET_FORK } from "../../features/features"
 import AssetDataHelper from "./asset-data-helper"
 
 // We can't use destructuring because webpack has to replace all instances of
@@ -83,7 +84,8 @@ const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressOnNetwork
   accountBalance: AccountBalance
-  transactionSent: HexString
+  transactionSend: HexString
+  transactionSendFailure: undefined
   assetTransfers: {
     addressNetwork: AddressOnNetwork
     assetTransfers: AssetTransfer[]
@@ -598,6 +600,9 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
+    if (USE_MAINNET_FORK) {
+      return 350000n
+    }
     const estimate = await this.providers.ethereum.estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
@@ -616,17 +621,17 @@ export default class ChainService extends BaseService<Events> {
   async broadcastSignedTransaction(
     transaction: SignedEVMTransaction
   ): Promise<void> {
-    // TODO make proper use of tx.network to choose provider
-    const serialized = utils.serializeTransaction(
-      ethersTransactionFromSignedTransaction(transaction),
-      { r: transaction.r, s: transaction.s, v: transaction.v }
-    )
     try {
+      // TODO make proper use of tx.network to choose provider
+      const serialized = utils.serializeTransaction(
+        ethersTransactionFromSignedTransaction(transaction),
+        { r: transaction.r, s: transaction.s, v: transaction.v }
+      )
       await Promise.all([
         this.providers.ethereum
           .sendTransaction(serialized)
           .then((transactionResponse) => {
-            this.emitter.emit("transactionSent", transactionResponse.hash)
+            this.emitter.emit("transactionSend", transactionResponse.hash)
           })
           .catch((error) => {
             logger.debug(
@@ -640,7 +645,6 @@ export default class ChainService extends BaseService<Events> {
               "alchemy"
             )
             this.releaseEVMTransactionNonce(transaction)
-
             return Promise.reject(error)
           }),
         this.subscribeToTransactionConfirmation(
@@ -650,6 +654,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 
       throw error
