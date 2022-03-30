@@ -328,9 +328,9 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     if (USE_MAINNET_FORK) {
       depositTransactionData.gasLimit = BigNumber.from(850000) // for mainnet fork only
     }
-    dispatch(currentlyDepositing(true))
     dispatch(clearInput())
     const response = await signer.sendTransaction(depositTransactionData)
+    dispatch(currentlyDepositing(true))
     const receipt = await response.wait()
     if (receipt.status === 1) {
       dispatch(currentlyDepositing(false))
@@ -375,8 +375,8 @@ export const claimVaultRewards = createBackgroundAsyncThunk(
       signer
     )
     const tx = await vaultContract.functions["getReward()"]()
-    const response = signer.sendTransaction(tx)
-    await tx.wait(response)
+    await signer.sendTransaction(tx)
+
     dispatch(updateEarnedValues())
   }
 )
