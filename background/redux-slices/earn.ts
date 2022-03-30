@@ -2,6 +2,8 @@ import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
 import { parseUnits } from "ethers/lib/utils"
+import Emittery from "emittery"
+
 import { AnyAsset } from "../assets"
 import { USE_MAINNET_FORK } from "../features/features"
 import { ERC20_ABI } from "../lib/erc20"
@@ -42,6 +44,7 @@ export type EarnState = {
   currentlyApproving: boolean
   depositError: boolean
   inputAmount: string
+  depositingProcess: boolean
 }
 
 export type Signature = {
@@ -50,6 +53,12 @@ export type Signature = {
   v: number | undefined
   deadline: number | undefined
 }
+
+export type Events = {
+  depositSuccessful: string
+}
+
+export const emitter = new Emittery<Events>()
 
 export const initialState: EarnState = {
   signature: {
@@ -107,6 +116,7 @@ export const initialState: EarnState = {
   currentlyApproving: false,
   depositError: false,
   inputAmount: "",
+  depositingProcess: false,
 }
 
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
@@ -132,8 +142,15 @@ const earnSlice = createSlice({
         deadline: undefined,
       },
     }),
+    clearInput: (state) => ({
+      ...state,
+      inputAmount: "",
+    }),
     currentlyDepositing: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyDepositing = payload
+    },
+    depositProcess: (immerState, { payload }: { payload: boolean }) => {
+      immerState.depositingProcess = payload
     },
     currentlyApproving: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyApproving = payload
@@ -142,12 +159,6 @@ const earnSlice = createSlice({
       return {
         ...state,
         inputAmount: payload,
-      }
-    },
-    clearInputAmount: (state) => {
-      return {
-        ...state,
-        inputAmount: "",
       }
     },
     earnedOnVault: (
@@ -219,7 +230,8 @@ export const {
   lockedAmounts,
   inputAmount,
   clearSignature,
-  clearInputAmount,
+  clearInput,
+  depositProcess,
 } = earnSlice.actions
 
 export default earnSlice.reducer
@@ -286,6 +298,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     },
     { getState, dispatch }
   ) => {
+    dispatch(depositProcess(false))
     const provider = getProvider()
     const signer = provider.getSigner()
     const signerAddress = await getSignerAddress()
@@ -315,16 +328,17 @@ export const vaultDeposit = createBackgroundAsyncThunk(
     if (USE_MAINNET_FORK) {
       depositTransactionData.gasLimit = BigNumber.from(850000) // for mainnet fork only
     }
+    dispatch(currentlyDepositing(true))
+    dispatch(clearInput())
     const response = await signer.sendTransaction(depositTransactionData)
     const receipt = await response.wait()
     if (receipt.status === 1) {
       dispatch(currentlyDepositing(false))
       dispatch(clearSignature())
       dispatch(updateLockedValues())
-      dispatch(clearInputAmount())
+      await emitter.emit("depositSuccessful", "Asset successfully deposited")
     }
     dispatch(clearSignature())
-    dispatch(clearInputAmount())
     dispatch(currentlyDepositing(false))
     dispatch(dispatch(depositError(true)))
   }
@@ -486,6 +500,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     const { r, s, v } = splitSignature
 
     dispatch(earnSlice.actions.saveSignature({ r, s, v, deadline }))
+    dispatch(depositProcess(true))
   }
 )
 export const selectApprovalTargetApprovals = createSelector(
@@ -531,6 +546,11 @@ export const selectSignature = createSelector(
 export const selectEarnInputAmount = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => earnState.inputAmount
+)
+
+export const selectDepositingProcess = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) => earnState.depositingProcess
 )
 
 export const selectEnrichedAvailableVaults = createSelector(

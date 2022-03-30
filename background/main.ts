@@ -87,6 +87,7 @@ import {
   SignTypedDataRequest,
   SignDataRequest,
 } from "./utils/signing"
+import { emitter as earnSliceEmitter } from "./redux-slices/earn"
 import {
   resetLedgerState,
   setDeviceConnectionStatus,
@@ -662,6 +663,10 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
       )
+    })
+
+    earnSliceEmitter.on("depositSuccessful", (message) => {
+      this.store.dispatch(setSnackbarMessage(message))
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
