@@ -3,12 +3,11 @@ import Snackbar from "../Snackbar/Snackbar"
 
 interface Props {
   children: React.ReactNode
-  hasTabBar: boolean
   hasTopBar: boolean
 }
 
 export default function CorePage(props: Props): ReactElement {
-  const { children, hasTabBar, hasTopBar } = props
+  const { children, hasTopBar } = props
 
   return (
     <main>
@@ -26,7 +25,7 @@ export default function CorePage(props: Props): ReactElement {
             align-items: center;
             background-color: var(--hunter-green);
             z-index: 10;
-            height: ${hasTopBar && hasTabBar ? "480px" : "100vh"};
+            height: ${hasTopBar ? "480px" : "100vh"};
             margin-top: ${hasTopBar ? "0px" : "-64px"};
           }
           .top_menu_wrap {
@@ -40,6 +39,5 @@ export default function CorePage(props: Props): ReactElement {
 }
 
 CorePage.defaultProps = {
-  hasTabBar: true,
   hasTopBar: true,
 }

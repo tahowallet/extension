@@ -32,7 +32,7 @@ export function useSigningLedgerState(
       case "available":
         return {
           state: "available",
-          arbitraryDataEnabled: device.isArbitraryDataSigningEnabled ?? false,
+          arbitraryDataEnabled: device?.isArbitraryDataSigningEnabled ?? false,
         }
       case "busy":
         return { state: "busy" }

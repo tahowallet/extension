@@ -59,7 +59,7 @@ export default function Eligible(): ReactElement {
   }
 
   const advanceStep = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1)
       dispatch(advanceClaimStep())
     }
@@ -110,6 +110,7 @@ export default function Eligible(): ReactElement {
       <div className="eligible">
         <div className="top_bar standard_width">
           <SharedBackButton
+            path="/"
             onClick={
               step > 1
                 ? () => {

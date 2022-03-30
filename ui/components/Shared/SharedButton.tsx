@@ -17,6 +17,7 @@ interface Props {
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
+    | "twitter"
   size: "small" | "medium" | "large"
   icon?: string
   iconSize?: "small" | "medium" | "large" | "secondaryMedium"
@@ -25,6 +26,7 @@ interface Props {
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick: boolean
+  isLoading: boolean
   isFormSubmit: boolean
 }
 
@@ -41,6 +43,7 @@ export default function SharedButton(props: Props): ReactElement {
     iconPosition,
     linkTo,
     showLoadingOnClick,
+    isLoading,
     isFormSubmit,
   } = props
 
@@ -68,7 +71,7 @@ export default function SharedButton(props: Props): ReactElement {
     }
   }
 
-  const isShowingLoadingSpinner = isClicked && showLoadingOnClick
+  const isShowingLoadingSpinner = isLoading || (isClicked && showLoadingOnClick)
 
   return (
     <button
@@ -85,7 +88,8 @@ export default function SharedButton(props: Props): ReactElement {
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { deemphasized_white: type === "deemphasizedWhite" },
-        { warning: type === "warning" }
+        { warning: type === "warning" },
+        { twitter: type === "twitter" }
       )}
       onClick={handleClick}
     >
@@ -101,7 +105,7 @@ export default function SharedButton(props: Props): ReactElement {
         })}
       >
         {children}
-        {icon ? (
+        {icon || type === "twitter" ? (
           <span
             className={classNames(
               { icon_button: true },
@@ -233,6 +237,16 @@ export default function SharedButton(props: Props): ReactElement {
           .tertiary:active .icon_button {
             background-color: var(--gold-80);
           }
+          .twitter,
+          .twitter:hover {
+            background-color: #3a90e9;
+            color: #fff;
+          }
+          .twitter .icon_button,
+          .twitter:hover .icon_button {
+            mask-image: url("./images/twitter.svg");
+            background-color: #fff;
+          }
           .white {
             color: #ffffff;
             font-weight: 500;
@@ -317,5 +331,6 @@ SharedButton.defaultProps = {
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,
+  isLoading: false,
   isFormSubmit: false,
 }
