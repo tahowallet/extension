@@ -45,9 +45,9 @@ export default function BonusProgramModalContent(): ReactElement {
           </div>
         </div>
       </div>
-      <h2>Share to receive 10%</h2>
+      <h2>Share to receive 5%</h2>
       <p>
-        Everytime somebody claims their tokens using your link, you each get 10%
+        Everytime somebody claims their tokens using your link, you each get 5%
         of the claim.{" "}
         <a
           className="rewards_link"
