@@ -7,10 +7,6 @@ import {
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { useHistory } from "react-router-dom"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
-import {
-  clearTransactionState,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
@@ -51,11 +47,7 @@ export default function SwapQuote({
   const handleConfirmClick = useCallback(async () => {
     const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
 
-    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
-    // FIXME proper transaction queueing is in effect.
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-
-    dispatch(
+    await dispatch(
       executeSwap({
         ...quoteWithoutGasPrice,
         gasPrice:
@@ -64,9 +56,7 @@ export default function SwapQuote({
       })
     )
 
-    history.push("/sign-transaction", {
-      redirectTo: { path: "/" },
-    })
+    history.push("/")
   }, [
     finalQuote,
     dispatch,

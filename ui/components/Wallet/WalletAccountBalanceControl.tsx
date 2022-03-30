@@ -3,7 +3,6 @@ import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -158,7 +157,7 @@ export default function WalletAccountBalanceControl(
           </span>
         </span>
         <div className="balance_actions">
-          {currentAccountSigningMethod && !HIDE_SEND_BUTTON ? (
+          {currentAccountSigningMethod ? (
             <>
               {hasSavedSeed ? (
                 <div className="send_receive_button_wrap">

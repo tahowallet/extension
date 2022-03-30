@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { isAddress } from "@ethersproject/address"
 import {
   selectCurrentAccount,
@@ -6,13 +6,10 @@ import {
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  broadcastOnSign,
   NetworkFeeSettings,
   selectEstimatedFeesPerGas,
   setFeeType,
-  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { utils } from "ethers"
 import {
   FungibleAsset,
   isFungibleAssetAmount,
@@ -22,9 +19,13 @@ import {
   convertFixedPointNumber,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import {
+  selectAssetPricePoint,
+  transferAsset,
+} from "@tallyho/tally-background/redux-slices/assets"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { useHistory, useLocation } from "react-router-dom"
 import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
@@ -34,17 +35,23 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 
 export default function Send(): ReactElement {
-  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(ETH)
+  const location = useLocation<FungibleAsset>()
+  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
+    location.state ?? ETH
+  )
   const [destinationAddress, setDestinationAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)
+  const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
+    useState(false)
   const [hasError, setHasError] = useState(false)
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
 
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const history = useHistory()
 
   const dispatch = useBackgroundDispatch()
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
@@ -86,17 +93,38 @@ export default function Send(): ReactElement {
 
   const assetAmount = assetAmountFromForm()
 
-  const sendTransactionRequest = async () => {
-    dispatch(broadcastOnSign(true))
-    const transaction = {
-      from: currentAccount.address,
-      to: destinationAddress,
-      // eslint-disable-next-line no-underscore-dangle
-      value: BigInt(utils.parseEther(amount?.toString())._hex),
-      gasLimit,
+  const sendTransactionRequest = useCallback(async () => {
+    if (assetAmount === undefined) {
+      return
     }
-    return dispatch(updateTransactionOptions(transaction))
-  }
+
+    try {
+      setIsSendingTransactionRequest(true)
+
+      await dispatch(
+        transferAsset({
+          fromAddressNetwork: currentAccount,
+          toAddressNetwork: {
+            address: destinationAddress,
+            network: currentAccount.network,
+          },
+          assetAmount,
+          gasLimit,
+        })
+      )
+    } finally {
+      setIsSendingTransactionRequest(false)
+    }
+
+    history.push("/singleAsset", assetAmount.asset)
+  }, [
+    assetAmount,
+    currentAccount,
+    destinationAddress,
+    dispatch,
+    gasLimit,
+    history,
+  ])
 
   const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     setGasLimit(networkSetting.gasLimit)
@@ -130,7 +158,6 @@ export default function Send(): ReactElement {
               }}
               selectedAsset={selectedAsset}
               amount={amount}
-              disableDropdown
             />
             <div className="value">
               ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
@@ -173,16 +200,9 @@ export default function Send(): ReactElement {
                 !isAddress(destinationAddress) ||
                 hasError
               }
-              linkTo={{
-                pathname: "/sign-transaction",
-                state: {
-                  redirectTo: {
-                    path: "/singleAsset",
-                    state: { symbol: selectedAsset.symbol },
-                  },
-                },
-              }}
               onClick={sendTransactionRequest}
+              isFormSubmit
+              isLoading={isSendingTransactionRequest}
             >
               Send
             </SharedButton>
