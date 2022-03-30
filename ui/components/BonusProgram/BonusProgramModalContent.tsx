@@ -1,7 +1,29 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useCallback, useMemo } from "react"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 export default function BonusProgramModalContent(): ReactElement {
+  const dispatch = useBackgroundDispatch()
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  const referralLink = useMemo(
+    () => ({
+      link: `tally.cash/referral/${currentAccount.address}`,
+      shortLink: `tally.cash/referral/${truncateAddress(
+        currentAccount.address
+      )}`,
+    }),
+    [currentAccount.address]
+  )
+
+  const copyLink = useCallback(() => {
+    navigator.clipboard.writeText(referralLink.link)
+    dispatch(setSnackbarMessage("Link copied to clipboard"))
+  }, [referralLink, dispatch])
+
   return (
     <div className="standard_width wrap">
       <h1>Rewards program</h1>
@@ -11,34 +33,51 @@ export default function BonusProgramModalContent(): ReactElement {
         </div>
         <div className="claimable">
           <div className="claimable_info">Total bonus received so far</div>
-          <div className="amount">36,736</div>
-          <div className="claimable_info">DOGGO</div>
+          <div className="claimable_row">
+            <div className="claimable_column">
+              <div className="amount">36,736</div>
+              <div className="claimable_item">DOGGO</div>
+            </div>
+            <div className="claimable_column">
+              <div className="amount">120</div>
+              <div className="claimable_item">Users</div>
+            </div>
+          </div>
         </div>
       </div>
-      <h2>Share to receive 10%</h2>
+      <h2>Share to receive 5%</h2>
       <p>
-        Everytime somebody claims their tokens using your link, you each get 10%
-        of the claim.
+        Everytime somebody claims their tokens using your link, you each get 5%
+        of the claim.{" "}
+        <a
+          className="rewards_link"
+          href="http://tallyho.org/rewards"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Read more
+        </a>
       </p>
       <div className="link_cta_wrap">
         <span>
-          Your link:{" "}
-          <span className="link">tally.cash/referral/...C11e09517BF</span>
+          Your link: <span className="link">{referralLink.shortLink}</span>
         </span>
         <div className="bottom">
           <SharedButton
-            type="primary"
+            type="twitter"
             size="medium"
             iconPosition="left"
-            icon="external_small"
+            iconSize="secondaryMedium"
           >
             Share
           </SharedButton>
           <SharedButton
             type="secondary"
             size="medium"
-            icon="plus"
+            icon="copy"
+            iconSize="secondaryMedium"
             iconPosition="left"
+            onClick={copyLink}
           >
             Copy to clipboard
           </SharedButton>
@@ -78,7 +117,7 @@ export default function BonusProgramModalContent(): ReactElement {
             height: 69.9px;
             position: relative;
             top: -4px;
-            margin-left: -3px;
+            margin: 0 10px 0 -3px;
           }
           .amount {
             font-family: Quincy CF;
@@ -92,12 +131,19 @@ export default function BonusProgramModalContent(): ReactElement {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin-right: 5px;
-          }
-          .claimable_info {
             color: var(--green-40);
             font-weight: 500;
             text-align: center;
+            width: 100%;
+          }
+          .claimable_row {
+            width: 100%;
+            display: flex;
+            justify-content: space-evenly;
+          }
+          .claimable_info {
+            font-size: 14px;
+            margin-bottom: 5px;
           }
           h2 {
             color: var(--green-20);
@@ -125,8 +171,8 @@ export default function BonusProgramModalContent(): ReactElement {
           }
           .bottom {
             display: flex;
+            justify-content: space-between;
             margin-top: 16px;
-            grid-gap: 19px;
           }
           .public_notice {
             width: 352px;
@@ -145,6 +191,9 @@ export default function BonusProgramModalContent(): ReactElement {
             width: 24px;
             height: 24px;
             margin-right: 5px;
+          }
+          .rewards_link {
+            color: var(--trophy-gold);
           }
         `}
       </style>

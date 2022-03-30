@@ -59,7 +59,7 @@ export default function Eligible(): ReactElement {
   }
 
   const advanceStep = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1)
       dispatch(advanceClaimStep())
     }
