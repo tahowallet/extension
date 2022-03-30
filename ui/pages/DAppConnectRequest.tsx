@@ -78,7 +78,7 @@ export default function DAppConnectRequest(): ReactElement {
 
   const grant = useCallback(async () => {
     if (typeof permission !== "undefined") {
-      await dispatch(
+      dispatch(
         grantPermission({
           ...permission,
           state: "allow",
