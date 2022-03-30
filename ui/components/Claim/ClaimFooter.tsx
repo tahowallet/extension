@@ -1,38 +1,68 @@
-import React, {
-  Dispatch,
-  ReactElement,
-  SetStateAction,
-  useCallback,
-  useMemo,
-} from "react"
+import {
+  claimRewards,
+  selectClaimSelections,
+  selectIsDelegationSigned,
+  signTokenDelegationData,
+  selectCurrentlyClaiming,
+} from "@tallyho/tally-background/redux-slices/claim"
+import {
+  clearTransactionState,
+  TransactionConstructionStatus,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import React, { ReactElement, useCallback, useMemo } from "react"
+import { useHistory } from "react-router-dom"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedProgressIndicator from "../Shared/SharedProgressIndicator"
 
 interface ClaimFooterProps {
   step: number
-  setStep: Dispatch<SetStateAction<number>>
   advanceStep: () => void
   showSuccess: () => void
 }
 
 export default function ClaimFooter({
   step,
-  setStep,
   advanceStep,
   showSuccess,
 }: ClaimFooterProps): ReactElement {
+  const history = useHistory()
+  const dispatch = useBackgroundDispatch()
+
+  const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
+  const isDelegationSigned = useBackgroundSelector(selectIsDelegationSigned)
+  const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
+  const claimState = useBackgroundSelector((state) => state.claim)
+
+  const lastStepButtonText = useMemo(() => {
+    if (selectedDelegate.address !== undefined && !isDelegationSigned) {
+      return "Sign Delegation"
+    }
+    return "Claim"
+  }, [isDelegationSigned, selectedDelegate.address])
+
   const buttonText = useMemo(
-    () => ["Get started", "Continue", "I'm In", "Continue", "Claim"],
-    []
+    () => ["Get started", "Continue", "I'm In", "Continue", lastStepButtonText],
+    [lastStepButtonText]
   )
 
+  if (isCurrentlyClaiming) {
+    showSuccess()
+  }
   const handleClick = useCallback(async () => {
-    if (buttonText[step - 1] === "Claim") {
-      showSuccess()
+    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
+    // FIXME proper transaction queueing is in effect.
+    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
+    if (buttonText[step - 1] === "Sign Delegation") {
+      dispatch(signTokenDelegationData())
+      history.push("/sign-data")
+    } else if (buttonText[step - 1] === "Claim") {
+      dispatch(claimRewards(claimState))
+      history.push("/sign-transaction")
     } else {
       advanceStep()
     }
-  }, [buttonText, step, showSuccess, advanceStep])
+  }, [buttonText, step, advanceStep, dispatch, history, claimState])
 
   return (
     <footer>
@@ -40,13 +70,18 @@ export default function ClaimFooter({
         {step < 5 && (
           <SharedProgressIndicator
             activeStep={step - 1}
-            onProgressStepClicked={(s) => setStep(s)}
+            onProgressStepClicked={() => {}}
             numberOfSteps={3}
+            noInteraction
           />
         )}
       </div>
-
-      <SharedButton type="primary" size="medium" onClick={handleClick}>
+      <SharedButton
+        type="primary"
+        size="medium"
+        onClick={handleClick}
+        isDisabled={isCurrentlyClaiming}
+      >
         {buttonText[step - 1]}
       </SharedButton>
       <style jsx>

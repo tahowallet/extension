@@ -122,13 +122,16 @@ export default class ClaimService extends BaseService<Events> {
 
   async getEligibility(address: string): Promise<Eligible> {
     const fileHash = await getFileHashProspect(address)
-    const { amount } = await getClaimFromFileHash(address, fileHash)
-
-    // TEMP: Place into current structure to avoid conflict with claim slice PR
-    const claim = {
+    const { account, amount, index, proof } = await getClaimFromFileHash(
       address,
-      earnings: BigInt(amount),
-      reasons: "",
+      fileHash
+    )
+
+    const claim = {
+      index,
+      amount: BigInt(amount),
+      account,
+      proof,
     }
     this.emitter.emit("newEligibility", claim)
     return claim

@@ -17,7 +17,10 @@ import { AddressOnNetwork } from "../../accounts"
 import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
-import { getMetadata as getERC20Metadata } from "../../lib/erc20"
+import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
+import { USE_MAINNET_FORK } from "../../features/features"
+import { ETHEREUM } from "../../constants"
+import { DOGGO_TOKEN_ADDRESS } from "../../redux-slices/claim"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -64,7 +67,26 @@ export default class AssetDataHelper {
         error
       )
     }
-
+    // Load balances of tokens on the mainnet fork
+    if (USE_MAINNET_FORK) {
+      const tokens = [DOGGO_TOKEN_ADDRESS]
+      const balances = tokens.map(async (token) => {
+        const balance = await getBalance(
+          provider,
+          token,
+          addressOnNetwork.address
+        )
+        return {
+          smartContract: {
+            contractAddress: token,
+            homeNetwork: ETHEREUM,
+          },
+          amount: BigInt(balance.toString()),
+        }
+      })
+      const resolvedBalances = Promise.all(balances)
+      return resolvedBalances
+    }
     return []
   }
 

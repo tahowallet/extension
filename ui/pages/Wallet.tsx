@@ -1,10 +1,13 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
+  selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundSelector } from "../hooks"
+import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
+
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
@@ -14,12 +17,26 @@ import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOp
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
+  const dispatch = useBackgroundDispatch()
+
   const hasAccounts = useBackgroundSelector(
     (state) => Object.keys(state.account.accountsData).length > 0
   )
 
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
+  const claimState = useBackgroundSelector((state) => state.claim)
+
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  useEffect(() => {
+    dispatch(
+      checkAlreadyClaimed({
+        claimState,
+        accountAddress: currentAccount.address,
+      })
+    )
+  }, [claimState, currentAccount.address, dispatch])
 
   const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
     assetAmounts: [],

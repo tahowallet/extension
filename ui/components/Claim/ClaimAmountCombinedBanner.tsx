@@ -4,12 +4,12 @@ export default function ClaimAmountCombinedBanner(): ReactElement {
   return (
     <div className="banner banner_primary">
       <div>
-        <img className="banner_image" src="./images/claim.png" alt="" />
+        <img className="banner_image" src="./images/claim@2x.png" alt="" />
       </div>
       <div className="claimable">
         <div className="title">Claim + Bonus</div>
         <div className="amount">10,989</div>
-        <div className="currency">TALLY</div>
+        <div className="currency">DOGGO</div>
       </div>
       <style jsx>
         {`

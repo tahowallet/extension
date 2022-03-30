@@ -1,9 +1,11 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import {
   chooseDAO,
   selectClaimSelections,
   DAO,
 } from "@tallyho/tally-background/redux-slices/claim"
+import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -72,22 +74,26 @@ function DAOButton(props: {
 export default function ClaimReferral(props: {
   DAOs: DAO[]
   claimAmount: number
-  claimAmountWithBonus: number
 }): ReactElement {
-  const { DAOs, claimAmount, claimAmountWithBonus } = props
+  const { DAOs, claimAmount } = props
   const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
+  const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
+  const amountWithBonus = formatCurrencyAmount(
+    mainCurrency,
+    claimAmount * 0.05,
+    2
+  )
 
   return (
     <div className="claim standard_width">
       <ClaimAmountBanner amount={claimAmount} />
       <div className="title">
         Get a bonus of
-        <div className="highlight">{Math.floor(claimAmountWithBonus)}</div>
-        TALLY!
+        <div className="highlight">{amountWithBonus}</div>
+        DOGGO!
       </div>
       <div className="description">
-        Select a Project/DAO to share the bonus with! You each receive 463
-        TALLY!
+        {`Select a Project/DAO to share the bonus with! You each receive ${amountWithBonus} DOGGO!`}
       </div>
       <div className="options">
         {DAOs.map(({ address, name, avatar }) => {

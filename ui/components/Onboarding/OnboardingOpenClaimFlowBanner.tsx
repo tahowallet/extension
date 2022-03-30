@@ -2,45 +2,84 @@ import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import classNames from "classnames"
 import {
-  toFixedPointNumber,
-  fixedPointNumberToString,
-} from "@tallyho/tally-background/lib/fixed-point"
-import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
+  selectCurrentAccount,
+  selectCurrentAccountSigningMethod,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
+import {
+  selectClaimed,
+  selectClaimError,
+  selectCurrentlyClaiming,
+} from "@tallyho/tally-background/redux-slices/claim"
+
 import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
-function IneligibleCTAContent({
+function EligibleCTAContent({
   currentAccountSigningMethod,
   claimAmount,
+  isCurrentlyClaiming,
+  claimError,
 }: {
   currentAccountSigningMethod: SigningMethod | null
   claimAmount: string
+  isCurrentlyClaiming: boolean
+  claimError: boolean
 }) {
+  const getComponentToDisplay = () => {
+    if (isCurrentlyClaiming) {
+      return <div className="claiming">Claiming...</div>
+    }
+    if (claimError) {
+      return (
+        <div className="claimError">
+          Something went wrong, please try claiming again.
+        </div>
+      )
+    }
+    return (
+      <div className="claimable_woohoo">
+        {currentAccountSigningMethod
+          ? "Wohoo! You can claim"
+          : "Upgrade your wallet to claim"}
+      </div>
+    )
+  }
   return (
     <>
       <div>
-        <img className="image" src="./images/claim.png" alt="" />
+        <img className="image" src="./images/claim@2x.png" alt="" />
       </div>
-      <div className="claimable">
-        <div className="claimable_woohoo">
-          {currentAccountSigningMethod
-            ? "Wohoo! You can claim"
-            : "Upgrade your wallet to claim"}
-        </div>
-        <div>
-          <span className="claimable_amount">{claimAmount}</span> TALLY
-        </div>
-      </div>
-      <Link
-        to="/eligible"
-        className={classNames({
-          no_click: !currentAccountSigningMethod,
+      <div
+        className={classNames("claimable_container", {
+          isCurrentlyClaiming: "left",
         })}
       >
-        <div className="link_content">{">"}</div>
-      </Link>
+        {getComponentToDisplay()}
+        <div>
+          <span className="claimable_amount">{claimAmount}</span> DOGGO
+        </div>
+      </div>
+      {!isCurrentlyClaiming ? (
+        <Link
+          to="/eligible"
+          className={classNames({
+            no_click: !currentAccountSigningMethod,
+          })}
+        >
+          <div className="link_content">
+            <img
+              className="link_icon"
+              src="./images/continue.svg"
+              alt="Claim tokens"
+            />
+          </div>
+        </Link>
+      ) : (
+        <></>
+      )}
       <style>
         {`
           .image {
@@ -49,7 +88,7 @@ function IneligibleCTAContent({
             top: -3px;
             left: 1px;
           }
-          .claimable {
+          .claimable_container {
             display: flex;
             flex-flow: column;
             position: relative;
@@ -57,6 +96,15 @@ function IneligibleCTAContent({
             color: var(--green-40);
             font-size: 14px;
             width: 190px;
+          }
+          .left {
+            justify-self: flex-start;
+          }
+          .claiming{
+            color: var(--trophy-gold);
+          }
+          .claimError{
+            color: var(--error);
           }
           .claimable_amount {
             font-family: Quincy CF;
@@ -69,11 +117,17 @@ function IneligibleCTAContent({
             height: 74px;
             background-color: var(--trophy-gold);
             border-radius: 8px;
-            color: black;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 18px;
+          }
+          .link_icon {
+            width: 16px;
+            height: 17px;
+          }
+          .link_content:hover {
+            background-color: var(--gold-80);
           }
           .upgrade .link_content {
             background-color: var(--green-80);
@@ -84,7 +138,7 @@ function IneligibleCTAContent({
   )
 }
 
-function EligibleCTAContent({
+function IneligibleCTAContent({
   handleCloseBanner,
 }: {
   handleCloseBanner: () => void
@@ -166,24 +220,37 @@ function EligibleCTAContent({
 
 export default function OnboardingOpenClaimFlowBanner(): ReactElement {
   const claimAmount = useBackgroundSelector((state) =>
-    fixedPointNumberToString(
-      toFixedPointNumber(
-        Number(state.claim?.eligibility?.earnings) || 0,
-        tallyTokenDecimalDigits
-      )
-    )
+    fromFixedPointNumber(
+      {
+        amount: BigInt(Number(state.claim?.eligibility?.amount || 0n)) || 0n,
+        decimals: tallyTokenDecimalDigits,
+      },
+      0
+    ).toString()
   )
 
   const currentAccountSigningMethod = useBackgroundSelector(
     selectCurrentAccountSigningMethod
   )
 
+  const claimError = useBackgroundSelector(selectClaimError)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+  const claimed = useBackgroundSelector(selectClaimed)
+
+  const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
+
   const [showOrHide, setShowOrHide] = useLocalStorage(
     "showOrHideOnboardingClaimFlowBanner",
     "show"
   )
 
-  if (claimAmount === "0" && showOrHide === "hide") return <></>
+  const hasAlreadyClaimed = claimed[currentAccount.address]
+
+  if (
+    (claimAmount === "0" && showOrHide === "hide") ||
+    typeof hasAlreadyClaimed === "undefined"
+  )
+    return <></>
 
   return (
     <div
@@ -191,14 +258,16 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
         upgrade: !currentAccountSigningMethod,
       })}
     >
-      <div className="banner">
-        {claimAmount !== "0" ? (
-          <IneligibleCTAContent
+      <div className={classNames("banner", { left: isCurrentlyClaiming })}>
+        {claimAmount !== "0" && !hasAlreadyClaimed ? (
+          <EligibleCTAContent
             currentAccountSigningMethod={currentAccountSigningMethod}
             claimAmount={claimAmount}
+            isCurrentlyClaiming={isCurrentlyClaiming}
+            claimError={claimError[currentAccount.address]}
           />
         ) : (
-          <EligibleCTAContent
+          <IneligibleCTAContent
             handleCloseBanner={() => {
               setShowOrHide("hide")
             }}
@@ -219,6 +288,10 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             margin-bottom: 20px;
             justify-content: space-between;
             align-items: center;
+          }
+          .left {
+            justify-content: flex-start;
+            gap: 20px;
           }
         `}
       </style>

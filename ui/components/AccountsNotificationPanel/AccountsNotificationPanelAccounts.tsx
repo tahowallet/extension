@@ -14,6 +14,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "@tallyho/tally-background/lib/utils"
+import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -263,6 +264,7 @@ export default function AccountsNotificationPanelAccounts({
                           <button
                             type="button"
                             onClick={() => {
+                              dispatch(resetClaimFlow())
                               updateCurrentAccount(normalizedAddress)
                             }}
                           >

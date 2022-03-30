@@ -9,7 +9,7 @@ export default function ClaimSuccessModalContent(): ReactElement {
       <div className="subtitle">
         While your transaction is beeing processed, let’s share your bonus
         address and the good news with the world! Each time someone uses your
-        code, you&apos;ll get 5% of all the TALLY they claim.
+        code, you&apos;ll get 5% of all the DOGGO they claim.
       </div>
       <SharedButton type="primary" size="medium">
         Share on twitter

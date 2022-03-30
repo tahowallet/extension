@@ -13,7 +13,7 @@ export default function ClaimAmountBanner({
         </div>
         <div className="claimable">
           <div className="claimable_amount">{amount}</div>
-          <div className="claimable_currency symbol">TALLY</div>
+          <div className="claimable_currency symbol">DOGGO</div>
         </div>
       </div>
       <style jsx>
