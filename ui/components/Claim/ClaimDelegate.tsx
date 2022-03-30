@@ -11,7 +11,6 @@ import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
-// TODO: replace any
 export default function ClaimDelegate(props: {
   delegates: Delegate[]
   claimAmount: number

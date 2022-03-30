@@ -53,7 +53,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
           <div className="label">Reward</div>
           <div className="rewards">
             <img className="lock" src="./images/lock@2.png" alt="Locked" />
-            TALLY
+            DOGGO
           </div>
         </div>
         {isComingSoon && <div className="coming_soon_notice">Coming soon</div>}

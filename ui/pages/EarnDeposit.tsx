@@ -250,7 +250,7 @@ export default function EarnDeposit(): ReactElement {
             <div className="label">Rewards</div>
             <div className="rewards">
               <img className="lock" src="./images/lock@2.png" alt="Locked" />
-              TALLY
+              DOGGO
             </div>
           </li>
         </ul>
@@ -267,8 +267,7 @@ export default function EarnDeposit(): ReactElement {
             <li className="row">
               <div className="label">Available rewards</div>
               <div className="amount">
-                {pendingRewards}
-                <span className="token">TALLY</span>
+                {pendingRewards} <span className="token">DOGGO</span>
               </div>
             </li>
             <li className="row claim">
@@ -377,7 +376,7 @@ export default function EarnDeposit(): ReactElement {
                 <li className="row">
                   <div className="label">Available rewards</div>
                   <div className="amount">
-                    {pendingRewards} <span className="token">TALLY</span>
+                    {pendingRewards} <span className="token">DOGGO</span>
                   </div>
                 </li>
               </div>

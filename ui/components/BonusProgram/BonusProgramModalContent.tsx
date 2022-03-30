@@ -12,7 +12,7 @@ export default function BonusProgramModalContent(): ReactElement {
         <div className="claimable">
           <div className="claimable_info">Total bonus received so far</div>
           <div className="amount">36,736</div>
-          <div className="claimable_info">TALLY</div>
+          <div className="claimable_info">DOGGO</div>
         </div>
       </div>
       <h2>Share to receive 10%</h2>
