@@ -52,11 +52,16 @@ export default function ClaimFooter({
   const handleClick = useCallback(async () => {
     // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
     // FIXME proper transaction queueing is in effect.
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
     if (buttonText[step - 1] === "Sign Delegation") {
+      await dispatch(
+        clearTransactionState(TransactionConstructionStatus.Pending)
+      )
       dispatch(signTokenDelegationData())
       history.push("/sign-data")
     } else if (buttonText[step - 1] === "Claim") {
+      await dispatch(
+        clearTransactionState(TransactionConstructionStatus.Pending)
+      )
       dispatch(claimRewards(claimState))
       history.push("/sign-transaction")
     } else {
