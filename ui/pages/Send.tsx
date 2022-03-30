@@ -173,15 +173,6 @@ export default function Send(): ReactElement {
                 !isAddress(destinationAddress) ||
                 hasError
               }
-              linkTo={{
-                pathname: "/sign-transaction",
-                state: {
-                  redirectTo: {
-                    path: "/singleAsset",
-                    state: { symbol: selectedAsset.symbol },
-                  },
-                },
-              }}
               onClick={sendTransactionRequest}
             >
               Send

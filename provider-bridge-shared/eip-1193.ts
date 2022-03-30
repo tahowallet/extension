@@ -48,7 +48,7 @@ export class EIP1193Error extends Error {
     super(eip1193Error.message)
   }
 
-  toJSON() {
+  toJSON(): unknown {
     return this.eip1193Error
   }
 }
