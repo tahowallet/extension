@@ -122,6 +122,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         )}`
       case "eth_blockNumber":
       case "eth_call":
+      case "eth_estimateGas":
       case "eth_feeHistory":
       case "eth_gasPrice":
       case "eth_getBalance":
@@ -194,7 +195,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
       case "wallet_watchAsset":
-      case "eth_estimateGas":
       case "estimateGas": // --- eip1193-bridge only method --
       case "eth_coinbase": // --- MM only methods ---
       case "eth_decrypt":

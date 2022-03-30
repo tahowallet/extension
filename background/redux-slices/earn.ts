@@ -375,8 +375,8 @@ export const claimVaultRewards = createBackgroundAsyncThunk(
       signer
     )
     const tx = await vaultContract.functions["getReward()"]()
-    await signer.sendTransaction(tx)
-
+    const response = signer.sendTransaction(tx)
+    await tx.wait(response)
     dispatch(updateEarnedValues())
   }
 )
