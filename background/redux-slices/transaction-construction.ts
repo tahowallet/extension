@@ -8,7 +8,6 @@ import {
   REGULAR,
 } from "../constants/network-fees"
 import { USE_MAINNET_FORK } from "../features/features"
-import logger from "../lib/logger"
 
 import {
   BlockEstimate,

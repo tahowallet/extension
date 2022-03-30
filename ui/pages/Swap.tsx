@@ -28,11 +28,7 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { useHistory, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import {
-  clearTransactionState,
-  selectDefaultNetworkFeeSettings,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -70,7 +66,6 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
 
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const history = useHistory()
   const location = useLocation<
     { symbol: string; contractAddress?: string } | undefined
   >()
