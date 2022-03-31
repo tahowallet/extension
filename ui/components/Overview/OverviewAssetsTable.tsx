@@ -36,10 +36,13 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
             </td>
             <td>
               {asset.localizedUnitPrice ? (
-                <div>
-                  <span className="lighter_color">$</span>
-                  {asset.localizedUnitPrice}
-                </div>
+                <>
+                  <div>
+                    <span className="lighter_color">$</span>
+                    {asset.localizedUnitPrice}
+                  </div>
+                  <div>&nbsp;</div>
+                </>
               ) : (
                 <div className="loading_wrap">
                   {initializationLoadingTimeExpired ? (
