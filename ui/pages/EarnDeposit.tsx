@@ -209,7 +209,7 @@ export default function EarnDeposit(): ReactElement {
   return (
     <>
       <section className="primary_info">
-        <BackButton />
+        <BackButton path="/earn" />
         <ul className="wrapper">
           <li className="row header">
             <div className="type">VAULT</div>
