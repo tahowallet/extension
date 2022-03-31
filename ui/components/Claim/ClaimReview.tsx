@@ -83,7 +83,6 @@ export default function ClaimReview({
             flex-shrink: 0;
           }
           .address {
-            width: 102px;
             height: 24px;
             color: var(--green-60);
             font-size: 16px;
