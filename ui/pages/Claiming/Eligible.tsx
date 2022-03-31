@@ -103,7 +103,7 @@ export default function Eligible(): ReactElement {
         close={handleSuccessModalClose}
         size="large"
       >
-        <ClaimSuccessModalContent />
+        <ClaimSuccessModalContent close={handleSuccessModalClose} />
       </SharedSlideUpMenu>
 
       <div className="background" />
