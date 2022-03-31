@@ -3,6 +3,7 @@ import {
   selectEnrichedAvailableVaults,
   updateEarnedValues,
   updateLockedValues,
+  getPoolAPR,
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
@@ -26,6 +27,18 @@ type EarnCardProps = {
 }
 
 function EarnCard({ vault, isComingSoon }: EarnCardProps) {
+  const [APR, setAPR] = useState("0")
+
+  const dispatch = useBackgroundDispatch()
+
+  useEffect(() => {
+    const fetchPoolAPRs = async () => {
+      const yearlyAPR = await dispatch(getPoolAPR(vault))
+      setAPR(yearlyAPR)
+    }
+    fetchPoolAPRs()
+  }, [vault, dispatch])
+
   return (
     <Link
       to={{
@@ -42,7 +55,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         </div>
         <span className="token_name">{vault?.asset?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
-        <span className="apy_percent">250%</span>
+        <span className="apy_percent">{APR}%</span>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>

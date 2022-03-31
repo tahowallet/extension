@@ -1,7 +1,12 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
-import { parseUnits } from "ethers/lib/utils"
+import {
+  formatEther,
+  formatUnits,
+  parseEther,
+  parseUnits,
+} from "ethers/lib/utils"
 import Emittery from "emittery"
 
 import { AnyAsset } from "../assets"
@@ -436,6 +441,73 @@ export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
     } catch (err) {
       return undefined
     }
+  }
+)
+
+export const getPoolAPR = createBackgroundAsyncThunk(
+  "earn/getPoolAPR",
+  async (vault: AvailableVault, { getState }): Promise<string> => {
+    const state = getState()
+    const { assets } = state as { assets: AssetsState }
+
+    function nFormatter(num: number, digits: number) {
+      const lookup = [
+        { value: 1, symbol: "" },
+        { value: 1e3, symbol: "k" },
+        { value: 1e6, symbol: "M" },
+        { value: 1e9, symbol: "B" },
+      ]
+      const item = lookup
+        .slice()
+        .reverse()
+        .find(function check(item1) {
+          return num >= item1.value
+        })
+      return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
+    }
+
+    // We don't know how much DOGGO will cost
+    const assumedDoggoPrice = 1.2
+
+    const totalRewardsAddedToPool = 750000000 // rewards set when deploying to be distributed within 14 days
+
+    // Multiplying totalRewardsAddedToPool times 26 will give us yearly value 14 * 26 = 364
+    const totalRewardValueYearly =
+      totalRewardsAddedToPool * 26 * assumedDoggoPrice
+
+    // We get how much our Hunting Ground has deposited into the yearn vault
+    const yearnVaultContract = await getContract(vault.yearnVault, VAULT_ABI)
+    const sharesStakedInPool: BigNumber = await yearnVaultContract.balanceOf(
+      vault.vaultAddress
+    )
+
+    const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
+
+    // TODO This is NOT the right way to fetch the price as it doesn't work if user doesn't have that token
+    const assetPricePoint = selectAssetPricePoint(
+      assets,
+      vault.asset.symbol,
+      mainCurrencySymbol
+    )
+
+    const sharesStakedParsed = formatUnits(
+      sharesStakedInPool,
+      vault.asset.decimals
+    )
+
+    // TODO remove once we change price source
+    if (assetPricePoint?.amounts[1] === undefined) return "0"
+
+    const totalValueOfSharesStaked =
+      Number(sharesStakedParsed) *
+      Number(formatUnits(assetPricePoint?.amounts[1], 10))
+
+    if (totalValueOfSharesStaked > 0) {
+      const APR = (totalRewardValueYearly / totalValueOfSharesStaked) * 100
+      return nFormatter(APR, 1)
+    }
+
+    return "Infinite"
   }
 )
 
