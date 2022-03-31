@@ -31,7 +31,7 @@ import { EnrichedEVMTransaction } from "../enrichment/types"
 const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 
 interface Events extends ServiceLifecycleEvents {
-  accountBalance: AccountBalance
+  accountBalance: AccountBalance | AccountBalance[]
   price: PricePoint
   assets: AnyAsset[]
 }
@@ -383,7 +383,6 @@ export default class IndexingService extends BaseService<Events> {
               dataSource: "alchemy",
             } as const
 
-            this.emitter.emit("accountBalance", accountBalance)
             return accountBalance
           }
 
@@ -391,12 +390,15 @@ export default class IndexingService extends BaseService<Events> {
         })
         .filter((b) => !!b)
     ).then((returnArray) =>
-      returnArray.filter(
-        (promiseReturn) => promiseReturn.status === "fulfilled"
-      )
+      returnArray
+        .filter((promiseReturn) => promiseReturn.status === "fulfilled")
+        .map(
+          (fulfilledReturn) =>
+            (fulfilledReturn as PromiseFulfilledResult<AccountBalance>).value
+        )
     )
-    // @ts-expect-error don't know how to tell TS about the filters above :( thoughts are welcome 🙇‍♂️
     await this.db.addBalances(accountBalances)
+    this.emitter.emit("accountBalance", accountBalances)
 
     return balances
   }

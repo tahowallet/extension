@@ -24,7 +24,7 @@ import {
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
-import { AddressOnNetwork, NameOnNetwork } from "./accounts"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
@@ -836,20 +836,31 @@ export default class Main extends BaseService<never> {
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
       "accountBalance",
-      async (accountWithBalance) => {
+      async (accountWithBalanceOrBalances) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
 
-        // TODO support multi-network assets
-        const doesThisBalanceHaveAnAlreadyTrackedAsset = !!assetsToTrack.filter(
-          (t) => t.symbol === accountWithBalance.assetAmount.asset.symbol
-        )[0]
+        const accountWithBalance = Array.isArray(accountWithBalanceOrBalances)
+          ? accountWithBalanceOrBalances
+          : [accountWithBalanceOrBalances]
 
-        if (
-          accountWithBalance.assetAmount.amount > 0 ||
-          doesThisBalanceHaveAnAlreadyTrackedAsset
-        ) {
-          this.store.dispatch(updateAccountBalance(accountWithBalance))
-        }
+        const filteredBalancesToDispatch = [] as AccountBalance[]
+
+        accountWithBalance.forEach((balance) => {
+          // TODO support multi-network assets
+          const doesThisBalanceHaveAnAlreadyTrackedAsset =
+            !!assetsToTrack.filter(
+              (t) => t.symbol === balance.assetAmount.asset.symbol
+            )[0]
+
+          if (
+            balance.assetAmount.amount > 0 ||
+            doesThisBalanceHaveAnAlreadyTrackedAsset
+          ) {
+            filteredBalancesToDispatch.push(balance)
+          }
+        })
+
+        this.store.dispatch(updateAccountBalance(filteredBalancesToDispatch))
       }
     )
 
