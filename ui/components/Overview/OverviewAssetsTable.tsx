@@ -12,6 +12,27 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
   const { assets, initializationLoadingTimeExpired } = props
   if (!assets) return <></>
 
+  function assetSortCompare(a: CompleteAssetAmount, b: CompleteAssetAmount) {
+    if (a.mainCurrencyAmount && b.mainCurrencyAmount) {
+      return b.mainCurrencyAmount - a.mainCurrencyAmount
+    }
+
+    // Prioritize mainCurrencyAmount sort
+    if (!a.mainCurrencyAmount || !b.mainCurrencyAmount) {
+      return 1
+    }
+
+    // Alphabetical fallback
+    if (a.asset.symbol > b.asset.symbol) {
+      return -1
+    }
+    if (a.asset.symbol < b.asset.symbol) {
+      return 1
+    }
+
+    return 0
+  }
+
   return (
     <table className="standard_width">
       <thead>
@@ -22,54 +43,47 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         </tr>
       </thead>
       <tbody>
-        {assets
-          .sort((a, b) => {
-            if (a.mainCurrencyAmount && b.mainCurrencyAmount) {
-              return b.mainCurrencyAmount - a.mainCurrencyAmount
-            }
-            return 0
-          })
-          .map((asset) => (
-            <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
-              <td>
-                <div className="asset_descriptor">
-                  <SharedAssetIcon
-                    size="small"
-                    logoURL={asset?.asset?.metadata?.logoURL}
-                    symbol={asset?.asset?.symbol}
-                  />
-                  <span className="asset_name">{asset.asset.symbol}</span>
+        {assets.sort(assetSortCompare).map((asset) => (
+          <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
+            <td>
+              <div className="asset_descriptor">
+                <SharedAssetIcon
+                  size="small"
+                  logoURL={asset?.asset?.metadata?.logoURL}
+                  symbol={asset?.asset?.symbol}
+                />
+                <span className="asset_name">{asset.asset.symbol}</span>
+              </div>
+            </td>
+            <td>
+              {asset.localizedUnitPrice ? (
+                <div>
+                  <span className="lighter_color">$</span>
+                  {asset.localizedUnitPrice}
                 </div>
-              </td>
-              <td>
-                {asset.localizedUnitPrice ? (
-                  <div>
-                    <span className="lighter_color">$</span>
-                    {asset.localizedUnitPrice}
-                  </div>
-                ) : (
-                  <div className="loading_wrap">
-                    {initializationLoadingTimeExpired ? (
-                      <></>
-                    ) : (
-                      <SharedLoadingSpinner size="small" />
-                    )}
-                  </div>
-                )}
-              </td>
-              <td>
-                {asset.localizedMainCurrencyAmount && (
-                  <div>
-                    <span className="lighter_color">$</span>
-                    {asset.localizedMainCurrencyAmount}
-                  </div>
-                )}
-                <div className="balance_token_amount">
-                  {asset.localizedDecimalAmount}
+              ) : (
+                <div className="loading_wrap">
+                  {initializationLoadingTimeExpired ? (
+                    <></>
+                  ) : (
+                    <SharedLoadingSpinner size="small" />
+                  )}
                 </div>
-              </td>
-            </tr>
-          ))}
+              )}
+            </td>
+            <td>
+              {asset.localizedMainCurrencyAmount && (
+                <div>
+                  <span className="lighter_color">$</span>
+                  {asset.localizedMainCurrencyAmount}
+                </div>
+              )}
+              <div className="balance_token_amount">
+                {asset.localizedDecimalAmount}
+              </div>
+            </td>
+          </tr>
+        ))}
       </tbody>
       <style jsx>{`
         tr {
