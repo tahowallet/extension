@@ -2,10 +2,10 @@ import React, { ReactElement, useState } from "react"
 import {
   chooseDelegate,
   Delegate,
+  selectClaimSelections,
 } from "@tallyho/tally-background/redux-slices/claim"
 
-import { useBackgroundDispatch } from "../../hooks"
-
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
@@ -16,6 +16,7 @@ export default function ClaimDelegate(props: {
   claimAmount: number
 }): ReactElement {
   const { delegates, claimAmount } = props
+  const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
   const [panelNumber, setPanelNumber] = useState(0)
   const dispatch = useBackgroundDispatch()
 
@@ -52,6 +53,8 @@ export default function ClaimDelegate(props: {
                         name="delegate"
                         id={delegate.ensName}
                         className="radio"
+                        checked={delegate.ensName === selectedDelegate.ensName}
+                        readOnly
                       />
                       <label
                         className="delegate_details"
