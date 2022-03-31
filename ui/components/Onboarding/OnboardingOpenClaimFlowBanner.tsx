@@ -256,10 +256,8 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
 
   const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
 
-  const [isIneligibleVisible, setIsIneligibleVisible] = useLocalStorage(
-    "isIneligibleVisible",
-    "true"
-  )
+  const [addresHasNothingToClaimClosed, setAddresHasNothingToClaimClosed] =
+    useLocalStorage("addresHasNothingToClaimClosed", "")
   const [addressFinishedClaiming, setAddressFinishedClaiming] = useLocalStorage(
     "addressFinishedClaiming",
     ""
@@ -271,8 +269,8 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
 
   if (
     addressFinishedClaiming.split(";").includes(currentAddress) ||
-    (!hasSomethingToClaim && isIneligibleVisible === "false") ||
-    typeof hasAlreadyClaimed === "undefined"
+    (!hasSomethingToClaim &&
+      addresHasNothingToClaimClosed.split(";").includes(currentAddress))
   )
     return <></>
 
@@ -294,7 +292,11 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
           />
         ) : (
           <IneligibleCTAContent
-            handleCloseBanner={() => setIsIneligibleVisible("false")}
+            handleCloseBanner={() =>
+              setAddresHasNothingToClaimClosed(
+                `${addresHasNothingToClaimClosed};${currentAddress}`
+              )
+            }
           />
         )}
       </div>
