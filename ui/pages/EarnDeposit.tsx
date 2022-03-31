@@ -125,7 +125,6 @@ export default function EarnDeposit(): ReactElement {
           tokenAddress: vault.asset.contractAddress,
         })
       )
-      history.push("/sign-transaction")
     }
   }, [amount, dispatch, history, inDepositProcess, vault])
 
@@ -163,7 +162,6 @@ export default function EarnDeposit(): ReactElement {
 
   const approve = async () => {
     dispatch(approveApprovalTarget(vault.asset.contractAddress))
-    history.push("/sign-transaction")
   }
 
   const deposit = async () => {
@@ -185,12 +183,10 @@ export default function EarnDeposit(): ReactElement {
     )
     setDeposited(false)
     setWithdrawalSlideupVisible(false)
-    history.push("/sign-transaction")
   }
 
   const claimRewards = async () => {
     dispatch(claimVaultRewards(vault.vaultAddress))
-    history.push("/sign-transaction")
   }
 
   const handleAmountChange = (
