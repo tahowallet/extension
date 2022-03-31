@@ -349,46 +349,44 @@ export default class IndexingService extends BaseService<Events> {
     // look up all assets and set balances
 
     const accountBalances = await Promise.allSettled(
-      balances
-        .map(async ({ smartContract: { contractAddress }, amount }) => {
-          const knownAsset =
-            listedAssetByAddress[contractAddress] ??
-            (await this.getKnownSmartContractAsset(
-              addressNetwork.network,
-              contractAddress
-            ))
+      balances.map(async ({ smartContract: { contractAddress }, amount }) => {
+        const knownAsset =
+          listedAssetByAddress[contractAddress] ??
+          (await this.getKnownSmartContractAsset(
+            addressNetwork.network,
+            contractAddress
+          ))
 
-          if (amount > 0) {
-            if (knownAsset) {
-              // TODO: we might don't need this here? Or we just need it for the first time?
-              await this.addAssetToTrack(knownAsset)
-            } else {
-              await this.addTokenToTrackByContract(
-                addressNetwork,
-                contractAddress
-              )
-              // TODO we're losing balance information here, consider an
-              // addTokenAndBalanceToTrackByContract method
-            }
-          }
-
+        if (amount > 0) {
           if (knownAsset) {
-            const accountBalance = {
-              ...addressNetwork,
-              assetAmount: {
-                asset: knownAsset,
-                amount,
-              },
-              retrievedAt: Date.now(),
-              dataSource: "alchemy",
-            } as const
-
-            return accountBalance
+            // TODO: we might don't need this here? Or we just need it for the first time?
+            await this.addAssetToTrack(knownAsset)
+          } else {
+            await this.addTokenToTrackByContract(
+              addressNetwork,
+              contractAddress
+            )
+            // TODO we're losing balance information here, consider an
+            // addTokenAndBalanceToTrackByContract method
           }
+        }
 
-          return undefined
-        })
-        .filter((b) => !!b)
+        if (knownAsset) {
+          const accountBalance = {
+            ...addressNetwork,
+            assetAmount: {
+              asset: knownAsset,
+              amount,
+            },
+            retrievedAt: Date.now(),
+            dataSource: "alchemy",
+          } as const
+
+          return accountBalance
+        }
+
+        return undefined
+      })
     ).then((returnArray) =>
       returnArray
         .filter((promiseReturn) => promiseReturn.status === "fulfilled")
@@ -396,7 +394,9 @@ export default class IndexingService extends BaseService<Events> {
           (fulfilledReturn) =>
             (fulfilledReturn as PromiseFulfilledResult<AccountBalance>).value
         )
+        .filter((value) => !!value)
     )
+
     await this.db.addBalances(accountBalances)
     this.emitter.emit("accountBalance", accountBalances)
 
