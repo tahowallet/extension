@@ -5,10 +5,7 @@ import {
   signTokenDelegationData,
   selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
-import {
-  clearTransactionState,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+
 import React, { ReactElement, useCallback, useMemo } from "react"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"

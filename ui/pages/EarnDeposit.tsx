@@ -22,10 +22,7 @@ import {
   vaultDeposit,
   vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
-import {
-  clearTransactionState,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
