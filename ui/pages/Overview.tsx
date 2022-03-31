@@ -39,7 +39,7 @@ export default function Overview(): ReactElement {
         </div>
         <div className="sub_info_row">
           <div className="info_group_item">
-            <span className="info_left">Addresses</span>
+            <span className="info_left">Accounts</span>
             {numberOfAddresses}
           </div>
           <div className="info_group_item">
