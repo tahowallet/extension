@@ -206,8 +206,7 @@ export default function NetworkSettingsSelect({
 
   return (
     <div className="fees standard_width">
-      <div className="title">Network Fees</div>
-
+      <div className="title spacer">Network Fees</div>
       <EstimateRefreshCountdownDivider />
 
       {gasOptions.map((option, i) => {
@@ -335,6 +334,9 @@ export default function NetworkSettingsSelect({
             margin: 16px 0;
             width: 40%;
             position: relative;
+          }
+          .spacer {
+            margin-bottom: 8px;
           }
         `}
       </style>
