@@ -4,6 +4,7 @@ import {
   Delegate,
   selectClaimSelections,
 } from "@tallyho/tally-background/redux-slices/claim"
+import { isAddress } from "@ethersproject/address"
 
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimAmountBanner from "./ClaimAmountBanner"
@@ -17,7 +18,10 @@ export default function ClaimDelegate(props: {
 }): ReactElement {
   const { delegates, claimAmount } = props
   const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
+
   const [panelNumber, setPanelNumber] = useState(0)
+  const [errorMessage, setErrorMessage] = useState("")
+
   const dispatch = useBackgroundDispatch()
 
   return (
@@ -91,7 +95,18 @@ export default function ClaimDelegate(props: {
               Delegate yourself or somebody else. We advice you only do this if
               the person you delegate plans to be active in DAO votings.
             </p>
-            <SharedInput label="Delegate with ENS or address" />
+            <SharedInput
+              label="Delegate with an address"
+              onChange={(value) => {
+                if (isAddress(value)) {
+                  setErrorMessage("")
+                  dispatch(chooseDelegate({ address: value }))
+                } else if (value.length > 10) {
+                  setErrorMessage("Invalid address")
+                }
+              }}
+              errorMessage={errorMessage}
+            />
           </div>
         )}
       </div>
