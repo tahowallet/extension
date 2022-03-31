@@ -16,60 +16,84 @@ import { SigningMethod } from "@tallyho/tally-background/utils/signing"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
+import SharedIcon from "../Shared/SharedIcon"
 
 function EligibleCTAContent({
   currentAccountSigningMethod,
   claimAmount,
   isCurrentlyClaiming,
-  claimError,
+  hasAlreadyClaimed,
+  hasError,
+  handleCloseBanner,
 }: {
   currentAccountSigningMethod: SigningMethod | null
   claimAmount: string
   isCurrentlyClaiming: boolean
-  claimError: boolean
+  hasError: boolean
+  hasAlreadyClaimed: boolean
+  handleCloseBanner: () => void
 }) {
   const getComponentToDisplay = () => {
     if (isCurrentlyClaiming) {
-      return <div className="claiming">Claiming...</div>
+      return <div className="claim_progress">Claiming...</div>
     }
-    if (claimError) {
-      return (
-        <div className="claimError">
-          Something went wrong, please try claiming again.
-        </div>
-      )
+    if (hasError) {
+      return <div className="claim_error ">Claiming failed. Try again</div>
     }
-    return (
-      <div className="claimable_woohoo">
-        {currentAccountSigningMethod
-          ? "Wohoo! You can claim"
-          : "Upgrade your wallet to claim"}
-      </div>
-    )
+    if (hasAlreadyClaimed) {
+      return <div className="claim_success">Succesfully claimed</div>
+    }
+    return <div>Wohoo! You can claim</div>
   }
+
+  const isFirstClaim = !hasAlreadyClaimed && !hasError && !isCurrentlyClaiming
+
   return (
     <>
-      <div>
-        <img className="image" src="./images/claim@2x.png" alt="" />
-      </div>
-      <div
-        className={classNames("claimable_container", {
-          isCurrentlyClaiming: "left",
-        })}
-      >
+      <img className="image" src="./images/claim.svg" alt="" />
+      <div className="claimable_container">
         {getComponentToDisplay()}
         <div>
-          <span className="claimable_amount">{claimAmount}</span> DOGGO
+          <span
+            className={classNames("claimable_amount", {
+              has_highlight: isFirstClaim,
+            })}
+          >
+            {claimAmount}
+          </span>{" "}
+          DOGGO
         </div>
+        {currentAccountSigningMethod ? (
+          <></>
+        ) : (
+          <div>Upgrade above to claim</div>
+        )}
       </div>
-      {!isCurrentlyClaiming ? (
+      {hasAlreadyClaimed ? (
+        <SharedIcon
+          icon="close.svg"
+          width={12}
+          color="var(--green-40)"
+          hoverColor="#fff"
+          ariaLabel="Close banner"
+          onClick={handleCloseBanner}
+          customStyles={`
+            align-self: flex-start;
+            margin: 10px 12px;
+          `}
+        />
+      ) : (
         <Link
           to="/eligible"
           className={classNames({
-            no_click: !currentAccountSigningMethod,
+            no_click: !currentAccountSigningMethod || isCurrentlyClaiming,
           })}
         >
-          <div className="link_content">
+          <div
+            className={classNames("link_content", {
+              disabled: !currentAccountSigningMethod || isCurrentlyClaiming,
+            })}
+          >
             <img
               className="link_icon"
               src="./images/continue.svg"
@@ -77,50 +101,50 @@ function EligibleCTAContent({
             />
           </div>
         </Link>
-      ) : (
-        <></>
       )}
       <style>
         {`
           .image {
-            width: 72px;
-            position: relative;
-            top: -3px;
-            left: 1px;
+            height: 100%;
+            margin-right: 15px;
           }
           .claimable_container {
             display: flex;
+            flex-grow: 1;
             flex-flow: column;
             position: relative;
-            top: 4px;
             color: var(--green-40);
             font-size: 14px;
-            width: 190px;
           }
-          .left {
-            justify-self: flex-start;
+          .claim_progress {
+            color: var(--attention);
           }
-          .claiming{
-            color: var(--trophy-gold);
-          }
-          .claimError{
+          .claim_error {
             color: var(--error);
+          }
+          .claim_success {
+            color: var(--success);
           }
           .claimable_amount {
             font-family: Quincy CF;
             font-size: 36px;
             line-height: 38px;
+          }
+          .claimable_amount.has_highlight {
             color: #22c480;
           }
           .link_content {
             width: 40px;
-            height: 74px;
+            height: 100%;
             background-color: var(--trophy-gold);
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 18px;
+          }
+          .link_content.disabled {
+            background-color: var(--green-60);
           }
           .link_icon {
             width: 16px;
@@ -144,21 +168,27 @@ function IneligibleCTAContent({
   handleCloseBanner: () => void
 }) {
   return (
-    <div className="right">
-      <div className="top">
+    <div className="banner_right">
+      <div className="banner_top">
         <p>
           Looks like there are no tokens to claim.
           <br /> Try another address or see other ways to earn
         </p>
 
-        <button
-          type="button"
-          className="icon_close"
+        <SharedIcon
+          icon="close.svg"
+          width={12}
+          color="var(--green-40)"
           onClick={handleCloseBanner}
-          aria-label="Close menu"
+          ariaLabel="Close menu"
+          customStyles={`
+            margin-top: 8px;
+            margin-right: 8px;
+            flex-shrink: 0;
+          `}
         />
       </div>
-      <div className="bottom">
+      <div className="banner_bottom">
         <SharedButton
           type="tertiary"
           size="small"
@@ -179,24 +209,11 @@ function IneligibleCTAContent({
       </div>
       <style>
         {`
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            width: 12px;
-            height: 12px;
-            background-color: var(--green-40);
-            margin-top: 8px;
-            margin-right: 8px;
-            flex-shrink: 0;
-          }
-          .icon_close:hover {
-            background-color: #fff;
-          }
-          .right {
+          .banner_right {
             display: flex;
             flex-direction: column;
           }
-          .top {
+          .banner_top {
             display: flex;
             justify-content: space-between;
           }
@@ -209,7 +226,7 @@ function IneligibleCTAContent({
             margin-bottom: -1px;
             margin-top: 1px;
           }
-          .bottom {
+          .banner_bottom {
             display: flex;
           }
         `}
@@ -239,38 +256,47 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
 
   const isCurrentlyClaiming = useBackgroundSelector(selectCurrentlyClaiming)
 
-  const [showOrHide, setShowOrHide] = useLocalStorage(
-    "showOrHideOnboardingClaimFlowBanner",
-    "show"
+  const [addresHasNothingToClaimClosed, setAddresHasNothingToClaimClosed] =
+    useLocalStorage("addresHasNothingToClaimClosed", "")
+  const [addressFinishedClaiming, setAddressFinishedClaiming] = useLocalStorage(
+    "addressFinishedClaiming",
+    ""
   )
-
-  const hasAlreadyClaimed = claimed[currentAccount.address]
+  const currentAddress = currentAccount.address
+  const hasAlreadyClaimed = claimed[currentAddress]
+  const hasError = claimError[currentAddress]
+  const hasSomethingToClaim = claimAmount !== "0"
 
   if (
-    (claimAmount === "0" && showOrHide === "hide") ||
-    typeof hasAlreadyClaimed === "undefined"
+    addressFinishedClaiming.split(";").includes(currentAddress) ||
+    (!hasSomethingToClaim &&
+      addresHasNothingToClaimClosed.split(";").includes(currentAddress))
   )
     return <></>
 
   return (
-    <div
-      className={classNames("standard_width", {
-        upgrade: !currentAccountSigningMethod,
-      })}
-    >
-      <div className={classNames("banner", { left: isCurrentlyClaiming })}>
-        {claimAmount !== "0" && !hasAlreadyClaimed ? (
+    <div className="standard_width">
+      <div className="banner">
+        {hasSomethingToClaim ? (
           <EligibleCTAContent
             currentAccountSigningMethod={currentAccountSigningMethod}
             claimAmount={claimAmount}
             isCurrentlyClaiming={isCurrentlyClaiming}
-            claimError={claimError[currentAccount.address]}
+            hasAlreadyClaimed={hasAlreadyClaimed}
+            hasError={hasError}
+            handleCloseBanner={() =>
+              setAddressFinishedClaiming(
+                `${addressFinishedClaiming};${currentAddress}`
+              )
+            }
           />
         ) : (
           <IneligibleCTAContent
-            handleCloseBanner={() => {
-              setShowOrHide("hide")
-            }}
+            handleCloseBanner={() =>
+              setAddresHasNothingToClaimClosed(
+                `${addresHasNothingToClaimClosed};${currentAddress}`
+              )
+            }
           />
         )}
       </div>
@@ -283,15 +309,10 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
             border-radius: 16px;
             background-color: var(--green-95);
             display: flex;
-            padding: 0 8px;
+            padding: 8px;
             box-sizing: border-box;
             margin-bottom: 20px;
-            justify-content: space-between;
             align-items: center;
-          }
-          .left {
-            justify-content: flex-start;
-            gap: 20px;
           }
         `}
       </style>

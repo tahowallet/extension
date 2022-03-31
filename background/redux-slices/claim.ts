@@ -180,7 +180,9 @@ export const checkAlreadyClaimed = createBackgroundAsyncThunk(
     const alreadyClaimed = await distributorContract.isClaimed(
       eligibility.index
     )
-    dispatch(claimed({ account: accountAddress, alreadyClaimed }))
+    if (alreadyClaimed) {
+      dispatch(claimed({ account: accountAddress, alreadyClaimed }))
+    }
     return alreadyClaimed
   }
 )
