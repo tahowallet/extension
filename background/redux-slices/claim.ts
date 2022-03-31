@@ -32,6 +32,7 @@ export interface Delegate {
   applicationLink?: string
   avatar?: string
   truncatedAddress?: string
+  enteredBy?: "list" | "custom"
 }
 
 interface ClaimingState {
