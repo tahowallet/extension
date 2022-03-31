@@ -347,37 +347,56 @@ export default class IndexingService extends BaseService<Events> {
     }, {})
 
     // look up all assets and set balances
-    await Promise.allSettled(
-      balances.map(async ({ smartContract: { contractAddress }, amount }) => {
-        const knownAsset =
-          listedAssetByAddress[contractAddress] ??
-          (await this.getKnownSmartContractAsset(
-            addressNetwork.network,
-            contractAddress
-          ))
 
-        if (knownAsset) {
-          const accountBalance = {
-            ...addressNetwork,
-            assetAmount: {
-              asset: knownAsset,
-              amount,
-            },
-            retrievedAt: Date.now(),
-            dataSource: "alchemy",
-          } as const
-          await this.db.addBalances([accountBalance])
-          this.emitter.emit("accountBalance", accountBalance)
+    const accountBalances = await Promise.allSettled(
+      balances
+        .map(async ({ smartContract: { contractAddress }, amount }) => {
+          const knownAsset =
+            listedAssetByAddress[contractAddress] ??
+            (await this.getKnownSmartContractAsset(
+              addressNetwork.network,
+              contractAddress
+            ))
+
           if (amount > 0) {
-            await this.addAssetToTrack(knownAsset)
+            if (knownAsset) {
+              // TODO: we might don't need this here? Or we just need it for the first time?
+              await this.addAssetToTrack(knownAsset)
+            } else {
+              await this.addTokenToTrackByContract(
+                addressNetwork,
+                contractAddress
+              )
+              // TODO we're losing balance information here, consider an
+              // addTokenAndBalanceToTrackByContract method
+            }
           }
-        } else if (amount > 0) {
-          await this.addTokenToTrackByContract(addressNetwork, contractAddress)
-          // TODO we're losing balance information here, consider an
-          // addTokenAndBalanceToTrackByContract method
-        }
-      })
+
+          if (knownAsset) {
+            const accountBalance = {
+              ...addressNetwork,
+              assetAmount: {
+                asset: knownAsset,
+                amount,
+              },
+              retrievedAt: Date.now(),
+              dataSource: "alchemy",
+            } as const
+
+            this.emitter.emit("accountBalance", accountBalance)
+            return accountBalance
+          }
+
+          return undefined
+        })
+        .filter((b) => !!b)
+    ).then((returnArray) =>
+      returnArray.filter(
+        (promiseReturn) => promiseReturn.status === "fulfilled"
+      )
     )
+    // @ts-expect-error don't know how to tell TS about the filters above :( thoughts are welcome 🙇‍♂️
+    await this.db.addBalances(accountBalances)
 
     return balances
   }
