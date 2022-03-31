@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useMemo } from "react"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -63,14 +64,10 @@ export default function BonusProgramModalContent(): ReactElement {
           Your link: <span className="link">{referralLink.shortLink}</span>
         </span>
         <div className="bottom">
-          <SharedButton
-            type="twitter"
-            size="medium"
-            iconPosition="left"
-            iconSize="secondaryMedium"
-          >
-            Share
-          </SharedButton>
+          <SharedTwitterButton
+            link={referralLink.link}
+            text="Get an extra 5% bonus on your $DOGGO claim when you use this link (🐶, 🐶)"
+          />
           <SharedButton
             type="secondary"
             size="medium"
