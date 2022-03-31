@@ -5,7 +5,6 @@ import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
-import ClaimReferralBridge from "./ClaimReferralBridge"
 
 export default function ClaimReferralByUser({
   claimAmount,
@@ -33,7 +32,6 @@ export default function ClaimReferralByUser({
       <div className="description">
         {`You were referred by somebody, and to reward that you each get ${amountWithBonus} DOGGO`}
       </div>
-      <ClaimReferralBridge />
       <ClaimDelegateChoiceProfile name={truncateAddress(referrer)} />
       <style jsx>
         {`
