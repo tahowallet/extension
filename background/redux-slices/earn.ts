@@ -55,7 +55,7 @@ export type Signature = {
 }
 
 export type Events = {
-  depositSuccessful: string
+  earnDeposit: string
 }
 
 export const emitter = new Emittery<Events>()
@@ -336,8 +336,10 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(currentlyDepositing(false))
       dispatch(clearSignature())
       dispatch(updateLockedValues())
-      await emitter.emit("depositSuccessful", "Asset successfully deposited")
+      await emitter.emit("earnDeposit", "Asset successfully deposited")
+      return
     }
+    await emitter.emit("earnDeposit", "Asset deposit has failed")
     dispatch(clearSignature())
     dispatch(currentlyDepositing(false))
     dispatch(dispatch(depositError(true)))

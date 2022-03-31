@@ -110,6 +110,7 @@ export default function Eligible(): ReactElement {
       <div className="eligible">
         <div className="top_bar standard_width">
           <SharedBackButton
+            path="/"
             onClick={
               step > 1
                 ? () => {
