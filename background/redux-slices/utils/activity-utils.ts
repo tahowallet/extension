@@ -1,13 +1,24 @@
 import { convertToEth, weiToGwei } from "../../lib/utils"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
+import { HexString } from "../../types"
 
-export function getRecipient(activityItem: ActivityItem): string | undefined {
+export function getRecipient(activityItem: ActivityItem): {
+  address: HexString | undefined
+  name?: string
+} {
   const { annotation } = activityItem
 
-  if (annotation?.type === "asset-transfer") {
-    return annotation.recipientAddress
+  switch (annotation?.type) {
+    case "asset-transfer":
+      return {
+        address: annotation.recipientAddress,
+        name: annotation.recipientName,
+      }
+    case "contract-interaction":
+      return { address: activityItem.to, name: annotation.contractName }
+    default:
+      return { address: activityItem.to }
   }
-  return activityItem.to
 }
 
 function ethTransformer(

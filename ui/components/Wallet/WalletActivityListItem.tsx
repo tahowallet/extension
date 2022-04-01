@@ -7,6 +7,8 @@ import {
   sameEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
+import { HexString } from "@tallyho/tally-background/types"
+import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
@@ -36,14 +38,17 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   let renderDetails: {
     iconClass: string | undefined
     label: string
-    recipient: string
+    recipient: {
+      address: HexString | undefined
+      name?: string | undefined
+    }
     assetLogoURL: string | undefined
     assetSymbol: string
     assetValue: string
   } = {
     iconClass: undefined,
     label: "Contract interaction",
-    recipient: activity.toTruncated,
+    recipient: getRecipient(activity),
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
     assetValue: activity.localizedDecimalValue,
@@ -57,7 +62,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         iconClass: isReceiveActivity(activity, asAccount)
           ? "receive_icon"
           : "send_icon",
-        recipient: truncateAddress(activity.annotation.recipientAddress),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
         assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
@@ -67,7 +71,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       renderDetails = {
         label: "Token approval",
         iconClass: "approve_icon",
-        recipient: truncateAddress(activity.annotation.spenderAddress),
+        recipient: {
+          address: activity.annotation.spenderAddress,
+          name: activity.annotation.spenderName,
+        },
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
         assetValue: isMaxUint256(activity.annotation.assetAmount.amount)
@@ -79,7 +86,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       renderDetails = {
         iconClass: "swap_icon",
         label: "Swap",
-        recipient: activity.toTruncated,
+        recipient: getRecipient(activity),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
         assetValue: activity.localizedDecimalValue,
@@ -91,7 +98,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       renderDetails = {
         iconClass: "contract_interaction_icon",
         label: "Contract Interaction",
-        recipient: activity.toTruncated,
+        recipient: getRecipient(activity),
         // TODO fall back to the asset URL we have in metadata
         assetLogoURL: activity.annotation?.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
@@ -153,12 +160,17 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           </div>
           <div className="right">
             {isSendActivity(activity, asAccount) ? (
-              <div className="outcome">
+              <div className="outcome" title={renderDetails.recipient.address}>
                 To:
-                {` ${renderDetails.recipient}`}
+                {` ${
+                  renderDetails.recipient.name ??
+                  (renderDetails.recipient.address === undefined
+                    ? "(Contract creation)"
+                    : truncateAddress(renderDetails.recipient.address))
+                }`}
               </div>
             ) : (
-              <div className="outcome">
+              <div className="outcome" title={activity.from}>
                 From:
                 {` ${activity.fromTruncated}`}
               </div>
