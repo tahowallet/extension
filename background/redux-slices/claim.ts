@@ -95,11 +95,6 @@ const claimingSlice = createSlice({
     setEligibility: (immerState, { payload: eligibility }) => {
       immerState.eligibility = eligibility
     },
-    advanceClaimStep: (immerState) => {
-      if (immerState.claimStep < 5) {
-        immerState.claimStep += 1
-      }
-    },
     setClaimStep: (immerState, { payload }: { payload: number }) => {
       immerState.claimStep = payload
     },
@@ -152,7 +147,6 @@ export const {
   setEligibility,
   saveSignature,
   currentlyClaiming,
-  advanceClaimStep,
   setClaimStep,
   claimed,
   resetStep,

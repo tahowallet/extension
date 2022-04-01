@@ -1,7 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
-import { advanceClaimStep } from "@tallyho/tally-background/redux-slices/claim"
 import { Redirect, useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
@@ -61,7 +60,6 @@ export default function Eligible(): ReactElement {
   const advanceStep = () => {
     if (step < 5) {
       setStep(step + 1)
-      dispatch(advanceClaimStep())
     }
   }
 
