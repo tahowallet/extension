@@ -15,12 +15,14 @@ interface ClaimFooterProps {
   step: number
   advanceStep: () => void
   showSuccess: () => void
+  isAdvanceable: boolean
 }
 
 export default function ClaimFooter({
   step,
   advanceStep,
   showSuccess,
+  isAdvanceable,
 }: ClaimFooterProps): ReactElement {
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
@@ -75,7 +77,7 @@ export default function ClaimFooter({
         type="primary"
         size="medium"
         onClick={handleClick}
-        isDisabled={isCurrentlyClaiming}
+        isDisabled={isCurrentlyClaiming || !isAdvanceable}
       >
         {buttonText[step - 1]}
       </SharedButton>
