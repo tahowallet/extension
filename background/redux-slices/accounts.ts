@@ -314,17 +314,6 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
   }
 )
 
-/**
- * Async thunk whose dispatch promise will return when the ENS domain account
- * has been added.
- */
-export const addAccountByName = createBackgroundAsyncThunk(
-  "account/addAccountByName",
-  async (nameNetwork: NameOnNetwork, { extra: { main } }) => {
-    await main.addAccountByName(nameNetwork)
-  }
-)
-
 export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
   async (address: HexString, { dispatch, extra: { main } }) => {
