@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useMemo } from "react"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -12,8 +13,11 @@ export default function BonusProgramModalContent(): ReactElement {
 
   const referralLink = useMemo(
     () => ({
-      link: `tallyho.org/claim/${currentAccount.address}`,
-      shortLink: `tallyho.org/claim/${truncateAddress(currentAccount.address)}`,
+      link: `${WEBSITE_ORIGIN}/claim/${currentAccount.address}`,
+      shortLink: `${WEBSITE_ORIGIN?.replace(
+        /^https?:\/\//,
+        ""
+      )}/claim/${truncateAddress(currentAccount.address)}`,
     }),
     [currentAccount.address]
   )
@@ -50,7 +54,7 @@ export default function BonusProgramModalContent(): ReactElement {
         of the claim.{" "}
         <a
           className="rewards_link"
-          href="http://tallyho.org/rewards"
+          href={`${WEBSITE_ORIGIN}/rewards`}
           target="_blank"
           rel="noreferrer"
         >
