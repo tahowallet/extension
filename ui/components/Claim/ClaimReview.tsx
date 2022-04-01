@@ -84,7 +84,6 @@ export default function ClaimReview({
             margin-right: 13px;
             flex-shrink: 0;
           }
-
           .option {
             display: flex;
             justify-content: space-between;

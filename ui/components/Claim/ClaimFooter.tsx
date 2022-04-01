@@ -5,10 +5,6 @@ import {
   signTokenDelegationData,
   selectCurrentlyClaiming,
 } from "@tallyho/tally-background/redux-slices/claim"
-import {
-  clearTransactionState,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import React, { ReactElement, useCallback, useMemo } from "react"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -55,15 +51,9 @@ export default function ClaimFooter({
     // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
     // FIXME proper transaction queueing is in effect.
     if (buttonText[step - 1] === "Sign Delegation") {
-      await dispatch(
-        clearTransactionState(TransactionConstructionStatus.Pending)
-      )
       dispatch(signTokenDelegationData())
       history.push("/sign-data")
     } else if (buttonText[step - 1] === "Claim") {
-      await dispatch(
-        clearTransactionState(TransactionConstructionStatus.Pending)
-      )
       dispatch(claimRewards(claimState))
       history.push("/sign-transaction")
     } else {
