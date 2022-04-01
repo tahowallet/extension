@@ -82,7 +82,7 @@ const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressOnNetwork
-  accountBalance: AccountBalance
+  accountBalance: AccountBalance[]
   transactionSend: HexString
   transactionSendFailure: undefined
   assetTransfers: {
@@ -482,7 +482,7 @@ export default class ChainService extends BaseService<Events> {
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
-    this.emitter.emit("accountBalance", accountBalance)
+    this.emitter.emit("accountBalance", [accountBalance])
     await this.db.addBalance(accountBalance)
     return accountBalance
   }

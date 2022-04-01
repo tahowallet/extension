@@ -836,12 +836,8 @@ export default class Main extends BaseService<never> {
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
       "accountBalance",
-      async (accountWithBalanceOrBalances) => {
+      async (accountWithBalance) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
-
-        const accountWithBalance = Array.isArray(accountWithBalanceOrBalances)
-          ? accountWithBalanceOrBalances
-          : [accountWithBalanceOrBalances]
 
         const filteredBalancesToDispatch = [] as AccountBalance[]
 

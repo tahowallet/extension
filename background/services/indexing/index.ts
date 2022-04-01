@@ -31,7 +31,7 @@ import { EnrichedEVMTransaction } from "../enrichment/types"
 const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 
 interface Events extends ServiceLifecycleEvents {
-  accountBalance: AccountBalance | AccountBalance[]
+  accountBalance: AccountBalance[]
   price: PricePoint
   assets: AnyAsset[]
 }
