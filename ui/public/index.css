@@ -1,35 +1,40 @@
 :root {
-  --hunter-green: #002522;
+  --hunter-green: #002825;
   --castle-black: #0a0806;
-  --green-120: #001413;
-  --green-95: #193330;
-  --green-80: #33514e;
-  --green-60: #667c7a;
-  --green-40: #99a8a7;
-  --green-20: #ccd3d3;
-  --green-5: #f1f6f6;
+  --green-120: #00211e;
+  --green-95: #013834;
+  --green-80: #074b48;
+  --green-60: #497270;
+  --green-40: #7da19f;
+  --green-20: #b8d1d0;
+  --green-5: #ebfffe;
 
-  --trophy-gold: #d08e39;
-  --gold-120: #b6792b;
-  --gold-80: #d9a561;
-  --gold-60: #e3bb88;
-  --gold-40: #ecd2b0;
-  --gold-20: #f6e8d7;
-  --gold-5: #faf8f1;
-  --white: #faf8f1;
+  --trophy-gold: #ef9c32;
+  --gold-120: #b57017;
+  --gold-80: #f0ac55;
+  --gold-60: #efbf81;
+  --gold-40: #f5dab7;
+  --gold-20: #fbedda;
+  --gold-5: #fdf6ed;
+  --white: #ffffff;
 
-  --error: #e84855;
-  --error-80: #f18c8f;
-  --error-20: #e9cfcf;
+  --error: #ec3137;
+  --error-80: #ae383b;
+  --error-20: #372a29;
 
-  --success: #22c480;
-  --success-20: #d2e9e8;
+  --success: #20c580;
+  --success-20: #0a5740;
 
-  --attention: #eeb218;
-  --attention-20: #faf0cf;
+  --attention: #f2b824;
+  --attention-20: #495325;
 
-  --info: #5448c8;
-  --info-20: #d4e9f0;
+  --info: #3cc5ee;
+  --info-20: #125761;
+
+  --link: #14b9ea;
+
+  --shadow: 0px 16px 16px rgba(0, 33, 30, 0.14),
+    0px 6px 8px rgba(0, 33, 30, 0.24), 0px 2px 4px rgba(0, 33, 30, 0.34);
 }
 
 ::-webkit-scrollbar {
