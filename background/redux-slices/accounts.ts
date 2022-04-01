@@ -163,34 +163,36 @@ const accountSlice = createSlice({
     },
     updateAccountBalance: (
       immerState,
-      { payload: updatedAccountBalance }: { payload: AccountBalance }
+      { payload: accountsWithBalances }: { payload: AccountBalance[] }
     ) => {
-      const {
-        address: updatedAccount,
-        assetAmount: {
-          asset: { symbol: updatedAssetSymbol },
-        },
-      } = updatedAccountBalance
-      const existingAccountData = immerState.accountsData[updatedAccount]
-      if (existingAccountData) {
-        if (existingAccountData !== "loading") {
-          existingAccountData.balances[updatedAssetSymbol] =
-            updatedAccountBalance
-        } else {
-          immerState.accountsData[updatedAccount] = {
-            ...newAccountData(
-              updatedAccount,
-              updatedAccountBalance.network,
-              Object.keys(immerState.accountsData).filter(
-                (key) => key !== updatedAccount
-              ).length
-            ),
-            balances: {
-              [updatedAssetSymbol]: updatedAccountBalance,
-            },
+      accountsWithBalances.forEach((updatedAccountBalance) => {
+        const {
+          address: updatedAccount,
+          assetAmount: {
+            asset: { symbol: updatedAssetSymbol },
+          },
+        } = updatedAccountBalance
+        const existingAccountData = immerState.accountsData[updatedAccount]
+        if (existingAccountData) {
+          if (existingAccountData !== "loading") {
+            existingAccountData.balances[updatedAssetSymbol] =
+              updatedAccountBalance
+          } else {
+            immerState.accountsData[updatedAccount] = {
+              ...newAccountData(
+                updatedAccount,
+                updatedAccountBalance.network,
+                Object.keys(immerState.accountsData).filter(
+                  (key) => key !== updatedAccount
+                ).length
+              ),
+              balances: {
+                [updatedAssetSymbol]: updatedAccountBalance,
+              },
+            }
           }
         }
-      }
+      })
 
       // A key assumption here is that the balances of two accounts in
       // accountsData are mutually exclusive; that is, that there are no two
