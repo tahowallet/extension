@@ -1,7 +1,10 @@
 import React, { ReactElement, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
-import { advanceClaimStep } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  setClaimStep,
+  selectClaimSelections,
+} from "@tallyho/tally-background/redux-slices/claim"
 import { Redirect, useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimIntro from "../../components/Claim/ClaimIntro"
@@ -17,10 +20,11 @@ import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { tallyTokenDecimalDigits } from "../../utils/constants"
 import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
+import ClaimReferralBridge from "../../components/Claim/ClaimReferralBridge"
 
 export default function Eligible(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const { delegates, DAOs, claimAmount, claimStep, referrer } =
+  const { delegates, DAOs, claimAmount, step, referrer } =
     useBackgroundSelector((state) => {
       return {
         delegates: state.claim.delegates,
@@ -34,17 +38,19 @@ export default function Eligible(): ReactElement {
             },
             0
           ),
-        claimStep: state.claim.claimStep,
+        step: state.claim.claimStep,
         referrer: state.claim.referrer,
       }
     })
 
   const history = useHistory()
-  const [step, setStep] = useState(claimStep)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
+  )
+  const { selectedDelegate, selectedDAO } = useBackgroundSelector(
+    selectClaimSelections
   )
   const hasAccounts = useBackgroundSelector(
     (state) => Object.keys(state.account.accountsData).length > 0
@@ -58,10 +64,13 @@ export default function Eligible(): ReactElement {
     return <Redirect to="/overview" />
   }
 
+  function setStep(newStep: number) {
+    dispatch(setClaimStep(newStep))
+  }
+
   const advanceStep = () => {
     if (step < 5) {
       setStep(step + 1)
-      dispatch(advanceClaimStep())
     }
   }
 
@@ -76,24 +85,45 @@ export default function Eligible(): ReactElement {
   }
 
   const stepsComponents = [
-    <ClaimIntro claimAmount={claimAmount} />,
-    referrer !== null ? (
-      <ClaimReferralByUser claimAmount={claimAmount} />
-    ) : (
-      <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
-    ),
-    <ClaimManifesto claimAmount={claimAmountWithBonus} />,
-    <ClaimDelegate delegates={delegates} claimAmount={claimAmountWithBonus} />,
-    <ClaimReview
-      claimAmount={claimAmountWithBonus}
-      backToChoose={() => {
-        setStep(step - 1)
-      }}
-    />,
+    { component: <ClaimIntro claimAmount={claimAmount} />, canAdvance: true },
+    {
+      component:
+        referrer !== null ? (
+          <ClaimReferralByUser claimAmount={claimAmount} />
+        ) : (
+          <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
+        ),
+      canAdvance: Boolean(selectedDAO),
+    },
+    {
+      component: <ClaimManifesto claimAmount={claimAmountWithBonus} />,
+      canAdvance: true,
+    },
+    {
+      component: (
+        <ClaimDelegate
+          delegates={delegates}
+          claimAmount={claimAmountWithBonus}
+        />
+      ),
+      canAdvance: Boolean(selectedDelegate.truncatedAddress),
+    },
+    {
+      component: (
+        <ClaimReview
+          claimAmount={claimAmountWithBonus}
+          backToChoose={() => {
+            setStep(step - 1)
+          }}
+        />
+      ),
+      canAdvance: true,
+    },
   ]
 
   return (
     <div className="wrap">
+      <ClaimReferralBridge />
       {infoModalVisible ? (
         <ClaimInfoModal setModalVisible={setInfoModalVisible} />
       ) : null}
@@ -103,7 +133,7 @@ export default function Eligible(): ReactElement {
         close={handleSuccessModalClose}
         size="large"
       >
-        <ClaimSuccessModalContent />
+        <ClaimSuccessModalContent close={handleSuccessModalClose} />
       </SharedSlideUpMenu>
 
       <div className="background" />
@@ -123,7 +153,9 @@ export default function Eligible(): ReactElement {
             <TopMenuProfileButton />
           </div>
         </div>
-        <div className="steps-container">{stepsComponents[step - 1]}</div>
+        <div className="steps-container">
+          {stepsComponents[step - 1].component}
+        </div>
       </div>
       <footer>
         <ClaimFooter
@@ -132,6 +164,7 @@ export default function Eligible(): ReactElement {
           showSuccess={() => {
             setShowSuccessStep(true)
           }}
+          isAdvanceable={stepsComponents[step - 1].canAdvance}
         />
       </footer>
       <style jsx>

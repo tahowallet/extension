@@ -12,10 +12,8 @@ export default function BonusProgramModalContent(): ReactElement {
 
   const referralLink = useMemo(
     () => ({
-      link: `tally.cash/referral/${currentAccount.address}`,
-      shortLink: `tally.cash/referral/${truncateAddress(
-        currentAccount.address
-      )}`,
+      link: `tallyho.org/claim/${currentAccount.address}`,
+      shortLink: `tallyho.org/claim/${truncateAddress(currentAccount.address)}`,
     }),
     [currentAccount.address]
   )

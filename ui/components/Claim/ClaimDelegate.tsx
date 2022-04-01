@@ -1,22 +1,87 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useState, useCallback } from "react"
 import {
   chooseDelegate,
   Delegate,
+  selectClaimSelections,
 } from "@tallyho/tally-background/redux-slices/claim"
+import { isAddress } from "@ethersproject/address"
 
-import { useBackgroundDispatch } from "../../hooks"
-
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
+
+function CustomDelegatePanel({
+  selectedDelegate,
+}: {
+  selectedDelegate: Delegate
+}) {
+  const dispatch = useBackgroundDispatch()
+  const [errorMessage, setErrorMessage] = useState("")
+  const [addressInputValue, setAddressInputValue] = useState(
+    selectedDelegate.enteredBy === "custom"
+      ? selectedDelegate.address
+      : undefined
+  )
+
+  const clearSelectedDelegate = useCallback(() => {
+    if (selectedDelegate.enteredBy === "custom") {
+      dispatch(chooseDelegate(undefined))
+    }
+  }, [dispatch, selectedDelegate.enteredBy])
+
+  const handleAddressInputChange = useCallback(
+    (value) => {
+      if (isAddress(value)) {
+        setErrorMessage("")
+        dispatch(chooseDelegate({ address: value, enteredBy: "custom" }))
+      } else if (value.length > 10) {
+        // Clear selected delegate when not valid
+        setErrorMessage("Invalid address")
+        clearSelectedDelegate()
+      } else {
+        // Clear selected delegate when not long enough
+        clearSelectedDelegate()
+      }
+      setAddressInputValue(value)
+    },
+    [dispatch, clearSelectedDelegate]
+  )
+
+  return (
+    <div>
+      <p>
+        Delegate yourself or somebody else. We advice you only do this if the
+        person you delegate plans to be active in DAO votings.
+      </p>
+      <SharedInput
+        label="Delegate with an address"
+        value={addressInputValue}
+        onChange={handleAddressInputChange}
+        errorMessage={errorMessage}
+      />
+      <style jsx>{`
+        p {
+          color: var(--green-40);
+          font-size: 16px;
+          line-height: 24px;
+          margin-bottom: 40px;
+        }
+      `}</style>
+    </div>
+  )
+}
 
 export default function ClaimDelegate(props: {
   delegates: Delegate[]
   claimAmount: number
 }): ReactElement {
   const { delegates, claimAmount } = props
+  const { selectedDelegate } = useBackgroundSelector(selectClaimSelections)
+
   const [panelNumber, setPanelNumber] = useState(0)
+
   const dispatch = useBackgroundDispatch()
 
   return (
@@ -52,6 +117,8 @@ export default function ClaimDelegate(props: {
                         name="delegate"
                         id={delegate.ensName}
                         className="radio"
+                        checked={delegate.ensName === selectedDelegate.ensName}
+                        readOnly
                       />
                       <label
                         className="delegate_details"
@@ -83,13 +150,7 @@ export default function ClaimDelegate(props: {
             })}
           </ul>
         ) : (
-          <div>
-            <p>
-              Delegate yourself or somebody else. We advice you only do this if
-              the person you delegate plans to be active in DAO votings.
-            </p>
-            <SharedInput label="Delegate with ENS or address" />
-          </div>
+          <CustomDelegatePanel selectedDelegate={selectedDelegate} />
         )}
       </div>
       <style jsx>
@@ -169,12 +230,6 @@ export default function ClaimDelegate(props: {
             background-color: #006ae3;
             border-radius: 999px;
             flex-shrink: 0;
-          }
-          p {
-            color: var(--green-40);
-            font-size: 16px;
-            line-height: 24px;
-            margin-bottom: 40px;
           }
         `}
       </style>

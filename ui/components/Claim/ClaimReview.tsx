@@ -30,8 +30,10 @@ export default function ClaimReview({
         <div className="icon" />
         <div className="option">
           <div className="left">
-            {selectedDelegate?.ensName}
-            <div className="address">{selectedDelegate?.truncatedAddress}</div>
+            {selectedDelegate?.ensName ? (
+              <span>{selectedDelegate?.ensName}</span>
+            ) : null}
+            <span>{selectedDelegate?.truncatedAddress}</span>
           </div>
           <div className="right">
             <SharedButton
@@ -82,13 +84,6 @@ export default function ClaimReview({
             margin-right: 13px;
             flex-shrink: 0;
           }
-          .address {
-            width: 102px;
-            height: 24px;
-            color: var(--green-60);
-            font-size: 16px;
-            line-height: 24px;
-          }
           .option {
             display: flex;
             justify-content: space-between;
@@ -98,6 +93,12 @@ export default function ClaimReview({
           .left {
             display: flex;
             flex-direction: column;
+            color: var(--green-60);
+            font-size: 16px;
+            line-height: 20px;
+          }
+          .left span:first-of-type {
+            color: #fff;
           }
         `}
       </style>
