@@ -8,6 +8,7 @@ import {
   AssetDecimalAmount,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
+import { normalizeEVMAddress } from "../lib/utils"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -138,24 +139,26 @@ const accountSlice = createSlice({
   initialState,
   reducers: {
     loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
-      return state.accountsData[accountToLoad]
+      const accountKey = normalizeEVMAddress(accountToLoad)
+      return state.accountsData[accountKey]
         ? state // If the account data already exists, the account is already loaded.
         : {
             ...state,
-            accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
+            accountsData: { ...state.accountsData, [accountKey]: "loading" },
           }
     },
     deleteAccount: (
       state,
       { payload: accountToRemove }: { payload: string }
     ) => {
-      if (!state.accountsData[accountToRemove]) {
+      const keyToRemove = normalizeEVMAddress(accountToRemove)
+
+      if (!state.accountsData[normalizeEVMAddress(keyToRemove)]) {
         return state
       }
       // Immutably remove the account passed in
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { [accountToRemove]: _, ...withoutAccountToRemove } =
-        state.accountsData
+      const { [keyToRemove]: _, ...withoutAccountToRemove } = state.accountsData
       return {
         ...state,
         accountsData: withoutAccountToRemove,
@@ -171,18 +174,21 @@ const accountSlice = createSlice({
           asset: { symbol: updatedAssetSymbol },
         },
       } = updatedAccountBalance
-      const existingAccountData = immerState.accountsData[updatedAccount]
+
+      const updatedAccountKey = normalizeEVMAddress(updatedAccount)
+
+      const existingAccountData = immerState.accountsData[updatedAccountKey]
       if (existingAccountData) {
         if (existingAccountData !== "loading") {
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
         } else {
-          immerState.accountsData[updatedAccount] = {
+          immerState.accountsData[updatedAccountKey] = {
             ...newAccountData(
-              updatedAccount,
+              updatedAccountKey,
               updatedAccountBalance.network,
               Object.keys(immerState.accountsData).filter(
-                (key) => key !== updatedAccount
+                (key) => key !== updatedAccountKey
               ).length
             ),
             balances: {
@@ -225,21 +231,21 @@ const accountSlice = createSlice({
       }: { payload: AddressOnNetwork & { name: DomainName } }
     ) => {
       // TODO Refactor when accounts are also keyed per network.
-      const address = addressNetworkName.address.toLowerCase()
+      const accountKey = normalizeEVMAddress(addressNetworkName.address)
 
       // No entry means this ENS name isn't being tracked here.
-      if (immerState.accountsData[address] === undefined) {
+      if (immerState.accountsData[accountKey] === undefined) {
         return
       }
 
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData[address],
-        address,
+        immerState.accountsData[accountKey],
+        accountKey,
         addressNetworkName.network,
-        Object.keys(immerState.accountsData).filter((key) => key !== address)
+        Object.keys(immerState.accountsData).filter((key) => key !== accountKey)
           .length
       )
-      immerState.accountsData[address] = {
+      immerState.accountsData[accountKey] = {
         ...baseAccountData,
         ens: { ...baseAccountData.ens, name: addressNetworkName.name },
       }
@@ -251,21 +257,21 @@ const accountSlice = createSlice({
       }: { payload: AddressOnNetwork & { avatar: URI } }
     ) => {
       // TODO Refactor when accounts are also keyed per network.
-      const address = addressNetworkAvatar.address.toLowerCase()
+      const accountKey = normalizeEVMAddress(addressNetworkAvatar.address)
 
       // No entry means this ENS name isn't being tracked here.
-      if (immerState.accountsData[address] === undefined) {
+      if (immerState.accountsData[accountKey] === undefined) {
         return
       }
 
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData[address],
-        address,
+        immerState.accountsData[accountKey],
+        accountKey,
         addressNetworkAvatar.network,
-        Object.keys(immerState.accountsData).filter((key) => key !== address)
+        Object.keys(immerState.accountsData).filter((key) => key !== accountKey)
           .length
       )
-      immerState.accountsData[address] = {
+      immerState.accountsData[accountKey] = {
         ...baseAccountData,
         ens: { ...baseAccountData.ens, avatarURL: addressNetworkAvatar.avatar },
       }
