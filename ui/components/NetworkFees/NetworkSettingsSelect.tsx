@@ -69,7 +69,8 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
-    dollarValue: dollarValue ? `$${dollarValue}` : "-",
+    // dollarValue: dollarValue ? `$${dollarValue}` : "-",
+    dollarValue: dollarValue ? `🍫 ${(+dollarValue / 2.94).toFixed(1)}` : "-", // https://www.walmart.com/ip/Lindt-Excellence-85-Cocoa-Dark-Chocolate-Candy-Bar-3-5-oz/10312257
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     price,

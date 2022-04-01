@@ -70,7 +70,9 @@ export default function FeeSettingsText(): ReactElement {
 
   return (
     <div>
-      ~${dollarValue}
+      {/* ~${dollarValue} */}
+      {/* https://www.walmart.com/ip/Lindt-Excellence-85-Cocoa-Dark-Chocolate-Candy-Bar-3-5-oz/10312257 */}
+      ~🍫{(+dollarValue / 2.94).toFixed(1)}
       <span className="fee_gwei">({gweiValue})</span>
       <style jsx>{`
         .fee_gwei {
