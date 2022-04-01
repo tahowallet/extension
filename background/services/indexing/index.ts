@@ -1,7 +1,7 @@
 import logger from "../../lib/logger"
 
 import { HexString } from "../../types"
-import { EVMNetwork } from "../../networks"
+import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
@@ -25,10 +25,14 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
+import { sameEVMAddress } from "../../lib/utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
 const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
+// The number of ms to coalesce tokens whose balances are known to have changed
+// before balance-checking them.
+const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
 interface Events extends ServiceLifecycleEvents {
   accountBalance: AccountBalance
@@ -81,7 +85,7 @@ export default class IndexingService extends BaseService<Events> {
     super({
       tokens: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 10,
         },
         handler: () => this.handleTokenAlarm(),
         runAtStart: true,
@@ -204,6 +208,17 @@ export default class IndexingService extends BaseService<Events> {
    * PRIVATE METHODS *
    ******************* */
 
+  private acceleratedTokenRefresh: {
+    timeout: number | undefined
+    assetLookups: {
+      asset: SmartContractFungibleAsset
+      addressOnNetwork: AddressOnNetwork
+    }[]
+  } = {
+    timeout: undefined,
+    assetLookups: [],
+  }
+
   async notifyEnrichedTransaction(
     enrichedEVMTransaction: EnrichedEVMTransaction
   ): Promise<void> {
@@ -215,29 +230,76 @@ export default class IndexingService extends BaseService<Events> {
             ...(enrichedEVMTransaction.annotation.subannotations ?? []),
           ]
 
-    jointAnnotations.forEach((annotation) => {
+    jointAnnotations.forEach(async (annotation) => {
       // Note asset transfers of smart contract assets to or from an
       // address we're tracking, and ensure we're tracking that asset +
-      // that we do a balance check soon.
+      // that we do an accelerated balance check.
       if (
         typeof annotation !== "undefined" &&
         annotation.type === "asset-transfer" &&
-        isSmartContractFungibleAsset(annotation.assetAmount.asset) &&
-        this.chainService.isTrackingAddressesOnNetworks(
-          {
-            address: annotation.senderAddress,
-            network: enrichedEVMTransaction.network,
-          },
-          {
-            address: annotation.recipientAddress,
-            network: enrichedEVMTransaction.network,
-          }
-        )
+        isSmartContractFungibleAsset(annotation.assetAmount.asset)
       ) {
-        this.addAssetToTrack(annotation.assetAmount.asset)
-        this.scheduledTokenRefresh = true
+        const { asset } = annotation.assetAmount
+        const annotationAddressesOnNetwork = [
+          annotation.senderAddress,
+          annotation.recipientAddress,
+        ].map((address) => ({
+          address,
+          network: enrichedEVMTransaction.network,
+        }))
+
+        const trackedAddresesOnNetworks =
+          await this.chainService.filterTrackedAddressesOnNetworks(
+            annotationAddressesOnNetwork
+          )
+
+        const assetLookups = trackedAddresesOnNetworks.map(
+          (addressOnNetwork) => ({
+            asset,
+            addressOnNetwork,
+          })
+        )
+
+        this.acceleratedTokenRefresh.assetLookups.push(...assetLookups)
+        this.acceleratedTokenRefresh.timeout ??= window.setTimeout(
+          this.handleAcceleratedTokenRefresh.bind(this),
+          ACCELERATED_TOKEN_REFRESH_TIMEOUT
+        )
       }
     })
+  }
+
+  private async handleAcceleratedTokenRefresh(): Promise<void> {
+    try {
+      const { assetLookups } = this.acceleratedTokenRefresh
+
+      this.acceleratedTokenRefresh.timeout = undefined
+      this.acceleratedTokenRefresh.assetLookups = []
+
+      const lookupsByAddressOnNetwork = assetLookups.reduce<
+        [AddressOnNetwork, SmartContractFungibleAsset[]][]
+      >((lookups, { asset, addressOnNetwork: { address, network } }) => {
+        const existingAddressOnNetworkIndex = lookups.findIndex(
+          ([{ address: existingAddress, network: existingNetwork }]) =>
+            sameEVMAddress(address, existingAddress) &&
+            sameNetwork(network, existingNetwork)
+        )
+
+        if (existingAddressOnNetworkIndex !== -1) {
+          lookups[existingAddressOnNetworkIndex][1].push(asset)
+        } else {
+          lookups.push([{ address, network }, [asset]])
+        }
+
+        return lookups
+      }, [])
+
+      lookupsByAddressOnNetwork.forEach(([addressOnNetwork, assets]) => {
+        this.retrieveTokenBalances(addressOnNetwork, assets)
+      })
+    } catch (error) {
+      logger.error("Error during accelerated token refresh", error)
+    }
   }
 
   private async connectChainServiceEvents(): Promise<void> {
