@@ -225,7 +225,12 @@ export default function EarnDeposit(): ReactElement {
               <h1 className="asset_name">{vault?.asset.symbol}</h1>
             </div>
             <div>
-              <a href="www.onet.pl" target="_blank">
+              {/* @TODO: Generalize for other networks */}
+              <a
+                href={`https://etherscan.io/address/${vault.vaultAddress}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <div className="contract">
                   <div className="contract_link">Contract</div>
                   <span className="external" />
