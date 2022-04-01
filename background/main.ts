@@ -643,10 +643,13 @@ export default class Main extends BaseService<never> {
 
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
-    this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
-      // The first account balance update will transition the account to loading.
-      this.store.dispatch(updateAccountBalance(accountWithBalance))
-    })
+    this.chainService.emitter.on(
+      "accountsWithBalances",
+      (accountWithBalance) => {
+        // The first account balance update will transition the account to loading.
+        this.store.dispatch(updateAccountBalance(accountWithBalance))
+      }
+    )
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
@@ -835,13 +838,13 @@ export default class Main extends BaseService<never> {
 
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
-      "accountBalance",
-      async (accountWithBalance) => {
+      "accountsWithBalances",
+      async (accountsWithBalances) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
 
-        const filteredBalancesToDispatch = [] as AccountBalance[]
+        const filteredBalancesToDispatch: AccountBalance[] = []
 
-        accountWithBalance.forEach((balance) => {
+        accountsWithBalances.forEach((balance) => {
           // TODO support multi-network assets
           const doesThisBalanceHaveAnAlreadyTrackedAsset =
             !!assetsToTrack.filter(

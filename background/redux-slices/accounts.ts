@@ -163,9 +163,9 @@ const accountSlice = createSlice({
     },
     updateAccountBalance: (
       immerState,
-      { payload: updatedAccountBalances }: { payload: AccountBalance[] }
+      { payload: accountsWithBalances }: { payload: AccountBalance[] }
     ) => {
-      updatedAccountBalances.forEach((updatedAccountBalance) => {
+      accountsWithBalances.forEach((updatedAccountBalance) => {
         const {
           address: updatedAccount,
           assetAmount: {

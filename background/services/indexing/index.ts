@@ -31,7 +31,7 @@ import { EnrichedEVMTransaction } from "../enrichment/types"
 const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 
 interface Events extends ServiceLifecycleEvents {
-  accountBalance: AccountBalance[]
+  accountsWithBalances: AccountBalance[]
   price: PricePoint
   assets: AnyAsset[]
 }
@@ -359,15 +359,12 @@ export default class IndexingService extends BaseService<Events> {
 
         if (amount > 0) {
           if (knownAsset) {
-            // TODO: we might don't need this here? Or we just need it for the first time?
             await this.addAssetToTrack(knownAsset)
           } else {
             await this.addTokenToTrackByContract(
               addressNetwork,
               contractAddress
             )
-            // TODO we're losing balance information here, consider an
-            // addTokenAndBalanceToTrackByContract method
           }
         }
 
@@ -394,11 +391,11 @@ export default class IndexingService extends BaseService<Events> {
           (fulfilledReturn) =>
             (fulfilledReturn as PromiseFulfilledResult<AccountBalance>).value
         )
-        .filter((value) => !!value)
+        .filter((value) => !undefined)
     )
 
     await this.db.addBalances(accountBalances)
-    this.emitter.emit("accountBalance", accountBalances)
+    this.emitter.emit("accountsWithBalances", accountBalances)
 
     return balances
   }
