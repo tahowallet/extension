@@ -347,8 +347,7 @@ export default class IndexingService extends BaseService<Events> {
     }, {})
 
     // look up all assets and set balances
-
-    const accountBalances = await Promise.allSettled(
+    const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
           listedAssetByAddress[contractAddress] ??
@@ -384,14 +383,16 @@ export default class IndexingService extends BaseService<Events> {
 
         return undefined
       })
-    ).then((returnArray) =>
-      returnArray
-        .filter((promiseReturn) => promiseReturn.status === "fulfilled")
-        .map(
-          (fulfilledReturn) =>
-            (fulfilledReturn as PromiseFulfilledResult<AccountBalance>).value
-        )
-        .filter((value) => !undefined)
+    )
+
+    const accountBalances = unfilteredAccountBalances.reduce<AccountBalance[]>(
+      (acc, current) => {
+        if (current.status === "fulfilled" && current.value) {
+          return [...acc, current.value]
+        }
+        return acc
+      },
+      []
     )
 
     await this.db.addBalances(accountBalances)
