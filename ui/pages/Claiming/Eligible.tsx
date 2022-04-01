@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from "react"
 import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import {
-  advanceClaimStep,
+  setClaimStep,
   selectClaimSelections,
 } from "@tallyho/tally-background/redux-slices/claim"
 import { Redirect, useHistory } from "react-router-dom"
@@ -23,7 +23,7 @@ import SharedBackButton from "../../components/Shared/SharedBackButton"
 
 export default function Eligible(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const { delegates, DAOs, claimAmount, claimStep, referrer } =
+  const { delegates, DAOs, claimAmount, step, referrer } =
     useBackgroundSelector((state) => {
       return {
         delegates: state.claim.delegates,
@@ -37,13 +37,12 @@ export default function Eligible(): ReactElement {
             },
             0
           ),
-        claimStep: state.claim.claimStep,
+        step: state.claim.claimStep,
         referrer: state.claim.referrer,
       }
     })
 
   const history = useHistory()
-  const [step, setStep] = useState(claimStep)
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
   const { accountData } = useBackgroundSelector(
@@ -64,10 +63,13 @@ export default function Eligible(): ReactElement {
     return <Redirect to="/overview" />
   }
 
+  function setStep(newStep: number) {
+    dispatch(setClaimStep(newStep))
+  }
+
   const advanceStep = () => {
     if (step < 5) {
       setStep(step + 1)
-      dispatch(advanceClaimStep())
     }
   }
 
