@@ -25,10 +25,9 @@ function isReceiveActivity(activity: ActivityItem, account: string): boolean {
 }
 
 function isSendActivity(activity: ActivityItem, account: string): boolean {
-  return (
-    activity.annotation?.type === "asset-transfer" &&
-    sameEVMAddress(activity.annotation?.senderAddress, account)
-  )
+  return activity.annotation?.type === "asset-transfer"
+    ? sameEVMAddress(activity.annotation?.senderAddress, account)
+    : true
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
