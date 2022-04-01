@@ -54,12 +54,11 @@ export default function ClaimFooter({
       dispatch(signTokenDelegationData())
       history.push("/sign-data")
     } else if (buttonText[step - 1] === "Claim") {
-      dispatch(claimRewards(claimState))
-      history.push("/sign-transaction")
+      await dispatch(claimRewards(claimState))
     } else {
       advanceStep()
     }
-  }, [buttonText, step, advanceStep, dispatch, history, claimState])
+  }, [buttonText, step, advanceStep, dispatch, claimState, history])
 
   return (
     <footer>
