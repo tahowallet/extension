@@ -288,8 +288,20 @@ const initializeStore = (preloadedState = {}, main: Main) =>
       return middleware
     },
     devTools: false,
-    enhancers:
-      process.env.NODE_ENV === "development"
+    enhancers: [
+      // TODO: refactor this into debouncedThrottledSubscribe variable with proper typing
+      (createStore) => (reducer, initialState) => {
+        const store: any = createStore(reducer, initialState)
+        const originalSubscribe = store.subscribe
+
+        store.subscribe = (listener: any) => {
+          console.log("hey we are spying with great success")
+          debugger
+          return originalSubscribe(listener)
+        }
+        return store
+      },
+      ...(process.env.NODE_ENV === "development"
         ? [
             devToolsEnhancer({
               hostname: "localhost",
@@ -299,7 +311,8 @@ const initializeStore = (preloadedState = {}, main: Main) =>
               stateSanitizer: devToolsSanitizer,
             }),
           ]
-        : [],
+        : []),
+    ],
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
