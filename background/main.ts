@@ -1252,6 +1252,18 @@ export default class Main extends BaseService<never> {
     this.telemetryService.connectReduxStore(this.store)
   }
 
+  async resolveNameOnNetwork({
+    name,
+    network,
+  }: NameOnNetwork): Promise<string | undefined> {
+    try {
+      return await this.nameService.lookUpEthereumAddress(name /* , network */)
+    } catch (error) {
+      logger.info("Error looking up Ethereum address: ", error)
+      return undefined
+    }
+  }
+
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
