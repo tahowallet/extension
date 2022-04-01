@@ -181,7 +181,7 @@ const pageList: PageList[] = [
     Component: Eligible,
     hasTabBar: false,
     hasTopBar: false,
-    persistOnClose: false,
+    persistOnClose: true,
   },
   {
     path: "/",
