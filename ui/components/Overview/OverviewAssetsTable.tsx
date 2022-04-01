@@ -13,24 +13,20 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
   if (!assets) return <></>
 
   function assetSortCompare(a: CompleteAssetAmount, b: CompleteAssetAmount) {
-    if (a.mainCurrencyAmount && b.mainCurrencyAmount) {
+    if (a.mainCurrencyAmount !== b.mainCurrencyAmount) {
+      // Any mismatched undefined is ranked below its defined counterpart.
+      if (a.mainCurrencyAmount === undefined) {
+        return 1
+      }
+      if (b.mainCurrencyAmount === undefined) {
+        return -1
+      }
+
       return b.mainCurrencyAmount - a.mainCurrencyAmount
     }
 
-    // Prioritize mainCurrencyAmount sort
-    if (!a.mainCurrencyAmount || !b.mainCurrencyAmount) {
-      return 1
-    }
-
-    // Alphabetical fallback
-    if (a.asset.symbol > b.asset.symbol) {
-      return -1
-    }
-    if (a.asset.symbol < b.asset.symbol) {
-      return 1
-    }
-
-    return 0
+    // Fall back on symbol comparison.
+    return a.asset.symbol.localeCompare(b.asset.symbol)
   }
 
   return (
