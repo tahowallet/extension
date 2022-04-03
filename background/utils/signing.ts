@@ -57,6 +57,7 @@ export type EIP2612TypedData = {
   types: Record<string, TypedDataField[]>
   message: EIP2612Message
   primaryType: "Permit"
+  // FIXME Add network info.
 }
 
 const checkEIP4361: (message: string) => EIP4361Data | undefined = (

@@ -6,12 +6,6 @@ import NameService from "../name"
 import { EIP712TypedData } from "../../types"
 import { EIP2612TypedData } from "../../utils/signing"
 
-export const ENRICHABLE_CONTRACT_NAMES: { [contractAddress: string]: string } =
-  {
-    // Uniswap v2 Router
-    "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": "🦄 Uniswap",
-  }
-
 export function isEIP2612TypedData(
   typedData: EIP712TypedData
 ): typedData is EIP2612TypedData {
@@ -49,8 +43,12 @@ export async function enrichEIP2612SignTypedDataRequest(
   // We only need to add the token if we're not able to properly format the value above
   const token = formattedValue === `${value}` ? domain.name : null
 
-  const [ownerName, spenderName] = (
+  const [sourceName, ownerName, spenderName] = (
     await Promise.all([
+      await nameService.lookUpName({
+        address: spender,
+        network: ETHEREUM,
+      }),
       await nameService.lookUpName(
         { address: owner, network: ETHEREUM },
         false
@@ -64,7 +62,7 @@ export async function enrichEIP2612SignTypedDataRequest(
 
   return {
     type: "EIP-2612",
-    source: ENRICHABLE_CONTRACT_NAMES[spender],
+    source: sourceName,
     displayFields: {
       owner: ownerName ?? owner,
       spender: spenderName ?? spender,
