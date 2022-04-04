@@ -9,6 +9,7 @@ import {
   checkApprovalTargetApproval,
   claimVaultRewards,
   clearSignature,
+  getPoolAPR,
   inputAmount,
   permitVaultDeposit,
   selectCurrentlyApproving,
@@ -22,10 +23,6 @@ import {
   vaultDeposit,
   vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
-import {
-  clearTransactionState,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
@@ -47,9 +44,9 @@ export default function EarnDeposit(): ReactElement {
   const [amount, setAmount] = useState(storedInput)
   const [hasError, setHasError] = useState(false)
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
-  const [isApproved, setIsApproved] = useState(false)
+  const [isApproved, setIsApproved] = useState(true)
   const [deposited, setDeposited] = useState(false)
-
+  const [APR, setAPR] = useState("")
   const dispatch = useBackgroundDispatch()
 
   const history = useHistory()
@@ -69,6 +66,18 @@ export default function EarnDeposit(): ReactElement {
   const vault = enrichedVaults.find(
     (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
   )
+
+  useEffect(() => {
+    if (typeof vault !== "undefined") {
+      const getAPR = async () => {
+        const displayAPR = (await dispatch(
+          getPoolAPR(vault)
+        )) as unknown as string
+        setAPR(displayAPR)
+      }
+      getAPR()
+    }
+  }, [dispatch, vault])
 
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
@@ -235,7 +244,7 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Estimated APR</div>
-            <div className="amount">250%</div>
+            <div className="amount">{APR}%</div>
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
@@ -304,7 +313,9 @@ export default function EarnDeposit(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                isDisabled={hasError || amount === "" || isCurrentlyApproving}
+                isDisabled={
+                  hasError || Number(amount) === 0 || isCurrentlyApproving
+                }
                 onClick={approve}
               >
                 {approveButtonText()}
@@ -314,7 +325,7 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 onClick={deposit}
-                isDisabled={hasError || amount === ""}
+                isDisabled={hasError || Number(amount) === 0}
               >
                 {isDepositPending ? "Depositing..." : "Authorize & Deposit"}
               </SharedButton>

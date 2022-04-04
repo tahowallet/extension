@@ -81,7 +81,7 @@ export const initialState: EarnState = {
         contractAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
         decimals: 6,
       },
-      vaultAddress: "0x6575a8E8Ca0FD1Fb974419AE1f9128cCb1055209",
+      vaultAddress: "0xCb3Bf98C8354776C7cE7869EDcC43e1940e430ff",
       yearnVault: "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
       userDeposited: 0n,
       totalDeposited: 0n,
@@ -95,7 +95,7 @@ export const initialState: EarnState = {
         contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
         decimals: 8,
       },
-      vaultAddress: "0xAAfcDd71F8eb9B6229852fD6B005F0c39394Af06",
+      vaultAddress: "0x4F186a311241A4e1EE546DbaDB04c87eadCBf4E8",
       yearnVault: "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
       userDeposited: 0n,
       totalDeposited: 0n,
@@ -109,12 +109,12 @@ export const initialState: EarnState = {
         contractAddress: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
         decimals: 18,
       },
-      vaultAddress: "0x30EEB5c3d3B3FB3aC532c77cD76dd59f78Ff9070",
+      vaultAddress: "0xBCd2638301A6e62A49015675B75bfC04b6621965",
       yearnVault: "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
       userDeposited: 0n,
       totalDeposited: 0n,
       pendingRewards: 0n,
-      active: false,
+      active: true,
     },
   ],
   currentlyDepositing: false,
@@ -125,7 +125,7 @@ export const initialState: EarnState = {
 }
 
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
-  "0x76465982fD8070FC74c91FD4CFfC7eb56Fc6b03a"
+  "0xaD92e615509fDb065Fe654f241b143293dE16D99"
 
 const earnSlice = createSlice({
   name: "earn",
@@ -467,18 +467,34 @@ export const getPoolAPR = createBackgroundAsyncThunk(
     }
 
     // We don't know how much DOGGO will cost
-    const assumedDoggoPrice = 1.2
+    const assumedDoggoPrice = parseUnits("1.2", 10)
 
-    const totalRewardsAddedToPool = 750000000 // rewards set when deploying to be distributed within 14 days
+    const totalRewardsAddedToPool = BigNumber.from("750000000") // rewards set when deploying to be distributed within 14 days
+    const huntingGroundContract = await getContract(
+      vault.vaultAddress,
+      VAULT_ABI
+    )
 
-    // Multiplying totalRewardsAddedToPool times 26 will give us yearly value 14 * 26 = 364
-    const totalRewardValueYearly =
-      totalRewardsAddedToPool * 26 * assumedDoggoPrice
+    // Rewards duration in seconds
+    const rewardPeriodSeconds: BigNumber =
+      await huntingGroundContract.duration()
+    const secondsInAYear = BigNumber.from(31556926)
+
+    const periodsPerYear = secondsInAYear.div(rewardPeriodSeconds)
+
+    // Total value in USDC
+    const totalRewardsYearly = totalRewardsAddedToPool.mul(periodsPerYear)
+
+    const totalRewardValue = totalRewardsYearly.mul(assumedDoggoPrice)
 
     // We get how much our Hunting Ground has deposited into the yearn vault
     const yearnVaultContract = await getContract(vault.yearnVault, VAULT_ABI)
-    const sharesStakedInPool: BigNumber = await yearnVaultContract.balanceOf(
+    const tokensStakedInPool: BigNumber = await yearnVaultContract.balanceOf(
       vault.vaultAddress
+    )
+
+    const decimals = BigNumber.from(10).pow(
+      BigNumber.from(vault.asset.decimals)
     )
 
     const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
@@ -490,21 +506,18 @@ export const getPoolAPR = createBackgroundAsyncThunk(
       mainCurrencySymbol
     )
 
-    const sharesStakedParsed = formatUnits(
-      sharesStakedInPool,
-      vault.asset.decimals
-    )
-
     // TODO remove once we change price source
     if (assetPricePoint?.amounts[1] === undefined) return "0"
 
-    const totalValueOfSharesStaked =
-      Number(sharesStakedParsed) *
-      Number(formatUnits(assetPricePoint?.amounts[1], 10))
+    const totalValueOfTokensStaked = tokensStakedInPool
+      .mul(assetPricePoint?.amounts[1])
+      .div(decimals)
 
-    if (totalValueOfSharesStaked > 0) {
-      const APR = (totalRewardValueYearly / totalValueOfSharesStaked) * 100
-      return nFormatter(APR, 1)
+    if (totalValueOfTokensStaked.gt(BigNumber.from(0))) {
+      const APR = totalRewardValue
+        .div(totalValueOfTokensStaked)
+        .mul(BigNumber.from(100))
+      return nFormatter(APR.toNumber(), 1)
     }
 
     return "Infinite"

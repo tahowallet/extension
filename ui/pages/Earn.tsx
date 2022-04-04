@@ -33,7 +33,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
 
   useEffect(() => {
     const fetchPoolAPRs = async () => {
-      const yearlyAPR = await dispatch(getPoolAPR(vault))
+      const yearlyAPR = (await dispatch(getPoolAPR(vault))) as unknown as string
       setAPR(yearlyAPR)
     }
     fetchPoolAPRs()
