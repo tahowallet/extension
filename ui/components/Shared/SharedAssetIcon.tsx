@@ -12,11 +12,15 @@ export default function SharedAssetIcon(props: Props): ReactElement {
   const hardcodedIcons = ["ETH"]
   const hasHardcodedIcon = hardcodedIcons.includes(symbol)
 
-  // Checks to see if it's an http(s) address because I've seen
-  // strings get here like ipfs://QmYNz8J1h5yefkaAw6tZwUYoJyBTWmBXgAY28ZWZ5rPsLR
-  // which won't load. Of if we have a hardcoded backup image
+  // If IPFS url, pass through gateway
+  const httpURL =
+    logoURL?.includes("ipfs") && logoURL.split("ipfs://")[1]
+      ? `https://ipfs.io/ipfs/${logoURL.split("ipfs://")[1]}`
+      : logoURL
+
+  // Check if an http(s) address or if we have a hardcoded backup image
   const hasValidImage =
-    (logoURL && logoURL.includes("http")) || hasHardcodedIcon
+    (httpURL && httpURL.includes("http")) || hasHardcodedIcon
 
   return (
     <div className={`token_icon_wrap ${size}`}>
@@ -73,7 +77,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           ${hasHardcodedIcon
             ? `background: url("${`./images/${symbol.toLowerCase()}@2x.png`}") center no-repeat;
             background-size: 45% auto;`
-            : `background: url("${logoURL}");
+            : `background: url("${httpURL}");
             background-size: cover;`}
         }
       `}</style>
