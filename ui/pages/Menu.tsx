@@ -8,6 +8,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
+import t from "../utils/i18n"
 
 function SettingRow(props: {
   title: string
@@ -53,7 +54,7 @@ export default function Menu(): ReactElement {
   const settings = {
     general: [
       {
-        title: "Hide asset balance under $2",
+        title: t("menuHideSmallAssetBalance", "2"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -62,7 +63,7 @@ export default function Menu(): ReactElement {
         ),
       },
       {
-        title: "Use Tally Ho as default wallet",
+        title: t("menuSetAsDefault"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
