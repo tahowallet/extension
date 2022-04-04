@@ -27,11 +27,12 @@ export interface DAO {
 }
 
 export interface Delegate {
-  address: string
-  ensName: string
-  applicationLink: string
+  address?: string
+  ensName?: string
+  applicationLink?: string
   avatar?: string
   truncatedAddress?: string
+  enteredBy?: "list" | "custom"
 }
 
 interface ClaimingState {
@@ -95,11 +96,6 @@ const claimingSlice = createSlice({
     setEligibility: (immerState, { payload: eligibility }) => {
       immerState.eligibility = eligibility
     },
-    advanceClaimStep: (immerState) => {
-      if (immerState.claimStep < 5) {
-        immerState.claimStep += 1
-      }
-    },
     setClaimStep: (immerState, { payload }: { payload: number }) => {
       immerState.claimStep = payload
     },
@@ -152,7 +148,6 @@ export const {
   setEligibility,
   saveSignature,
   currentlyClaiming,
-  advanceClaimStep,
   setClaimStep,
   claimed,
   resetStep,
@@ -367,9 +362,9 @@ export const selectClaimSelections = createSelector(
     return {
       selectedDelegate: {
         ...claimState.selectedDelegate,
-        truncatedAddress: truncateAddress(
-          claimState?.selectedDelegate?.address ?? ""
-        ),
+        truncatedAddress: claimState?.selectedDelegate?.address
+          ? truncateAddress(claimState?.selectedDelegate?.address)
+          : undefined,
       },
       selectedDAO: claimState.selectedDAO,
     }

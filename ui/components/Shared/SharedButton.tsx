@@ -237,10 +237,13 @@ export default function SharedButton(props: Props): ReactElement {
           .tertiary:active .icon_button {
             background-color: var(--gold-80);
           }
-          .twitter,
-          .twitter:hover {
+          .twitter {
             background-color: #3a90e9;
             color: #fff;
+          }
+          .twitter:hover {
+            color: #fff;
+            background-color: #5cacff;
           }
           .twitter .icon_button,
           .twitter:hover .icon_button {

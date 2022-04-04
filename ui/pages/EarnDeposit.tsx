@@ -23,6 +23,7 @@ import {
   vaultDeposit,
   vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
+
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
@@ -134,7 +135,6 @@ export default function EarnDeposit(): ReactElement {
           tokenAddress: vault.asset.contractAddress,
         })
       )
-      history.push("/sign-transaction")
     }
   }, [amount, dispatch, history, inDepositProcess, vault])
 
@@ -172,7 +172,6 @@ export default function EarnDeposit(): ReactElement {
 
   const approve = async () => {
     dispatch(approveApprovalTarget(vault.asset.contractAddress))
-    history.push("/sign-transaction")
   }
 
   const deposit = async () => {
@@ -194,12 +193,10 @@ export default function EarnDeposit(): ReactElement {
     )
     setDeposited(false)
     setWithdrawalSlideupVisible(false)
-    history.push("/sign-transaction")
   }
 
   const claimRewards = async () => {
     dispatch(claimVaultRewards(vault.vaultAddress))
-    history.push("/sign-transaction")
   }
 
   const handleAmountChange = (
@@ -225,7 +222,7 @@ export default function EarnDeposit(): ReactElement {
   return (
     <>
       <section className="primary_info">
-        <BackButton />
+        <BackButton path="/earn" />
         <ul className="wrapper">
           <li className="row header">
             <div className="type">VAULT</div>
@@ -234,7 +231,12 @@ export default function EarnDeposit(): ReactElement {
               <h1 className="asset_name">{vault?.asset.symbol}</h1>
             </div>
             <div>
-              <a href="www.onet.pl" target="_blank">
+              {/* @TODO: Generalize for other networks */}
+              <a
+                href={`https://etherscan.io/address/${vault.vaultAddress}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <div className="contract">
                   <div className="contract_link">Contract</div>
                   <span className="external" />
