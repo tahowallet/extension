@@ -54,7 +54,7 @@ export default function Menu(): ReactElement {
   const settings = {
     general: [
       {
-        title: t("menuHideSmallAssetBalance"),
+        title: t("menuHideSmallAssetBalance", "2"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}

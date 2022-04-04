@@ -8,7 +8,7 @@
     "description": "in Wallet > WalletAccountBalanceControl"
   },
   "menuHideSmallAssetBalance": {
-    "message": "Hide asset balance under $$2",
+    "message": "Hide asset balance under $$$1",
     "description": "in pages > Menu"
   },
   "menuSetAsDefault": {
