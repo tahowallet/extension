@@ -964,14 +964,15 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Looks up whether any of the passed address/network pairs are being tracked.
+   * Given a list of AddressOnNetwork objects, return only the ones that
+   * are currently being tracked.
    */
-  async isTrackingAddressesOnNetworks(
-    ...addressesOnNetworks: AddressOnNetwork[]
-  ): Promise<boolean> {
+  async filterTrackedAddressesOnNetworks(
+    addressesOnNetworks: AddressOnNetwork[]
+  ): Promise<AddressOnNetwork[]> {
     const accounts = await this.getAccountsToTrack()
 
-    return addressesOnNetworks.some(({ address, network }) =>
+    return addressesOnNetworks.filter(({ address, network }) =>
       accounts.some(
         ({ address: trackedAddress, network: trackedNetwork }) =>
           sameEVMAddress(trackedAddress, address) &&
