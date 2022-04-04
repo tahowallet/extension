@@ -24,7 +24,7 @@ import {
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
-import { AddressOnNetwork, NameOnNetwork } from "./accounts"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 
 import rootReducer from "./redux-slices"
 import {
@@ -633,10 +633,13 @@ export default class Main extends BaseService<never> {
 
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
-    this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
-      // The first account balance update will transition the account to loading.
-      this.store.dispatch(updateAccountBalance(accountWithBalance))
-    })
+    this.chainService.emitter.on(
+      "accountsWithBalances",
+      (accountWithBalance) => {
+        // The first account balance update will transition the account to loading.
+        this.store.dispatch(updateAccountBalance(accountWithBalance))
+      }
+    )
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
@@ -793,21 +796,28 @@ export default class Main extends BaseService<never> {
 
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
-      "accountBalance",
-      async (accountWithBalance) => {
+      "accountsWithBalances",
+      async (accountsWithBalances) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
 
-        // TODO support multi-network assets
-        const doesThisBalanceHaveAnAlreadyTrackedAsset = !!assetsToTrack.filter(
-          (t) => t.symbol === accountWithBalance.assetAmount.asset.symbol
-        )[0]
+        const filteredBalancesToDispatch: AccountBalance[] = []
 
-        if (
-          accountWithBalance.assetAmount.amount > 0 ||
-          doesThisBalanceHaveAnAlreadyTrackedAsset
-        ) {
-          this.store.dispatch(updateAccountBalance(accountWithBalance))
-        }
+        accountsWithBalances.forEach((balance) => {
+          // TODO support multi-network assets
+          const doesThisBalanceHaveAnAlreadyTrackedAsset =
+            !!assetsToTrack.filter(
+              (t) => t.symbol === balance.assetAmount.asset.symbol
+            )[0]
+
+          if (
+            balance.assetAmount.amount > 0 ||
+            doesThisBalanceHaveAnAlreadyTrackedAsset
+          ) {
+            filteredBalancesToDispatch.push(balance)
+          }
+        })
+
+        this.store.dispatch(updateAccountBalance(filteredBalancesToDispatch))
       }
     )
 

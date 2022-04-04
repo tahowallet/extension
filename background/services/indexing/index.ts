@@ -35,7 +35,7 @@ const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
 interface Events extends ServiceLifecycleEvents {
-  accountBalance: AccountBalance
+  accountsWithBalances: AccountBalance[]
   price: PricePoint
   assets: AnyAsset[]
 }
@@ -409,7 +409,7 @@ export default class IndexingService extends BaseService<Events> {
     }, {})
 
     // look up all assets and set balances
-    await Promise.allSettled(
+    const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
           listedAssetByAddress[contractAddress] ??
@@ -417,6 +417,17 @@ export default class IndexingService extends BaseService<Events> {
             addressNetwork.network,
             contractAddress
           ))
+
+        if (amount > 0) {
+          if (knownAsset) {
+            await this.addAssetToTrack(knownAsset)
+          } else {
+            await this.addTokenToTrackByContract(
+              addressNetwork,
+              contractAddress
+            )
+          }
+        }
 
         if (knownAsset) {
           const accountBalance = {
@@ -428,18 +439,26 @@ export default class IndexingService extends BaseService<Events> {
             retrievedAt: Date.now(),
             dataSource: "alchemy",
           } as const
-          await this.db.addBalances([accountBalance])
-          this.emitter.emit("accountBalance", accountBalance)
-          if (amount > 0) {
-            await this.addAssetToTrack(knownAsset)
-          }
-        } else if (amount > 0) {
-          await this.addTokenToTrackByContract(addressNetwork, contractAddress)
-          // TODO we're losing balance information here, consider an
-          // addTokenAndBalanceToTrackByContract method
+
+          return accountBalance
         }
+
+        return undefined
       })
     )
+
+    const accountBalances = unfilteredAccountBalances.reduce<AccountBalance[]>(
+      (acc, current) => {
+        if (current.status === "fulfilled" && current.value) {
+          return [...acc, current.value]
+        }
+        return acc
+      },
+      []
+    )
+
+    await this.db.addBalances(accountBalances)
+    this.emitter.emit("accountsWithBalances", accountBalances)
 
     return balances
   }

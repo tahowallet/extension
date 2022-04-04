@@ -166,37 +166,39 @@ const accountSlice = createSlice({
     },
     updateAccountBalance: (
       immerState,
-      { payload: updatedAccountBalance }: { payload: AccountBalance }
+      { payload: accountsWithBalances }: { payload: AccountBalance[] }
     ) => {
-      const {
-        address: updatedAccount,
-        assetAmount: {
-          asset: { symbol: updatedAssetSymbol },
-        },
-      } = updatedAccountBalance
+      accountsWithBalances.forEach((updatedAccountBalance) => {
+        const {
+          address: updatedAccount,
+          assetAmount: {
+            asset: { symbol: updatedAssetSymbol },
+          },
+        } = updatedAccountBalance
 
-      const updatedAccountKey = normalizeEVMAddress(updatedAccount)
+        const updatedAccountKey = normalizeEVMAddress(updatedAccount)
 
-      const existingAccountData = immerState.accountsData[updatedAccountKey]
-      if (existingAccountData) {
-        if (existingAccountData !== "loading") {
-          existingAccountData.balances[updatedAssetSymbol] =
-            updatedAccountBalance
-        } else {
-          immerState.accountsData[updatedAccountKey] = {
-            ...newAccountData(
-              updatedAccountKey,
-              updatedAccountBalance.network,
-              Object.keys(immerState.accountsData).filter(
-                (key) => key !== updatedAccountKey
-              ).length
-            ),
-            balances: {
-              [updatedAssetSymbol]: updatedAccountBalance,
-            },
+        const existingAccountData = immerState.accountsData[updatedAccountKey]
+        if (existingAccountData) {
+          if (existingAccountData !== "loading") {
+            existingAccountData.balances[updatedAssetSymbol] =
+              updatedAccountBalance
+          } else {
+            immerState.accountsData[updatedAccountKey] = {
+              ...newAccountData(
+                updatedAccountKey,
+                updatedAccountBalance.network,
+                Object.keys(immerState.accountsData).filter(
+                  (key) => key !== updatedAccountKey
+                ).length
+              ),
+              balances: {
+                [updatedAssetSymbol]: updatedAccountBalance,
+              },
+            }
           }
         }
-      }
+      })
 
       // A key assumption here is that the balances of two accounts in
       // accountsData are mutually exclusive; that is, that there are no two
