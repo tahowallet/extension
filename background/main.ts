@@ -260,14 +260,19 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 const debounceThrottle = (
   originalListener: () => void,
   debounceTimeMs = 100,
-  throttleTimeMs = 500
+  throttleTimeMs = 250
 ): (() => void) => {
   let debounceTimer: NodeJS.Timeout | undefined
   let timeOfLastCall: number
 
   return () => {
-    const startDebounceTimer = () => {
+    const initDebounceTimer = () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = undefined
+
       debounceTimer = setTimeout(() => {
+        console.log(">> debounce time up send", Date.now() - timeOfLastCall)
+
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = undefined
 
@@ -276,30 +281,24 @@ const debounceThrottle = (
       }, debounceTimeMs)
     }
 
-    const resetDebounceTimer = () => {
-      if (debounceTimer) clearTimeout(debounceTimer)
-      debounceTimer = undefined
-
-      startDebounceTimer()
-    }
-
     const callOriginalListener = () => {
       timeOfLastCall = Date.now()
       originalListener()
     }
 
-    if (!debounceTimer) {
-      // 🚀 This is the first incoming change. Let's propagate it and set up the state accordingly!
-      callOriginalListener()
-      startDebounceTimer()
-    } else if (Date.now() - timeOfLastCall < throttleTimeMs) {
-      // ⏳ We are in debounce state, within debounceTimeMs and within throttleTimeMs. Let's restart the counter!
-      resetDebounceTimer()
-    } else {
-      // 🚀 We are in debouncing state, but more than throttleTimeMs has passed. Let's make a call!
-      resetDebounceTimer()
+    if (!debounceTimer || Date.now() - timeOfLastCall >= throttleTimeMs) {
+      if (!debounceTimer) {
+        console.log(">> init send", Date.now() - timeOfLastCall)
+      } else {
+        console.log(">> throttle send", Date.now() - timeOfLastCall)
+      }
+
+      // 🚀 We want to force a send outside of the debounce timer if it's the first call
+      // or more than throttleTimeMs has gone since last call
       callOriginalListener()
     }
+    console.log("reset", Date.now() - timeOfLastCall)
+    initDebounceTimer()
   }
 }
 
