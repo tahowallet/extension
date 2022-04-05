@@ -1,12 +1,7 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
-import {
-  formatEther,
-  formatUnits,
-  parseEther,
-  parseUnits,
-} from "ethers/lib/utils"
+import { parseUnits } from "ethers/lib/utils"
 import Emittery from "emittery"
 
 import { AnyAsset } from "../assets"
@@ -446,7 +441,20 @@ export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
 
 export const getPoolAPR = createBackgroundAsyncThunk(
   "earn/getPoolAPR",
-  async (vault: AvailableVault, { getState }): Promise<string> => {
+  async (
+    {
+      vaultAddress,
+      yearnVault,
+      tokenDecimals,
+      symbol,
+    }: {
+      vaultAddress: HexString
+      yearnVault: HexString
+      tokenDecimals: number
+      symbol: string
+    },
+    { getState }
+  ): Promise<string> => {
     const state = getState()
     const { assets } = state as { assets: AssetsState }
 
@@ -470,10 +478,7 @@ export const getPoolAPR = createBackgroundAsyncThunk(
     const assumedDoggoPrice = parseUnits("1.2", 10)
 
     const totalRewardsAddedToPool = BigNumber.from("750000000") // rewards set when deploying to be distributed within 14 days
-    const huntingGroundContract = await getContract(
-      vault.vaultAddress,
-      VAULT_ABI
-    )
+    const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
 
     // Rewards duration in seconds
     const rewardPeriodSeconds: BigNumber =
@@ -488,21 +493,19 @@ export const getPoolAPR = createBackgroundAsyncThunk(
     const totalRewardValue = totalRewardsYearly.mul(assumedDoggoPrice)
 
     // We get how much our Hunting Ground has deposited into the yearn vault
-    const yearnVaultContract = await getContract(vault.yearnVault, VAULT_ABI)
+    const yearnVaultContract = await getContract(yearnVault, VAULT_ABI)
     const tokensStakedInPool: BigNumber = await yearnVaultContract.balanceOf(
-      vault.vaultAddress
+      vaultAddress
     )
 
-    const decimals = BigNumber.from(10).pow(
-      BigNumber.from(vault.asset.decimals)
-    )
+    const decimals = BigNumber.from(10).pow(BigNumber.from(tokenDecimals))
 
     const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
 
     // TODO This is NOT the right way to fetch the price as it doesn't work if user doesn't have that token
     const assetPricePoint = selectAssetPricePoint(
       assets,
-      vault.asset.symbol,
+      symbol,
       mainCurrencySymbol
     )
 

@@ -10,7 +10,7 @@ import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import classNames from "classnames"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -31,13 +31,28 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
 
   const dispatch = useBackgroundDispatch()
 
+  const fetchPoolAPRs = useCallback(async () => {
+    const yearlyAPR = (await dispatch(
+      getPoolAPR({
+        vaultAddress: vault.vaultAddress,
+        yearnVault: vault.yearnVault,
+        symbol: vault.asset.symbol,
+        tokenDecimals: vault.asset.decimals,
+      })
+    )) as unknown as string
+    setAPR(yearlyAPR)
+    return yearlyAPR
+  }, [
+    dispatch,
+    vault.vaultAddress,
+    vault.yearnVault,
+    vault.asset.decimals,
+    vault.asset.symbol,
+  ])
+
   useEffect(() => {
-    const fetchPoolAPRs = async () => {
-      const yearlyAPR = (await dispatch(getPoolAPR(vault))) as unknown as string
-      setAPR(yearlyAPR)
-    }
     fetchPoolAPRs()
-  }, [vault, dispatch])
+  }, [fetchPoolAPRs])
 
   return (
     <Link
