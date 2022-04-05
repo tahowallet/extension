@@ -257,6 +257,52 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   return result
 }
 
+const debounceThrottle = (
+  originalListener: () => void,
+  debounceTimeMs = 100,
+  throttleTimeMs = 500
+): (() => void) => {
+  let debounceTimer: NodeJS.Timeout | undefined
+  let timeOfLastCall: number
+
+  return () => {
+    const startDebounceTimer = () => {
+      debounceTimer = setTimeout(() => {
+        if (debounceTimer) clearTimeout(debounceTimer)
+        debounceTimer = undefined
+
+        timeOfLastCall = Date.now()
+        originalListener()
+      }, debounceTimeMs)
+    }
+
+    const resetDebounceTimer = () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = undefined
+
+      startDebounceTimer()
+    }
+
+    const callOriginalListener = () => {
+      timeOfLastCall = Date.now()
+      originalListener()
+    }
+
+    if (!debounceTimer) {
+      // 🚀 This is the first incoming change. Let's propagate it and set up the state accordingly!
+      callOriginalListener()
+      startDebounceTimer()
+    } else if (Date.now() - timeOfLastCall < throttleTimeMs) {
+      // ⏳ We are in debounce state, within debounceTimeMs and within throttleTimeMs. Let's restart the counter!
+      resetDebounceTimer()
+    } else {
+      // 🚀 We are in debouncing state, but more than throttleTimeMs has passed. Let's make a call!
+      resetDebounceTimer()
+      callOriginalListener()
+    }
+  }
+}
+
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
 const initializeStore = (preloadedState = {}, main: Main) =>
@@ -289,15 +335,12 @@ const initializeStore = (preloadedState = {}, main: Main) =>
     },
     devTools: false,
     enhancers: [
-      // TODO: refactor this into debouncedThrottledSubscribe variable with proper typing
       (createStore) => (reducer, initialState) => {
         const store: any = createStore(reducer, initialState)
         const originalSubscribe = store.subscribe
 
         store.subscribe = (listener: any) => {
-          console.log("hey we are spying with great success")
-          debugger
-          return originalSubscribe(listener)
+          return originalSubscribe(debounceThrottle(listener))
         }
         return store
       },
