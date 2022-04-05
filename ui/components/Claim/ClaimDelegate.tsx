@@ -126,7 +126,11 @@ export default function ClaimDelegate(props: {
                       >
                         <div className="icon" />
                         <div className="delegate_info">
-                          <div className="name">{delegate.ensName}</div>
+                          <div className="name">
+                            {delegate.ensName && delegate.ensName.length > 0
+                              ? delegate.ensName
+                              : delegate.truncatedAddress}
+                          </div>
                           {/* <span className="count">123 Votes</span> */}
                           <div className="pitch">
                             <SharedButton
