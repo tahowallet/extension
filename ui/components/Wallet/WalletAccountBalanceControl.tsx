@@ -196,7 +196,7 @@ export default function WalletAccountBalanceControl(
             </>
           ) : (
             <SharedButton
-              linkTo="/onboarding/importMetamask"
+              linkTo="/onboarding/import-metamask"
               size="medium"
               type="tertiary"
             >
