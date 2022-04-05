@@ -477,11 +477,10 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              <SwapRewardsCard />
-              {/* <SwapTransactionSettingsChooser
+              <SwapTransactionSettingsChooser
                 swapTransactionSettings={swapTransactionSettings}
                 onSwapTransactionSettingsSave={setSwapTransactionSettings}
-              /> */}
+              />
             </div>
             <div className="footer standard_width_padded">
               {
