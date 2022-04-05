@@ -17,6 +17,7 @@ import {
   knownContractResolverFor,
   addressBookResolverFor,
   ensResolverFor,
+  unsResolver,
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
@@ -121,6 +122,8 @@ export default class NameService extends BaseService<Events> {
       // Third-party resolvers are used when the user has not defined a name
       // for the given resource.
       ensResolverFor(chainService),
+      // For UNS
+      unsResolver(),
     ]
 
     chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
