@@ -159,8 +159,10 @@ export default class DoggoService extends BaseService<Events> {
       }
 
       const providedClaimWithFriends = ClaimWithFriends.connect(provider)
-      const referralFilter =
-        ClaimWithFriends.filters.ClaimedWithCommunityCode(address)
+      const referralFilter = ClaimWithFriends.filters.ClaimedWithCommunityCode(
+        null,
+        address
+      )
 
       const referralHandler: Parameters<
         typeof providedClaimWithFriends["on"]
