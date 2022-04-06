@@ -421,7 +421,7 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
 
 export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
   "earn/checkApprovalTargetApproval",
-  async (tokenContractAddress: HexString, { dispatch }) => {
+  async (tokenContractAddress: HexString) => {
     const assetContract = await getContract(tokenContractAddress, ERC20_ABI)
     const signerAddress = await getSignerAddress()
     try {
@@ -486,14 +486,13 @@ export const getPoolAPR = createBackgroundAsyncThunk(
     const totalRewardsAddedToPool = BigNumber.from(totalRewards) // rewards set when deploying to be distributed within 14 days
     const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
 
-    // Rewards duration in seconds
+    // Rewards duration in seconds coming from the contract
     const rewardPeriodSeconds: BigNumber =
       await huntingGroundContract.duration()
     const secondsInAYear = BigNumber.from(31556926)
 
     const periodsPerYear = secondsInAYear.div(rewardPeriodSeconds)
 
-    // Total value in USDC
     const totalRewardsYearly = totalRewardsAddedToPool.mul(periodsPerYear)
 
     const totalRewardValue = totalRewardsYearly.mul(assumedDoggoPrice)
@@ -508,14 +507,12 @@ export const getPoolAPR = createBackgroundAsyncThunk(
 
     const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
 
-    // TODO This is NOT the right way to fetch the price as it doesn't work if user doesn't have that token
     const assetPricePoint = selectAssetPricePoint(
       assets,
       symbol,
       mainCurrencySymbol
     )
 
-    // TODO remove once we change price source
     if (assetPricePoint?.amounts[1] === undefined) return "0"
 
     const totalValueOfTokensStaked = tokensStakedInPool
@@ -528,7 +525,7 @@ export const getPoolAPR = createBackgroundAsyncThunk(
         .mul(BigNumber.from(100))
       return nFormatter(APR.toNumber(), 1)
     }
-
+    // If no one has deposited into the pool yet we cannot calculate APR
     return "Infinite"
   }
 )
