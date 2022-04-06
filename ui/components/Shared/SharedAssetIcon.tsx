@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
 
 interface Props {
   size: "small" | "medium" | "large"
@@ -13,18 +14,14 @@ export default function SharedAssetIcon(props: Props): ReactElement {
   const hasHardcodedIcon = hardcodedIcons.includes(symbol)
 
   // If IPFS url, pass through gateway
-  const httpURL =
-    logoURL?.includes("ipfs") && logoURL.split("ipfs://")[1]
-      ? `https://ipfs.io/ipfs/${logoURL.split("ipfs://")[1]}`
-      : logoURL
-
-  // Check if an http(s) address or if we have a hardcoded backup image
-  const hasValidImage =
-    (httpURL && httpURL.includes("http")) || hasHardcodedIcon
+  let httpURL = logoURL
+  if (logoURL && new URL(logoURL) && logoURL.includes("ipfs")) {
+    httpURL = String(storageGatewayURL(new URL(logoURL)))
+  }
 
   return (
     <div className={`token_icon_wrap ${size}`}>
-      {hasValidImage ? (
+      {httpURL ? (
         <div className="token_icon" />
       ) : (
         <div className={`token_icon_fallback ${size}`}>
