@@ -82,7 +82,7 @@ const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressOnNetwork
-  accountBalance: AccountBalance
+  accountsWithBalances: AccountBalance[]
   transactionSend: HexString
   transactionSendFailure: undefined
   assetTransfers: {
@@ -482,7 +482,7 @@ export default class ChainService extends BaseService<Events> {
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
-    this.emitter.emit("accountBalance", accountBalance)
+    this.emitter.emit("accountsWithBalances", [accountBalance])
     await this.db.addBalance(accountBalance)
     return accountBalance
   }
@@ -964,14 +964,15 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Looks up whether any of the passed address/network pairs are being tracked.
+   * Given a list of AddressOnNetwork objects, return only the ones that
+   * are currently being tracked.
    */
-  async isTrackingAddressesOnNetworks(
-    ...addressesOnNetworks: AddressOnNetwork[]
-  ): Promise<boolean> {
+  async filterTrackedAddressesOnNetworks(
+    addressesOnNetworks: AddressOnNetwork[]
+  ): Promise<AddressOnNetwork[]> {
     const accounts = await this.getAccountsToTrack()
 
-    return addressesOnNetworks.some(({ address, network }) =>
+    return addressesOnNetworks.filter(({ address, network }) =>
       accounts.some(
         ({ address: trackedAddress, network: trackedNetwork }) =>
           sameEVMAddress(trackedAddress, address) &&
