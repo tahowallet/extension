@@ -1,7 +1,6 @@
 import { ethers } from "ethers"
-import { EventFragment } from "ethers/lib/utils"
 
-const CLAIM_WITH_FRIENDS_ABI = [
+export const CLAIM_WITH_FRIENDS_ABI = [
   {
     anonymous: false,
     inputs: [
@@ -37,7 +36,7 @@ const CLAIM_WITH_FRIENDS_ABI = [
         type: "uint256",
       },
       {
-        indexed: false,
+        indexed: true,
         internalType: "address",
         name: "claimant",
         type: "address",
@@ -55,7 +54,7 @@ const CLAIM_WITH_FRIENDS_ABI = [
         type: "uint256",
       },
       {
-        indexed: false,
+        indexed: true,
         internalType: "address",
         name: "communityRef",
         type: "address",
@@ -275,26 +274,6 @@ const CLAIM_WITH_FRIENDS_ABI = [
     type: "function",
   },
 ] as const
-
-const cwfFunctions = CLAIM_WITH_FRIENDS_ABI.filter(
-  (entry): entry is typeof entry & { type: "function" } =>
-    entry.type === "function"
-).map((fn) => [fn.name, fn] as const)
-
-type CwfEventsObject = {
-  [Prop in typeof cwfEvents[0][0]]: EventFragment
-}
-
-const cwfEvents = CLAIM_WITH_FRIENDS_ABI.filter(
-  (entry): entry is typeof entry & { readonly type: "event" } =>
-    entry.type === "event"
-).map((fn) => [fn.name, fn] as const)
-
-export const CLAIM_WITH_FRIENDS_FUNCTIONS = Object.fromEntries(cwfFunctions)
-
-export const CLAIM_WITH_FRIENDS_EVENTS = Object.fromEntries(
-  cwfEvents
-) as unknown as CwfEventsObject
 
 export const ClaimWithFriends = new ethers.Contract(
   "** address from JSON **",
