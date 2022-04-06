@@ -86,8 +86,8 @@ export default function SharedButton(props: Props): ReactElement {
     size,
     onClick,
     isDisabled,
-    icon,
-    iconSize,
+    iconSmall,
+    iconMedium,
     iconPosition,
     linkTo,
     showLoadingOnClick,
@@ -152,12 +152,11 @@ export default function SharedButton(props: Props): ReactElement {
         })}
       >
         {children}
-        {icon ? (
+        {iconMedium || iconSmall ? (
           <span
             className={classNames(
               { icon_button: true },
-              { icon_large: iconSize === "large" },
-              { icon_secondary_medium: iconSize === "secondaryMedium" }
+              { icon_medium: iconMedium }
             )}
           />
         ) : null}
@@ -199,10 +198,10 @@ export default function SharedButton(props: Props): ReactElement {
             align-items: center;
           }
           .icon_button {
-            mask-image: url("./images/${icon}@2x.png");
+            mask-image: url("./images/icons/s/${iconSmall}.svg");
             mask-size: cover;
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             margin-left: 9px;
             background-color: #ffffff;
             display: inline-block;
@@ -218,7 +217,9 @@ export default function SharedButton(props: Props): ReactElement {
             height: 16px;
             margin-left: 4px;
           }
-          .icon_large {
+          .icon_medium {
+            mask-image: url("./images/icons/m/${iconMedium}.svg");
+            mask-size: cover;
             width: 24px;
             height: 24px;
             margin-left: 10px;
