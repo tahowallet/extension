@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, Signature, utils } from "ethers"
 import { TransactionResponse } from "@ethersproject/abstract-provider"
-import { Eligible } from "../services/claim/types"
+import { Eligible } from "../services/doggo/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { normalizeEVMAddress, truncateAddress } from "../lib/utils"

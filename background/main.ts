@@ -18,7 +18,7 @@ import {
   ProviderBridgeService,
   TelemetryService,
   ServiceCreatorFunction,
-  ClaimService,
+  DoggoService,
   LedgerService,
   SigningService,
 } from "./services"
@@ -26,7 +26,7 @@ import {
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
-import { Eligible } from "./services/claim/types"
+import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -341,7 +341,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
-    const claimService = ClaimService.create()
+    const doggoService = DoggoService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -388,7 +388,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
-      await claimService,
+      await doggoService,
       await telemetryService,
       await ledgerService,
       await signingService
@@ -443,7 +443,7 @@ export default class Main extends BaseService<never> {
      * A promise to the claim service, which saves the eligibility data
      * for efficient storage and retrieval.
      */
-    private claimService: ClaimService,
+    private doggoService: DoggoService,
     /**
      * A promise to the telemetry service, which keeps track of extension
      * storage usage and (eventually) other statistics.
@@ -515,7 +515,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
-      this.claimService.startService(),
+      this.doggoService.startService(),
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
@@ -534,7 +534,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
-      this.claimService.stopService(),
+      this.doggoService.stopService(),
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
@@ -552,7 +552,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
-    this.connectClaimService()
+    this.connectDoggoService()
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
@@ -1186,7 +1186,7 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
-      await this.claimService.getEligibility(addressNetwork.address)
+      await this.doggoService.getEligibility(addressNetwork.address)
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
@@ -1211,8 +1211,8 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async connectClaimService(): Promise<void> {
-    this.claimService.emitter.on(
+  async connectDoggoService(): Promise<void> {
+    this.doggoService.emitter.on(
       "newEligibility",
       async (eligibility: Eligible) => {
         await this.store.dispatch(setEligibility(eligibility))
