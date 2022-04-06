@@ -38,6 +38,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         yearnVault: vault.yearnVault,
         symbol: vault.asset.symbol,
         tokenDecimals: vault.asset.decimals,
+        totalRewards: vault.totalRewards,
       })
     )) as unknown as string
     setAPR(yearlyAPR)
@@ -48,6 +49,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
     vault.yearnVault,
     vault.asset.decimals,
     vault.asset.symbol,
+    vault.totalRewards,
   ])
 
   useEffect(() => {

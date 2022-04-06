@@ -34,6 +34,7 @@ export type AvailableVault = {
   yearnVault: HexString
   asset: AnyAsset & { contractAddress: string; decimals: number }
   pendingRewards: bigint
+  totalRewards: bigint
 }
 
 export type EarnState = {
@@ -78,6 +79,7 @@ export const initialState: EarnState = {
       },
       vaultAddress: "0xCb3Bf98C8354776C7cE7869EDcC43e1940e430ff",
       yearnVault: "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+      totalRewards: 375000000n,
       userDeposited: 0n,
       totalDeposited: 0n,
       pendingRewards: 0n,
@@ -92,6 +94,7 @@ export const initialState: EarnState = {
       },
       vaultAddress: "0x4F186a311241A4e1EE546DbaDB04c87eadCBf4E8",
       yearnVault: "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+      totalRewards: 375000000n,
       userDeposited: 0n,
       totalDeposited: 0n,
       pendingRewards: 0n,
@@ -106,6 +109,7 @@ export const initialState: EarnState = {
       },
       vaultAddress: "0xBCd2638301A6e62A49015675B75bfC04b6621965",
       yearnVault: "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+      totalRewards: 375000000n,
       userDeposited: 0n,
       totalDeposited: 0n,
       pendingRewards: 0n,
@@ -447,11 +451,13 @@ export const getPoolAPR = createBackgroundAsyncThunk(
       yearnVault,
       tokenDecimals,
       symbol,
+      totalRewards,
     }: {
       vaultAddress: HexString
       yearnVault: HexString
       tokenDecimals: number
       symbol: string
+      totalRewards: bigint
     },
     { getState }
   ): Promise<string> => {
@@ -477,7 +483,7 @@ export const getPoolAPR = createBackgroundAsyncThunk(
     // We don't know how much DOGGO will cost
     const assumedDoggoPrice = parseUnits("1.2", 10)
 
-    const totalRewardsAddedToPool = BigNumber.from("750000000") // rewards set when deploying to be distributed within 14 days
+    const totalRewardsAddedToPool = BigNumber.from(totalRewards) // rewards set when deploying to be distributed within 14 days
     const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
 
     // Rewards duration in seconds

@@ -79,6 +79,7 @@ export default function EarnDeposit(): ReactElement {
           yearnVault: vault.yearnVault,
           tokenDecimals: vault.asset.decimals,
           symbol: vault.asset.symbol,
+          totalRewards: vault.totalRewards,
         })
       )) as unknown as string
       setAPR(displayAPR)
@@ -89,6 +90,7 @@ export default function EarnDeposit(): ReactElement {
     vault?.vaultAddress,
     vault?.yearnVault,
     vault?.asset.symbol,
+    vault?.totalRewards,
   ])
 
   useEffect(() => {
