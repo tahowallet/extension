@@ -925,11 +925,13 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateTransactionOptions(payload))
 
         const clear = () => {
+          // Mutual dependency to handleAndClear.
           // eslint-disable-next-line @typescript-eslint/no-use-before-define
           this.signingService.emitter.off("signingTxResponse", handleAndClear)
 
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -945,13 +947,6 @@ export default class Main extends BaseService<never> {
               rejecter()
               break
           }
-        }
-
-        const resolveAndClear = (
-          signedTransactionResult: SignedEVMTransaction
-        ) => {
-          clear()
-          resolver(signedTransactionResult)
         }
 
         const rejectAndClear = () => {
@@ -985,12 +980,14 @@ export default class Main extends BaseService<never> {
         const clear = () => {
           this.signingService.emitter.off(
             "signingDataResponse",
+            // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1006,11 +1003,6 @@ export default class Main extends BaseService<never> {
               rejecter()
               break
           }
-        }
-
-        const resolveAndClear = (signedData: string) => {
-          clear()
-          resolver(signedData)
         }
 
         const rejectAndClear = () => {
@@ -1039,12 +1031,14 @@ export default class Main extends BaseService<never> {
         const clear = () => {
           this.signingService.emitter.off(
             "personalSigningResponse",
+            // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1060,11 +1054,6 @@ export default class Main extends BaseService<never> {
               rejecter()
               break
           }
-        }
-
-        const resolveAndClear = (signedData: string) => {
-          clear()
-          resolver(signedData)
         }
 
         const rejectAndClear = () => {
