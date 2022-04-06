@@ -18,8 +18,57 @@ interface Props {
     | "warning"
     | "unstyled"
   size: "small" | "medium" | "large"
-  icon?: string
-  iconSize?: "small" | "medium" | "large" | "secondaryMedium"
+  iconSmall?:
+    | "add"
+    | "arrow-right"
+    | "back"
+    | "close"
+    | "continue"
+    | "copy"
+    | "edit"
+    | "garbage"
+    | "lock"
+    | "mark-read"
+    | "new-tab"
+    | "notif-announ"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "notification"
+    | "receive"
+    | "send"
+    | "settings"
+    | "swap"
+  iconMedium?:
+    | "connected"
+    | "continue"
+    | "copy"
+    | "dark"
+    | "dashboard"
+    | "developer"
+    | "disconnect"
+    | "earn"
+    | "export"
+    | "eye-off"
+    | "eye-on"
+    | "feedback"
+    | "gift"
+    | "import"
+    | "info"
+    | "light"
+    | "list"
+    | "lock"
+    | "menu"
+    | "new-tab"
+    | "notif-accouncement"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "search"
+    | "swap"
+    | "switch"
+    | "wallet"
+    | "discord"
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
@@ -313,9 +362,7 @@ export default function SharedButton(props: Props): ReactElement {
 }
 
 SharedButton.defaultProps = {
-  icon: null,
   isDisabled: false,
-  iconSize: "medium",
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,
