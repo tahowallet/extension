@@ -29,6 +29,7 @@ export function changeURLProtocolAndBase(url: URL, baseURL: URL): URL {
 // TODO eventually we want proper IPFS and Arweave support
 export function storageGatewayURL(url: URL): URL {
   switch (url.protocol) {
+    case "ipfs:":
       return changeURLProtocolAndBase(url, ipfsGateway)
     case "ar":
       return changeURLProtocolAndBase(url, arweaveGateway)
