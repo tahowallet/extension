@@ -9,7 +9,6 @@ import {
 import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
@@ -182,11 +181,8 @@ export default function AccountsNotificationPanelAccounts({
     AccountType.Internal,
     AccountType.Imported,
     AccountType.ReadOnly,
+    AccountType.Ledger,
   ]
-
-  if (!HIDE_IMPORT_LEDGER) {
-    accountTypes.push(AccountType.Ledger)
-  }
 
   return (
     <div className="switcher_wrap">
