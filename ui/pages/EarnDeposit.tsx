@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -17,7 +17,6 @@ import {
   selectDepositingProcess,
   selectEarnInputAmount,
   selectEnrichedAvailableVaults,
-  selectSignature,
   updateEarnedValues,
   updateLockedValues,
   vaultDeposit,
@@ -27,7 +26,6 @@ import {
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
-import { getCurrentTimestamp } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -57,28 +55,47 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
-  const signature = useBackgroundSelector(selectSignature)
   const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
   const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
 
   const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
+
   const account = useBackgroundSelector(selectCurrentAccount)
 
   const vault = enrichedVaults.find(
     (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
   )
 
-  useEffect(() => {
-    if (typeof vault !== "undefined") {
-      const getAPR = async () => {
-        const displayAPR = (await dispatch(
-          getPoolAPR(vault)
-        )) as unknown as string
-        setAPR(displayAPR)
-      }
-      getAPR()
+  const getAPR = useCallback(async () => {
+    if (
+      typeof vault?.asset.decimals !== "undefined" &&
+      typeof vault?.vaultAddress !== "undefined" &&
+      typeof vault?.yearnVault !== "undefined" &&
+      typeof vault?.asset.symbol !== "undefined"
+    ) {
+      const displayAPR = (await dispatch(
+        getPoolAPR({
+          vaultAddress: vault.vaultAddress,
+          yearnVault: vault.yearnVault,
+          tokenDecimals: vault.asset.decimals,
+          symbol: vault.asset.symbol,
+          totalRewards: vault.totalRewards,
+        })
+      )) as unknown as string
+      setAPR(displayAPR)
     }
-  }, [dispatch, vault])
+  }, [
+    dispatch,
+    vault?.asset.decimals,
+    vault?.vaultAddress,
+    vault?.yearnVault,
+    vault?.asset.symbol,
+    vault?.totalRewards,
+  ])
+
+  useEffect(() => {
+    getAPR()
+  }, [dispatch, getAPR])
 
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
@@ -104,19 +121,6 @@ export default function EarnDeposit(): ReactElement {
     account.address,
     isCurrentlyApproving,
   ])
-
-  useEffect(() => {
-    const checkCurrentSignatureDeadline = async () => {
-      const timestamp = await getCurrentTimestamp()
-      if (
-        typeof signature?.deadline !== "undefined" &&
-        timestamp > signature.deadline
-      ) {
-        dispatch(clearSignature())
-      }
-    }
-    checkCurrentSignatureDeadline()
-  }, [dispatch, signature?.deadline])
 
   useEffect(() => {
     dispatch(updateLockedValues())
@@ -341,10 +345,6 @@ export default function EarnDeposit(): ReactElement {
         <div className="standard_width">
           <ul className="list">
             <li className="list_item">
-              Withdrawing your deposit will also automatically claim your
-              rewards.
-            </li>
-            <li className="list_item">
               You can withdraw only the rewards by using the Claim rewards
               button.
             </li>
@@ -358,35 +358,26 @@ export default function EarnDeposit(): ReactElement {
               size="large"
               onClick={showWithdrawalModal}
             >
-              Withdraw deposit + rewards
+              Withdraw deposit
             </SharedButton>
           </div>
           <SharedSlideUpMenu
             isOpen={withdrawSlideupVisible}
             close={() => setWithdrawalSlideupVisible(false)}
             size="custom"
-            customSize="400px"
+            customSize="300px"
           >
             <div className="container">
-              <h2 className="withdrawal_title">Withdraw deposit & rewards</h2>
+              <h2 className="withdrawal_title">Withdraw deposit</h2>
               <div className="withdrawal_info">
-                Are you sure you want to withdraw deposited amount and rewards?
-                <br /> If you only want to claim rewards you can do that by
-                closing this and clicking claim rewards.
+                Are you sure you want to withdraw deposited amount?
               </div>
               <div className="wrapper dark">
                 <li className="row">
-                  <div className="label">Deposited amount</div>
+                  <div className="label">Withdraw amount</div>
                   <div className="amount">
                     {userDeposited}
                     <span className="token">{vault.asset.symbol}</span>
-                  </div>
-                </li>
-                <div className="divider" />
-                <li className="row">
-                  <div className="label">Available rewards</div>
-                  <div className="amount">
-                    {pendingRewards} <span className="token">DOGGO</span>
                   </div>
                 </li>
               </div>
@@ -434,11 +425,19 @@ export default function EarnDeposit(): ReactElement {
             margin: 0;
           }
           .withdrawal_info {
-            padding: 24px 0;
+            padding: 24px 0 12px 0;
             line-height: 24px;
           }
           .container {
             padding: 0 24px;
+            display: flex;
+            height: 90%;
+            width: 100%;
+            position: relative;
+            top: -16px;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: space-between;
           }
           .row {
             position: relative;
