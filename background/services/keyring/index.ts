@@ -22,7 +22,7 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { HIDE_IMPORT_LEDGER, USE_MAINNET_FORK } from "../../features/features"
+import { USE_MAINNET_FORK } from "../../features/features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 
@@ -505,9 +505,7 @@ export default class KeyringService extends BaseService<Events> {
       asset: ETH,
       network: USE_MAINNET_FORK ? FORK : network,
     }
-    if (HIDE_IMPORT_LEDGER) {
-      this.emitter.emit("signedTx", signedTx)
-    }
+
     return signedTx
   }
   /**
@@ -538,9 +536,7 @@ export default class KeyringService extends BaseService<Events> {
         typesForSigning,
         message
       )
-      if (HIDE_IMPORT_LEDGER) {
-        this.emitter.emit("signedData", signature)
-      }
+
       return signature
     } catch (error) {
       throw new Error("Signing data failed")
@@ -567,9 +563,7 @@ export default class KeyringService extends BaseService<Events> {
     const keyring = await this.#findKeyring(account)
     try {
       const signature = await keyring.signMessage(account, signingData)
-      if (HIDE_IMPORT_LEDGER) {
-        this.emitter.emit("signedData", signature)
-      }
+
       return signature
     } catch (error) {
       throw new Error("Signing data failed")
