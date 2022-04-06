@@ -567,30 +567,6 @@ export default class Main extends BaseService<never> {
     await this.signingService.removeAccount(address, signingMethod)
   }
 
-  async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
-    try {
-      const address = await this.nameService.lookUpEthereumAddress(
-        nameNetwork.name
-      )
-
-      if (address) {
-        const addressNetwork = {
-          address,
-          network: nameNetwork.network,
-        }
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(address))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
-      } else {
-        throw new Error("Name not found")
-      }
-    } catch (error) {
-      throw new Error(
-        `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
-      )
-    }
-  }
-
   async importLedgerAccounts(
     accounts: Array<{
       path: string
@@ -1180,6 +1156,18 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  async resolveNameOnNetwork({
+    name,
+    network,
+  }: NameOnNetwork): Promise<string | undefined> {
+    try {
+      return await this.nameService.lookUpEthereumAddress(name /* , network */)
+    } catch (error) {
+      logger.info("Error looking up Ethereum address: ", error)
+      return undefined
+    }
   }
 
   private connectPopupMonitor() {
