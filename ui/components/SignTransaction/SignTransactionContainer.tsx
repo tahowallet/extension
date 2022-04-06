@@ -70,12 +70,7 @@ export default function SignTransactionContainer({
         <>
           {extraPanel}
           <div className="footer_actions">
-            <SharedButton
-              iconSize="large"
-              size="large"
-              type="secondary"
-              onClick={handleReject}
-            >
+            <SharedButton size="large" type="secondary" onClick={handleReject}>
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
@@ -84,7 +79,6 @@ export default function SignTransactionContainer({
               !canLedgerSign ? (
                 <SharedButton
                   type="primaryGreen"
-                  iconSize="large"
                   size="large"
                   onClick={() => {
                     setSlideUpOpen(true)
@@ -95,7 +89,6 @@ export default function SignTransactionContainer({
               ) : (
                 <SharedButton
                   type="primaryGreen"
-                  iconSize="large"
                   size="large"
                   onClick={handleConfirm}
                   showLoadingOnClick

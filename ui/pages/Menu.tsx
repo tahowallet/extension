@@ -93,8 +93,7 @@ export default function Menu(): ReactElement {
           <SharedButton
             type="primary"
             size="large"
-            icon="discord"
-            iconSize="large"
+            iconMedium="discord"
             iconPosition="left"
             onClick={() => {
               window.open(`https://chat.tally.cash/`, "_blank")?.focus()

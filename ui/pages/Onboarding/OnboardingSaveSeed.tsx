@@ -62,8 +62,7 @@ export default function OnboardingSaveSeed(): ReactElement {
         <SharedButton
           type="primary"
           size="medium"
-          icon="arrow_right"
-          iconSize="large"
+          iconMedium="continue"
           linkTo="/onboarding/verify-seed"
         >
           I wrote it down
@@ -71,8 +70,7 @@ export default function OnboardingSaveSeed(): ReactElement {
         <SharedButton
           type="tertiary"
           size="medium"
-          icon="copy"
-          iconSize="large"
+          iconMedium="copy"
           onClick={() => {
             navigator.clipboard.writeText(freshMnemonic?.join(" ") ?? "")
             dispatch(setSnackbarMessage("Copied!"))

@@ -22,9 +22,8 @@ export default function SignTransactionRawDataPanel(): ReactElement {
     <div className="raw_data_wrap standard_width_padded">
       <SharedButton
         type="tertiary"
-        icon="copy"
+        iconMedium="copy"
         size="medium"
-        iconSize="secondaryMedium"
         iconPosition="left"
         onClick={copyData}
       >
