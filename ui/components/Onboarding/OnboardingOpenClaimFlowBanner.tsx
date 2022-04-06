@@ -192,7 +192,7 @@ function IneligibleCTAContent({
         <SharedButton
           type="tertiary"
           size="small"
-          linkTo="/onboarding/addWallet"
+          linkTo="/onboarding/add-wallet"
           icon="plus"
           iconPosition="left"
         >

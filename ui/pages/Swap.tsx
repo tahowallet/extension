@@ -87,19 +87,6 @@ export default function Swap(): ReactElement {
         assetAmount.asset.symbol === "ETH"
     ) ?? []
 
-  const buyAssets = useBackgroundSelector((state) => {
-    // Some type massaging needed to remind TypeScript how these types fit
-    // together.
-    const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(
-      (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
-        isSmartContractFungibleAsset(asset) ||
-        // Explicity add ETH even though it is not an ERC-20 token
-        // @TODO change as part of multi-network refactor.
-        (isFungibleAsset(asset) && asset.symbol === "ETH")
-    )
-  })
-
   const {
     symbol: locationAssetSymbol,
     contractAddress: locationAssetContractAddress,
@@ -145,23 +132,41 @@ export default function Swap(): ReactElement {
     undefined
   )
 
-  const sellAssetAmounts = ownedSellAssetAmounts.some(
-    ({ asset }) =>
-      typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+  const buyAssets = useBackgroundSelector((state) => {
+    // Some type massaging needed to remind TypeScript how these types fit
+    // together.
+    const knownAssets: AnyAsset[] = state.assets
+    return knownAssets.filter(
+      (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
+        (isSmartContractFungibleAsset(asset) ||
+          // Explicity add ETH even though it is not an ERC-20 token
+          // @TODO change as part of multi-network refactor.
+          (isFungibleAsset(asset) && asset.symbol === "ETH")) &&
+        asset.symbol !== sellAsset?.symbol
+    )
+  })
+
+  const sellAssetAmounts = (
+    ownedSellAssetAmounts.some(
+      ({ asset }) =>
+        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+    )
+      ? ownedSellAssetAmounts
+      : ownedSellAssetAmounts.concat(
+          typeof sellAsset === "undefined"
+            ? []
+            : [
+                {
+                  asset: sellAsset,
+                  amount: 0n,
+                  decimalAmount: 0,
+                  localizedDecimalAmount: "0",
+                },
+              ]
+        )
+  ).filter(
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
   )
-    ? ownedSellAssetAmounts
-    : ownedSellAssetAmounts.concat(
-        typeof sellAsset === "undefined"
-          ? []
-          : [
-              {
-                asset: sellAsset,
-                amount: 0n,
-                decimalAmount: 0,
-                localizedDecimalAmount: "0",
-              },
-            ]
-      )
 
   useEffect(() => {
     if (typeof sellAsset !== "undefined") {
