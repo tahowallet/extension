@@ -93,7 +93,7 @@ export default function Eligible(): ReactElement {
         ) : (
           <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
         ),
-      canAdvance: Boolean(selectedDAO),
+      canAdvance: Boolean(selectedDAO) || Boolean(referrer),
     },
     {
       component: <ClaimManifesto claimAmount={claimAmountWithBonus} />,
