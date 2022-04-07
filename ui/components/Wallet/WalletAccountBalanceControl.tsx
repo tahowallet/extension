@@ -7,12 +7,13 @@ import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
+import t from "../../utils/i18n"
 
 function ReadOnlyNotice(): ReactElement {
   return (
     <div className="notice_wrap">
       <div className="icon_eye" />
-      Read-only mode
+      {t("readOnlyNotice")}
       <style jsx>{`
         .notice_wrap {
           width: 177px;
@@ -143,7 +144,7 @@ export default function WalletAccountBalanceControl(
             balance_label_loading: shouldIndicateLoading,
           })}
         >
-          Total account balance
+          {t("totalAccountBalance")}
         </div>
         <span className="balance_area">
           <span

@@ -8,6 +8,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
+import t from "../utils/i18n"
 
 function SettingRow(props: {
   title: string
@@ -53,7 +54,7 @@ export default function Menu(): ReactElement {
   const settings = {
     general: [
       {
-        title: "Hide asset balance under $2",
+        title: t("menuHideSmallAssetBalance", "2"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -62,7 +63,7 @@ export default function Menu(): ReactElement {
         ),
       },
       {
-        title: "Use Tally Ho as default wallet",
+        title: t("menuSetAsDefault"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
@@ -76,7 +77,7 @@ export default function Menu(): ReactElement {
   return (
     <>
       <section className="standard_width_padded">
-        <h1>Settings</h1>
+        <h1>Main menu</h1>
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
@@ -87,7 +88,7 @@ export default function Menu(): ReactElement {
           ))}
         </ul>
         <div className="community_cta_wrap">
-          <h2 className="serif_header">Community release!</h2>
+          <h2>Join our community</h2>
           <p>Join our discord to give us feedback!</p>
           <SharedButton
             type="primary"
@@ -99,11 +100,11 @@ export default function Menu(): ReactElement {
               window.open(`https://chat.tally.cash/`, "_blank")?.focus()
             }}
           >
-            Give feedback!
+            Join and give feedback
           </SharedButton>
-          <div className="version">
-            Version: {process.env.VERSION ?? `<unknown>`}
-          </div>
+        </div>
+        <div className="version">
+          Version: {process.env.VERSION ?? `<unknown>`}
         </div>
       </section>
       <style jsx>
@@ -120,7 +121,7 @@ export default function Menu(): ReactElement {
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;
-            padding-top: 24px;
+            padding: 24px 0px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -134,7 +135,10 @@ export default function Menu(): ReactElement {
             margin-bottom: 5px;
           }
           h2 {
-            font-size: 36px;
+            font-weight: 500;
+            font-size: 22px;
+            padding: 0px;
+            margin: 0px 0px -1px 0px;
           }
           p {
             color: var(--green-20);
@@ -161,8 +165,11 @@ export default function Menu(): ReactElement {
           }
           .version {
             margin: 16px 0;
-            color: var(--green-60);
-            font-size: 12px;
+            color: var(--green-40);
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 auto;
+            padding: 16px 0px;
           }
         `}
       </style>
