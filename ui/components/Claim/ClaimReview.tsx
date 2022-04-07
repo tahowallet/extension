@@ -23,7 +23,7 @@ export default function ClaimReview({
       <div className="description_review">You will receive</div>
       <AmountBanner amount={claimAmount} />
       <ClaimDelegateChoiceProfile
-        name={referrer || selectedDAO?.name || ""}
+        name={referrer ?? selectedDAO?.name ?? ""}
         delegate={referrer ? null : selectedDAO}
       />
       <div className="description_review">Chosen delegate</div>
