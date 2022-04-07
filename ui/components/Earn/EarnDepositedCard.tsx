@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import { AnyAsset } from "@tallyho/tally-background/assets"
 import { HexString } from "@tallyho/tally-background/types"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 export default function EarnDepositedCard({
@@ -10,11 +11,18 @@ export default function EarnDepositedCard({
   availableRewards,
   vaultAddress,
 }: {
-  asset: (AnyAsset & { contractAddress: HexString }) | undefined
-  depositedAmount: number
+  asset: AnyAsset & { contractAddress: HexString; decimals: number }
+  depositedAmount: bigint
   availableRewards: number
   vaultAddress: HexString
 }): ReactElement {
+  const userDeposited = fromFixedPointNumber(
+    {
+      amount: depositedAmount,
+      decimals: asset.decimals,
+    },
+    4
+  )
   return (
     <Link
       to={{
@@ -38,11 +46,13 @@ export default function EarnDepositedCard({
         </li>
         <li className="info">
           <span className="amount_type">Deposited amount</span>
-          <span className="amount">${depositedAmount}</span>
+          <span className="amount">
+            {userDeposited} {asset?.symbol}
+          </span>
         </li>
         <li className="info">
           <span className="amount_type">Available rewards</span>
-          <span className="amount">{availableRewards}</span>
+          <span className="amount">{availableRewards.toFixed(2)}</span>
         </li>
         <style jsx>{`
           .card {

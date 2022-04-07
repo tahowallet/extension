@@ -204,6 +204,7 @@ export default function Earn(): ReactElement {
       )
     })
     .reduce((prev, curr) => prev + curr, 0)
+    .toFixed(2)
 
   return (
     <>
@@ -278,22 +279,27 @@ export default function Earn(): ReactElement {
             </div>
           </div>
           <ul className="cards_wrap">
-            {vaultsWithMainCurrencyValues.map((vault) => (
-              <li>
-                <EarnDepositedCard
-                  vaultAddress={vault.vaultAddress}
-                  asset={vault.asset}
-                  depositedAmount={vault.numberValueUserDeposited || 0}
-                  availableRewards={fromFixedPointNumber(
-                    {
-                      amount: vault.pendingRewards,
-                      decimals: doggoTokenDecimalDigits,
-                    },
-                    2
-                  )}
-                />
-              </li>
-            ))}
+            {vaultsWithMainCurrencyValues.map((vault) => {
+              if (vault.userDeposited > 0n) {
+                return (
+                  <li>
+                    <EarnDepositedCard
+                      vaultAddress={vault.vaultAddress}
+                      asset={vault.asset}
+                      depositedAmount={vault.userDeposited}
+                      availableRewards={fromFixedPointNumber(
+                        {
+                          amount: vault.pendingRewards,
+                          decimals: doggoTokenDecimalDigits,
+                        },
+                        2
+                      )}
+                    />
+                  </li>
+                )
+              }
+              return <></>
+            })}
           </ul>
         </section>
       ) : (
