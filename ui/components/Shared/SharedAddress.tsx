@@ -9,6 +9,7 @@ type SharedAddressProps = {
   address: string
   name?: string | undefined
   nameResolverSystem?: NameResolverSystem
+  alwaysShowAddress: boolean
 }
 
 /**
@@ -30,6 +31,7 @@ export default function SharedAddress({
   name,
   address,
   nameResolverSystem,
+  alwaysShowAddress,
 }: SharedAddressProps): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -46,17 +48,24 @@ export default function SharedAddress({
       onClick={copyAddress}
       title={`Copy to clipboard:\n${address}`}
     >
-      {primaryText}
-      {name === undefined || nameResolverSystem === undefined ? (
-        <></>
+      <p>
+        {primaryText}
+        {name === undefined || nameResolverSystem === undefined ? (
+          <></>
+        ) : (
+          <>
+            <SharedTooltip width={130}>
+              <p className="name_source_tooltip">
+                Resolved using {nameResolverSystem}
+              </p>
+            </SharedTooltip>{" "}
+          </>
+        )}
+      </p>
+      {alwaysShowAddress && name !== undefined ? (
+        <p className="detail">{truncateAddress(address)}</p>
       ) : (
-        <>
-          <SharedTooltip width={130}>
-            <p className="name_source_tooltip">
-              Resolved using {nameResolverSystem}
-            </p>
-          </SharedTooltip>{" "}
-        </>
+        <></>
       )}
       <style jsx>{`
         button {
@@ -72,7 +81,21 @@ export default function SharedAddress({
           margin: 0;
           text-align: center;
         }
+        p {
+          font-size: 16px;
+          line-height: 24px;
+          margin: 0;
+        }
+        p.detail {
+          font-size: 14px;
+          line-height: 16px;
+          color: var(--green-40);
+        }
       `}</style>
     </button>
   )
+}
+
+SharedAddress.defaultProps = {
+  alwaysShowAddress: false,
 }
