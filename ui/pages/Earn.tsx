@@ -72,8 +72,10 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             transition: all 0.2s ease;
           }
           .card:hover {
-            box-shadow: 0px 10px 12px 0px #0014138a;
-            background: linear-gradient(180deg, #284340 0%, #193330 100%);
+            background: linear-gradient(180deg, #034f4b 0%, #033633 100%);
+            box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.04),
+              0px 14px 16px rgba(0, 20, 19, 0.14),
+              0px 10px 12px rgba(0, 20, 19, 0.54);
           }
           .tvl {
             font-size: 18px;
@@ -243,7 +245,8 @@ export default function Earn(): ReactElement {
           <ul className="cards_wrap">
             {vaultsWithMainCurrencyValues?.map((vault) => (
               <li>
-                <EarnCard vault={vault} isComingSoon={!vault.active} />
+                {/* TODO Replace isComing soon with a check if current Timestamp > vault.poolStartTime */}
+                <EarnCard vault={vault} isComingSoon={false} />
               </li>
             ))}
           </ul>
