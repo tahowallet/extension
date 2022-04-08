@@ -1,27 +1,472 @@
 [
   {
-    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "ensName": "henryboldi.eth",
-    "applicationLink": "https://gov.tally.cash/t/tally-delegate-applications/18/8"
+    "address": "0x210a0095b3De91a2753C9F74E4784258F6C7728a",
+    "ensName": "foxyhound.crypto",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/41"
   },
   {
-    "address": "0x63cf5f22c3719391e0014584bad67ecba6b9f98b",
+    "address": "0xaB339ae6eab3C3CF4f5885E56F7B49391a01DDA6 ",
+    "ensName": "state.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/44"
+  },
+  {
+    "address": "0xEDDd4EC5d3775de964416b7b9d4DA885F530f90a",
+    "ensName": "VincentTaglia.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/47"
+  },
+  {
+    "address": "0x3Dc4E4F0bF3a9135748802f5e7983AE36212e80d",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/80"
+  },
+  {
+    "address": "0xbcae3f1ab2ac4a82d199720be78c5a32bb144e8b",
+    "ensName": "adnfx2.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/153"
+  },
+  {
+    "address": "0xB3d59B91308bdB0C2F93BbBDdd52E009e9c791aE",
+    "ensName": "eastban.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/7"
+  },
+  {
+    "address": "0x3Eb7919c79b4ad11F2523eaF96462386e7FbD358",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/8"
+  },
+  {
+    "address": "0xdaFa879f659Bba79011130cfA6537Ab3E1ABdD97",
     "ensName": "younghwang.eth",
-    "applicationLink": "https://gov.tally.cash/t/tally-delegate-applications/18/11"
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/9"
   },
   {
-    "address": "0x2513955f84ea829ca26c00bf30e25b8a0a3f6dc6",
-    "ensName": "mergod.eth",
-    "applicationLink": "https://gov.tally.cash/t/tally-delegate-applications/18/11"
+    "address": "0x5239cd235a8D79A1142eDb5AD218028576e0727F",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/10"
   },
   {
-    "address": "0x1766975b6a6b8c236a0e64bb165b30bb1880f848",
-    "ensName": "xihari.eth",
-    "applicationLink": "https://gov.tally.cash/t/tally-delegate-applications/18/13"
+    "address": "0x0c4E0544F0eCfdF4387B45E44d2F45d26aE65D02",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/15"
   },
   {
-    "address": "0x855cf4e983919e963e64c763d7c14db53b35baa6",
-    "ensName": "blockfishdao.eth",
-    "applicationLink": "https://gov.tally.cash/t/tally-delegate-applications/18/14"
+    "address": "0x8504A09352555ff1acF9C8a8D9fB5FDcC4161cbc",
+    "ensName": "abcabc.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/16"
+  },
+  {
+    "address": "0x2D96e1FE38ff45CC8910C617b3c5E0B6298a81f3",
+    "ensName": "dao4ever.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/19"
+  },
+  {
+    "address": "0x1A567B84377e64bdaB026342C177870cc7410EaD",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/21"
+  },
+  {
+    "address": "0x12b0E1B718b33d16512BD7A81C3680fAEe3C7e3f",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/22"
+  },
+  {
+    "address": "0xCbE96752FaF9cfaEB71721338700a51852fEf27D",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/25"
+  },
+  {
+    "address": "0x1914fF49932f3fd65FA61aB267185c6b7c64d579",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/26"
+  },
+  {
+    "address": "0x1e8A416C1f4d07aF9cD4B6B580102ED027488325",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/27"
+  },
+  {
+    "address": "0x489D69939b4Aca357f630055e351A81F1Fbb7Fb6",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/29"
+  },
+  {
+    "address": "0x7020B5882692965567eE7aa09da086b31839ce84",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/31"
+  },
+  {
+    "address": "0xEAFEFb44c6b5802Df613877B37d1bC7Ddb81300b",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/33"
+  },
+  {
+    "address": "0xEe7aF2130A135B799E2536c590FEF9d4d10036ae",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/35"
+  },
+  {
+    "address": "0xFCdAB116EE65f00f93BD2A6dfF2b5f0d08E4B872",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/36"
+  },
+  {
+    "address": "0x4b1eC19BeaC9c7542D0055A1527C3Bb9C276ecd2",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/38"
+  },
+  {
+    "address": "0x803740916F4e6aB4F64E957a68eB7F62392dEE3e",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/39"
+  },
+  {
+    "address": "0xFA23b5dA44c4eD29257eEc4eEf1e5CC53a8a6FeE",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/42"
+  },
+  {
+    "address": "0xDdC7dE7E4a7e9697EbA717039B66e00941B2c9D2",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/45"
+  },
+  {
+    "address": "0x11Ca877E894341Fec87Ff371E0C0C856b337ec7e",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/46"
+  },
+  {
+    "address": "0x8be60fe9F7C8d940D8DA9d5dDD0D8E0c15A4288B",
+    "ensName": "jvk.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/48"
+  },
+  {
+    "address": "0xd0415Bda753b6C3d9fc24e3556Ea7101599678A5",
+    "ensName": "woofwoofwoof.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/50"
+  },
+  {
+    "address": "0x531a50b437725CA67A8AeE30065370453Db09334",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/52"
+  },
+  {
+    "address": "0x2d481C39E28c71915feE81854D1C95cBcf5a5d74",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/53"
+  },
+  {
+    "address": "0xA05B26f366035F4A797c12cbC23B87633F353337",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/54"
+  },
+  {
+    "address": "0x37aee6419064c5980b093cD2961b1fbEA88Be070",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/55"
+  },
+  {
+    "address": "0x940eA03A1c05e7Cf1451ad07FEfEc116EB19AB68",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/56"
+  },
+  {
+    "address": "0x83AeFe167d325682F8f02fC9B96A5df4c39ec840",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/59"
+  },
+  {
+    "address": "0x4e5950f0FA488F62B1275e0B55f1E6175849A2e2",
+    "ensName": "djbooman.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/60"
+  },
+  {
+    "address": "0x8aa4243Ef5fE3D6ebe375fA6D47A710266Cb0CaF",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/61"
+  },
+  {
+    "address": "0xDC0958d3E43e3fed2bB3b2a7f33E5b09d461BA04",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/63"
+  },
+  {
+    "address": "0xB16EA38fC742bbA8D19e4914d12fbc9462E83b2E",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/68"
+  },
+  {
+    "address": "0x58eFa8c67d562f0c7AAA0F58cAb71D4CEB0031BC",
+    "ensName": "brayton.crypto",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/69"
+  },
+  {
+    "address": "0x6e3c9DFE5413A98720E29f8245c63064f8687492",
+    "ensName": "obstropolos.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/71"
+  },
+  {
+    "address": "0x4e8455A139Cc6ded3019b72dA359aF6a16F7250d",
+    "ensName": "aseoconnor.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/73"
+  },
+  {
+    "address": "0xe0Ec3f9d1E47D841CE89b7A56bA0895d1A2Ea74d",
+    "ensName": "yuppietao.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/74"
+  },
+  {
+    "address": "0x89A64d05d02760cb1C8Fb5848a250e464449f117",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/75"
+  },
+  {
+    "address": "0x0a9A04F289e1237c978d9ED375EeebdA73EE97b1",
+    "ensName": "vexter.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/76"
+  },
+  {
+    "address": "0x5FC5B2fC589967b5Fe482E33DdCe64881547a016",
+    "ensName": "icpeople.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/77"
+  },
+  {
+    "address": "0x3bD672eC3D56e4A87A1A0D43Cf2a84c8664E3869",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/86"
+  },
+  {
+    "address": "0xf18e9613D97F2851Bc0F572Af838F0Bd63E3fac0",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/87"
+  },
+  {
+    "address": "0x52d0Fc347560cC997f87984200F4a9344eCDC597",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/88"
+  },
+  {
+    "address": "0x822Fb53D67af805dA7b5BB77A9BEF3B19370f90C",
+    "ensName": "nicoholo.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/90"
+  },
+  {
+    "address": "0x117446E347Eb2b8a2E682Ca713cf367e29908f51",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/91"
+  },
+  {
+    "address": "0x2Bc05Ae76E47849692b6ba5fC39E7bf07d6DC750",
+    "ensName": "banano.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/93"
+  },
+  {
+    "address": "0xf9c991E5E84954561A4625A0DC0D879Fd7fbbebc",
+    "ensName": "ifir3.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/95"
+  },
+  {
+    "address": "0x1e2D06578fCf11d50384aE5bf43467200A216F86",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/96"
+  },
+  {
+    "address": "0x3e2DEA91d1A67C5eAc598fFC4c6676Ca2c640360",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/97"
+  },
+  {
+    "address": "0x01e3Fbb144ff4b42ba0FCaBb8B285C177Cd01E31",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/98"
+  },
+  {
+    "address": "0xdaac69192b95d7740b4d2ae79f83da1873da419b",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/100"
+  },
+  {
+    "address": "0xFD74AB82A3213b012BffA88d51BCF258166860f8",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/101"
+  },
+  {
+    "address": "0xE9EeeFE3B13f1D0f44553212BC3be114a248f552",
+    "ensName": "jf52967091.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/104"
+  },
+  {
+    "address": "0x4B863b3DB30bCB6cF9561e9baa8C0b86fff76f6f",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/105"
+  },
+  {
+    "address": "0x31B87a9636DC5626a9C1B9AA730cbD17158d701F",
+    "ensName": "hagi.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/107"
+  },
+  {
+    "address": "0xc2fB4B3EA53E10c88D193E709A81C4dc7aEC902e",
+    "ensName": "theblockchainsocialist.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/110"
+  },
+  {
+    "address": "0x8caB03C38c8be5d76404D647a5C45aE53A027341",
+    "ensName": "thepassivetrust.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/111"
+  },
+  {
+    "address": "0x8F004F5A2B12eB26CC77291AA879c42A4af1Ae6D",
+    "ensName": "ohhkaneda.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/112"
+  },
+  {
+    "address": "0xDc10eBa5a79886940eE98bEA0A80f3ACd3510D3D",
+    "ensName": "deefs.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/113"
+  },
+  {
+    "address": "0xF188CCdD5107fc2C04eDe0Ec04afBbf45DAe275D",
+    "ensName": "jacklondon.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/114"
+  },
+  {
+    "address": "0x0de290F9717764641B9694C246338A477Cff9543",
+    "ensName": "commstark.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/118"
+  },
+  {
+    "address": "0x50843361B564b66044555c1fBE0F19ee16A11397",
+    "ensName": "Sterlingb.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/120"
+  },
+  {
+    "address": "0xA111683fB82F615f496BCa0b9b3bA1c1867E518b",
+    "ensName": "ivora.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/121"
+  },
+  {
+    "address": "0xDF93B5ec8Eb9407F03fF14a2E2B3eE4196fcD8b0",
+    "ensName": "askar.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/124"
+  },
+  {
+    "address": "0xBe9e265c78a22e31d6a41Fc2710D9590ED2d5a96",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/125"
+  },
+  {
+    "address": "0xA24B45D04799D176714a381E8AA37cC6e778A15E",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/127"
+  },
+  {
+    "address": "0x33A74ed005785A83295D3EBE7e9Fee647c3b4246",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/128"
+  },
+  {
+    "address": "0x95D8bBA9e5af3dE140917393F4BA911718F88C38",
+    "ensName": "carverchan.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/130"
+  },
+  {
+    "address": "0xcE69BEe18184A94Cf0a65d90d5Ed2fa91adAb11e",
+    "ensName": "mgarland.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/131"
+  },
+  {
+    "address": "0x05A1ff0a32bc24265BCB39499d0c5D9A6cb2011c",
+    "ensName": "willywonka.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/135"
+  },
+  {
+    "address": "0x828abc51fb7c272bf0430874b557d3128c12cc1e",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/141"
+  },
+  {
+    "address": "0xf44217a8b6b3f258bffead635c226528aa516aea",
+    "ensName": "chiminiv9.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/142"
+  },
+  {
+    "address": "0xc0e2324817EaefD075aF9f9fAF52FFaef45d0c04",
+    "ensName": "zrowgz.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/144"
+  },
+  {
+    "address": "0xE768687Cf9Ff40a1319F4847d3afD5b9fb6a4700",
+    "ensName": "tridog.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/145"
+  },
+  {
+    "address": "0x78Fb6814FcEFabf0B80C7176639A6d68c61036a5",
+    "ensName": "bcmakes.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/149"
+  },
+  {
+    "address": "0xb61f64f6f4a76459f2684056debdf447d8629d32",
+    "ensName": "WholesomeCrypto.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/152"
+  },
+  {
+    "address": "0x9ac9c636404C8d46D9eb966d7179983Ba5a3941A",
+    "ensName": "typto.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/154"
+  },
+  {
+    "address": "0x72C39ad0dAdA72173Fd2a47cB36E1531C349a118",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/155"
+  },
+  {
+    "address": "0x5aD0434A60Bb3b6712aafFc9cc2A44BFA4d6C3Ec",
+    "ensName": "davidawad.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/156"
+  },
+  {
+    "address": "0x50b95efc04c70aea07a283ba105167709924d638",
+    "ensName": "connerjason.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/157"
+  },
+  {
+    "address": "0xC0ffba72b199Ec42C039B988aCCf225Fba6B3c52",
+    "ensName": "evanonearth.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/159"
+  },
+  {
+    "address": "0x11B8cC31f483Cdf4741de8f3559A472E5fe2299A",
+    "ensName": "Bobbay.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/160"
+  },
+  {
+    "address": "0xcCE9A28b570946123f392Cf1DbfA6D2D5e636a1f",
+    "ensName": "geoist.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/161"
+  },
+  {
+    "address": "0xc09e11f24e5285f8ba6989a33dc49e2cc273be88",
+    "ensName": "emiliob.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/162"
+  },
+  {
+    "address": "0xFA23b5dA44c4eD29257eEc4eEf1e5CC53a8a6FeE",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/163"
+  },
+  {
+    "address": "0x7a6F5571a2C4c64f611ee00ABcf118bbb28bdbc3",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/164"
+  },
+  {
+    "address": "0x852ef0033B1D600a7021C3E6c109ed3659F4741C",
+    "ensName": "",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/165"
+  },
+  {
+    "address": "0x0a7575fd1a77cd71b9a7dabf82a41b9e7122bcd1",
+    "ensName": "tallyhodelegate.eth",
+    "applicationLink": "https://gov.tally.cash/t/tally-ho-delegate-applications/18/172"
   }
 ]
