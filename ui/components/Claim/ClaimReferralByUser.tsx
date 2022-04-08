@@ -1,3 +1,4 @@
+import { Referrer } from "@tallyho/tally-background/redux-slices/claim"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
@@ -16,7 +17,9 @@ export default function ClaimReferralByUser({
     claimAmount * 0.05,
     2
   )
-  const referrer = useBackgroundSelector((state) => state.claim.referrer)
+  const referrer: Referrer | null = useBackgroundSelector(
+    (state) => state.claim.referrer
+  )
 
   if (referrer === null) {
     return <></>
@@ -31,7 +34,9 @@ export default function ClaimReferralByUser({
       <div className="description">
         {`You were referred by somebody, and to reward that you each get ${amountWithBonus} DOGGO`}
       </div>
-      <ClaimDelegateChoiceProfile name={referrer} />
+      <ClaimDelegateChoiceProfile
+        name={referrer.ensName ?? referrer.address ?? ""}
+      />
       <style jsx>
         {`
           .wrap {
