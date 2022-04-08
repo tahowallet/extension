@@ -1,18 +1,18 @@
 {
   "totalAccountBalance": {
-    "message": "Total account balance",
+    "message": "帳戶總額",
     "description": "in Wallet > WalletAccountBalanceControl"
   },
   "readOnlyNotice": {
-    "message": "Read-only mode",
+    "message": "唯讀模式",
     "description": "in Wallet > WalletAccountBalanceControl"
   },
   "menuHideSmallAssetBalance": {
-    "message": "Hide asset balance under $$$1",
+    "message": "隱藏小於 $$$1 的資產",
     "description": "in pages > Menu"
   },
   "menuSetAsDefault": {
-    "message": "Use Tally Ho as default wallet",
+    "message": "將 Tally Ho 設定成預設錢包",
     "description": "in pages > Menu"
   }
 }

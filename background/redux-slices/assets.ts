@@ -1,7 +1,20 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
-import { AnyAsset, PricePoint } from "../assets"
+import { ethers } from "ethers"
+import {
+  AnyAsset,
+  AnyAssetAmount,
+  isSmartContractFungibleAsset,
+  PricePoint,
+} from "../assets"
+import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
+import { createBackgroundAsyncThunk } from "./utils"
+import { isNetworkBaseAsset } from "./utils/asset-utils"
+import { getProvider } from "./utils/contract-utils"
+import { sameNetwork } from "../networks"
+import { ERC20_INTERFACE } from "../lib/erc20"
+import logger from "../lib/logger"
 
 type SingleAssetState = AnyAsset & {
   prices: PricePoint[]
@@ -144,6 +157,72 @@ const selectPairedAssetSymbol = (
   _2: string,
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
+
+/**
+ * Executes an asset transfer between two addresses, for a set amount. Supports
+ * an optional fixed gas limit.
+ *
+ * If the from address is not a writeable address in the wallet, this signature
+ * will not be possible.
+ */
+export const transferAsset = createBackgroundAsyncThunk(
+  "assets/transferAsset",
+  async ({
+    fromAddressNetwork: { address: fromAddress, network: fromNetwork },
+    toAddressNetwork: { address: toAddress, network: toNetwork },
+    assetAmount,
+    gasLimit,
+  }: {
+    fromAddressNetwork: AddressOnNetwork
+    toAddressNetwork: AddressOnNetwork
+    assetAmount: AnyAssetAmount
+    gasLimit: bigint | undefined
+  }) => {
+    if (!sameNetwork(fromNetwork, toNetwork)) {
+      throw new Error("Only same-network transfers are supported for now.")
+    }
+
+    const provider = getProvider()
+    const signer = provider.getSigner()
+
+    if (isNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
+      logger.debug(
+        `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
+          `${fromAddress} to ${toAddress} as a base asset transfer.`
+      )
+      await signer.sendTransaction({
+        from: fromAddress,
+        to: toAddress,
+        value: assetAmount.amount,
+        gasLimit,
+      })
+    } else if (isSmartContractFungibleAsset(assetAmount.asset)) {
+      logger.debug(
+        `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
+          `${fromAddress} to ${toAddress} as an ERC20 transfer.`
+      )
+      const token = new ethers.Contract(
+        assetAmount.asset.contractAddress,
+        ERC20_INTERFACE,
+        signer
+      )
+
+      const transactionDetails = await token.populateTransaction.transfer(
+        toAddress,
+        assetAmount.amount
+      )
+
+      await signer.sendUncheckedTransaction({
+        ...transactionDetails,
+        gasLimit: gasLimit ?? transactionDetails.gasLimit,
+      })
+    } else {
+      throw new Error(
+        "Only base and fungible smart contract asset transfers are supported for now."
+      )
+    }
+  }
+)
 
 /**
  * Selects a particular asset price point given the asset symbol and the paired

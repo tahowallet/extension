@@ -25,6 +25,7 @@ interface Props {
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick: boolean
+  isLoading: boolean
   isFormSubmit: boolean
 }
 
@@ -41,6 +42,7 @@ export default function SharedButton(props: Props): ReactElement {
     iconPosition,
     linkTo,
     showLoadingOnClick,
+    isLoading,
     isFormSubmit,
   } = props
 
@@ -68,7 +70,7 @@ export default function SharedButton(props: Props): ReactElement {
     }
   }
 
-  const isShowingLoadingSpinner = isClicked && showLoadingOnClick
+  const isShowingLoadingSpinner = isLoading || (isClicked && showLoadingOnClick)
 
   return (
     <button
@@ -317,5 +319,6 @@ SharedButton.defaultProps = {
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,
+  isLoading: false,
   isFormSubmit: false,
 }

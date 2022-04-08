@@ -82,8 +82,9 @@ const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressOnNetwork
-  accountBalance: AccountBalance
-  transactionSent: HexString
+  accountsWithBalances: AccountBalance[]
+  transactionSend: HexString
+  transactionSendFailure: undefined
   assetTransfers: {
     addressNetwork: AddressOnNetwork
     assetTransfers: AssetTransfer[]
@@ -481,7 +482,7 @@ export default class ChainService extends BaseService<Events> {
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
-    this.emitter.emit("accountBalance", accountBalance)
+    this.emitter.emit("accountsWithBalances", [accountBalance])
     await this.db.addBalance(accountBalance)
     return accountBalance
   }
@@ -615,17 +616,17 @@ export default class ChainService extends BaseService<Events> {
   async broadcastSignedTransaction(
     transaction: SignedEVMTransaction
   ): Promise<void> {
-    // TODO make proper use of tx.network to choose provider
-    const serialized = utils.serializeTransaction(
-      ethersTransactionFromSignedTransaction(transaction),
-      { r: transaction.r, s: transaction.s, v: transaction.v }
-    )
     try {
+      // TODO make proper use of tx.network to choose provider
+      const serialized = utils.serializeTransaction(
+        ethersTransactionFromSignedTransaction(transaction),
+        { r: transaction.r, s: transaction.s, v: transaction.v }
+      )
       await Promise.all([
         this.providers.ethereum
           .sendTransaction(serialized)
           .then((transactionResponse) => {
-            this.emitter.emit("transactionSent", transactionResponse.hash)
+            this.emitter.emit("transactionSend", transactionResponse.hash)
           })
           .catch((error) => {
             logger.debug(
@@ -639,7 +640,6 @@ export default class ChainService extends BaseService<Events> {
               "alchemy"
             )
             this.releaseEVMTransactionNonce(transaction)
-
             return Promise.reject(error)
           }),
         this.subscribeToTransactionConfirmation(
@@ -649,6 +649,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 
       throw error
@@ -963,14 +964,15 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Looks up whether any of the passed address/network pairs are being tracked.
+   * Given a list of AddressOnNetwork objects, return only the ones that
+   * are currently being tracked.
    */
-  async isTrackingAddressesOnNetworks(
-    ...addressesOnNetworks: AddressOnNetwork[]
-  ): Promise<boolean> {
+  async filterTrackedAddressesOnNetworks(
+    addressesOnNetworks: AddressOnNetwork[]
+  ): Promise<AddressOnNetwork[]> {
     const accounts = await this.getAccountsToTrack()
 
-    return addressesOnNetworks.some(({ address, network }) =>
+    return addressesOnNetworks.filter(({ address, network }) =>
       accounts.some(
         ({ address: trackedAddress, network: trackedNetwork }) =>
           sameEVMAddress(trackedAddress, address) &&

@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
+import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
 
@@ -54,8 +55,17 @@ export default function OnboardingInfoIntro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
+  const hasAccounts = useBackgroundSelector(
+    (state) => Object.keys(state.account.accountsData).length > 0
+  )
+
   if (redirectToAddWallet) {
     return <Redirect push to="/onboarding/add-wallet" />
+  }
+
+  // If there's an account, return to /wallet
+  if (hasAccounts) {
+    return <Redirect to="/wallet" />
   }
 
   return (
