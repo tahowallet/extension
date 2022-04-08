@@ -444,7 +444,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               size="medium"
               isDisabled={isDisabled || disableDropdown}
               onClick={toggleIsAssetMenuOpen}
-              iconSmall="continue"
+              iconSmall="dropdown"
             >
               Select token
             </SharedButton>

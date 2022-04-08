@@ -25,6 +25,7 @@ interface Props {
     | "close"
     | "continue"
     | "copy"
+    | "dropdown"
     | "edit"
     | "garbage"
     | "lock"
