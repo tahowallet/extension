@@ -15,6 +15,7 @@ export default function ClaimReview({
   const { selectedDelegate, selectedDAO } = useBackgroundSelector(
     selectClaimSelections
   )
+  const referrer = useBackgroundSelector((state) => state.claim.referrer)
 
   return (
     <div className="claim standard_width">
@@ -22,8 +23,8 @@ export default function ClaimReview({
       <div className="description_review">You will receive</div>
       <AmountBanner amount={claimAmount} />
       <ClaimDelegateChoiceProfile
-        name={selectedDAO?.name ?? ""}
-        delegate={selectedDAO}
+        name={referrer ?? selectedDAO?.name ?? ""}
+        delegate={referrer ? null : selectedDAO}
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">

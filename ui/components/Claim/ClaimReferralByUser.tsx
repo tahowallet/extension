@@ -1,4 +1,3 @@
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
@@ -32,7 +31,7 @@ export default function ClaimReferralByUser({
       <div className="description">
         {`You were referred by somebody, and to reward that you each get ${amountWithBonus} DOGGO`}
       </div>
-      <ClaimDelegateChoiceProfile name={truncateAddress(referrer)} />
+      <ClaimDelegateChoiceProfile name={referrer} />
       <style jsx>
         {`
           .wrap {
