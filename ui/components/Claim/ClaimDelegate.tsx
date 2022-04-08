@@ -115,9 +115,9 @@ export default function ClaimDelegate(props: {
                       <input
                         type="radio"
                         name="delegate"
-                        id={delegate.ensName}
+                        id={delegate.address}
                         className="radio"
-                        checked={delegate.ensName === selectedDelegate.ensName}
+                        checked={delegate.address === selectedDelegate.address}
                         readOnly
                       />
                       <label
