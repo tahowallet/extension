@@ -25,7 +25,7 @@ import {
 
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
-import { AddressOnNetwork, NameOnNetwork } from "./accounts"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/claim/types"
 
 import rootReducer from "./redux-slices"
@@ -94,7 +94,6 @@ import {
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
-import { HIDE_IMPORT_LEDGER } from "./features/features"
 import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 
@@ -346,13 +345,13 @@ export default class Main extends BaseService<never> {
 
     const telemetryService = TelemetryService.create()
 
-    const ledgerService = HIDE_IMPORT_LEDGER
-      ? (Promise.resolve(null) as unknown as Promise<LedgerService>)
-      : LedgerService.create()
+    const ledgerService = LedgerService.create()
 
-    const signingService = HIDE_IMPORT_LEDGER
-      ? (Promise.resolve(null) as unknown as Promise<SigningService>)
-      : SigningService.create(keyringService, ledgerService, chainService)
+    const signingService = SigningService.create(
+      keyringService,
+      ledgerService,
+      chainService
+    )
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -518,12 +517,9 @@ export default class Main extends BaseService<never> {
       this.providerBridgeService.startService(),
       this.claimService.startService(),
       this.telemetryService.startService(),
+      this.ledgerService.startService(),
+      this.signingService.startService(),
     ]
-
-    if (!HIDE_IMPORT_LEDGER) {
-      servicesToBeStarted.push(this.ledgerService.startService())
-      servicesToBeStarted.push(this.signingService.startService())
-    }
 
     await Promise.all(servicesToBeStarted)
   }
@@ -540,12 +536,9 @@ export default class Main extends BaseService<never> {
       this.providerBridgeService.stopService(),
       this.claimService.stopService(),
       this.telemetryService.stopService(),
+      this.ledgerService.stopService(),
+      this.signingService.stopService(),
     ]
-
-    if (!HIDE_IMPORT_LEDGER) {
-      servicesToBeStopped.push(this.ledgerService.stopService())
-      servicesToBeStopped.push(this.signingService.stopService())
-    }
 
     await Promise.all(servicesToBeStopped)
     await super.internalStopService()
@@ -561,11 +554,8 @@ export default class Main extends BaseService<never> {
     this.connectEnrichmentService()
     this.connectClaimService()
     this.connectTelemetryService()
-
-    if (!HIDE_IMPORT_LEDGER) {
-      this.connectLedgerService()
-      this.connectSigningService()
-    }
+    this.connectLedgerService()
+    this.connectSigningService()
 
     await this.connectChainService()
 
@@ -589,30 +579,6 @@ export default class Main extends BaseService<never> {
     signingMethod: SigningMethod
   ): Promise<void> {
     await this.signingService.removeAccount(address, signingMethod)
-  }
-
-  async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
-    try {
-      const address = await this.nameService.lookUpEthereumAddress(
-        nameNetwork.name
-      )
-
-      if (address) {
-        const addressNetwork = {
-          address,
-          network: nameNetwork.network,
-        }
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(address))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
-      } else {
-        throw new Error("Name not found")
-      }
-    } catch (error) {
-      throw new Error(
-        `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
-      )
-    }
   }
 
   async importLedgerAccounts(
@@ -657,10 +623,13 @@ export default class Main extends BaseService<never> {
 
   async connectChainService(): Promise<void> {
     // Wire up chain service to account slice.
-    this.chainService.emitter.on("accountBalance", (accountWithBalance) => {
-      // The first account balance update will transition the account to loading.
-      this.store.dispatch(updateAccountBalance(accountWithBalance))
-    })
+    this.chainService.emitter.on(
+      "accountsWithBalances",
+      (accountWithBalance) => {
+        // The first account balance update will transition the account to loading.
+        this.store.dispatch(updateAccountBalance(accountWithBalance))
+      }
+    )
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
@@ -733,47 +702,15 @@ export default class Main extends BaseService<never> {
     transactionConstructionSliceEmitter.on(
       "requestSignature",
       async ({ transaction, method }) => {
-        if (HIDE_IMPORT_LEDGER) {
-          const network = this.chainService.resolveNetwork(transaction)
-          if (typeof network === "undefined") {
-            throw new Error(`Unknown chain ID ${transaction.chainID}.`)
-          }
-
-          const transactionWithNonce =
-            await this.chainService.populateEVMTransactionNonce(transaction)
-
-          try {
-            const signedTransactionResult =
-              await this.keyringService.signTransaction(
-                {
-                  address: transaction.from,
-                  network: this.chainService.ethereumNetwork,
-                },
-                transactionWithNonce
-              )
-            await this.store.dispatch(
-              transactionSigned(signedTransactionResult)
-            )
-          } catch (exception) {
-            logger.error(
-              "Error signing transaction; releasing nonce",
-              exception
-            )
-            this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
-          }
-        } else {
-          try {
-            const signedTransactionResult =
-              await this.signingService.signTransaction(transaction, method)
-            await this.store.dispatch(
-              transactionSigned(signedTransactionResult)
-            )
-          } catch (exception) {
-            logger.error("Error signing transaction", exception)
-            this.store.dispatch(
-              clearTransactionState(TransactionConstructionStatus.Idle)
-            )
-          }
+        try {
+          const signedTransactionResult =
+            await this.signingService.signTransaction(transaction, method)
+          await this.store.dispatch(transactionSigned(signedTransactionResult))
+        } catch (exception) {
+          logger.error("Error signing transaction", exception)
+          this.store.dispatch(
+            clearTransactionState(TransactionConstructionStatus.Idle)
+          )
         }
       }
     )
@@ -853,21 +790,28 @@ export default class Main extends BaseService<never> {
 
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
-      "accountBalance",
-      async (accountWithBalance) => {
+      "accountsWithBalances",
+      async (accountsWithBalances) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
 
-        // TODO support multi-network assets
-        const doesThisBalanceHaveAnAlreadyTrackedAsset = !!assetsToTrack.filter(
-          (t) => t.symbol === accountWithBalance.assetAmount.asset.symbol
-        )[0]
+        const filteredBalancesToDispatch: AccountBalance[] = []
 
-        if (
-          accountWithBalance.assetAmount.amount > 0 ||
-          doesThisBalanceHaveAnAlreadyTrackedAsset
-        ) {
-          this.store.dispatch(updateAccountBalance(accountWithBalance))
-        }
+        accountsWithBalances.forEach((balance) => {
+          // TODO support multi-network assets
+          const doesThisBalanceHaveAnAlreadyTrackedAsset =
+            !!assetsToTrack.filter(
+              (t) => t.symbol === balance.assetAmount.asset.symbol
+            )[0]
+
+          if (
+            balance.assetAmount.amount > 0 ||
+            doesThisBalanceHaveAnAlreadyTrackedAsset
+          ) {
+            filteredBalancesToDispatch.push(balance)
+          }
+        })
+
+        this.store.dispatch(updateAccountBalance(filteredBalancesToDispatch))
       }
     )
 
@@ -963,14 +907,10 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
-      if (HIDE_IMPORT_LEDGER) {
-        await this.keyringService.deriveAddress(keyringID)
-      } else {
-        await this.signingService.deriveAddress({
-          type: "keyring",
-          accountID: keyringID,
-        })
-      }
+      await this.signingService.deriveAddress({
+        type: "keyring",
+        accountID: keyringID,
+      })
     })
 
     keyringSliceEmitter.on("generateNewKeyring", async () => {
@@ -1003,16 +943,13 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateTransactionOptions(payload))
 
         const clear = () => {
-          if (HIDE_IMPORT_LEDGER) {
-            // Ye olde mutual dependency.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            this.keyringService.emitter.off("signedTx", resolveAndClear)
-          } else {
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            this.signingService.emitter.off("signingTxResponse", handleAndClear)
-          }
+          // Mutual dependency to handleAndClear.
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          this.signingService.emitter.off("signingTxResponse", handleAndClear)
+
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1030,23 +967,13 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const resolveAndClear = (
-          signedTransactionResult: SignedEVMTransaction
-        ) => {
-          clear()
-          resolver(signedTransactionResult)
-        }
-
         const rejectAndClear = () => {
           clear()
           rejecter()
         }
 
-        if (HIDE_IMPORT_LEDGER) {
-          this.keyringService.emitter.on("signedTx", resolveAndClear)
-        } else {
-          this.signingService.emitter.on("signingTxResponse", handleAndClear)
-        }
+        this.signingService.emitter.on("signingTxResponse", handleAndClear)
+
         transactionConstructionSliceEmitter.on(
           "signatureRejected",
           rejectAndClear
@@ -1069,19 +996,16 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
 
         const clear = () => {
-          if (HIDE_IMPORT_LEDGER) {
-            // Ye olde mutual dependency.
+          this.signingService.emitter.off(
+            "signingDataResponse",
+            // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            this.keyringService.emitter.off("signedData", resolveAndClear)
-          } else {
-            this.signingService.emitter.off(
-              "signingDataResponse",
-              // eslint-disable-next-line @typescript-eslint/no-use-before-define
-              handleAndClear
-            )
-          }
+            handleAndClear
+          )
+
           signingSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1099,21 +1023,13 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const resolveAndClear = (signedData: string) => {
-          clear()
-          resolver(signedData)
-        }
-
         const rejectAndClear = () => {
           clear()
           rejecter()
         }
 
-        if (HIDE_IMPORT_LEDGER) {
-          this.keyringService.emitter.on("signedData", resolveAndClear)
-        } else {
-          this.signingService.emitter.on("signingDataResponse", handleAndClear)
-        }
+        this.signingService.emitter.on("signingDataResponse", handleAndClear)
+
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
@@ -1131,18 +1047,16 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(signDataRequest(payload))
 
         const clear = () => {
-          if (HIDE_IMPORT_LEDGER) {
+          this.signingService.emitter.off(
+            "personalSigningResponse",
+            // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            this.keyringService.emitter.off("signedData", resolveAndClear)
-          } else {
-            this.signingService.emitter.off(
-              "personalSigningResponse",
-              // eslint-disable-next-line @typescript-eslint/no-use-before-define
-              handleAndClear
-            )
-          }
+            handleAndClear
+          )
+
           signingSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1160,24 +1074,16 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const resolveAndClear = (signedData: string) => {
-          clear()
-          resolver(signedData)
-        }
-
         const rejectAndClear = () => {
           clear()
           rejecter()
         }
 
-        if (HIDE_IMPORT_LEDGER) {
-          this.keyringService.emitter.on("signedData", resolveAndClear)
-        } else {
-          this.signingService.emitter.on(
-            "personalSigningResponse",
-            handleAndClear
-          )
-        }
+        this.signingService.emitter.on(
+          "personalSigningResponse",
+          handleAndClear
+        )
+
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
@@ -1282,6 +1188,18 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  async resolveNameOnNetwork({
+    name,
+    network,
+  }: NameOnNetwork): Promise<string | undefined> {
+    try {
+      return await this.nameService.lookUpEthereumAddress(name /* , network */)
+    } catch (error) {
+      logger.info("Error looking up Ethereum address: ", error)
+      return undefined
+    }
   }
 
   private connectPopupMonitor() {

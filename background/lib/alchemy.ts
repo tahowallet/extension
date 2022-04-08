@@ -137,10 +137,13 @@ export async function getTokenBalances(
   { address, network }: AddressOnNetwork,
   tokens?: HexString[]
 ): Promise<SmartContractAmount[]> {
+  const uniqueTokens = [...new Set(tokens ?? [])]
+
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
     address,
-    tokens || "DEFAULT_TOKENS",
+    uniqueTokens || "DEFAULT_TOKENS",
   ])
+
   if (!isValidAlchemyTokenBalanceResponse(json)) {
     logger.warn(
       "Alchemy token balance response didn't validate, did the API change?",

@@ -1,17 +1,26 @@
 import React, { ReactElement } from "react"
 import { Delegate, DAO } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  isProbablyEVMAddress,
+  truncateAddress,
+} from "@tallyho/tally-background/lib/utils"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
   delegate?: Delegate | DAO | null
 }): ReactElement {
   const { name, delegate } = props
+
+  const referrerLabel = isProbablyEVMAddress(name)
+    ? truncateAddress(name)
+    : name
+
   return (
     <div className="wrap">
       <div className="label">Referred by</div>
       <div className="ref_block">
         <div className="icon" />
-        {name}
+        {referrerLabel}
       </div>
       <style jsx>
         {`

@@ -10,16 +10,18 @@ export default function SwapRewardsCard(): ReactElement {
         <p className="text">
           This week, 240,000 DOGGO tokens will be equally shared as Swap
           Rewards.
-          <SharedTooltip width={150} verticalPosition="top">
-            <p className="tooltip">
-              {`Tally rewards it's users that use swap everyweek. A council decides
+          <span className="tooltip_inline_wrap">
+            <SharedTooltip width={150} verticalPosition="top">
+              <p className="tooltip">
+                {`Tally rewards it's users that use swap every week. A council decides
           weekly prizes and who is eligible.`}
-            </p>
-            <button type="button" className="details">
-              Details
-              <div className="details_icon" />
-            </button>
-          </SharedTooltip>
+              </p>
+              <button type="button" className="details">
+                Details
+                <div className="details_icon" />
+              </button>
+            </SharedTooltip>
+          </span>
         </p>
       </div>
       <style jsx>{`
@@ -68,6 +70,10 @@ export default function SwapRewardsCard(): ReactElement {
           height: 16px;
           background-color: var(--hunter-green);
           margin-left: 5px;
+        }
+        .tooltip_inline_wrap {
+          display: inline-block;
+          vertical-align: middle;
         }
       `}</style>
     </div>

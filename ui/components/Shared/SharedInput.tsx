@@ -1,47 +1,40 @@
-import React, {
-  ChangeEventHandler,
-  ReactElement,
-  useEffect,
-  useRef,
-  useState,
-} from "react"
+import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
-import { useRunOnFirstRender } from "../../hooks"
+import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 
 interface Props<T> {
   id?: string
   label: string
   focusedLabelBackgroundColor: string
-  defaultValue?: T
   placeholder?: string
   type: "password" | "text" | "number"
-  value?: string | number | undefined
-  onChange?: (value: T) => void
+  value?: string | undefined
+  onChange?: (value: T | undefined) => void
   onFocus?: () => void
   errorMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
-  parseAndValidate: (value: string) => { parsed: T } | { error: string }
+  parseAndValidate: (
+    value: string
+  ) => { parsed: T | undefined } | { error: string }
 }
 
 export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const {
     id,
     label,
-    defaultValue,
     placeholder,
     focusedLabelBackgroundColor,
     type,
     onChange,
     onFocus,
-    value,
+    value: currentValue,
     errorMessage,
     autoFocus = false,
     autoSelect = false,
     parseAndValidate,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [parserError, setParserError] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus()
@@ -51,23 +44,20 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     if (autoSelect) inputRef.current?.select()
   }, [autoSelect])
 
+  const {
+    rawValue: inputValue,
+    errorMessage: parserError,
+    handleInputChange,
+  } = useParsedValidation<T | undefined>(
+    onChange ?? (() => {}),
+    parseAndValidate
+  )
+
   useRunOnFirstRender(() => {
-    if (defaultValue) {
-      onChange?.(defaultValue)
+    if (currentValue && currentValue.trim() !== inputValue) {
+      handleInputChange(currentValue)
     }
   })
-
-  const onInputChange: ChangeEventHandler<HTMLInputElement> = ({
-    target: { value: inputValue },
-  }) => {
-    const result = parseAndValidate(inputValue)
-    if ("error" in result) {
-      setParserError(result.error)
-    } else {
-      setParserError(undefined)
-      onChange?.(result.parsed)
-    }
-  }
 
   return (
     <>
@@ -79,9 +69,11 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             ? " "
             : placeholder
         }
-        value={value}
+        value={inputValue}
         spellCheck={false}
-        onChange={onInputChange}
+        onInput={(event: ChangeEvent<HTMLInputElement>) =>
+          handleInputChange(event.target.value)
+        }
         onFocus={onFocus}
         className={classNames({
           error: errorMessage,
@@ -158,8 +150,17 @@ SharedTypedInput.defaultProps = {
   focusedLabelBackgroundColor: "var(--hunter-green)",
 }
 
-export default function SharedInput(props: Props<string>): ReactElement {
-  return SharedTypedInput(props)
+export default function SharedInput(
+  props: Omit<Props<string>, "onChange"> & { onChange?: (_: string) => void }
+): ReactElement {
+  const onChangeWrapper = (newValue: string | undefined) => {
+    props.onChange?.(newValue ?? "")
+  }
+
+  return SharedTypedInput({
+    ...props,
+    onChange: onChangeWrapper,
+  })
 }
 
 SharedInput.defaultProps = {
