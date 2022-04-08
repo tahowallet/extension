@@ -251,7 +251,7 @@ export const initialState: EarnState = {
 }
 
 const APPROVAL_TARGET_CONTRACT_ADDRESS =
-  "0x76465982fD8070FC74c91FD4CFfC7eb56Fc6b03a"
+  "0x9638990047B8CdF6eE8457d89Ee9Ea8575eC5d9D"
 
 const earnSlice = createSlice({
   name: "earn",
@@ -460,20 +460,24 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       depositTransactionData.gasLimit = BigNumber.from(850000) // for mainnet fork only
     }
     dispatch(clearInput())
-    const response = await signer.sendTransaction(depositTransactionData)
-    dispatch(currentlyDepositing(true))
-    const receipt = await response.wait()
-    if (receipt.status === 1) {
-      dispatch(currentlyDepositing(false))
+    try {
+      const response = await signer.sendTransaction(depositTransactionData)
+      dispatch(currentlyDepositing(true))
+      const receipt = await response.wait()
+      if (receipt.status === 1) {
+        dispatch(currentlyDepositing(false))
+        dispatch(clearSignature())
+        dispatch(updateLockedValues())
+        await emitter.emit("earnDeposit", "Asset successfully deposited")
+        return
+      }
+      throw new Error()
+    } catch {
+      await emitter.emit("earnDeposit", "Asset deposit has failed")
       dispatch(clearSignature())
-      dispatch(updateLockedValues())
-      await emitter.emit("earnDeposit", "Asset successfully deposited")
-      return
+      dispatch(currentlyDepositing(false))
+      dispatch(dispatch(depositError(true)))
     }
-    await emitter.emit("earnDeposit", "Asset deposit has failed")
-    dispatch(clearSignature())
-    dispatch(currentlyDepositing(false))
-    dispatch(dispatch(depositError(true)))
   }
 )
 
