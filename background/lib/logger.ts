@@ -58,6 +58,21 @@ const styles: LogStyles = {
   },
 }
 
+function purgeSensitiveFailSafe(log: string): string {
+  return log
+    .replace(/0x(.*?)[\s]/g, "[REDACTED]") // Replace hexadecimal segments
+    .replace(/\b[a-zA-Z0-9]{64}\b/g, "[REDACTED]") // Replace private key length segments
+}
+
+function saveLog(logLabel: string, stackTrace: string[] | undefined) {
+  localStorage.setItem(
+    "logs",
+    `${(localStorage.getItem("logs") ?? "").slice(
+      -5000
+    )} ${purgeSensitiveFailSafe(logLabel + stackTrace)} \n`
+  )
+}
+
 const BLINK_PREFIX = "    at "
 const WEBKIT_GECKO_DELIMITER = "@"
 const WEBKIT_MARKER = "@"
@@ -133,6 +148,8 @@ function genericLogger(level: LogLevel, input: unknown[]) {
   }
 
   console.groupEnd()
+
+  saveLog(logLabel, stackTrace)
 }
 
 const logger = {
