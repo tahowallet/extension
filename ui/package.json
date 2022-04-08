@@ -43,7 +43,6 @@
     "react-qr-code": "^2.0.0",
     "react-redux": "^7.2.4",
     "react-router-dom": "^5.3.0",
-    "react-share": "^4.4.0",
     "react-transition-group": "^4.4.2",
     "redux": "^4.1.0",
     "webextension-polyfill": "^0.8.0"

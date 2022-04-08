@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { TwitterShareButton } from "react-share"
 import SharedButton from "./SharedButton"
 
 export default function SharedTwitterButton({
@@ -12,7 +11,13 @@ export default function SharedTwitterButton({
   buttonLabel?: string
 }): ReactElement {
   return (
-    <TwitterShareButton url={link} title={text}>
+    <a
+      href={encodeURI(
+        `https://twitter.com/intent/tweet?url=${link}&text=${text}`
+      )}
+      target="_blank"
+      rel="noreferrer"
+    >
       <SharedButton
         type="twitter"
         size="medium"
@@ -21,6 +26,6 @@ export default function SharedTwitterButton({
       >
         {buttonLabel}
       </SharedButton>
-    </TwitterShareButton>
+    </a>
   )
 }
