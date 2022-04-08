@@ -26,6 +26,7 @@ export default function ClaimSuccessModalContent({
         buttonLabel="Share on twitter"
         link={`${WEBSITE_ORIGIN}/claim/${currentAccount.address}`}
         text="Get an extra 5% bonus on your $DOGGO claim when you use this link (🐶, 🐶)"
+        onClick={close}
       />
       <div className="notice">
         <SharedIcon icon="eye@2x.png" width={24} color="var(--trophy-gold)" />

@@ -5,10 +5,12 @@ export default function SharedTwitterButton({
   link,
   text,
   buttonLabel = "Share",
+  onClick,
 }: {
   link: string
   text: string
   buttonLabel?: string
+  onClick?: () => void
 }): ReactElement {
   return (
     <a
@@ -23,6 +25,7 @@ export default function SharedTwitterButton({
         size="medium"
         iconPosition="left"
         iconSize="secondaryMedium"
+        onClick={onClick}
       >
         {buttonLabel}
       </SharedButton>
