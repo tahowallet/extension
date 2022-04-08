@@ -27,6 +27,7 @@ interface Props {
     | "copy"
     | "download"
     | "discord"
+    | "dropdown"
     | "edit"
     | "garbage"
     | "lock"

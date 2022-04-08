@@ -291,6 +291,17 @@ export const {
 export default accountSlice.reducer
 
 /**
+ * Async thunk whose dispatch promise will return a resolved name or undefined
+ * if the name cannot be resolved.
+ */
+export const resolveNameOnNetwork = createBackgroundAsyncThunk(
+  "account/resolveNameOnNetwork",
+  async (nameOnNetwork: NameOnNetwork, { extra: { main } }) => {
+    return main.resolveNameOnNetwork(nameOnNetwork)
+  }
+)
+
+/**
  * Async thunk whose dispatch promise will return when the account has been
  * added.
  *
@@ -308,17 +319,6 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
 
     dispatch(loadAccount(normalizedAddressNetwork.address))
     await main.addAccount(normalizedAddressNetwork)
-  }
-)
-
-/**
- * Async thunk whose dispatch promise will return when the ENS domain account
- * has been added.
- */
-export const addAccountByName = createBackgroundAsyncThunk(
-  "account/addAccountByName",
-  async (nameNetwork: NameOnNetwork, { extra: { main } }) => {
-    await main.addAccountByName(nameNetwork)
   }
 )
 
