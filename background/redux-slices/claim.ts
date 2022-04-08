@@ -54,8 +54,8 @@ interface ClaimingState {
   referrer: string | null
 }
 
-export const DOGGO_TOKEN_ADDRESS = "0xF2C850284B499e0318aF2Bc4E5328b77e54775F8"
-const VOTE_WITH_FRIENDS_ADDRESS = "0xE09ca7b8B427b3f2AF5351Bd4741dd2651659339"
+export const DOGGO_TOKEN_ADDRESS = "0x21A977BDC1907037E256DCC9999525049c329EDB"
+const VOTE_WITH_FRIENDS_ADDRESS = "0x478d40B2B3a0A4b79AEE30E91AAe21Db8E50687f"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address

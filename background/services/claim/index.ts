@@ -188,7 +188,7 @@ const HARDCODED_VAULTS = [
       name: "Uniswap V2",
       symbol: "UNI-V2",
       decimals: 18,
-      contractAddress: "0xAC5115B57709880448d090AC6De8Fc2D6a4fC507",
+      contractAddress: "0xb1bFe7cCfAC94A52811b2201dD1069FEfFa60a44",
     },
   },
 ]
