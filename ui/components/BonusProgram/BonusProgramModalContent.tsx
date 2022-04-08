@@ -62,9 +62,12 @@ export default function BonusProgramModalContent(): ReactElement {
         </a>
       </p>
       <div className="link_cta_wrap">
-        <span>
-          Your link: <span className="link">{referralLink.shortLink}</span>
-        </span>
+        <div className="link_line">
+          <span className="link_title">Your link:</span>
+          <span className="link" title={referralLink.shortLink}>
+            {referralLink.shortLink}
+          </span>
+        </div>
         <div className="bottom">
           <SharedTwitterButton
             link={referralLink.link}
@@ -165,8 +168,18 @@ export default function BonusProgramModalContent(): ReactElement {
             padding: 16px;
             box-sizing: border-box;
           }
+          .link_line {
+            display: flex;
+          }
+          .link_title {
+            flex: 0 0 auto;
+            margin-right: 5px;
+          }
           .link {
             color: var(--green-40);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           .bottom {
             display: flex;
