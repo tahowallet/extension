@@ -136,7 +136,6 @@ export default function Eligible(): ReactElement {
         <ClaimSuccessModalContent close={handleSuccessModalClose} />
       </SharedSlideUpMenu>
 
-      <div className="background" />
       <div className="eligible">
         <div className="top_bar standard_width">
           <SharedBackButton
@@ -171,24 +170,23 @@ export default function Eligible(): ReactElement {
         {`
           .steps-container {
             align-self: flex-start;
-            margin-top: -20px;
+            margin-top: -10px;
             height: 492px;
             overflow: scroll;
+            padding: 0px 16px;
+            background-image: url("./images/dark_forest_bg@2x.png");
+            background-size: 384px 274px;
+            background-position: top;
+            background-color: var(--hunter-green);
+            background-attachment: local, scroll;
+            background-repeat: no-repeat;
+            margin-bottom: -16px;
           }
           .wrap {
             width: 100%;
             display: flex;
             flex-flow: column;
             position: relative;
-          }
-          .background {
-            width: 100%;
-            background-image: url("./images/dark_forest@2x.png");
-            background-repeat: repeat-x;
-            background-position: bottom;
-            background-color: var(--green-95);
-            height: 357px;
-            margin-bottom: -357px;
           }
           .eligible {
             display: flex;
@@ -197,14 +195,17 @@ export default function Eligible(): ReactElement {
             justify-content: space-between;
             flex-grow: 1;
             width: 100%;
-            padding: 0px 16px;
             margin: 0 auto;
             overflow-x: hidden;
             box-sizing: border-box;
-            padding-top: 7px;
+            background-color: var(--green-95);
           }
           footer {
             background-color: var(--hunter-green);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 63px;
           }
           .top_bar {
             display: flex;

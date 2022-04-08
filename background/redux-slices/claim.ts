@@ -72,7 +72,14 @@ const initialState: ClaimingState = {
   selectedDAO: null,
   selectedDelegate: null,
   eligibility: null,
-  delegates,
+  delegates: delegates
+    .sort(() => Math.random() - 0.5)
+    .map((delegate) => {
+      return {
+        ...delegate,
+        truncatedAddress: truncateAddress(delegate.address),
+      }
+    }),
   DAOs: DAOs.sort(() => Math.random() - 0.5),
   claimStep: 1,
   signature: undefined,
