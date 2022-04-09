@@ -45,7 +45,8 @@ function EligibleCTAContent({
     }
     return <div>Wohoo! You can claim</div>
   }
-
+  const amount = Number(claimAmount)
+  const amountWithBonus = amount + amount * 0.05
   const isFirstClaim = !hasAlreadyClaimed && !hasError && !isCurrentlyClaiming
 
   return (
@@ -59,7 +60,7 @@ function EligibleCTAContent({
               has_highlight: isFirstClaim,
             })}
           >
-            {claimAmount}
+            {isFirstClaim ? claimAmount : amountWithBonus}
           </span>{" "}
           DOGGO
         </div>

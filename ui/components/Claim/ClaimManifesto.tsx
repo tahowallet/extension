@@ -8,7 +8,7 @@ export default function ClaimManifesto({
 }): ReactElement {
   return (
     <div className="standard_width">
-      <ClaimAmountBanner amount={claimAmount} />
+      <ClaimAmountBanner amount={claimAmount} showLabel showBonus />
       <ul>
         <li>
           <div className="ethos_title">Our community&apos;s values</div>
