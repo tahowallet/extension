@@ -51,7 +51,7 @@ function EligibleCTAContent({
 
   return (
     <>
-      <img className="image" src="./images/claim.svg" alt="" />
+      <img className="image" src="./images/claim@2x.png" alt="" />
       <div className="claimable_container">
         {getComponentToDisplay()}
         <div>

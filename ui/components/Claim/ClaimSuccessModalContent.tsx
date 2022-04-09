@@ -60,10 +60,11 @@ export default function ClaimSuccessModalContent({
             margin: 8px 0 32px;
           }
           .header_image {
-            background: url("./images/claim_success.svg"),
-              url("./images/dark_forest@2x.png");
+            background: url("./images/claim_success.png"),
+              url("./images/dark_forest_bg@2x.png");
             background-repeat: no-repeat;
-            background-position: top, 0 40px;
+            background-size: cover;
+            background-position: top;
             background-color: var(--green-95);
             width: 100%;
             height: 240px;
