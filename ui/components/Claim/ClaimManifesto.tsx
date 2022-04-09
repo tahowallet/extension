@@ -20,8 +20,8 @@ export default function ClaimManifesto({
         <li>
           <div className="ethos_title">Access over privilege</div>
           <div className="description">
-            Everyone should have access to web3--regardless of where they live
-            or which country issued their passport.
+            Everyone should have access to web3—regardless of where they live or
+            which country issued their passport.
           </div>
         </li>
         <li>
@@ -29,7 +29,7 @@ export default function ClaimManifesto({
             Open source over restrictive licensing
           </div>
           <div className="description">
-            All Tally code is--and will remain--100% free and open source. For
+            All Tally code is—and will remain—100% free and open source. For
             anyone to review, fork, hack, or remix.
           </div>
         </li>
