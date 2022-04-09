@@ -4,12 +4,14 @@ import {
   isProbablyEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
+import SharedButton from "../Shared/SharedButton"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
   delegate?: Delegate | DAO | null
+  discard?: () => void
 }): ReactElement {
-  const { name, delegate } = props
+  const { name, delegate, discard } = props
 
   const referrerLabel = isProbablyEVMAddress(name)
     ? truncateAddress(name)
@@ -20,7 +22,14 @@ export default function ClaimDelegateChoiceProfile(props: {
       <div className="label">Referred by</div>
       <div className="ref_block">
         <div className="icon" />
-        {referrerLabel}
+        <div className="referrer_label">{referrerLabel}</div>
+        {discard ? (
+          <SharedButton type="tertiaryGray" size="small" onClick={discard}>
+            Discard
+          </SharedButton>
+        ) : (
+          <></>
+        )}
       </div>
       <style jsx>
         {`
@@ -30,6 +39,9 @@ export default function ClaimDelegateChoiceProfile(props: {
             margin-top: 14px;
             color: var(--green-40);
             margin-bottom: 10px;
+          }
+          .referrer_label {
+            flex-grow: 1;
           }
           .ref_block {
             width: 352px;
