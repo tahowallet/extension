@@ -310,10 +310,11 @@ export default class NameService extends BaseService<Events> {
     }
 
     if (avatarUri.match(/^eip155:1\/erc721:/)) {
+      const normalizedAvatarUri = avatarUri.toLowerCase()
       // check if we've cached the resolved URL, otherwise hit the chain
-      if (avatarUri.toLowerCase() in this.cachedResolvedEIP155Avatars) {
+      if (normalizedAvatarUri in this.cachedResolvedEIP155Avatars) {
         // TODO properly cache this with any other non-ENS NFT stuff we do
-        return this.cachedResolvedEIP155Avatars[avatarUri.toLowerCase()]
+        return this.cachedResolvedEIP155Avatars[normalizedAvatarUri]
       }
 
       const provider = this.chainService.providerForNetwork(
@@ -341,7 +342,8 @@ export default class NameService extends BaseService<Events> {
             resolved: { avatar: storageGatewayURL(new URL(image)) },
           }
 
-          this.cachedResolvedEIP155Avatars[avatarUri] = resolvedGateway
+          this.cachedResolvedEIP155Avatars[normalizedAvatarUri] =
+            resolvedGateway
           return resolvedGateway
         }
       }
