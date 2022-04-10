@@ -109,7 +109,10 @@ export default class NameService extends BaseService<Events> {
   /**
    * Cached resolution for avatar URIs that are not yet URLs, e.g. for EIP155.
    */
-  private cachedResolvedEIP155Avatars: Record<string, ResolvedAvatarRecord> = {}
+  private cachedResolvedEIP155Avatars: Record<
+    string,
+    ResolvedAvatarRecord | undefined
+  > = {}
 
   /**
    * Cached resolution for name records, by network family followed by whatever
@@ -118,7 +121,7 @@ export default class NameService extends BaseService<Events> {
   private cachedResolvedNames: {
     EVM: {
       [chainID: string]: {
-        [address: HexString]: ResolvedNameRecord
+        [address: HexString]: ResolvedNameRecord | undefined
       }
     }
   } = { EVM: { [ETHEREUM.chainID]: {} } }
@@ -208,18 +211,15 @@ export default class NameService extends BaseService<Events> {
     const { address: normalizedAddress, network } =
       normalizeAddressOnNetwork(addressOnNetwork)
 
-    if (
-      checkCache &&
+    const cachedResolvedNameRecord =
       this.cachedResolvedNames[network.family][network.chainID][
         normalizedAddress
       ]
-    ) {
+
+    if (checkCache && cachedResolvedNameRecord) {
       const {
         resolved: { nameOnNetwork, expiresAt },
-      } =
-        this.cachedResolvedNames[network.family][network.chainID][
-          normalizedAddress
-        ]
+      } = cachedResolvedNameRecord
 
       if (expiresAt >= Date.now()) {
         return nameOnNetwork
@@ -256,16 +256,14 @@ export default class NameService extends BaseService<Events> {
       system: resolverType,
     } as const
 
-    const { name: existingName } =
-      this.cachedResolvedNames[network.family][network.chainID][
-        normalizedAddress
-      ].resolved?.nameOnNetwork
+    const cachedNameOnNetwork = cachedResolvedNameRecord?.resolved.nameOnNetwork
+
     this.cachedResolvedNames[network.family][network.chainID][
       normalizedAddress
     ] = nameRecord
 
     // Only emit an event if the resolved name changed.
-    if (existingName !== nameOnNetwork.name) {
+    if (cachedNameOnNetwork?.name !== nameOnNetwork.name) {
       this.emitter.emit("resolvedName", nameRecord)
     }
 
