@@ -1,5 +1,12 @@
+import React, {
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
@@ -35,6 +42,7 @@ export default function SignTransactionContainer({
 }): ReactElement {
   const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
+  const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
 
   const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
 
@@ -49,6 +57,57 @@ export default function SignTransactionContainer({
     !signingLedgerState.arbitraryDataEnabled
 
   const canLedgerSign = isLedgerAvailable && !mustEnableArbitraryDataSigning
+
+  /*
+    Prevent shenanigans by disabling the sign button for a bit
+    when rendering new sign content or when changing window focus.
+  */
+  const delaySignButtonTimeout = useRef<number | undefined>()
+  const firstOpen = useRef(true)
+
+  const clearDelaySignButtonTimeout = useCallback(() => {
+    if (typeof delaySignButtonTimeout.current !== "undefined") {
+      clearTimeout(delaySignButtonTimeout.current)
+      delaySignButtonTimeout.current = undefined
+    }
+  }, [])
+
+  const onBlurFocusChange = useCallback(
+    (isFocus: boolean) => {
+      clearDelaySignButtonTimeout()
+      firstOpen.current = false
+
+      if (isFocus) {
+        delaySignButtonTimeout.current = window.setTimeout(() => {
+          setIsOnDelayToSign(false)
+          // Random delay between 0.5 and 2 seconds
+        }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
+      } else {
+        setIsOnDelayToSign(true)
+        clearDelaySignButtonTimeout()
+      }
+    },
+    [clearDelaySignButtonTimeout]
+  )
+
+  // Runs on updates
+  useEffect(() => {
+    if (!firstOpen.current && delaySignButtonTimeout.current === undefined) {
+      // Start delay on new update, if not already delayed or on first open
+      setIsOnDelayToSign(true)
+    } else {
+      // On first open of window mark as focused
+      onBlurFocusChange(true)
+    }
+
+    window.addEventListener("focus", () => onBlurFocusChange(true))
+    window.addEventListener("blur", () => onBlurFocusChange(false))
+
+    return () => {
+      window.removeEventListener("focus", () => onBlurFocusChange(true))
+      window.removeEventListener("blur", () => onBlurFocusChange(false))
+    }
+  }, [onBlurFocusChange, reviewPanel])
 
   return (
     <section>
@@ -99,6 +158,7 @@ export default function SignTransactionContainer({
                   size="large"
                   onClick={handleConfirm}
                   showLoadingOnClick
+                  isDisabled={isOnDelayToSign}
                 >
                   {confirmButtonLabel}
                 </SharedButton>
