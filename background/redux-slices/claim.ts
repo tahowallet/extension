@@ -35,6 +35,11 @@ export interface Delegate {
   enteredBy?: "list" | "custom"
 }
 
+export interface Referrer {
+  address?: HexString
+  ensName?: string
+}
+
 interface ClaimingState {
   status: string
   claimed: {
@@ -51,7 +56,7 @@ interface ClaimingState {
   claimStep: number
   currentlyClaiming: boolean
   claimError: { [address: HexString]: boolean }
-  referrer: string | null
+  referrer: Referrer | null
 }
 
 export const DOGGO_TOKEN_ADDRESS = "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62"
@@ -145,7 +150,7 @@ const claimingSlice = createSlice({
     },
     setReferrer: (
       immerState,
-      { payload: referrer }: { payload: string | null }
+      { payload: referrer }: { payload: Referrer | null }
     ) => {
       immerState.referrer = referrer
     },

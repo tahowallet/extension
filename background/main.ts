@@ -4,7 +4,12 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import {
+  decodeJSON,
+  encodeJSON,
+  getEthereumNetwork,
+  isProbablyEVMAddress,
+} from "./lib/utils"
 
 import {
   BaseService,
@@ -1104,9 +1109,27 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.providerBridgeService.emitter.on("setClaimReferrer", (referral) => {
-      this.store.dispatch(setReferrer(referral))
-    })
+    this.providerBridgeService.emitter.on(
+      "setClaimReferrer",
+      async (referral) => {
+        const isAddress = isProbablyEVMAddress(referral)
+        const ensName = isAddress
+          ? await this.nameService.lookUpName(referral, getEthereumNetwork())
+          : referral
+        const address = isAddress
+          ? referral
+          : await this.nameService.lookUpEthereumAddress(referral)
+
+        if (typeof address !== "undefined") {
+          this.store.dispatch(
+            setReferrer({
+              address,
+              ensName,
+            })
+          )
+        }
+      }
+    )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await this.providerBridgeService.grantPermission(permission)
