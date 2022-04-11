@@ -19,7 +19,7 @@ export default function MenuExportLogs(): ReactElement {
       <section>
         <h2>1. Join #bug-reports on Discord</h2>
         <p>
-          Visit us on our Discord channel, and report your bug there, make sure
+          Visit us on our Discord channel, and report your bug there. Make sure
           to include the logs.
         </p>
         <SharedButton
@@ -36,10 +36,7 @@ export default function MenuExportLogs(): ReactElement {
       </section>
       <section>
         <h2>2. Export logs</h2>
-        <p>
-          In order for us to better understand your bug we need you to export
-          your logs
-        </p>
+        <p>To better understand your bug, we need you to export your logs.</p>
         <a
           href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
           download={logFileName}
