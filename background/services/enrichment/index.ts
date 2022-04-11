@@ -122,7 +122,10 @@ export default class EnrichmentService extends BaseService<Events> {
       transaction.input === "0x" ||
       typeof transaction.input === "undefined"
     ) {
-      const toName = await this.nameService.lookUpName(transaction.to, ETHEREUM)
+      const { name: toName } = (await this.nameService.lookUpName({
+        address: transaction.to,
+        network,
+      })) ?? { name: undefined }
 
       // This is _almost certainly_ not a contract interaction, move on. Note that
       // a simple ETH send to a contract address can still effectively be a
@@ -174,10 +177,10 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx &&
         (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
       ) {
-        const toName = await this.nameService.lookUpName(
-          erc20Tx.args.to,
-          ETHEREUM
-        )
+        const { name: toName } = (await this.nameService.lookUpName({
+          address: erc20Tx.args.to,
+          network,
+        })) ?? { name: undefined }
 
         // We have an ERC-20 transfer
         txAnnotation = {
@@ -200,10 +203,10 @@ export default class EnrichmentService extends BaseService<Events> {
         erc20Tx &&
         erc20Tx.name === "approve"
       ) {
-        const spenderName = await this.nameService.lookUpName(
-          erc20Tx.args.spender,
-          ETHEREUM
-        )
+        const { name: spenderName } = (await this.nameService.lookUpName({
+          address: erc20Tx.args.spender,
+          network,
+        })) ?? { name: undefined }
 
         txAnnotation = {
           timestamp: resolvedTime,
@@ -220,10 +223,10 @@ export default class EnrichmentService extends BaseService<Events> {
           ),
         }
       } else {
-        const toName = await this.nameService.lookUpName(
-          transaction.to,
-          ETHEREUM
-        )
+        const { name: toName } = (await this.nameService.lookUpName({
+          address: transaction.to,
+          network,
+        })) ?? { name: undefined }
 
         // Fall back on a standard contract interaction.
         txAnnotation = {
@@ -258,7 +261,9 @@ export default class EnrichmentService extends BaseService<Events> {
               async (address) =>
                 [
                   normalizeEVMAddress(address),
-                  await this.nameService.lookUpName(address, ETHEREUM),
+                  (
+                    await this.nameService.lookUpName({ address, network })
+                  )?.name,
                 ] as const
             )
           )
