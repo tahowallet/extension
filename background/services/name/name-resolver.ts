@@ -19,7 +19,7 @@ export interface NameResolver<ResolverType extends string> {
   type: ResolverType
 
   /**
-   * Given a name and network, synchronously returns a boolean indicating
+   * Given an address and network, synchronously returns a boolean indicating
    * whether this name resolver can attempt to resolve it. This is useful for
    * avoiding lookups for names that are statically known to be malformed per
    * this resolver, for example trying to look up Bitcoin name on a resolver

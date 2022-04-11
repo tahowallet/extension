@@ -2,6 +2,7 @@ import { DomainName, HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
 import { getTokenMetadata } from "../../lib/erc721"
+import { storageGatewayURL } from "../../lib/storage-gateway"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
@@ -62,46 +63,6 @@ type Events = ServiceLifecycleEvents & {
 // A minimum record expiry that avoids infinite resolution loops.
 const MINIMUM_RECORD_EXPIRY = 10 * SECOND
 
-const ipfsGateway = new URL("https://ipfs.io/ipfs/")
-const arweaveGateway = new URL("https://arweave.net/")
-
-/**
- * Given a url and a base URL, adjust the url to match the protocol and
- * hostname of the base URL, and append the hostname and remaining path of the
- * original url as path components in the base URL. Preserves querystrings and
- * hash data if present.
- *
- * @example
- * url: `ipfs://CID/path/to/resource`
- * baseURL: `https://ipfs.io/ipfs/`
- * result: `https://ipfs.io/ipfs/CID/path/to/resource`
- *
- * @example
- * url: `ipfs://CID/path/to/resource?parameters#hash`
- * baseURL: `https://ipfs.io/ipfs/`
- * result: `https://ipfs.io/ipfs/CID/path/to/resource?parameters#hash`
- */
-function changeURLProtocolAndBase(url: URL, baseURL: URL) {
-  const newURL = new URL(url)
-  newURL.protocol = baseURL.protocol
-  newURL.hostname = baseURL.hostname
-  newURL.pathname = `${baseURL.pathname}/${url.hostname}/${url.pathname}`
-
-  return newURL
-}
-
-// TODO eventually we want proper IPFS and Arweave support
-function storageGatewayURL(url: URL): URL {
-  switch (url.protocol) {
-    case "ipfs":
-      return changeURLProtocolAndBase(url, ipfsGateway)
-    case "ar":
-      return changeURLProtocolAndBase(url, arweaveGateway)
-    default:
-      return url
-  }
-}
-
 /**
  * The NameService is responsible for resolving human-readable names into
  * addresses and other metadata across multiple networks, caching where
@@ -115,7 +76,10 @@ export default class NameService extends BaseService<Events> {
   /**
    * Cached resolution for avatar URIs that are not yet URLs, e.g. for EIP155.
    */
-  private cachedResolvedEIP155Avatars: Record<string, ResolvedAvatarRecord> = {}
+  private cachedResolvedEIP155Avatars: Record<
+    string,
+    ResolvedAvatarRecord | undefined
+  > = {}
 
   /**
    * Cached resolution for name records, by network family followed by whatever
@@ -230,20 +194,15 @@ export default class NameService extends BaseService<Events> {
     const { address: normalizedAddress, network } =
       normalizeAddressOnNetwork(addressOnNetwork)
 
-    if (
-      checkCache &&
+    const cachedResolvedNameRecord =
       this.cachedResolvedNames[network.family][network.chainID][
         normalizedAddress
-      ] !== undefined
-    ) {
+      ]
+
+    if (checkCache && cachedResolvedNameRecord) {
       const {
         resolved: { nameOnNetwork, expiresAt },
-      } =
-        // Checked defined above.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.cachedResolvedNames[network.family][network.chainID][
-          normalizedAddress
-        ]!
+      } = cachedResolvedNameRecord
 
       if (expiresAt >= Date.now()) {
         return nameOnNetwork
@@ -286,15 +245,14 @@ export default class NameService extends BaseService<Events> {
       system: resolverType,
     } as const
 
-    const { name: existingName } = this.cachedResolvedNames[network.family][
-      network.chainID
-    ][normalizedAddress]?.resolved?.nameOnNetwork ?? { name: undefined }
+    const cachedNameOnNetwork = cachedResolvedNameRecord?.resolved.nameOnNetwork
+
     this.cachedResolvedNames[network.family][network.chainID][
       normalizedAddress
     ] = nameRecord
 
     // Only emit an event if the resolved name changed.
-    if (existingName !== nameOnNetwork.name) {
+    if (cachedNameOnNetwork?.name !== nameOnNetwork.name) {
       this.emitter.emit("resolvedName", nameRecord)
     }
 
@@ -344,10 +302,11 @@ export default class NameService extends BaseService<Events> {
     }
 
     if (avatarUri.match(/^eip155:1\/erc721:/)) {
+      const normalizedAvatarUri = avatarUri.toLowerCase()
       // check if we've cached the resolved URL, otherwise hit the chain
-      if (avatarUri.toLowerCase() in this.cachedResolvedEIP155Avatars) {
+      if (normalizedAvatarUri in this.cachedResolvedEIP155Avatars) {
         // TODO properly cache this with any other non-ENS NFT stuff we do
-        return this.cachedResolvedEIP155Avatars[avatarUri.toLowerCase()]
+        return this.cachedResolvedEIP155Avatars[normalizedAvatarUri]
       }
 
       const provider = this.chainService.providerForNetwork(
@@ -375,7 +334,8 @@ export default class NameService extends BaseService<Events> {
             resolved: { avatar: storageGatewayURL(new URL(image)) },
           }
 
-          this.cachedResolvedEIP155Avatars[avatarUri] = resolvedGateway
+          this.cachedResolvedEIP155Avatars[normalizedAvatarUri] =
+            resolvedGateway
           return resolvedGateway
         }
       }
