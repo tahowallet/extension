@@ -86,7 +86,7 @@ export default function ClaimDelegate(props: {
 
   return (
     <div>
-      <ClaimAmountBanner amount={claimAmount} />
+      <ClaimAmountBanner amount={claimAmount} showLabel showBonus />
       <div className="claim standard_width">
         <div className="title">Choose a delegate!</div>
         <div className="description">

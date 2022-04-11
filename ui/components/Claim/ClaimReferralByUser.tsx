@@ -23,7 +23,7 @@ export default function ClaimReferralByUser({
   }
   return (
     <div className="wrap standard_width">
-      <ClaimAmountBanner amount={claimAmount} />
+      <ClaimAmountBanner amount={claimAmount} showLabel />
       <div className="title">
         Get a bonus of
         <div className="highlight">{amountWithBonus}</div> DOGGO!

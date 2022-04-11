@@ -45,12 +45,13 @@ function EligibleCTAContent({
     }
     return <div>Wohoo! You can claim</div>
   }
-
+  const amount = Number(claimAmount)
+  const amountWithBonus = amount + amount * 0.05
   const isFirstClaim = !hasAlreadyClaimed && !hasError && !isCurrentlyClaiming
 
   return (
     <>
-      <img className="image" src="./images/claim.svg" alt="" />
+      <img className="image" src="./images/claim@2x.png" alt="" />
       <div className="claimable_container">
         {getComponentToDisplay()}
         <div>
@@ -59,7 +60,7 @@ function EligibleCTAContent({
               has_highlight: isFirstClaim,
             })}
           >
-            {claimAmount}
+            {isFirstClaim ? claimAmount : amountWithBonus}
           </span>{" "}
           DOGGO
         </div>

@@ -1,9 +1,14 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 
 export default function ClaimAmountBanner({
   amount,
+  showLabel = false,
+  showBonus = false,
 }: {
   amount: number
+  showLabel?: boolean
+  showBonus?: boolean
 }): ReactElement {
   return (
     <div className="wrap">
@@ -11,9 +16,20 @@ export default function ClaimAmountBanner({
         <div>
           <img src="./images/claim@2x.png" alt="" />
         </div>
-        <div className="claimable">
+        <div
+          className={classNames("claimable", {
+            column: showLabel,
+          })}
+        >
+          {showLabel ? (
+            <div className="claimable_text">
+              Your claim{showBonus ? " + Bonus" : ""}
+            </div>
+          ) : (
+            <></>
+          )}
           <div className="claimable_amount">{amount}</div>
-          <div className="claimable_currency symbol">DOGGO</div>
+          <div className="claimable_text symbol">DOGGO</div>
         </div>
       </div>
       <style jsx>
@@ -26,7 +42,6 @@ export default function ClaimAmountBanner({
             box-sizing: border-box;
             align-items: center;
             padding: 0 17px;
-            height: 66px;
             margin: 20px 0 8px 0;
             background-color: var(--hunter-green);
             justify-content: space-between;
@@ -44,17 +59,27 @@ export default function ClaimAmountBanner({
             line-height: 27px;
             display: inline-block;
           }
-          .claimable_currency {
+          .claimable_text {
             color: var(--green-40);
+            font-size: 14px;
           }
           .claimable {
             display: flex;
             align-items: flex-end;
           }
+          .claimable.column {
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+            padding: 5px 0;
+          }
+          .claimable.column .claimable_text {
+            margin: 5px 0;
+          }
           .symbol {
-            color: var(--green-40);
             margin-left: 8px;
             display: inline-block;
+            font-size: 16px;
           }
         `}
       </style>
