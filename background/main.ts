@@ -1119,12 +1119,15 @@ export default class Main extends BaseService<never> {
         const address = isAddress
           ? referral
           : await this.nameService.lookUpEthereumAddress(referral)
-        this.store.dispatch(
-          setReferrer({
-            address,
-            ensName,
-          })
-        )
+
+        if (typeof address !== "undefined") {
+          this.store.dispatch(
+            setReferrer({
+              address,
+              ensName,
+            })
+          )
+        }
       }
     )
 
