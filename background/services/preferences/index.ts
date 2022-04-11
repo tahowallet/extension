@@ -24,7 +24,7 @@ const BUILT_IN_CONTRACTS = [
   },
   {
     network: ETHEREUM,
-    // Uniswap v2 Router
+    // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
   },
