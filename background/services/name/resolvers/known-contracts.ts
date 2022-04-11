@@ -19,7 +19,9 @@ export default function knownContractResolverFor(
     lookUpAddressForName:
       preferenceService.lookUpAddressForContractName.bind(preferenceService),
     async lookUpAvatar() {
-      throw new Error("Avatar resolution not supported in address book.")
+      throw new Error(
+        "Avatar resolution not supported in known contracts resolver."
+      )
     },
     lookUpNameForAddress:
       preferenceService.lookUpNameForContractAddress.bind(preferenceService),
