@@ -25,7 +25,7 @@ export default function ClaimDelegateChoiceProfile(props: {
         <div className="referrer_label">{referrerLabel}</div>
         {discard ? (
           <SharedButton type="tertiaryGray" size="small" onClick={discard}>
-            Discard
+            Change
           </SharedButton>
         ) : (
           <></>
