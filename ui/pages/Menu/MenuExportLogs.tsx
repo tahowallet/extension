@@ -1,8 +1,18 @@
 import React, { ReactElement } from "react"
+import dayjs from "dayjs"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 
 export default function MenuExportLogs(): ReactElement {
+  const base64LogContent = Buffer.from(
+    `${window.navigator.userAgent}\n\n\n${localStorage.getItem("logs")}` || ""
+  ).toString("base64")
+
+  const logFileName = `logs_v${(process.env.VERSION || "").replace(
+    /\./g,
+    "_"
+  )}__${dayjs().format()}.txt`
+
   return (
     <div className="standard_width_padded">
       <SharedPageHeader>Bug report</SharedPageHeader>
