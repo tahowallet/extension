@@ -245,13 +245,6 @@ export default class NameService extends BaseService<Events> {
           normalizedAddress
         ]!
 
-      if (
-        addressOnNetwork.address ===
-        "0xDef1C0ded9bec7F1a1670819833240f027b25EfF"
-      ) {
-        logger.warn("Cached", nameOnNetwork)
-      }
-
       if (expiresAt >= Date.now()) {
         return nameOnNetwork
       }
@@ -260,12 +253,6 @@ export default class NameService extends BaseService<Events> {
     const workingResolvers = this.resolvers.filter((resolver) =>
       resolver.canAttemptNameResolution(addressOnNetwork)
     )
-
-    if (
-      addressOnNetwork.address === "0xDef1C0ded9bec7F1a1670819833240f027b25EfF"
-    ) {
-      logger.warn("Trying", workingResolvers)
-    }
 
     const firstMatchingResolution = (
       await Promise.allSettled(
@@ -277,20 +264,6 @@ export default class NameService extends BaseService<Events> {
     )
       .filter(isFulfilledPromise)
       .find(({ value: { resolved } }) => resolved !== undefined)?.value
-
-    if (
-      addressOnNetwork.address === "0xDef1C0ded9bec7F1a1670819833240f027b25EfF"
-    ) {
-      logger.warn(
-        "Got",
-        await Promise.allSettled(
-          workingResolvers.map(async (resolver) => ({
-            type: resolver.type,
-            resolved: await resolver.lookUpNameForAddress(addressOnNetwork),
-          }))
-        )
-      )
-    }
 
     if (
       firstMatchingResolution === undefined ||
@@ -312,17 +285,6 @@ export default class NameService extends BaseService<Events> {
       },
       system: resolverType,
     } as const
-
-    if (
-      addressOnNetwork.address === "0xDef1C0ded9bec7F1a1670819833240f027b25EfF"
-    ) {
-      logger.warn(
-        this.cachedResolvedNames[network.family][network.chainID],
-        this.cachedResolvedNames[network.family][network.chainID][
-          normalizedAddress
-        ]
-      )
-    }
 
     const { name: existingName } = this.cachedResolvedNames[network.family][
       network.chainID
