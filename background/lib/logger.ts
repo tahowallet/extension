@@ -59,9 +59,14 @@ const styles: LogStyles = {
 }
 
 function purgeSensitiveFailSafe(log: string): string {
-  return log
-    .replace(/0x(.*?)[\s]/g, "[REDACTED]") // Replace hexadecimal segments
-    .replace(/\b[a-zA-Z0-9]{64}\b/g, "[REDACTED]") // Replace private key length segments
+  // 1. Hexadecimal segments
+  // 2. Private key length segments
+  // 3. Lowercase groups of 12 words, which therefore covers 24
+  const matchPossibleSensitive = new RegExp(
+    `(${/0x(.*?)[s]/g})|(${/\b[a-zA-Z0-9]{64}\b/g})|(${/(?:[a-z]+\s){12}/g})`
+  )
+
+  return log.replace(`${matchPossibleSensitive} `, "[REDACTED]")
 }
 
 function saveLog(logLabel: string, stackTrace: string[] | undefined) {
@@ -69,7 +74,7 @@ function saveLog(logLabel: string, stackTrace: string[] | undefined) {
     "logs",
     `${(localStorage.getItem("logs") ?? "").slice(
       -50000
-    )} ${purgeSensitiveFailSafe(logLabel + stackTrace)} \n`
+    )} ${purgeSensitiveFailSafe(logLabel + stackTrace)}\n\n`
   )
 }
 
