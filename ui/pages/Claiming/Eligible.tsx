@@ -196,7 +196,6 @@ export default function Eligible(): ReactElement {
             flex-grow: 1;
             width: 100%;
             margin: 0 auto;
-            overflow-x: hidden;
             box-sizing: border-box;
             background-color: var(--green-95);
           }
