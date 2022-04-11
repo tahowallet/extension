@@ -17,32 +17,7 @@ export default function MenuExportLogs(): ReactElement {
     <div className="standard_width_padded">
       <SharedPageHeader>Bug report</SharedPageHeader>
       <section>
-        <h2>1. Export logs</h2>
-        <p>
-          In order for us to better understand your bug we need you to export
-          your logs
-        </p>
-        <a
-          href={`data:application/octet-stream;charset=utf-16le;base64,${Buffer.from(
-            localStorage.getItem("logs") || ""
-          ).toString("base64")}`}
-          download={`logs_${(process.env.VERSION || "").replace(
-            /\./g,
-            "_"
-          )}.txt`}
-        >
-          <SharedButton
-            type="secondary"
-            size="medium"
-            iconSmall="download"
-            iconPosition="left"
-          >
-            Export logs
-          </SharedButton>
-        </a>
-      </section>
-      <section>
-        <h2>2. Join #bug-reports on Discord</h2>
+        <h2>1. Join #bug-reports on Discord</h2>
         <p>
           Visit us on our Discord channel, and report your bug there, make sure
           to include the logs.
@@ -58,6 +33,26 @@ export default function MenuExportLogs(): ReactElement {
         >
           Join Discord
         </SharedButton>
+      </section>
+      <section>
+        <h2>2. Export logs</h2>
+        <p>
+          In order for us to better understand your bug we need you to export
+          your logs
+        </p>
+        <a
+          href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
+          download={logFileName}
+        >
+          <SharedButton
+            type="secondary"
+            size="medium"
+            iconSmall="download"
+            iconPosition="left"
+          >
+            Export logs
+          </SharedButton>
+        </a>
       </section>
       <style jsx>{`
         h2 {
