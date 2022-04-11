@@ -15,7 +15,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
   // If IPFS url, pass through gateway
   let httpURL = logoURL
-  if (logoURL && new URL(logoURL) && logoURL.includes("ipfs")) {
+  if (logoURL && new URL(logoURL) && new URL(logoURL).protocol === "ipfs:") {
     httpURL = String(storageGatewayURL(new URL(logoURL)))
   }
 

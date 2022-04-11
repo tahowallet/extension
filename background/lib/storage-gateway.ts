@@ -31,7 +31,7 @@ export function storageGatewayURL(url: URL): URL {
   switch (url.protocol) {
     case "ipfs:":
       return changeURLProtocolAndBase(url, ipfsGateway)
-    case "ar":
+    case "ar:":
       return changeURLProtocolAndBase(url, arweaveGateway)
     default:
       return url
