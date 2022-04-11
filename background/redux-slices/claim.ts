@@ -148,7 +148,10 @@ const claimingSlice = createSlice({
       immerState.referrer = null
       immerState.currentlyClaiming = false
     },
-    setReferrer: (immerState, { payload: referrer }: { payload: Referrer }) => {
+    setReferrer: (
+      immerState,
+      { payload: referrer }: { payload: Referrer | null }
+    ) => {
       immerState.referrer = referrer
     },
   },

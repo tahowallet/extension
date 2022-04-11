@@ -1,8 +1,11 @@
-import { Referrer } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  Referrer,
+  setReferrer,
+} from "@tallyho/tally-background/redux-slices/claim"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
 
@@ -11,6 +14,7 @@ export default function ClaimReferralByUser({
 }: {
   claimAmount: number
 }): ReactElement {
+  const dispatch = useBackgroundDispatch()
   const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
   const amountWithBonus = formatCurrencyAmount(
     mainCurrency,
@@ -20,13 +24,14 @@ export default function ClaimReferralByUser({
   const referrer: Referrer | null = useBackgroundSelector(
     (state) => state.claim.referrer
   )
+  const discardReferrer = () => dispatch(setReferrer(null))
 
   if (referrer === null) {
     return <></>
   }
   return (
     <div className="wrap standard_width">
-      <ClaimAmountBanner amount={claimAmount} />
+      <ClaimAmountBanner amount={claimAmount} showLabel />
       <div className="title">
         Get a bonus of
         <div className="highlight">{amountWithBonus}</div> DOGGO!
@@ -36,6 +41,7 @@ export default function ClaimReferralByUser({
       </div>
       <ClaimDelegateChoiceProfile
         name={referrer.ensName ?? referrer.address ?? ""}
+        discard={discardReferrer}
       />
       <style jsx>
         {`

@@ -325,9 +325,11 @@ export default function Send(): ReactElement {
             text-align: end;
             margin-top: -25px;
             margin-right: 15px;
+            margin-bottom: 5px;
           }
           input#send_address ~ .validating {
             margin-top: -50px;
+            margin-bottom: 22px;
             margin-right: 15px;
             align-self: flex-end;
           }

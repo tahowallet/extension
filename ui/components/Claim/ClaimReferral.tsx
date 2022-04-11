@@ -86,7 +86,7 @@ export default function ClaimReferral(props: {
 
   return (
     <div className="claim standard_width">
-      <ClaimAmountBanner amount={claimAmount} />
+      <ClaimAmountBanner amount={claimAmount} showLabel />
       <div className="title">
         Get a bonus of
         <div className="highlight">{amountWithBonus}</div>

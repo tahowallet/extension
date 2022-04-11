@@ -26,7 +26,7 @@ export default function ClaimReview({
     <div className="claim standard_width">
       <div className="title">Review claim</div>
       <div className="description_review">You will receive</div>
-      <AmountBanner amount={claimAmount} />
+      <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
         name={referrer?.ensName ?? referrer?.address ?? selectedDAO?.name ?? ""}
         delegate={referrer ? null : selectedDAO}
