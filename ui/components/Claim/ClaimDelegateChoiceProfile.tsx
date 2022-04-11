@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { Delegate, DAO } from "@tallyho/tally-background/redux-slices/claim"
 import {
   isProbablyEVMAddress,
   truncateAddress,
@@ -8,10 +7,10 @@ import SharedButton from "../Shared/SharedButton"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
-  delegate?: Delegate | DAO | null
+  avatar?: string
   discard?: () => void
 }): ReactElement {
-  const { name, delegate, discard } = props
+  const { name, avatar, discard } = props
 
   const referrerLabel = isProbablyEVMAddress(name)
     ? truncateAddress(name)
@@ -60,7 +59,7 @@ export default function ClaimDelegateChoiceProfile(props: {
             border-radius: 150px;
             margin-right: 13px;
             flex-shrink: 0;
-            background-image: url("./images/DAOs/${delegate?.avatar}");
+            background-image: url("${avatar}");
             background-size: cover;
             background-color: #006ae3;
           }

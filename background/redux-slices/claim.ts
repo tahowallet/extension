@@ -36,7 +36,7 @@ export interface Delegate {
 }
 
 export interface Referrer {
-  address?: HexString
+  address: HexString
   ensName?: string
 }
 
@@ -154,6 +154,9 @@ const claimingSlice = createSlice({
     ) => {
       immerState.referrer = referrer
     },
+    resetReferrer: (immerState) => {
+      immerState.referrer = null
+    },
   },
 })
 
@@ -169,6 +172,7 @@ export const {
   resetClaimFlow,
   claimError,
   setReferrer,
+  resetReferrer,
 } = claimingSlice.actions
 
 export default claimingSlice.reducer

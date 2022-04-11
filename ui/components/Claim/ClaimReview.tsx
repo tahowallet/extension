@@ -29,7 +29,11 @@ export default function ClaimReview({
       <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
         name={referrer?.ensName ?? referrer?.address ?? selectedDAO?.name ?? ""}
-        delegate={referrer ? null : selectedDAO}
+        avatar={
+          referrer
+            ? `https://effigy.im/a/${referrer.address}.png`
+            : `./images/DAOs/${selectedDAO?.avatar}`
+        }
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
