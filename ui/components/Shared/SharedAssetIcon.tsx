@@ -13,11 +13,18 @@ export default function SharedAssetIcon(props: Props): ReactElement {
   const hardcodedIcons = ["ETH"]
   const hasHardcodedIcon = hardcodedIcons.includes(symbol)
 
-  // If IPFS url, pass through gateway
-  let httpURL = logoURL
-  if (logoURL && new URL(logoURL) && new URL(logoURL).protocol === "ipfs:") {
-    httpURL = String(storageGatewayURL(new URL(logoURL)))
+  // Passes IPFS and Arweave through HTTP gateway
+  function getAsHttpURL(anyURL: string) {
+    let httpURL = anyURL
+    try {
+      httpURL = storageGatewayURL(new URL(anyURL)).href
+    } catch (err) {
+      httpURL = ""
+    }
+    return httpURL
   }
+
+  const httpURL = getAsHttpURL(logoURL)
 
   return (
     <div className={`token_icon_wrap ${size}`}>
