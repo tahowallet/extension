@@ -19,6 +19,7 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 import { HOUR } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
+import { ReferrerStats } from "../services/doggo/db"
 
 export interface DAO {
   address: string
@@ -57,6 +58,7 @@ interface ClaimingState {
   currentlyClaiming: boolean
   claimError: { [address: HexString]: boolean }
   referrer: Referrer | null
+  referrerStats: ReferrerStats
 }
 
 export const DOGGO_TOKEN_ADDRESS = "0xA0DDAEd22e3a8aa512C85a13F426165861922801"
@@ -94,6 +96,10 @@ const initialState: ClaimingState = {
   currentlyClaiming: false,
   claimError: {},
   referrer: null,
+  referrerStats: {
+    bonusTotal: 0n,
+    referredUsers: 0,
+  },
 } as ClaimingState
 
 const claimingSlice = createSlice({
@@ -155,6 +161,12 @@ const claimingSlice = createSlice({
     ) => {
       immerState.referrer = referrer
     },
+    setReferrerStats: (
+      immerState,
+      { payload: reffererStats }: { payload: ReferrerStats }
+    ) => {
+      immerState.referrerStats = reffererStats
+    },
   },
 })
 
@@ -170,6 +182,7 @@ export const {
   resetClaimFlow,
   claimError,
   setReferrer,
+  setReferrerStats,
 } = claimingSlice.actions
 
 export default claimingSlice.reducer
@@ -385,4 +398,9 @@ export const selectClaimSelections = createSelector(
       selectedDAO: claimState.selectedDAO,
     }
   }
+)
+
+export const selectReferrerStats = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) => claimState.referrerStats
 )

@@ -1,15 +1,27 @@
 import React, { ReactElement, useCallback, useMemo } from "react"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectReferrerStats } from "@tallyho/tally-background/redux-slices/claim"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { tallyTokenDecimalDigits } from "../../utils/constants"
 
 export default function BonusProgramModalContent(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
+  const { referredUsers, bonusTotal } =
+    useBackgroundSelector(selectReferrerStats)
+  const bunusAmount = fromFixedPointNumber(
+    {
+      amount: bonusTotal,
+      decimals: tallyTokenDecimalDigits,
+    },
+    2
+  )
 
   const referralLink = useMemo(
     () => ({
@@ -38,11 +50,11 @@ export default function BonusProgramModalContent(): ReactElement {
           <div className="claimable_info">Total bonus received so far</div>
           <div className="claimable_row">
             <div className="claimable_column">
-              <div className="amount">36,736</div>
+              <div className="amount">{bunusAmount}</div>
               <div className="claimable_item">DOGGO</div>
             </div>
             <div className="claimable_column">
-              <div className="amount">120</div>
+              <div className="amount">{referredUsers}</div>
               <div className="claimable_item">Users</div>
             </div>
           </div>

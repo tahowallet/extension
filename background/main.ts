@@ -42,7 +42,11 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
-import { setEligibility, setReferrer } from "./redux-slices/claim"
+import {
+  setEligibility,
+  setReferrer,
+  setReferrerStats,
+} from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -101,6 +105,7 @@ import {
 import { ETHEREUM } from "./constants"
 import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import { ReferrerStats } from "./services/doggo/db"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1207,9 +1212,23 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.doggoService.emitter.on("newReferral", () => {
-      // TODO
-    })
+    this.doggoService.emitter.on(
+      "newReferral",
+      async (
+        referral: {
+          referrer: AddressOnNetwork
+        } & ReferrerStats
+      ) => {
+        const { referredUsers, bonusTotal } = referral
+
+        await this.store.dispatch(
+          setReferrerStats({
+            referredUsers,
+            bonusTotal,
+          })
+        )
+      }
+    )
   }
 
   connectTelemetryService(): void {
