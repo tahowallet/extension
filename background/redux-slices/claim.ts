@@ -205,7 +205,7 @@ export const claimRewards = createBackgroundAsyncThunk(
     const account = await signer.getAddress()
 
     const referralAddress =
-      claimState.referrer ?? claimState.selectedDAO?.address
+      claimState.referrer?.address ?? claimState.selectedDAO?.address
 
     const delegate = claimState.selectedDelegate
     const { signature, eligibility } = claimState
