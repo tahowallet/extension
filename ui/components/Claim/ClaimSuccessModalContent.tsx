@@ -1,12 +1,18 @@
 import React, { ReactElement } from "react"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
+import SharedTwitterButton from "../Shared/SharedTwitterButton"
+import { useBackgroundSelector } from "../../hooks"
 
 export default function ClaimSuccessModalContent({
   close,
 }: {
   close: () => void
 }): ReactElement {
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
   return (
     <div className="wrap">
       <div className="header_image" />
@@ -16,14 +22,12 @@ export default function ClaimSuccessModalContent({
         {`Each time someone uses your bonus link, you'll get 5% of all the DOGGO
         they claim.`}
       </div>
-      <SharedButton
-        type="twitter"
-        size="medium"
-        iconPosition="left"
-        iconSize="secondaryMedium"
-      >
-        Share on twitter
-      </SharedButton>
+      <SharedTwitterButton
+        buttonLabel="Share on twitter"
+        link={`${WEBSITE_ORIGIN}/claim/${currentAccount.address}`}
+        text="Get an extra 5% bonus on your $DOGGO claim when you use this link (🐶, 🐶)"
+        onClick={close}
+      />
       <div className="notice">
         <SharedIcon icon="eye@2x.png" width={24} color="var(--trophy-gold)" />
         <span className="notice_text">Address will be visible in the link</span>

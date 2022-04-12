@@ -2,6 +2,8 @@ import React, { ReactElement, useCallback, useMemo } from "react"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
+import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -11,8 +13,11 @@ export default function BonusProgramModalContent(): ReactElement {
 
   const referralLink = useMemo(
     () => ({
-      link: `tallyho.org/claim/${currentAccount.address}`,
-      shortLink: `tallyho.org/claim/${truncateAddress(currentAccount.address)}`,
+      link: `${WEBSITE_ORIGIN}/claim/${currentAccount.address}`,
+      shortLink: `${WEBSITE_ORIGIN?.replace(
+        /^https?:\/\//,
+        ""
+      )}/claim/${truncateAddress(currentAccount.address)}`,
     }),
     [currentAccount.address]
   )
@@ -49,7 +54,7 @@ export default function BonusProgramModalContent(): ReactElement {
         of the claim.{" "}
         <a
           className="rewards_link"
-          href="http://tallyho.org/rewards"
+          href={`${WEBSITE_ORIGIN}/rewards`}
           target="_blank"
           rel="noreferrer"
         >
@@ -57,18 +62,17 @@ export default function BonusProgramModalContent(): ReactElement {
         </a>
       </p>
       <div className="link_cta_wrap">
-        <span>
-          Your link: <span className="link">{referralLink.shortLink}</span>
-        </span>
+        <div className="link_line">
+          <span className="link_title">Your link:</span>
+          <span className="link" title={referralLink.shortLink}>
+            {referralLink.shortLink}
+          </span>
+        </div>
         <div className="bottom">
-          <SharedButton
-            type="twitter"
-            size="medium"
-            iconPosition="left"
-            iconSize="secondaryMedium"
-          >
-            Share
-          </SharedButton>
+          <SharedTwitterButton
+            link={referralLink.link}
+            text="Get an extra 5% bonus on your $DOGGO claim when you use this link (🐶, 🐶)"
+          />
           <SharedButton
             type="secondary"
             size="medium"
@@ -164,8 +168,18 @@ export default function BonusProgramModalContent(): ReactElement {
             padding: 16px;
             box-sizing: border-box;
           }
+          .link_line {
+            display: flex;
+          }
+          .link_title {
+            flex: 0 0 auto;
+            margin-right: 5px;
+          }
           .link {
             color: var(--green-40);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           .bottom {
             display: flex;
