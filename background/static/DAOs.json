@@ -21,7 +21,7 @@
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "GitCoin",
+    "name": "Gitcoin",
     "avatar": "gitcoin_logo@2x.png"
   },
   {
@@ -36,12 +36,12 @@
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "Pleasr",
+    "name": "PleasrDAO",
     "avatar": "pleasr_logo@2x.png"
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "Raicle",
+    "name": "Radicle",
     "avatar": "radicle_logo@2x.png"
   },
   {
@@ -66,7 +66,7 @@
   },
   {
     "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-    "name": "Bankless",
+    "name": "BanklessDAO",
     "avatar": "bankless_logo@2x.png"
   }
 ]

@@ -86,7 +86,7 @@ export default function ClaimDelegate(props: {
 
   return (
     <div>
-      <ClaimAmountBanner amount={claimAmount} />
+      <ClaimAmountBanner amount={claimAmount} showLabel showBonus />
       <div className="claim standard_width">
         <div className="title">Choose a delegate!</div>
         <div className="description">
@@ -115,9 +115,9 @@ export default function ClaimDelegate(props: {
                       <input
                         type="radio"
                         name="delegate"
-                        id={delegate.ensName}
+                        id={delegate.address}
                         className="radio"
-                        checked={delegate.ensName === selectedDelegate.ensName}
+                        checked={delegate.address === selectedDelegate.address}
                         readOnly
                       />
                       <label
@@ -126,7 +126,11 @@ export default function ClaimDelegate(props: {
                       >
                         <div className="icon" />
                         <div className="delegate_info">
-                          <div className="name">{delegate.ensName}</div>
+                          <div className="name">
+                            {delegate.ensName && delegate.ensName.length > 0
+                              ? delegate.ensName
+                              : delegate.truncatedAddress}
+                          </div>
                           {/* <span className="count">123 Votes</span> */}
                           <div className="pitch">
                             <SharedButton

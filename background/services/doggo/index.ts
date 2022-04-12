@@ -8,6 +8,7 @@ import { ETHEREUM } from "../../constants"
 import { sameNetwork } from "../../networks"
 import { ClaimWithFriends } from "./contracts"
 import IndexingService from "../indexing"
+import { initialVaults } from "../../redux-slices/earn"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
@@ -17,49 +18,6 @@ interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
   newReferral: { referrer: AddressOnNetwork } & ReferrerStats
 }
-
-/**
- * Hunting grounds for earn, currently hardocded. Should be resolved via the
- * hunting ground registry in the future.
- */
-const HARCODED_HUNTING_GROUNDS = [
-  {
-    network: ETHEREUM,
-    asset: {
-      name: "USDT",
-      symbol: "USDT",
-      contractAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-      decimals: 6,
-    },
-    vaultAddress: "0x6575a8E8Ca0FD1Fb974419AE1f9128cCb1055209",
-    yearnVault: "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
-    active: true,
-  },
-  {
-    network: ETHEREUM,
-    asset: {
-      name: "Wrapped BTC",
-      symbol: "WBTC",
-      contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-      decimals: 8,
-    },
-    vaultAddress: "0xAAfcDd71F8eb9B6229852fD6B005F0c39394Af06",
-    yearnVault: "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
-    active: true,
-  },
-  {
-    network: ETHEREUM,
-    asset: {
-      name: "ChainLink",
-      symbol: "LINK",
-      contractAddress: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
-      decimals: 18,
-    },
-    vaultAddress: "0x30EEB5c3d3B3FB3aC532c77cD76dd59f78Ff9070",
-    yearnVault: "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
-    active: false,
-  },
-]
 
 /*
  * The DOGGO service handles interactions, caching, and indexing related to the
@@ -91,7 +49,7 @@ export default class DoggoService extends BaseService<Events> {
   protected async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    const huntingGrounds = HARCODED_HUNTING_GROUNDS
+    const huntingGrounds = initialVaults
 
     const ethereumProvider = this.chainService.providerForNetwork(ETHEREUM)
     if (ethereumProvider === undefined) {

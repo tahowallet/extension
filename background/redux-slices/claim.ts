@@ -35,6 +35,11 @@ export interface Delegate {
   enteredBy?: "list" | "custom"
 }
 
+export interface Referrer {
+  address?: HexString
+  ensName?: string
+}
+
 interface ClaimingState {
   status: string
   claimed: {
@@ -51,12 +56,12 @@ interface ClaimingState {
   claimStep: number
   currentlyClaiming: boolean
   claimError: { [address: HexString]: boolean }
-  referrer: string | null
+  referrer: Referrer | null
 }
 
-export const DOGGO_TOKEN_ADDRESS = "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62"
+export const DOGGO_TOKEN_ADDRESS = "0xA0DDAEd22e3a8aa512C85a13F426165861922801"
 export const VOTE_WITH_FRIENDS_ADDRESS =
-  "0x4301FB587883a78E7A88B92215E3fd0C4D3eBb5b"
+  "0x81448b6aB39a3146000D1b2876A83cAb0696c56c"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
@@ -73,7 +78,14 @@ const initialState: ClaimingState = {
   selectedDAO: null,
   selectedDelegate: null,
   eligibility: null,
-  delegates,
+  delegates: delegates
+    .sort(() => Math.random() - 0.5)
+    .map((delegate) => {
+      return {
+        ...delegate,
+        truncatedAddress: truncateAddress(delegate.address),
+      }
+    }),
   DAOs: DAOs.sort(() => Math.random() - 0.5),
   claimStep: 1,
   signature: undefined,
@@ -137,7 +149,10 @@ const claimingSlice = createSlice({
       immerState.referrer = null
       immerState.currentlyClaiming = false
     },
-    setReferrer: (immerState, { payload: referrer }: { payload: string }) => {
+    setReferrer: (
+      immerState,
+      { payload: referrer }: { payload: Referrer | null }
+    ) => {
       immerState.referrer = referrer
     },
   },
@@ -191,7 +206,7 @@ export const claimRewards = createBackgroundAsyncThunk(
     const account = await signer.getAddress()
 
     const referralAddress =
-      claimState.referrer ?? claimState.selectedDAO?.address
+      claimState.referrer?.address ?? claimState.selectedDAO?.address
 
     const delegate = claimState.selectedDelegate
     const { signature, eligibility } = claimState

@@ -1,5 +1,4 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { isAddress } from "@ethersproject/address"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -26,20 +25,28 @@ import {
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useHistory, useLocation } from "react-router-dom"
+import classNames from "classnames"
 import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import {
+  useAddressOrNameValidation,
+  useBackgroundDispatch,
+  useBackgroundSelector,
+} from "../hooks"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
+import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 
 export default function Send(): ReactElement {
   const location = useLocation<FungibleAsset>()
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
     location.state ?? ETH
   )
-  const [destinationAddress, setDestinationAddress] = useState("")
+  const [destinationAddress, setDestinationAddress] = useState<
+    string | undefined
+  >(undefined)
   const [amount, setAmount] = useState("")
   const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
@@ -94,7 +101,7 @@ export default function Send(): ReactElement {
   const assetAmount = assetAmountFromForm()
 
   const sendTransactionRequest = useCallback(async () => {
-    if (assetAmount === undefined) {
+    if (assetAmount === undefined || destinationAddress === undefined) {
       return
     }
 
@@ -131,6 +138,12 @@ export default function Send(): ReactElement {
     dispatch(setFeeType(networkSetting.feeType))
     setNetworkSettingsModalOpen(false)
   }
+
+  const {
+    errorMessage: addressErrorMessage,
+    isValidating: addressIsValidating,
+    handleInputChange: handleAddressChange,
+  } = useAddressOrNameValidation(setDestinationAddress)
 
   return (
     <>
@@ -170,8 +183,23 @@ export default function Send(): ReactElement {
               type="text"
               placeholder="0x..."
               spellCheck={false}
-              onChange={(event) => setDestinationAddress(event.target.value)}
+              onChange={(event) => handleAddressChange(event.target.value)}
+              className={classNames({
+                error: addressErrorMessage !== undefined,
+              })}
             />
+            {addressIsValidating ? (
+              <p className="validating">
+                <SharedLoadingSpinner />
+              </p>
+            ) : (
+              <></>
+            )}
+            {addressErrorMessage !== undefined ? (
+              <p className="error">{addressErrorMessage}</p>
+            ) : (
+              <></>
+            )}
           </div>
           <SharedSlideUpMenu
             size="custom"
@@ -197,7 +225,7 @@ export default function Send(): ReactElement {
               size="large"
               isDisabled={
                 Number(amount) === 0 ||
-                !isAddress(destinationAddress) ||
+                destinationAddress === undefined ||
                 hasError
               }
               onClick={sendTransactionRequest}
@@ -287,6 +315,23 @@ export default function Send(): ReactElement {
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 0px 16px;
+          }
+          input#send_address ~ .error {
+            color: var(--error);
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 20px;
+            align-self: flex-end;
+            text-align: end;
+            margin-top: -25px;
+            margin-right: 15px;
+            margin-bottom: 5px;
+          }
+          input#send_address ~ .validating {
+            margin-top: -50px;
+            margin-bottom: 22px;
+            margin-right: 15px;
+            align-self: flex-end;
           }
           .send_footer {
             display: flex;

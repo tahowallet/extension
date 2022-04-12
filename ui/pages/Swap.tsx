@@ -14,6 +14,7 @@ import {
   SwapQuoteRequest,
   fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { HIDE_SWAP_REWARDS } from "@tallyho/tally-background/features/features"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -25,7 +26,7 @@ import {
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
-import { useHistory, useLocation } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -39,6 +40,7 @@ import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSe
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SwapRewardsNotification from "../components/Swap/SwapRewardsNotification"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -441,8 +443,22 @@ export default function Swap(): ReactElement {
           )}
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
-          <SharedActivityHeader label="Swap Assets" activity="swap" />
-          <SwapRewardsNotification />
+          <div className="header">
+            <SharedActivityHeader label="Swap Assets" activity="swap" />
+            {HIDE_SWAP_REWARDS ? (
+              <></>
+            ) : (
+              // TODO: Add onClick function after design is ready
+              <SharedIcon
+                icon="cog@2x.png"
+                width={20}
+                color="var(--green-60)"
+                hoverColor="#fff"
+                customStyles="margin: 17px 0 25px;"
+              />
+            )}
+          </div>
+          {HIDE_SWAP_REWARDS ? <SwapRewardsNotification /> : <></>}
           <div className="form">
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
@@ -482,11 +498,14 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              <SwapRewardsCard />
-              {/* <SwapTransactionSettingsChooser
-                swapTransactionSettings={swapTransactionSettings}
-                onSwapTransactionSettingsSave={setSwapTransactionSettings}
-              /> */}
+              {HIDE_SWAP_REWARDS ? (
+                <SwapTransactionSettingsChooser
+                  swapTransactionSettings={swapTransactionSettings}
+                  onSwapTransactionSettingsSave={setSwapTransactionSettings}
+                />
+              ) : (
+                <SwapRewardsCard />
+              )}
             </div>
             <div className="footer standard_width_padded">
               {
@@ -536,6 +555,11 @@ export default function Swap(): ReactElement {
         {`
           .swap_wrap {
             margin-top: -9px;
+          }
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
           }
           .network_fee_group {
             display: flex;

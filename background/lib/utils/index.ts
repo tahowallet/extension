@@ -3,9 +3,20 @@ import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
+import { AddressOnNetwork } from "../../accounts"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
+}
+
+export function normalizeAddressOnNetwork({
+  address,
+  network,
+}: AddressOnNetwork): AddressOnNetwork {
+  return {
+    address: normalizeEVMAddress(address),
+    network,
+  }
 }
 
 export function truncateDecimalAmount(
@@ -112,10 +123,6 @@ export function getEthereumNetwork(): EVMNetwork {
 }
 
 export function isProbablyEVMAddress(str: string): str is HexString {
-  if (str.endsWith(".eth")) {
-    return true
-  }
-
   if (normalizeHexAddress(str).startsWith("0x") && str.length === 42) {
     return true
   }

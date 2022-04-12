@@ -1,5 +1,5 @@
 import { HexString } from "../../types"
-import { Eligible, IPFSLinkItem } from "./types"
+import { IPFSLinkItem } from "./types"
 
 export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
 export const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
