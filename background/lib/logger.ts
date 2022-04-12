@@ -69,12 +69,16 @@ function purgeSensitiveFailSafe(log: string): string {
   return log.replace(`${matchPossibleSensitive} `, "[REDACTED]")
 }
 
-function saveLog(logLabel: string, stackTrace: string[] | undefined) {
+function saveLog(
+  logLabel: string,
+  input: unknown[],
+  stackTrace: string[] | undefined
+) {
   localStorage.setItem(
     "logs",
     `${(localStorage.getItem("logs") ?? "").slice(
       -50000
-    )} ${purgeSensitiveFailSafe(logLabel + stackTrace)}\n\n`
+    )}${purgeSensitiveFailSafe(`${logLabel}\n${input}\n${stackTrace}`)}\n\n`
   )
 }
 
@@ -154,7 +158,7 @@ function genericLogger(level: LogLevel, input: unknown[]) {
 
   console.groupEnd()
 
-  saveLog(logLabel, stackTrace)
+  saveLog(logLabel, input, stackTrace)
 }
 
 const logger = {
