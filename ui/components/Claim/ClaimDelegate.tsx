@@ -211,9 +211,12 @@ export default function ClaimDelegate(props: {
             color: var(--green-20);
             font-size: 16px;
             font-weight: 500;
-            display: flex;
-            flex-direction: column;
+            display: block;
             line-height: 32px;
+            width: 175px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           .delegates {
             background-color: var(--hunter-green);
