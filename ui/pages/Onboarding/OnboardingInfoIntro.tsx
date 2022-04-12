@@ -20,8 +20,8 @@ const steps = [
     image: {
       width: 359.65,
       height: 343.17,
-      fileName: "onboarding/graphic_tally_token",
-      extraStyles: `margin-top: -12px;`,
+      fileName: "onboarding/graphic_drop",
+      extraStyles: ``,
     },
     title: "Tally Ho! is a DAO",
     body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
@@ -31,8 +31,8 @@ const steps = [
     image: {
       width: 330,
       height: 277,
-      fileName: "onboarding/graphic_airdrop",
-      extraStyles: `margin-top: 0px; margin-right: 0px;`,
+      fileName: "onboarding/graphic_token",
+      extraStyles: ``,
     },
     title: "Test Responsibly",
     body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
@@ -43,7 +43,7 @@ const steps = [
       width: 267,
       height: 236.6,
       fileName: "illustration_onboarding_default",
-      extraStyles: `margin-top: 21px;`,
+      extraStyles: ``,
     },
     title: "TallyHo set as default",
     body: `TallyHo will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
@@ -169,7 +169,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             left: 0;
             right: 0;
             margin: 0 auto;
-            margin-top: 21px;
+            margin-top: 0px;
             position: absolute;
             animation: fadeIn ease 0.5s;
             ${steps[activeStep - 1].image.extraStyles}
