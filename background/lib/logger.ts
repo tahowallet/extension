@@ -62,11 +62,11 @@ function purgeSensitiveFailSafe(log: string): string {
   // 1. Hexadecimal segments
   // 2. Private key length segments
   // 3. Lowercase groups of 12 words, which therefore covers 24
-  const matchPossibleSensitive = new RegExp(
-    `(${/0x(.*?)[s]/g})|(${/\b[a-zA-Z0-9]{64}\b/g})|(${/(?:[a-z]+\s){12}/g})`
-  )
 
-  return log.replace(`${matchPossibleSensitive} `, "[REDACTED]")
+  return `${log} `.replaceAll(
+    /(0x(\S+))|(\b[a-zA-Z0-9]{64}\b)|((?:[a-z]+\s){12})/g,
+    "[REDACTED]"
+  )
 }
 
 function saveLog(
