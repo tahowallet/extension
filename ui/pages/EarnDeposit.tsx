@@ -250,12 +250,14 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Estimated APR</div>
-            <div className="amount">{APR}%</div>
+            <div className="amount">{APR}</div>
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
             <div className="amount">
-              ${vault.localValueTotalDeposited ?? "0"}
+              {vault.localValueTotalDeposited
+                ? `$${vault.localValueTotalDeposited}`
+                : "Unknown"}
             </div>
           </li>
           <li className="row">

@@ -670,7 +670,7 @@ export const getPoolAPR = createBackgroundAsyncThunk(
       mainCurrencySymbol
     )
 
-    if (assetPricePoint?.amounts[1] === undefined) return "0"
+    if (assetPricePoint?.amounts[1] === undefined) return "Unknown"
 
     const totalValueOfTokensStaked = tokensStakedInPool
       .mul(assetPricePoint?.amounts[1])
@@ -680,10 +680,10 @@ export const getPoolAPR = createBackgroundAsyncThunk(
       const APR = totalRewardValue
         .div(totalValueOfTokensStaked)
         .mul(BigNumber.from(100))
-      return nFormatter(APR.toNumber(), 1)
+      return `${nFormatter(APR.toNumber(), 1)}%`
     }
     // If no one has deposited into the pool yet we cannot calculate APR
-    return "Infinite"
+    return "New"
   }
 )
 

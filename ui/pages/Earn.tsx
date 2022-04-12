@@ -27,7 +27,7 @@ type EarnCardProps = {
 }
 
 function EarnCard({ vault, isComingSoon }: EarnCardProps) {
-  const [APR, setAPR] = useState("0")
+  const [APR, setAPR] = useState("Loading...")
 
   const dispatch = useBackgroundDispatch()
 
@@ -72,11 +72,15 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         </div>
         <span className="token_name">{vault?.asset?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
-        <span className="apy_percent">{APR}%</span>
+        <span className="apy_percent">{APR}</span>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
-          <div className="tvl">${vault.localValueTotalDeposited ?? 0}</div>
+          <div className="tvl">
+            {vault.localValueTotalDeposited
+              ? `$${vault.localValueTotalDeposited}`
+              : "Unknown"}
+          </div>
         </div>
         <div className="divider" />
         <div className="info">
