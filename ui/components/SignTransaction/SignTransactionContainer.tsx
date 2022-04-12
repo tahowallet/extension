@@ -42,6 +42,7 @@ export default function SignTransactionContainer({
   const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
+  const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
   const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
 
@@ -70,7 +71,21 @@ export default function SignTransactionContainer({
     }
   }
 
-  function onBlurFocusChange() {
+  useEffect(() => {
+    const increaseFocusChangeNonce = () => {
+      setFocusChangeNonce((x) => x + 1)
+    }
+    window.addEventListener("focus", increaseFocusChangeNonce)
+    window.addEventListener("blur", increaseFocusChangeNonce)
+
+    return () => {
+      window.removeEventListener("focus", increaseFocusChangeNonce)
+      window.removeEventListener("blur", increaseFocusChangeNonce)
+    }
+  }, [])
+
+  // Runs on updates
+  useEffect(() => {
     clearDelaySignButtonTimeout()
 
     if (document.hasFocus()) {
@@ -81,22 +96,7 @@ export default function SignTransactionContainer({
     } else {
       setIsOnDelayToSign(true)
     }
-  }
-
-  useEffect(() => {
-    window.addEventListener("focus", onBlurFocusChange)
-    window.addEventListener("blur", onBlurFocusChange)
-
-    return () => {
-      window.removeEventListener("focus", onBlurFocusChange)
-      window.removeEventListener("blur", onBlurFocusChange)
-    }
-  }, [])
-
-  // Runs on updates
-  useEffect(() => {
-    onBlurFocusChange()
-  }, [reviewPanel])
+  }, [reviewPanel, focusChangeNonce])
 
   return (
     <section>
