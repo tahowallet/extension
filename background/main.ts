@@ -4,7 +4,12 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import devToolsEnhancer from "remote-redux-devtools"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import {
+  decodeJSON,
+  encodeJSON,
+  getEthereumNetwork,
+  isProbablyEVMAddress,
+} from "./lib/utils"
 
 import {
   BaseService,
@@ -341,7 +346,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
-    const claimService = ClaimService.create()
+    const claimService = ClaimService.create(indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -579,30 +584,6 @@ export default class Main extends BaseService<never> {
     signingMethod: SigningMethod
   ): Promise<void> {
     await this.signingService.removeAccount(address, signingMethod)
-  }
-
-  async addAccountByName(nameNetwork: NameOnNetwork): Promise<void> {
-    try {
-      const address = await this.nameService.lookUpEthereumAddress(
-        nameNetwork.name
-      )
-
-      if (address) {
-        const addressNetwork = {
-          address,
-          network: nameNetwork.network,
-        }
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(address))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
-      } else {
-        throw new Error("Name not found")
-      }
-    } catch (error) {
-      throw new Error(
-        `Could not resolve name ${nameNetwork.name} for ${nameNetwork.network.name}`
-      )
-    }
   }
 
   async importLedgerAccounts(
@@ -967,11 +948,13 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateTransactionOptions(payload))
 
         const clear = () => {
+          // Mutual dependency to handleAndClear.
           // eslint-disable-next-line @typescript-eslint/no-use-before-define
           this.signingService.emitter.off("signingTxResponse", handleAndClear)
 
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -987,13 +970,6 @@ export default class Main extends BaseService<never> {
               rejecter()
               break
           }
-        }
-
-        const resolveAndClear = (
-          signedTransactionResult: SignedEVMTransaction
-        ) => {
-          clear()
-          resolver(signedTransactionResult)
         }
 
         const rejectAndClear = () => {
@@ -1027,12 +1003,14 @@ export default class Main extends BaseService<never> {
         const clear = () => {
           this.signingService.emitter.off(
             "signingDataResponse",
+            // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1048,11 +1026,6 @@ export default class Main extends BaseService<never> {
               rejecter()
               break
           }
-        }
-
-        const resolveAndClear = (signedData: string) => {
-          clear()
-          resolver(signedData)
         }
 
         const rejectAndClear = () => {
@@ -1081,12 +1054,14 @@ export default class Main extends BaseService<never> {
         const clear = () => {
           this.signingService.emitter.off(
             "personalSigningResponse",
+            // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
+            // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
@@ -1102,11 +1077,6 @@ export default class Main extends BaseService<never> {
               rejecter()
               break
           }
-        }
-
-        const resolveAndClear = (signedData: string) => {
-          clear()
-          resolver(signedData)
         }
 
         const rejectAndClear = () => {
@@ -1139,9 +1109,27 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.providerBridgeService.emitter.on("setClaimReferrer", (referral) => {
-      this.store.dispatch(setReferrer(referral))
-    })
+    this.providerBridgeService.emitter.on(
+      "setClaimReferrer",
+      async (referral) => {
+        const isAddress = isProbablyEVMAddress(referral)
+        const ensName = isAddress
+          ? await this.nameService.lookUpName(referral, getEthereumNetwork())
+          : referral
+        const address = isAddress
+          ? referral
+          : await this.nameService.lookUpEthereumAddress(referral)
+
+        if (typeof address !== "undefined") {
+          this.store.dispatch(
+            setReferrer({
+              address,
+              ensName,
+            })
+          )
+        }
+      }
+    )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await this.providerBridgeService.grantPermission(permission)
@@ -1223,6 +1211,18 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  async resolveNameOnNetwork({
+    name,
+    network,
+  }: NameOnNetwork): Promise<string | undefined> {
+    try {
+      return await this.nameService.lookUpEthereumAddress(name /* , network */)
+    } catch (error) {
+      logger.info("Error looking up Ethereum address: ", error)
+      return undefined
+    }
   }
 
   private connectPopupMonitor() {

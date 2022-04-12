@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import SharedTooltip from "../Shared/SharedTooltip"
 
 export default function SwapRewardsCard(): ReactElement {
@@ -16,10 +17,15 @@ export default function SwapRewardsCard(): ReactElement {
                 {`Tally rewards it's users that use swap every week. A council decides
           weekly prizes and who is eligible.`}
               </p>
-              <button type="button" className="details">
+              <a
+                href={`${WEBSITE_ORIGIN}/rewards`}
+                target="_blank"
+                rel="noreferrer"
+                className="details"
+              >
                 Details
                 <div className="details_icon" />
-              </button>
+              </a>
             </SharedTooltip>
           </span>
         </p>

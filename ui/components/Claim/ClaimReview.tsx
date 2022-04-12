@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
-import { selectClaimSelections } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  Referrer,
+  selectClaimSelections,
+} from "@tallyho/tally-background/redux-slices/claim"
 import SharedButton from "../Shared/SharedButton"
 import AmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
@@ -15,15 +18,18 @@ export default function ClaimReview({
   const { selectedDelegate, selectedDAO } = useBackgroundSelector(
     selectClaimSelections
   )
+  const referrer: Referrer | null = useBackgroundSelector(
+    (state) => state.claim.referrer
+  )
 
   return (
     <div className="claim standard_width">
       <div className="title">Review claim</div>
       <div className="description_review">You will receive</div>
-      <AmountBanner amount={claimAmount} />
+      <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
-        name={selectedDAO?.name ?? ""}
-        delegate={selectedDAO}
+        name={referrer?.ensName ?? referrer?.address ?? selectedDAO?.name ?? ""}
+        delegate={referrer ? null : selectedDAO}
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">

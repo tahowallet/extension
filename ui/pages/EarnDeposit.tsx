@@ -157,14 +157,14 @@ export default function EarnDeposit(): ReactElement {
   )
 
   if (
-    typeof vault.numberValueUserDeposited !== "undefined" &&
-    vault.numberValueUserDeposited > 0 &&
+    typeof userDeposited !== "undefined" &&
+    userDeposited > 0 &&
     deposited === false
   ) {
     setDeposited(true)
   } else if (
-    typeof vault.numberValueUserDeposited !== "undefined" &&
-    vault.numberValueUserDeposited === 0 &&
+    typeof userDeposited !== "undefined" &&
+    userDeposited === 0 &&
     deposited === true
   ) {
     setDeposited(false)
