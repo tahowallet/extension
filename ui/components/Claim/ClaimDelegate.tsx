@@ -11,6 +11,7 @@ import ClaimAmountBanner from "./ClaimAmountBanner"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
+import SharedAddressAvatar from "../Shared/SharedAddressAvatar"
 
 function CustomDelegatePanel({
   selectedDelegate,
@@ -124,7 +125,7 @@ export default function ClaimDelegate(props: {
                         className="delegate_details"
                         htmlFor={delegate.ensName}
                       >
-                        <div className="icon" />
+                        <SharedAddressAvatar address={delegate.address ?? ""} />
                         <div className="delegate_info">
                           <div className="name">
                             {delegate.ensName && delegate.ensName.length > 0
@@ -195,6 +196,7 @@ export default function ClaimDelegate(props: {
             align-items: center;
             width: 100%;
             cursor: pointer;
+            box-sizing: border-box;
           }
           .delegate_info {
             display: flex;
@@ -206,6 +208,7 @@ export default function ClaimDelegate(props: {
           .radio {
             all: revert;
             cursor: pointer;
+            margin-right: 10px;
           }
           .name {
             color: var(--green-20);
@@ -229,14 +232,6 @@ export default function ClaimDelegate(props: {
             color: var(--green-60);
             font-size: 16px;
             font-weight: 500;
-          }
-          .icon {
-            width: 40px;
-            height: 40px;
-            margin-left: 10px;
-            background-color: #006ae3;
-            border-radius: 999px;
-            flex-shrink: 0;
           }
         `}
       </style>
