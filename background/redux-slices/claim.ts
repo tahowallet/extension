@@ -167,6 +167,12 @@ const claimingSlice = createSlice({
     ) => {
       immerState.referrerStats = reffererStats
     },
+    resetReferrerStats: (immerState) => {
+      immerState.referrerStats = {
+        bonusTotal: 0n,
+        referredUsers: 0,
+      }
+    },
   },
 })
 
@@ -183,6 +189,7 @@ export const {
   claimError,
   setReferrer,
   setReferrerStats,
+  resetReferrerStats,
 } = claimingSlice.actions
 
 export default claimingSlice.reducer

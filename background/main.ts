@@ -43,6 +43,7 @@ import {
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
+  resetReferrerStats,
   setEligibility,
   setReferrer,
   setReferrerStats,
@@ -1180,6 +1181,8 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
       await this.doggoService.getEligibility(addressNetwork.address)
+      this.store.dispatch(resetReferrerStats())
+      await this.doggoService.trackReferrals(addressNetwork)
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
@@ -1219,14 +1222,17 @@ export default class Main extends BaseService<never> {
           referrer: AddressOnNetwork
         } & ReferrerStats
       ) => {
-        const { referredUsers, bonusTotal } = referral
+        const { referrer, referredUsers, bonusTotal } = referral
+        const selectedAddressNetwork = this.store.getState().ui.selectedAccount
 
-        await this.store.dispatch(
-          setReferrerStats({
-            referredUsers,
-            bonusTotal,
-          })
-        )
+        if (referrer.address === selectedAddressNetwork.address) {
+          this.store.dispatch(
+            setReferrerStats({
+              referredUsers,
+              bonusTotal,
+            })
+          )
+        }
       }
     )
   }
