@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useState,
   useRef,
-  useCallback,
 } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../Shared/SharedButton"
@@ -63,20 +62,18 @@ export default function SignTransactionContainer({
     when rendering new sign content or when changing window focus.
   */
   const delaySignButtonTimeout = useRef<number | undefined>()
-  const firstOpen = useRef(true)
 
-  const clearDelaySignButtonTimeout = useCallback(() => {
+  function clearDelaySignButtonTimeout() {
     if (typeof delaySignButtonTimeout.current !== "undefined") {
       clearTimeout(delaySignButtonTimeout.current)
       delaySignButtonTimeout.current = undefined
     }
-  }, [])
+  }
 
-  function onBlurFocusChange(isFocus: boolean) {
+  function onBlurFocusChange() {
     clearDelaySignButtonTimeout()
-    firstOpen.current = false
 
-    if (isFocus) {
+    if (document.hasFocus()) {
       delaySignButtonTimeout.current = window.setTimeout(() => {
         setIsOnDelayToSign(false)
         // Random delay between 0.5 and 2 seconds
@@ -86,31 +83,19 @@ export default function SignTransactionContainer({
     }
   }
 
-  function handleBlur() {
-    onBlurFocusChange(false)
-  }
+  useEffect(() => {
+    window.addEventListener("focus", onBlurFocusChange)
+    window.addEventListener("blur", onBlurFocusChange)
 
-  function handleFocus() {
-    onBlurFocusChange(true)
-  }
+    return () => {
+      window.removeEventListener("focus", onBlurFocusChange)
+      window.removeEventListener("blur", onBlurFocusChange)
+    }
+  }, [])
 
   // Runs on updates
   useEffect(() => {
-    if (!firstOpen.current && delaySignButtonTimeout.current === undefined) {
-      // Start delay on new update, if not already delayed or on first open
-      setIsOnDelayToSign(true)
-    } else {
-      // On first open of window mark as focused
-      onBlurFocusChange(true)
-    }
-
-    window.addEventListener("focus", handleFocus)
-    window.addEventListener("blur", handleBlur)
-
-    return () => {
-      window.removeEventListener("focus", handleFocus)
-      window.removeEventListener("blur", handleBlur)
-    }
+    onBlurFocusChange()
   }, [reviewPanel])
 
   return (
