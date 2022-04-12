@@ -1,4 +1,5 @@
 import { ethers } from "ethers"
+import { VOTE_WITH_FRIENDS_ADDRESS } from "../../redux-slices/claim"
 
 export const CLAIM_WITH_FRIENDS_ABI = [
   {
@@ -276,6 +277,6 @@ export const CLAIM_WITH_FRIENDS_ABI = [
 ] as const
 
 export const ClaimWithFriends = new ethers.Contract(
-  "** address from calling DoggoDeployer.VOTE_WITH_FRIENDS(), this should probably be a function **",
+  VOTE_WITH_FRIENDS_ADDRESS, // "** address from calling DoggoDeployer.VOTE_WITH_FRIENDS(), this should probably be a function **",
   CLAIM_WITH_FRIENDS_ABI
 )

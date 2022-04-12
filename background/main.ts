@@ -1218,6 +1218,13 @@ export default class Main extends BaseService<never> {
         await this.store.dispatch(setEligibility(eligibility))
       }
     )
+
+    this.doggoService.emitter.on(
+      "newReferral",
+      ({ referrer, referredUsers, bonusTotal }) => {
+        // TODO
+      }
+    )
   }
 
   connectTelemetryService(): void {
