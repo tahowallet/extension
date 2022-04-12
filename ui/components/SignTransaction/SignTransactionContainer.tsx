@@ -72,23 +72,27 @@ export default function SignTransactionContainer({
     }
   }, [])
 
-  const onBlurFocusChange = useCallback(
-    (isFocus: boolean) => {
-      clearDelaySignButtonTimeout()
-      firstOpen.current = false
+  function onBlurFocusChange(isFocus: boolean) {
+    clearDelaySignButtonTimeout()
+    firstOpen.current = false
 
-      if (isFocus) {
-        delaySignButtonTimeout.current = window.setTimeout(() => {
-          setIsOnDelayToSign(false)
-          // Random delay between 0.5 and 2 seconds
-        }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
-      } else {
-        setIsOnDelayToSign(true)
-        clearDelaySignButtonTimeout()
-      }
-    },
-    [clearDelaySignButtonTimeout]
-  )
+    if (isFocus) {
+      delaySignButtonTimeout.current = window.setTimeout(() => {
+        setIsOnDelayToSign(false)
+        // Random delay between 0.5 and 2 seconds
+      }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
+    } else {
+      setIsOnDelayToSign(true)
+    }
+  }
+
+  function handleBlur() {
+    onBlurFocusChange(false)
+  }
+
+  function handleFocus() {
+    onBlurFocusChange(true)
+  }
 
   // Runs on updates
   useEffect(() => {
@@ -100,14 +104,14 @@ export default function SignTransactionContainer({
       onBlurFocusChange(true)
     }
 
-    window.addEventListener("focus", () => onBlurFocusChange(true))
-    window.addEventListener("blur", () => onBlurFocusChange(false))
+    window.addEventListener("focus", handleFocus)
+    window.addEventListener("blur", handleBlur)
 
     return () => {
-      window.removeEventListener("focus", () => onBlurFocusChange(true))
-      window.removeEventListener("blur", () => onBlurFocusChange(false))
+      window.removeEventListener("focus", handleFocus)
+      window.removeEventListener("blur", handleBlur)
     }
-  }, [onBlurFocusChange, reviewPanel])
+  }, [reviewPanel])
 
   return (
     <section>
