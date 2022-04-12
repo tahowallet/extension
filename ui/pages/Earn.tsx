@@ -42,7 +42,6 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
       })
     )) as unknown as string
     setAPR(yearlyAPR)
-    return yearlyAPR
   }, [
     dispatch,
     vault.vaultAddress,
