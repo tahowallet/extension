@@ -1,5 +1,9 @@
 import React, { ReactElement } from "react"
 
+/*
+@TODO Switch to using our own resolution service, especially
+once we upgrade our service to support whatever else Effigy can do.
+*/
 export default function SharedAddressAvatar({
   address,
 }: {
