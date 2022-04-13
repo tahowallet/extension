@@ -26,6 +26,40 @@ if (!window.walletRouter) {
     value: {
       currentProvider: window.tally,
       providers: [...(window.ethereum ? [window.ethereum] : [])],
+      switchToPreviousProvider() {
+        const previousProvider = this.providers.pop()
+        if (previousProvider) {
+          this.providers.push(this.currentProvider)
+          this.currentProvider = previousProvider
+        }
+      },
+      getProviderInfo(provider: WalletProvider) {
+        return (
+          provider.providerInfo || {
+            label: "Injected Provider",
+            injectedNamespace: "ethereum",
+            iconURL: "TODO",
+          }
+        )
+      },
+      hasProvider(checkIdentity: (provider: WalletProvider) => boolean) {
+        return this.providers.some(checkIdentity)
+      },
+      setCurrentProvider(checkIdentity: (provider: WalletProvider) => boolean) {
+        if (!this.hasProvider(checkIdentity)) {
+          throw new Error(
+            "The given identity did not match to any of the recognized providers!"
+          )
+        }
+        const providerIdex = this.providers.findIndex(checkIdentity)
+        const previousProvider = this.currentProvider
+        this.currentProvider = this.providers[providerIdex]
+        this.providers.splice(providerIdex, 1)
+        this.providers.push(previousProvider)
+      },
+      addProvider(newProvider: WalletProvider) {
+        this.providers.push(newProvider)
+      },
     },
     writable: false,
     configurable: false,
@@ -37,7 +71,7 @@ Object.defineProperty(window, "ethereum", {
     return window.walletRouter?.currentProvider || window.tally
   },
   set(newProvider) {
-    window.walletRouter?.providers.push(newProvider)
+    window.walletRouter?.addProvider(newProvider)
   },
   configurable: false,
 })
