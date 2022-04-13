@@ -27,9 +27,8 @@ export default function Receive(): ReactElement {
       </div>
       <div className="copy_wrap">
         <SharedButton
-          icon="copy"
+          iconMedium="copy"
           size="medium"
-          iconSize="large"
           type="primary"
           onClick={() => {
             navigator.clipboard.writeText(currentAccount.address)
