@@ -69,6 +69,8 @@ interface PropsWithSmallIcon extends Props {
     | "close"
     | "continue"
     | "copy"
+    | "discord"
+    | "download"
     | "dropdown"
     | "edit"
     | "garbage"
