@@ -25,12 +25,26 @@ if (!window.walletRouter) {
   Object.defineProperty(window, "walletRouter", {
     value: {
       currentProvider: window.tally,
-      providers: [...(window.ethereum ? [window.ethereum] : [])],
+      previousProvider: window.ethereum,
+      providers: [
+        // deduplicate the providers array: https://medium.com/@jakubsynowiec/unique-array-values-in-javascript-7c932682766c
+        ...new Set([
+          // eslint-disable-next-line no-nested-ternary
+          ...(window.ethereum
+            ? // let's use the providers that has already been registered
+              // This format is used by coinbase wallet
+              Array.isArray(window.ethereum.providers)
+              ? [...window.ethereum.providers, window.ethereum]
+              : [window.ethereum]
+            : []),
+          window.tally,
+        ]),
+      ],
       switchToPreviousProvider() {
-        const previousProvider = this.providers.pop()
-        if (previousProvider) {
-          this.providers.push(this.currentProvider)
-          this.currentProvider = previousProvider
+        if (this.previousProvider) {
+          const tempPreviousProvider = this.previousProvider
+          this.previousProvider = this.currentProvider
+          this.currentProvider = tempPreviousProvider
         }
       },
       getProviderInfo(provider: WalletProvider) {
@@ -52,13 +66,12 @@ if (!window.walletRouter) {
           )
         }
         const providerIdex = this.providers.findIndex(checkIdentity)
-        const previousProvider = this.currentProvider
+        this.previousProvider = this.currentProvider
         this.currentProvider = this.providers[providerIdex]
-        this.providers.splice(providerIdex, 1)
-        this.providers.push(previousProvider)
       },
       addProvider(newProvider: WalletProvider) {
         this.providers.push(newProvider)
+        this.previousProvider = newProvider
       },
     },
     writable: false,
