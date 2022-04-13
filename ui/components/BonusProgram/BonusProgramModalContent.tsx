@@ -15,7 +15,7 @@ export default function BonusProgramModalContent(): ReactElement {
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const { referredUsers, bonusTotal } =
     useBackgroundSelector(selectReferrerStats)
-  const bunusAmount = fromFixedPointNumber(
+  const bonusAmount = fromFixedPointNumber(
     {
       amount: bonusTotal,
       decimals: tallyTokenDecimalDigits,
@@ -50,7 +50,7 @@ export default function BonusProgramModalContent(): ReactElement {
           <div className="claimable_info">Total bonus received so far</div>
           <div className="claimable_row">
             <div className="claimable_column">
-              <div className="amount">{bunusAmount}</div>
+              <div className="amount">{bonusAmount}</div>
               <div className="claimable_item">DOGGO</div>
             </div>
             <div className="claimable_column">

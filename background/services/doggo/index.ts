@@ -13,6 +13,7 @@ import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
 import { DoggoDatabase, getOrCreateDB, ReferrerStats } from "./db"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
@@ -133,14 +134,10 @@ export default class DoggoService extends BaseService<Events> {
           return
         }
 
-        this.registerReferral({ address, network }, [
-          args[0],
-          args[1],
-          args[2],
-          args[3],
-          args[4],
-          args[5],
-        ])
+        this.registerReferral(
+          { address: normalizeEVMAddress(address), network },
+          [args[0], args[1], args[2], args[3], args[4], args[5]]
+        )
       }
 
       providedClaimWithFriends.on(referralFilter, referralHandler)
@@ -168,8 +165,8 @@ export default class DoggoService extends BaseService<Events> {
   }
 
   private async registerReferral(
-    referrer: AddressOnNetwork,
-    [, claiming, , , , communityBonus]: [
+    claimant: AddressOnNetwork,
+    [, , , , communityRef, communityBonus]: [
       BigNumber,
       HexString,
       BigNumber,
@@ -178,12 +175,17 @@ export default class DoggoService extends BaseService<Events> {
       BigNumber
     ]
   ): Promise<void> {
+    const referrer = {
+      address: normalizeEVMAddress(communityRef),
+      network: claimant.network,
+    }
     await this.db.addReferralBonus(
+      claimant,
       referrer,
-      { address: claiming, network: referrer.network },
       communityBonus.toBigInt()
     )
 
+    // emit event to inform referrer that their referral link was used
     this.emitter.emit("newReferral", {
       referrer,
       ...(await this.getReferrerStats(referrer)),

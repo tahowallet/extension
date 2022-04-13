@@ -1,5 +1,6 @@
 import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 export type ReferrerStats = {
   bonusTotal: bigint
@@ -8,7 +9,7 @@ export type ReferrerStats = {
 
 export class DoggoDatabase extends Dexie {
   private referralBonuses!: Dexie.Table<
-    AddressOnNetwork & { referred: AddressOnNetwork; referralBonus: bigint },
+    AddressOnNetwork & { referredBy: AddressOnNetwork; referralBonus: bigint },
     [string, string, string]
   >
 
@@ -16,16 +17,17 @@ export class DoggoDatabase extends Dexie {
     super("tally/doggo")
 
     this.version(1).stores({
-      referralBonuses: "&[address+network.name+network.chainID],address",
+      referralBonuses:
+        "&[address+referredBy.address+network.name+network.chainID],address,referredBy.address",
     })
   }
 
   async addReferralBonus(
-    referrer: AddressOnNetwork,
-    referred: AddressOnNetwork,
+    claimant: AddressOnNetwork,
+    referredBy: AddressOnNetwork,
     bonus: bigint
   ): Promise<void> {
-    this.referralBonuses.put({ ...referrer, referred, referralBonus: bonus })
+    this.referralBonuses.put({ ...claimant, referredBy, referralBonus: bonus })
   }
 
   async getReferrerStats({
@@ -33,11 +35,13 @@ export class DoggoDatabase extends Dexie {
     network,
   }: AddressOnNetwork): Promise<ReferrerStats> {
     const allReferrals = await this.referralBonuses
-      .where({
-        address,
-        "network.name": network.name,
-        "network.chainID": network.chainID,
-      })
+      .where("referredBy.address")
+      .equals(normalizeEVMAddress(address))
+      .filter(
+        ({ network: claimantNetwork }) =>
+          claimantNetwork.name === network.name &&
+          claimantNetwork.chainID === network.chainID
+      )
       .toArray()
 
     return {

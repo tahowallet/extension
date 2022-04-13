@@ -9,6 +9,7 @@ import {
   encodeJSON,
   getEthereumNetwork,
   isProbablyEVMAddress,
+  normalizeEVMAddress,
 } from "./lib/utils"
 
 import {
@@ -43,7 +44,6 @@ import {
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
-  resetReferrerStats,
   setEligibility,
   setReferrer,
   setReferrerStats,
@@ -1181,8 +1181,11 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
       await this.doggoService.getEligibility(addressNetwork.address)
-      this.store.dispatch(resetReferrerStats())
-      await this.doggoService.trackReferrals(addressNetwork)
+
+      const referrerStats = await this.doggoService.getReferrerStats(
+        addressNetwork
+      )
+      this.store.dispatch(setReferrerStats(referrerStats))
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
@@ -1223,9 +1226,12 @@ export default class Main extends BaseService<never> {
         } & ReferrerStats
       ) => {
         const { referrer, referredUsers, bonusTotal } = referral
-        const selectedAddressNetwork = this.store.getState().ui.selectedAccount
+        const { selectedAccount } = this.store.getState().ui
 
-        if (referrer.address === selectedAddressNetwork.address) {
+        if (
+          normalizeEVMAddress(referrer.address) ===
+          normalizeEVMAddress(selectedAccount.address)
+        ) {
           this.store.dispatch(
             setReferrerStats({
               referredUsers,
