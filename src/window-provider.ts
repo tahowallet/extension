@@ -70,7 +70,10 @@ if (!window.walletRouter) {
         this.currentProvider = this.providers[providerIdex]
       },
       addProvider(newProvider: WalletProvider) {
-        this.providers.push(newProvider)
+        if (!this.providers.includes(newProvider)) {
+          this.providers.push(newProvider)
+        }
+
         this.previousProvider = newProvider
       },
     },
@@ -81,7 +84,23 @@ if (!window.walletRouter) {
 
 Object.defineProperty(window, "ethereum", {
   get() {
-    return window.walletRouter?.currentProvider || window.tally
+    return new Proxy(window.walletRouter!.currentProvider, {
+      get(target, prop, receiver) {
+        if (
+          window.walletRouter &&
+          !(prop in window.walletRouter!.currentProvider) &&
+          prop in window.walletRouter!
+        ) {
+          // let's publish the api of `window.walletRoute` also on `window.ethereum` for better discoverability
+
+          // @ts-expect-error ts accepts symbols as index only from 4.4
+          // https://stackoverflow.com/questions/59118271/using-symbol-as-object-key-type-in-typescript
+          return window.walletRouter[prop]
+        }
+
+        return Reflect.get(target, prop, receiver)
+      },
+    })
   },
   set(newProvider) {
     window.walletRouter?.addProvider(newProvider)
