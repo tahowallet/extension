@@ -127,8 +127,7 @@ export default function WalletActivityDetails(
           <SharedButton
             type="tertiary"
             size="medium"
-            icon="external"
-            iconSize="large"
+            iconMedium="new-tab"
             onClick={openExplorer}
           >
             Etherscan
