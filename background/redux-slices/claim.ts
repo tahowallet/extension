@@ -175,13 +175,7 @@ export default claimingSlice.reducer
 
 export const checkAlreadyClaimed = createBackgroundAsyncThunk(
   "claim/checkAlreadyClaimed",
-  async (
-    {
-      claimState,
-      accountAddress,
-    }: { claimState: ClaimingState; accountAddress: HexString },
-    { dispatch }
-  ) => {
+  async ({ claimState }: { claimState: ClaimingState }, { dispatch }) => {
     const { eligibility } = claimState
     const distributorContract = await getDistributorContract()
     if (!eligibility) {
@@ -191,7 +185,7 @@ export const checkAlreadyClaimed = createBackgroundAsyncThunk(
       eligibility.index
     )
     if (alreadyClaimed) {
-      dispatch(claimed({ account: accountAddress, alreadyClaimed }))
+      dispatch(claimed({ account: eligibility.account, alreadyClaimed }))
     }
     return alreadyClaimed
   }
