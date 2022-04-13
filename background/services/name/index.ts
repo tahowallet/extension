@@ -12,7 +12,13 @@ import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { SECOND } from "../../constants"
 
 import { NameResolver } from "./name-resolver"
-import { NameResolverSystem, ensResolverFor } from "./resolvers"
+import {
+  NameResolverSystem,
+  knownContractResolverFor,
+  addressBookResolverFor,
+  ensResolverFor,
+} from "./resolvers"
+import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
 
 export { NameResolverSystem }
@@ -97,15 +103,25 @@ export default class NameService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     NameService,
-    [Promise<ChainService>]
-  > = async (chainService) => {
-    return new this(await chainService)
+    [Promise<ChainService>, Promise<PreferenceService>]
+  > = async (chainService, preferenceService) => {
+    return new this(await chainService, await preferenceService)
   }
 
-  private constructor(private chainService: ChainService) {
+  private constructor(
+    private chainService: ChainService,
+    preferenceService: PreferenceService
+  ) {
     super({})
 
-    this.resolvers = [ensResolverFor(chainService)]
+    this.resolvers = [
+      // User-controlled resolvers are higher priority.
+      addressBookResolverFor(preferenceService),
+      knownContractResolverFor(preferenceService),
+      // Third-party resolvers are used when the user has not defined a name
+      // for the given resource.
+      ensResolverFor(chainService),
+    ]
 
     chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
       try {
@@ -138,20 +154,26 @@ export default class NameService extends BaseService<Events> {
       resolver.canAttemptAddressResolution(nameOnNetwork)
     )
 
-    const resolved = (
+    const firstMatchingResolution = (
       await Promise.allSettled(
         workingResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpAddressForName(nameOnNetwork),
         }))
       )
-    ).find(isFulfilledPromise)?.value
+    )
+      .filter(isFulfilledPromise)
+      .find(({ value: { resolved } }) => resolved !== undefined)?.value
 
-    if (resolved === undefined || resolved.resolved === undefined) {
+    if (
+      firstMatchingResolution === undefined ||
+      firstMatchingResolution.resolved === undefined
+    ) {
       return undefined
     }
 
-    const { type: resolverType, resolved: addressOnNetwork } = resolved
+    const { type: resolverType, resolved: addressOnNetwork } =
+      firstMatchingResolution
 
     // TODO cache name resolution and TTL
     const normalizedAddressOnNetwork =
@@ -191,20 +213,26 @@ export default class NameService extends BaseService<Events> {
       resolver.canAttemptNameResolution(addressOnNetwork)
     )
 
-    const resolved = (
+    const firstMatchingResolution = (
       await Promise.allSettled(
         workingResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpNameForAddress(addressOnNetwork),
         }))
       )
-    ).find(isFulfilledPromise)?.value
+    )
+      .filter(isFulfilledPromise)
+      .find(({ value: { resolved } }) => resolved !== undefined)?.value
 
-    if (resolved === undefined || resolved.resolved === undefined) {
+    if (
+      firstMatchingResolution === undefined ||
+      firstMatchingResolution.resolved === undefined
+    ) {
       return undefined
     }
 
-    const { type: resolverType, resolved: nameOnNetwork } = resolved
+    const { type: resolverType, resolved: nameOnNetwork } =
+      firstMatchingResolution
 
     const nameRecord = {
       from: { addressOnNetwork },
@@ -238,23 +266,28 @@ export default class NameService extends BaseService<Events> {
       resolver.canAttemptAvatarResolution(addressOnNetwork)
     )
 
-    const resolved = (
+    const firstMatchingResolution = (
       await Promise.allSettled(
         workingResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpAvatar(addressOnNetwork),
         }))
       )
-    ).find(isFulfilledPromise)?.value
+    )
+      .filter(isFulfilledPromise)
+      .find(({ value: { resolved } }) => resolved !== undefined)?.value
 
-    if (resolved === undefined || resolved.resolved === undefined) {
+    if (
+      firstMatchingResolution === undefined ||
+      firstMatchingResolution.resolved === undefined
+    ) {
       return undefined
     }
 
     const {
       type: resolverType,
       resolved: { uri: avatarUri },
-    } = resolved
+    } = firstMatchingResolution
 
     const baseResolvedAvatar = {
       from: { addressOnNetwork },

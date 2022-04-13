@@ -189,6 +189,10 @@ export default function SharedButton(props: Props): ReactElement {
           .secondary:active {
             border-color: var(--trophy-gold);
           }
+          .primaryGreen {
+            color: var(--hunter-green);
+            background-color: var(--trophy-gold);
+          }
           .disabled {
             background-color: var(--green-60);
             color: var(--green-80);
@@ -279,10 +283,7 @@ export default function SharedButton(props: Props): ReactElement {
             height: 32px;
             font-size: 16px;
           }
-          .primaryGreen {
-            color: var(--hunter-green);
-            background-color: var(--trophy-gold);
-          }
+
           .warning {
             background-color: var(--attention);
           }

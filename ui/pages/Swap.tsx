@@ -470,7 +470,7 @@ export default function Swap(): ReactElement {
                 showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
-                  setBuyAmount(buyAmount)
+                  setBuyAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)
                   }
