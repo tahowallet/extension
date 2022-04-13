@@ -4,42 +4,31 @@
 // result in a handful of type errors. See PR #196.
 
 declare module "styled-jsx/style"
+
+type WalletProvider = {
+  on: (
+    eventName: string | symbol,
+    listener: (...args: unknown[]) => void
+  ) => unknown
+  removeListener: (
+    eventName: string | symbol,
+    listener: (...args: unknown[]) => void
+  ) => unknown
+}
+
+type WindowEthereum = WalletProvider & {
+  isMetaMask?: boolean
+  isTally?: boolean
+  autoRefreshOnNetworkChange?: boolean
+}
 interface Window {
-  tally?: {
+  walletRouter?: {
+    currentProvider: WalletProvider
+    providers: WalletProvider[]
+  }
+  tally?: WalletProvider & {
     isTally: boolean
-    on: (
-      eventName: string | symbol,
-      listener: (...args: unknown[]) => void
-    ) => unknown
-    removeListener: (
-      eventName: string | symbol,
-      listener: (...args: unknown[]) => void
-    ) => unknown
   }
-  ethereum?: {
-    isMetaMask?: boolean
-    isTally?: boolean
-    on?: (
-      eventName: string | symbol,
-      listener: (...args: unknown[]) => void
-    ) => unknown
-    removeListener?: (
-      eventName: string | symbol,
-      listener: (...args: unknown[]) => void
-    ) => unknown
-    autoRefreshOnNetworkChange?: boolean
-  }
-  oldEthereum?: {
-    isMetaMask?: boolean
-    isTally?: boolean
-    on?: (
-      eventName: string | symbol,
-      listener: (...args: unknown[]) => void
-    ) => unknown
-    removeListener?: (
-      eventName: string | symbol,
-      listener: (...args: unknown[]) => void
-    ) => unknown
-    autoRefreshOnNetworkChange?: boolean
-  }
+  ethereum?: WindowEthereum
+  oldEthereum?: WindowEthereum
 }
