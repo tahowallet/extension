@@ -324,7 +324,7 @@ export default class Main extends BaseService<never> {
       preferenceService,
       chainService
     )
-    const nameService = NameService.create(chainService)
+    const nameService = NameService.create(chainService, preferenceService)
     const enrichmentService = EnrichmentService.create(
       chainService,
       indexingService,
@@ -756,15 +756,20 @@ export default class Main extends BaseService<never> {
   async connectNameService(): Promise<void> {
     this.nameService.emitter.on(
       "resolvedName",
-      async ({ from: { addressNetwork }, resolved: { name } }) => {
-        this.store.dispatch(updateENSName({ ...addressNetwork, name }))
+      async ({
+        from: { addressOnNetwork },
+        resolved: {
+          nameOnNetwork: { name },
+        },
+      }) => {
+        this.store.dispatch(updateENSName({ ...addressOnNetwork, name }))
       }
     )
     this.nameService.emitter.on(
       "resolvedAvatar",
-      async ({ from: { addressNetwork }, resolved: { avatar } }) => {
+      async ({ from: { addressOnNetwork }, resolved: { avatar } }) => {
         this.store.dispatch(
-          updateENSAvatar({ ...addressNetwork, avatar: avatar.toString() })
+          updateENSAvatar({ ...addressOnNetwork, avatar: avatar.toString() })
         )
       }
     )
@@ -1158,12 +1163,11 @@ export default class Main extends BaseService<never> {
     this.telemetryService.connectReduxStore(this.store)
   }
 
-  async resolveNameOnNetwork({
-    name,
-    network,
-  }: NameOnNetwork): Promise<string | undefined> {
+  async resolveNameOnNetwork(
+    nameOnNetwork: NameOnNetwork
+  ): Promise<AddressOnNetwork | undefined> {
     try {
-      return await this.nameService.lookUpEthereumAddress(name /* , network */)
+      return await this.nameService.lookUpEthereumAddress(nameOnNetwork)
     } catch (error) {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined

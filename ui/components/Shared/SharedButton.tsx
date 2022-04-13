@@ -18,30 +18,16 @@ interface Props {
     | "warning"
     | "unstyled"
   size: "small" | "medium" | "large"
-  iconSmall?:
-    | "add"
-    | "arrow-right"
-    | "back"
-    | "close"
-    | "continue"
-    | "copy"
-    | "download"
-    | "discord"
-    | "dropdown"
-    | "edit"
-    | "garbage"
-    | "lock"
-    | "mark-read"
-    | "new-tab"
-    | "notif-announ"
-    | "notif-attention"
-    | "notif-correct"
-    | "notif-wrong"
-    | "notification"
-    | "receive"
-    | "send"
-    | "settings"
-    | "swap"
+  iconPosition?: "left" | "right"
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+  isDisabled?: boolean
+  linkTo?: History.LocationDescriptor<unknown>
+  showLoadingOnClick: boolean
+  isLoading: boolean
+  isFormSubmit: boolean
+}
+
+interface PropsWithMediumIcon extends Props {
   iconMedium?:
     | "connected"
     | "continue"
@@ -72,16 +58,46 @@ interface Props {
     | "switch"
     | "wallet"
     | "discord"
-  iconPosition?: "left" | "right"
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
-  isDisabled?: boolean
-  linkTo?: History.LocationDescriptor<unknown>
-  showLoadingOnClick: boolean
-  isLoading: boolean
-  isFormSubmit: boolean
+  iconSmall?: never
 }
 
-export default function SharedButton(props: Props): ReactElement {
+interface PropsWithSmallIcon extends Props {
+  iconSmall?:
+    | "add"
+    | "arrow-right"
+    | "back"
+    | "close"
+    | "continue"
+    | "copy"
+    | "discord"
+    | "download"
+    | "dropdown"
+    | "edit"
+    | "garbage"
+    | "lock"
+    | "mark-read"
+    | "new-tab"
+    | "notif-announ"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "notification"
+    | "receive"
+    | "send"
+    | "settings"
+    | "swap"
+  iconMedium?: never
+}
+
+export default function SharedButton(
+  props:
+    | (Props & {
+        iconMedium?: never
+        iconSmall?: never
+      })
+    | PropsWithMediumIcon
+    | PropsWithSmallIcon
+): ReactElement {
   const {
     id,
     children,
@@ -242,6 +258,10 @@ export default function SharedButton(props: Props): ReactElement {
           .secondary:active {
             border-color: var(--trophy-gold);
           }
+          .primaryGreen {
+            color: var(--hunter-green);
+            background-color: var(--trophy-gold);
+          }
           .disabled {
             background-color: var(--green-60);
             color: var(--green-80);
@@ -332,10 +352,7 @@ export default function SharedButton(props: Props): ReactElement {
             height: 32px;
             font-size: 16px;
           }
-          .primaryGreen {
-            color: var(--hunter-green);
-            background-color: var(--trophy-gold);
-          }
+
           .warning {
             background-color: var(--attention);
           }
