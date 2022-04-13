@@ -18,28 +18,16 @@ interface Props {
     | "warning"
     | "unstyled"
   size: "small" | "medium" | "large"
-  iconSmall?:
-    | "add"
-    | "arrow-right"
-    | "back"
-    | "close"
-    | "continue"
-    | "copy"
-    | "dropdown"
-    | "edit"
-    | "garbage"
-    | "lock"
-    | "mark-read"
-    | "new-tab"
-    | "notif-announ"
-    | "notif-attention"
-    | "notif-correct"
-    | "notif-wrong"
-    | "notification"
-    | "receive"
-    | "send"
-    | "settings"
-    | "swap"
+  iconPosition?: "left" | "right"
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+  isDisabled?: boolean
+  linkTo?: History.LocationDescriptor<unknown>
+  showLoadingOnClick: boolean
+  isLoading: boolean
+  isFormSubmit: boolean
+}
+
+interface PropsWithMediumIcon extends Props {
   iconMedium?:
     | "connected"
     | "continue"
@@ -70,16 +58,44 @@ interface Props {
     | "switch"
     | "wallet"
     | "discord"
-  iconPosition?: "left" | "right"
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
-  isDisabled?: boolean
-  linkTo?: History.LocationDescriptor<unknown>
-  showLoadingOnClick: boolean
-  isLoading: boolean
-  isFormSubmit: boolean
+  iconSmall?: never
 }
 
-export default function SharedButton(props: Props): ReactElement {
+interface PropsWithSmallIcon extends Props {
+  iconSmall?:
+    | "add"
+    | "arrow-right"
+    | "back"
+    | "close"
+    | "continue"
+    | "copy"
+    | "dropdown"
+    | "edit"
+    | "garbage"
+    | "lock"
+    | "mark-read"
+    | "new-tab"
+    | "notif-announ"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "notification"
+    | "receive"
+    | "send"
+    | "settings"
+    | "swap"
+  iconMedium?: never
+}
+
+export default function SharedButton(
+  props:
+    | (Props & {
+        iconMedium?: never
+        iconSmall?: never
+      })
+    | PropsWithMediumIcon
+    | PropsWithSmallIcon
+): ReactElement {
   const {
     id,
     children,
