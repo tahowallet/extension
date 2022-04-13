@@ -59,15 +59,18 @@ if (!window.walletRouter) {
       hasProvider(checkIdentity: (provider: WalletProvider) => boolean) {
         return this.providers.some(checkIdentity)
       },
+      getProvider(checkIdentity: (provider: WalletProvider) => boolean) {
+        const providerIndex = this.providers.findIndex(checkIdentity)
+        return this.providers[providerIndex]
+      },
       setCurrentProvider(checkIdentity: (provider: WalletProvider) => boolean) {
         if (!this.hasProvider(checkIdentity)) {
           throw new Error(
             "The given identity did not match to any of the recognized providers!"
           )
         }
-        const providerIdex = this.providers.findIndex(checkIdentity)
         this.previousProvider = this.currentProvider
-        this.currentProvider = this.providers[providerIdex]
+        this.currentProvider = this.getProvider(checkIdentity)
       },
       addProvider(newProvider: WalletProvider) {
         if (!this.providers.includes(newProvider)) {
