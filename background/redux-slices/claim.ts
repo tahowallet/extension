@@ -59,8 +59,8 @@ interface ClaimingState {
   referrer: Referrer | null
 }
 
-export const DOGGO_TOKEN_ADDRESS = "0xC8B1e49A5dDE816BCde63F23e7E787086229FE62"
-const VOTE_WITH_FRIENDS_ADDRESS = "0x4301FB587883a78E7A88B92215E3fd0C4D3eBb5b"
+export const DOGGO_TOKEN_ADDRESS = "0xA0DDAEd22e3a8aa512C85a13F426165861922801"
+const VOTE_WITH_FRIENDS_ADDRESS = "0x81448b6aB39a3146000D1b2876A83cAb0696c56c"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
@@ -209,7 +209,7 @@ export const claimRewards = createBackgroundAsyncThunk(
     const account = await signer.getAddress()
 
     const referralAddress =
-      claimState.referrer ?? claimState.selectedDAO?.address
+      claimState.referrer?.address ?? claimState.selectedDAO?.address
 
     const delegate = claimState.selectedDelegate
     const { signature, eligibility } = claimState

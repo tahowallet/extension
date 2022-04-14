@@ -1,6 +1,8 @@
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 import { Eligible, IPFSLinkItem } from "./types"
 import BaseService from "../base"
+import IndexingService from "../indexing"
+import { initialVaults } from "../../redux-slices/earn"
 
 const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
 const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
@@ -103,17 +105,26 @@ interface Events extends ServiceLifecycleEvents {
  * efficient storage and retrieval.
  */
 export default class ClaimService extends BaseService<Events> {
-  static create: ServiceCreatorFunction<Events, ClaimService, []> =
-    async () => {
-      return new this()
-    }
+  static create: ServiceCreatorFunction<
+    Events,
+    ClaimService,
+    [Promise<IndexingService>]
+  > = async (indexingService) => {
+    return new this(await indexingService)
+  }
 
-  private constructor() {
+  private constructor(private indexingService: IndexingService) {
     super()
   }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService()
+
+    const huntingGrounds = initialVaults
+
+    huntingGrounds.forEach(({ network, asset }) => {
+      this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
+    })
   }
 
   protected async internalStopService(): Promise<void> {

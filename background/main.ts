@@ -346,7 +346,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
-    const claimService = ClaimService.create()
+    const claimService = ClaimService.create(indexingService)
 
     const telemetryService = TelemetryService.create()
 
