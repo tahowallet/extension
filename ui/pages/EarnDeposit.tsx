@@ -70,16 +70,14 @@ export default function EarnDeposit(): ReactElement {
     if (
       typeof vault?.asset.decimals !== "undefined" &&
       typeof vault?.vaultAddress !== "undefined" &&
-      typeof vault?.yearnVault !== "undefined" &&
       typeof vault?.asset.symbol !== "undefined"
     ) {
       const displayAPR = (await dispatch(
         getPoolAPR({
           vaultAddress: vault.vaultAddress,
-          yearnVault: vault.yearnVault,
           tokenDecimals: vault.asset.decimals,
           symbol: vault.asset.symbol,
-          totalRewards: vault.totalRewards,
+          wantToken: vault.asset.contractAddress,
         })
       )) as unknown as string
       setAPR(displayAPR)
@@ -88,9 +86,8 @@ export default function EarnDeposit(): ReactElement {
     dispatch,
     vault?.asset.decimals,
     vault?.vaultAddress,
-    vault?.yearnVault,
     vault?.asset.symbol,
-    vault?.totalRewards,
+    vault?.asset.contractAddress,
   ])
 
   useEffect(() => {

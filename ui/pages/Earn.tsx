@@ -35,20 +35,18 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
     const yearlyAPR = (await dispatch(
       getPoolAPR({
         vaultAddress: vault.vaultAddress,
-        yearnVault: vault.yearnVault,
         symbol: vault.asset.symbol,
         tokenDecimals: vault.asset.decimals,
-        totalRewards: vault.totalRewards,
+        wantToken: vault.asset.contractAddress,
       })
     )) as unknown as string
     setAPR(yearlyAPR)
   }, [
     dispatch,
     vault.vaultAddress,
-    vault.yearnVault,
     vault.asset.decimals,
     vault.asset.symbol,
-    vault.totalRewards,
+    vault.asset.contractAddress,
   ])
 
   useEffect(() => {

@@ -81,6 +81,7 @@ export default class AssetDataHelper {
         "0xCb08717451aaE9EF950a2524E33B6DCaBA60147B", // crvTETH
         "0x93a08986ec9a74CB9E001702F30202f3749ceDC4", // DOGGOETH
         "0xA0DDAEd22e3a8aa512C85a13F426165861922801", // DOGGO
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
       ]
       const balances = tokens.map(async (token) => {
         const balance = await getBalance(
