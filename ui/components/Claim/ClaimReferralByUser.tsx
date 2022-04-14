@@ -1,6 +1,6 @@
 import {
   Referrer,
-  setReferrer,
+  resetReferrer,
 } from "@tallyho/tally-background/redux-slices/claim"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
@@ -24,7 +24,7 @@ export default function ClaimReferralByUser({
   const referrer: Referrer | null = useBackgroundSelector(
     (state) => state.claim.referrer
   )
-  const discardReferrer = () => dispatch(setReferrer(null))
+  const discardReferrer = () => dispatch(resetReferrer())
 
   if (referrer === null) {
     return <></>
