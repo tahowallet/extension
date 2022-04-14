@@ -7,10 +7,10 @@ import SharedProgressIndicator from "../../components/Shared/SharedProgressIndic
 const steps = [
   {
     image: {
-      width: 267.15,
-      height: 153.33,
+      width: 384,
+      height: 336,
       fileName: "onboarding/graphic_different",
-      extraStyles: `margin-top: 78px;`,
+      extraStyles: ``,
     },
     title: "Welcome to Tally Ho!",
     body: "The community owned & operated wallet.",
@@ -18,8 +18,8 @@ const steps = [
   },
   {
     image: {
-      width: 359.65,
-      height: 343.17,
+      width: 384,
+      height: 336,
       fileName: "onboarding/graphic_drop",
       extraStyles: ``,
     },
@@ -29,8 +29,8 @@ const steps = [
   },
   {
     image: {
-      width: 330,
-      height: 277,
+      width: 384,
+      height: 336,
       fileName: "onboarding/graphic_token",
       extraStyles: ``,
     },
