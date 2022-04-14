@@ -6,7 +6,7 @@ export default function SharedBackButton(): ReactElement {
   const historyPre: unknown = useHistory()
   const [redirect, setRedirect] = useState(false)
   const history = historyPre as {
-    entries: { pathName: string }[]
+    entries: { pathname: string }[]
   }
 
   if (redirect) {
@@ -14,7 +14,7 @@ export default function SharedBackButton(): ReactElement {
       <Redirect
         push
         to={{
-          pathname: history.entries[history.entries.length - 1].pathName,
+          pathname: history.entries[history.entries.length - 2].pathname,
           state: { isBack: true },
         }}
       />

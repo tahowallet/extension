@@ -161,7 +161,7 @@ export default function OnboardingVerifySeed(): ReactElement {
                       onClick={() => {
                         handleRemove(item)
                       }}
-                      icon="close"
+                      iconSmall="close"
                     >
                       {item}
                     </SharedButton>
