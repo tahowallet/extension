@@ -4,6 +4,7 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
+import SharedAddressAvatar from "../Shared/SharedAddressAvatar"
 
 export default function ClaimDelegateChoiceProfile(props: {
   name: string
@@ -20,7 +21,11 @@ export default function ClaimDelegateChoiceProfile(props: {
     <div className="wrap">
       <div className="label">Referred by</div>
       <div className="ref_block">
-        <div className="icon" />
+        {avatar ? (
+          <div className="icon" />
+        ) : (
+          <SharedAddressAvatar address={name} />
+        )}
         <div className="referrer_label">{referrerLabel}</div>
         {discard ? (
           <SharedButton type="tertiaryGray" size="small" onClick={discard}>
@@ -41,6 +46,7 @@ export default function ClaimDelegateChoiceProfile(props: {
           }
           .referrer_label {
             flex-grow: 1;
+            margin-left: 13px;
           }
           .ref_block {
             width: 352px;
@@ -57,7 +63,6 @@ export default function ClaimDelegateChoiceProfile(props: {
             width: 40px;
             height: 40px;
             border-radius: 150px;
-            margin-right: 13px;
             flex-shrink: 0;
             background-image: url("${avatar}");
             background-size: cover;

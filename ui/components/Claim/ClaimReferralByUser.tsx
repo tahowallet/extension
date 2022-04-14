@@ -41,7 +41,6 @@ export default function ClaimReferralByUser({
       </div>
       <ClaimDelegateChoiceProfile
         name={referrer.ensName ?? referrer.address ?? ""}
-        avatar={`https://effigy.im/a/${referrer.address}.png`}
         discard={discardReferrer}
       />
       <style jsx>
