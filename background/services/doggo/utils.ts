@@ -1,14 +1,11 @@
-import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
-import { Eligible, IPFSLinkItem } from "./types"
-import BaseService from "../base"
-import IndexingService from "../indexing"
-import { initialVaults } from "../../redux-slices/earn"
+import { HexString } from "../../types"
+import { IPFSLinkItem } from "./types"
 
-const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
-const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
+export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
+export const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
 
-const IPFSHTTPGatewayPrefix = "https://ipfs.io/ipfs/"
-const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
+export const IPFSHTTPGatewayPrefix = "https://ipfs.io/ipfs/"
+export const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
 
 /*
  * For context, the eligibility data is split up into files:
@@ -20,7 +17,9 @@ const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
  * ...
  * To find which file to look in, we reference claim-index.json
  */
-async function getFileHashProspect(targetAddress: string) {
+export async function getFileHashProspect(
+  targetAddress: string
+): Promise<string> {
   const numericTargetAddress = BigInt(targetAddress)
 
   const IPFSFileDirectory = await fetch(
@@ -52,7 +51,15 @@ async function getFileHashProspect(targetAddress: string) {
   return IPFSHashForFoundFile?.Hash["/"]
 }
 
-async function getClaimFromFileHash(targetAddress: string, hash: string) {
+export async function getClaimFromFileHash(
+  targetAddress: string,
+  hash: string
+): Promise<{
+  account: HexString
+  amount: string | number
+  index: HexString
+  proof: HexString[]
+}> {
   const res = await fetch(`${IPFSHTTPGatewayPrefix}${hash}`)
   let claim
   const reader = res?.body?.getReader()
@@ -91,60 +98,8 @@ async function getClaimFromFileHash(targetAddress: string, hash: string) {
 
   return (
     claim ?? {
+      account: targetAddress,
       amount: 0,
     }
   )
-}
-
-interface Events extends ServiceLifecycleEvents {
-  newEligibility: Eligible
-}
-
-/*
- * The claim service saves the eligibility data for
- * efficient storage and retrieval.
- */
-export default class ClaimService extends BaseService<Events> {
-  static create: ServiceCreatorFunction<
-    Events,
-    ClaimService,
-    [Promise<IndexingService>]
-  > = async (indexingService) => {
-    return new this(await indexingService)
-  }
-
-  private constructor(private indexingService: IndexingService) {
-    super()
-  }
-
-  protected async internalStartService(): Promise<void> {
-    await super.internalStartService()
-
-    const huntingGrounds = initialVaults
-
-    huntingGrounds.forEach(({ network, asset }) => {
-      this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
-    })
-  }
-
-  protected async internalStopService(): Promise<void> {
-    await super.internalStopService()
-  }
-
-  async getEligibility(address: string): Promise<Eligible> {
-    const fileHash = await getFileHashProspect(address)
-    const { account, amount, index, proof } = await getClaimFromFileHash(
-      address,
-      fileHash
-    )
-
-    const claim = {
-      index,
-      amount: BigInt(amount),
-      account,
-      proof,
-    }
-    this.emitter.emit("newEligibility", claim)
-    return claim
-  }
 }
