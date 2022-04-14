@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, Signature, utils } from "ethers"
 import { TransactionResponse } from "@ethersproject/abstract-provider"
-import { Eligible } from "../services/claim/types"
+import { Eligible } from "../services/doggo/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
@@ -19,6 +19,7 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 import { HOUR } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
+import { ReferrerStats } from "../services/doggo/db"
 
 export interface DAO {
   address: string
@@ -57,10 +58,12 @@ interface ClaimingState {
   currentlyClaiming: boolean
   claimError: { [address: HexString]: boolean }
   referrer: Referrer | null
+  referrerStats: ReferrerStats
 }
 
 export const DOGGO_TOKEN_ADDRESS = "0xA0DDAEd22e3a8aa512C85a13F426165861922801"
-const VOTE_WITH_FRIENDS_ADDRESS = "0x81448b6aB39a3146000D1b2876A83cAb0696c56c"
+export const VOTE_WITH_FRIENDS_ADDRESS =
+  "0x81448b6aB39a3146000D1b2876A83cAb0696c56c"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
@@ -93,6 +96,10 @@ const initialState: ClaimingState = {
   currentlyClaiming: false,
   claimError: {},
   referrer: null,
+  referrerStats: {
+    bonusTotal: 0n,
+    referredUsers: 0,
+  },
 } as ClaimingState
 
 const claimingSlice = createSlice({
@@ -157,6 +164,12 @@ const claimingSlice = createSlice({
     resetReferrer: (immerState) => {
       immerState.referrer = null
     },
+    setReferrerStats: (
+      immerState,
+      { payload: reffererStats }: { payload: ReferrerStats }
+    ) => {
+      immerState.referrerStats = reffererStats
+    },
   },
 })
 
@@ -173,6 +186,7 @@ export const {
   claimError,
   setReferrer,
   resetReferrer,
+  setReferrerStats,
 } = claimingSlice.actions
 
 export default claimingSlice.reducer
@@ -388,4 +402,9 @@ export const selectClaimSelections = createSelector(
       selectedDAO: claimState.selectedDAO,
     }
   }
+)
+
+export const selectReferrerStats = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) => claimState.referrerStats
 )

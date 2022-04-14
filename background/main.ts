@@ -9,6 +9,7 @@ import {
   encodeJSON,
   getEthereumNetwork,
   isProbablyEVMAddress,
+  normalizeEVMAddress,
 } from "./lib/utils"
 
 import {
@@ -23,7 +24,7 @@ import {
   ProviderBridgeService,
   TelemetryService,
   ServiceCreatorFunction,
-  ClaimService,
+  DoggoService,
   LedgerService,
   SigningService,
 } from "./services"
@@ -31,7 +32,7 @@ import {
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
-import { Eligible } from "./services/claim/types"
+import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -42,7 +43,11 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
-import { setEligibility, setReferrer } from "./redux-slices/claim"
+import {
+  setEligibility,
+  setReferrer,
+  setReferrerStats,
+} from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -101,6 +106,7 @@ import {
 import { ETHEREUM } from "./constants"
 import { clearApprovalInProgress } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import { ReferrerStats } from "./services/doggo/db"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -346,7 +352,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
-    const claimService = ClaimService.create(indexingService)
+    const doggoService = DoggoService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -393,7 +399,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
-      await claimService,
+      await doggoService,
       await telemetryService,
       await ledgerService,
       await signingService
@@ -448,7 +454,7 @@ export default class Main extends BaseService<never> {
      * A promise to the claim service, which saves the eligibility data
      * for efficient storage and retrieval.
      */
-    private claimService: ClaimService,
+    private doggoService: DoggoService,
     /**
      * A promise to the telemetry service, which keeps track of extension
      * storage usage and (eventually) other statistics.
@@ -520,7 +526,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
-      this.claimService.startService(),
+      this.doggoService.startService(),
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
@@ -539,7 +545,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
-      this.claimService.stopService(),
+      this.doggoService.stopService(),
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
@@ -557,7 +563,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
-    this.connectClaimService()
+    this.connectDoggoService()
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
@@ -1174,7 +1180,12 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
-      await this.claimService.getEligibility(addressNetwork.address)
+      await this.doggoService.getEligibility(addressNetwork.address)
+
+      const referrerStats = await this.doggoService.getReferrerStats(
+        addressNetwork
+      )
+      this.store.dispatch(setReferrerStats(referrerStats))
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
@@ -1199,11 +1210,35 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async connectClaimService(): Promise<void> {
-    this.claimService.emitter.on(
+  async connectDoggoService(): Promise<void> {
+    this.doggoService.emitter.on(
       "newEligibility",
       async (eligibility: Eligible) => {
         await this.store.dispatch(setEligibility(eligibility))
+      }
+    )
+
+    this.doggoService.emitter.on(
+      "newReferral",
+      async (
+        referral: {
+          referrer: AddressOnNetwork
+        } & ReferrerStats
+      ) => {
+        const { referrer, referredUsers, bonusTotal } = referral
+        const { selectedAccount } = this.store.getState().ui
+
+        if (
+          normalizeEVMAddress(referrer.address) ===
+          normalizeEVMAddress(selectedAccount.address)
+        ) {
+          this.store.dispatch(
+            setReferrerStats({
+              referredUsers,
+              bonusTotal,
+            })
+          )
+        }
       }
     )
   }

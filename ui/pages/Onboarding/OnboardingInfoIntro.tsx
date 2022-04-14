@@ -7,10 +7,10 @@ import SharedProgressIndicator from "../../components/Shared/SharedProgressIndic
 const steps = [
   {
     image: {
-      width: 267.15,
-      height: 153.33,
+      width: 384,
+      height: 336,
       fileName: "onboarding/graphic_different",
-      extraStyles: `margin-top: 78px;`,
+      extraStyles: ``,
     },
     title: "Welcome to Tally Ho!",
     body: "The community owned & operated wallet.",
@@ -18,10 +18,10 @@ const steps = [
   },
   {
     image: {
-      width: 359.65,
-      height: 343.17,
-      fileName: "onboarding/graphic_tally_token",
-      extraStyles: `margin-top: -12px;`,
+      width: 384,
+      height: 336,
+      fileName: "onboarding/graphic_drop",
+      extraStyles: ``,
     },
     title: "Tally Ho! is a DAO",
     body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
@@ -29,25 +29,14 @@ const steps = [
   },
   {
     image: {
-      width: 330,
-      height: 277,
-      fileName: "onboarding/graphic_airdrop",
-      extraStyles: `margin-top: 0px; margin-right: 0px;`,
+      width: 384,
+      height: 336,
+      fileName: "onboarding/graphic_token",
+      extraStyles: ``,
     },
     title: "Test Responsibly",
     body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
     buttonCopy: "Continue",
-  },
-  {
-    image: {
-      width: 267,
-      height: 236.6,
-      fileName: "illustration_onboarding_default",
-      extraStyles: `margin-top: 21px;`,
-    },
-    title: "TallyHo set as default",
-    body: `TallyHo will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
-    buttonCopy: "Get started",
   },
 ]
 
@@ -133,6 +122,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             height: 141px;
             align-self: flex-end;
             justify-self: flex-end;
+            z-index: 1;
           }
           p {
             font-size: 16px;
@@ -169,7 +159,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             left: 0;
             right: 0;
             margin: 0 auto;
-            margin-top: 21px;
+            margin-top: 0px;
             position: absolute;
             animation: fadeIn ease 0.5s;
             ${steps[activeStep - 1].image.extraStyles}
