@@ -122,6 +122,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             height: 141px;
             align-self: flex-end;
             justify-self: flex-end;
+            z-index: 1;
           }
           p {
             font-size: 16px;
