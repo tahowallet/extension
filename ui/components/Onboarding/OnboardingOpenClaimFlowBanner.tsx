@@ -41,7 +41,7 @@ function EligibleCTAContent({
       return <div className="claim_error ">Claiming failed. Try again</div>
     }
     if (hasAlreadyClaimed) {
-      return <div className="claim_success">Succesfully claimed</div>
+      return <div className="claim_success">Successfully claimed</div>
     }
     return <div>Wohoo! You can claim</div>
   }
