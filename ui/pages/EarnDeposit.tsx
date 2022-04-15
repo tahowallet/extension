@@ -67,28 +67,16 @@ export default function EarnDeposit(): ReactElement {
   )
 
   const getAPR = useCallback(async () => {
-    if (
-      typeof vault?.asset.decimals !== "undefined" &&
-      typeof vault?.vaultAddress !== "undefined" &&
-      typeof vault?.asset.symbol !== "undefined"
-    ) {
+    if (typeof vault?.asset !== "undefined") {
       const displayAPR = (await dispatch(
         getPoolAPR({
+          asset: vault.asset,
           vaultAddress: vault.vaultAddress,
-          tokenDecimals: vault.asset.decimals,
-          symbol: vault.asset.symbol,
-          wantToken: vault.asset.contractAddress,
         })
       )) as unknown as string
       setAPR(displayAPR)
     }
-  }, [
-    dispatch,
-    vault?.asset.decimals,
-    vault?.vaultAddress,
-    vault?.asset.symbol,
-    vault?.asset.contractAddress,
-  ])
+  }, [dispatch, vault?.asset, vault?.vaultAddress])
 
   useEffect(() => {
     getAPR()

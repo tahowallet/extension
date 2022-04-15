@@ -30,24 +30,15 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
   const [APR, setAPR] = useState("Loading...")
 
   const dispatch = useBackgroundDispatch()
-
   const fetchPoolAPRs = useCallback(async () => {
     const yearlyAPR = (await dispatch(
       getPoolAPR({
+        asset: vault.asset,
         vaultAddress: vault.vaultAddress,
-        symbol: vault.asset.symbol,
-        tokenDecimals: vault.asset.decimals,
-        wantToken: vault.asset.contractAddress,
       })
     )) as unknown as string
     setAPR(yearlyAPR)
-  }, [
-    dispatch,
-    vault.vaultAddress,
-    vault.asset.decimals,
-    vault.asset.symbol,
-    vault.asset.contractAddress,
-  ])
+  }, [dispatch, vault.asset, vault.vaultAddress])
 
   useEffect(() => {
     fetchPoolAPRs()

@@ -1,10 +1,10 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider"
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, ethers } from "ethers"
-import { formatEther, parseEther, parseUnits } from "ethers/lib/utils"
+import { parseUnits } from "ethers/lib/utils"
 import Emittery from "emittery"
 
-import { AnyAsset } from "../assets"
+import { AnyAsset, PricePoint } from "../assets"
 import { USE_MAINNET_FORK } from "../features/features"
 import { ERC20_ABI } from "../lib/erc20"
 import { fromFixedPointNumber } from "../lib/fixed-point"
@@ -44,6 +44,13 @@ export type AvailableVault = {
   duration: number
   rewardToken: HexString
   totalRewards: bigint
+}
+
+export type EnrichedAvailableVault = AvailableVault & {
+  localValueUserDeposited: string
+  localValueTotalDeposited: string
+  numberValueUserDeposited: number
+  numberValueTotalDeposited: number
 }
 
 export type EarnState = {
@@ -397,6 +404,178 @@ export const {
 
 export default earnSlice.reducer
 
+const getDoggoPrice = async (
+  assets: AssetsState,
+  mainCurrencySymbol: string
+) => {
+  // Fetching price of DOGGO from DOGGO/ETH UniswapV2Pair
+  try {
+    const doggoUniswapPairContract = await getContract(
+      DOGGOETH_PAIR,
+      UNISWAP_V2_PAIR.abi
+    )
+    const reserves = await doggoUniswapPairContract.getReserves()
+    const { reserve0, reserve1 } = reserves
+    const asset0PricePoint = selectAssetPricePoint(
+      assets,
+      "WETH",
+      mainCurrencySymbol
+    )
+    if (typeof asset0PricePoint?.amounts[1] === "undefined") return 0n
+
+    const priceOfWethReserve = reserve1.mul(
+      BigNumber.from(asset0PricePoint?.amounts[1])
+    )
+    const amountOfDoggoInLP = reserve0
+    const priceOfDoggo = priceOfWethReserve.div(amountOfDoggoInLP)
+
+    return priceOfDoggo.toBigInt()
+  } catch {
+    return 0n
+  }
+}
+
+const getUniswapPairTokenPrice = async (
+  tokenAddress: HexString,
+  assets: AssetsState,
+  mainCurrencySymbol: string
+) => {
+  const UniswapV2PairContract = await getContract(
+    tokenAddress,
+    UNISWAP_V2_PAIR.abi
+  )
+
+  const totalLPSupply = await UniswapV2PairContract.totalSupply()
+  const LPDecimals = await UniswapV2PairContract.decimals()
+
+  const reserves = await UniswapV2PairContract.getReserves()
+  const { reserve0, reserve1 } = reserves
+
+  const token0 = await UniswapV2PairContract.token0()
+
+  const token0Contract = await getContract(token0, ERC20_ABI)
+  const token0Symbol = await token0Contract.symbol()
+
+  const asset0PricePoint = selectAssetPricePoint(
+    assets,
+    token0Symbol,
+    mainCurrencySymbol
+  )
+  if (typeof asset0PricePoint?.amounts[1] !== "undefined") {
+    const token0Decimals = await token0Contract.decimals()
+    const decimalsDifferent = LPDecimals - token0Decimals
+    const tokenPrice = asset0PricePoint?.amounts[1]
+    const tokensInReserve = reserve0.mul(BigNumber.from(2))
+    const totalReserveValue = tokensInReserve.mul(tokenPrice)
+    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
+    const result =
+      decimalsDifferent > 0
+        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
+        : totalReserveValue.div(totalLPSupply)
+    return result.toBigInt()
+  }
+
+  const token1 = await UniswapV2PairContract.token1()
+  const token1Contract = await getContract(token1, ERC20_ABI)
+  const token1Symbol = await token1Contract.symbol()
+  const asset1PricePoint = selectAssetPricePoint(
+    assets,
+    token1Symbol,
+    mainCurrencySymbol
+  )
+  if (typeof asset1PricePoint?.amounts[1] !== "undefined") {
+    const token1Decimals = await token1Contract.decimals()
+    const decimalsDifferent = LPDecimals - token1Decimals
+    const tokenPrice = asset1PricePoint?.amounts[1]
+    const tokensInReserve = reserve1.mul(BigNumber.from(2))
+    const totalReserveValue = tokensInReserve.mul(tokenPrice)
+    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
+    const result =
+      decimalsDifferent > 0
+        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
+        : totalReserveValue.div(totalLPSupply)
+    return result.toBigInt()
+  }
+
+  return 0n
+}
+
+const getCurveLPTokenPrice = async (wantToken: HexString) => {
+  const curveCrypto = await fetch(
+    "https://api.curve.fi/api/getPools/ethereum/crypto"
+  )
+  const curveCryptoParsed = await curveCrypto.json()
+  const curveFactoryCrypto = await fetch(
+    "https://api.curve.fi/api/getPools/ethereum/factory-crypto"
+  )
+  const curveFactoryCryptoParsed = await curveFactoryCrypto.json()
+
+  const curvePools = [
+    ...curveCryptoParsed.data.poolData,
+    ...curveFactoryCryptoParsed.data.poolData,
+  ]
+
+  const pool = curvePools.find(
+    (curvePool) => curvePool.lpTokenAddress === wantToken
+  )
+  if (typeof pool !== "undefined") {
+    // found a curve lp token!
+    // 1 LP token is worth total supply / usdTotal
+    const totalSupplyDecimals = BigNumber.from(10).pow(BigNumber.from(18))
+    const amountOfLPTokens = BigNumber.from(pool.totalSupply).div(
+      totalSupplyDecimals
+    )
+
+    const LPTokenPrice = BigNumber.from(pool.usdTotal.toFixed()).div(
+      amountOfLPTokens
+    )
+
+    const standardizedAmount = LPTokenPrice.mul(BigNumber.from("10").pow(10))
+    return standardizedAmount.toBigInt()
+  }
+  return 0n
+}
+
+export const getTokenPrice = async (
+  asset: AnyAsset & { decimals: number; contractAddress: HexString },
+  assets: AssetsState
+): Promise<{ singleTokenPrice: bigint; pricePoint: PricePoint }> => {
+  const mainCurrencySymbol = "USD"
+  let tokenPrice
+  if (asset.symbol.startsWith("crv") || asset.symbol.startsWith("YFIETH")) {
+    tokenPrice = await getCurveLPTokenPrice(asset.contractAddress) // in USD bigint with 10 decimals
+  } else if (asset.symbol.startsWith("UNI-V2")) {
+    tokenPrice = await getUniswapPairTokenPrice(
+      asset.contractAddress,
+      assets,
+      mainCurrencySymbol
+    ) // in USD bigint with 10 decimals
+  } else {
+    // assetPricePoint.amounts[1] returns USD value with 10 decimals
+    const assetPricePoint = selectAssetPricePoint(
+      assets,
+      asset.symbol,
+      mainCurrencySymbol
+    )
+    tokenPrice = assetPricePoint?.amounts[1]
+  }
+  const bigIntDecimals = BigNumber.from("10")
+    .pow(BigNumber.from(asset.decimals))
+    .toBigInt()
+  const USDAsset = {
+    name: "United States Dollar",
+    symbol: "USD",
+    decimals: 10,
+  }
+  const imitatedPricePoint = {
+    pair: [asset, USDAsset],
+    amounts: [bigIntDecimals, tokenPrice],
+    time: 1,
+  } as PricePoint
+
+  return { singleTokenPrice: tokenPrice, pricePoint: imitatedPricePoint }
+}
+
 export const updateLockedValues = createBackgroundAsyncThunk(
   "earn/updateLockedValues",
   async (_, { getState, dispatch }) => {
@@ -613,150 +792,18 @@ export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
   }
 )
 
-const getDoggoPrice = async (
-  assets: AssetsState,
-  mainCurrencySymbol: string
-) => {
-  // Fetching price of DOGGO from DOGGO/ETH UniswapV2Pair
-  try {
-    const doggoUniswapPairContract = await getContract(
-      DOGGOETH_PAIR,
-      UNISWAP_V2_PAIR.abi
-    )
-    const reserves = await doggoUniswapPairContract.getReserves()
-    const { reserve0, reserve1 } = reserves
-    const asset0PricePoint = selectAssetPricePoint(
-      assets,
-      "WETH",
-      mainCurrencySymbol
-    )
-    if (typeof asset0PricePoint?.amounts[1] === "undefined") return 0n
-
-    const priceOfWethReserve = reserve1.mul(
-      BigNumber.from(asset0PricePoint?.amounts[1])
-    )
-    const amountOfDoggoInLP = reserve0
-    const priceOfDoggo = priceOfWethReserve.div(amountOfDoggoInLP)
-
-    return priceOfDoggo.toBigInt()
-  } catch {
-    return 0n
-  }
-}
-const getUniswapPairTokenPrice = async (
-  tokenAddress: HexString,
-  assets: AssetsState,
-  mainCurrencySymbol: string
-) => {
-  const UniswapV2PairContract = await getContract(
-    tokenAddress,
-    UNISWAP_V2_PAIR.abi
-  )
-
-  const totalLPSupply = await UniswapV2PairContract.totalSupply()
-  const LPDecimals = await UniswapV2PairContract.decimals()
-
-  const reserves = await UniswapV2PairContract.getReserves()
-  const { reserve0, reserve1 } = reserves
-
-  const token0 = await UniswapV2PairContract.token0()
-
-  const token0Contract = await getContract(token0, ERC20_ABI)
-  const token0Symbol = await token0Contract.symbol()
-
-  const asset0PricePoint = selectAssetPricePoint(
-    assets,
-    token0Symbol,
-    mainCurrencySymbol
-  )
-  if (typeof asset0PricePoint?.amounts[1] !== "undefined") {
-    const token0Decimals = await token0Contract.decimals()
-    const decimalsDifferent = LPDecimals - token0Decimals
-    const tokenPrice = asset0PricePoint?.amounts[1]
-    const tokensInReserve = reserve0.mul(BigNumber.from(2))
-    const totalReserveValue = tokensInReserve.mul(tokenPrice)
-    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
-    const result =
-      decimalsDifferent > 0
-        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
-        : totalReserveValue.div(totalLPSupply)
-    return result.toBigInt()
-  }
-
-  const token1 = await UniswapV2PairContract.token1()
-  const token1Contract = await getContract(token1, ERC20_ABI)
-  const token1Symbol = await token1Contract.symbol()
-  const asset1PricePoint = selectAssetPricePoint(
-    assets,
-    token1Symbol,
-    mainCurrencySymbol
-  )
-  if (typeof asset1PricePoint?.amounts[1] !== "undefined") {
-    const token1Decimals = await token1Contract.decimals()
-    const decimalsDifferent = LPDecimals - token1Decimals
-    const tokenPrice = asset1PricePoint?.amounts[1]
-    const tokensInReserve = reserve1.mul(BigNumber.from(2))
-    const totalReserveValue = tokensInReserve.mul(tokenPrice)
-    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
-    const result =
-      decimalsDifferent > 0
-        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
-        : totalReserveValue.div(totalLPSupply)
-    return result.toBigInt()
-  }
-
-  return 0n
-}
-
-const getCurveLPTokenPrice = async (wantToken: HexString) => {
-  const curveCrypto = await fetch(
-    "https://api.curve.fi/api/getPools/ethereum/crypto"
-  )
-  const curveCryptoParsed = await curveCrypto.json()
-  const curveFactoryCrypto = await fetch(
-    "https://api.curve.fi/api/getPools/ethereum/factory-crypto"
-  )
-  const curveFactoryCryptoParsed = await curveFactoryCrypto.json()
-
-  const curvePools = [
-    ...curveCryptoParsed.data.poolData,
-    ...curveFactoryCryptoParsed.data.poolData,
-  ]
-
-  const pool = curvePools.find(
-    (curvePool) => curvePool.lpTokenAddress === wantToken
-  )
-  if (typeof pool !== "undefined") {
-    // found a curve lp token!
-    // 1 LP token is worth total supply / usdTotal
-    const totalSupplyDecimals = BigNumber.from(10).pow(BigNumber.from(18))
-    const amountOfLPTokens = BigNumber.from(pool.totalSupply).div(
-      totalSupplyDecimals
-    )
-
-    const LPTokenPrice = BigNumber.from(pool.usdTotal.toFixed()).div(
-      amountOfLPTokens
-    )
-
-    const standardizedAmount = LPTokenPrice.mul(BigNumber.from("10").pow(10))
-    return standardizedAmount.toBigInt()
-  }
-  return 0n
-}
-
 export const getPoolAPR = createBackgroundAsyncThunk(
   "earn/getPoolAPR",
   async (
     {
+      asset,
       vaultAddress,
-      tokenDecimals,
-      symbol,
-      wantToken,
     }: {
+      asset: AnyAsset & {
+        decimals: number
+        contractAddress: HexString
+      }
       vaultAddress: HexString
-      tokenDecimals: number
-      symbol: string
-      wantToken: HexString
     },
     { getState }
   ): Promise<string> => {
@@ -808,28 +855,12 @@ export const getPoolAPR = createBackgroundAsyncThunk(
     // 7. How many tokens have been staked into the hunting ground
     const tokensStaked = await huntingGroundContract.totalSupply()
     // 8. What is the value of a single stake token
-    let tokenPrice
-    if (symbol.startsWith("crv") || symbol.startsWith("YFIETH")) {
-      tokenPrice = await getCurveLPTokenPrice(wantToken) // in USD bigint with 10 decimals
-    } else if (symbol.startsWith("UNI-V2")) {
-      tokenPrice = await getUniswapPairTokenPrice(
-        wantToken,
-        assets,
-        mainCurrencySymbol
-      ) // in USD bigint with 10 decimals
-    } else {
-      // assetPricePoint.amounts[1] returns USD value with 10 decimals
-      const assetPricePoint = selectAssetPricePoint(
-        assets,
-        symbol,
-        mainCurrencySymbol
-      )
-      tokenPrice = assetPricePoint?.amounts[1] || 0n
-    }
+    const { singleTokenPrice } = await getTokenPrice(asset, assets)
+
     // 9. What is the total value of all locked tokens
     const tokensStakedValue = tokensStaked
-      .mul(BigNumber.from(tokenPrice))
-      .div(BigNumber.from("10").pow(10 + tokenDecimals))
+      .mul(BigNumber.from(singleTokenPrice))
+      .div(BigNumber.from("10").pow(10 + asset.decimals))
     // Cannot calculate APR if no one has staked tokens
     if (tokensStakedValue.lte(BigNumber.from("0"))) return "New"
     // 10. What is the totalRewardValue / totalLocked Value ratio
