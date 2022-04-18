@@ -85,6 +85,7 @@ import {
   SignDataRequest,
 } from "./utils/signing"
 import {
+  LedgerState,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
@@ -211,7 +212,14 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   6: (prevState: any) => {
     const { ...newState } = prevState
-    newState.ledger.isArbitraryDataSigningEnabled = false
+    // If a user is upgrading from pre 0.11.0.  They will not have `ledger` in their redux store - so we need to check that it exists.
+    if (newState.ledger) {
+      Object.keys(newState.ledger.devices).forEach((deviceId) => {
+        ;(newState.ledger as LedgerState).devices[
+          deviceId
+        ].isArbitraryDataSigningEnabled = false
+      })
+    }
 
     return newState
   },
