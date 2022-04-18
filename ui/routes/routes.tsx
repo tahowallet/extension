@@ -20,6 +20,7 @@ import Swap from "../pages/Swap"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
+import MenuExportLogs from "../pages/Menu/MenuExportLogs"
 
 interface PageList {
   path: string
@@ -122,6 +123,13 @@ const pageList: PageList[] = [
     Component: Earn,
     hasTabBar: true,
     hasTopBar: true,
+    persistOnClose: true,
+  },
+  {
+    path: "/menu/export-logs",
+    Component: MenuExportLogs,
+    hasTabBar: true,
+    hasTopBar: false,
     persistOnClose: true,
   },
   {

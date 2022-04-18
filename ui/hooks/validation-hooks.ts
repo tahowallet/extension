@@ -1,3 +1,4 @@
+import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
@@ -160,7 +161,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
 
       const resolved = (await dispatch(
         resolveNameOnNetwork({ name: trimmed, network: ETHEREUM })
-      )) as unknown as string
+      )) as unknown as AddressOnNetwork | undefined
 
       // Asynchronicity means we could already have started validating another
       // value before this validation completed; ignore those cases.
@@ -169,7 +170,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
           onValidChange(undefined)
           setErrorMessage("Address could not be found")
         } else {
-          onValidChange(resolved)
+          onValidChange(resolved.address)
         }
 
         setIsValidating(false)

@@ -162,7 +162,7 @@ export default function WalletAccountBalanceControl(
             {hasSavedSeed ? (
               <div className="send_receive_button_wrap">
                 <SharedButton
-                  icon="send"
+                  iconSmall="send"
                   size="medium"
                   type="tertiary"
                   linkTo="/send"
@@ -172,7 +172,7 @@ export default function WalletAccountBalanceControl(
                 </SharedButton>
                 <SharedButton
                   onClick={handleClick}
-                  icon="receive"
+                  iconSmall="receive"
                   size="medium"
                   type="tertiary"
                   iconPosition="left"
@@ -183,8 +183,7 @@ export default function WalletAccountBalanceControl(
             ) : (
               <div className="save_seed_button_wrap">
                 <SharedButton
-                  icon="arrow_right"
-                  iconSize="large"
+                  iconSmall="arrow-right"
                   size="large"
                   type="warning"
                   linkTo="/onboarding/2"

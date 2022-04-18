@@ -138,20 +138,10 @@ export default function DAppConnectRequest(): ReactElement {
         </ul>
       </section>
       <div className="footer_actions">
-        <SharedButton
-          iconSize="large"
-          size="large"
-          type="secondary"
-          onClick={deny}
-        >
+        <SharedButton size="large" type="secondary" onClick={deny}>
           Reject
         </SharedButton>
-        <SharedButton
-          type="primary"
-          iconSize="large"
-          size="large"
-          onClick={grant}
-        >
+        <SharedButton type="primary" size="large" onClick={grant}>
           Connect
         </SharedButton>
       </div>
