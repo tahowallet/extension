@@ -8,7 +8,7 @@
     "description": "in Wallet > WalletAccountBalanceControl"
   },
   "menuHideSmallAssetBalance": {
-    "message": "隱藏小於 $$$1 的資產",
+    "message": "隱藏小於 $1 的資產",
     "description": "in pages > Menu"
   },
   "menuSetAsDefault": {
