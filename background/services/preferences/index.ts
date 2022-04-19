@@ -10,11 +10,18 @@ import { ETHEREUM } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
 
-type InMemoryAddressBook = {
+type AddressBookEntry = {
   network: EVMNetwork
   address: HexString
   name: string
-}[]
+}
+
+type InMemoryAddressBook = AddressBookEntry[]
+
+const sameEntry = (a: AddressBookEntry, b: AddressBookEntry) =>
+  a.name === b.name &&
+  a.address === b.address &&
+  sameNetwork(a.network, b.network)
 
 const BUILT_IN_CONTRACTS = [
   {
@@ -74,6 +81,27 @@ export default class PreferenceService extends BaseService<Events> {
     this.db.close()
 
     await super.internalStopService()
+  }
+
+  async addOrEditNameInAddressBook(newEntry: AddressBookEntry): Promise<void> {
+    const correspondingEntryIndex = this.addressBook.findIndex(
+      (entry) =>
+        newEntry.address === entry.address &&
+        sameNetwork(newEntry.network, entry.network)
+    )
+    if (correspondingEntryIndex) {
+      this.addressBook[correspondingEntryIndex] = newEntry
+      return
+    }
+    this.addressBook.push(newEntry)
+  }
+
+  async removeNameFromAddressBook(
+    entryToRemove: AddressBookEntry
+  ): Promise<void> {
+    this.addressBook = this.addressBook.filter(
+      (entry) => !sameEntry(entry, entryToRemove)
+    )
   }
 
   // TODO Implement the following 4 methods as something stored in the database and user-manageable.
