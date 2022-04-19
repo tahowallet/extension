@@ -19,7 +19,7 @@ const supportedBrowsers = ["brave", "chrome", "edge", "firefox", "opera"]
 
 // Replicated and adjusted for each target browser and the current build mode.
 const baseConfig: Configuration = {
-  devtool: "source-map",
+  devtool: "eval",
   stats: "errors-only",
   entry: {
     ui: "./src/ui.ts",
@@ -133,6 +133,14 @@ const modeConfigs: {
     },
   }),
   production: (browser) => ({
+    // For some reason, every source map variant embeds absolute paths, and
+    // Firefox reproducibility is required for Firefox add-on store submission.
+    // As such, in production, no source maps for firefox for full
+    // reproducibility.
+    //
+    // Ideally, we would figure out a way not to have absolute paths in source
+    // maps.
+    devtool: browser === "firefox" ? false : "source-map",
     plugins: [
       new WebExtensionArchivePlugin({
         filename: browser,
@@ -140,6 +148,10 @@ const modeConfigs: {
     ],
     optimization: {
       minimizer: [
+        // Firefox imposes filesize limits in the add-on store, so Firefox
+        // builds are mangled and compressed. In a perfect world, we would
+        // never do this so that users can inspect the code running on their
+        // system more easily.
         new TerserPlugin({
           terserOptions: {
             mangle: browser === "firefox",
