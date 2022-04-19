@@ -1,9 +1,7 @@
 import {
   AvailableVault,
-  selectEnrichedAvailableVaults,
-  updateEarnedValues,
-  updateLockedValues,
-  getPoolAPR,
+  selectAvailableVaults,
+  updateVaults,
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
@@ -19,31 +17,11 @@ import EarnDepositedCard from "../components/Earn/EarnDepositedCard"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 
 type EarnCardProps = {
-  vault: AvailableVault & {
-    localValueTotalDeposited: string | undefined
-    localValueUserDeposited: string | undefined
-  }
+  vault: AvailableVaultsWithLockedValues
   isComingSoon: boolean
 }
 
 function EarnCard({ vault, isComingSoon }: EarnCardProps) {
-  const [APR, setAPR] = useState("Loading...")
-
-  const dispatch = useBackgroundDispatch()
-  const fetchPoolAPRs = useCallback(async () => {
-    const yearlyAPR = (await dispatch(
-      getPoolAPR({
-        asset: vault.asset,
-        vaultAddress: vault.vaultAddress,
-      })
-    )) as unknown as string
-    setAPR(yearlyAPR)
-  }, [dispatch, vault.asset, vault.vaultAddress])
-
-  useEffect(() => {
-    fetchPoolAPRs()
-  }, [fetchPoolAPRs])
-
   return (
     <Link
       to={{
@@ -60,7 +38,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         </div>
         <span className="token_name">{vault?.asset?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
-        <span className="apy_percent">{APR}</span>
+        <span className="apy_percent">{vault.APR}</span>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
@@ -184,42 +162,61 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
   )
 }
 
+export type AvailableVaultsWithLockedValues = AvailableVault & {
+  localValueUserDeposited?: string
+  localValueTotalDeposited?: string
+  numberValueUserDeposited?: number
+  numberValueTotalDeposited?: number
+}
+
 export default function Earn(): ReactElement {
+  const availableVaults = useBackgroundSelector(selectAvailableVaults)
+
   const [panelNumber, setPanelNumber] = useState(0)
+  const [vaultsWithLockedValues, setVaultsWithLockedValues] =
+    useState<AvailableVaultsWithLockedValues[]>(availableVaults)
 
   const dispatch = useBackgroundDispatch()
-
-  const vaultsWithMainCurrencyValues = useBackgroundSelector(
-    selectEnrichedAvailableVaults
-  )
-
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+
+  const updateVaultsData = useCallback(async () => {
+    const updatedVaults = (await dispatch(
+      updateVaults(availableVaults)
+    )) as unknown as AvailableVault[]
+    setVaultsWithLockedValues(updatedVaults)
+
+    // todo find a different way to avoid loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch])
+
+  const getLockedValues = useCallback(async () => {
+    updateVaultsData()
+  }, [updateVaultsData])
+
+  useEffect(() => {
+    getLockedValues()
+  }, [getLockedValues])
 
   const isComingSoon = false
 
-  useEffect(() => {
-    dispatch(updateLockedValues())
-    dispatch(updateEarnedValues())
-  }, [dispatch])
-
-  const totalTVL = vaultsWithMainCurrencyValues
-    .map((item) => {
+  const totalTVL = vaultsWithLockedValues
+    ?.map((item) => {
       return typeof item.numberValueTotalDeposited !== "undefined"
         ? item.numberValueTotalDeposited
         : 0
     })
     .reduce((prev, curr) => prev + curr, 0)
 
-  const userTVL = vaultsWithMainCurrencyValues
-    .map((item) => {
+  const userTVL = vaultsWithLockedValues
+    ?.map((item) => {
       return typeof item.numberValueUserDeposited !== "undefined"
         ? item.numberValueUserDeposited
         : 0
     })
     .reduce((prev, curr) => prev + curr, 0)
 
-  const userPendingRewards = vaultsWithMainCurrencyValues
-    .map((item) => {
+  const userPendingRewards = vaultsWithLockedValues
+    ?.map((item) => {
       return fromFixedPointNumber(
         { amount: item.pendingRewards, decimals: doggoTokenDecimalDigits },
         2
@@ -252,7 +249,7 @@ export default function Earn(): ReactElement {
             <div className="pre_title">Total value locked</div>
             <div className="balance">
               <span className="currency_sign">$</span>
-              {formatCurrencyAmount(mainCurrencySymbol, totalTVL, 2)}
+              {formatCurrencyAmount(mainCurrencySymbol, totalTVL || 0, 2)}
             </div>
           </div>
           <div className="right" />
@@ -266,7 +263,7 @@ export default function Earn(): ReactElement {
       {panelNumber === 0 ? (
         <section className="standard_width">
           <ul className="cards_wrap">
-            {vaultsWithMainCurrencyValues?.map((vault) => (
+            {vaultsWithLockedValues?.map((vault) => (
               <li>
                 {/* TODO Replace isComing soon with a check if current Timestamp > vault.poolStartTime */}
                 <EarnCard vault={vault} isComingSoon={false} />
@@ -292,7 +289,7 @@ export default function Earn(): ReactElement {
             <div className="left">
               <div className="label">Total deposits</div>
               <div className="amount">
-                ${formatCurrencyAmount(mainCurrencySymbol, userTVL, 2)}
+                ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
               </div>
             </div>
             <div className="right">
@@ -301,7 +298,7 @@ export default function Earn(): ReactElement {
             </div>
           </div>
           <ul className="cards_wrap">
-            {vaultsWithMainCurrencyValues.map((vault) => {
+            {vaultsWithLockedValues?.map((vault) => {
               if (vault.userDeposited > 0n) {
                 return (
                   <li>

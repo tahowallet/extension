@@ -6,19 +6,17 @@ import {
 import {
   ApprovalTargetAllowance,
   approveApprovalTarget,
+  AvailableVault,
   checkApprovalTargetApproval,
   claimVaultRewards,
   clearSignature,
-  getPoolAPR,
   inputAmount,
   permitVaultDeposit,
   selectCurrentlyApproving,
   selectCurrentlyDepositing,
   selectDepositingProcess,
   selectEarnInputAmount,
-  selectEnrichedAvailableVaults,
-  updateEarnedValues,
-  updateLockedValues,
+  updateVaults,
   vaultDeposit,
   vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
@@ -45,43 +43,25 @@ export default function EarnDeposit(): ReactElement {
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
   const [isApproved, setIsApproved] = useState(true)
   const [deposited, setDeposited] = useState(false)
-  const [APR, setAPR] = useState("")
-  const dispatch = useBackgroundDispatch()
-
-  const history = useHistory()
 
   const { vaultAddress } = useLocation().state as {
     vaultAddress: HexString
   }
+  const vault = useBackgroundSelector((state) =>
+    state.earn.availableVaults.find(
+      (availableVault) => availableVault.vaultAddress === vaultAddress
+    )
+  )
+  const [vaultData, setVaultData] = useState<AvailableVault | undefined>(vault)
+  const dispatch = useBackgroundDispatch()
+
+  const history = useHistory()
 
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
   const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
   const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
 
-  const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
-
   const account = useBackgroundSelector(selectCurrentAccount)
-
-  const vault = enrichedVaults.find(
-    (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
-  )
-
-  const getAPR = useCallback(async () => {
-    if (typeof vault?.asset !== "undefined") {
-      const displayAPR = (await dispatch(
-        getPoolAPR({
-          asset: vault.asset,
-          vaultAddress: vault.vaultAddress,
-        })
-      )) as unknown as string
-      setAPR(displayAPR)
-    }
-  }, [dispatch, vault?.asset, vault?.vaultAddress])
-
-  useEffect(() => {
-    getAPR()
-  }, [dispatch, getAPR])
-
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
   useEffect(() => {
@@ -107,13 +87,23 @@ export default function EarnDeposit(): ReactElement {
     isCurrentlyApproving,
   ])
 
+  const getUpdatedVault = useCallback(async () => {
+    if (typeof vault !== "undefined") {
+      const updatedVault = (await dispatch(
+        updateVaults([vault])
+      )) as unknown as AvailableVault[]
+      setVaultData(updatedVault[0])
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, vault?.pendingRewards, vault?.userDeposited])
+
   useEffect(() => {
-    dispatch(updateLockedValues())
-    dispatch(updateEarnedValues())
+    getUpdatedVault()
     return () => {
       dispatch(clearSignature())
     }
-  }, [dispatch, account.address])
+  }, [dispatch, getUpdatedVault])
 
   useEffect(() => {
     if (inDepositProcess && typeof vault !== "undefined") {
@@ -132,12 +122,15 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const pendingRewards = fromFixedPointNumber(
-    { amount: vault.pendingRewards, decimals: doggoTokenDecimalDigits },
+    {
+      amount: vaultData?.pendingRewards || 0n,
+      decimals: doggoTokenDecimalDigits,
+    },
     2
   )
 
   const userDeposited = fromFixedPointNumber(
-    { amount: vault.userDeposited, decimals: vault.asset.decimals },
+    { amount: vaultData?.userDeposited || 0n, decimals: vault.asset.decimals },
     4
   )
 
@@ -185,7 +178,7 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const claimRewards = async () => {
-    dispatch(claimVaultRewards(vault.vaultAddress))
+    dispatch(claimVaultRewards(vault))
   }
 
   const handleAmountChange = (
@@ -235,13 +228,13 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Estimated APR</div>
-            <div className="amount">{APR}</div>
+            <div className="amount">{vaultData?.APR}</div>
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
             <div className="amount">
-              {vault.localValueTotalDeposited
-                ? `$${vault.localValueTotalDeposited}`
+              {vaultData?.localValueTotalDeposited
+                ? `$${vaultData?.localValueTotalDeposited}`
                 : "Unknown"}
             </div>
           </li>

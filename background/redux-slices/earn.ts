@@ -44,6 +44,11 @@ export type AvailableVault = {
   duration: number
   rewardToken: HexString
   totalRewards: bigint
+  APR?: string
+  localValueUserDeposited?: string
+  localValueTotalDeposited?: string
+  numberValueUserDeposited?: number
+  numberValueTotalDeposited?: number
 }
 
 export type EnrichedAvailableVault = AvailableVault & {
@@ -329,42 +334,16 @@ const earnSlice = createSlice({
         inputAmount: payload,
       }
     },
-    earnedOnVault: (
-      state,
-      { payload }: { payload: { vault: HexString; amount: bigint } }
-    ) => {
+    updateVaultsStats: (state, { payload }: { payload: AvailableVault[] }) => {
       return {
         ...state,
-        availableVaults: state.availableVaults.map((availableVault) =>
-          availableVault.vaultAddress === payload.vault
-            ? { ...availableVault, pendingRewards: payload.amount }
-            : availableVault
-        ),
-      }
-    },
-    lockedAmounts: (
-      state,
-      {
-        payload,
-      }: {
-        payload: {
-          vault: AvailableVault
-          userLockedValue: bigint
-          totalTVL: bigint
-        }
-      }
-    ) => {
-      return {
-        ...state,
-        availableVaults: state.availableVaults.map((availableVault) =>
-          availableVault.vaultAddress === payload.vault.vaultAddress
-            ? {
-                ...availableVault,
-                userDeposited: payload.userLockedValue,
-                totalDeposited: payload.totalTVL,
-              }
-            : availableVault
-        ),
+        availableVaults: state.availableVaults.map((availableVault) => {
+          const currentVault = payload.find(
+            (updatedVault) =>
+              availableVault.vaultAddress === updatedVault.vaultAddress
+          )
+          return currentVault || availableVault
+        }),
       }
     },
     depositError: (immerState, { payload }: { payload: boolean }) => {
@@ -393,9 +372,8 @@ export const {
   saveAllowance,
   currentlyDepositing,
   currentlyApproving,
-  earnedOnVault,
   depositError,
-  lockedAmounts,
+  updateVaultsStats,
   inputAmount,
   clearSignature,
   clearInput,
@@ -576,17 +554,91 @@ export const getTokenPrice = async (
   return { singleTokenPrice: tokenPrice, pricePoint: imitatedPricePoint }
 }
 
-export const updateLockedValues = createBackgroundAsyncThunk(
+const getPoolAPR = async ({
+  asset,
+  assets,
+  vaultAddress,
+}: {
+  asset: AnyAsset & {
+    decimals: number
+    contractAddress: HexString
+  }
+  assets: AssetsState
+  vaultAddress: HexString
+}): Promise<string> => {
+  function nFormatter(num: number, digits: number) {
+    const lookup = [
+      { value: 1, symbol: "" },
+      { value: 1e3, symbol: "k" },
+      { value: 1e6, symbol: "M" },
+      { value: 1e9, symbol: "B" },
+    ]
+    const item = lookup
+      .slice()
+      .reverse()
+      .find(function check(item1) {
+        return num >= item1.value
+      })
+    return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
+  }
+
+  const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
+
+  // 1. How much rewards are stored in the hunting ground
+  const doggoContract = await getContract(DOGGO_TOKEN_ADDRESS, ERC20_ABI)
+  // ! This will be incorrect because it counts rewards that are not yet claimed.
+  const huntingGroundRemainingRewards = await doggoContract.balanceOf(
+    vaultAddress
+  )
+  // 2. How long will the rewards be distributed for in seconds
+  const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
+  const currentTimestamp = await getCurrentTimestamp()
+  const periodEndBN = await huntingGroundContract.periodFinish()
+  const remainingPeriodSeconds = periodEndBN.toNumber() - currentTimestamp
+  // 3. How many of those periods fit in a year
+  const secondsInAYear = BigNumber.from(31556926)
+  const periodsPerYear = secondsInAYear.div(remainingPeriodSeconds)
+  // 4. What is the value of single reward token in USD bigint with 10 decimals
+  const rewardTokenPrice = await getDoggoPrice(assets, mainCurrencySymbol)
+  // 5. What is the total value of all tokens to be distributed in given period
+  const rewardsRemainingValue = huntingGroundRemainingRewards
+    .div(BigNumber.from("10").pow(doggoTokenDecimalDigits))
+    .mul(rewardTokenPrice)
+    .div(BigNumber.from("10").pow(10))
+
+  // 6. Multiply the above value by number of periods fitting in a year
+  const totalYearlyRewardsValue = rewardsRemainingValue.mul(periodsPerYear)
+  // 7. How many tokens have been staked into the hunting ground
+  const tokensStaked = await huntingGroundContract.totalSupply()
+  // 8. What is the value of a single stake token
+  const { singleTokenPrice } = await getTokenPrice(asset, assets)
+
+  // 9. What is the total value of all locked tokens
+  const tokensStakedValue = tokensStaked
+    .mul(BigNumber.from(singleTokenPrice))
+    .div(BigNumber.from("10").pow(10 + asset.decimals))
+  // Cannot calculate APR if no one has staked tokens
+  if (tokensStakedValue.lte(BigNumber.from("0"))) return "New"
+  // 10. What is the totalRewardValue / totalLocked Value ratio
+  const rewardRatio = totalYearlyRewardsValue.div(tokensStakedValue)
+  // 11. Multiply that ratio by 100 to receive percentage
+  const percentageAPR = rewardRatio.mul(BigNumber.from(100))
+  return `${nFormatter(percentageAPR.toNumber(), 1)}%`
+}
+
+export const updateVaults = createBackgroundAsyncThunk(
   "earn/updateLockedValues",
-  async (_, { getState, dispatch }) => {
+  async (vaultsToUpdate: AvailableVault[], { getState, dispatch }) => {
     const currentState = getState()
-    const { earn } = currentState as { earn: EarnState }
-    const { availableVaults } = earn
+    const { assets } = currentState as {
+      earn: EarnState
+      assets: AssetsState
+    }
     const provider = getProvider()
     const signer = provider.getSigner()
     const account = signer.getAddress()
 
-    availableVaults.map(async (vault) => {
+    const vaultsWithNewValues = vaultsToUpdate.map(async (vault) => {
       const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
       const userLockedValue: BigNumber = await vaultContract.balanceOf(account)
       const yearnVaultContract = await getContract(
@@ -598,23 +650,46 @@ export const updateLockedValues = createBackgroundAsyncThunk(
       const newUserLockedValue = userLockedValue
         .mul(pricePerShare)
         .div(BigNumber.from("10").pow(yearnVaultDecimals))
-      const totalTVL: BigNumber = await yearnVaultContract.balanceOf(
-        vault.vaultAddress
+      const totalSupply: BigNumber = await vaultContract.totalSupply()
+      const newTotalTVL = totalSupply
+        .mul(pricePerShare)
+        .div(BigNumber.from("10").pow(yearnVaultDecimals))
+
+      const earned: BigNumber = await vaultContract.earned(account)
+
+      const vaultAPR = await getPoolAPR({
+        asset: vault.asset,
+        assets,
+        vaultAddress: vault.vaultAddress,
+      })
+
+      const { pricePoint } = await getTokenPrice(vault.asset, assets)
+      const userTVL = enrichAssetAmountWithMainCurrencyValues(
+        { amount: vault.userDeposited, asset: vault.asset },
+        pricePoint,
+        2
+      )
+      const totalTVL = enrichAssetAmountWithMainCurrencyValues(
+        { amount: vault.totalDeposited, asset: vault.asset },
+        pricePoint,
+        2
       )
 
-      dispatch(
-        lockedAmounts({
-          vault,
-          userLockedValue: newUserLockedValue.toBigInt(),
-          totalTVL: totalTVL.toBigInt(),
-        })
-      )
       return {
         ...vault,
         userDeposited: newUserLockedValue.toBigInt(),
-        totalDeposited: totalTVL.toBigInt(),
+        totalDeposited: newTotalTVL.toBigInt(),
+        pendingRewards: earned.toBigInt(),
+        localValueUserDeposited: userTVL.localizedMainCurrencyAmount,
+        localValueTotalDeposited: totalTVL.localizedMainCurrencyAmount,
+        numberValueUserDeposited: userTVL.mainCurrencyAmount,
+        numberValueTotalDeposited: totalTVL.mainCurrencyAmount,
+        APR: vaultAPR,
       }
     })
+    const updatedVaults = await Promise.all(vaultsWithNewValues)
+    dispatch(updateVaultsStats(updatedVaults))
+    return updatedVaults
   }
 )
 
@@ -629,7 +704,7 @@ export const vaultWithdraw = createBackgroundAsyncThunk(
     const tx = await vaultContract.functions["withdraw()"]()
     const receipt = await tx.wait()
     if (receipt.status === 1) {
-      dispatch(updateLockedValues())
+      dispatch(updateVaults([vault]))
     }
   }
 )
@@ -685,7 +760,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       if (receipt.status === 1) {
         dispatch(currentlyDepositing(false))
         dispatch(clearSignature())
-        dispatch(updateLockedValues())
+        dispatch(updateVaults([vault]))
         await emitter.emit("earnDeposit", "Asset successfully deposited")
         return
       }
@@ -699,40 +774,21 @@ export const vaultDeposit = createBackgroundAsyncThunk(
   }
 )
 
-export const updateEarnedValues = createBackgroundAsyncThunk(
-  "earn/updateEarnedOnDepositedPools",
-  async (_, { getState, dispatch }) => {
-    const currentState = getState()
-    const { earn } = currentState as { earn: EarnState }
-    const { availableVaults } = earn
-    const provider = getProvider()
-    const signer = provider.getSigner()
-    const account = signer.getAddress()
-    availableVaults.forEach(async (vault) => {
-      const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
-      const earned: BigNumber = await vaultContract.earned(account)
-      dispatch(
-        earnedOnVault({ vault: vault.vaultAddress, amount: earned.toBigInt() })
-      )
-    })
-  }
-)
-
 export const claimVaultRewards = createBackgroundAsyncThunk(
   "earn/clamRewards",
-  async (vaultContractAddress: HexString, { dispatch }) => {
+  async (vault: AvailableVault, { dispatch }) => {
     const provider = getProvider()
     const signer = provider.getSigner()
 
     const vaultContract = new ethers.Contract(
-      vaultContractAddress,
+      vault.vaultAddress,
       VAULT_ABI,
       signer
     )
     const tx = await vaultContract.functions["getReward()"]()
     const response = signer.sendTransaction(tx)
     await tx.wait(response)
-    dispatch(updateEarnedValues())
+    dispatch(updateVaults([vault]))
   }
 )
 
@@ -789,85 +845,6 @@ export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
     } catch (err) {
       return undefined
     }
-  }
-)
-
-export const getPoolAPR = createBackgroundAsyncThunk(
-  "earn/getPoolAPR",
-  async (
-    {
-      asset,
-      vaultAddress,
-    }: {
-      asset: AnyAsset & {
-        decimals: number
-        contractAddress: HexString
-      }
-      vaultAddress: HexString
-    },
-    { getState }
-  ): Promise<string> => {
-    const state = getState()
-    const { assets } = state as { assets: AssetsState }
-
-    function nFormatter(num: number, digits: number) {
-      const lookup = [
-        { value: 1, symbol: "" },
-        { value: 1e3, symbol: "k" },
-        { value: 1e6, symbol: "M" },
-        { value: 1e9, symbol: "B" },
-      ]
-      const item = lookup
-        .slice()
-        .reverse()
-        .find(function check(item1) {
-          return num >= item1.value
-        })
-      return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
-    }
-
-    const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
-
-    // 1. How much rewards are stored in the hunting ground
-    const doggoContract = await getContract(DOGGO_TOKEN_ADDRESS, ERC20_ABI)
-    // ! This will be incorrect because it counts rewards that are not yet claimed.
-    const huntingGroundRemainingRewards = await doggoContract.balanceOf(
-      vaultAddress
-    )
-    // 2. How long will the rewards be distributed for in seconds
-    const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
-    const currentTimestamp = await getCurrentTimestamp()
-    const periodEndBN = await huntingGroundContract.periodFinish()
-    const remainingPeriodSeconds = periodEndBN.toNumber() - currentTimestamp
-    // 3. How many of those periods fit in a year
-    const secondsInAYear = BigNumber.from(31556926)
-    const periodsPerYear = secondsInAYear.div(remainingPeriodSeconds)
-    // 4. What is the value of single reward token in USD bigint with 10 decimals
-    const rewardTokenPrice = await getDoggoPrice(assets, mainCurrencySymbol)
-    // 5. What is the total value of all tokens to be distributed in given period
-    const rewardsRemainingValue = huntingGroundRemainingRewards
-      .div(BigNumber.from("10").pow(doggoTokenDecimalDigits))
-      .mul(rewardTokenPrice)
-      .div(BigNumber.from("10").pow(10))
-
-    // 6. Multiply the above value by number of periods fitting in a year
-    const totalYearlyRewardsValue = rewardsRemainingValue.mul(periodsPerYear)
-    // 7. How many tokens have been staked into the hunting ground
-    const tokensStaked = await huntingGroundContract.totalSupply()
-    // 8. What is the value of a single stake token
-    const { singleTokenPrice } = await getTokenPrice(asset, assets)
-
-    // 9. What is the total value of all locked tokens
-    const tokensStakedValue = tokensStaked
-      .mul(BigNumber.from(singleTokenPrice))
-      .div(BigNumber.from("10").pow(10 + asset.decimals))
-    // Cannot calculate APR if no one has staked tokens
-    if (tokensStakedValue.lte(BigNumber.from("0"))) return "New"
-    // 10. What is the totalRewardValue / totalLocked Value ratio
-    const rewardRatio = totalYearlyRewardsValue.div(tokensStakedValue)
-    // 11. Multiply that ratio by 100 to receive percentage
-    const percentageAPR = rewardRatio.mul(BigNumber.from(100))
-    return `${nFormatter(percentageAPR.toNumber(), 1)}%`
   }
 )
 
@@ -985,41 +962,4 @@ export const selectEarnInputAmount = createSelector(
 export const selectDepositingProcess = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => earnState.depositingProcess
-)
-
-export const selectEnrichedAvailableVaults = createSelector(
-  (state: { earn: EarnState }): EarnState => state.earn,
-  (state: { assets: AssetsState }): AssetsState => state.assets,
-  (earnState: EarnState, assetsState: AssetsState) => {
-    // FIXME make this proper main currency
-    const mainCurrencySymbol = "USD"
-    const vaultsWithMainCurrencyValues = earnState.availableVaults.map(
-      (vault) => {
-        const assetPricePoint = selectAssetPricePoint(
-          assetsState,
-          vault.asset.symbol,
-          mainCurrencySymbol
-        )
-        const userTVL = enrichAssetAmountWithMainCurrencyValues(
-          { amount: vault.userDeposited, asset: vault.asset },
-          assetPricePoint,
-          2
-        )
-        const totalTVL = enrichAssetAmountWithMainCurrencyValues(
-          { amount: vault.totalDeposited, asset: vault.asset },
-          assetPricePoint,
-          2
-        )
-
-        return {
-          ...vault,
-          localValueUserDeposited: userTVL.localizedMainCurrencyAmount,
-          localValueTotalDeposited: totalTVL.localizedMainCurrencyAmount,
-          numberValueUserDeposited: userTVL.mainCurrencyAmount,
-          numberValueTotalDeposited: totalTVL.mainCurrencyAmount,
-        }
-      }
-    )
-    return vaultsWithMainCurrencyValues
-  }
 )
