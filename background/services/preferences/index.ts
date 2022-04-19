@@ -10,7 +10,7 @@ import { ETHEREUM } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
 
-type AddressBookEntry = {
+export type AddressBookEntry = {
   network: EVMNetwork
   address: HexString
   name: string
@@ -87,13 +87,13 @@ export default class PreferenceService extends BaseService<Events> {
   // TODO Implement the following 6 methods as something stored in the database and user-manageable.
   // TODO Track account names in the UI in the address book.
 
-  async addOrEditNameInAddressBook(newEntry: AddressBookEntry): Promise<void> {
+  addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
     const correspondingEntryIndex = this.addressBook.findIndex(
       (entry) =>
         newEntry.address === entry.address &&
         sameNetwork(newEntry.network, entry.network)
     )
-    if (correspondingEntryIndex) {
+    if (correspondingEntryIndex !== -1) {
       this.addressBook[correspondingEntryIndex] = newEntry
     } else {
       this.addressBook.push(newEntry)
@@ -101,9 +101,7 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("addressBookEntryModified", newEntry)
   }
 
-  async removeNameFromAddressBook(
-    entryToRemove: AddressBookEntry
-  ): Promise<void> {
+  removeNameFromAddressBook(entryToRemove: AddressBookEntry): void {
     this.addressBook = this.addressBook.filter(
       (entry) => !sameEntry(entry, entryToRemove)
     )

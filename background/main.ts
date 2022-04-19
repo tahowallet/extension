@@ -1156,6 +1156,14 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("refreshBackgroundPage", async () => {
       window.location.reload()
     })
+
+    uiSliceEmitter.on("addOrEditAddressName", async ({ name, address }) => {
+      this.preferenceService.addOrEditNameInAddressBook({
+        network: ETHEREUM,
+        name,
+        address,
+      })
+    })
   }
 
   connectTelemetryService(): void {

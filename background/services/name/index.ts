@@ -63,9 +63,6 @@ type Events = ServiceLifecycleEvents & {
 // A minimum record expiry that avoids infinite resolution loops.
 const MINIMUM_RECORD_EXPIRY = 10 * SECOND
 
-// The initial state of the cache of resolved names.
-const EMPTY_NAME_CACHE_STATE = { EVM: { [ETHEREUM.chainID]: {} } }
-
 /**
  * The NameService is responsible for resolving human-readable names into
  * addresses and other metadata across multiple networks, caching where
@@ -94,7 +91,7 @@ export default class NameService extends BaseService<Events> {
         [address: HexString]: ResolvedNameRecord | undefined
       }
     }
-  } = EMPTY_NAME_CACHE_STATE
+  } = { EVM: { [ETHEREUM.chainID]: {} } }
 
   /**
    * Create a new NameService. The service isn't initialized until
@@ -128,8 +125,9 @@ export default class NameService extends BaseService<Events> {
 
     preferenceService.emitter.on(
       "addressBookEntryModified",
-      ({ network, address }) => {
+      async ({ network, address }) => {
         this.clearNameCacheEntry(network.chainID, address)
+        await this.lookUpName({ network, address })
       }
     )
 
