@@ -41,6 +41,7 @@ interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
+  addressBookEntryModified: AddressBookEntry
 }
 
 /*
@@ -94,9 +95,10 @@ export default class PreferenceService extends BaseService<Events> {
     )
     if (correspondingEntryIndex) {
       this.addressBook[correspondingEntryIndex] = newEntry
-      return
+    } else {
+      this.addressBook.push(newEntry)
     }
-    this.addressBook.push(newEntry)
+    this.emitter.emit("addressBookEntryModified", newEntry)
   }
 
   async removeNameFromAddressBook(
@@ -105,6 +107,7 @@ export default class PreferenceService extends BaseService<Events> {
     this.addressBook = this.addressBook.filter(
       (entry) => !sameEntry(entry, entryToRemove)
     )
+    this.emitter.emit("addressBookEntryModified", entryToRemove)
   }
 
   async lookUpAddressForName({
