@@ -212,14 +212,23 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   6: (prevState: any) => {
     const { ...newState } = prevState
-    // If a user is upgrading from pre 0.11.0.  They will not have `ledger` in their redux store - so we need to check that it exists.
-    if (newState.ledger) {
-      Object.keys(newState.ledger.devices).forEach((deviceId) => {
-        ;(newState.ledger as LedgerState).devices[
-          deviceId
-        ].isArbitraryDataSigningEnabled = false
-      })
+
+    // A user might be upgrading from version without the `ledger` key in the redux store - so we
+    // initialize it here if that is the case.
+    if (!newState.ledger) {
+      newState.ledger = {
+        currentDeviceID: null,
+        devices: {},
+        usbDeviceCount: 0,
+      }
+      return newState
     }
+
+    Object.keys(newState.ledger.devices).forEach((deviceId) => {
+      ;(newState.ledger as LedgerState).devices[
+        deviceId
+      ].isArbitraryDataSigningEnabled = false
+    })
 
     return newState
   },
