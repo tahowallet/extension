@@ -26,9 +26,11 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
   const httpURL = getAsHttpURL(logoURL)
 
+  const shouldDisplayTokenIcon = Boolean(httpURL || hasHardcodedIcon)
+
   return (
     <div className={`token_icon_wrap ${size}`}>
-      {httpURL ? (
+      {shouldDisplayTokenIcon ? (
         <div className="token_icon" />
       ) : (
         <div className={`token_icon_fallback ${size}`}>
