@@ -83,6 +83,9 @@ export default class PreferenceService extends BaseService<Events> {
     await super.internalStopService()
   }
 
+  // TODO Implement the following 6 methods as something stored in the database and user-manageable.
+  // TODO Track account names in the UI in the address book.
+
   async addOrEditNameInAddressBook(newEntry: AddressBookEntry): Promise<void> {
     const correspondingEntryIndex = this.addressBook.findIndex(
       (entry) =>
@@ -104,8 +107,6 @@ export default class PreferenceService extends BaseService<Events> {
     )
   }
 
-  // TODO Implement the following 4 methods as something stored in the database and user-manageable.
-  // TODO Track account names in the UI in the address book.
   async lookUpAddressForName({
     name,
     network,
