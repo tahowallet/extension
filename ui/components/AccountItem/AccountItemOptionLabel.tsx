@@ -1,32 +1,40 @@
 import classNames from "classnames"
 import React, { ReactElement } from "react"
 
-interface RemoveAddressProps {
+interface AccountitemOptionLabelProps {
   hoverable?: boolean
+  label: string
+  icon: string
+  color?: string
+  hoverColor?: string
 }
 
-export default function RemoveAddressLabel({
+export default function AccountitemOptionLabel({
   hoverable,
-}: RemoveAddressProps): ReactElement {
+  label,
+  icon,
+  color,
+  hoverColor,
+}: AccountitemOptionLabelProps): ReactElement {
   return (
     <div className={classNames("remove_address", { hover: hoverable })}>
-      <div className="icon_garbage" />
-      <span>Remove address</span>
+      <div className="icon" />
+      <span>{label}</span>
       <style jsx>{`
-          .icon_garbage {
-            mask-image: url("./images/garbage@2x.png");
+          .icon {
+            mask-image: url("./images/${icon}");
             mask-size: cover;
             color: blue;
-            background-color: var(--error);
+            background-color: ${color || "var(--green-20)"};
             width: 16px;
             margin-right: 5px;
             height: 16px;
           }
           .remove_address {
             display: flex;
+            color: ${color || "var(--green-20)"};
             flexDirection: row;
             align-items: center;
-            color: var(--error);
             font-size: 16px;
             height: 100%;
             line-height 24px;
@@ -34,15 +42,15 @@ export default function RemoveAddressLabel({
             width: 100%;
           }
           .hover:hover {
-            color: var(--error-80);
+            color: ${hoverColor || "#fff"};
           }
-          .hover:hover .icon_garbage {
-            background-color: var(--error-80);
+          .hover:hover .icon {
+            background-color: ${hoverColor || "#fff"};
           }
         `}</style>
     </div>
   )
 }
-RemoveAddressLabel.defaultProps = {
+AccountitemOptionLabel.defaultProps = {
   hoverable: false,
 }

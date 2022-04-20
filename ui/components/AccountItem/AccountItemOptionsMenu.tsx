@@ -3,8 +3,8 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement, useRef, useState } from "react"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import AccountitemOptionLabel from "./AccountItemOptionLabel"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
-import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
@@ -82,7 +82,11 @@ export default function AccountItemOptionsMenu({
                 setShowAddressRemoveConfirm(true)
               }}
             >
-              <RemoveAddressLabel hoverable />
+              <AccountitemOptionLabel
+                icon="icons/s/edit.svg"
+                label="Edit name"
+                hoverable
+              />
             </button>
             <button
               type="button"
@@ -94,6 +98,25 @@ export default function AccountItemOptionsMenu({
               }}
             >
               <div className="icon_close" />
+            </button>
+          </li>
+          <li className="option">
+            <button
+              className="remove_address_button"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowOptionsMenu(false)
+                setShowAddressRemoveConfirm(true)
+              }}
+            >
+              <AccountitemOptionLabel
+                icon="garbage@2x.png"
+                label="Remove address"
+                hoverable
+                color="var(--error)"
+                hoverColor="var(--error-80)"
+              />
             </button>
           </li>
         </ul>
@@ -128,7 +151,7 @@ export default function AccountItemOptionsMenu({
             background-color: var(--green-120);
             display: flex;
             align-items: center;
-            flex-direction: row;
+            flex-direction: column;
             justify-content: space-between;
             width: 212px;
             border-radius: 4px;
@@ -138,7 +161,7 @@ export default function AccountItemOptionsMenu({
             line-height: 24px;
             padding: 14px;
             flex-direction: row;
-            width: 100%;
+            width: 90%;
             align-items: center;
             height: 100%;
             cursor: default;
