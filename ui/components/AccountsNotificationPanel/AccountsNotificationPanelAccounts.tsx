@@ -73,8 +73,7 @@ function WalletTypeHeader({
             <SharedButton
               type="tertiaryGray"
               size="small"
-              icon="plus"
-              iconSize="medium"
+              iconSmall="add"
               onClick={() => {
                 if (areKeyringsUnlocked) {
                   onClickAddAddress()
@@ -290,8 +289,7 @@ export default function AccountsNotificationPanelAccounts({
         <SharedButton
           type="tertiary"
           size="medium"
-          icon="plus"
-          iconSize="medium"
+          iconSmall="add"
           iconPosition="left"
           linkTo="/onboarding/add-wallet"
         >
