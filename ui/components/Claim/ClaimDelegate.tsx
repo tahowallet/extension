@@ -125,7 +125,10 @@ export default function ClaimDelegate(props: {
                         className="delegate_details"
                         htmlFor={delegate.ensName}
                       >
-                        <SharedAddressAvatar address={delegate.address ?? ""} />
+                        <SharedAddressAvatar
+                          address={delegate.address ?? ""}
+                          url={delegate?.avatar}
+                        />
                         <div className="delegate_info">
                           <div className="name">
                             {delegate.ensName && delegate.ensName.length > 0
