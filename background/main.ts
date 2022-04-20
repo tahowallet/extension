@@ -560,6 +560,20 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  async addOrEditAddressName({
+    name,
+    address,
+  }: {
+    name: string
+    address: HexString
+  }): Promise<void> {
+    this.preferenceService.addOrEditNameInAddressBook({
+      network: ETHEREUM,
+      name,
+      address,
+    })
+  }
+
   async removeAccount(
     address: HexString,
     signingMethod: SigningMethod
@@ -762,6 +776,7 @@ export default class Main extends BaseService<never> {
           nameOnNetwork: { name },
         },
       }) => {
+        console.log("Got new name!", name)
         this.store.dispatch(updateENSName({ ...addressOnNetwork, name }))
       }
     )
@@ -1155,14 +1170,6 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("refreshBackgroundPage", async () => {
       window.location.reload()
-    })
-
-    uiSliceEmitter.on("addOrEditAddressName", async ({ name, address }) => {
-      this.preferenceService.addOrEditNameInAddressBook({
-        network: ETHEREUM,
-        name,
-        address,
-      })
     })
   }
 

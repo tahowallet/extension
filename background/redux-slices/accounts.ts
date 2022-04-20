@@ -322,6 +322,16 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
   }
 )
 
+export const addOrEditAddressName = createBackgroundAsyncThunk(
+  "account/addOrEditAddressName",
+  async (
+    payload: { name: string; address: HexString },
+    { extra: { main } }
+  ) => {
+    await main.addOrEditAddressName(payload)
+  }
+)
+
 export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
   async (address: HexString, { dispatch, extra: { main } }) => {

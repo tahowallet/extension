@@ -146,13 +146,6 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   }
 )
 
-export const addOrEditAddressName = createBackgroundAsyncThunk(
-  "ui/addOrEditAddressName",
-  async (payload: { name: string; address: HexString }) => {
-    await emitter.emit("addOrEditAddressName", payload)
-  }
-)
-
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
