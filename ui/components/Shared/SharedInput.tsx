@@ -13,6 +13,7 @@ interface Props<T> {
   onFocus?: () => void
   errorMessage?: string
   autoFocus?: boolean
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   autoSelect?: boolean
   parseAndValidate: (
     value: string
@@ -33,6 +34,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     autoFocus = false,
     autoSelect = false,
     parseAndValidate,
+    onKeyDown,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -74,6 +76,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         onInput={(event: ChangeEvent<HTMLInputElement>) =>
           handleInputChange(event.target.value)
         }
+        onKeyDown={onKeyDown}
         onFocus={onFocus}
         className={classNames({
           error: errorMessage,

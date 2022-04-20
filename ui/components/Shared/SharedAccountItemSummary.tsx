@@ -1,8 +1,12 @@
 import React, { ReactElement } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
 
+import { useDispatch } from "react-redux"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
+import SharedIcon from "./SharedIcon"
+import { SharedTypedInput } from "./SharedInput"
 
 interface Props {
   isSelected?: boolean
@@ -19,6 +23,14 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
     localizedTotalMainCurrencyAmount,
   } = accountTotal
 
+  const dispatch = useDispatch()
+  const [localName, setLocalName] = React.useState(name ?? "")
+  const [editing, setEditing] = React.useState(false)
+
+  React.useEffect(() => {
+    setLocalName(name ?? "")
+  }, [name])
+
   return (
     <li className="standard_width">
       <div className="summary">
@@ -33,7 +45,50 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
 
           <div className="info">
             <div className="address_name">
-              {typeof name === "undefined" ? shortenedAddress : name}
+              {editing ? (
+                <div role="presentation" onClick={(e) => e.stopPropagation()}>
+                  <SharedTypedInput
+                    label=""
+                    parseAndValidate={(value) => {
+                      return { parsed: value }
+                    }}
+                    onChange={(value) => {
+                      if (typeof value === "string") {
+                        setLocalName(value)
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation()
+                      if (e.key === "Enter") {
+                        dispatch(
+                          addOrEditAddressName({
+                            address: accountTotal.address,
+                            name: localName,
+                          })
+                        )
+                        setEditing(false)
+                      }
+                      if (e.key === "Escape") {
+                        setEditing(false)
+                        setLocalName(name ?? "")
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <>
+                  {typeof name === "undefined" ? shortenedAddress : name}{" "}
+                  <SharedIcon
+                    icon="edit@2x.png"
+                    color="var(--gold-80)"
+                    width={12}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditing(true)
+                    }}
+                  />
+                </>
+              )}
             </div>
             <div className="address">
               {typeof name !== "undefined" ? shortenedAddress : ""}
@@ -103,6 +158,10 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
         .address_name {
           color: #fff;
           font-size: 18px;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
           font-weight: 600;
         }
         .address {
