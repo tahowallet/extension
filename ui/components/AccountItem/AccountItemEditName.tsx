@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemActionHeader from "./AccountItemActionHeader"
+import SharedInput from "../Shared/SharedInput"
 
 interface AccountItemEditNameProps {
   account: AccountTotal
@@ -19,7 +20,7 @@ export default function AccountItemEditName({
 }: AccountItemEditNameProps): ReactElement {
   const dispatch = useDispatch()
   return (
-    <div className="remove_address_option">
+    <div className="edit_address_name">
       <div className="header">
         <AccountItemActionHeader
           label="Edit name"
@@ -38,8 +39,7 @@ export default function AccountItemEditName({
         </li>
       </ul>
       <div className="details">
-        This Is Where Input Will Go This Is Where Input Will Go This Is Where
-        Input Will Go This Is Where Input Will Go This Is Where Input Will Go{" "}
+        <SharedInput label="" placeholder="Type new name" />
       </div>
       <div className="button_container">
         <SharedButton
@@ -53,7 +53,7 @@ export default function AccountItemEditName({
           Cancel
         </SharedButton>
         <SharedButton
-          type="primary"
+          type="primaryGreen"
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
@@ -74,12 +74,11 @@ export default function AccountItemEditName({
         .header {
           height: 24px;
         }
-        .remove_address_option {
+        .edit_address_name {
           margin-left: 20px;
           margin-right: 20px;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
           height: 95%;
         }
         .details {
@@ -87,14 +86,16 @@ export default function AccountItemEditName({
           flex-direction: column;
           line-height: 24px;
           font-size 16px;
+          margin-top: 21px;
         }
         .button_container {
+          margin-top: 52px;
           display: flex;
           flex-direction: row;
           justify-content: space-between;
         }
         .account_container {
-          margin-top: -10px;
+          margin-top: 15px;
           background-color: var(--hunter-green);
           padding: 5px;
           border-radius: 16px;

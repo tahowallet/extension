@@ -29,7 +29,7 @@ export default function AccountItemOptionsMenu({
     <div className="options_menu_warp">
       <SharedSlideUpMenu
         size="custom"
-        customSize="336px"
+        customSize="304px"
         isOpen={showAddressRemoveConfirm || showEditName}
         close={(e) => {
           e?.stopPropagation()
