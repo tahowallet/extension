@@ -189,13 +189,9 @@ export default function Earn(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch])
 
-  const getLockedValues = useCallback(async () => {
+  useEffect(() => {
     updateVaultsData()
   }, [updateVaultsData])
-
-  useEffect(() => {
-    getLockedValues()
-  }, [getLockedValues])
 
   const isComingSoon = false
 
