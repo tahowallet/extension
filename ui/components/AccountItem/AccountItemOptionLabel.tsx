@@ -17,20 +17,19 @@ export default function AccountitemOptionLabel({
   hoverColor,
 }: AccountitemOptionLabelProps): ReactElement {
   return (
-    <div className={classNames("remove_address", { hover: hoverable })}>
+    <div className={classNames("option_label", { hover: hoverable })}>
       <div className="icon" />
       <span>{label}</span>
       <style jsx>{`
           .icon {
             mask-image: url("./images/${icon}");
             mask-size: cover;
-            color: blue;
             background-color: ${color || "var(--green-20)"};
             width: 16px;
             margin-right: 5px;
             height: 16px;
           }
-          .remove_address {
+          .option_label {
             display: flex;
             color: ${color || "var(--green-20)"};
             flexDirection: row;

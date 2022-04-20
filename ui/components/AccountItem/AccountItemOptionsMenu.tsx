@@ -3,6 +3,7 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement, useRef, useState } from "react"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import AccountItemEditName from "./AccountItemEditName"
 import AccountitemOptionLabel from "./AccountItemOptionLabel"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 
@@ -18,6 +19,7 @@ export default function AccountItemOptionsMenu({
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
+  const [showEditName, setShowEditName] = useState(false)
   const optionsMenuRef = useRef(null)
   useOnClickOutside(optionsMenuRef, () => {
     setShowOptionsMenu(false)
@@ -28,9 +30,10 @@ export default function AccountItemOptionsMenu({
       <SharedSlideUpMenu
         size="custom"
         customSize="336px"
-        isOpen={showAddressRemoveConfirm}
+        isOpen={showAddressRemoveConfirm || showEditName}
         close={(e) => {
           e?.stopPropagation()
+          setShowEditName(false)
           setShowAddressRemoveConfirm(false)
         }}
       >
@@ -39,11 +42,20 @@ export default function AccountItemOptionsMenu({
           onClick={(e) => e.stopPropagation()}
           style={{ cursor: "default" }}
         >
-          <AccountItemRemovalConfirm
-            address={address}
-            account={accountTotal}
-            close={() => setShowAddressRemoveConfirm(false)}
-          />
+          {showEditName && (
+            <AccountItemEditName
+              address={address}
+              account={accountTotal}
+              close={() => setShowEditName(false)}
+            />
+          )}
+          {showAddressRemoveConfirm && (
+            <AccountItemRemovalConfirm
+              address={address}
+              account={accountTotal}
+              close={() => setShowAddressRemoveConfirm(false)}
+            />
+          )}
         </div>
       </SharedSlideUpMenu>
       <button
@@ -79,7 +91,7 @@ export default function AccountItemOptionsMenu({
               onClick={(e) => {
                 e.stopPropagation()
                 setShowOptionsMenu(false)
-                setShowAddressRemoveConfirm(true)
+                setShowEditName(true)
               }}
             >
               <AccountitemOptionLabel
