@@ -404,8 +404,8 @@ const getDoggoPrice = async (
     const priceOfWethReserve = reserve1.mul(
       BigNumber.from(asset0PricePoint?.amounts[1])
     )
-    const amountOfDoggoInLP = reserve0
-    const priceOfDoggo = priceOfWethReserve.div(amountOfDoggoInLP)
+    const amountOfDoggoInPair = reserve0
+    const priceOfDoggo = priceOfWethReserve.div(amountOfDoggoInPair)
 
     return priceOfDoggo.toBigInt()
   } catch {
@@ -548,7 +548,7 @@ export const getTokenPrice = async (
   const imitatedPricePoint = {
     pair: [asset, USDAsset],
     amounts: [bigIntDecimals, tokenPrice],
-    time: 1,
+    time: Date.now(),
   } as PricePoint
 
   return { singleTokenPrice: tokenPrice, pricePoint: imitatedPricePoint }
