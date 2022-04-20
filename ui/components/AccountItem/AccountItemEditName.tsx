@@ -1,6 +1,7 @@
+import React, { ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
-import React, { ReactElement } from "react"
+import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
 import { useDispatch } from "react-redux"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
@@ -19,6 +20,7 @@ export default function AccountItemEditName({
   close,
 }: AccountItemEditNameProps): ReactElement {
   const dispatch = useDispatch()
+  const [newName, setNewName] = React.useState("")
   return (
     <div className="edit_address_name">
       <div className="header">
@@ -39,7 +41,13 @@ export default function AccountItemEditName({
         </li>
       </ul>
       <div className="details">
-        <SharedInput label="" placeholder="Type new name" />
+        <SharedInput
+          label=""
+          placeholder="Type new name"
+          onChange={(value) => {
+            setNewName(value)
+          }}
+        />
       </div>
       <div className="button_container">
         <SharedButton
@@ -57,6 +65,13 @@ export default function AccountItemEditName({
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
+            dispatch(
+              addOrEditAddressName({
+                name: newName,
+                address,
+              })
+            )
+            close()
           }}
         >
           Save name

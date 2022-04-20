@@ -24,12 +24,6 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
   } = accountTotal
 
   const dispatch = useDispatch()
-  const [localName, setLocalName] = React.useState(name ?? "")
-  const [editing, setEditing] = React.useState(false)
-
-  React.useEffect(() => {
-    setLocalName(name ?? "")
-  }, [name])
 
   return (
     <li className="standard_width">
@@ -45,50 +39,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
 
           <div className="info">
             <div className="address_name">
-              {editing ? (
-                <div role="presentation" onClick={(e) => e.stopPropagation()}>
-                  <SharedTypedInput
-                    label=""
-                    parseAndValidate={(value) => {
-                      return { parsed: value }
-                    }}
-                    onChange={(value) => {
-                      if (typeof value === "string") {
-                        setLocalName(value)
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      e.stopPropagation()
-                      if (e.key === "Enter") {
-                        dispatch(
-                          addOrEditAddressName({
-                            address: accountTotal.address,
-                            name: localName,
-                          })
-                        )
-                        setEditing(false)
-                      }
-                      if (e.key === "Escape") {
-                        setEditing(false)
-                        setLocalName(name ?? "")
-                      }
-                    }}
-                  />
-                </div>
-              ) : (
-                <>
-                  {typeof name === "undefined" ? shortenedAddress : name}{" "}
-                  <SharedIcon
-                    icon="edit@2x.png"
-                    color="var(--gold-80)"
-                    width={12}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditing(true)
-                    }}
-                  />
-                </>
-              )}
+              {typeof name === "undefined" ? shortenedAddress : name}{" "}
             </div>
             <div className="address">
               {typeof name !== "undefined" ? shortenedAddress : ""}
