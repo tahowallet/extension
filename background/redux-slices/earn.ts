@@ -22,7 +22,6 @@ import { AssetsState, selectAssetPricePoint } from "./assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "./utils/asset-utils"
 import { doggoTokenDecimalDigits, ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
-import { DOGGO_TOKEN_ADDRESS } from "./claim"
 import YEARN_VAULT_ABI from "../lib/yearnVault"
 import UNISWAP_V2_PAIR from "../lib/uniswapPair"
 
@@ -413,11 +412,43 @@ const getDoggoPrice = async (
   }
 }
 
+const getLPTokenValue = async (
+  mainCurrencySymbol: string,
+  assets: AssetsState,
+  token: HexString,
+  reserve: BigNumber,
+  LPDecimals: number,
+  totalLPSupply: BigNumber
+): Promise<bigint | undefined> => {
+  const token0Contract = await getContract(token, ERC20_ABI)
+  const token0Symbol = await token0Contract.symbol()
+
+  const assetPricePoint = selectAssetPricePoint(
+    assets,
+    token0Symbol,
+    mainCurrencySymbol
+  )
+  if (typeof assetPricePoint?.amounts[1] !== "undefined") {
+    const token0Decimals = await token0Contract.decimals()
+    const decimalsDifferent = LPDecimals - token0Decimals
+    const tokenPrice = assetPricePoint?.amounts[1]
+    const tokensInReserve = reserve.mul(BigNumber.from(2))
+    const totalReserveValue = tokensInReserve.mul(tokenPrice)
+    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
+    const result =
+      decimalsDifferent > 0
+        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
+        : totalReserveValue.div(totalLPSupply)
+    return result.toBigInt()
+  }
+  return undefined
+}
+
 const getUniswapPairTokenPrice = async (
   tokenAddress: HexString,
   assets: AssetsState,
   mainCurrencySymbol: string
-) => {
+): Promise<bigint> => {
   const UniswapV2PairContract = await getContract(
     tokenAddress,
     UNISWAP_V2_PAIR.abi
@@ -431,49 +462,29 @@ const getUniswapPairTokenPrice = async (
 
   const token0 = await UniswapV2PairContract.token0()
 
-  const token0Contract = await getContract(token0, ERC20_ABI)
-  const token0Symbol = await token0Contract.symbol()
-
-  const asset0PricePoint = selectAssetPricePoint(
+  const priceFromToken0 = await getLPTokenValue(
+    mainCurrencySymbol,
     assets,
-    token0Symbol,
-    mainCurrencySymbol
+    token0,
+    reserve0,
+    LPDecimals,
+    totalLPSupply
   )
-  if (typeof asset0PricePoint?.amounts[1] !== "undefined") {
-    const token0Decimals = await token0Contract.decimals()
-    const decimalsDifferent = LPDecimals - token0Decimals
-    const tokenPrice = asset0PricePoint?.amounts[1]
-    const tokensInReserve = reserve0.mul(BigNumber.from(2))
-    const totalReserveValue = tokensInReserve.mul(tokenPrice)
-    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
-    const result =
-      decimalsDifferent > 0
-        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
-        : totalReserveValue.div(totalLPSupply)
-    return result.toBigInt()
-  }
+
+  if (typeof priceFromToken0 !== "undefined") return priceFromToken0
 
   const token1 = await UniswapV2PairContract.token1()
-  const token1Contract = await getContract(token1, ERC20_ABI)
-  const token1Symbol = await token1Contract.symbol()
-  const asset1PricePoint = selectAssetPricePoint(
+
+  const priceFromToken1 = await getLPTokenValue(
+    mainCurrencySymbol,
     assets,
-    token1Symbol,
-    mainCurrencySymbol
+    token1,
+    reserve1,
+    LPDecimals,
+    totalLPSupply
   )
-  if (typeof asset1PricePoint?.amounts[1] !== "undefined") {
-    const token1Decimals = await token1Contract.decimals()
-    const decimalsDifferent = LPDecimals - token1Decimals
-    const tokenPrice = asset1PricePoint?.amounts[1]
-    const tokensInReserve = reserve1.mul(BigNumber.from(2))
-    const totalReserveValue = tokensInReserve.mul(tokenPrice)
-    const missingDecimals = BigNumber.from("10").pow(decimalsDifferent)
-    const result =
-      decimalsDifferent > 0
-        ? totalReserveValue.mul(missingDecimals).div(totalLPSupply)
-        : totalReserveValue.div(totalLPSupply)
-    return result.toBigInt()
-  }
+
+  if (typeof priceFromToken1 !== "undefined") return priceFromToken1
 
   return 0n
 }
@@ -536,6 +547,10 @@ export const getTokenPrice = async (
       mainCurrencySymbol
     )
     tokenPrice = assetPricePoint?.amounts[1]
+
+    if (typeof tokenPrice === "undefined") {
+      tokenPrice = 0n
+    }
   }
   const bigIntDecimals = BigNumber.from("10")
     .pow(BigNumber.from(asset.decimals))
@@ -584,17 +599,15 @@ const getPoolAPR = async ({
 
   const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
 
-  // 1. How much rewards are stored in the hunting ground
-  const doggoContract = await getContract(DOGGO_TOKEN_ADDRESS, ERC20_ABI)
-  // ! This will be incorrect because it counts rewards that are not yet claimed.
-  const huntingGroundRemainingRewards = await doggoContract.balanceOf(
-    vaultAddress
-  )
-  // 2. How long will the rewards be distributed for in seconds
+  // 1. How long will the rewards be distributed for in seconds
   const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
   const currentTimestamp = await getCurrentTimestamp()
   const periodEndBN = await huntingGroundContract.periodFinish()
   const remainingPeriodSeconds = periodEndBN.toNumber() - currentTimestamp
+
+  // 2. How much rewards are stored in the hunting ground
+  const rewardRate = await huntingGroundContract.rewardRate()
+  const huntingGroundRemainingRewards = rewardRate.mul(remainingPeriodSeconds)
   // 3. How many of those periods fit in a year
   const secondsInAYear = BigNumber.from(31556926)
   const periodsPerYear = secondsInAYear.div(remainingPeriodSeconds)
