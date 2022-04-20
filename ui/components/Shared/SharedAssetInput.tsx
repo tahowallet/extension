@@ -500,6 +500,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             justify-content: space-between;
             padding: 0px 16px;
             box-sizing: border-box;
+            position: relative;
           }
           .asset_input {
             width: 100%;
