@@ -100,14 +100,10 @@ export default function OnboardingVerifySeed(): ReactElement {
   })
 
   function hasUserSelectedCorrectOrder() {
-    let result = true
-
-    selectedInOrder.forEach((selectedIndex, i) => {
-      if (sortedIndexesOfRandomOrderedMnemonicPart[i] !== selectedIndex) {
-        result = false
-      }
-    })
-    return result
+    return !selectedInOrder.some(
+      (selectedIndex, i) =>
+        sortedIndexesOfRandomOrderedMnemonicPart[i] !== selectedIndex
+    )
   }
 
   const handleAdd = (mnemonicWordIndex: number) => {
