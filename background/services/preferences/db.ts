@@ -98,7 +98,7 @@ export class PreferenceDatabase extends Dexie {
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: [
-                "https://ipfs.fleek.co/ipfs/bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la",
+                "https://ipfs.io/ipfs/bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la",
                 ...storedPreferences.tokenLists.urls,
               ],
             }

@@ -45,8 +45,8 @@ const steps = [
       fileName: "illustration_onboarding_default",
       extraStyles: `margin-top: 21px;`,
     },
-    title: "TallyHo set as default",
-    body: `TallyHo will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
+    title: "Tally Ho set as default",
+    body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
     buttonCopy: "Get started",
   },
 ]
