@@ -10,7 +10,7 @@ import { ETHEREUM } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
 
-export type AddressBookEntry = {
+type AddressBookEntry = {
   network: EVMNetwork
   address: HexString
   name: string

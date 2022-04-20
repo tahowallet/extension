@@ -776,7 +776,6 @@ export default class Main extends BaseService<never> {
           nameOnNetwork: { name },
         },
       }) => {
-        console.log("Got new name!", name)
         this.store.dispatch(updateENSName({ ...addressOnNetwork, name }))
       }
     )

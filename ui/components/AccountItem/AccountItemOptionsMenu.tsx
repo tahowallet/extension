@@ -30,10 +30,30 @@ export default function AccountItemOptionsMenu({
       <SharedSlideUpMenu
         size="custom"
         customSize="304px"
-        isOpen={showAddressRemoveConfirm || showEditName}
+        isOpen={showEditName}
         close={(e) => {
           e?.stopPropagation()
           setShowEditName(false)
+        }}
+      >
+        <div
+          role="presentation"
+          onClick={(e) => e.stopPropagation()}
+          style={{ cursor: "default" }}
+        >
+          <AccountItemEditName
+            address={address}
+            account={accountTotal}
+            close={() => setShowEditName(false)}
+          />
+        </div>
+      </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        size="custom"
+        customSize="336px"
+        isOpen={showAddressRemoveConfirm}
+        close={(e) => {
+          e?.stopPropagation()
           setShowAddressRemoveConfirm(false)
         }}
       >
@@ -42,20 +62,11 @@ export default function AccountItemOptionsMenu({
           onClick={(e) => e.stopPropagation()}
           style={{ cursor: "default" }}
         >
-          {showEditName && (
-            <AccountItemEditName
-              address={address}
-              account={accountTotal}
-              close={() => setShowEditName(false)}
-            />
-          )}
-          {showAddressRemoveConfirm && (
-            <AccountItemRemovalConfirm
-              address={address}
-              account={accountTotal}
-              close={() => setShowAddressRemoveConfirm(false)}
-            />
-          )}
+          <AccountItemRemovalConfirm
+            address={address}
+            account={accountTotal}
+            close={() => setShowAddressRemoveConfirm(false)}
+          />
         </div>
       </SharedSlideUpMenu>
       <button

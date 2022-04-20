@@ -30,16 +30,9 @@ export default function AccountItemEditName({
           color="#fff"
         />
       </div>
-      <ul>
-        <li className="account_container">
-          <li className="standard_width">
-            <SharedAccountItemSummary
-              accountTotal={account}
-              isSelected={false}
-            />
-          </li>
-        </li>
-      </ul>
+      <div className="account_container standard_width">
+        <SharedAccountItemSummary accountTotal={account} isSelected={false} />
+      </div>
       <div className="details">
         <SharedInput
           label=""
@@ -79,12 +72,7 @@ export default function AccountItemEditName({
       </div>
       <style jsx>{`
         li {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin: 0 auto;
-          width: 336px;
-          height: 52px;
+
         }
         .header {
           height: 24px;
@@ -110,6 +98,12 @@ export default function AccountItemEditName({
           justify-content: space-between;
         }
         .account_container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 0 auto;
+          width: 336px;
+          height: 52px;
           margin-top: 15px;
           background-color: var(--hunter-green);
           padding: 5px;
