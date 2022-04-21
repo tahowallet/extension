@@ -203,7 +203,6 @@ const YEARN_VAULT_ABI = [
     name: "apiVersion",
     inputs: [],
     outputs: [{ name: "", type: "string" }],
-    gas: 4546,
   },
   {
     stateMutability: "nonpayable",
@@ -211,7 +210,6 @@ const YEARN_VAULT_ABI = [
     name: "setName",
     inputs: [{ name: "name", type: "string" }],
     outputs: [],
-    gas: 107044,
   },
   {
     stateMutability: "nonpayable",
@@ -219,7 +217,6 @@ const YEARN_VAULT_ABI = [
     name: "setSymbol",
     inputs: [{ name: "symbol", type: "string" }],
     outputs: [],
-    gas: 71894,
   },
   {
     stateMutability: "nonpayable",
@@ -227,7 +224,6 @@ const YEARN_VAULT_ABI = [
     name: "setGovernance",
     inputs: [{ name: "governance", type: "address" }],
     outputs: [],
-    gas: 36365,
   },
   {
     stateMutability: "nonpayable",
@@ -235,7 +231,6 @@ const YEARN_VAULT_ABI = [
     name: "acceptGovernance",
     inputs: [],
     outputs: [],
-    gas: 37637,
   },
   {
     stateMutability: "nonpayable",
@@ -243,7 +238,6 @@ const YEARN_VAULT_ABI = [
     name: "setManagement",
     inputs: [{ name: "management", type: "address" }],
     outputs: [],
-    gas: 37775,
   },
   {
     stateMutability: "nonpayable",
@@ -251,7 +245,6 @@ const YEARN_VAULT_ABI = [
     name: "setGuestList",
     inputs: [{ name: "guestList", type: "address" }],
     outputs: [],
-    gas: 37805,
   },
   {
     stateMutability: "nonpayable",
@@ -259,7 +252,6 @@ const YEARN_VAULT_ABI = [
     name: "setRewards",
     inputs: [{ name: "rewards", type: "address" }],
     outputs: [],
-    gas: 37835,
   },
   {
     stateMutability: "nonpayable",
@@ -267,7 +259,6 @@ const YEARN_VAULT_ABI = [
     name: "setLockedProfitDegration",
     inputs: [{ name: "degration", type: "uint256" }],
     outputs: [],
-    gas: 36519,
   },
   {
     stateMutability: "nonpayable",
@@ -275,7 +266,6 @@ const YEARN_VAULT_ABI = [
     name: "setDepositLimit",
     inputs: [{ name: "limit", type: "uint256" }],
     outputs: [],
-    gas: 37795,
   },
   {
     stateMutability: "nonpayable",
@@ -283,7 +273,6 @@ const YEARN_VAULT_ABI = [
     name: "setPerformanceFee",
     inputs: [{ name: "fee", type: "uint256" }],
     outputs: [],
-    gas: 37929,
   },
   {
     stateMutability: "nonpayable",
@@ -291,7 +280,6 @@ const YEARN_VAULT_ABI = [
     name: "setManagementFee",
     inputs: [{ name: "fee", type: "uint256" }],
     outputs: [],
-    gas: 37959,
   },
   {
     stateMutability: "nonpayable",
@@ -299,7 +287,6 @@ const YEARN_VAULT_ABI = [
     name: "setGuardian",
     inputs: [{ name: "guardian", type: "address" }],
     outputs: [],
-    gas: 39203,
   },
   {
     stateMutability: "nonpayable",
@@ -307,7 +294,6 @@ const YEARN_VAULT_ABI = [
     name: "setEmergencyShutdown",
     inputs: [{ name: "active", type: "bool" }],
     outputs: [],
-    gas: 39274,
   },
   {
     stateMutability: "nonpayable",
@@ -315,7 +301,6 @@ const YEARN_VAULT_ABI = [
     name: "setWithdrawalQueue",
     inputs: [{ name: "queue", type: "address[20]" }],
     outputs: [],
-    gas: 763950,
   },
   {
     stateMutability: "nonpayable",
@@ -326,7 +311,6 @@ const YEARN_VAULT_ABI = [
       { name: "amount", type: "uint256" },
     ],
     outputs: [{ name: "", type: "bool" }],
-    gas: 76768,
   },
   {
     stateMutability: "nonpayable",
@@ -338,7 +322,6 @@ const YEARN_VAULT_ABI = [
       { name: "amount", type: "uint256" },
     ],
     outputs: [{ name: "", type: "bool" }],
-    gas: 116531,
   },
   {
     stateMutability: "nonpayable",
@@ -349,7 +332,6 @@ const YEARN_VAULT_ABI = [
       { name: "amount", type: "uint256" },
     ],
     outputs: [{ name: "", type: "bool" }],
-    gas: 38271,
   },
   {
     stateMutability: "nonpayable",
@@ -360,7 +342,6 @@ const YEARN_VAULT_ABI = [
       { name: "amount", type: "uint256" },
     ],
     outputs: [{ name: "", type: "bool" }],
-    gas: 40312,
   },
   {
     stateMutability: "nonpayable",
@@ -371,7 +352,6 @@ const YEARN_VAULT_ABI = [
       { name: "amount", type: "uint256" },
     ],
     outputs: [{ name: "", type: "bool" }],
-    gas: 40336,
   },
   {
     stateMutability: "nonpayable",
@@ -385,7 +365,6 @@ const YEARN_VAULT_ABI = [
       { name: "signature", type: "bytes" },
     ],
     outputs: [{ name: "", type: "bool" }],
-    gas: 81264,
   },
   {
     stateMutability: "view",
@@ -393,7 +372,6 @@ const YEARN_VAULT_ABI = [
     name: "totalAssets",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 4098,
   },
   {
     stateMutability: "nonpayable",
@@ -425,7 +403,6 @@ const YEARN_VAULT_ABI = [
     name: "maxAvailableShares",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 383839,
   },
   {
     stateMutability: "nonpayable",
@@ -468,7 +445,6 @@ const YEARN_VAULT_ABI = [
     name: "pricePerShare",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 18195,
   },
   {
     stateMutability: "nonpayable",
@@ -482,7 +458,6 @@ const YEARN_VAULT_ABI = [
       { name: "performanceFee", type: "uint256" },
     ],
     outputs: [],
-    gas: 1485796,
   },
   {
     stateMutability: "nonpayable",
@@ -493,7 +468,6 @@ const YEARN_VAULT_ABI = [
       { name: "debtRatio", type: "uint256" },
     ],
     outputs: [],
-    gas: 115193,
   },
   {
     stateMutability: "nonpayable",
@@ -504,7 +478,6 @@ const YEARN_VAULT_ABI = [
       { name: "minDebtPerHarvest", type: "uint256" },
     ],
     outputs: [],
-    gas: 42441,
   },
   {
     stateMutability: "nonpayable",
@@ -515,7 +488,6 @@ const YEARN_VAULT_ABI = [
       { name: "maxDebtPerHarvest", type: "uint256" },
     ],
     outputs: [],
-    gas: 42471,
   },
   {
     stateMutability: "nonpayable",
@@ -526,7 +498,6 @@ const YEARN_VAULT_ABI = [
       { name: "performanceFee", type: "uint256" },
     ],
     outputs: [],
-    gas: 41251,
   },
   {
     stateMutability: "nonpayable",
@@ -537,7 +508,6 @@ const YEARN_VAULT_ABI = [
       { name: "newVersion", type: "address" },
     ],
     outputs: [],
-    gas: 1141468,
   },
   {
     stateMutability: "nonpayable",
@@ -559,7 +529,6 @@ const YEARN_VAULT_ABI = [
     name: "addStrategyToQueue",
     inputs: [{ name: "strategy", type: "address" }],
     outputs: [],
-    gas: 1199804,
   },
   {
     stateMutability: "nonpayable",
@@ -567,7 +536,6 @@ const YEARN_VAULT_ABI = [
     name: "removeStrategyFromQueue",
     inputs: [{ name: "strategy", type: "address" }],
     outputs: [],
-    gas: 23088703,
   },
   {
     stateMutability: "view",
@@ -603,7 +571,6 @@ const YEARN_VAULT_ABI = [
     name: "availableDepositLimit",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 9551,
   },
   {
     stateMutability: "view",
@@ -629,7 +596,6 @@ const YEARN_VAULT_ABI = [
       { name: "_debtPayment", type: "uint256" },
     ],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 1015170,
   },
   {
     stateMutability: "nonpayable",
@@ -654,7 +620,6 @@ const YEARN_VAULT_ABI = [
     name: "name",
     inputs: [],
     outputs: [{ name: "", type: "string" }],
-    gas: 8750,
   },
   {
     stateMutability: "view",
@@ -662,7 +627,6 @@ const YEARN_VAULT_ABI = [
     name: "symbol",
     inputs: [],
     outputs: [{ name: "", type: "string" }],
-    gas: 7803,
   },
   {
     stateMutability: "view",
@@ -670,7 +634,6 @@ const YEARN_VAULT_ABI = [
     name: "decimals",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2408,
   },
   {
     stateMutability: "view",
@@ -678,7 +641,6 @@ const YEARN_VAULT_ABI = [
     name: "precisionFactor",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2438,
   },
   {
     stateMutability: "view",
@@ -686,7 +648,6 @@ const YEARN_VAULT_ABI = [
     name: "balanceOf",
     inputs: [{ name: "arg0", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2683,
   },
   {
     stateMutability: "view",
@@ -697,7 +658,6 @@ const YEARN_VAULT_ABI = [
       { name: "arg1", type: "address" },
     ],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2928,
   },
   {
     stateMutability: "view",
@@ -705,7 +665,6 @@ const YEARN_VAULT_ABI = [
     name: "totalSupply",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2528,
   },
   {
     stateMutability: "view",
@@ -713,7 +672,6 @@ const YEARN_VAULT_ABI = [
     name: "token",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
-    gas: 2558,
   },
   {
     stateMutability: "view",
@@ -721,7 +679,6 @@ const YEARN_VAULT_ABI = [
     name: "governance",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
-    gas: 2588,
   },
   {
     stateMutability: "view",
@@ -729,7 +686,6 @@ const YEARN_VAULT_ABI = [
     name: "management",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
-    gas: 2618,
   },
   {
     stateMutability: "view",
@@ -737,7 +693,6 @@ const YEARN_VAULT_ABI = [
     name: "guardian",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
-    gas: 2648,
   },
   {
     stateMutability: "view",
@@ -745,7 +700,6 @@ const YEARN_VAULT_ABI = [
     name: "guestList",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
-    gas: 2678,
   },
   {
     stateMutability: "view",
@@ -763,7 +717,6 @@ const YEARN_VAULT_ABI = [
       { name: "totalGain", type: "uint256" },
       { name: "totalLoss", type: "uint256" },
     ],
-    gas: 11031,
   },
   {
     stateMutability: "view",
@@ -771,7 +724,6 @@ const YEARN_VAULT_ABI = [
     name: "withdrawalQueue",
     inputs: [{ name: "arg0", type: "uint256" }],
     outputs: [{ name: "", type: "address" }],
-    gas: 2847,
   },
   {
     stateMutability: "view",
@@ -779,7 +731,6 @@ const YEARN_VAULT_ABI = [
     name: "emergencyShutdown",
     inputs: [],
     outputs: [{ name: "", type: "bool" }],
-    gas: 2768,
   },
   {
     stateMutability: "view",
@@ -787,7 +738,6 @@ const YEARN_VAULT_ABI = [
     name: "depositLimit",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2798,
   },
   {
     stateMutability: "view",
@@ -795,7 +745,6 @@ const YEARN_VAULT_ABI = [
     name: "debtRatio",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2828,
   },
   {
     stateMutability: "view",
@@ -803,7 +752,6 @@ const YEARN_VAULT_ABI = [
     name: "totalDebt",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2858,
   },
   {
     stateMutability: "view",
@@ -811,7 +759,6 @@ const YEARN_VAULT_ABI = [
     name: "lastReport",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2888,
   },
   {
     stateMutability: "view",
@@ -819,7 +766,6 @@ const YEARN_VAULT_ABI = [
     name: "activation",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2918,
   },
   {
     stateMutability: "view",
@@ -827,7 +773,6 @@ const YEARN_VAULT_ABI = [
     name: "lockedProfit",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2948,
   },
   {
     stateMutability: "view",
@@ -835,7 +780,6 @@ const YEARN_VAULT_ABI = [
     name: "lockedProfitDegration",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 2978,
   },
   {
     stateMutability: "view",
@@ -843,7 +787,6 @@ const YEARN_VAULT_ABI = [
     name: "rewards",
     inputs: [],
     outputs: [{ name: "", type: "address" }],
-    gas: 3008,
   },
   {
     stateMutability: "view",
@@ -851,7 +794,6 @@ const YEARN_VAULT_ABI = [
     name: "managementFee",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 3038,
   },
   {
     stateMutability: "view",
@@ -859,7 +801,6 @@ const YEARN_VAULT_ABI = [
     name: "performanceFee",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 3068,
   },
   {
     stateMutability: "view",
@@ -867,7 +808,6 @@ const YEARN_VAULT_ABI = [
     name: "nonces",
     inputs: [{ name: "arg0", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
-    gas: 3313,
   },
   {
     stateMutability: "view",
@@ -875,7 +815,6 @@ const YEARN_VAULT_ABI = [
     name: "DOMAIN_SEPARATOR",
     inputs: [],
     outputs: [{ name: "", type: "bytes32" }],
-    gas: 3128,
   },
 ]
 
