@@ -19,7 +19,7 @@ const supportedBrowsers = ["brave", "chrome", "edge", "firefox", "opera"]
 
 // Replicated and adjusted for each target browser and the current build mode.
 const baseConfig: Configuration = {
-  devtool: "eval",
+  devtool: "source-map",
   stats: "errors-only",
   entry: {
     ui: "./src/ui.ts",
