@@ -102,13 +102,6 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("addressBookEntryModified", newEntry)
   }
 
-  removeNameFromAddressBook(entryToRemove: AddressBookEntry): void {
-    this.addressBook = this.addressBook.filter(
-      (entry) => !sameAddressBookEntry(entry, entryToRemove)
-    )
-    this.emitter.emit("addressBookEntryModified", entryToRemove)
-  }
-
   async lookUpAddressForName({
     name,
     network,
