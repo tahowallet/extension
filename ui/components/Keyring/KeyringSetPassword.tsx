@@ -54,7 +54,7 @@ export default function KeyringSetPassword(): ReactElement {
   return (
     <section className="standard_width">
       <div className="top">
-        <SharedBackButton />
+        <SharedBackButton path="/" />
         <div className="wordmark" />
       </div>
       <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
