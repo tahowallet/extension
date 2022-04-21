@@ -226,7 +226,7 @@ const accountSlice = createSlice({
         }, {})
       )
     },
-    updateENSName: (
+    updateAccountName: (
       immerState,
       {
         payload: addressNetworkName,
@@ -284,7 +284,7 @@ const accountSlice = createSlice({
 export const {
   loadAccount,
   updateAccountBalance,
-  updateENSName,
+  updateAccountName,
   updateENSAvatar,
 } = accountSlice.actions
 
