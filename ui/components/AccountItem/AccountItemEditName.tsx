@@ -21,6 +21,17 @@ export default function AccountItemEditName({
 }: AccountItemEditNameProps): ReactElement {
   const dispatch = useDispatch()
   const [newName, setNewName] = React.useState("")
+  const [error, setError] = React.useState("")
+  const [touched, setTouched] = React.useState(false)
+
+  React.useEffect(() => {
+    if (touched && newName.trim() === "") {
+      setError("Name is required")
+    } else {
+      setError("")
+    }
+  }, [newName, error, touched])
+
   return (
     <div className="edit_address_name">
       <div className="header">
@@ -37,7 +48,24 @@ export default function AccountItemEditName({
         <SharedInput
           label=""
           placeholder="Type new name"
+          errorMessage={error}
+          onPressEnter={(e) => {
+            if (error) {
+              e.stopPropagation()
+              return
+            }
+            dispatch(
+              addOrEditAddressName({
+                name: newName,
+                address,
+              })
+            )
+            close()
+          }}
           onChange={(value) => {
+            if (!touched) {
+              setTouched(true)
+            }
             setNewName(value)
           }}
         />
@@ -57,7 +85,10 @@ export default function AccountItemEditName({
           type="primaryGreen"
           size="medium"
           onClick={(e) => {
-            e.stopPropagation()
+            if (error) {
+              e.stopPropagation()
+              return
+            }
             dispatch(
               addOrEditAddressName({
                 name: newName,

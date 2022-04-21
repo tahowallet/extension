@@ -11,9 +11,9 @@ interface Props<T> {
   value?: string | undefined
   onChange?: (value: T | undefined) => void
   onFocus?: () => void
+  onPressEnter?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   errorMessage?: string
   autoFocus?: boolean
-  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   autoSelect?: boolean
   parseAndValidate: (
     value: string
@@ -29,12 +29,12 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     type,
     onChange,
     onFocus,
+    onPressEnter,
     value: currentValue,
     errorMessage,
     autoFocus = false,
     autoSelect = false,
     parseAndValidate,
-    onKeyDown,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -76,8 +76,14 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         onInput={(event: ChangeEvent<HTMLInputElement>) =>
           handleInputChange(event.target.value)
         }
-        onKeyDown={onKeyDown}
         onFocus={onFocus}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && typeof onPressEnter !== "undefined") {
+            if (!parserError) {
+              onPressEnter(e)
+            }
+          }
+        }}
         className={classNames({
           error: errorMessage,
         })}
@@ -116,6 +122,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-size: 14px;
             line-height: 20px;
             margin-top: 3px;
+            margin-left: 5px;
           }
           label {
             position: absolute;
