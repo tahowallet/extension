@@ -1,12 +1,8 @@
 import React, { ReactElement } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
 
-import { useDispatch } from "react-redux"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
-import SharedIcon from "./SharedIcon"
-import { SharedTypedInput } from "./SharedInput"
 
 interface Props {
   isSelected?: boolean
@@ -22,8 +18,6 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
     avatarURL,
     localizedTotalMainCurrencyAmount,
   } = accountTotal
-
-  const dispatch = useDispatch()
 
   return (
     <li className="standard_width">
