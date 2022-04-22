@@ -117,7 +117,7 @@ describe("Earn", () => {
         .mockImplementation(() => Promise.resolve(1651050516))
 
       // @ts-ignore
-      jest.spyOn(contractUtils, "getContract").mockImplementationOnce(() => ({
+      jest.spyOn(contractUtils, "getContract").mockImplementation(() => ({
         getReserves: () => ({
           reserve0: BigNumber.from(100000000000000000n),
           reserve1: BigNumber.from(100000000000000000n),
@@ -129,7 +129,7 @@ describe("Earn", () => {
 
       const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
 
-      expect(APR).toBe("...") // TODO
+      expect(APR).toBe("332.2B%")
     })
 
     it("should return APR 150% when total yearly rewards value is 3USD and tokens staked value is 2USD", async () => {})
