@@ -4,12 +4,13 @@ import BaseService from "../base"
 import IndexingService from "../indexing"
 import { initialVaults } from "../../redux-slices/earn"
 import { ETHEREUM } from "../../constants"
+import { HexString } from "../../types"
 
-const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
-const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
+export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
+export const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
 
-const IPFSHTTPGatewayPrefix = "https://ipfs.io/ipfs/"
-const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
+export const IPFSHTTPGatewayPrefix = "https://ipfs.io/ipfs/"
+export const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
 
 /*
  * For context, the eligibility data is split up into files:
@@ -21,7 +22,9 @@ const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
  * ...
  * To find which file to look in, we reference claim-index.json
  */
-async function getFileHashProspect(targetAddress: string) {
+export async function getFileHashProspect(
+  targetAddress: string
+): Promise<string> {
   const numericTargetAddress = BigInt(targetAddress)
 
   const IPFSFileDirectory = await fetch(
@@ -53,7 +56,15 @@ async function getFileHashProspect(targetAddress: string) {
   return IPFSHashForFoundFile?.Hash["/"]
 }
 
-async function getClaimFromFileHash(targetAddress: string, hash: string) {
+export async function getClaimFromFileHash(
+  targetAddress: string,
+  hash: string
+): Promise<{
+  account: HexString
+  amount: string | number
+  index: HexString
+  proof: HexString[]
+}> {
   const res = await fetch(`${IPFSHTTPGatewayPrefix}${hash}`)
   let claim
   const reader = res?.body?.getReader()
@@ -92,6 +103,7 @@ async function getClaimFromFileHash(targetAddress: string, hash: string) {
 
   return (
     claim ?? {
+      account: targetAddress,
       amount: 0,
     }
   )

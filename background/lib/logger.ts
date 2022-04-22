@@ -58,6 +58,30 @@ const styles: LogStyles = {
   },
 }
 
+function purgeSensitiveFailSafe(log: string): string {
+  // 1. Hexadecimal segments
+  // 2. Private key length segments
+  // 3. Lowercase groups of 12 words, which therefore covers 24
+
+  return `${log} `.replaceAll(
+    /(0x(\S+))|(\b[a-zA-Z0-9]{64}\b)|((?:[a-z]+\s){12})/g,
+    "[REDACTED]"
+  )
+}
+
+function saveLog(
+  logLabel: string,
+  input: unknown[],
+  stackTrace: string[] | undefined
+) {
+  localStorage.setItem(
+    "logs",
+    `${(localStorage.getItem("logs") ?? "").slice(
+      -50000
+    )}${purgeSensitiveFailSafe(`${logLabel}\n${input}\n${stackTrace}`)}\n\n`
+  )
+}
+
 const BLINK_PREFIX = "    at "
 const WEBKIT_GECKO_DELIMITER = "@"
 const WEBKIT_MARKER = "@"
@@ -133,6 +157,8 @@ function genericLogger(level: LogLevel, input: unknown[]) {
   }
 
   console.groupEnd()
+
+  saveLog(logLabel, input, stackTrace)
 }
 
 const logger = {

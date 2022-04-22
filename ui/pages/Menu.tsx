@@ -7,6 +7,7 @@ import {
   toggleHideDust,
 } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../components/Shared/SharedButton"
+import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import t from "../utils/i18n"
 
@@ -54,7 +55,7 @@ export default function Menu(): ReactElement {
   const settings = {
     general: [
       {
-        title: t("menuHideSmallAssetBalance", "2"),
+        title: t("menuHideSmallAssetBalance", ["$2"]),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -69,6 +70,44 @@ export default function Menu(): ReactElement {
             onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
             value={defaultWallet}
           />
+        ),
+      },
+      {
+        title: "",
+        component: () => (
+          <SharedButton
+            type="unstyled"
+            size="medium"
+            linkTo="/menu/export-logs"
+          >
+            <div className="bug_report_row">
+              <div className="action_name">Bug report</div>
+              <SharedIcon
+                icon="icons/s/continue.svg"
+                width={16}
+                color="var(--green-20)"
+                ariaLabel="Open bug report"
+              />
+              <style jsx>{`
+                .action_name {
+                  color: var(--green-20);
+                  font-size: 18px;
+                  font-weight: 600;
+                  line-height: 24px;
+                }
+                .bug_report_row {
+                  width: 336px;
+                  align-items: center;
+                  justify-content: space-between;
+                  align-content: center;
+                  display: flex;
+                }
+                .bug_report_row:hover > .action_name {
+                  color: var(--green-5);
+                }
+              `}</style>
+            </div>
+          </SharedButton>
         ),
       },
     ],
@@ -93,8 +132,7 @@ export default function Menu(): ReactElement {
           <SharedButton
             type="primary"
             size="large"
-            icon="discord"
-            iconSize="large"
+            iconMedium="discord"
             iconPosition="left"
             onClick={() => {
               window.open(`https://chat.tally.cash/`, "_blank")?.focus()
