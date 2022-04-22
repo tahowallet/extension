@@ -577,13 +577,13 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  async addOrEditAddressName({
+  addOrEditAddressName({
     name,
     address,
   }: {
     name: string
     address: HexString
-  }): Promise<void> {
+  }): void {
     this.preferenceService.addOrEditNameInAddressBook({
       network: ETHEREUM,
       name,
