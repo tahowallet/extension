@@ -1,14 +1,13 @@
 /**
  * @jest-environment jsdom
  */
-/* eslint-disable no-extend-native, @typescript-eslint/ban-ts-comment */
-
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { BigNumber } from "ethers"
-import * as earn from "../../redux-slices/earn"
+import * as getTokenPrice from "../../redux-slices/earn-utils/getTokenPrice"
+import { getDoggoPrice, getPoolAPR } from "../../redux-slices/earn-utils"
 import assets from "./assets.mock"
 import * as contractUtils from "../../redux-slices/utils/contract-utils"
 
-const { getDoggoPrice, getPoolAPR } = earn
 const mainCurrencySymbol = "USD"
 
 describe("Earn", () => {
@@ -108,11 +107,10 @@ describe("Earn", () => {
     })
 
     it("should return APR value if rewards value is bigger than 0 and staked value is bigger than 0", async () => {
-      // TODO: It is not getting mocked...
-      jest
-        .spyOn(earn, "getTokenPrice")
+      jest.spyOn(getTokenPrice, "default").mockImplementationOnce(() =>
         // @ts-ignore
-        .mockImplementation(() => ({ singleTokenPrice: 10000000000n }))
+        Promise.resolve({ singleTokenPrice: 10000000000n })
+      )
 
       jest
         .spyOn(contractUtils, "getCurrentTimestamp")
