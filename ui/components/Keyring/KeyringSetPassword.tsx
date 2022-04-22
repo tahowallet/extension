@@ -7,6 +7,7 @@ import SharedInput from "../Shared/SharedInput"
 import titleStyle from "../Onboarding/titleStyle"
 import SharedBackButton from "../Shared/SharedBackButton"
 import SharedIcon from "../Shared/SharedIcon"
+import SharedWarningBanner from "../Shared/SharedWarningBanner"
 
 export default function KeyringSetPassword(): ReactElement {
   const [password, setPassword] = useState("")
@@ -61,17 +62,9 @@ export default function KeyringSetPassword(): ReactElement {
       <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
 
       <div className="warning_wrap">
-        <SharedIcon
-          icon="icons/m/notif-attention.svg"
-          width={24}
-          color="var(--attention)"
-          ariaLabel="password attention"
-          customStyles="flex-shrink:0"
-        />
-        <div className="warning_text">
-          You will NOT be able to change this password for now
-        </div>
+        <SharedWarningBanner title="You will NOT be able to change this password for now" />
       </div>
+
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -149,22 +142,8 @@ export default function KeyringSetPassword(): ReactElement {
             bottom: 26px;
           }
           .warning_wrap {
-            width: 336px;
-            background: var(--green-120);
-            border-radius: 8px;
             margin-top: 16px;
             margin-bottom: 24px;
-            padding: 8px;
-            display: flex;
-            flex-direction: row;
-            align-items: start;
-          }
-          .warning_text {
-            color: var(--attention);
-            font-weight: 500;
-            font-size: 16px;
-            line-height: 24px;
-            margin-left: 8px;
           }
         `}
       </style>
