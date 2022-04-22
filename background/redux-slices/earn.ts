@@ -381,10 +381,10 @@ export const {
 
 export default earnSlice.reducer
 
-const getDoggoPrice = async (
+export const getDoggoPrice = async (
   assets: AssetsState,
   mainCurrencySymbol: string
-) => {
+): Promise<bigint> => {
   // Fetching price of DOGGO from DOGGO/ETH UniswapV2Pair
   try {
     const doggoUniswapPairContract = await getContract(
@@ -569,7 +569,7 @@ export const getTokenPrice = async (
   return { singleTokenPrice: tokenPrice, pricePoint: imitatedPricePoint }
 }
 
-const getPoolAPR = async ({
+export const getPoolAPR = async ({
   asset,
   assets,
   vaultAddress,
