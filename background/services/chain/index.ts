@@ -6,7 +6,7 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import { Logger } from "ethers/lib/utils"
-import * as lodash from "lodash"
+import { camelCase } from "lodash"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -16,7 +16,6 @@ import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
   EVMNetwork,
-  Network,
   SignedEVMTransaction,
   BlockPrices,
   LegacyEVMTransactionRequest,
@@ -197,7 +196,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.providers = Object.fromEntries(
       this.supportedNetworks.map((network) => [
-        lodash.camelCase(network.name),
+        camelCase(network.name),
         new SerialFallbackProvider(
           network,
           () =>
@@ -216,7 +215,9 @@ export default class ChainService extends BaseService<Events> {
 
     this.subscribedAccounts = []
     this.subscribedNetworks = []
-    this.transactionsToRetrieve = { ethereum: [] }
+    this.transactionsToRetrieve = Object.fromEntries(
+      this.supportedNetworks.map((network) => [camelCase(network.name), []])
+    )
 
     this.assetData = new AssetDataHelper(this)
   }
@@ -225,20 +226,29 @@ export default class ChainService extends BaseService<Events> {
     await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()
-    const ethProvider = this.providers.ethereum
-    const network = ETHEREUM
 
-    // FIXME Should we await or drop Promise.all on the below two?
-    Promise.all([
-      // TODO get the latest block for other networks
-      ethProvider.getBlockNumber().then(async (n) => {
-        const result = await ethProvider.getBlock(n)
-        const block = blockFromEthersBlock(network, result)
-        await this.db.addBlock(block)
-      }),
-
-      this.subscribeToNewHeads(network),
-    ])
+    // get the latest blocks and subscribe for all support networks
+    // TODO revisit whether we actually want to subscribe to new heads
+    // if a user isn't tracking a relevant addressOnNetwork
+    this.supportedNetworks.forEach(async (network) => {
+      const provider = this.providerForNetwork(network)
+      if (provider) {
+        const promises = Promise.all([
+          provider.getBlockNumber().then(async (n) => {
+            const result = await provider.getBlock(n)
+            const block = blockFromEthersBlock(network, result)
+            await this.db.addBlock(block)
+          }),
+          this.subscribeToNewHeads(network),
+        ])
+        if (network.chainID !== ETHEREUM.chainID) {
+          // only block start to get Ethereum data
+          await promises
+        }
+      } else {
+        logger.error(`Couldn't find provider for supported network ${network}`)
+      }
+    })
 
     Promise.all(
       accounts
@@ -249,17 +259,18 @@ export default class ChainService extends BaseService<Events> {
           this.getLatestBaseAccountBalance(an).then(() => {}),
         ])
         .concat(
+          // TODO make multi-network
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
           this.db
-            .getNetworkPendingTransactions(network)
+            .getNetworkPendingTransactions(ETHEREUM)
             .then((pendingTransactions) => {
               pendingTransactions.forEach(({ hash, firstSeen }) => {
                 logger.debug(
                   `Queuing pending transaction ${hash} for status lookup.`
                 )
-                this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+                this.queueTransactionHashToRetrieve(ETHEREUM, hash, firstSeen)
               })
             })
         )
@@ -271,7 +282,26 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers[network.name.toLowerCase()]
+    return this.providers[camelCase(network.name)]
+  }
+
+  /**
+   * Finds a provider for the given network, or returns undefined if no such
+   * provider exists.
+   */
+  providerForNetworkOrThrow(network: EVMNetwork): SerialFallbackProvider {
+    const provider = this.providerForNetwork(network)
+
+    if (!provider) {
+      logger.error(
+        "Request received for operation on unsupported network",
+        network,
+        "expected",
+        this.supportedNetworks
+      )
+      throw new Error(`Unexpected network ${network}`)
+    }
+    return provider
   }
 
   /**
@@ -469,12 +499,9 @@ export default class ChainService extends BaseService<Events> {
   async getLatestBaseAccountBalance(
     addressNetwork: AddressOnNetwork
   ): Promise<AccountBalance> {
-    this.checkNetwork(addressNetwork.network)
-
-    // TODO look up provider network properly
-    const balance = await this.providers.ethereum.getBalance(
-      addressNetwork.address
-    )
+    const balance = await this.providerForNetworkOrThrow(
+      addressNetwork.network
+    ).getBalance(addressNetwork.address)
     const accountBalance: AccountBalance = {
       address: addressNetwork.address,
       assetAmount: {
@@ -498,13 +525,12 @@ export default class ChainService extends BaseService<Events> {
     this.loadRecentAssetTransfers(addressNetwork)
   }
 
-  async getBlockHeight(network: Network): Promise<number> {
+  async getBlockHeight(network: EVMNetwork): Promise<number> {
     const cachedBlock = await this.db.getLatestBlock(network)
     if (cachedBlock) {
       return cachedBlock.blockHeight
     }
-    // TODO make proper use of the network
-    return this.providers.ethereum.getBlockNumber()
+    return this.providerForNetworkOrThrow(network).getBlockNumber()
   }
 
   /**
@@ -520,14 +546,15 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     blockHash: string
   ): Promise<AnyEVMBlock> {
-    // TODO make this multi network
     const cachedBlock = await this.db.getBlock(network, blockHash)
     if (cachedBlock) {
       return cachedBlock
     }
 
     // Looking for new block
-    const resultBlock = await this.providers.ethereum.getBlock(blockHash)
+    const resultBlock = await this.providerForNetworkOrThrow(network).getBlock(
+      blockHash
+    )
 
     const block = blockFromEthersBlock(network, resultBlock)
 
@@ -554,8 +581,9 @@ export default class ChainService extends BaseService<Events> {
     if (cachedTx) {
       return cachedTx
     }
-    // TODO make proper use of the network
-    const gethResult = await this.providers.ethereum.getTransaction(txHash)
+    const gethResult = await this.providerForNetworkOrThrow(
+      network
+    ).getTransaction(txHash)
     const newTransaction = transactionFromEthersTransaction(gethResult, network)
 
     if (!newTransaction.blockHash && !newTransaction.blockHeight) {
@@ -585,12 +613,16 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): Promise<void> {
-    // TODO make proper use of the network
-    const seen = new Set(
-      this.transactionsToRetrieve.ethereum.map(({ hash }) => hash)
-    )
+    if (!(camelCase(network.name) in this.transactionsToRetrieve)) {
+      this.transactionsToRetrieve[camelCase(network.name)] = []
+    }
+
+    const toRetrieve = this.transactionsToRetrieve[camelCase(network.name)]
+
+    const seen = new Set((toRetrieve ?? []).map(({ hash }) => hash))
+
     if (!seen.has(txHash)) {
-      this.transactionsToRetrieve.ethereum.push({ hash: txHash, firstSeen })
+      toRetrieve.push({ hash: txHash, firstSeen })
     }
   }
 
@@ -602,7 +634,7 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
-    const estimate = await this.providers.ethereum.estimateGas(
+    const estimate = await this.providerForNetworkOrThrow(network).estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
     // Add 10% more gas as a safety net
@@ -620,13 +652,12 @@ export default class ChainService extends BaseService<Events> {
     transaction: SignedEVMTransaction
   ): Promise<void> {
     try {
-      // TODO make proper use of tx.network to choose provider
       const serialized = utils.serializeTransaction(
         ethersTransactionFromSignedTransaction(transaction),
         { r: transaction.r, s: transaction.s, v: transaction.v }
       )
       await Promise.all([
-        this.providers.ethereum
+        this.providerForNetworkOrThrow(transaction.network)
           .sendTransaction(serialized)
           .then((transactionResponse) => {
             this.emitter.emit("transactionSend", transactionResponse.hash)
@@ -679,20 +710,6 @@ export default class ChainService extends BaseService<Events> {
   /* *****************
    * PRIVATE METHODS *
    * **************** */
-
-  /**
-   * Ensure the given network is supported; otherwise, log and throw.
-   */
-  private checkNetwork(network: EVMNetwork): void {
-    if (network.name !== ETHEREUM.name) {
-      logger.error(
-        "Request received for operation on unsupported network",
-        network,
-        "expected",
-        ETHEREUM
-      )
-    }
-  }
 
   /**
    * Load recent asset transfers from an account on a particular network. Backs
@@ -799,7 +816,13 @@ export default class ChainService extends BaseService<Events> {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
-    this.checkNetwork(addressOnNetwork.network)
+    // TODO this will require custom code for Arbitrum and Optimism support
+    // as neither have Alchemy's assetTranfers endpoint
+    if (addressOnNetwork.network.chainID !== "1") {
+      logger.error(
+        `Asset transfer check not supported on network ${addressOnNetwork.network}`
+      )
+    }
 
     const assetTransfers = await this.assetData.getAssetTransfers(
       addressOnNetwork,
@@ -991,8 +1014,7 @@ export default class ChainService extends BaseService<Events> {
    * @param network The EVM network to watch.
    */
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
-    // TODO look up provider network properly
-    const provider = this.providers.ethereum
+    const provider = this.providerForNetworkOrThrow(network)
     // eslint-disable-next-line no-underscore-dangle
     await provider.subscribe(
       "newHeadsSubscriptionID",
@@ -1024,10 +1046,7 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
-    this.checkNetwork(network)
-
-    // TODO look up provider network properly
-    const provider = this.providers.ethereum
+    const provider = this.providerForNetworkOrThrow(network)
     await provider.subscribeFullPendingTransactions(
       { address, network },
       async (transaction) => {
@@ -1080,18 +1099,13 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
-    this.checkNetwork(network)
-
-    // TODO make proper use of the network
-    this.providers.ethereum.once(
-      transaction.hash,
-      (confirmedReceipt: TransactionReceipt) => {
-        this.saveTransaction(
-          enrichTransactionWithReceipt(transaction, confirmedReceipt),
-          "alchemy"
-        )
-      }
-    )
+    const provider = this.providerForNetworkOrThrow(network)
+    provider.once(transaction.hash, (confirmedReceipt: TransactionReceipt) => {
+      this.saveTransaction(
+        enrichTransactionWithReceipt(transaction, confirmedReceipt),
+        "alchemy"
+      )
+    })
   }
 
   /**
@@ -1104,12 +1118,8 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transaction: AnyEVMTransaction
   ): Promise<void> {
-    this.checkNetwork(network)
-
-    // TODO make proper use of the network
-    const receipt = await this.providers.ethereum.getTransactionReceipt(
-      transaction.hash
-    )
+    const provider = this.providerForNetworkOrThrow(network)
+    const receipt = await provider.getTransactionReceipt(transaction.hash)
     await this.saveTransaction(
       enrichTransactionWithReceipt(transaction, receipt),
       "alchemy"
