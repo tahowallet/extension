@@ -23,7 +23,7 @@ import {
 import { AssetTransfer } from "../../assets"
 import { HOUR } from "../../constants"
 import { ETH } from "../../constants/currencies"
-import { ETHEREUM, ARBITRUM_ONE } from "../../constants/networks"
+import { ETHEREUM, ARBITRUM_ONE, OPTIMISM } from "../../constants/networks"
 import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features/features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -191,7 +191,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.supportedNetworks = USE_MULTI_NETWORK
-      ? [ETHEREUM, ARBITRUM_ONE]
+      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
       : [ETHEREUM]
 
     this.providers = Object.fromEntries(

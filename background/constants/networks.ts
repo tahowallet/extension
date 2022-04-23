@@ -17,6 +17,13 @@ export const ARBITRUM_ONE: EVMNetwork = {
   family: "EVM",
 }
 
+export const OPTIMISM: EVMNetwork = {
+  name: "Optimism",
+  baseAsset: ETH,
+  chainID: "10",
+  family: "EVM",
+}
+
 export const ROPSTEN: EVMNetwork = {
   name: "Ropsten",
   baseAsset: ETH,
@@ -58,7 +65,7 @@ export const FORK: EVMNetwork = {
   family: "EVM",
 }
 
-export const EVM_MAIN_NETWORKS = [ETHEREUM, ARBITRUM_ONE]
+export const EVM_MAIN_NETWORKS = [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
 
 export const EVM_TEST_NETWORKS = [ROPSTEN, RINKEBY, GOERLI, KOVAN]
 
