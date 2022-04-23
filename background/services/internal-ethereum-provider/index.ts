@@ -122,9 +122,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         // allowed to have an RPC call made to it. Ideally this would be based
         // on a user's idea of a dApp connection rather than a network-specific
         // modality, requiring it to be constantly "switched"
-        return `0x${BigInt(ETHEREUM.chainID).toString(
-          16
-        )}`
+        return `0x${BigInt(ETHEREUM.chainID).toString(16)}`
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":

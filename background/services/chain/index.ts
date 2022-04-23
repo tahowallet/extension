@@ -438,15 +438,6 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  resolveNetwork(
-    transactionRequest: EIP1559TransactionRequest
-  ): EVMNetwork | undefined {
-    if (transactionRequest.chainID === ETHEREUM.chainID) {
-      return ETHEREUM
-    }
-    return undefined
-  }
-
   /**
    * Releases the specified nonce for the given network and address. This
    * updates internal service state to allow that nonce to be reused. In cases
