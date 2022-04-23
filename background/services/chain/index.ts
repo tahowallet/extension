@@ -6,6 +6,7 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import { Logger } from "ethers/lib/utils"
+import * as lodash from "lodash"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -21,7 +22,10 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
+import { HOUR } from "../../constants"
 import { ETH } from "../../constants/currencies"
+import { ETHEREUM, ARBITRUM_ONE } from "../../constants/networks"
+import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features/features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
@@ -34,16 +38,11 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
 } from "./utils"
-import {
-  getEthereumNetwork,
-  normalizeEVMAddress,
-  sameEVMAddress,
-} from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../enrichment"
-import { HOUR } from "../../constants"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
 
@@ -153,7 +152,7 @@ export default class ChainService extends BaseService<Events> {
     return new this(await getOrCreateDB(), await preferenceService)
   }
 
-  ethereumNetwork: EVMNetwork
+  supportedNetworks: EVMNetwork[]
 
   assetData: AssetDataHelper
 
@@ -192,24 +191,28 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
-    this.ethereumNetwork = getEthereumNetwork()
+    this.supportedNetworks = USE_MULTI_NETWORK
+      ? [ETHEREUM, ARBITRUM_ONE]
+      : [ETHEREUM]
 
-    // TODO set up for each relevant network
-    this.providers = {
-      ethereum: new SerialFallbackProvider(
-        this.ethereumNetwork,
-        () =>
-          new AlchemyWebSocketProvider(
-            getNetwork(Number(this.ethereumNetwork.chainID)),
-            ALCHEMY_KEY
-          ),
-        () =>
-          new AlchemyProvider(
-            getNetwork(Number(this.ethereumNetwork.chainID)),
-            ALCHEMY_KEY
-          )
-      ),
-    }
+    this.providers = Object.fromEntries(
+      this.supportedNetworks.map((network) => [
+        lodash.camelCase(network.name),
+        new SerialFallbackProvider(
+          network,
+          () =>
+            new AlchemyWebSocketProvider(
+              getNetwork(Number(network.chainID)),
+              ALCHEMY_KEY
+            ),
+          () =>
+            new AlchemyProvider(
+              getNetwork(Number(network.chainID)),
+              ALCHEMY_KEY
+            )
+        ),
+      ])
+    )
 
     this.subscribedAccounts = []
     this.subscribedNetworks = []
@@ -223,7 +226,7 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
     const ethProvider = this.providers.ethereum
-    const network = this.ethereumNetwork
+    const network = ETHEREUM
 
     // FIXME Should we await or drop Promise.all on the below two?
     Promise.all([
@@ -408,8 +411,8 @@ export default class ChainService extends BaseService<Events> {
   resolveNetwork(
     transactionRequest: EIP1559TransactionRequest
   ): EVMNetwork | undefined {
-    if (transactionRequest.chainID === this.ethereumNetwork.chainID) {
-      return this.ethereumNetwork
+    if (transactionRequest.chainID === ETHEREUM.chainID) {
+      return ETHEREUM
     }
     return undefined
   }
@@ -681,12 +684,12 @@ export default class ChainService extends BaseService<Events> {
    * Ensure the given network is supported; otherwise, log and throw.
    */
   private checkNetwork(network: EVMNetwork): void {
-    if (network.name !== this.ethereumNetwork.name) {
+    if (network.name !== ETHEREUM.name) {
       logger.error(
         "Request received for operation on unsupported network",
         network,
         "expected",
-        this.ethereumNetwork
+        ETHEREUM
       )
     }
   }
@@ -845,7 +848,7 @@ export default class ChainService extends BaseService<Events> {
         TRANSACTIONS_RETRIEVED_PER_ALARM
       )
 
-    const network = this.ethereumNetwork
+    const network = ETHEREUM
 
     toHandle.forEach(async ({ hash, firstSeen }) => {
       try {

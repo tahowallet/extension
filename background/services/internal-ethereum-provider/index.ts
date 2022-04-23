@@ -12,6 +12,7 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import { ETHEREUM } from "../../constants/networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
@@ -117,7 +118,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           typedData: JSON.parse(params[1] as string),
         })
       case "eth_chainId":
-        return `0x${BigInt(this.chainService.ethereumNetwork.chainID).toString(
+        // TODO Decide on a better way to track whether a particular chain is
+        // allowed to have an RPC call made to it. Ideally this would be based
+        // on a user's idea of a dApp connection rather than a network-specific
+        // modality, requiring it to be constantly "switched"
+        return `0x${BigInt(ETHEREUM.chainID).toString(
           16
         )}`
       case "eth_blockNumber":

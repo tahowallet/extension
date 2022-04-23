@@ -112,11 +112,10 @@ export default class IndexingService extends BaseService<Events> {
 
     this.connectChainServiceEvents()
 
-    // on launch, push any assets we have cached
-    this.emitter.emit(
-      "assets",
-      await this.getCachedAssets(this.chainService.ethereumNetwork)
-    )
+    // on launch, push any assets we have cached for all supported networks
+    this.chainService.supportedNetworks.forEach(async (network) => {
+      this.emitter.emit("assets", await this.getCachedAssets(network))
+    })
 
     // ... and kick off token list fetching
     await this.fetchAndCacheTokenLists()
@@ -553,11 +552,13 @@ export default class IndexingService extends BaseService<Events> {
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
 
-    // Filter all assets based on the currently selected network
+    // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter(
       (asset) =>
         asset.symbol === "ETH" ||
-        asset.homeNetwork.chainID === this.chainService.ethereumNetwork.chainID
+        this.chainService.supportedNetworks
+          .map((n) => n.chainID)
+          .includes(asset.homeNetwork.chainID)
     )
 
     try {
@@ -633,10 +634,10 @@ export default class IndexingService extends BaseService<Events> {
             )
           }
         }
-        this.emitter.emit(
-          "assets",
-          await this.getCachedAssets(this.chainService.ethereumNetwork)
-        )
+
+        this.chainService.supportedNetworks.forEach(async (network) => {
+          this.emitter.emit("assets", await this.getCachedAssets(network))
+        })
       })
     )
 
@@ -658,9 +659,10 @@ export default class IndexingService extends BaseService<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
-    const activeAssetsToTrack = assetsToTrack.filter(
-      (asset) =>
-        asset.homeNetwork.chainID === this.chainService.ethereumNetwork.chainID
+    const activeAssetsToTrack = assetsToTrack.filter((asset) =>
+      this.chainService.supportedNetworks
+        .map((n) => n.chainID)
+        .includes(asset.homeNetwork.chainID)
     )
 
     // wait on balances being written to the db, don't wait on event emission
