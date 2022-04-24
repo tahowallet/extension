@@ -12,8 +12,7 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import logger from "@tallyho/tally-background/lib/logger"
-import SharedInput from "../Shared/SharedInput"
+import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
 
@@ -61,6 +60,7 @@ const gasOptionFromEstimate = (
           2
         )
       : undefined
+  const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
 
   return {
     confidence: `${confidence}`,
@@ -69,7 +69,7 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
-    dollarValue: feeAssetAmount?.localizedMainCurrencyAmount ?? "-",
+    dollarValue: dollarValue ? `$${dollarValue}` : "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     price,
@@ -160,15 +160,8 @@ export default function NetworkSettingsSelect({
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
       const { regular, express, instant } = estimatedFeesPerGas ?? {}
-      let gasLimit = networkSettings.suggestedGasLimit
-      try {
-        gasLimit = BigInt(networkSettings.gasLimit)
-      } catch (error) {
-        logger.debug(
-          "Failed to parse network settings gas limit",
-          networkSettings.gasLimit
-        )
-      }
+      const gasLimit =
+        networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
       if (
         typeof instant !== "undefined" &&
@@ -207,13 +200,8 @@ export default function NetworkSettingsSelect({
     updateGasOptions()
   }, [updateGasOptions])
 
-  const setGasLimit = (newGasLimit: string) => {
-    // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
-    // FIXME entry as possible.
-    onNetworkSettingsChange({
-      ...networkSettings,
-      gasLimit: newGasLimit,
-    })
+  const setGasLimit = (gasLimit: bigint | undefined) => {
+    onNetworkSettingsChange({ ...networkSettings, gasLimit })
   }
 
   return (
@@ -236,18 +224,35 @@ export default function NetworkSettingsSelect({
             </div>
             <div className="option_right">
               <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-              <div className="subtext">${option.dollarValue}</div>
+              <div className="subtext">{option.dollarValue}</div>
             </div>
           </button>
         )
       })}
       <div className="info">
         <div className="limit">
-          <SharedInput
+          <SharedTypedInput
             id="gasLimit"
-            value={networkSettings.gasLimit}
+            value={networkSettings.gasLimit?.toString() ?? ""}
             placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
             onChange={setGasLimit}
+            parseAndValidate={(value) => {
+              if (value.trim() === "") {
+                return { parsed: undefined }
+              }
+              try {
+                const parsed = BigInt(value)
+                if (parsed < 0n) {
+                  return {
+                    error: "Gas Limit must be greater than 0",
+                  }
+                }
+
+                return { parsed }
+              } catch (e) {
+                return { error: "Gas Limit must be a number" }
+              }
+            }}
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"
@@ -273,9 +278,10 @@ export default function NetworkSettingsSelect({
             margin: 8px 0;
             cursor: pointer;
             border-radius: 4px;
+            border: 1px solid transparent;
           }
           .option.active {
-            border: 1px solid var(--success);
+            border-color: var(--success);
             box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);

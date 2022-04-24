@@ -25,7 +25,6 @@ import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { ETH } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { HIDE_IMPORT_LEDGER } from "../../features/features"
 
 enum LedgerType {
   UNKNOWN,
@@ -40,8 +39,7 @@ export const LedgerProductDatabase = {
   LEDGER_NANO_X: { productId: 0x4015 },
 }
 
-export const isLedgerSupported =
-  !HIDE_IMPORT_LEDGER && typeof navigator.usb === "object"
+export const isLedgerSupported = typeof navigator.usb === "object"
 
 const TestedProductId = (productId: number): boolean => {
   return Object.values(LedgerProductDatabase).some(
@@ -51,7 +49,7 @@ const TestedProductId = (productId: number): boolean => {
 
 type MetaData = {
   ethereumVersion: string
-  ethereumBlindSigner: boolean
+  isArbitraryDataSigningEnabled: boolean
 }
 
 export type ConnectedDevice = {
@@ -81,7 +79,7 @@ type Events = ServiceLifecycleEvents & {
   usbDeviceCount: number
 }
 
-export const idDerviationPath = "44'/60'/0'/0/0"
+export const idDerivationPath = "44'/60'/0'/0/0"
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
@@ -114,19 +112,27 @@ async function generateLedgerId(
     return [undefined, extensionDeviceType]
   }
 
-  const address = await deriveAddressOnLedger(idDerviationPath, eth)
+  const address = await deriveAddressOnLedger(idDerivationPath, eth)
 
   return [address, extensionDeviceType]
 }
 
 /**
- * The LedgerService is responsible for maintaining the connection
- * with a Ledger device.
+ * The LedgerService is responsible for exposing the functionality of
+ * Ledger devices in a digestible form by other services
  *
- * The main purpose for this service is to keep track of all previously
- * connected Ledgers' derived identifiers and make show an unified interface
- * to the most common operation (ie. signing)
- * - xxx
+ * To do so, it does:
+ *   - serialize the calls to the critical resource (ie. Ledger)
+ *   - acts when a paired device is (dis-)connected
+ *   - supports address derivation from BIP32 paths
+ *   - supports transaction signing
+ *   - supports typed data signing
+ *   - maps the successfully onboarded addresses to their derivation paths
+ *
+ * Known issues
+ *   - this service's kryptonite is having multiple browser-paired Ledgers
+ *     connected to the computer. In that case the Wallet doesn't know
+ *     which device will respond to its requests
  */
 export default class LedgerService extends BaseService<Events> {
   #currentLedgerId: string | null = null
@@ -185,7 +191,7 @@ export default class LedgerService extends BaseService<Events> {
         type,
         metadata: {
           ethereumVersion: appData.version,
-          ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
         },
       })
 
@@ -197,10 +203,10 @@ export default class LedgerService extends BaseService<Events> {
         this.emitter.emit("ledgerAdded", {
           id: this.#currentLedgerId,
           type,
-          accountIDs: [idDerviationPath],
+          accountIDs: [idDerivationPath],
           metadata: {
             ethereumVersion: appData.version,
-            ethereumBlindSigner: appData.arbitraryDataEnabled !== 0,
+            isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
           },
         })
       }
@@ -219,22 +225,23 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  #handleUSBDisconnect = async (event: USBConnectionEvent): Promise<void> => {
-    this.emitter.emit(
-      "usbDeviceCount",
-      (await navigator.usb.getDevices()).length
-    )
-    if (!this.#currentLedgerId) {
-      return
+  #handleUSBDisconnect =
+    async (/* event: USBConnectionEvent */): Promise<void> => {
+      this.emitter.emit(
+        "usbDeviceCount",
+        (await navigator.usb.getDevices()).length
+      )
+      if (!this.#currentLedgerId) {
+        return
+      }
+
+      this.emitter.emit("disconnected", {
+        id: this.#currentLedgerId,
+        type: LedgerType.LEDGER_NANO_S,
+      })
+
+      this.#currentLedgerId = null
     }
-
-    this.emitter.emit("disconnected", {
-      id: this.#currentLedgerId,
-      type: LedgerType.LEDGER_NANO_S,
-    })
-
-    this.#currentLedgerId = null
-  }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns

@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
 
 interface Props {
   size: "small" | "medium" | "large"
@@ -12,15 +13,24 @@ export default function SharedAssetIcon(props: Props): ReactElement {
   const hardcodedIcons = ["ETH"]
   const hasHardcodedIcon = hardcodedIcons.includes(symbol)
 
-  // Checks to see if it's an http(s) address because I've seen
-  // strings get here like ipfs://QmYNz8J1h5yefkaAw6tZwUYoJyBTWmBXgAY28ZWZ5rPsLR
-  // which won't load. Of if we have a hardcoded backup image
-  const hasValidImage =
-    (logoURL && logoURL.includes("http")) || hasHardcodedIcon
+  // Passes IPFS and Arweave through HTTP gateway
+  function getAsHttpURL(anyURL: string) {
+    let httpURL = anyURL
+    try {
+      httpURL = storageGatewayURL(new URL(anyURL)).href
+    } catch (err) {
+      httpURL = ""
+    }
+    return httpURL
+  }
+
+  const httpURL = getAsHttpURL(logoURL)
+
+  const shouldDisplayTokenIcon = Boolean(httpURL || hasHardcodedIcon)
 
   return (
     <div className={`token_icon_wrap ${size}`}>
-      {hasValidImage ? (
+      {shouldDisplayTokenIcon ? (
         <div className="token_icon" />
       ) : (
         <div className={`token_icon_fallback ${size}`}>
@@ -73,7 +83,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           ${hasHardcodedIcon
             ? `background: url("${`./images/${symbol.toLowerCase()}@2x.png`}") center no-repeat;
             background-size: 45% auto;`
-            : `background: url("${logoURL}");
+            : `background: url("${httpURL}");
             background-size: cover;`}
         }
       `}</style>

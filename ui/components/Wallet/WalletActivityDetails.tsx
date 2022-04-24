@@ -1,7 +1,8 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
 import SharedButton from "../Shared/SharedButton"
+import SharedAddress from "../Shared/SharedAddress"
 
 interface DetailRowItemProps {
   label: string
@@ -52,15 +53,16 @@ function DetailRowItem(props: DetailRowItemProps): ReactElement {
 interface DestinationCardProps {
   label: string
   address: string
+  name?: string | undefined
 }
 
 function DestinationCard(props: DestinationCardProps): ReactElement {
-  const { label, address } = props
+  const { label, address, name } = props
 
   return (
     <div className="card_wrap">
       <div className="sub_info from">{label}:</div>
-      {truncateAddress(address)}
+      <SharedAddress address={address} name={name} alwaysShowAddress />
       <div className="sub_info name" />
       <style jsx>
         {`
@@ -115,6 +117,9 @@ export default function WalletActivityDetails(
 
   if (!activityItem) return <></>
 
+  const { address: recipientAddress, name: recipientName } =
+    getRecipient(activityItem)
+
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
@@ -122,8 +127,7 @@ export default function WalletActivityDetails(
           <SharedButton
             type="tertiary"
             size="medium"
-            icon="external"
-            iconSize="large"
+            iconMedium="new-tab"
             onClick={openExplorer}
           >
             Etherscan
@@ -135,7 +139,8 @@ export default function WalletActivityDetails(
         <div className="icon_transfer" />
         <DestinationCard
           label="To"
-          address={activityItem.to || "(Contract creation)"}
+          address={recipientAddress || "(Contract creation)"}
+          name={recipientName}
         />
       </div>
       <ul>

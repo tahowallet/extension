@@ -22,8 +22,9 @@ import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
 import { ETH, FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { HIDE_IMPORT_LEDGER, USE_MAINNET_FORK } from "../../features/features"
+import { USE_MAINNET_FORK } from "../../features/features"
 import { AddressOnNetwork } from "../../accounts"
+import logger from "../../lib/logger"
 
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
@@ -134,6 +135,15 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Update activity timestamps and emit unlocked event.
+   */
+  #unlock(): void {
+    this.lastKeyringActivity = Date.now()
+    this.lastOutsideActivity = Date.now()
+    this.emitter.emit("locked", false)
+  }
+
+  /**
    * Unlock the keyring with a provided password, initializing from the most
    * recently persisted keyring vault if one exists.
    *
@@ -158,7 +168,9 @@ export default class KeyringService extends BaseService<Events> {
     ignoreExistingVaults = false
   ): Promise<boolean> {
     if (!this.locked()) {
-      throw new Error("KeyringService is already unlocked!")
+      logger.warn("KeyringService is already unlocked!")
+      this.#unlock()
+      return true
     }
 
     if (!ignoreExistingVaults) {
@@ -207,9 +219,7 @@ export default class KeyringService extends BaseService<Events> {
       await this.persistKeyrings()
     }
 
-    this.lastKeyringActivity = Date.now()
-    this.lastOutsideActivity = Date.now()
-    this.emitter.emit("locked", false)
+    this.#unlock()
     return true
   }
 
@@ -495,9 +505,7 @@ export default class KeyringService extends BaseService<Events> {
       asset: ETH,
       network: USE_MAINNET_FORK ? FORK : network,
     }
-    if (HIDE_IMPORT_LEDGER) {
-      this.emitter.emit("signedTx", signedTx)
-    }
+
     return signedTx
   }
   /**
@@ -528,9 +536,7 @@ export default class KeyringService extends BaseService<Events> {
         typesForSigning,
         message
       )
-      if (HIDE_IMPORT_LEDGER) {
-        this.emitter.emit("signedData", signature)
-      }
+
       return signature
     } catch (error) {
       throw new Error("Signing data failed")
@@ -557,9 +563,7 @@ export default class KeyringService extends BaseService<Events> {
     const keyring = await this.#findKeyring(account)
     try {
       const signature = await keyring.signMessage(account, signingData)
-      if (HIDE_IMPORT_LEDGER) {
-        this.emitter.emit("signedData", signature)
-      }
+
       return signature
     } catch (error) {
       throw new Error("Signing data failed")

@@ -9,7 +9,6 @@ import {
 import { useHistory } from "react-router-dom"
 import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
@@ -39,7 +38,7 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
   [AccountType.Internal]: {
     title: "Tally Ho",
-    icon: "./images/tally_reward@2x.png", // FIXME: Icon is cut off - we should get a better one
+    icon: "./images/tally_avatar.svg",
   },
   [AccountType.Ledger]: {
     title: "Full access via Ledger", // FIXME: check copy against UI specs
@@ -72,8 +71,7 @@ function WalletTypeHeader({
             <SharedButton
               type="tertiaryGray"
               size="small"
-              icon="plus"
-              iconSize="medium"
+              iconSmall="add"
               onClick={() => {
                 if (areKeyringsUnlocked) {
                   onClickAddAddress()
@@ -179,11 +177,8 @@ export default function AccountsNotificationPanelAccounts({
     AccountType.Internal,
     AccountType.Imported,
     AccountType.ReadOnly,
+    AccountType.Ledger,
   ]
-
-  if (!HIDE_IMPORT_LEDGER) {
-    accountTypes.push(AccountType.Ledger)
-  }
 
   return (
     <div className="switcher_wrap">
@@ -290,8 +285,7 @@ export default function AccountsNotificationPanelAccounts({
         <SharedButton
           type="tertiary"
           size="medium"
-          icon="plus"
-          iconSize="medium"
+          iconSmall="add"
           iconPosition="left"
           linkTo="/onboarding/add-wallet"
         >

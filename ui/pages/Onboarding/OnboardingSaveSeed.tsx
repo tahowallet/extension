@@ -1,10 +1,14 @@
 import React, { ReactElement } from "react"
+import { useDispatch } from "react-redux"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../../components/Shared/SharedButton"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
 import titleStyle from "../../components/Onboarding/titleStyle"
 import { useBackgroundSelector } from "../../hooks"
 
 export default function OnboardingSaveSeed(): ReactElement {
+  const dispatch = useDispatch()
+
   const freshMnemonic = useBackgroundSelector((state) => {
     return state.keyrings.keyringToVerify?.mnemonic
   })
@@ -58,11 +62,21 @@ export default function OnboardingSaveSeed(): ReactElement {
         <SharedButton
           type="primary"
           size="medium"
-          icon="arrow_right"
-          iconSize="large"
+          iconMedium="continue"
           linkTo="/onboarding/verify-seed"
         >
           I wrote it down
+        </SharedButton>
+        <SharedButton
+          type="tertiary"
+          size="medium"
+          iconMedium="copy"
+          onClick={() => {
+            navigator.clipboard.writeText(freshMnemonic?.join(" ") ?? "")
+            dispatch(setSnackbarMessage("Copied!"))
+          }}
+        >
+          Copy phrase to clipboard
         </SharedButton>
       </div>
       <style jsx>
@@ -78,7 +92,8 @@ export default function OnboardingSaveSeed(): ReactElement {
           }
           .serif_header {
             font-size: 31px;
-            margin-top: 16px;
+            margin-top: 12px;
+            margin-bottom: 5px;
           }
           .numbers {
             width: 18px;
@@ -108,18 +123,16 @@ export default function OnboardingSaveSeed(): ReactElement {
             text-align: left;
           }
           .button_group {
+            align-items: center;
+            height: 86px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-          }
-          .copy_button {
-            margin: 16px 0px 4px 0px;
+            justify-content: space-between;
           }
           .top {
             display: flex;
             width: 100%;
-            height: 47px;
+            height: 40px;
           }
           .wordmark {
             background: url("./images/wordmark@2x.png");

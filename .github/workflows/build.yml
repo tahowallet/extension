@@ -5,6 +5,8 @@ on:
   push:
     branches:
     - main
+    tags:
+    - v*
 
 jobs:
   build:
@@ -23,23 +25,34 @@ jobs:
         cache: "yarn"
     - run: yarn install --frozen-lockfile
     - name: Dev build
-      if: github.ref != 'refs/heads/main' && !startsWith(github.head_ref, 'release-')
+      if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
         BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
+        COMMIT_SHA: ${{ github.sha }}
     - name: Production build
-      if: github.ref == 'refs/heads/main' || startsWith(github.head_ref, 'release-')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       run: yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
         ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
+        COMMIT_SHA: ${{ github.sha }}
     - name: Upload build asset
+      if: ${{ !startsWith(github.ref, 'refs/tags/') }}
       uses: actions/upload-artifact@v2
       with:
         name: extension-builds
         path: dist/*.zip
+    - name: Create Release and Upload Artifacts
+      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: dist/*.zip
+        draft: true
+        generate_release_notes: true
+        prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
   test:
     runs-on: ubuntu-latest
     steps:

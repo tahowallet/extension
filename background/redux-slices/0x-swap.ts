@@ -47,10 +47,6 @@ export const initialState: SwapState = {
   inProgressApprovalContract: undefined,
 }
 
-// The magic string used by the 0x API to signify we're dealing with ETH rather
-// than an ERC-20
-const ZEROX_ETH_SIGNIFIER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-
 const swapSlice = createSlice({
   name: "0x-swap",
   initialState,
@@ -132,7 +128,7 @@ const gatedHeaders: { [header: string]: string } =
 function build0xUrlFromSwapRequest(
   requestPath: string,
   { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
-  additionalParameters?: Record<string, string>
+  additionalParameters: Record<string, string>
 ): URL {
   const requestUrl = new URL(`https://${zeroXApiBase}/swap/v1${requestPath}`)
   const tradeAmount = utils.parseUnits(
@@ -165,6 +161,16 @@ function build0xUrlFromSwapRequest(
     ...gatedParameters,
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
+    // Do not set buyTokenPercentageFee if swapping to ETH. Currently the 0x
+    // `GET /quote` endpoint does not support a `sellTokenPercentageFee` and
+    // errors when passing in a `buyTokenPercentageFee` when the buy token is
+    // ETH.
+    if (
+      buyToken === "ETH" &&
+      (parameter === "buyTokenPercentageFee" || parameter === "feeRecipient")
+    ) {
+      return
+    }
     requestUrl.searchParams.set(parameter, value.toString())
   })
 
@@ -249,7 +255,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     let needsApproval = false
     // If we aren't selling ETH, check whether we need an approval to swap
     // TODO Handle other non-ETH base assets
-    if (quote.sellTokenAddress !== ZEROX_ETH_SIGNIFIER) {
+    if (quote.allowanceTarget !== ethers.constants.AddressZero) {
       const assetContract = new ethers.Contract(
         quote.sellTokenAddress,
         ERC20_ABI,

@@ -1,1 +1,18 @@
-{}
+{
+  "totalAccountBalance": {
+    "message": "Total account balance",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "readOnlyNotice": {
+    "message": "Read-only mode",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "menuHideSmallAssetBalance": {
+    "message": "Hide asset balance under $1",
+    "description": "in pages > Menu"
+  },
+  "menuSetAsDefault": {
+    "message": "Use Tally Ho as default wallet",
+    "description": "in pages > Menu"
+  }
+}

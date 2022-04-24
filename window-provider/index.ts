@@ -29,6 +29,15 @@ export default class TallyWindowProvider extends EventEmitter {
 
   bridgeListeners = new Map()
 
+  providerInfo = {
+    label: "Tally Ho!",
+    injectedNamespace: "tally",
+    iconURL: "TODO",
+    identityFlag: "isTally",
+    checkIdentity: (provider: WalletProvider) =>
+      !!provider && !!provider.isTally,
+  } as const
+
   constructor(public transport: ProviderTransport) {
     super()
 
@@ -57,22 +66,26 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        if (result.defaultWallet) {
-          // let's set Tally as a default wallet
-          // and bkp any object that maybe using window.ethereum
-          if (window.ethereum) {
-            window.oldEthereum = window.ethereum
+        if (!result.defaultWallet) {
+          // if tally is NOT set to be default wallet
+          // AND we have other providers that tried to inject into window.ethereum
+          if (window.walletRouter?.providers.length) {
+            // then let's reset window.ethereum to the original value
+            window.walletRouter.switchToPreviousProvider()
           }
 
-          window.ethereum = window.tally
-        } else if (window.oldEthereum) {
-          // let's remove tally as a default wallet
-          // and put back whatever it was there before us
-          window.ethereum = window.oldEthereum
-        } else if (window.ethereum?.isTally) {
-          // we were told not to be a default wallet anymore
-          // so in case if we have `window.ethereum` just remove ourselves
-          window.ethereum = undefined
+          // NOTE: we do not remove the TallyWindowProvider from window.ethereum
+          // if there is nothing else that want's to use it.
+        } else if (window.walletRouter?.currentProvider !== window.tally) {
+          if (
+            !window.walletRouter?.hasProvider(this.providerInfo.checkIdentity)
+          ) {
+            window.walletRouter?.addProvider(window.tally!)
+          }
+
+          window.walletRouter?.setCurrentProvider(
+            this.providerInfo.checkIdentity
+          )
         }
       } else if (isTallyAccountPayload(result)) {
         this.handleAddressChange.bind(this)(result.address)
@@ -83,7 +96,7 @@ export default class TallyWindowProvider extends EventEmitter {
   }
 
   // deprecated EIP-1193 method
-  async enable() {
+  async enable(): Promise<unknown> {
     return this.request({ method: "eth_requestAccounts" })
   }
 
@@ -213,7 +226,7 @@ export default class TallyWindowProvider extends EventEmitter {
     })
   }
 
-  handleAddressChange(address: Array<string>) {
+  handleAddressChange(address: Array<string>): void {
     if (this.selectedAddress !== address[0]) {
       // eslint-disable-next-line prefer-destructuring
       this.selectedAddress = address[0]

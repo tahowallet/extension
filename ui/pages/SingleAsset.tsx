@@ -5,21 +5,26 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigningMethod,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import {
-  HIDE_SEND_BUTTON,
-  HIDE_SWAP,
-} from "@tallyho/tally-background/features/features"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { isSmartContractFungibleAsset } from "@tallyho/tally-background/assets"
+import {
+  AnyAsset,
+  isSmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
+import SharedTooltip from "../components/Shared/SharedTooltip"
 
 export default function SingleAsset(): ReactElement {
-  const location = useLocation<{ symbol: string; contractAddress?: string }>()
-  const { symbol, contractAddress } = location.state
+  const location = useLocation<AnyAsset>()
+  const locationAsset = location.state
+  const { symbol } = locationAsset
+  const contractAddress =
+    "contractAddress" in locationAsset
+      ? locationAsset.contractAddress
+      : undefined
 
   const currentAccountSigningMethod = useBackgroundSelector(
     selectCurrentAccountSigningMethod
@@ -92,6 +97,25 @@ export default function SingleAsset(): ReactElement {
                 symbol={asset?.symbol}
               />
               <span className="asset_name">{symbol}</span>
+              {contractAddress ? (
+                <SharedTooltip
+                  width={155}
+                  IconComponent={() => (
+                    <a
+                      className="new_tab_link"
+                      href={`https://etherscan.io/token/${contractAddress}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <div className="icon_new_tab" />
+                    </a>
+                  )}
+                >
+                  View asset on Etherscan
+                </SharedTooltip>
+              ) : (
+                <></>
+              )}
             </div>
             <div className="balance">{localizedDecimalAmount}</div>
             {typeof localizedMainCurrencyAmount !== "undefined" ? (
@@ -103,44 +127,28 @@ export default function SingleAsset(): ReactElement {
           <div className="right">
             {currentAccountSigningMethod ? (
               <>
-                {!HIDE_SEND_BUTTON && symbol === "ETH" && (
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    icon="send"
-                    linkTo={{
-                      pathname: "/send",
-                      state: {
-                        symbol,
-                        contractAddress:
-                          "contractAddress" in asset
-                            ? asset.contractAddress
-                            : undefined,
-                      },
-                    }}
-                  >
-                    Send
-                  </SharedButton>
-                )}
-                {!HIDE_SWAP && symbol !== "ETH" && (
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    icon="swap"
-                    linkTo={{
-                      pathname: "/swap",
-                      state: {
-                        symbol,
-                        contractAddress:
-                          "contractAddress" in asset
-                            ? asset.contractAddress
-                            : undefined,
-                      },
-                    }}
-                  >
-                    Swap
-                  </SharedButton>
-                )}
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  iconSmall="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: asset,
+                  }}
+                >
+                  Send
+                </SharedButton>
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  iconSmall="swap"
+                  linkTo={{
+                    pathname: "/swap",
+                    state: asset,
+                  }}
+                >
+                  Swap
+                </SharedButton>
               </>
             ) : (
               <></>
@@ -217,6 +225,17 @@ export default function SingleAsset(): ReactElement {
             font-weight: 500;
             line-height: 24px;
             margin-bottom: 8px;
+          }
+          .icon_new_tab {
+            mask-image: url("./images/new_tab@2x.png");
+            mask-size: cover;
+            width: 16px;
+            height: 16px;
+            background-color: var(--green-40);
+            margin-left: 5px;
+          }
+          .new_tab_link:hover .icon_new_tab {
+            background-color: var(--trophy-gold);
           }
         `}
       </style>

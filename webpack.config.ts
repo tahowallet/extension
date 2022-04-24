@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import path from "path"
 import webpack, {
   Configuration,
@@ -13,28 +12,10 @@ import TerserPlugin from "terser-webpack-plugin"
 import LiveReloadPlugin from "webpack-livereload-plugin"
 import CopyPlugin, { ObjectPattern } from "copy-webpack-plugin"
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
-import { GitRevisionPlugin } from "git-revision-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
+import InjectWindowProvider from "./build-utils/inject-window-provider"
 
 const supportedBrowsers = ["brave", "chrome", "edge", "firefox", "opera"]
-
-const gitRevisionPlugin = new GitRevisionPlugin({
-  /* `--tags` option allows for un-annotated tags, currently present in the repo */
-  versionCommand: `describe --tags`,
-})
-
-const gitVersion = gitRevisionPlugin.version()
-if (gitVersion === null || !gitVersion.startsWith("v")) {
-  throw new Error(`cannot get current version from git: missing or invalid`)
-}
-
-const [manifestVersion, versionQualifier] = gitVersion
-  .substring(1)
-  .split("-", 2)
-
-if (typeof versionQualifier !== "undefined") {
-  console.log(`Building NON-OFFICIAL version ${gitVersion}. Do not release.`)
-}
 
 // Replicated and adjusted for each target browser and the current build mode.
 const baseConfig: Configuration = {
@@ -78,6 +59,7 @@ const baseConfig: Configuration = {
     },
   },
   plugins: [
+    new InjectWindowProvider(),
     new Dotenv({
       defaults: true,
       systemvars: true,
@@ -112,16 +94,8 @@ const baseConfig: Configuration = {
       // FIXME version refed in @types/copy-webpack-plugin and our local
       // FIXME webpack version.
     }) as unknown as WebpackPluginInstance,
-    gitRevisionPlugin,
     new DefinePlugin({
-      "process.env.GIT_COMMIT_HASH": JSON.stringify(
-        gitRevisionPlugin.commithash()
-      ),
-      "process.env.GIT_COMMIT_DATE": JSON.stringify(
-        gitRevisionPlugin.lastcommitdatetime()
-      ),
-      "process.env.GIT_BRANCH": JSON.stringify(gitRevisionPlugin.branch()),
-      "process.env.VERSION": JSON.stringify(gitRevisionPlugin.version()),
+      "process.env.VERSION": JSON.stringify(process.env.npm_package_version),
     }),
   ],
   optimization: {
@@ -159,6 +133,14 @@ const modeConfigs: {
     },
   }),
   production: (browser) => ({
+    // For some reason, every source map variant embeds absolute paths, and
+    // Firefox reproducibility is required for Firefox add-on store submission.
+    // As such, in production, no source maps for firefox for full
+    // reproducibility.
+    //
+    // Ideally, we would figure out a way not to have absolute paths in source
+    // maps.
+    devtool: browser === "firefox" ? false : "source-map",
     plugins: [
       new WebExtensionArchivePlugin({
         filename: browser,
@@ -166,6 +148,10 @@ const modeConfigs: {
     ],
     optimization: {
       minimizer: [
+        // Firefox imposes filesize limits in the add-on store, so Firefox
+        // builds are mangled and compressed. In a perfect world, we would
+        // never do this so that users can inspect the code running on their
+        // system more easily.
         new TerserPlugin({
           terserOptions: {
             mangle: browser === "firefox",
@@ -234,12 +220,6 @@ export default (
                     .filter((assetData) => assetData.trim().length > 0)
                     .map((assetData) => JSON.parse(assetData))
                 )
-
-                if (combinedManifest.version !== manifestVersion) {
-                  throw new Error(
-                    `manifest version '${combinedManifest.version}' does not match git version '${manifestVersion}'`
-                  )
-                }
 
                 return JSON.stringify(combinedManifest, null, 2)
               },

@@ -3,9 +3,20 @@ import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
+import { AddressOnNetwork } from "../../accounts"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
+}
+
+export function normalizeAddressOnNetwork({
+  address,
+  network,
+}: AddressOnNetwork): AddressOnNetwork {
+  return {
+    address: normalizeEVMAddress(address),
+    network,
+  }
 }
 
 export function truncateDecimalAmount(
@@ -111,8 +122,15 @@ export function getEthereumNetwork(): EVMNetwork {
   return ETHEREUM
 }
 
+export function isProbablyEVMAddress(str: string): str is HexString {
+  if (normalizeHexAddress(str).startsWith("0x") && str.length === 42) {
+    return true
+  }
+  return false
+}
+
 export function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-5)}`
+  return `${address.slice(0, 6)}…${address.slice(-5)}`
 }
 
 export const getNumericStringValueFromBigNumber = (
@@ -135,7 +153,7 @@ export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
 /**
  * Converts a string of hexidecimals bytes to ascii text
  */
-export const hexToAscii = (hex_: string) => {
+export const hexToAscii = (hex_: string): string => {
   const hex = hex_.toString() // force conversion
   let str = ""
   for (let i = 0; i < hex.length; i += 2)

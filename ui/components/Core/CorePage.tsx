@@ -3,12 +3,11 @@ import Snackbar from "../Snackbar/Snackbar"
 
 interface Props {
   children: React.ReactNode
-  hasTabBar: boolean
   hasTopBar: boolean
 }
 
 export default function CorePage(props: Props): ReactElement {
-  const { children, hasTabBar, hasTopBar } = props
+  const { children, hasTopBar } = props
 
   return (
     <main>
@@ -40,6 +39,5 @@ export default function CorePage(props: Props): ReactElement {
 }
 
 CorePage.defaultProps = {
-  hasTabBar: true,
   hasTopBar: true,
 }

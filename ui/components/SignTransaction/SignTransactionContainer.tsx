@@ -1,8 +1,13 @@
+import React, {
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useState,
+  useRef,
+} from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
 import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
 import SignTransactionLedgerNotConnected from "./SignTransactionLedgerNotConnected"
@@ -21,6 +26,7 @@ export default function SignTransactionContainer({
   handleConfirm,
   handleReject,
   isTransactionSigning,
+  isArbitraryDataSigningRequired,
 }: {
   signerAccountTotal: AccountTotal
   title: ReactNode
@@ -31,14 +37,66 @@ export default function SignTransactionContainer({
   handleConfirm: () => void
   handleReject: () => void
   isTransactionSigning: boolean
+  isArbitraryDataSigningRequired: boolean
 }): ReactElement {
   const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
+  const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
+  const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
   const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
 
   const isLedgerSigning = signingMethod?.type === "ledger"
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
+
+  const isLedgerAvailable = signingLedgerState?.state === "available"
+
+  const mustEnableArbitraryDataSigning =
+    isLedgerAvailable &&
+    isArbitraryDataSigningRequired &&
+    !signingLedgerState.arbitraryDataEnabled
+
+  const canLedgerSign = isLedgerAvailable && !mustEnableArbitraryDataSigning
+
+  /*
+    Prevent shenanigans by disabling the sign button for a bit
+    when rendering new sign content or when changing window focus.
+  */
+  const delaySignButtonTimeout = useRef<number | undefined>()
+
+  function clearDelaySignButtonTimeout() {
+    if (typeof delaySignButtonTimeout.current !== "undefined") {
+      clearTimeout(delaySignButtonTimeout.current)
+      delaySignButtonTimeout.current = undefined
+    }
+  }
+
+  useEffect(() => {
+    const increaseFocusChangeNonce = () => {
+      setFocusChangeNonce((x) => x + 1)
+    }
+    window.addEventListener("focus", increaseFocusChangeNonce)
+    window.addEventListener("blur", increaseFocusChangeNonce)
+
+    return () => {
+      window.removeEventListener("focus", increaseFocusChangeNonce)
+      window.removeEventListener("blur", increaseFocusChangeNonce)
+    }
+  }, [])
+
+  // Runs on updates
+  useEffect(() => {
+    clearDelaySignButtonTimeout()
+
+    if (document.hasFocus()) {
+      delaySignButtonTimeout.current = window.setTimeout(() => {
+        setIsOnDelayToSign(false)
+        // Random delay between 0.5 and 2 seconds
+      }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
+    } else {
+      setIsOnDelayToSign(true)
+    }
+  }, [reviewPanel, focusChangeNonce])
 
   return (
     <section>
@@ -60,21 +118,15 @@ export default function SignTransactionContainer({
         <>
           {extraPanel}
           <div className="footer_actions">
-            <SharedButton
-              iconSize="large"
-              size="large"
-              type="secondary"
-              onClick={handleReject}
-            >
+            <SharedButton size="large" type="secondary" onClick={handleReject}>
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
             {signerAccountTotal.signingMethod &&
               (signerAccountTotal.signingMethod.type === "ledger" &&
-              signingLedgerState !== "available" ? (
+              !canLedgerSign ? (
                 <SharedButton
-                  type="primary"
-                  iconSize="large"
+                  type="primaryGreen"
                   size="large"
                   onClick={() => {
                     setSlideUpOpen(true)
@@ -84,11 +136,11 @@ export default function SignTransactionContainer({
                 </SharedButton>
               ) : (
                 <SharedButton
-                  type="primary"
-                  iconSize="large"
+                  type="primaryGreen"
                   size="large"
                   onClick={handleConfirm}
                   showLoadingOnClick
+                  isDisabled={isOnDelayToSign}
                 >
                   {confirmButtonLabel}
                 </SharedButton>
@@ -100,28 +152,28 @@ export default function SignTransactionContainer({
         </>
       )}
       <SharedSlideUpMenu
-        isOpen={isSlideUpOpen && signingLedgerState !== "available"}
+        isOpen={isSlideUpOpen && !canLedgerSign}
         close={() => {
           setSlideUpOpen(false)
         }}
         alwaysRenderChildren
         size="auto"
       >
-        {signingLedgerState === "no-ledger-connected" && (
+        {signingLedgerState?.state === "no-ledger-connected" && (
           <SignTransactionLedgerNotConnected />
         )}
-        {signingLedgerState === "wrong-ledger-connected" && (
+        {signingLedgerState?.state === "wrong-ledger-connected" && (
           <SignTransactionWrongLedgerConnected
             signerAccountTotal={signerAccountTotal}
           />
         )}
-        {signingLedgerState === "multiple-ledgers-connected" && (
+        {signingLedgerState?.state === "multiple-ledgers-connected" && (
           <SignTransactionMultipleLedgersConnected />
         )}
-        {signingLedgerState === "activate-blind-signing" && (
+        {mustEnableArbitraryDataSigning && (
           <SignTransactionLedgerActivateBlindSigning />
         )}
-        {signingLedgerState === "busy" && <SignTransactionLedgerBusy />}
+        {signingLedgerState?.state === "busy" && <SignTransactionLedgerBusy />}
       </SharedSlideUpMenu>
       <style jsx>
         {`

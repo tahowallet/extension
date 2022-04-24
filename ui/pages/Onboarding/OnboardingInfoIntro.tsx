@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
+import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
 
@@ -44,8 +45,8 @@ const steps = [
       fileName: "illustration_onboarding_default",
       extraStyles: `margin-top: 21px;`,
     },
-    title: "TallyHo set as default",
-    body: `TallyHo will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
+    title: "Tally Ho set as default",
+    body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
     buttonCopy: "Get started",
   },
 ]
@@ -54,8 +55,17 @@ export default function OnboardingInfoIntro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
+  const hasAccounts = useBackgroundSelector(
+    (state) => Object.keys(state.account.accountsData).length > 0
+  )
+
   if (redirectToAddWallet) {
     return <Redirect push to="/onboarding/add-wallet" />
+  }
+
+  // If there's an account, return to /wallet
+  if (hasAccounts) {
+    return <Redirect to="/wallet" />
   }
 
   return (

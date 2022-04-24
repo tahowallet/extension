@@ -3,17 +3,17 @@ import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_SEND_BUTTON } from "@tallyho/tally-background/features/features"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
+import t from "../../utils/i18n"
 
 function ReadOnlyNotice(): ReactElement {
   return (
     <div className="notice_wrap">
       <div className="icon_eye" />
-      Read-only mode
+      {t("readOnlyNotice")}
       <style jsx>{`
         .notice_wrap {
           width: 177px;
@@ -144,7 +144,7 @@ export default function WalletAccountBalanceControl(
             balance_label_loading: shouldIndicateLoading,
           })}
         >
-          Total account balance
+          {t("totalAccountBalance")}
         </div>
         <span className="balance_area">
           <span
@@ -157,12 +157,12 @@ export default function WalletAccountBalanceControl(
             {!shouldIndicateLoading && <BalanceReloader />}
           </span>
         </span>
-        {currentAccountSigningMethod && !HIDE_SEND_BUTTON ? (
+        {currentAccountSigningMethod ? (
           <>
             {hasSavedSeed ? (
               <div className="send_receive_button_wrap">
                 <SharedButton
-                  icon="send"
+                  iconSmall="send"
                   size="medium"
                   type="tertiary"
                   linkTo="/send"
@@ -172,7 +172,7 @@ export default function WalletAccountBalanceControl(
                 </SharedButton>
                 <SharedButton
                   onClick={handleClick}
-                  icon="receive"
+                  iconSmall="receive"
                   size="medium"
                   type="tertiary"
                   iconPosition="left"
@@ -183,8 +183,7 @@ export default function WalletAccountBalanceControl(
             ) : (
               <div className="save_seed_button_wrap">
                 <SharedButton
-                  icon="arrow_right"
-                  iconSize="large"
+                  iconSmall="arrow-right"
                   size="large"
                   type="warning"
                   linkTo="/onboarding/2"

@@ -18,20 +18,17 @@ import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-sl
 import {
   AnyAsset,
   FungibleAsset,
+  isFungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
-import { useHistory, useLocation } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import {
-  clearTransactionState,
-  selectDefaultNetworkFeeSettings,
-  TransactionConstructionStatus,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -69,7 +66,6 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
 
 export default function Swap(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const history = useHistory()
   const location = useLocation<
     { symbol: string; contractAddress?: string } | undefined
   >()
@@ -88,13 +84,6 @@ export default function Swap(): ReactElement {
         isSmartContractFungibleAsset(assetAmount.asset) ||
         assetAmount.asset.symbol === "ETH"
     ) ?? []
-
-  const buyAssets = useBackgroundSelector((state) => {
-    // Some type massaging needed to remind TypeScript how these types fit
-    // together.
-    const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(isSmartContractFungibleAsset)
-  })
 
   const {
     symbol: locationAssetSymbol,
@@ -119,7 +108,8 @@ export default function Swap(): ReactElement {
   const {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
-  } = savedQuoteRequest ?? {
+  } = (!locationAsset && savedQuoteRequest) || {
+    // ^ If coming from an asset item swap button, let the UI start fresh
     assets: { sellAsset: locationAsset },
   }
 
@@ -140,23 +130,41 @@ export default function Swap(): ReactElement {
     undefined
   )
 
-  const sellAssetAmounts = ownedSellAssetAmounts.some(
-    ({ asset }) =>
-      typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+  const buyAssets = useBackgroundSelector((state) => {
+    // Some type massaging needed to remind TypeScript how these types fit
+    // together.
+    const knownAssets: AnyAsset[] = state.assets
+    return knownAssets.filter(
+      (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
+        (isSmartContractFungibleAsset(asset) ||
+          // Explicity add ETH even though it is not an ERC-20 token
+          // @TODO change as part of multi-network refactor.
+          (isFungibleAsset(asset) && asset.symbol === "ETH")) &&
+        asset.symbol !== sellAsset?.symbol
+    )
+  })
+
+  const sellAssetAmounts = (
+    ownedSellAssetAmounts.some(
+      ({ asset }) =>
+        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+    )
+      ? ownedSellAssetAmounts
+      : ownedSellAssetAmounts.concat(
+          typeof sellAsset === "undefined"
+            ? []
+            : [
+                {
+                  asset: sellAsset,
+                  amount: 0n,
+                  decimalAmount: 0,
+                  localizedDecimalAmount: "0",
+                },
+              ]
+        )
+  ).filter(
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
   )
-    ? ownedSellAssetAmounts
-    : ownedSellAssetAmounts.concat(
-        typeof sellAsset === "undefined"
-          ? []
-          : [
-              {
-                asset: sellAsset,
-                amount: 0n,
-                decimalAmount: 0,
-                localizedDecimalAmount: "0",
-              },
-            ]
-      )
 
   useEffect(() => {
     if (typeof sellAsset !== "undefined") {
@@ -235,18 +243,12 @@ export default function Swap(): ReactElement {
       return
     }
 
-    // FIXME Set state to pending so SignTransaction doesn't redirect back; drop after
-    // FIXME proper transaction queueing is in effect.
-    await dispatch(clearTransactionState(TransactionConstructionStatus.Pending))
-
-    dispatch(
+    await dispatch(
       approveTransfer({
         assetContractAddress: sellAsset.contractAddress,
         approvalTarget,
       })
     )
-
-    history.push("/sign-transaction")
   }
 
   const updateSwapData = useCallback(
@@ -444,7 +446,6 @@ export default function Swap(): ReactElement {
                 amount={sellAmount}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
-                disableDropdown={typeof locationAsset !== "undefined"}
                 isDisabled={sellAmountLoading}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
@@ -469,7 +470,7 @@ export default function Swap(): ReactElement {
                 showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
-                  setBuyAmount(buyAmount)
+                  setBuyAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)
                   }

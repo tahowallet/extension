@@ -9,13 +9,12 @@ import classNames from "classnames"
 
 import { useOnClickOutside } from "../../hooks"
 
-type Option = { value: string; label: string }
+export type Option = { value: string; label: string; hideActiveValue?: boolean }
 
 type Props = {
   options: Option[] | string[]
   onChange: (value: string) => void
   defaultIndex?: number
-  placeholder?: string
   label?: string
   placement?: "top" | "bottom"
   triggerLabel?: string
@@ -29,7 +28,6 @@ export default function SharedSelect(props: Props): ReactElement {
     onChange,
     defaultIndex = 0,
     label,
-    placeholder,
     placement = "bottom",
     triggerLabel,
     onTrigger,
@@ -65,6 +63,7 @@ export default function SharedSelect(props: Props): ReactElement {
       : null
   const currentLabel = currentOption?.label ?? null
   const currentValue = currentOption?.value ?? null
+  const currentHideActiveValue = currentOption?.hideActiveValue ?? false
 
   useEffect(() => {
     if (currentValue) onChange(currentValue)
@@ -98,7 +97,7 @@ export default function SharedSelect(props: Props): ReactElement {
           tabIndex={0}
         >
           <span>
-            {showValue && activeIndex
+            {showValue && activeIndex && !currentHideActiveValue
               ? `${currentLabel} - ${currentValue}`
               : `${currentLabel}`}
           </span>
@@ -240,7 +239,7 @@ export default function SharedSelect(props: Props): ReactElement {
           }
 
           .options.show {
-            max-height: 224px;
+            max-height: 140px;
             bottom: 42px;
             opacity: 1;
           }
