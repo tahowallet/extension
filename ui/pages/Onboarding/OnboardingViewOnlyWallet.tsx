@@ -52,7 +52,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       <div className="content">
         <h1 className="serif_header">Explore Tally Ho!</h1>
         <div className="subtitle">
-          Add an Ethereum address or ENS name to view an existing wallet in
+          Add an Ethereum address, ENS or UNS name to view an existing wallet in
           Tally Ho.
         </div>
         <form
