@@ -30,6 +30,7 @@ jobs:
       env:
         ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
         BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
+        COMMIT_SHA: ${{ github.sha }}
     - name: Production build
       if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       run: yarn build
@@ -37,6 +38,7 @@ jobs:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
         ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
+        COMMIT_SHA: ${{ github.sha }}
     - name: Upload build asset
       if: ${{ !startsWith(github.ref, 'refs/tags/') }}
       uses: actions/upload-artifact@v2

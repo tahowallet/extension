@@ -99,6 +99,7 @@ import {
 } from "./utils/signing"
 import { emitter as earnSliceEmitter } from "./redux-slices/earn"
 import {
+  LedgerState,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
@@ -226,7 +227,23 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   6: (prevState: any) => {
     const { ...newState } = prevState
-    newState.ledger.isArbitraryDataSigningEnabled = false
+
+    // A user might be upgrading from version without the `ledger` key in the redux store - so we
+    // initialize it here if that is the case.
+    if (!newState.ledger) {
+      newState.ledger = {
+        currentDeviceID: null,
+        devices: {},
+        usbDeviceCount: 0,
+      }
+      return newState
+    }
+
+    Object.keys(newState.ledger.devices).forEach((deviceId) => {
+      ;(newState.ledger as LedgerState).devices[
+        deviceId
+      ].isArbitraryDataSigningEnabled = false
+    })
 
     return newState
   },
@@ -1122,14 +1139,25 @@ export default class Main extends BaseService<never> {
 
     this.providerBridgeService.emitter.on(
       "setClaimReferrer",
-      async (referral) => {
+      async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
+        const network = getEthereumNetwork()
         const ensName = isAddress
-          ? await this.nameService.lookUpName(referral, getEthereumNetwork())
+          ? (
+              await this.nameService.lookUpName({
+                address: referral,
+                network,
+              })
+            )?.name
           : referral
         const address = isAddress
           ? referral
-          : await this.nameService.lookUpEthereumAddress(referral)
+          : (
+              await this.nameService.lookUpEthereumAddress({
+                name: referral,
+                network,
+              })
+            )?.address
 
         if (typeof address !== "undefined") {
           this.store.dispatch(

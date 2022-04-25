@@ -194,7 +194,7 @@ function IneligibleCTAContent({
           type="tertiary"
           size="small"
           linkTo="/onboarding/add-wallet"
-          icon="plus"
+          iconSmall="add"
           iconPosition="left"
         >
           Add wallet
@@ -202,7 +202,7 @@ function IneligibleCTAContent({
         <SharedButton
           type="tertiary"
           size="small"
-          icon="external_small"
+          iconSmall="new-tab"
           iconPosition="left"
         >
           Learn more

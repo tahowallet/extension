@@ -59,6 +59,7 @@ interface PropsWithMediumIcon extends Props {
     | "switch"
     | "wallet"
     | "discord"
+    | "github"
   iconSmall?: never
 }
 
