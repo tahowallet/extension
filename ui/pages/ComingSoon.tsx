@@ -13,9 +13,8 @@ export default function ComingSoon(): ReactElement {
       <SharedButton
         type="primary"
         size="medium"
-        icon="github"
+        iconMedium="github"
         iconPosition="left"
-        iconSize="large"
       >
         Deploy a contract on Github
       </SharedButton>

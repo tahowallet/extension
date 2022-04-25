@@ -88,8 +88,7 @@ export default function BonusProgramModalContent(): ReactElement {
           <SharedButton
             type="secondary"
             size="medium"
-            icon="copy"
-            iconSize="secondaryMedium"
+            iconSmall="copy"
             iconPosition="left"
             onClick={copyLink}
           >

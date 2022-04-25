@@ -1139,14 +1139,25 @@ export default class Main extends BaseService<never> {
 
     this.providerBridgeService.emitter.on(
       "setClaimReferrer",
-      async (referral) => {
+      async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
+        const network = getEthereumNetwork()
         const ensName = isAddress
-          ? await this.nameService.lookUpName(referral, getEthereumNetwork())
+          ? (
+              await this.nameService.lookUpName({
+                address: referral,
+                network,
+              })
+            )?.name
           : referral
         const address = isAddress
           ? referral
-          : await this.nameService.lookUpEthereumAddress(referral)
+          : (
+              await this.nameService.lookUpEthereumAddress({
+                name: referral,
+                network,
+              })
+            )?.address
 
         if (typeof address !== "undefined") {
           this.store.dispatch(
