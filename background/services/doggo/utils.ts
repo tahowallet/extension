@@ -2,8 +2,6 @@ import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 import { Eligible, IPFSLinkItem } from "./types"
 import BaseService from "../base"
 import IndexingService from "../indexing"
-import { initialVaults } from "../../redux-slices/earn"
-import { ETHEREUM } from "../../constants"
 import { HexString } from "../../types"
 
 export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
@@ -132,19 +130,6 @@ export default class ClaimService extends BaseService<Events> {
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService()
-
-    const huntingGrounds = initialVaults
-
-    huntingGrounds.forEach(({ network, asset }) => {
-      this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
-    })
-    this.indexingService.addAssetToTrack({
-      contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      decimals: 18,
-      homeNetwork: ETHEREUM,
-      name: "Wrapped Ether",
-      symbol: "WETH",
-    })
   }
 
   protected async internalStopService(): Promise<void> {

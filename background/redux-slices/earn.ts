@@ -24,6 +24,7 @@ import { doggoTokenDecimalDigits, ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
 import YEARN_VAULT_ABI from "../lib/yearnVault"
 import UNISWAP_V2_PAIR from "../lib/uniswapPair"
+import { sameEVMAddress } from "../lib/utils"
 
 export type ApprovalTargetAllowance = {
   contractAddress: HexString
@@ -637,7 +638,16 @@ const getPoolAPR = async ({
   const rewardRatio = totalYearlyRewardsValue.div(tokensStakedValue)
   // 11. Multiply that ratio by 100 to receive percentage
   const percentageAPR = rewardRatio.mul(BigNumber.from(100))
-  return `${nFormatter(percentageAPR.toNumber(), 1)}%`
+  // 12. Fetch underlying yearn vault APR
+  const yearnVaultAddress = await huntingGroundContract.vault()
+  const yearnVaultsAPIData = await (
+    await fetch("https://api.yearn.finance/v1/chains/1/vaults/all")
+  ).json()
+  const yearnVaultAPY =
+    yearnVaultsAPIData.find((yearnVault: any) =>
+      sameEVMAddress(yearnVault.address, yearnVaultAddress)
+    )?.apy?.net_apy * 100
+  return `${nFormatter(percentageAPR.toNumber() + yearnVaultAPY, 1)}%`
 }
 
 export const updateVaults = createBackgroundAsyncThunk(
