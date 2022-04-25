@@ -34,7 +34,10 @@ export default function ClaimReview({
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
-        <SharedAddressAvatar address={selectedDelegate?.address ?? ""} />
+        <SharedAddressAvatar
+          address={selectedDelegate?.address ?? ""}
+          url={selectedDelegate?.avatar}
+        />
         <div className="option">
           <div className="left">
             {selectedDelegate?.ensName ? (
