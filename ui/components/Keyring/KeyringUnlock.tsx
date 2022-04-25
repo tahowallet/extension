@@ -10,6 +10,7 @@ import {
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import titleStyle from "../Onboarding/titleStyle"
+import SharedBackButton from "../Shared/SharedBackButton"
 
 export default function KeyringUnlock(): ReactElement {
   const [password, setPassword] = useState("")
@@ -43,6 +44,11 @@ export default function KeyringUnlock(): ReactElement {
     await dispatch(rejectTransactionSignature())
   }
 
+  const handleBack = async () => {
+    await handleReject()
+    history.goBack()
+  }
+
   return (
     <section className="standard_width">
       {isDappPopup && (
@@ -56,6 +62,9 @@ export default function KeyringUnlock(): ReactElement {
           </SharedButton>
         </div>
       )}
+      <div className="back_button_wrap">
+        <SharedBackButton onClick={handleBack} />
+      </div>
       <div className="illustration_unlock" />
       <h1 className="serif_header">Unlock Your Wallet</h1>
       <div className="subtitle">
@@ -109,6 +118,9 @@ export default function KeyringUnlock(): ReactElement {
             position: fixed;
             right: 0px;
             top: 0px;
+          }
+          .back_button_wrap {
+            margin-right: auto;
           }
         `}
       </style>

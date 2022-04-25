@@ -29,6 +29,15 @@ export default class TallyWindowProvider extends EventEmitter {
 
   bridgeListeners = new Map()
 
+  providerInfo = {
+    label: "Tally Ho!",
+    injectedNamespace: "tally",
+    iconURL: "TODO",
+    identityFlag: "isTally",
+    checkIdentity: (provider: WalletProvider) =>
+      !!provider && !!provider.isTally,
+  } as const
+
   constructor(public transport: ProviderTransport) {
     super()
 
@@ -59,14 +68,24 @@ export default class TallyWindowProvider extends EventEmitter {
       if (isTallyConfigPayload(result)) {
         if (!result.defaultWallet) {
           // if tally is NOT set to be default wallet
-          // AND window.ethereum was taken
-          if (window.oldEthereum) {
+          // AND we have other providers that tried to inject into window.ethereum
+          if (window.walletRouter?.providers.length) {
             // then let's reset window.ethereum to the original value
-            window.ethereum = window.oldEthereum
+            window.walletRouter.switchToPreviousProvider()
           }
 
           // NOTE: we do not remove the TallyWindowProvider from window.ethereum
           // if there is nothing else that want's to use it.
+        } else if (window.walletRouter?.currentProvider !== window.tally) {
+          if (
+            !window.walletRouter?.hasProvider(this.providerInfo.checkIdentity)
+          ) {
+            window.walletRouter?.addProvider(window.tally!)
+          }
+
+          window.walletRouter?.setCurrentProvider(
+            this.providerInfo.checkIdentity
+          )
         }
       } else if (isTallyAccountPayload(result)) {
         this.handleAddressChange.bind(this)(result.address)

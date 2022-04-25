@@ -24,7 +24,6 @@ export default function SharedTwitterButton({
         type="twitter"
         size="medium"
         iconPosition="left"
-        iconSize="secondaryMedium"
         onClick={onClick}
       >
         {buttonLabel}

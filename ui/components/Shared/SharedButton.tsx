@@ -19,8 +19,6 @@ interface Props {
     | "unstyled"
     | "twitter"
   size: "small" | "medium" | "large"
-  icon?: string
-  iconSize?: "small" | "medium" | "large" | "secondaryMedium"
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
@@ -30,7 +28,78 @@ interface Props {
   isFormSubmit: boolean
 }
 
-export default function SharedButton(props: Props): ReactElement {
+interface PropsWithMediumIcon extends Props {
+  iconMedium?:
+    | "connected"
+    | "continue"
+    | "copy"
+    | "dark"
+    | "dashboard"
+    | "developer"
+    | "disconnect"
+    | "earn"
+    | "export"
+    | "eye-off"
+    | "eye-on"
+    | "feedback"
+    | "gift"
+    | "import"
+    | "info"
+    | "light"
+    | "list"
+    | "lock"
+    | "menu"
+    | "new-tab"
+    | "notif-accouncement"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "search"
+    | "swap"
+    | "switch"
+    | "wallet"
+    | "discord"
+    | "github"
+  iconSmall?: never
+}
+
+interface PropsWithSmallIcon extends Props {
+  iconSmall?:
+    | "add"
+    | "arrow-right"
+    | "back"
+    | "close"
+    | "continue"
+    | "copy"
+    | "discord"
+    | "download"
+    | "dropdown"
+    | "edit"
+    | "garbage"
+    | "lock"
+    | "mark-read"
+    | "new-tab"
+    | "notif-announ"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "notification"
+    | "receive"
+    | "send"
+    | "settings"
+    | "swap"
+  iconMedium?: never
+}
+
+export default function SharedButton(
+  props:
+    | (Props & {
+        iconMedium?: never
+        iconSmall?: never
+      })
+    | PropsWithMediumIcon
+    | PropsWithSmallIcon
+): ReactElement {
   const {
     id,
     children,
@@ -38,8 +107,8 @@ export default function SharedButton(props: Props): ReactElement {
     size,
     onClick,
     isDisabled,
-    icon,
-    iconSize,
+    iconSmall,
+    iconMedium,
     iconPosition,
     linkTo,
     showLoadingOnClick,
@@ -105,12 +174,11 @@ export default function SharedButton(props: Props): ReactElement {
         })}
       >
         {children}
-        {icon || type === "twitter" ? (
+        {iconMedium || iconSmall || type === "twitter" ? (
           <span
             className={classNames(
               { icon_button: true },
-              { icon_large: iconSize === "large" },
-              { icon_secondary_medium: iconSize === "secondaryMedium" }
+              { icon_medium: iconMedium }
             )}
           />
         ) : null}
@@ -152,10 +220,10 @@ export default function SharedButton(props: Props): ReactElement {
             align-items: center;
           }
           .icon_button {
-            mask-image: url("./images/${icon}@2x.png");
+            mask-image: url("./images/icons/s/${iconSmall}.svg");
             mask-size: cover;
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             margin-left: 9px;
             background-color: #ffffff;
             display: inline-block;
@@ -171,7 +239,9 @@ export default function SharedButton(props: Props): ReactElement {
             height: 16px;
             margin-left: 4px;
           }
-          .icon_large {
+          .icon_medium {
+            mask-image: url("./images/icons/m/${iconMedium}.svg");
+            mask-size: cover;
             width: 24px;
             height: 24px;
             margin-left: 10px;
@@ -190,6 +260,10 @@ export default function SharedButton(props: Props): ReactElement {
           }
           .secondary:active {
             border-color: var(--trophy-gold);
+          }
+          .primaryGreen {
+            color: var(--hunter-green);
+            background-color: var(--trophy-gold);
           }
           .disabled {
             background-color: var(--green-60);
@@ -294,10 +368,7 @@ export default function SharedButton(props: Props): ReactElement {
             height: 32px;
             font-size: 16px;
           }
-          .primaryGreen {
-            color: var(--hunter-green);
-            background-color: var(--trophy-gold);
-          }
+
           .warning {
             background-color: var(--attention);
           }
@@ -328,9 +399,7 @@ export default function SharedButton(props: Props): ReactElement {
 }
 
 SharedButton.defaultProps = {
-  icon: null,
   isDisabled: false,
-  iconSize: "medium",
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,

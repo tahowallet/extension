@@ -38,6 +38,17 @@ const steps = [
     body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
     buttonCopy: "Continue",
   },
+  {
+    image: {
+      width: 267,
+      height: 236.6,
+      fileName: "illustration_onboarding_default",
+      extraStyles: `margin-top: 21px;`,
+    },
+    title: "Tally Ho set as default",
+    body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
+    buttonCopy: "Get started",
+  },
 ]
 
 export default function OnboardingInfoIntro(): ReactElement {

@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
 import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -63,71 +63,76 @@ function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
 }
 
 export default function OnboardingVerifySeed(): ReactElement {
-  const [isSelected, setIsSelected] = useState<string[]>([])
-
   const mnemonicToVerify = useBackgroundSelector((state) => {
     return state.keyrings.keyringToVerify?.mnemonic
   })
 
+  const [selectedInOrder, setSelectedInOrder] = useState<number[]>([])
+
+  const [notYetChosenMnemonicWordIndexes, setNotYetChosenMnemonicWordIndexes] =
+    useState<number[]>([])
+
   // A random set of 8 from the mnemonic used for verification UI
-  const [randomOrderedMnemonicPart] = useState(
-    mnemonicToVerify
-      ?.slice()
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 8)
-  )
+  const [randomizedMnemonicIndexes, setRandomizedMnemonicIndexes] = useState<
+    number[]
+  >([])
+
+  useEffect(() => {
+    if (mnemonicToVerify) {
+      const randomizedIndexes = mnemonicToVerify
+        ?.map((_, index) => index)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 8)
+
+      setRandomizedMnemonicIndexes(randomizedIndexes)
+      setNotYetChosenMnemonicWordIndexes(randomizedIndexes)
+    }
+  }, [mnemonicToVerify])
 
   // To display the order of verification in the UI (the unfilled numbers "1 -", "7 -", etc)
-  const sortedIndexesOfRandomOrderedMnemonicPart = randomOrderedMnemonicPart
-    ?.map((item) => {
-      return mnemonicToVerify?.indexOf(item)
-    })
-    ?.sort((a, b) => {
-      if (a === 0) {
-        return -1
-      }
-      return (a && b && a - b) || 0
-    })
+  const sortedIndexesOfRandomOrderedMnemonicPart = [
+    ...randomizedMnemonicIndexes,
+  ].sort((a, b) => {
+    if (a === 0) {
+      return -1
+    }
+    return (a && b && a - b) || 0
+  })
 
   function hasUserSelectedCorrectOrder() {
-    let result = true
-    isSelected.forEach((word, i) => {
-      const assignedNumber =
-        (sortedIndexesOfRandomOrderedMnemonicPart &&
-          sortedIndexesOfRandomOrderedMnemonicPart[i]) ||
-        0
-      if (mnemonicToVerify && mnemonicToVerify[assignedNumber] !== word) {
-        result = false
-      }
-    })
-    return result
+    return !selectedInOrder.some(
+      (selectedIndex, i) =>
+        sortedIndexesOfRandomOrderedMnemonicPart[i] !== selectedIndex
+    )
   }
 
-  const [isNotSelected, setIsNotSelected] = useState(randomOrderedMnemonicPart)
-
-  const handleAdd = useCallback((item) => {
-    setIsSelected((currentlySelected) => [...currentlySelected, item])
-    setIsNotSelected((currentlyUnselected) =>
-      currentlyUnselected?.filter((e) => e !== item)
+  const handleAdd = (mnemonicWordIndex: number) => {
+    setNotYetChosenMnemonicWordIndexes(
+      notYetChosenMnemonicWordIndexes.filter((index: number) => {
+        return index !== mnemonicWordIndex
+      })
     )
-  }, [])
+    setSelectedInOrder([...selectedInOrder, mnemonicWordIndex])
+  }
 
-  const handleRemove = useCallback((item) => {
-    setIsSelected((currentlySelected) =>
-      currentlySelected.filter((e) => e !== item)
+  const handleRemove = (mnemonicWordIndex: number) => {
+    setNotYetChosenMnemonicWordIndexes([
+      ...notYetChosenMnemonicWordIndexes,
+      mnemonicWordIndex,
+    ])
+    setSelectedInOrder(
+      selectedInOrder.filter((index: number) => {
+        return index !== mnemonicWordIndex
+      })
     )
-    setIsNotSelected((currentlyUnselected) => {
-      if (currentlyUnselected) {
-        return [...currentlyUnselected, item]
-      }
-      return [item]
-    })
-  }, [])
+  }
 
   const columnEnds = [
     [0, 4],
     [4, 8],
   ]
+
+  if (!mnemonicToVerify) return <span>Recovery phrase not created</span>
 
   return (
     <section>
@@ -144,7 +149,7 @@ export default function OnboardingVerifySeed(): ReactElement {
           const posOne = positions[0]
           const posTwo = positions[1]
           return (
-            <div className="column_wrap">
+            <div className="column_wrap" key={`column_starting_${posOne}`}>
               <div className="column numbers">
                 {sortedIndexesOfRandomOrderedMnemonicPart
                   ?.slice(posOne, posTwo)
@@ -153,27 +158,32 @@ export default function OnboardingVerifySeed(): ReactElement {
               </div>
               <div className="column dashes">- - - -</div>
               <div className="column words">
-                {isSelected.slice(posOne, posTwo).map((item) => (
-                  <div className="button_spacing" key={item}>
-                    <SharedButton
-                      type="deemphasizedWhite"
-                      size="small"
-                      onClick={() => {
-                        handleRemove(item)
-                      }}
-                      icon="close"
+                {selectedInOrder
+                  .slice(posOne, posTwo)
+                  .map((mnemonicWordIndex) => (
+                    <div
+                      className="button_spacing"
+                      key={`word_selected_${mnemonicWordIndex}`}
                     >
-                      {item}
-                    </SharedButton>
-                  </div>
-                ))}
+                      <SharedButton
+                        type="deemphasizedWhite"
+                        size="small"
+                        onClick={() => {
+                          handleRemove(mnemonicWordIndex)
+                        }}
+                        iconSmall="close"
+                      >
+                        {mnemonicToVerify[mnemonicWordIndex]}
+                      </SharedButton>
+                    </div>
+                  ))}
               </div>
             </div>
           )
         })}
       </div>
       <ul className="standard_width_padded button_group center_horizontal bottom">
-        {isNotSelected?.length === 0 ? (
+        {notYetChosenMnemonicWordIndexes?.length === 0 ? (
           <>
             {mnemonicToVerify && hasUserSelectedCorrectOrder() ? (
               <SuccessMessage mnemonic={mnemonicToVerify} />
@@ -182,16 +192,19 @@ export default function OnboardingVerifySeed(): ReactElement {
             )}
           </>
         ) : (
-          isNotSelected?.map((item) => (
-            <li className="button_spacing">
+          notYetChosenMnemonicWordIndexes?.map((mnemonicWordIndex) => (
+            <li
+              className="button_spacing"
+              key={`word_choice_${mnemonicWordIndex}`}
+            >
               <SharedButton
                 type="primary"
                 size="small"
                 onClick={() => {
-                  handleAdd(item)
+                  handleAdd(mnemonicWordIndex)
                 }}
               >
-                {item}
+                {mnemonicToVerify[mnemonicWordIndex]}
               </SharedButton>
             </li>
           ))

@@ -23,6 +23,7 @@ import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
+import MenuExportLogs from "../pages/Menu/MenuExportLogs"
 
 interface PageList {
   path: string
@@ -125,6 +126,13 @@ const pageList: PageList[] = [
     Component: EARN_COMING_SOON ? ComingSoon : Earn,
     hasTabBar: true,
     hasTopBar: true,
+    persistOnClose: true,
+  },
+  {
+    path: "/menu/export-logs",
+    Component: MenuExportLogs,
+    hasTabBar: true,
+    hasTopBar: false,
     persistOnClose: true,
   },
   {
