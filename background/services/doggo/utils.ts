@@ -1,5 +1,10 @@
+import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
+import { Eligible, IPFSLinkItem } from "./types"
+import BaseService from "../base"
+import IndexingService from "../indexing"
+import { initialVaults } from "../../redux-slices/earn"
+import { ETHEREUM } from "../../constants"
 import { HexString } from "../../types"
-import { IPFSLinkItem } from "./types"
 
 export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
 export const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
@@ -102,4 +107,64 @@ export async function getClaimFromFileHash(
       amount: 0,
     }
   )
+}
+
+interface Events extends ServiceLifecycleEvents {
+  newEligibility: Eligible
+}
+
+/*
+ * The claim service saves the eligibility data for
+ * efficient storage and retrieval.
+ */
+export default class ClaimService extends BaseService<Events> {
+  static create: ServiceCreatorFunction<
+    Events,
+    ClaimService,
+    [Promise<IndexingService>]
+  > = async (indexingService) => {
+    return new this(await indexingService)
+  }
+
+  private constructor(private indexingService: IndexingService) {
+    super()
+  }
+
+  protected async internalStartService(): Promise<void> {
+    await super.internalStartService()
+
+    const huntingGrounds = initialVaults
+
+    huntingGrounds.forEach(({ network, asset }) => {
+      this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
+    })
+    this.indexingService.addAssetToTrack({
+      contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      decimals: 18,
+      homeNetwork: ETHEREUM,
+      name: "Wrapped Ether",
+      symbol: "WETH",
+    })
+  }
+
+  protected async internalStopService(): Promise<void> {
+    await super.internalStopService()
+  }
+
+  async getEligibility(address: string): Promise<Eligible> {
+    const fileHash = await getFileHashProspect(address)
+    const { account, amount, index, proof } = await getClaimFromFileHash(
+      address,
+      fileHash
+    )
+
+    const claim = {
+      index,
+      amount: BigInt(amount),
+      account,
+      proof,
+    }
+    this.emitter.emit("newEligibility", claim)
+    return claim
+  }
 }

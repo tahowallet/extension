@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -6,6 +6,7 @@ import {
 import {
   ApprovalTargetAllowance,
   approveApprovalTarget,
+  AvailableVault,
   checkApprovalTargetApproval,
   claimVaultRewards,
   clearSignature,
@@ -15,10 +16,7 @@ import {
   selectCurrentlyDepositing,
   selectDepositingProcess,
   selectEarnInputAmount,
-  selectEnrichedAvailableVaults,
-  selectSignature,
-  updateEarnedValues,
-  updateLockedValues,
+  updateVaults,
   vaultDeposit,
   vaultWithdraw,
 } from "@tallyho/tally-background/redux-slices/earn"
@@ -26,7 +24,6 @@ import {
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
-import { getCurrentTimestamp } from "@tallyho/tally-background/redux-slices/utils/contract-utils"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -44,29 +41,27 @@ export default function EarnDeposit(): ReactElement {
   const [amount, setAmount] = useState(storedInput)
   const [hasError, setHasError] = useState(false)
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
-  const [isApproved, setIsApproved] = useState(false)
+  const [isApproved, setIsApproved] = useState(true)
   const [deposited, setDeposited] = useState(false)
-
-  const dispatch = useBackgroundDispatch()
-
-  const history = useHistory()
 
   const { vaultAddress } = useLocation().state as {
     vaultAddress: HexString
   }
+  const vault = useBackgroundSelector((state) =>
+    state.earn.availableVaults.find(
+      (availableVault) => availableVault.vaultAddress === vaultAddress
+    )
+  )
+  const [vaultData, setVaultData] = useState<AvailableVault | undefined>(vault)
+  const dispatch = useBackgroundDispatch()
+
+  const history = useHistory()
 
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
-  const signature = useBackgroundSelector(selectSignature)
   const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
   const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
 
-  const enrichedVaults = useBackgroundSelector(selectEnrichedAvailableVaults)
   const account = useBackgroundSelector(selectCurrentAccount)
-
-  const vault = enrichedVaults.find(
-    (enrichedVault) => enrichedVault?.vaultAddress === vaultAddress
-  )
-
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
   useEffect(() => {
@@ -92,26 +87,23 @@ export default function EarnDeposit(): ReactElement {
     isCurrentlyApproving,
   ])
 
-  useEffect(() => {
-    const checkCurrentSignatureDeadline = async () => {
-      const timestamp = await getCurrentTimestamp()
-      if (
-        typeof signature?.deadline !== "undefined" &&
-        timestamp > signature.deadline
-      ) {
-        dispatch(clearSignature())
-      }
+  const getUpdatedVault = useCallback(async () => {
+    if (typeof vault !== "undefined") {
+      const updatedVault = (await dispatch(
+        updateVaults([vault])
+      )) as unknown as AvailableVault[]
+      setVaultData(updatedVault[0])
     }
-    checkCurrentSignatureDeadline()
-  }, [dispatch, signature?.deadline])
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, vault?.pendingRewards, vault?.userDeposited])
 
   useEffect(() => {
-    dispatch(updateLockedValues())
-    dispatch(updateEarnedValues())
+    getUpdatedVault()
     return () => {
       dispatch(clearSignature())
     }
-  }, [dispatch, account.address])
+  }, [dispatch, getUpdatedVault])
 
   useEffect(() => {
     if (inDepositProcess && typeof vault !== "undefined") {
@@ -130,12 +122,15 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const pendingRewards = fromFixedPointNumber(
-    { amount: vault.pendingRewards, decimals: doggoTokenDecimalDigits },
+    {
+      amount: vaultData?.pendingRewards || 0n,
+      decimals: doggoTokenDecimalDigits,
+    },
     2
   )
 
   const userDeposited = fromFixedPointNumber(
-    { amount: vault.userDeposited, decimals: vault.asset.decimals },
+    { amount: vaultData?.userDeposited || 0n, decimals: vault.asset.decimals },
     4
   )
 
@@ -183,7 +178,7 @@ export default function EarnDeposit(): ReactElement {
   }
 
   const claimRewards = async () => {
-    dispatch(claimVaultRewards(vault.vaultAddress))
+    dispatch(claimVaultRewards(vault))
   }
 
   const handleAmountChange = (
@@ -233,12 +228,14 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Estimated APR</div>
-            <div className="amount">250%</div>
+            <div className="amount">{vaultData?.APR}</div>
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
             <div className="amount">
-              ${vault.localValueTotalDeposited ?? "0"}
+              {vaultData?.localValueTotalDeposited
+                ? `$${vaultData?.localValueTotalDeposited}`
+                : "Unknown"}
             </div>
           </li>
           <li className="row">
@@ -302,7 +299,9 @@ export default function EarnDeposit(): ReactElement {
               <SharedButton
                 type="primary"
                 size="large"
-                isDisabled={hasError || amount === "" || isCurrentlyApproving}
+                isDisabled={
+                  hasError || Number(amount) === 0 || isCurrentlyApproving
+                }
                 onClick={approve}
               >
                 {approveButtonText()}
@@ -312,7 +311,7 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 onClick={deposit}
-                isDisabled={hasError || amount === ""}
+                isDisabled={hasError || Number(amount) === 0}
               >
                 {isDepositPending ? "Depositing..." : "Authorize & Deposit"}
               </SharedButton>
@@ -325,10 +324,6 @@ export default function EarnDeposit(): ReactElement {
       {panelNumber === 1 ? (
         <div className="standard_width">
           <ul className="list">
-            <li className="list_item">
-              Withdrawing your deposit will also automatically claim your
-              rewards.
-            </li>
             <li className="list_item">
               You can withdraw only the rewards by using the Claim rewards
               button.
@@ -343,35 +338,26 @@ export default function EarnDeposit(): ReactElement {
               size="large"
               onClick={showWithdrawalModal}
             >
-              Withdraw deposit + rewards
+              Withdraw deposit
             </SharedButton>
           </div>
           <SharedSlideUpMenu
             isOpen={withdrawSlideupVisible}
             close={() => setWithdrawalSlideupVisible(false)}
             size="custom"
-            customSize="400px"
+            customSize="300px"
           >
             <div className="container">
-              <h2 className="withdrawal_title">Withdraw deposit & rewards</h2>
+              <h2 className="withdrawal_title">Withdraw deposit</h2>
               <div className="withdrawal_info">
-                Are you sure you want to withdraw deposited amount and rewards?
-                <br /> If you only want to claim rewards you can do that by
-                closing this and clicking claim rewards.
+                Are you sure you want to withdraw deposited amount?
               </div>
               <div className="wrapper dark">
                 <li className="row">
-                  <div className="label">Deposited amount</div>
+                  <div className="label">Withdraw amount</div>
                   <div className="amount">
                     {userDeposited}
                     <span className="token">{vault.asset.symbol}</span>
-                  </div>
-                </li>
-                <div className="divider" />
-                <li className="row">
-                  <div className="label">Available rewards</div>
-                  <div className="amount">
-                    {pendingRewards} <span className="token">DOGGO</span>
                   </div>
                 </li>
               </div>
@@ -419,11 +405,19 @@ export default function EarnDeposit(): ReactElement {
             margin: 0;
           }
           .withdrawal_info {
-            padding: 24px 0;
+            padding: 24px 0 12px 0;
             line-height: 24px;
           }
           .container {
             padding: 0 24px;
+            display: flex;
+            height: 90%;
+            width: 100%;
+            position: relative;
+            top: -16px;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: space-between;
           }
           .row {
             position: relative;
