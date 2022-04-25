@@ -44,16 +44,13 @@ export default function AccountItemEditName({
       <div className="account_container standard_width">
         <SharedAccountItemSummary accountTotal={account} isSelected={false} />
       </div>
-      <div className="details">
-        <SharedInput
-          label=""
-          placeholder="Type new name"
-          errorMessage={error}
-          onPressEnter={(e) => {
-            if (error) {
-              e.stopPropagation()
-              return
-            }
+      <div
+        className="details"
+        role="presentation"
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <form
+          onSubmit={() => {
             dispatch(
               addOrEditAddressName({
                 name: newName,
@@ -62,13 +59,19 @@ export default function AccountItemEditName({
             )
             close()
           }}
-          onChange={(value) => {
-            if (!touched) {
-              setTouched(true)
-            }
-            setNewName(value)
-          }}
-        />
+        >
+          <SharedInput
+            label=""
+            placeholder="Type new name"
+            errorMessage={error}
+            onChange={(value) => {
+              if (!touched) {
+                setTouched(true)
+              }
+              setNewName(value)
+            }}
+          />
+        </form>
       </div>
       <div className="button_container">
         <SharedButton
