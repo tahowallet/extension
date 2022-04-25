@@ -5,3 +5,4 @@ export const HIDE_IMPORT_DERIVATION_PATH =
 export const HIDE_CREATE_PHRASE = process.env.HIDE_CREATE_PHRASE === "true"
 export const PERSIST_UI_LOCATION = process.env.PERSIST_UI_LOCATION === "true"
 export const USE_MAINNET_FORK = process.env.USE_MAINNET_FORK === "true"
+export const RESOLVE_UNS_NAMES = process.env.RESOLVE_UNS_NAMES === "true"
