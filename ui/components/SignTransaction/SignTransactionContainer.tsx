@@ -1,5 +1,11 @@
+import React, {
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useState,
+  useRef,
+} from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
@@ -35,6 +41,8 @@ export default function SignTransactionContainer({
 }): ReactElement {
   const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
+  const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
+  const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
   const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
 
@@ -49,6 +57,46 @@ export default function SignTransactionContainer({
     !signingLedgerState.arbitraryDataEnabled
 
   const canLedgerSign = isLedgerAvailable && !mustEnableArbitraryDataSigning
+
+  /*
+    Prevent shenanigans by disabling the sign button for a bit
+    when rendering new sign content or when changing window focus.
+  */
+  const delaySignButtonTimeout = useRef<number | undefined>()
+
+  function clearDelaySignButtonTimeout() {
+    if (typeof delaySignButtonTimeout.current !== "undefined") {
+      clearTimeout(delaySignButtonTimeout.current)
+      delaySignButtonTimeout.current = undefined
+    }
+  }
+
+  useEffect(() => {
+    const increaseFocusChangeNonce = () => {
+      setFocusChangeNonce((x) => x + 1)
+    }
+    window.addEventListener("focus", increaseFocusChangeNonce)
+    window.addEventListener("blur", increaseFocusChangeNonce)
+
+    return () => {
+      window.removeEventListener("focus", increaseFocusChangeNonce)
+      window.removeEventListener("blur", increaseFocusChangeNonce)
+    }
+  }, [])
+
+  // Runs on updates
+  useEffect(() => {
+    clearDelaySignButtonTimeout()
+
+    if (document.hasFocus()) {
+      delaySignButtonTimeout.current = window.setTimeout(() => {
+        setIsOnDelayToSign(false)
+        // Random delay between 0.5 and 2 seconds
+      }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
+    } else {
+      setIsOnDelayToSign(true)
+    }
+  }, [reviewPanel, focusChangeNonce])
 
   return (
     <section>
@@ -70,12 +118,7 @@ export default function SignTransactionContainer({
         <>
           {extraPanel}
           <div className="footer_actions">
-            <SharedButton
-              iconSize="large"
-              size="large"
-              type="secondary"
-              onClick={handleReject}
-            >
+            <SharedButton size="large" type="secondary" onClick={handleReject}>
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
@@ -84,7 +127,6 @@ export default function SignTransactionContainer({
               !canLedgerSign ? (
                 <SharedButton
                   type="primaryGreen"
-                  iconSize="large"
                   size="large"
                   onClick={() => {
                     setSlideUpOpen(true)
@@ -95,10 +137,10 @@ export default function SignTransactionContainer({
               ) : (
                 <SharedButton
                   type="primaryGreen"
-                  iconSize="large"
                   size="large"
                   onClick={handleConfirm}
                   showLoadingOnClick
+                  isDisabled={isOnDelayToSign}
                 >
                   {confirmButtonLabel}
                 </SharedButton>

@@ -20,6 +20,7 @@ const getPoolAPR = async ({
   assets: AssetsState
   vaultAddress: HexString
 }): Promise<string> => {
+  // Slightly modified version inspired by: https://stackoverflow.com/a/9462382
   function nFormatter(num: number, digits: number) {
     const lookup = [
       { value: 1, symbol: "" },

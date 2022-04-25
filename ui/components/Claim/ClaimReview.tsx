@@ -7,6 +7,7 @@ import SharedButton from "../Shared/SharedButton"
 import AmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
 import { useBackgroundSelector } from "../../hooks"
+import SharedAddressAvatar from "../Shared/SharedAddressAvatar"
 
 export default function ClaimReview({
   claimAmount,
@@ -29,11 +30,11 @@ export default function ClaimReview({
       <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
         name={referrer?.ensName ?? referrer?.address ?? selectedDAO?.name ?? ""}
-        delegate={referrer ? null : selectedDAO}
+        avatar={referrer ? undefined : `./images/DAOs/${selectedDAO?.avatar}`}
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
-        <div className="icon" />
+        <SharedAddressAvatar address={selectedDelegate?.address ?? ""} />
         <div className="option">
           <div className="left">
             {selectedDelegate?.ensName ? (
@@ -82,19 +83,12 @@ export default function ClaimReview({
             align-items: center;
             box-shadow: var(--shadow);
           }
-          .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 150px;
-            background-color: #006ae3;
-            margin-right: 13px;
-            flex-shrink: 0;
-          }
           .option {
             display: flex;
             justify-content: space-between;
             width: inherit;
             align-items: center;
+            margin-left: 12px;
           }
           .left {
             display: flex;

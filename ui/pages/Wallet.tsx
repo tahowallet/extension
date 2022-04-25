@@ -3,7 +3,6 @@ import { Redirect } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
-  selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
@@ -27,16 +26,13 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
 
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
-
   useEffect(() => {
     dispatch(
       checkAlreadyClaimed({
         claimState,
-        accountAddress: currentAccount.address,
       })
     )
-  }, [claimState, currentAccount.address, dispatch])
+  }, [claimState, dispatch])
 
   const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
     assetAmounts: [],

@@ -157,54 +157,45 @@ export default function WalletAccountBalanceControl(
             {!shouldIndicateLoading && <BalanceReloader />}
           </span>
         </span>
-        <div className="balance_actions">
-          {currentAccountSigningMethod ? (
-            <>
-              {hasSavedSeed ? (
-                <div className="send_receive_button_wrap">
-                  <SharedButton
-                    icon="send"
-                    size="medium"
-                    type="tertiary"
-                    linkTo="/send"
-                    iconPosition="left"
-                  >
-                    Send
-                  </SharedButton>
-                  <SharedButton
-                    onClick={handleClick}
-                    icon="receive"
-                    size="medium"
-                    type="tertiary"
-                    iconPosition="left"
-                  >
-                    Receive
-                  </SharedButton>
-                </div>
-              ) : (
-                <div className="save_seed_button_wrap">
-                  <SharedButton
-                    icon="arrow_right"
-                    iconSize="large"
-                    size="large"
-                    type="warning"
-                    linkTo="/onboarding/2"
-                  >
-                    First, secure your recovery seed
-                  </SharedButton>
-                </div>
-              )}
-            </>
-          ) : (
-            <SharedButton
-              linkTo="/onboarding/import-metamask"
-              size="medium"
-              type="tertiary"
-            >
-              Upgrade wallet
-            </SharedButton>
-          )}
-        </div>
+        {currentAccountSigningMethod ? (
+          <>
+            {hasSavedSeed ? (
+              <div className="send_receive_button_wrap">
+                <SharedButton
+                  iconSmall="send"
+                  size="medium"
+                  type="tertiary"
+                  linkTo="/send"
+                  iconPosition="left"
+                >
+                  Send
+                </SharedButton>
+                <SharedButton
+                  onClick={handleClick}
+                  iconSmall="receive"
+                  size="medium"
+                  type="tertiary"
+                  iconPosition="left"
+                >
+                  Receive
+                </SharedButton>
+              </div>
+            ) : (
+              <div className="save_seed_button_wrap">
+                <SharedButton
+                  iconSmall="arrow-right"
+                  size="large"
+                  type="warning"
+                  linkTo="/onboarding/2"
+                >
+                  First, secure your recovery seed
+                </SharedButton>
+              </div>
+            )}
+          </>
+        ) : (
+          <ReadOnlyNotice />
+        )}
       </div>
       <style jsx>
         {`

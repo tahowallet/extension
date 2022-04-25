@@ -1,11 +1,16 @@
 import { ETHEREUM, USD } from "../../constants"
+import { storageGatewayURL } from "../../lib/storage-gateway"
 import { Preferences } from "./types"
 
 const defaultPreferences: Preferences = {
   tokenLists: {
     autoUpdate: false,
     urls: [
-      "https://ipfs.fleek.co/ipfs/bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la", // the Tally community-curated list
+      storageGatewayURL(
+        new URL(
+          "ipfs://bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la"
+        )
+      ).href, // the Tally community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://yearn.science/static/tokenlist.json", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects

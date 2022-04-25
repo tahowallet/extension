@@ -296,8 +296,15 @@ function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
   asset: T,
   assetsToSearch: AnyAssetWithOptionalAmount<T>[]
 ) {
-  return assetsToSearch.find(({ asset: listAsset }) =>
-    isSameAsset(asset, listAsset)
+  return (
+    assetsToSearch.find(({ asset: listAsset }) =>
+      isSameAsset(asset, listAsset)
+    ) ?? {
+      // If not found, default balance to zero
+      asset: { ...asset, decimals: 1 },
+      localizedDecimalAmount: "0",
+      amount: BigInt(0),
+    }
   )
 }
 
@@ -358,7 +365,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
       parsedGivenAmount,
       selectedAssetAndAmount.asset.decimals
     )
-    if (decimalMatched.amount > selectedAssetAndAmount.amount) {
+    if (
+      decimalMatched.amount > selectedAssetAndAmount.amount ||
+      selectedAssetAndAmount.amount <= 0
+    ) {
       return "Insufficient balance"
     }
 
@@ -444,7 +454,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               size="medium"
               isDisabled={isDisabled || disableDropdown}
               onClick={toggleIsAssetMenuOpen}
-              icon="chevron"
+              iconSmall="dropdown"
             >
               Select token
             </SharedButton>

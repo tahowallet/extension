@@ -131,7 +131,5 @@ describe("Earn", () => {
 
       expect(APR).toBe("332.2B%")
     })
-
-    it("should return APR 150% when total yearly rewards value is 3USD and tokens staked value is 2USD", async () => {})
   })
 })

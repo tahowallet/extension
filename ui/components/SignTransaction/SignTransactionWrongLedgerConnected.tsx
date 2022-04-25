@@ -18,9 +18,8 @@ export default function SignTransactionWrongLedgerConnected({
             <div>Connect the Ledger containing this account:</div>
             <div>
               <SharedButton
-                icon="external"
+                iconSmall="new-tab"
                 size="small"
-                iconSize="small"
                 type="deemphasizedWhite"
                 onClick={() => {
                   window
