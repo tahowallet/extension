@@ -7,6 +7,7 @@ type BannerProps = {
   icon?: string
   iconColor?: string
   iconAriaLabel?: string
+  customStyles?: string
 }
 
 type CanBeClosedProps =
@@ -14,7 +15,7 @@ type CanBeClosedProps =
   | { canBeClosed?: false; id?: never }
 
 function Banner(props: BannerProps): ReactElement {
-  const { icon, iconColor, iconAriaLabel, children } = props
+  const { icon, iconColor, iconAriaLabel, customStyles = "", children } = props
 
   return (
     <div className="banner_wrap">
@@ -27,7 +28,7 @@ function Banner(props: BannerProps): ReactElement {
           customStyles="flex-shrink:0; margin-right: 8px;"
         />
       )}
-      <div>{children}</div>
+      <div className="banner_content">{children}</div>
       <style jsx>
         {`
           .banner_wrap {
@@ -39,6 +40,10 @@ function Banner(props: BannerProps): ReactElement {
             flex-direction: row;
             align-items: start;
             position: relative;
+            ${customStyles};
+          }
+          .banner_content {
+            margin: 2px 0;
           }
         `}
       </style>
@@ -47,13 +52,18 @@ function Banner(props: BannerProps): ReactElement {
 }
 
 function BannerWithClose(props: BannerProps & { id: string }): ReactElement {
-  const { id, children, icon, iconColor, iconAriaLabel } = props
+  const { id, children, icon, iconColor, customStyles, iconAriaLabel } = props
   const [isVisible, setIsVisible] = useLocalStorage(`banner_${id}`, "true")
 
   if (isVisible === "false") return <></>
 
   return (
-    <Banner icon={icon} iconColor={iconColor} iconAriaLabel={iconAriaLabel}>
+    <Banner
+      icon={icon}
+      iconColor={iconColor}
+      iconAriaLabel={iconAriaLabel}
+      customStyles={customStyles}
+    >
       <SharedIcon
         onClick={() => setIsVisible("false")}
         icon="icons/s/close.svg"
@@ -63,8 +73,8 @@ function BannerWithClose(props: BannerProps & { id: string }): ReactElement {
         hoverColor="var(--green-20)"
         customStyles={`
               position: absolute;
-              top: 10px;
-              right: 10px;
+              top: 12px;
+              right: 12px;
             `}
       />
       {children}
