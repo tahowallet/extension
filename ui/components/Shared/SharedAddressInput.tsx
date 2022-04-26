@@ -49,5 +49,5 @@ export default function SharedAddressInput({
 }
 
 SharedAddressInput.defaultProps = {
-  label: "ETH address or name (e.g. ENS)",
+  label: "ETH address or name (e.g. ENS or UNS)",
 }
