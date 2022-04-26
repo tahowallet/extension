@@ -87,6 +87,13 @@ const activitiesSlice = createSlice({
           )
         } else {
           activitiesAdapter.upsertOne(immerState[address], activityItem)
+          // Limit the number of activities in redux to 45
+          if (immerState[address].ids.length >= 45) {
+            activitiesAdapter.removeOne(
+              immerState[address],
+              immerState[address].ids[immerState[address].ids.length - 1]
+            )
+          }
         }
       })
     },
