@@ -38,7 +38,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         </div>
         <span className="token_name">{vault?.asset?.symbol}</span>
         <span className="apy_info_label">Estimated APR</span>
-        <span className="apy_percent">{vault.APR}</span>
+        <span className="apy_percent">{vault.APR?.totalAPR}</span>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>

@@ -228,7 +228,7 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Estimated APR</div>
-            <div className="amount">{vaultData?.APR}</div>
+            <div className="amount">{vaultData?.APR?.totalAPR}</div>
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
