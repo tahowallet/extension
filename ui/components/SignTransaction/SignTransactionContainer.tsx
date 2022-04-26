@@ -7,6 +7,7 @@ import React, {
 } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../Shared/SharedButton"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
@@ -28,7 +29,7 @@ export default function SignTransactionContainer({
   isTransactionSigning,
   isArbitraryDataSigningRequired,
 }: {
-  signerAccountTotal: AccountTotal
+  signerAccountTotal?: AccountTotal
   title: ReactNode
   detailPanel: ReactNode
   reviewPanel: ReactNode
@@ -39,8 +40,8 @@ export default function SignTransactionContainer({
   isTransactionSigning: boolean
   isArbitraryDataSigningRequired: boolean
 }): ReactElement {
-  const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
+  const signingMethod = signerAccountTotal?.signingMethod
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
   const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
@@ -100,9 +101,18 @@ export default function SignTransactionContainer({
 
   return (
     <section>
-      <SignTransactionNetworkAccountInfoTopBar
-        accountTotal={signerAccountTotal}
-      />
+      <SharedSkeletonLoader
+        isLoaded={!!signerAccountTotal}
+        height={32}
+        width={120}
+        margin="15px 0 15px 220px"
+      >
+        {!!signerAccountTotal && (
+          <SignTransactionNetworkAccountInfoTopBar
+            accountTotal={signerAccountTotal}
+          />
+        )}
+      </SharedSkeletonLoader>
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
@@ -122,9 +132,8 @@ export default function SignTransactionContainer({
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
-            {signerAccountTotal.signingMethod &&
-              (signerAccountTotal.signingMethod.type === "ledger" &&
-              !canLedgerSign ? (
+            {signingMethod &&
+              (isLedgerSigning && !canLedgerSign ? (
                 <SharedButton
                   type="primaryGreen"
                   size="large"
@@ -145,7 +154,7 @@ export default function SignTransactionContainer({
                   {confirmButtonLabel}
                 </SharedButton>
               ))}
-            {!signerAccountTotal.signingMethod && (
+            {!signingMethod === null && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>

@@ -38,15 +38,6 @@ export default function SignTransaction(): ReactElement {
 
   if (isLocked) return <></>
 
-  if (
-    typeof transactionDetails === "undefined" ||
-    typeof signerAccountTotal === "undefined"
-  ) {
-    // TODO Some sort of unexpected state error if we end up here... Or do we
-    // go back in history? That won't work for dApp popovers though.
-    return <></>
-  }
-
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
   }
@@ -79,7 +70,9 @@ export default function SignTransaction(): ReactElement {
           reviewPanel={textualInfoBlock}
           extraPanel={<SignTransactionPanelSwitcher />}
           isTransactionSigning={isTransactionSigning}
-          isArbitraryDataSigningRequired={!!transactionDetails.input}
+          isArbitraryDataSigningRequired={
+            !!(transactionDetails?.input ?? false)
+          }
         />
       )}
     </SignTransactionInfoProvider>

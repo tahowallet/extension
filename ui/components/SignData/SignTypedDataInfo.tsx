@@ -7,18 +7,25 @@ import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services
 import capitalize from "../../utils/capitalize"
 
 type SignTypedDataInfoProps = {
-  typedDataRequest: EnrichedSignTypedDataRequest
+  typedDataRequest?: EnrichedSignTypedDataRequest
 }
 
 export default function SignTypedDataInfo({
   typedDataRequest,
 }: SignTypedDataInfoProps): ReactElement {
-  const { typedData, annotation } = typedDataRequest
+  const { typedData, annotation } = typedDataRequest ?? {
+    typedData: {
+      domain: undefined,
+      message: undefined,
+      primaryType: undefined,
+    },
+    annotation: undefined,
+  }
 
   const fieldsToDisplay =
-    annotation.type !== "unrecognized"
+    annotation && annotation?.type !== "unrecognized"
       ? annotation.displayFields
-      : typedData.message
+      : typedData.message ?? {}
 
   const keys = Object.keys(fieldsToDisplay)
   return (
@@ -68,7 +75,7 @@ export default function SignTypedDataInfo({
             padding: 16px 0;
           }
           .icon_external {
-            mask-image: url("./images/new-tab-s@2.png");
+            mask-image: url("./images/new_tab@2x.png");
             mask-size: 16px 16px;
             width: 16px;
             margin-left: 4px;
