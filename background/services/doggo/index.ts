@@ -64,6 +64,14 @@ export default class DoggoService extends BaseService<Events> {
       this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
     })
 
+    this.indexingService.addAssetToTrack({
+      contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      decimals: 18,
+      homeNetwork: ETHEREUM,
+      name: "Wrapped Ether",
+      symbol: "WETH",
+    })
+
     // Track referrals for all added accounts and any new ones that are added
     // after load.
     this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
