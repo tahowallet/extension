@@ -106,7 +106,6 @@ export default function AccountItemEditName({
       </div>
       <style jsx>{`
         li {
-
         }
         .header {
           height: 24px;
@@ -118,11 +117,14 @@ export default function AccountItemEditName({
           flex-direction: column;
           height: 95%;
         }
+        form {
+          margin-top: 0px;
+        }
         .details {
           display: flex;
           flex-direction: column;
           line-height: 24px;
-          font-size 16px;
+          font-size: 16px;
           margin-top: 21px;
         }
         .button_container {
