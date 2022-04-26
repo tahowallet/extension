@@ -10,11 +10,17 @@ import { ETHEREUM } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
 
-type InMemoryAddressBook = {
+type AddressBookEntry = {
   network: EVMNetwork
   address: HexString
   name: string
-}[]
+}
+
+type InMemoryAddressBook = AddressBookEntry[]
+
+const sameAddressBookEntry = (a: AddressOnNetwork, b: AddressOnNetwork) =>
+  normalizeEVMAddress(a.address) === normalizeEVMAddress(b.address) &&
+  sameNetwork(a.network, b.network)
 
 const BUILT_IN_CONTRACTS = [
   {
@@ -34,6 +40,7 @@ interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
+  addressBookEntryModified: AddressBookEntry
 }
 
 /*
@@ -76,8 +83,25 @@ export default class PreferenceService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  // TODO Implement the following 4 methods as something stored in the database and user-manageable.
+  // TODO Implement the following 6 methods as something stored in the database and user-manageable.
   // TODO Track account names in the UI in the address book.
+
+  addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
+    const correspondingEntryIndex = this.addressBook.findIndex((entry) =>
+      sameAddressBookEntry(newEntry, entry)
+    )
+    if (correspondingEntryIndex !== -1) {
+      this.addressBook[correspondingEntryIndex] = newEntry
+    } else {
+      this.addressBook.push({
+        network: newEntry.network,
+        name: newEntry.name,
+        address: normalizeEVMAddress(newEntry.address),
+      })
+    }
+    this.emitter.emit("addressBookEntryModified", newEntry)
+  }
+
   async lookUpAddressForName({
     name,
     network,
@@ -88,14 +112,11 @@ export default class PreferenceService extends BaseService<Events> {
     )
   }
 
-  async lookUpNameForAddress({
-    address,
-    network,
-  }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
-    return this.addressBook.find(
-      ({ address: entryAddress, network: entryNetwork }) =>
-        sameNetwork(network, entryNetwork) &&
-        normalizeEVMAddress(address) === normalizeEVMAddress(entryAddress)
+  async lookUpNameForAddress(
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<NameOnNetwork | undefined> {
+    return this.addressBook.find((addressBookEntry) =>
+      sameAddressBookEntry(addressBookEntry, addressOnNetwork)
     )
   }
 

@@ -30,7 +30,7 @@ import rootReducer from "./redux-slices"
 import {
   loadAccount,
   updateAccountBalance,
-  updateENSName,
+  updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
@@ -577,6 +577,20 @@ export default class Main extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
+  addOrEditAddressName({
+    name,
+    address,
+  }: {
+    name: string
+    address: HexString
+  }): void {
+    this.preferenceService.addOrEditNameInAddressBook({
+      network: ETHEREUM,
+      name,
+      address,
+    })
+  }
+
   async removeAccount(
     address: HexString,
     signingMethod: SigningMethod
@@ -779,7 +793,7 @@ export default class Main extends BaseService<never> {
           nameOnNetwork: { name },
         },
       }) => {
-        this.store.dispatch(updateENSName({ ...addressOnNetwork, name }))
+        this.store.dispatch(updateAccountName({ ...addressOnNetwork, name }))
       }
     )
     this.nameService.emitter.on(

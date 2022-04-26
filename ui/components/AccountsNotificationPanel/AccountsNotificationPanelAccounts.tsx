@@ -255,8 +255,14 @@ export default function AccountsNotificationPanelAccounts({
                             e.currentTarget.style.backgroundColor = ""
                           }}
                         >
-                          <button
-                            type="button"
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                updateCurrentAccount(normalizedAddress)
+                              }
+                            }}
                             onClick={() => {
                               updateCurrentAccount(normalizedAddress)
                             }}
@@ -271,7 +277,7 @@ export default function AccountsNotificationPanelAccounts({
                                 address={accountTotal.address}
                               />
                             </SharedAccountItemSummary>
-                          </button>
+                          </div>
                         </li>
                       )
                     })}
