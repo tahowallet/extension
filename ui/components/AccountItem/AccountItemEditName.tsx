@@ -50,7 +50,8 @@ export default function AccountItemEditName({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <form
-          onSubmit={() => {
+          onSubmit={(event) => {
+            event.preventDefault()
             dispatch(
               addOrEditAddressName({
                 name: newName,
