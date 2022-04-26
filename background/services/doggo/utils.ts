@@ -1,9 +1,4 @@
-import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
-import { Eligible, IPFSLinkItem } from "./types"
-import BaseService from "../base"
-import IndexingService from "../indexing"
-import { initialVaults } from "../../redux-slices/earn"
-import { ETHEREUM } from "../../constants"
+import { IPFSLinkItem } from "./types"
 import { HexString } from "../../types"
 
 export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
