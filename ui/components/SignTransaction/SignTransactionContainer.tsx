@@ -154,7 +154,7 @@ export default function SignTransactionContainer({
                   {confirmButtonLabel}
                 </SharedButton>
               ))}
-            {!signingMethod === null && (
+            {signingMethod === null && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>
