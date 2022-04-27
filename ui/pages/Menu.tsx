@@ -55,7 +55,7 @@ export default function Menu(): ReactElement {
   const settings = {
     general: [
       {
-        title: t("menuHideSmallAssetBalance", "2"),
+        title: t("menuHideSmallAssetBalance", ["$2"]),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -142,7 +142,8 @@ export default function Menu(): ReactElement {
           </SharedButton>
         </div>
         <div className="version">
-          Version: {process.env.VERSION ?? `<unknown>`}
+          Version: {process.env.VERSION ?? `<unknown>`}_
+          {process.env.COMMIT_SHA?.slice(0, 7) ?? `<unknown>`}
         </div>
       </section>
       <style jsx>

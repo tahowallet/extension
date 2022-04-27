@@ -10,7 +10,7 @@ import SharedIcon from "../../components/Shared/SharedIcon"
 
 const accountCreateButtonInfos = [
   {
-    title: "Add exising accounts",
+    title: "Add existing accounts",
     items: [
       {
         label: "Import recovery phrase",
