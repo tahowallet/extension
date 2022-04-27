@@ -9,14 +9,7 @@ export default function SharedSkeletonLoader(props: {
   children?: React.ReactNode
   isLoaded?: boolean
 }): ReactElement {
-  const {
-    width,
-    height = 24,
-    borderRadius = 8,
-    margin = "0",
-    isLoaded = false,
-    children,
-  } = props
+  const { width, height, borderRadius, margin, isLoaded, children } = props
 
   if (isLoaded) return <>{children}</>
 
@@ -46,4 +39,11 @@ export default function SharedSkeletonLoader(props: {
       </style>
     </div>
   )
+}
+
+SharedSkeletonLoader.defaultProps = {
+  height: 24,
+  borderRadius: 8,
+  margin: "0",
+  isLoaded: false,
 }

@@ -7,23 +7,16 @@ import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services
 import capitalize from "../../utils/capitalize"
 
 type SignTypedDataInfoProps = {
-  typedDataRequest?: EnrichedSignTypedDataRequest
+  typedDataRequest: EnrichedSignTypedDataRequest
 }
 
 export default function SignTypedDataInfo({
   typedDataRequest,
 }: SignTypedDataInfoProps): ReactElement {
-  const { typedData, annotation } = typedDataRequest ?? {
-    typedData: {
-      domain: undefined,
-      message: undefined,
-      primaryType: undefined,
-    },
-    annotation: undefined,
-  }
+  const { typedData, annotation } = typedDataRequest
 
   const fieldsToDisplay =
-    annotation && annotation?.type !== "unrecognized"
+    annotation.type !== "unrecognized"
       ? annotation.displayFields
       : typedData.message ?? {}
 
