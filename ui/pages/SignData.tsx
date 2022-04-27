@@ -41,13 +41,6 @@ export default function SignData(): ReactElement {
   const isLocked = useIsSigningMethodLocked(signingMethod)
   if (isLocked) return <></>
 
-  if (
-    typeof typedDataRequest === "undefined" ||
-    typeof signerAccountTotal === "undefined"
-  ) {
-    return <></>
-  }
-
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
       if (signingMethod) {
@@ -68,7 +61,7 @@ export default function SignData(): ReactElement {
       confirmButtonLabel="Confirm"
       handleConfirm={handleConfirm}
       handleReject={handleReject}
-      title={`Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`}
+      title={`Sign ${typedDataRequest?.typedData.primaryType ?? "Message"}`}
       detailPanel={<SignDataDetailPanel />}
       reviewPanel={<SignDataDetailPanel />}
       isTransactionSigning={isTransactionSigning}
