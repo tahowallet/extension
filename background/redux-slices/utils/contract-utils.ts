@@ -1,6 +1,6 @@
 import { Web3Provider } from "@ethersproject/providers"
 import TallyWindowProvider from "@tallyho/window-provider"
-import { Contract, ethers, ContractInterface, providers } from "ethers"
+import { Contract, ethers, ContractInterface } from "ethers"
 import Emittery from "emittery"
 
 type InternalProviderPortEvents = {

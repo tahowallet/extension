@@ -126,6 +126,14 @@ export default class NameService extends BaseService<Events> {
       ...(RESOLVE_UNS_NAMES ? [unsResolver()] : []),
     ]
 
+    preferenceService.emitter.on(
+      "addressBookEntryModified",
+      async ({ network, address }) => {
+        this.clearNameCacheEntry(network.chainID, address)
+        await this.lookUpName({ network, address })
+      }
+    )
+
     chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
       try {
         await this.lookUpName(addressOnNetwork)
@@ -260,6 +268,12 @@ export default class NameService extends BaseService<Events> {
     }
 
     return nameOnNetwork
+  }
+
+  clearNameCacheEntry(chainId: string, address: HexString): void {
+    if (this.cachedResolvedNames.EVM[chainId]?.[address] !== undefined) {
+      delete this.cachedResolvedNames.EVM[chainId][address]
+    }
   }
 
   async lookUpAvatar(

@@ -2,6 +2,7 @@ import {
   AvailableVault,
   selectAvailableVaults,
   updateVaults,
+  clearInput,
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
@@ -187,6 +188,10 @@ export default function Earn(): ReactElement {
 
     // todo find a different way to avoid loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch])
+
+  useEffect(() => {
+    dispatch(clearInput()) // clear deposit amount input to start fresh after selecting any vault
   }, [dispatch])
 
   useEffect(() => {

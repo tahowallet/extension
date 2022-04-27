@@ -16,9 +16,7 @@ export default function SharedCurrentAccountInformation({
 }: Props): ReactElement {
   return (
     <div className={classNames("account_info_wrap", { hover: showHoverStyle })}>
-      <span className="account_info_label">
-        {name?.includes(".") ? name : shortenedAddress}
-      </span>
+      <span className="account_info_label">{name ?? shortenedAddress}</span>
       <div className="avatar" />
       <style jsx>
         {`

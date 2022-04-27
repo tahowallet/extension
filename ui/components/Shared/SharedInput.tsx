@@ -113,6 +113,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-size: 14px;
             line-height: 20px;
             margin-top: 3px;
+            margin-left: 5px;
           }
           label {
             position: absolute;
