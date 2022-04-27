@@ -9,9 +9,9 @@ import { useDispatch } from "react-redux"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import SharedButton from "../Shared/SharedButton"
-import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useBackgroundSelector } from "../../hooks"
+import AccountItemActionHeader from "./AccountItemActionHeader"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
@@ -51,7 +51,11 @@ export default function AccountItemRemovalConfirm({
   return (
     <div className="remove_address_option">
       <div className="header">
-        <RemoveAddressLabel />
+        <AccountItemActionHeader
+          label="Remove address"
+          icon="garbage@2x.png"
+          color="var(--error)"
+        />
       </div>
       <ul>
         <li className="account_container">
