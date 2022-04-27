@@ -11,6 +11,10 @@ import * as contractUtils from "../../redux-slices/utils/contract-utils"
 const mainCurrencySymbol = "USD"
 
 describe("Earn", () => {
+  global.fetch = () =>
+    Promise.resolve({
+      json: () => Promise.resolve([]),
+    }) as Promise<Response>
   describe("getDoggoPrice", () => {
     beforeEach(() => jest.resetAllMocks())
 
@@ -78,11 +82,12 @@ describe("Earn", () => {
         periodFinish: () => BigNumber.from("0x626ab98e"),
         rewardRate: () => BigNumber.from("0x10ce63bb1453e01451"),
         totalSupply: () => BigNumber.from("0x01f2d51b26bb6bf4b286"),
+        vault: () => "",
       }))
 
       const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
 
-      expect(APR).toBe("0%")
+      expect(APR.totalAPR).toBe("0%")
     })
 
     it("should return 'New' if total staked value is 0", async () => {
@@ -99,11 +104,12 @@ describe("Earn", () => {
         periodFinish: () => BigNumber.from("0x626ab98e"),
         rewardRate: () => BigNumber.from("0x10ce63bb1453e01451"),
         totalSupply: () => BigNumber.from(0n),
+        vault: () => "",
       }))
 
       const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
 
-      expect(APR).toBe("New")
+      expect(APR.totalAPR).toBe("New")
     })
 
     it("should return APR value if rewards value is bigger than 0 and staked value is bigger than 0", async () => {
@@ -125,11 +131,12 @@ describe("Earn", () => {
         periodFinish: () => BigNumber.from("0x626ab98e"),
         rewardRate: () => BigNumber.from("0x10ce63bb1453e01451"),
         totalSupply: () => BigNumber.from("0x01f2d51b26bb6bf4b286"),
+        vault: () => "",
       }))
 
       const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
 
-      expect(APR).toBe("332.2B%")
+      expect(APR.totalAPR).toBe("332.2B%")
     })
   })
 })
