@@ -1,23 +1,53 @@
 import { selectTypedData } from "@tallyho/tally-background/redux-slices/signing"
+import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
+import classNames from "classnames"
 import React, { ReactElement } from "react"
+import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
 import SignTypedDataInfo from "../components/SignData/SignTypedDataInfo"
 import { useBackgroundSelector } from "../hooks"
 import capitalize from "../utils/capitalize"
 
-export default function SignDataDetailPanel(): ReactElement {
-  const typedDataRequest = useBackgroundSelector(selectTypedData)
-  if (typeof typedDataRequest === "undefined") {
-    return <></>
+const getSourceLabel = (
+  typedDataRequest: EnrichedSignTypedDataRequest
+): string => {
+  const {
+    annotation,
+    typedData: { domain },
+  } = typedDataRequest
+  if (annotation.type !== "unrecognized") {
+    return capitalize(annotation.source)
   }
 
-  const { domain, message } = typedDataRequest.typedData
+  return domain.name ?? ""
+}
 
-  const typedDataRequestSource =
-    typedDataRequest.annotation?.type !== "unrecognized"
-      ? capitalize(typedDataRequest.annotation.source)
-      : domain.name
-
+function SignDataMessage({
+  typedDataRequest,
+}: {
+  typedDataRequest: EnrichedSignTypedDataRequest
+}): ReactElement {
+  const {
+    typedData: { message },
+  } = typedDataRequest
   const keys = Object.keys(message)
+
+  if (keys.length > 2)
+    return <SignTypedDataInfo typedDataRequest={typedDataRequest} />
+
+  return (
+    <>
+      {keys.map((key) => (
+        <div className="single_message">
+          <div className="key">{capitalize(key)}</div>
+          <div className="light">{`${message[key]}`}</div>
+        </div>
+      ))}
+    </>
+  )
+}
+
+export default function SignDataDetailPanel(): ReactElement {
+  const typedDataRequest = useBackgroundSelector(selectTypedData)
 
   /* TODO: should be `true` if the request originates from within the wallet */
   const isInternal = false
@@ -25,28 +55,36 @@ export default function SignDataDetailPanel(): ReactElement {
   return (
     <>
       <div className="sign_block">
-        <div className="container">
+        <div
+          className={classNames("container", {
+            loading: !typedDataRequest,
+          })}
+        >
           <div className="label header">
             {isInternal
               ? "Your signature is required"
               : "A dapp is requesting your signature"}
           </div>
           <div className="divider" />
-          {/* FIXME: `domain.name` was removed as part of personal sign implementation. Why? */}
-          <div className="source">{typedDataRequestSource}</div>
+          <SharedSkeletonLoader
+            isLoaded={!!typedDataRequest}
+            margin="10px 0"
+            width={280}
+          >
+            {!!typedDataRequest && (
+              <div className="source">{getSourceLabel(typedDataRequest)}</div>
+            )}
+          </SharedSkeletonLoader>
           <div className="divider" />
-          {keys.length > 2 ? (
-            <SignTypedDataInfo typedDataRequest={typedDataRequest} />
-          ) : (
-            <>
-              {keys.map((key) => (
-                <div className="single_message">
-                  <div className="key">{capitalize(key)}</div>
-                  <div className="light">{`${message[key]}`}</div>
-                </div>
-              ))}
-            </>
-          )}
+          <SharedSkeletonLoader
+            isLoaded={!!typedDataRequest}
+            margin="10px 0"
+            width={280}
+          >
+            {!!typedDataRequest && (
+              <SignDataMessage typedDataRequest={typedDataRequest} />
+            )}
+          </SharedSkeletonLoader>
         </div>
       </div>
 
@@ -112,6 +150,9 @@ export default function SignDataDetailPanel(): ReactElement {
           display: flex;
           flex-direction: column;
           align-items: center;
+        }
+        .container.loading {
+          height: 355px;
         }
       `}</style>
     </>
