@@ -8,11 +8,7 @@ const hardcodedMainCurrencySymbol = "USD"
 export const selectShowingActivityDetail = createSelector(
   (state: RootState) => state.activities,
   (state: RootState) => state.ui.showingActivityDetailID,
-  (state: RootState) => {
-    const { network } = state.ui.selectedAccount
-    return state.networks.evm[network.chainID].blocks
-  },
-  (activities, showingActivityDetailID, blocks) => {
+  (activities, showingActivityDetailID) => {
     return showingActivityDetailID === null
       ? null
       : Object.values(activities)
@@ -25,14 +21,7 @@ export const selectShowingActivityDetail = createSelector(
             (activity): activity is ActivityItem =>
               typeof activity !== "undefined"
           )
-          .slice(0, 1)
-          .map((activityItem) => ({
-            ...activityItem,
-            timestamp:
-              activityItem.blockHeight === null
-                ? undefined
-                : blocks[activityItem.blockHeight]?.timestamp,
-          }))[0]
+          .slice(0, 1)[0]
   }
 )
 

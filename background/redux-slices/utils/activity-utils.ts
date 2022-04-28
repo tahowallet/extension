@@ -51,7 +51,6 @@ export type UIAdaptationMap<T> = {
 
 export type ActivityItem = EnrichedEVMTransaction & {
   localizedDecimalValue: string
-  timestamp?: number
   blockHeight: number | null
   fromTruncated: string
   toTruncated: string
