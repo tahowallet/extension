@@ -76,7 +76,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         }
         onFocus={onFocus}
         className={classNames({
-          error: errorMessage,
+          error: errorMessage ?? parserError !== undefined,
         })}
         ref={inputRef}
       />
