@@ -129,6 +129,13 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             transition: font-size 0.2s ease, transform 0.2s ease,
               font-weight 0.2s ease, padding 0.2s ease;
           }
+          input:disabled {
+            color: var(--green-40);
+            background-color: var(--green-80);
+          }
+          input:disabled ~ label {
+            color: var(--green-60);
+          }
           input:focus {
             border-color: var(--trophy-gold);
           }
