@@ -34,6 +34,7 @@ import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import EmptyBowl from "../components/EmptyBowl/EmptyBowl"
 
 export default function EarnDeposit(): ReactElement {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
@@ -321,64 +322,65 @@ export default function EarnDeposit(): ReactElement {
       ) : (
         <></>
       )}
-      {panelNumber === 1 ? (
-        <div className="standard_width">
-          <ul className="list">
-            <li className="list_item">
-              You can withdraw only the rewards by using the Claim rewards
-              button.
-            </li>
-            <li className="list_item">
-              Deposit can only be withdrawn in full.
-            </li>
-          </ul>
-          <div className="withdraw_button">
-            <SharedButton
-              type="secondary"
-              size="large"
-              onClick={showWithdrawalModal}
+      {panelNumber === 1 &&
+        (userDeposited > 0 ? (
+          <div className="standard_width">
+            <ul className="list">
+              <li className="list_item">
+                You can withdraw only the rewards by using the Claim rewards
+                button.
+              </li>
+              <li className="list_item">
+                Deposit can only be withdrawn in full.
+              </li>
+            </ul>
+            <div className="withdraw_button">
+              <SharedButton
+                type="secondary"
+                size="large"
+                onClick={showWithdrawalModal}
+              >
+                Withdraw deposit
+              </SharedButton>
+            </div>
+            <SharedSlideUpMenu
+              isOpen={withdrawSlideupVisible}
+              close={() => setWithdrawalSlideupVisible(false)}
+              size="custom"
+              customSize="300px"
             >
-              Withdraw deposit
-            </SharedButton>
-          </div>
-          <SharedSlideUpMenu
-            isOpen={withdrawSlideupVisible}
-            close={() => setWithdrawalSlideupVisible(false)}
-            size="custom"
-            customSize="300px"
-          >
-            <div className="container">
-              <h2 className="withdrawal_title">Withdraw deposit</h2>
-              <div className="withdrawal_info">
-                Are you sure you want to withdraw deposited amount?
-              </div>
-              <div className="wrapper dark">
+              <div className="container">
+                <h2 className="withdrawal_title">Withdraw deposit</h2>
+                <div className="withdrawal_info">
+                  Are you sure you want to withdraw deposited amount?
+                </div>
+                <div className="wrapper dark">
+                  <li className="row">
+                    <div className="label">Withdraw amount</div>
+                    <div className="amount">
+                      {userDeposited}
+                      <span className="token">{vault.asset.symbol}</span>
+                    </div>
+                  </li>
+                </div>
                 <li className="row">
-                  <div className="label">Withdraw amount</div>
-                  <div className="amount">
-                    {userDeposited}
-                    <span className="token">{vault.asset.symbol}</span>
-                  </div>
+                  <SharedButton
+                    size="large"
+                    type="secondary"
+                    onClick={() => setWithdrawalSlideupVisible(false)}
+                  >
+                    Cancel
+                  </SharedButton>{" "}
+                  <SharedButton size="large" type="primary" onClick={withdraw}>
+                    Confirm Withdraw
+                  </SharedButton>
                 </li>
               </div>
-              <li className="row">
-                <SharedButton
-                  size="large"
-                  type="secondary"
-                  onClick={() => setWithdrawalSlideupVisible(false)}
-                >
-                  Cancel
-                </SharedButton>{" "}
-                <SharedButton size="large" type="primary" onClick={withdraw}>
-                  Confirm Withdraw
-                </SharedButton>
-              </li>
-            </div>
-          </SharedSlideUpMenu>
-        </div>
-      ) : (
-        <></>
-      )}
+            </SharedSlideUpMenu>
+          </div>
+        ) : (
+          <EmptyBowl />
+        ))}
       {panelNumber === 2 ? (
         <div className="standard_width ">
           <p className="pool_info">

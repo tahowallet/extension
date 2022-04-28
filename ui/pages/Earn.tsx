@@ -16,6 +16,7 @@ import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import EarnDepositedCard from "../components/Earn/EarnDepositedCard"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import EmptyBowl from "../components/EmptyBowl/EmptyBowl"
 
 type EarnCardProps = {
   vault: AvailableVaultsWithLockedValues
@@ -226,6 +227,10 @@ export default function Earn(): ReactElement {
     .reduce((prev, curr) => prev + curr, 0)
     .toFixed(2)
 
+  const depositedVaults = availableVaults?.filter(
+    (vault) => vault.userDeposited > 0n
+  )
+
   return (
     <>
       {isComingSoon ? (
@@ -284,23 +289,23 @@ export default function Earn(): ReactElement {
       ) : (
         <></>
       )}
-      {panelNumber === 2 ? (
-        <section className="standard_width">
-          <div className="your_deposit_heading_info">
-            <div className="left">
-              <div className="label">Total deposits</div>
-              <div className="amount">
-                ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
+      {panelNumber === 2 &&
+        (depositedVaults.length > 0 ? (
+          <section className="standard_width">
+            <div className="your_deposit_heading_info">
+              <div className="left">
+                <div className="label">Total deposits</div>
+                <div className="amount">
+                  ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
+                </div>
+              </div>
+              <div className="right">
+                <div className="label">Total available rewards</div>
+                <div className="amount">{userPendingRewards} DOGGO</div>
               </div>
             </div>
-            <div className="right">
-              <div className="label">Total available rewards</div>
-              <div className="amount">{userPendingRewards} DOGGO</div>
-            </div>
-          </div>
-          <ul className="cards_wrap">
-            {vaultsWithLockedValues?.map((vault) => {
-              if (vault.userDeposited > 0n) {
+            <ul className="cards_wrap">
+              {depositedVaults?.map((vault) => {
                 return (
                   <li>
                     <EarnDepositedCard
@@ -317,14 +322,12 @@ export default function Earn(): ReactElement {
                     />
                   </li>
                 )
-              }
-              return <></>
-            })}
-          </ul>
-        </section>
-      ) : (
-        <></>
-      )}
+              })}
+            </ul>
+          </section>
+        ) : (
+          <EmptyBowl />
+        ))}
       <style jsx>
         {`
           .cards_wrap {
