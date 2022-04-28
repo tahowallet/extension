@@ -18,7 +18,7 @@ export default function SignTypedDataInfo({
   const fieldsToDisplay =
     annotation.type !== "unrecognized"
       ? annotation.displayFields
-      : typedData.message
+      : typedData.message ?? {}
 
   const keys = Object.keys(fieldsToDisplay)
   return (

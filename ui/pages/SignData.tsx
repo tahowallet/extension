@@ -41,13 +41,6 @@ export default function SignData(): ReactElement {
   const isLocked = useIsSigningMethodLocked(signingMethod)
   if (isLocked) return <></>
 
-  if (
-    typeof typedDataRequest === "undefined" ||
-    typeof signerAccountTotal === "undefined"
-  ) {
-    return <></>
-  }
-
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
       if (signingMethod) {
@@ -66,10 +59,10 @@ export default function SignData(): ReactElement {
   }
 
   const getTitle = () => {
-    if (typedDataRequest.typedData.primaryType === "PermitAndTransferFrom") {
+    if (typedDataRequest?.typedData.primaryType === "PermitAndTransferFrom") {
       return "Authorize Deposit"
     }
-    return `Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`
+    return `Sign ${typedDataRequest?.typedData.primaryType ?? "Message"}`
   }
 
   return (

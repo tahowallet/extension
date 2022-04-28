@@ -193,7 +193,7 @@ export default function SharedButton(
             display: flex;
             align-items: center;
             justify-content: space-between;
-            color: #ffffff;
+            color: var(--hunter-green);
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.48px;
@@ -225,7 +225,7 @@ export default function SharedButton(
             width: 16px;
             height: 16px;
             margin-left: 9px;
-            background-color: #ffffff;
+            background-color: var(--hunter-green);
             display: inline-block;
             margin-top: -1px;
           }
