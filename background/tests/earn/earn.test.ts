@@ -11,10 +11,11 @@ import * as contractUtils from "../../redux-slices/utils/contract-utils"
 const mainCurrencySymbol = "USD"
 
 describe("Earn", () => {
-  global.fetch = () =>
+  global.fetch = jest.fn(() =>
     Promise.resolve({
       json: () => Promise.resolve([]),
-    }) as Promise<Response>
+    })
+  ) as jest.Mock
   describe("getDoggoPrice", () => {
     beforeEach(() => jest.resetAllMocks())
 
