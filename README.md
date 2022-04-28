@@ -327,3 +327,18 @@ background/ # @tallyho/tally-background package with trusted wallet core
 ui/ # @tallyho/tally-ui package
   package.json
 ```
+
+## Firefox store build
+
+Firefox requires to upload source code if minifier is used and to be able to compile identical output to the uploaded package. Our builds are environment dependent at the moment because of the minification and source map process. Long term solution will be to upgrade our build process to be able to produce identical file assets, but until then we use Docker.
+
+- git clone git@github.com:tallycash/extension.git tallyho-firefox
+- cd tallyho-firefox
+- git checkout tags/latest_release-tag
+- .env.prod: fill in the prod API keys
+- `./firefox-build.sh`
+- mv firefox.zip ../
+- git clean -fdx
+- rm -rf .git
+- cd ..
+- zip -r tallyho-firefox.zip tallyho-firefox
