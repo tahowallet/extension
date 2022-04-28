@@ -159,8 +159,10 @@ export default function WalletActivityDetails(
         <DetailRowItem
           label="Timestamp"
           value={
-            typeof activityItem.timestamp !== "undefined"
-              ? new Date(activityItem.timestamp * 1000).toLocaleString()
+            typeof activityItem.annotation?.timestamp !== "undefined"
+              ? new Date(
+                  activityItem.annotation?.timestamp * 1000
+                ).toLocaleString()
               : "(Unknown)"
           }
           valueDetail=""

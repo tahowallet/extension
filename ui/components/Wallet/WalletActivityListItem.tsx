@@ -135,8 +135,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             )}
           </div>
           <div className="right">
-            {activity.timestamp &&
-              dayjs.unix(activity.timestamp).format("MMM D")}
+            {activity.annotation?.timestamp &&
+              dayjs.unix(activity.annotation?.timestamp).format("MMM D")}
           </div>
         </div>
         <div className="bottom">
