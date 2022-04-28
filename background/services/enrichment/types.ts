@@ -22,6 +22,10 @@ export type BaseTransactionAnnotation = {
    * consumers can more easily upsert annotations.
    */
   annotatedAt: UNIXTime
+  /**
+   * The timestamp of the transaction's associated block if available.
+   */
+  timestamp: UNIXTime | undefined
 }
 
 export type ContractDeployment = BaseTransactionAnnotation & {
