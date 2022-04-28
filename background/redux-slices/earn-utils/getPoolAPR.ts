@@ -7,6 +7,7 @@ import VAULT_ABI from "../../lib/vault"
 import { doggoTokenDecimalDigits } from "../../constants"
 import getDoggoPrice from "./getDoggoPrice"
 import getTokenPrice from "./getTokenPrice"
+import { sameEVMAddress } from "../../lib/utils"
 
 const getPoolAPR = async ({
   asset,
@@ -19,7 +20,7 @@ const getPoolAPR = async ({
   }
   assets: AssetsState
   vaultAddress: HexString
-}): Promise<string> => {
+}): Promise<{ totalAPR: string; yearnAPY: string }> => {
   // Slightly modified version inspired by: https://stackoverflow.com/a/9462382
   function nFormatter(num: number, digits: number) {
     const lookup = [
@@ -65,18 +66,35 @@ const getPoolAPR = async ({
   const tokensStaked = await huntingGroundContract.totalSupply()
   // 8. What is the value of a single stake token
   const { singleTokenPrice } = await getTokenPrice(asset, assets)
-
-  // 9. What is the total value of all locked tokens
+  // 9. Fetch underlying yearn vault APR
+  const yearnVaultAddress = await huntingGroundContract.vault()
+  const yearnVaultsAPIData = await (
+    await fetch("https://api.yearn.finance/v1/chains/1/vaults/all")
+  ).json()
+  const yearnVaultAPY =
+    yearnVaultsAPIData.find((yearnVault: { address: HexString }) =>
+      sameEVMAddress(yearnVault.address, yearnVaultAddress)
+    )?.apy?.net_apy ?? 0
+  const yearnVaultAPYPercent = yearnVaultAPY * 100
+  // 10. What is the total value of all locked tokens
   const tokensStakedValue = tokensStaked
     .mul(BigNumber.from(singleTokenPrice))
     .div(BigNumber.from("10").pow(10 + asset.decimals))
   // Cannot calculate APR if no one has staked tokens
-  if (tokensStakedValue.lte(BigNumber.from("0"))) return "New"
-  // 10. What is the totalRewardValue / totalLocked Value ratio
+  if (tokensStakedValue.lte(BigNumber.from("0")))
+    return {
+      totalAPR: `New`,
+      yearnAPY: `${nFormatter(yearnVaultAPYPercent, 1)}%`,
+    }
+  // 11. What is the totalRewardValue / totalLocked Value ratio
   const rewardRatio = totalYearlyRewardsValue.div(tokensStakedValue)
-  // 11. Multiply that ratio by 100 to receive percentage
+  // 12. Multiply that ratio by 100 to receive percentage
   const percentageAPR = rewardRatio.mul(BigNumber.from(100))
-  return `${nFormatter(percentageAPR.toNumber(), 1)}%`
+  const combinedAPR = percentageAPR.toNumber() + yearnVaultAPYPercent
+  return {
+    totalAPR: `${nFormatter(combinedAPR, 1)}%`,
+    yearnAPY: `${nFormatter(yearnVaultAPY, 1)}%`,
+  }
 }
 
 export default getPoolAPR

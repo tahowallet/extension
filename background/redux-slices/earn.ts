@@ -30,6 +30,11 @@ export type ApprovalTargetAllowance = {
   allowance: number
 }
 
+export type APRData = {
+  totalAPR: string
+  yearnAPY: string
+}
+
 export type AvailableVault = {
   network: EVMNetwork
   vaultAddress: HexString
@@ -43,7 +48,7 @@ export type AvailableVault = {
   duration: number
   rewardToken: HexString
   totalRewards: bigint
-  APR?: string
+  APR?: APRData
   localValueUserDeposited?: string
   localValueTotalDeposited?: string
   numberValueUserDeposited?: number
