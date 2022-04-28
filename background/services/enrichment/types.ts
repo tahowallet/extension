@@ -21,7 +21,7 @@ export type BaseTransactionAnnotation = {
    * When this transaction annotation was resolved. Including this means
    * consumers can more easily upsert annotations.
    */
-  timestamp: UNIXTime
+  annotatedAt: UNIXTime
 }
 
 export type ContractDeployment = BaseTransactionAnnotation & {
