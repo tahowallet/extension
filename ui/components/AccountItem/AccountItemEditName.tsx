@@ -32,6 +32,32 @@ export default function AccountItemEditName({
     }
   }, [newName, error, touched])
 
+  const onSubmit = React.useCallback(
+    (
+      event:
+        | React.FormEvent<HTMLFormElement>
+        | React.MouseEvent<HTMLButtonElement, MouseEvent>
+    ) => {
+      event.preventDefault()
+      if (!newName) {
+        setTouched(true)
+        setError("Name is required")
+        return
+      }
+      if (error) {
+        return
+      }
+      dispatch(
+        addOrEditAddressName({
+          name: newName,
+          address,
+        })
+      )
+      close()
+    },
+    [address, close, dispatch, error, newName]
+  )
+
   return (
     <div className="edit_address_name">
       <div className="header">
@@ -49,18 +75,7 @@ export default function AccountItemEditName({
         role="presentation"
         onKeyDown={(e) => e.stopPropagation()}
       >
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            dispatch(
-              addOrEditAddressName({
-                name: newName,
-                address,
-              })
-            )
-            close()
-          }}
-        >
+        <form onSubmit={onSubmit}>
           <SharedInput
             label=""
             placeholder="Type new name"
@@ -85,23 +100,7 @@ export default function AccountItemEditName({
         >
           Cancel
         </SharedButton>
-        <SharedButton
-          type="primaryGreen"
-          size="medium"
-          onClick={(e) => {
-            if (error) {
-              e.stopPropagation()
-              return
-            }
-            dispatch(
-              addOrEditAddressName({
-                name: newName,
-                address,
-              })
-            )
-            close()
-          }}
-        >
+        <SharedButton type="primaryGreen" size="medium" onClick={onSubmit}>
           Save name
         </SharedButton>
       </div>
