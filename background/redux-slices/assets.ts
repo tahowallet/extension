@@ -28,13 +28,8 @@ export type AssetsState = SingleAssetState[]
 export const initialState = [] as AssetsState
 
 function prunePrices(prices: PricePoint[]): PricePoint[] {
-  const pricesToday = prices.filter(
-    (pp) => pp.time > (Date.now() - 24 * 60 * 60 * 1000) / 1000 // 24 hours ago in UNIXTime
-  )
-  const pricesToSort = pricesToday.map<[number, PricePoint]>((pp) => [
-    pp.time,
-    pp,
-  ])
+  // TODO filter prices to daily in the past week, weekly in the past month, monthly in the past year
+  const pricesToSort = prices.map<[number, PricePoint]>((pp) => [pp.time, pp])
   pricesToSort.sort()
   return pricesToSort.map(([, pp]) => pp)
 }
