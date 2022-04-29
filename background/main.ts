@@ -78,6 +78,7 @@ import {
   typedDataRequest,
   signDataRequest,
 } from "./redux-slices/signing"
+
 import {
   SigningMethod,
   SignTypedDataRequest,
@@ -233,10 +234,55 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   7: (prevState: any) => {
-    const { ...newState } = prevState
-    delete newState.networks.evm["1"].blocks // Only mainnet at this time
+    const { activities } = prevState
+    interface Entitiesish {
+      [id: string]: {
+        blockHeight: number | null
+        annotation: {
+          blockTimestamp: number
+        }
+      }
+    }
+    interface ActivitiesStateish {
+      [address: string]: {
+        ids: string[]
+        entities: Entitiesish
+      }
+    }
 
-    return newState
+    const newActivitiesState: ActivitiesStateish = {}
+
+    const { blocks } = prevState.networks.evm["1"]
+
+    // Grab timestamps off of blocks, add them as activity annotations
+    Object.keys(activities).forEach((accountActivitiesAddress: string) => {
+      const accountActivities = activities[accountActivitiesAddress]
+      const newEntities: Entitiesish = {}
+      accountActivities.ids.forEach((activityItemID: number) => {
+        const activityItem = accountActivities.entities[activityItemID]
+        newEntities[activityItemID] = {
+          ...activityItem,
+          annotation: {
+            ...activityItem.annotation,
+            blockTimestamp: activityItem.blockHeight
+              ? blocks[activityItem.blockHeight]?.timestamp
+              : undefined,
+          },
+        }
+      })
+      newActivitiesState[accountActivitiesAddress] = {
+        ids: accountActivities.ids,
+        entities: newEntities,
+      }
+    })
+
+    const { ...newState } = prevState
+    // Remove blocks
+    delete newState.networks.evm["1"].blocks // Only mainnet exists at this time
+    return {
+      ...newState,
+      activities: newActivitiesState,
+    }
   },
 }
 
