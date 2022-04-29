@@ -31,8 +31,11 @@ export type ApprovalTargetAllowance = {
 }
 
 export type APRData = {
-  totalAPR: string
-  yearnAPY: string
+  totalAPR?: string
+  yearnAPY?: string
+  low?: string
+  mid?: string
+  high?: string
 }
 
 export type AvailableVault = {

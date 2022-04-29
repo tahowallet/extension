@@ -38,7 +38,7 @@ function getYearlyRewardsValue(
 function numberFormatter(num: number, digits: number) {
   const lookup = [
     { value: 1, symbol: "" },
-    { value: 1e3, symbol: "k" },
+    { value: 1e3, symbol: "K" },
     { value: 1e6, symbol: "M" },
     { value: 1e9, symbol: "B" },
   ]
@@ -67,8 +67,8 @@ const getPoolAPR = async ({
   assets: AssetsState
   vaultAddress: HexString
 }): Promise<{
-  totalAPR: string
-  yearnAPY: string
+  totalAPR?: string
+  yearnAPY?: string
   low?: string
   mid?: string
   high?: string
@@ -133,12 +133,20 @@ const getPoolAPR = async ({
     const rewardRatio = yearlyRewardsValue.div(tokensStakedValue)
     // Multiply that ratio by 100 to receive percentage
     const estimateAPR = rewardRatio.mul(BigNumber.from(100)).toNumber()
-
-    return estimateAPR
+    const totalEstimateAPR = estimateAPR + yearnVaultAPYPercent
+    return totalEstimateAPR
   })
-  const combinedAPR = percentageAPR + yearnVaultAPYPercent
+  if (rewardTokenPrice === 0n) {
+    return {
+      totalAPR: undefined,
+      yearnAPY: `${numberFormatter(yearnVaultAPYPercent, 1)}%`,
+      low: `${numberFormatter(lowEstimateAPR, 1)}%`,
+      mid: `${numberFormatter(midEstimateAPR, 1)}%`,
+      high: `${numberFormatter(highEstimateAPR, 1)}%`,
+    }
+  }
   return {
-    totalAPR: `${numberFormatter(combinedAPR, 1)}%`,
+    totalAPR: `${numberFormatter(percentageAPR, 1)}%`,
     yearnAPY: `${numberFormatter(yearnVaultAPYPercent, 1)}%`,
     low: `${numberFormatter(lowEstimateAPR, 1)}%`,
     mid: `${numberFormatter(midEstimateAPR, 1)}%`,

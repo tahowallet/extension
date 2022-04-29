@@ -23,6 +23,12 @@ type EarnCardProps = {
 }
 
 function EarnCard({ vault, isComingSoon }: EarnCardProps) {
+  const getDisplayAPR = () => {
+    if (typeof vault.APR?.totalAPR === "undefined") {
+      return `${vault.APR?.low} - ${vault.APR?.high}`
+    }
+    return vault.APR?.totalAPR
+  }
   return (
     <Link
       to={{
@@ -63,7 +69,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         <span className="token_name">{vault?.asset?.symbol}</span>
         <div className="info">
           <div className="label">Total estimated vAPR</div>
-          <div className="value">{vault.APR?.totalAPR}</div>
+          <div className="value">{getDisplayAPR()}</div>
         </div>
         <div className="divider" />
         <div className="info">
