@@ -34,6 +34,27 @@ function getYearlyRewardsValue(
   return totalYearlyRewardsValue
 }
 
+// Slightly modified version inspired by: https://stackoverflow.com/a/9462382
+function numberFormatter(num: number, digits: number) {
+  const lookup = [
+    { value: 1, symbol: "" },
+    { value: 1e3, symbol: "k" },
+    { value: 1e6, symbol: "M" },
+    { value: 1e9, symbol: "B" },
+  ]
+  const item = lookup
+    .slice()
+    .reverse()
+    .find(function check(item1) {
+      return num >= item1.value
+    })
+  return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
+}
+
+const DOGGO_LOW_PRICE_ESTIMATE = 100000000n // $0.01
+const DOGGO_MID_PRICE_ESTIMATE = 1000000000n // $0.10
+const DOGGO_HIGH_PRICE_ESTIMATE = 5000000000n // $0.50
+
 const getPoolAPR = async ({
   asset,
   assets,
@@ -52,80 +73,17 @@ const getPoolAPR = async ({
   mid?: string
   high?: string
 }> => {
-  // Slightly modified version inspired by: https://stackoverflow.com/a/9462382
-  function nFormatter(num: number, digits: number) {
-    const lookup = [
-      { value: 1, symbol: "" },
-      { value: 1e3, symbol: "k" },
-      { value: 1e6, symbol: "M" },
-      { value: 1e9, symbol: "B" },
-    ]
-    const item = lookup
-      .slice()
-      .reverse()
-      .find(function check(item1) {
-        return num >= item1.value
-      })
-    return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
-  }
-
   const mainCurrencySymbol = "USD" // FIXME Exchange for function returning symbol
 
-  // 1. How long will the rewards be distributed for in seconds
   const huntingGroundContract = await getContract(vaultAddress, VAULT_ABI)
-  const currentTimestamp = await getCurrentTimestamp()
-  const periodEndBN = await huntingGroundContract.periodFinish()
-  const remainingPeriodSeconds =
-    periodEndBN.toNumber() - currentTimestamp > 0
-      ? periodEndBN.toNumber() - currentTimestamp
-      : 0
-
-  // 2. How much rewards are stored in the hunting ground
-  const rewardRate = await huntingGroundContract.rewardRate()
-  const huntingGroundRemainingRewards = rewardRate.mul(remainingPeriodSeconds)
-  // 3. How many of those periods fit in a year
-  const secondsInAYear = BigNumber.from(31556926)
-  const periodsPerYear =
-    remainingPeriodSeconds > 0
-      ? secondsInAYear.div(remainingPeriodSeconds)
-      : BigNumber.from(0)
-  // 4. What is the value of single reward token in USD bigint with 10 decimals
-  const rewardTokenPrice = await getDoggoPrice(assets, mainCurrencySymbol)
-  // The doggo price is not available before DAO vote, we will return approximate values
-  // The values are in USD with 10 decimals, e.g. 1_000_000_000n = $0.1
-  const lowEstimate = 100000000n // $0.01
-  const midEstimate = 1000000000n // $0.10
-  const highEstimate = 5000000000n // $0.50
-
-  // 5. What is the total value of all tokens to be distributed in given period
-  const totalYearlyRewardsValue = getYearlyRewardsValue(
-    rewardTokenPrice,
-    huntingGroundRemainingRewards,
-    periodsPerYear
-  )
-  const lowYearlyRewardsValue = getYearlyRewardsValue(
-    lowEstimate,
-    huntingGroundRemainingRewards,
-    periodsPerYear
-  )
-  const midYearlyRewardsValue = getYearlyRewardsValue(
-    midEstimate,
-    huntingGroundRemainingRewards,
-    periodsPerYear
-  )
-  const highYearlyRewardsValue = getYearlyRewardsValue(
-    highEstimate,
-    huntingGroundRemainingRewards,
-    periodsPerYear
-  )
-  // 7. How many tokens have been staked into the hunting ground
+  // How many tokens have been staked into the hunting ground
   const tokensStaked = await huntingGroundContract.totalSupply()
-  // 8. What is the value of a single stake token
+  // What is the value of a single stake token
   const { singleTokenPrice } = await getTokenPrice(asset, assets)
-  // 9. Fetch underlying yearn vault APR
+  // Fetch underlying yearn vault APR
   const yearnVaultAddress = await huntingGroundContract.vault()
   const yearnVaultAPYPercent = await getYearnVaultAPY(yearnVaultAddress)
-  // 10. What is the total value of all locked tokens
+  //  What is the total value of all locked tokens
   const tokensStakedValue = tokensStaked
     .mul(BigNumber.from(singleTokenPrice))
     .div(BigNumber.from("10").pow(10 + asset.decimals))
@@ -136,25 +94,55 @@ const getPoolAPR = async ({
       low: `New`,
       mid: `New`,
       high: `New`,
-      yearnAPY: `${nFormatter(yearnVaultAPYPercent, 1)}%`,
+      yearnAPY: `${numberFormatter(yearnVaultAPYPercent, 1)}%`,
     }
-  // 11. What is the totalRewardValue / totalLocked Value ratio
-  const rewardRatio = totalYearlyRewardsValue.div(tokensStakedValue)
-  const lowRewardRatio = lowYearlyRewardsValue.div(tokensStakedValue)
-  const midRewardRatio = midYearlyRewardsValue.div(tokensStakedValue)
-  const highRewardRatio = highYearlyRewardsValue.div(tokensStakedValue)
-  // 12. Multiply that ratio by 100 to receive percentage
-  const percentageAPR = rewardRatio.mul(BigNumber.from(100))
-  const lowEstimateAPR = lowRewardRatio.mul(BigNumber.from(100)).toNumber()
-  const midEstimateAPR = midRewardRatio.mul(BigNumber.from(100)).toNumber()
-  const highEstimateAPR = highRewardRatio.mul(BigNumber.from(100)).toNumber()
-  const combinedAPR = percentageAPR.toNumber() + yearnVaultAPYPercent
+  // How long will the rewards be distributed for in seconds
+  const currentTimestamp = await getCurrentTimestamp()
+  const periodEndBN = await huntingGroundContract.periodFinish()
+  const remainingPeriodSeconds =
+    periodEndBN.toNumber() - currentTimestamp > 0
+      ? periodEndBN.toNumber() - currentTimestamp
+      : 0
+
+  // How much rewards are stored in the hunting ground
+  const rewardRate = await huntingGroundContract.rewardRate()
+  const huntingGroundRemainingRewards = rewardRate.mul(remainingPeriodSeconds)
+  // How many of those periods fit in a year
+  const secondsInAYear = BigNumber.from(31556926)
+  const periodsPerYear =
+    remainingPeriodSeconds > 0
+      ? secondsInAYear.div(remainingPeriodSeconds)
+      : BigNumber.from(0)
+  // What is the value of single reward token in USD bigint with 10 decimals
+  const rewardTokenPrice = await getDoggoPrice(assets, mainCurrencySymbol)
+  // The doggo price is not available before DAO vote, we will return approximate values
+  // The values are in USD with 10 decimals, e.g. 1_000_000_000n = $0.1
+
+  const [percentageAPR, lowEstimateAPR, midEstimateAPR, highEstimateAPR] = [
+    rewardTokenPrice,
+    DOGGO_LOW_PRICE_ESTIMATE,
+    DOGGO_MID_PRICE_ESTIMATE,
+    DOGGO_HIGH_PRICE_ESTIMATE,
+  ].map((estimate: bigint) => {
+    // What is the total value of all tokens to be distributed in given period
+    const yearlyRewardsValue = getYearlyRewardsValue(
+      estimate,
+      huntingGroundRemainingRewards,
+      periodsPerYear
+    )
+    const rewardRatio = yearlyRewardsValue.div(tokensStakedValue)
+    // Multiply that ratio by 100 to receive percentage
+    const estimateAPR = rewardRatio.mul(BigNumber.from(100)).toNumber()
+
+    return estimateAPR
+  })
+  const combinedAPR = percentageAPR + yearnVaultAPYPercent
   return {
-    totalAPR: `${nFormatter(combinedAPR, 1)}%`,
-    yearnAPY: `${nFormatter(yearnVaultAPYPercent, 1)}%`,
-    low: `${nFormatter(lowEstimateAPR, 1)}%`,
-    mid: `${nFormatter(midEstimateAPR, 1)}%`,
-    high: `${nFormatter(highEstimateAPR, 1)}%`,
+    totalAPR: `${numberFormatter(combinedAPR, 1)}%`,
+    yearnAPY: `${numberFormatter(yearnVaultAPYPercent, 1)}%`,
+    low: `${numberFormatter(lowEstimateAPR, 1)}%`,
+    mid: `${numberFormatter(midEstimateAPR, 1)}%`,
+    high: `${numberFormatter(highEstimateAPR, 1)}%`,
   }
 }
 
