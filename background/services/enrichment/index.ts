@@ -119,7 +119,7 @@ export default class EnrichmentService extends BaseService<Events> {
     if (transaction?.blockHash) {
       block = await this.chainService.getBlockData(
         network,
-        transaction.blockHash ?? ""
+        transaction.blockHash
       )
     }
 
