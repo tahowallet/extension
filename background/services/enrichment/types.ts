@@ -21,11 +21,11 @@ export type BaseTransactionAnnotation = {
    * When this transaction annotation was resolved. Including this means
    * consumers can more easily upsert annotations.
    */
-  annotatedAt: UNIXTime
+  timestamp: UNIXTime
   /**
    * The timestamp of the transaction's associated block if available.
    */
-  timestamp: UNIXTime | undefined
+  blockTimestamp: UNIXTime | undefined
 }
 
 export type ContractDeployment = BaseTransactionAnnotation & {
