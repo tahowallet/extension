@@ -6,7 +6,6 @@ import {
 import { getNetwork } from "@ethersproject/networks"
 import { utils } from "ethers"
 import { Logger } from "ethers/lib/utils"
-import { camelCase } from "lodash"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -196,7 +195,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.providers = Object.fromEntries(
       this.supportedNetworks.map((network) => [
-        camelCase(network.name),
+        network.name,
         new SerialFallbackProvider(
           network,
           () =>
@@ -216,7 +215,7 @@ export default class ChainService extends BaseService<Events> {
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = Object.fromEntries(
-      this.supportedNetworks.map((network) => [camelCase(network.name), []])
+      this.supportedNetworks.map((network) => [network.name, []])
     )
 
     this.assetData = new AssetDataHelper(this)
@@ -282,7 +281,7 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers[camelCase(network.name)]
+    return this.providers[network.name]
   }
 
   /**
@@ -397,7 +396,7 @@ export default class ChainService extends BaseService<Events> {
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
 
     const chainNonce =
-      (await this.providers.ethereum.getTransactionCount(
+      (await this.providers[ETHEREUM.name].getTransactionCount(
         transactionRequest.from,
         "latest"
       )) - 1
@@ -604,11 +603,11 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): Promise<void> {
-    if (!(camelCase(network.name) in this.transactionsToRetrieve)) {
-      this.transactionsToRetrieve[camelCase(network.name)] = []
+    if (!(network.name in this.transactionsToRetrieve)) {
+      this.transactionsToRetrieve[network.name] = []
     }
 
-    const toRetrieve = this.transactionsToRetrieve[camelCase(network.name)]
+    const toRetrieve = this.transactionsToRetrieve[network.name]
 
     const seen = new Set((toRetrieve ?? []).map(({ hash }) => hash))
 
@@ -695,7 +694,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async send(method: string, params: unknown[]): Promise<unknown> {
-    return this.providers.ethereum.send(method, params)
+    return this.providers[ETHEREUM.name].send(method, params)
   }
 
   /* *****************
@@ -853,21 +852,20 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     // TODO make this multi network
-    const toHandle = this.transactionsToRetrieve.ethereum.slice(
+    const toHandle = this.transactionsToRetrieve[ETHEREUM.name].slice(
       0,
       TRANSACTIONS_RETRIEVED_PER_ALARM
     )
-    this.transactionsToRetrieve.ethereum =
-      this.transactionsToRetrieve.ethereum.slice(
-        TRANSACTIONS_RETRIEVED_PER_ALARM
-      )
+    this.transactionsToRetrieve[ETHEREUM.name] = this.transactionsToRetrieve[
+      ETHEREUM.name
+    ].slice(TRANSACTIONS_RETRIEVED_PER_ALARM)
 
     const network = ETHEREUM
 
     toHandle.forEach(async ({ hash, firstSeen }) => {
       try {
         // TODO make this multi network
-        const result = await this.providers.ethereum.getTransaction(hash)
+        const result = await this.providers[ETHEREUM.name].getTransaction(hash)
 
         const transaction = transactionFromEthersTransaction(result, network)
 
