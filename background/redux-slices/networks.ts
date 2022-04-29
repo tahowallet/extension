@@ -39,13 +39,9 @@ const networksSlice = createSlice({
         immerState.evm[block.network.chainID].blockHeight = block.blockHeight
       }
     },
-
-    addBlock: (immerState, { payload: block }: { payload: AnyEVMBlock }) => {
-      immerState.evm[block.network.chainID].blocks[block.blockHeight] = block
-    },
   },
 })
 
-export const { blockSeen, addBlock } = networksSlice.actions
+export const { blockSeen } = networksSlice.actions
 
 export default networksSlice.reducer

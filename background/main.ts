@@ -42,7 +42,7 @@ import {
   updateKeyrings,
   setKeyringToVerify,
 } from "./redux-slices/keyrings"
-import { blockSeen, addBlock } from "./redux-slices/networks"
+import { blockSeen } from "./redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -78,7 +78,6 @@ import {
   typedDataRequest,
   signDataRequest,
 } from "./redux-slices/signing"
-import { blockFromEthersBlock } from "./services/chain/utils"
 import {
   SigningMethod,
   SignTypedDataRequest,
@@ -778,17 +777,9 @@ export default class Main extends BaseService<never> {
     })
 
     // Report on transactions for basic activity. Fancier stuff is handled via
-    // connectEnrichmentService. Also dispatch block to be used for the timestamp
-    // and other supplementary info.
+    // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
       this.store.dispatch(activityEncountered(transactionInfo))
-      const block = blockFromEthersBlock(
-        transactionInfo.transaction.network,
-        await this.chainService.providers.ethereum.getBlock(
-          transactionInfo.transaction.blockHash || ""
-        )
-      )
-      this.store.dispatch(addBlock(block))
     })
   }
 
