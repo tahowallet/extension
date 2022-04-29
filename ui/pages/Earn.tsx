@@ -143,6 +143,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
+            padding-left: 2px;
           }
           .single_icon_first {
             z-index: 2;
