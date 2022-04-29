@@ -35,15 +35,40 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
     >
       <div className={classNames("card", { coming_soon: isComingSoon })}>
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" symbol={vault?.asset?.symbol} />
+          {vault.icons && vault.icons?.length > 1 ? (
+            <div className="multiple_icons">
+              <div className="single_icon_first">
+                <SharedAssetIcon
+                  size="large"
+                  symbol={vault?.asset?.symbol}
+                  logoURL={vault.icons?.[0]}
+                />
+              </div>
+              <div>
+                <SharedAssetIcon
+                  size="large"
+                  symbol={vault?.asset?.symbol}
+                  logoURL={vault.icons?.[1]}
+                />
+              </div>
+            </div>
+          ) : (
+            <SharedAssetIcon
+              size="large"
+              symbol={vault?.asset?.symbol}
+              logoURL={vault.icons?.[0]}
+            />
+          )}
         </div>
         <span className="token_name">{vault?.asset?.symbol}</span>
-        <span className="apy_info_label">Estimated APR</span>
-        <span className="apy_percent">{vault.APR?.totalAPR}</span>
+        <div className="info">
+          <div className="label">Total estimated vAPR</div>
+          <div className="value">{vault.APR?.totalAPR}</div>
+        </div>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
-          <div className="tvl">
+          <div className="value">
             {vault.localValueTotalDeposited
               ? `$${vault.localValueTotalDeposited}`
               : "Unknown"}
@@ -52,9 +77,12 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         <div className="divider" />
         <div className="info">
           <div className="label">Reward</div>
-          <div className="rewards">
-            <img className="lock" src="./images/lock@2.png" alt="Locked" />
-            DOGGO
+          <div className="rewardsWrap">
+            <div className="doggoRewards">
+              <img className="lock" src="./images/lock@2.png" alt="Locked" />
+              DOGGO
+            </div>
+            <div className="otherReward"> + {vault.asset.symbol}</div>
           </div>
         </div>
         {isComingSoon && <div className="coming_soon_notice">Coming soon</div>}
@@ -71,6 +99,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             margin-top: 26px;
             margin-bottom: 16px;
             transition: all 0.2s ease;
+            color: white;
           }
           .card:hover {
             background: linear-gradient(180deg, #034f4b 0%, #033633 100%);
@@ -78,7 +107,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
               0px 14px 16px rgba(0, 20, 19, 0.14),
               0px 10px 12px rgba(0, 20, 19, 0.54);
           }
-          .tvl {
+          .value {
             font-size: 18px;
             font-weight: bold;
           }
@@ -91,17 +120,36 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             align-items: center;
             color: white;
           }
-          .rewards {
+          .rewardsWrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+          }
+          .doggoRewards {
             display: flex;
             align-items: center;
             border-radius: 4px;
             padding: 4px;
             background-color: var(--hunter-green);
           }
+          .otherReward {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+          }
+          .single_icon_first {
+            z-index: 2;
+          }
           .asset_icon_wrap {
-            border: solid var(--green-95) 3px;
             border-radius: 500px;
             margin-top: -18px;
+          }
+          .multiple_icons {
+            display: flex;
+          }
+          .multiple_icons div {
+            margin: 0 -8px;
           }
           .token_name {
             font-weight: bold;
@@ -121,17 +169,6 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
           .apy_info_label {
             color: var(--green-40);
             font-size: 14px;
-            line-height: 17px;
-            margin-bottom: -4px;
-          }
-          .apy_percent {
-            color: var(--success);
-            font-family: "Quincy CF";
-            font-size: 36px;
-            font-weight: 500;
-            line-height: 42px;
-            text-align: center;
-            margin-bottom: 4px;
           }
           .icon_rewards_locked {
             background: url("./images/reward_locked@2x.png") center no-repeat;
@@ -172,7 +209,6 @@ export type AvailableVaultsWithLockedValues = AvailableVault & {
 
 export default function Earn(): ReactElement {
   const availableVaults = useBackgroundSelector(selectAvailableVaults)
-
   const [panelNumber, setPanelNumber] = useState(0)
   const [vaultsWithLockedValues, setVaultsWithLockedValues] =
     useState<AvailableVaultsWithLockedValues[]>(availableVaults)
@@ -259,7 +295,7 @@ export default function Earn(): ReactElement {
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
         panelNumber={panelNumber}
-        panelNames={["Vaults", "LP Pools", "Your deposits"]}
+        panelNames={["Pools", "Your deposits"]}
       />
       {panelNumber === 0 ? (
         <section className="standard_width">
@@ -276,15 +312,6 @@ export default function Earn(): ReactElement {
         <></>
       )}
       {panelNumber === 1 ? (
-        <section className="standard_width lp_pool_panel_wrap">
-          <div className="bone_illustration" />
-          <div className="serif_header">In training</div>
-          <div className="label">coming soon</div>
-        </section>
-      ) : (
-        <></>
-      )}
-      {panelNumber === 2 ? (
         <section className="standard_width">
           <div className="your_deposit_heading_info">
             <div className="left">
