@@ -23,14 +23,23 @@ export default function SharedAccordion({
 
   return (
     <div className="accordion">
-      <div className="accordion_header">
+      <div
+        className="accordion_header"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && toggle()}
+        onClick={toggle}
+      >
         <div className="accordion_header_content">{headerElement}</div>
         <SharedIcon
           icon="icons/s/arrow-toggle.svg"
           width={16}
           color="var(--green-5)"
           hoverColor="#fff"
-          onClick={toggle}
+          onClick={(e) => {
+            e.stopPropagation()
+            toggle()
+          }}
           customStyles={`
             margin: 2px 0 2px 8px;
             transform: rotate(${isOpen ? "180" : "0"}deg);
@@ -49,6 +58,7 @@ export default function SharedAccordion({
         .accordion_header {
           display: flex;
           padding: 4px 8px;
+          cursor: pointer;
         }
         .accordion_header_content {
           flex: 1 0 auto;
