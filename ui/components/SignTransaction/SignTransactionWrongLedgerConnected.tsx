@@ -6,8 +6,10 @@ import SignTransactionSlideUpContentLayout from "./SignTransactionSlideUpContent
 export default function SignTransactionWrongLedgerConnected({
   signerAccountTotal,
 }: {
-  signerAccountTotal: AccountTotal
+  signerAccountTotal?: AccountTotal
 }): ReactElement {
+  const address = signerAccountTotal?.address ?? ""
+
   return (
     <SignTransactionSlideUpContentLayout
       title="Wrong Ledger"
@@ -23,17 +25,11 @@ export default function SignTransactionWrongLedgerConnected({
                 type="deemphasizedWhite"
                 onClick={() => {
                   window
-                    .open(
-                      `https://etherscan.io/address/${signerAccountTotal.address}`,
-                      "_blank"
-                    )
+                    .open(`https://etherscan.io/address/${address}`, "_blank")
                     ?.focus()
                 }}
               >
-                {`${signerAccountTotal.address.slice(
-                  0,
-                  7
-                )}...${signerAccountTotal.address.slice(-6)}`}
+                {`${address.slice(0, 7)}...${address.slice(-6)}`}
               </SharedButton>
             </div>
           </div>
