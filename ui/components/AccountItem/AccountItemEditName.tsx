@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { useState, useEffect, useCallback, ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
 import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
@@ -20,11 +20,11 @@ export default function AccountItemEditName({
   close,
 }: AccountItemEditNameProps): ReactElement {
   const dispatch = useDispatch()
-  const [newName, setNewName] = React.useState("")
-  const [error, setError] = React.useState("")
-  const [touched, setTouched] = React.useState(false)
+  const [newName, setNewName] = useState("")
+  const [error, setError] = useState("")
+  const [touched, setTouched] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (touched && newName.trim() === "") {
       setError("Name is required")
     } else {
@@ -32,7 +32,7 @@ export default function AccountItemEditName({
     }
   }, [newName, error, touched])
 
-  const onSubmit = React.useCallback(
+  const onSubmit = useCallback(
     (
       event:
         | React.FormEvent<HTMLFormElement>
