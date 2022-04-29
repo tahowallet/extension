@@ -3,7 +3,7 @@ import React, { ReactElement } from "react"
 export default function EmptyBowl(): ReactElement {
   return (
     <div className="standard_width container">
-      <img className="bowlImage" src="./images/empty_bowl_@2.png" alt="" />
+      <img className="bowl_image" src="./images/empty_bowl_@2.png" alt="" />
       <div className="title">Just an empty bowl</div>
       <div className="text">You don&apos;t have an active deposit.</div>
       <style jsx>
@@ -15,7 +15,7 @@ export default function EmptyBowl(): ReactElement {
             margin-top: 16px;
             height: 100%;
           }
-          .bowlImage {
+          .bowl_image {
             width: 90px;
           }
           .title {

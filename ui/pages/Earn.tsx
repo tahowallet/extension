@@ -16,7 +16,7 @@ import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import EarnDepositedCard from "../components/Earn/EarnDepositedCard"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import EmptyBowl from "../components/EmptyBowl/EmptyBowl"
+import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
 
 type EarnCardProps = {
   vault: AvailableVaultsWithLockedValues
