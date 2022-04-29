@@ -3,7 +3,18 @@ import { TransactionAnnotation } from "@tallyho/tally-background/services/enrich
 import { ReactElement, ReactNode } from "react"
 
 export interface SignTransactionInfo {
-  title: ReactNode
+  title:
+    | "Contract interaction"
+    | "Activate blind signing"
+    | "Ledger is busy"
+    | "Connect to Ledger"
+    | "Multiple Ledgers are connected"
+    | "Sign Transaction"
+    | "Approve asset spend"
+    | "Swap assets"
+    | "Sign assets"
+    | "Sign Transfer"
+    | "Wrong Ledger"
   infoBlock: ReactNode
   textualInfoBlock: ReactNode
   confirmButtonLabel: ReactNode
