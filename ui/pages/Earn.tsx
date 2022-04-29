@@ -143,6 +143,8 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
           }
           .divider {
             width: 128px;
+            height: unset;
+            opacity: 100%;
             border-bottom: 1px solid var(--green-120);
           }
           .coming_soon_notice {

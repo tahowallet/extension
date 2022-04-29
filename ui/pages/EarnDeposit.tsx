@@ -491,12 +491,18 @@ export default function EarnDeposit(): ReactElement {
             font-weight: 400;
             height: 17px;
           }
+          .contract:hover .contract_link {
+            color: #fff;
+          }
           .external {
-            mask-image: url("./images/external@2x.png");
+            mask-image: url("./images/external_small@2x.png");
             mask-size: 12px 12px;
             width: 12px;
             height: 12px;
             background-color: var(--green-40);
+          }
+          .contract:hover .external {
+            background-color: #fff;
           }
           .wrapper {
             width: 100%;
