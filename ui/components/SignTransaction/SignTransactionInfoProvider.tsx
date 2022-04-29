@@ -4,6 +4,7 @@ import { useBackgroundSelector } from "../../hooks"
 import { SignTransactionInfo } from "./SignTransactionInfoBaseProvider"
 import SignTransactionLoader from "./SignTransactionLoader"
 import SignTransactionSignInfoProvider from "./SignTransactionSignInfoProvider"
+import SignTransactionContractInteractionProvider from "./SignTransactionContractInteractionProvider"
 import SignTransactionSpendAssetInfoProvider from "./SignTransactionSpendAssetInfoProvider"
 import SignTransactionSwapAssetInfoProvider from "./SignTransactionSwapAssetInfoProvider"
 import SignTransactionTransferInfoProvider from "./SignTransactionTransferInfoProvider"
@@ -49,6 +50,24 @@ export default function SignTransactionInfoProvider({
           transactionDetails={transactionDetails}
           annotation={annotation}
         />
+      )
+    case "contract-interaction":
+      return (
+        <>
+          {transactionDetails.value === BigInt(0) ? (
+            <SignTransactionContractInteractionProvider
+              inner={children}
+              transactionDetails={transactionDetails}
+              annotation={annotation}
+            />
+          ) : (
+            <SignTransactionSignInfoProvider
+              inner={children}
+              transactionDetails={transactionDetails}
+              annotation={annotation}
+            />
+          )}
+        </>
       )
     default:
       return (
