@@ -54,24 +54,15 @@ export default function SignTransactionSignInfoProvider({
       infoBlock={
         <div className="sign_block">
           <div className="container">
-            {typeof transactionDetails.to === "undefined" ? (
-              <>
-                <div className="label">Send to</div>
-                <div className="send_to">Contract creation</div>
-              </>
-            ) : (
-              <>
-                <div className="label">Send to</div>
-                <SharedAddress
-                  address={transactionDetails.to}
-                  name={
-                    annotation !== undefined && "contractName" in annotation
-                      ? annotation.contractName
-                      : undefined
-                  }
-                />
-              </>
-            )}
+            <div className="label">Send to</div>
+            <SharedAddress
+              address={transactionDetails.to ?? ""}
+              name={
+                annotation !== undefined && "contractName" in annotation
+                  ? annotation.contractName
+                  : undefined
+              }
+            />
           </div>
           <div className="divider" />
           <div className="container">
