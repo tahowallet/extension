@@ -44,8 +44,7 @@ function TextArea({
           padding: 12px 16px;
           box-sizing: border-box;
         }
-        .error,
-        .error:focus {
+        .error {
           border-color: var(--error);
         }
         .error_message {

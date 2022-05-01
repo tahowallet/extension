@@ -102,8 +102,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           input[type="number"] {
             -moz-appearance: textfield;
           }
-          .error,
-          .error:focus {
+          .error {
             border-color: var(--error);
           }
           .error_message {
