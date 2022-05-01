@@ -4,7 +4,9 @@ import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 export default function SignTransactionLoader(): ReactElement {
   return (
     <div className="loading_transaction">
-      <div className="header serif_header">Sign Transaction</div>
+      <div className="header">
+        <SharedSkeletonLoader height={44} width={235} />
+      </div>
       <div className="container">
         <SharedSkeletonLoader height={32} />
         <SharedSkeletonLoader height={42} />
@@ -18,11 +20,8 @@ export default function SignTransactionLoader(): ReactElement {
           padding-top: 64px;
         }
         .header {
-          color: var(--trophy-gold);
-          font-size: 36px;
-          font-weight: 500;
-          line-height: 42px;
-          text-align: center;
+          display: flex;
+          justify-content: center;
         }
         .container {
           border-radius: 16px;
