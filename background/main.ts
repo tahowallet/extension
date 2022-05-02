@@ -235,7 +235,7 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   7: (prevState: any) => {
     const { activities } = prevState
-    interface Entitiesish {
+    interface NewEntity {
       [id: string]: {
         blockHeight: number | null
         annotation: {
@@ -243,21 +243,21 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
         }
       }
     }
-    interface ActivitiesStateish {
+    interface NewActivitiesState {
       [address: string]: {
         ids: string[]
-        entities: Entitiesish
+        entities: NewEntity
       }
     }
 
-    const newActivitiesState: ActivitiesStateish = {}
+    const newActivitiesState: NewActivitiesState = {}
 
     const { blocks } = prevState.networks.evm["1"]
 
     // Grab timestamps off of blocks, add them as activity annotations
     Object.keys(activities).forEach((accountActivitiesAddress: string) => {
       const accountActivities = activities[accountActivitiesAddress]
-      const newEntities: Entitiesish = {}
+      const newEntities: NewEntity = {}
       accountActivities.ids.forEach((activityItemID: number) => {
         const activityItem = accountActivities.entities[activityItemID]
         newEntities[activityItemID] = {
