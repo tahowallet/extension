@@ -431,7 +431,7 @@ export const updateVaults = createBackgroundAsyncThunk(
     }
     const provider = getProvider()
     const signer = provider.getSigner()
-    const account = signer.getAddress()
+    const account = await signer.getAddress()
 
     const vaultsWithNewValues = vaultsToUpdate.map(async (vault) => {
       const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
@@ -460,12 +460,12 @@ export const updateVaults = createBackgroundAsyncThunk(
 
       const { pricePoint } = await getTokenPrice(vault.asset, assets)
       const userTVL = enrichAssetAmountWithMainCurrencyValues(
-        { amount: vault.userDeposited, asset: vault.asset },
+        { amount: newUserLockedValue.toBigInt(), asset: vault.asset },
         pricePoint,
         2
       )
       const totalTVL = enrichAssetAmountWithMainCurrencyValues(
-        { amount: vault.totalDeposited, asset: vault.asset },
+        { amount: newTotalTVL.toBigInt(), asset: vault.asset },
         pricePoint,
         2
       )
