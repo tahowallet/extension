@@ -14,9 +14,12 @@ import { Link } from "react-router-dom"
 import classNames from "classnames"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
-import EarnDepositedCard from "../components/Earn/EarnDepositedCard"
+import EarnDepositedCard, {
+  getDisplayAPR,
+} from "../components/Earn/EarnDepositedCard"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
+import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
 
 type EarnCardProps = {
   vault: AvailableVaultsWithLockedValues
@@ -24,12 +27,6 @@ type EarnCardProps = {
 }
 
 function EarnCard({ vault, isComingSoon }: EarnCardProps) {
-  const getDisplayAPR = () => {
-    if (typeof vault.APR?.totalAPR === "undefined") {
-      return `${vault.APR?.low} - ${vault.APR?.high}`
-    }
-    return vault.APR?.totalAPR
-  }
   return (
     <Link
       to={{
@@ -70,15 +67,17 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
         <span className="token_name">{vault?.asset?.symbol}</span>
         <div className="info">
           <div className="label">Total estimated vAPR</div>
-          <div className="value">{getDisplayAPR()}</div>
+          <div className="value">{getDisplayAPR(vault.APR)}</div>
         </div>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
           <div className="value">
-            {vault.localValueTotalDeposited
-              ? `$${vault.localValueTotalDeposited}`
-              : "Unknown"}
+            {vault.localValueTotalDeposited ? (
+              `$${vault.localValueTotalDeposited}`
+            ) : (
+              <SharedSkeletonLoader height={24} width={120} />
+            )}
           </div>
         </div>
         <div className="divider" />
@@ -116,6 +115,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
           }
           .value {
             font-size: 18px;
+            line-height: 24px;
             font-weight: bold;
           }
           .info {
@@ -132,6 +132,7 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             align-items: center;
             justify-content: center;
             width: 150px;
+            margin-top: 4px;
           }
           .doggoRewards {
             display: flex;
@@ -146,15 +147,16 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             white-space: nowrap;
             padding-left: 2px;
           }
-          .single_icon_first {
-            z-index: 2;
-          }
+
           .asset_icon_wrap {
             border-radius: 500px;
             margin-top: -18px;
           }
           .multiple_icons {
             display: flex;
+          }
+          .single_icon_first {
+            z-index: 2;
           }
           .multiple_icons div {
             margin: 0 -8px;
@@ -166,8 +168,8 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
             font-weight: 500;
             line-height: 24px;
             text-transform: uppercase;
-            margin-top: 3px;
-            margin-bottom: 4px;
+            margin-top: 4px;
+            margin-bottom: 8px;
           }
           .lock {
             height: 13px;
@@ -272,7 +274,7 @@ export default function Earn(): ReactElement {
     .reduce((prev, curr) => prev + curr, 0)
     .toFixed(2)
 
-  const depositedVaults = availableVaults?.filter(
+  const depositedVaults = vaultsWithLockedValues?.filter(
     (vault) => vault.userDeposited > 0n
   )
 
@@ -344,18 +346,7 @@ export default function Earn(): ReactElement {
               {depositedVaults?.map((vault) => {
                 return (
                   <li>
-                    <EarnDepositedCard
-                      vaultAddress={vault.vaultAddress}
-                      asset={vault.asset}
-                      depositedAmount={vault.userDeposited}
-                      availableRewards={fromFixedPointNumber(
-                        {
-                          amount: vault.pendingRewards,
-                          decimals: doggoTokenDecimalDigits,
-                        },
-                        2
-                      )}
-                    />
+                    <EarnDepositedCard vault={vault} />
                   </li>
                 )
               })}
