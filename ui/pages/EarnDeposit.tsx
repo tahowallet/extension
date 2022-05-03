@@ -301,7 +301,7 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 isDisabled={
-                  hasError || Number(amount) === 0 || isCurrentlyApproving
+                  hasError || Number(amount) <= 0 || isCurrentlyApproving
                 }
                 onClick={approve}
               >
@@ -312,7 +312,7 @@ export default function EarnDeposit(): ReactElement {
                 type="primary"
                 size="large"
                 onClick={deposit}
-                isDisabled={hasError || Number(amount) === 0}
+                isDisabled={hasError || Number(amount) <= 0}
               >
                 {isDepositPending ? "Depositing..." : "Authorize & Deposit"}
               </SharedButton>
