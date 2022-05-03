@@ -6,6 +6,7 @@ import {
   EVMNetwork,
   SignedEVMTransaction,
 } from "../../networks"
+import { EVM_NETWORKS_BY_CHAIN_ID } from "../../constants/networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -158,7 +159,8 @@ export default class SigningService extends BaseService<Events> {
   ): Promise<SignedEVMTransaction> {
     const network = USE_MAINNET_FORK
       ? FORK
-      : this.chainService.resolveNetwork(transactionRequest)
+      : EVM_NETWORKS_BY_CHAIN_ID[transactionRequest.chainID]
+
     if (typeof network === "undefined") {
       throw new Error(`Unknown chain ID ${transactionRequest.chainID}.`)
     }
