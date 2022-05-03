@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { useState, useEffect, useCallback, ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
 import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
@@ -20,17 +20,43 @@ export default function AccountItemEditName({
   close,
 }: AccountItemEditNameProps): ReactElement {
   const dispatch = useDispatch()
-  const [newName, setNewName] = React.useState("")
-  const [error, setError] = React.useState("")
-  const [touched, setTouched] = React.useState(false)
+  const [newName, setNewName] = useState("")
+  const [error, setError] = useState("")
+  const [touched, setTouched] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (touched && newName.trim() === "") {
       setError("Name is required")
     } else {
       setError("")
     }
   }, [newName, error, touched])
+
+  const onSubmit = useCallback(
+    (
+      event:
+        | React.FormEvent<HTMLFormElement>
+        | React.MouseEvent<HTMLButtonElement, MouseEvent>
+    ) => {
+      event.preventDefault()
+      if (!newName) {
+        setTouched(true)
+        setError("Name is required")
+        return
+      }
+      if (error) {
+        return
+      }
+      dispatch(
+        addOrEditAddressName({
+          name: newName,
+          address,
+        })
+      )
+      close()
+    },
+    [address, close, dispatch, error, newName]
+  )
 
   return (
     <div className="edit_address_name">
@@ -49,18 +75,7 @@ export default function AccountItemEditName({
         role="presentation"
         onKeyDown={(e) => e.stopPropagation()}
       >
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            dispatch(
-              addOrEditAddressName({
-                name: newName,
-                address,
-              })
-            )
-            close()
-          }}
-        >
+        <form onSubmit={onSubmit}>
           <SharedInput
             label=""
             placeholder="Type new name"
@@ -85,23 +100,7 @@ export default function AccountItemEditName({
         >
           Cancel
         </SharedButton>
-        <SharedButton
-          type="primaryGreen"
-          size="medium"
-          onClick={(e) => {
-            if (error) {
-              e.stopPropagation()
-              return
-            }
-            dispatch(
-              addOrEditAddressName({
-                name: newName,
-                address,
-              })
-            )
-            close()
-          }}
-        >
+        <SharedButton type="primaryGreen" size="medium" onClick={onSubmit}>
           Save name
         </SharedButton>
       </div>
