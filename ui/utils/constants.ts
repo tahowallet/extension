@@ -1,3 +1,3 @@
-export const tallyTokenDecimalDigits = 18
+export const doggoTokenDecimalDigits = 18
 
-export default tallyTokenDecimalDigits
+export default doggoTokenDecimalDigits

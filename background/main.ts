@@ -45,6 +45,7 @@ import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   setEligibility,
+  setEligibilityLoading,
   setReferrer,
   setReferrerStats,
 } from "./redux-slices/claim"
@@ -1227,7 +1228,8 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
-      await this.doggoService.getEligibility(addressNetwork.address)
+      this.store.dispatch(setEligibilityLoading())
+      this.doggoService.getEligibility(addressNetwork.address)
 
       const referrerStats = await this.doggoService.getReferrerStats(
         addressNetwork

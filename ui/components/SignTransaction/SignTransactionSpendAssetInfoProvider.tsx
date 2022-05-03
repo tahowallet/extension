@@ -132,7 +132,7 @@ export default function SignTransactionSpendAssetInfoProvider({
           <span className="spending_label">
             <SharedSkeletonLoader
               isLoaded={!!asset.symbol}
-              margin="10px 0 0"
+              customStyles="margin: 10px 0 0;"
               height={32}
             >
               Spend{" "}
