@@ -31,8 +31,11 @@ export type ApprovalTargetAllowance = {
 }
 
 export type APRData = {
-  totalAPR: string
-  yearnAPY: string
+  totalAPR?: string
+  yearnAPY?: string
+  low?: string
+  mid?: string
+  high?: string
 }
 
 export type AvailableVault = {
@@ -49,6 +52,7 @@ export type AvailableVault = {
   rewardToken: HexString
   totalRewards: bigint
   APR?: APRData
+  icons?: string[]
   localValueUserDeposited?: string
   localValueTotalDeposited?: string
   numberValueUserDeposited?: number
@@ -99,6 +103,9 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png?1601374110",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -118,6 +125,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
     },
+    icons: ["ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg"],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -137,6 +145,10 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x3A283D9c08E8b55966afb64C515f5143cf907611",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
+      "ipfs://bafybeicpyu35mpptkxvbcfbzmlaefiqlj7layt5oolcbjh5cc5vfkyi7c4",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -156,6 +168,10 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x29059568bB40344487d62f7450E78b8E6C74e0e5",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
+      "https://assets.coingecko.com/coins/images/11849/thumb/yfi-192x192.png?1598325330",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -175,6 +191,9 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
     },
+    icons: [
+      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F/logo.png",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -194,6 +213,9 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/12271/thumb/512x512_Logo_no_chop.png?1606986688",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -213,6 +235,9 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0xf4d2888d29D722226FafA5d9B24F9164c092421E",
     },
+    icons: [
+      "ipfs://bafybeia64nloazn7cxgwema5o26l2zjbxufb5kb5dxea6dbpretuxoappq",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -232,6 +257,9 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/3373/thumb/IuNzUb5b_400x400.jpg?1589526336",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -251,6 +279,10 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0xCb08717451aaE9EF950a2524E33B6DCaBA60147B",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
+      "ipfs://bafybeib53hx56um4xexwtaqjo3u3ridppnpblfucqdbotwlqcadlfyc2a4",
+    ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -270,6 +302,10 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x93a08986ec9a74CB9E001702F30202f3749ceDC4",
     },
+    icons: [
+      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
+      "https://avatars.githubusercontent.com/u/77035304?s=200&v=4",
+    ],
     totalRewards: BigNumber.from("0x8f0d1800").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -395,7 +431,7 @@ export const updateVaults = createBackgroundAsyncThunk(
     }
     const provider = getProvider()
     const signer = provider.getSigner()
-    const account = signer.getAddress()
+    const account = await signer.getAddress()
 
     const vaultsWithNewValues = vaultsToUpdate.map(async (vault) => {
       const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
@@ -424,12 +460,12 @@ export const updateVaults = createBackgroundAsyncThunk(
 
       const { pricePoint } = await getTokenPrice(vault.asset, assets)
       const userTVL = enrichAssetAmountWithMainCurrencyValues(
-        { amount: vault.userDeposited, asset: vault.asset },
+        { amount: newUserLockedValue.toBigInt(), asset: vault.asset },
         pricePoint,
         2
       )
       const totalTVL = enrichAssetAmountWithMainCurrencyValues(
-        { amount: vault.totalDeposited, asset: vault.asset },
+        { amount: newTotalTVL.toBigInt(), asset: vault.asset },
         pricePoint,
         2
       )

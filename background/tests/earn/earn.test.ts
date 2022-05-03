@@ -87,7 +87,7 @@ describe("Earn", () => {
 
       const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
 
-      expect(APR.totalAPR).toBe("0%")
+      expect(APR.totalAPR).toBe(undefined)
     })
 
     it("should return 'New' if total staked value is 0", async () => {

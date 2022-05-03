@@ -1,27 +1,45 @@
 import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
-import { AnyAsset } from "@tallyho/tally-background/assets"
-import { HexString } from "@tallyho/tally-background/types"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
+import {
+  APRData,
+  AvailableVault,
+} from "@tallyho/tally-background/redux-slices/earn"
+import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
+
+export const getDisplayAPR = (
+  data: APRData | undefined
+): string | ReactElement => {
+  if (typeof data?.totalAPR === "undefined") {
+    if (typeof data?.high === "undefined" || typeof data?.low === "undefined") {
+      return <SharedSkeletonLoader height={24} width={120} />
+    }
+    return `${data.low} - ${data.high}`
+  }
+  return data.totalAPR
+}
 
 export default function EarnDepositedCard({
-  asset,
-  depositedAmount,
-  availableRewards,
-  vaultAddress,
+  vault,
 }: {
-  asset: AnyAsset & { contractAddress: HexString; decimals: number }
-  depositedAmount: bigint
-  availableRewards: number
-  vaultAddress: HexString
+  vault: AvailableVault
 }): ReactElement {
-  const userDeposited = fromFixedPointNumber(
+  const { vaultAddress, icons, userDeposited, asset } = vault
+  const userDepositedAmount = fromFixedPointNumber(
     {
-      amount: depositedAmount,
+      amount: userDeposited,
       decimals: asset.decimals,
     },
     4
+  )
+  const availableRewards = fromFixedPointNumber(
+    {
+      amount: vault.pendingRewards,
+      decimals: doggoTokenDecimalDigits,
+    },
+    2
   )
   return (
     <Link
@@ -35,24 +53,51 @@ export default function EarnDepositedCard({
     >
       <div className="card">
         <div className="token_meta">
+          <div className="type">VAULT</div>
           <div className="asset_icon_wrap">
-            <SharedAssetIcon size="medium" symbol={asset?.symbol} />
+            {icons && icons?.length > 1 ? (
+              <div className="multiple_icons">
+                <div className="single_icon_first">
+                  <SharedAssetIcon
+                    size="large"
+                    symbol={asset?.symbol}
+                    logoURL={icons?.[0]}
+                  />
+                </div>
+                <div>
+                  <SharedAssetIcon
+                    size="large"
+                    symbol={asset?.symbol}
+                    logoURL={icons?.[1]}
+                  />
+                </div>
+              </div>
+            ) : (
+              <SharedAssetIcon
+                size="large"
+                symbol={asset?.symbol}
+                logoURL={icons?.[0]}
+              />
+            )}
           </div>
           <span className="token_name">{asset?.symbol}</span>
         </div>
         <li className="info">
-          <span className="amount_type">Estimated APR</span>
-          <span className="amount">250%</span>
+          <span className="amount_type">Total estimated vAPR</span>
+          <span className="amount">{getDisplayAPR(vault.APR)}</span>
         </li>
         <li className="info">
           <span className="amount_type">Deposited amount</span>
           <span className="amount">
-            {userDeposited} {asset?.symbol}
+            {userDepositedAmount}{" "}
+            <span className="symbol">{asset?.symbol}</span>
           </span>
         </li>
         <li className="info">
           <span className="amount_type">Available rewards</span>
-          <span className="amount">{availableRewards.toFixed(2)}</span>
+          <span className="amount">
+            {availableRewards.toFixed(2)} <span className="symbol">DOGGO</span>
+          </span>
         </li>
         <style jsx>{`
           .card {
@@ -87,6 +132,32 @@ export default function EarnDepositedCard({
             font-weight: 600;
             line-height: 24px;
           }
+          .symbol {
+            color: white;
+            font-weight: 400;
+            font-size: 14px;
+          }
+          .multiple_icons {
+            display: flex;
+          }
+          .single_icon_first {
+            z-index: 2;
+          }
+          .multiple_icons div {
+            margin: 0 -8px;
+          }
+          .type {
+            height: 17px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #a4cfff;
+            background: #0b4789;
+            font-size: 12px;
+            padding: 0 4px;
+            line-height: 17px;
+            max-width: 40px;
+          }
           .amount_type {
             color: var(--green-40);
             font-size: 14px;
@@ -109,8 +180,8 @@ export default function EarnDepositedCard({
           .asset_icon_wrap {
             display: flex;
             justify-content: center;
-            margin-bottom: 10px;
-            margin-top: -40px;
+            margin-bottom: 6px;
+            margin-top: -56px;
           }
         `}</style>
       </div>
