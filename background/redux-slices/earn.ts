@@ -103,9 +103,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png?1601374110",
-    ],
+    icons: ["https://cryptologos.cc/logos/thumbs/aave.png?v=022"],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -170,7 +168,7 @@ export const initialVaults: AvailableVault[] = [
     },
     icons: [
       "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
-      "https://assets.coingecko.com/coins/images/11849/thumb/yfi-192x192.png?1598325330",
+      "https://cryptologos.cc/logos/thumbs/yearn-finance.png?v=022",
     ],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
@@ -213,9 +211,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/12271/thumb/512x512_Logo_no_chop.png?1606986688",
-    ],
+    icons: ["https://cryptologos.cc/logos/thumbs/sushiswap.png?v=022"],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -257,9 +253,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/3373/thumb/IuNzUb5b_400x400.jpg?1589526336",
-    ],
+    icons: ["https://s2.coinmarketcap.com/static/img/coins/64x64/5566.png"],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
