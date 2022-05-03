@@ -712,10 +712,14 @@ export default class Main extends BaseService<never> {
     return this.ledgerService.refreshConnectedLedger()
   }
 
-  async getAccountEthBalanceUncached(address: string): Promise<bigint> {
-    const amountBigNumber =
-      await this.chainService.providers.ethereum.getBalance(address)
-    return amountBigNumber.toBigInt()
+  async getAccountEthBalanceUncached(
+    addressNetwork: AddressOnNetwork
+  ): Promise<bigint> {
+    const accountBalance = await this.chainService.getLatestBaseAccountBalance(
+      addressNetwork
+    )
+
+    return accountBalance.assetAmount.amount
   }
 
   async connectChainService(): Promise<void> {
@@ -745,24 +749,24 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      // TODO support multiple networks
+      const network = ETHEREUM
+
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
       } = selectDefaultNetworkFeeSettings(this.store.getState())
 
       const { transactionRequest: populatedRequest, gasEstimationError } =
-        await this.chainService.populatePartialEVMTransactionRequest(
-          this.chainService.ethereumNetwork,
-          {
-            ...options,
-            maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-            maxPriorityFeePerGas:
-              options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-          }
-        )
+        await this.chainService.populatePartialEVMTransactionRequest(network, {
+          ...options,
+          maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+          maxPriorityFeePerGas:
+            options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+        })
 
       const { annotation } =
         await this.enrichmentService.enrichTransactionSignature(
-          this.chainService.ethereumNetwork,
+          network,
           populatedRequest,
           2 /* TODO desiredDecimals should be configurable */
         )
@@ -973,6 +977,9 @@ export default class Main extends BaseService<never> {
   }
 
   async connectKeyringService(): Promise<void> {
+    // TODO support other networks
+    const network = ETHEREUM
+
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
@@ -983,8 +990,7 @@ export default class Main extends BaseService<never> {
 
       this.chainService.addAccountToTrack({
         address,
-        // TODO support other networks
-        network: this.chainService.ethereumNetwork,
+        network,
       })
     })
 

@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { ETH } from "../constants"
+import { ETH, ETHEREUM } from "../constants"
 import { createBackgroundAsyncThunk } from "./utils"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
@@ -241,7 +241,10 @@ export const fetchBalance = createBackgroundAsyncThunk(
     { dispatch, extra: { main } }
   ) => {
     dispatch(ledgerSlice.actions.setFetchingBalance({ deviceID, path }))
-    const amount = await main.getAccountEthBalanceUncached(address)
+    const amount = await main.getAccountEthBalanceUncached({
+      address,
+      network: ETHEREUM,
+    })
     const decimalDigits = 3
     const balance = enrichAssetAmountWithDecimalValues(
       { amount, asset: ETH },
