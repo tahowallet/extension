@@ -6,15 +6,14 @@ import { RootState } from ".."
 export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
   (state: RootState) => {
     const currentAccount = selectCurrentAccount(state)
-    const { address, network } = currentAccount
+    const { address } = currentAccount
 
     return {
       currentAccountActivities:
         typeof address !== "undefined" ? state.activities[address] : undefined,
-      blocks: state.networks.evm[network.chainID]?.blocks ?? {},
     }
   },
-  ({ currentAccountActivities, blocks }) => {
+  ({ currentAccountActivities }) => {
     return currentAccountActivities?.ids.map((id: EntityId): ActivityItem => {
       // Guaranteed by the fact that we got the id from the ids collection.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -22,10 +21,6 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
 
       return {
         ...activityItem,
-        timestamp:
-          activityItem.blockHeight === null
-            ? undefined
-            : blocks[activityItem.blockHeight]?.timestamp,
       }
     })
   }
