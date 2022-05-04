@@ -62,10 +62,10 @@ A few terms are used below and are worth defining:
   outside the memory space of the extension; may be remote via USB, the
   internet, or even air gap/QR code.
 - **Personal message signing**: Signing of unstructured plain text messages,
-  specified by [EIP-191](eip191). Unstructured messages are prefixed by a
+  specified by [EIP-191][eip191]. Unstructured messages are prefixed by a
   special string.
 - **Typed data signing**: Signing of structured data that includes type
-  information, specified by [EIP-712](eip712).
+  information, specified by [EIP-712][eip712].
 
 ## Proposal
 
@@ -601,8 +601,8 @@ different signature types should flow between each other.
 
 ## Related Links
 
-- [EIP-191: Signed Data Standard](eip191)
-- [EIP-712: Ethereum typed structured data hashing and signing](eip712)
+- [EIP-191: Signed Data Standard][eip191]
+- [EIP-712: Ethereum typed structured data hashing and signing][eip712]
 - <a name="move-keychain-unlock"></a>[GH comment: Intent to move keychain unlock step](https://github.com/tallycash/extension/pull/899#discussion_r792667593)
 - [GH comment: early structural flow suggestion](https://github.com/tallycash/extension/pull/932#pullrequestreview-873498285)
 
