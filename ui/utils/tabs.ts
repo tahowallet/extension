@@ -1,4 +1,4 @@
-import { HIDE_EARN_PAGE } from "@tallyho/tally-background/features/features"
+import { HIDE_EARN_PAGE } from "@tallyho/tally-background/features"
 
 const tabs: string[] = ["overview", "wallet", "swap", "earn", "menu"].filter(
   (tab) => {
