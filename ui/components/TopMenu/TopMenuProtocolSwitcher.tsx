@@ -2,14 +2,17 @@ import React, { ReactElement } from "react"
 
 type Props = {
   onClick?: () => void
+  enabled?: boolean
 }
 
 export default function TopMenuProtocolSwitcher({
   onClick,
+  enabled,
 }: Props): ReactElement {
   return (
-    <button type="button" onClick={onClick}>
+    <button type="button" onClick={() => (enabled && onClick && onClick())}>
       Ethereum
+      {enabled && <span className="icon_chevron_down" />}
       <style jsx>
         {`
           button {
