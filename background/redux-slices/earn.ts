@@ -70,6 +70,7 @@ export type EarnState = {
   signature: Signature
   approvalTargetAllowances: ApprovalTargetAllowance[]
   availableVaults: AvailableVault[]
+  isVaultDataStale: boolean
   currentlyDepositing: boolean
   currentlyApproving: boolean
   depositError: boolean
@@ -318,6 +319,7 @@ export const initialState: EarnState = {
   },
   approvalTargetAllowances: [],
   availableVaults: initialVaults,
+  isVaultDataStale: true,
   currentlyDepositing: false,
   currentlyApproving: false,
   depositError: false,
@@ -367,9 +369,16 @@ const earnSlice = createSlice({
         inputAmount: payload,
       }
     },
+    setVaultsAsStale: (state) => {
+      return {
+        ...state,
+        isVaultDataStale: true,
+      }
+    },
     updateVaultsStats: (state, { payload }: { payload: AvailableVault[] }) => {
       return {
         ...state,
+        isVaultDataStale: false,
         availableVaults: state.availableVaults.map((availableVault) => {
           const currentVault = payload.find(
             (updatedVault) =>
@@ -406,6 +415,7 @@ export const {
   currentlyDepositing,
   currentlyApproving,
   depositError,
+  setVaultsAsStale,
   updateVaultsStats,
   inputAmount,
   clearSignature,
@@ -751,4 +761,9 @@ export const selectEarnInputAmount = createSelector(
 export const selectDepositingProcess = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
   (earnState: EarnState) => earnState.depositingProcess
+)
+
+export const selectIsVaultDataStale = createSelector(
+  (state: { earn: EarnState }): EarnState => state.earn,
+  (earnState: EarnState) => earnState.isVaultDataStale
 )

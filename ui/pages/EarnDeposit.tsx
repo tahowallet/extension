@@ -16,6 +16,7 @@ import {
   selectCurrentlyDepositing,
   selectDepositingProcess,
   selectEarnInputAmount,
+  selectIsVaultDataStale,
   updateVaults,
   vaultDeposit,
   vaultWithdraw,
@@ -41,13 +42,11 @@ export default function EarnDeposit(): ReactElement {
   const account = useBackgroundSelector(selectCurrentAccount)
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
-  const [currentAddress, setCurrentAddress] = useState(account.address)
   const [panelNumber, setPanelNumber] = useState(0)
   const [amount, setAmount] = useState(storedInput)
   const [hasError, setHasError] = useState(false)
   const [withdrawSlideupVisible, setWithdrawalSlideupVisible] = useState(false)
   const [isApproved, setIsApproved] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
   const [deposited, setDeposited] = useState(false)
 
   const { vaultAddress } = useLocation().state as {
@@ -66,6 +65,7 @@ export default function EarnDeposit(): ReactElement {
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
   const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
   const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
+  const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
 
   useEffect(() => {
     if (typeof vault?.asset?.contractAddress !== "undefined") {
@@ -86,7 +86,7 @@ export default function EarnDeposit(): ReactElement {
     amount,
     dispatch,
     vault?.asset?.contractAddress,
-    currentAddress,
+    account.address,
     isCurrentlyApproving,
   ])
 
@@ -96,18 +96,9 @@ export default function EarnDeposit(): ReactElement {
         updateVaults([vault])
       )) as unknown as AvailableVault[]
       setVaultData(updatedVault[0])
-      setIsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, vault?.pendingRewards, vault?.userDeposited, currentAddress])
-
-  useEffect(() => {
-    // address change will cause vaults update so it should indicate loading
-    if (account.address !== currentAddress) {
-      setIsLoading(true)
-      setCurrentAddress(account.address)
-    }
-  }, [account, currentAddress])
+  }, [dispatch, vault?.pendingRewards, vault?.userDeposited, isValutDataStale])
 
   useEffect(() => {
     getUpdatedVault()
@@ -257,7 +248,7 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </li>
         </ul>
-        {!isLoading && (deposited || pendingRewards > 0) ? (
+        {!isValutDataStale && (deposited || pendingRewards > 0) ? (
           <div className="wrapper">
             <li className="row">
               <div className="label">Deposited amount</div>

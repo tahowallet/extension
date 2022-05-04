@@ -3,12 +3,10 @@ import {
   selectAvailableVaults,
   updateVaults,
   clearInput,
+  selectIsVaultDataStale,
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import {
-  selectCurrentAccount,
-  selectMainCurrencySymbol,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
@@ -223,10 +221,8 @@ export type AvailableVaultsWithLockedValues = AvailableVault & {
 }
 
 export default function Earn(): ReactElement {
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const availableVaults = useBackgroundSelector(selectAvailableVaults)
-  const [currentAddress, setCurrentAddress] = useState(currentAccount.address)
-  const [isLoading, setIsLoading] = useState(false)
+  const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
   const [panelNumber, setPanelNumber] = useState(0)
   const [vaultsWithLockedValues, setVaultsWithLockedValues] =
     useState<AvailableVaultsWithLockedValues[]>(availableVaults)
@@ -235,15 +231,16 @@ export default function Earn(): ReactElement {
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
   const updateVaultsData = useCallback(async () => {
-    const updatedVaults = (await dispatch(
-      updateVaults(availableVaults)
-    )) as unknown as AvailableVault[]
-    setVaultsWithLockedValues(updatedVaults)
-    setIsLoading(false)
+    if (isValutDataStale) {
+      const updatedVaults = (await dispatch(
+        updateVaults(availableVaults)
+      )) as unknown as AvailableVault[]
+      setVaultsWithLockedValues(updatedVaults)
+    }
 
     // todo find a different way to avoid loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, currentAddress])
+  }, [dispatch, isValutDataStale])
 
   useEffect(() => {
     dispatch(clearInput()) // clear deposit amount input to start fresh after selecting any vault
@@ -252,14 +249,6 @@ export default function Earn(): ReactElement {
   useEffect(() => {
     updateVaultsData()
   }, [updateVaultsData])
-
-  useEffect(() => {
-    // address change will cause vaults update so it should indicate loading
-    if (currentAccount.address !== currentAddress) {
-      setIsLoading(true)
-      setCurrentAddress(currentAccount.address)
-    }
-  }, [currentAccount, currentAddress])
 
   const isComingSoon = false
 
@@ -342,12 +331,12 @@ export default function Earn(): ReactElement {
         <></>
       )}
       {panelNumber === 1 &&
-        (isLoading || depositedVaults.length > 0 ? (
+        (isValutDataStale || depositedVaults.length > 0 ? (
           <section className="standard_width">
             <div className="your_deposit_heading_info">
               <div className="left">
                 <div className="label">Total deposits</div>
-                <SharedSkeletonLoader isLoaded={!isLoading}>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
                   <div className="amount">
                     ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
                   </div>
@@ -355,13 +344,13 @@ export default function Earn(): ReactElement {
               </div>
               <div className="right">
                 <div className="label">Total available rewards</div>
-                <SharedSkeletonLoader isLoaded={!isLoading}>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
                   <div className="amount">{userPendingRewards} DOGGO</div>
                 </SharedSkeletonLoader>
               </div>
             </div>
             <SharedSkeletonLoader
-              isLoaded={!isLoading}
+              isLoaded={!isValutDataStale}
               height={176}
               customStyles={`
                 margin-top: 40px;
