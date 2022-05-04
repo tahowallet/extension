@@ -105,7 +105,7 @@ export default function SignTransactionContainer({
         isLoaded={!!signerAccountTotal}
         height={32}
         width={120}
-        margin="15px 0 15px 220px"
+        customStyles="margin: 15px 0 15px 220px;"
       >
         {!!signerAccountTotal && (
           <SignTransactionNetworkAccountInfoTopBar

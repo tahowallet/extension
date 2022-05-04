@@ -8,7 +8,7 @@ import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import { tallyTokenDecimalDigits } from "../../utils/constants"
+import { doggoTokenDecimalDigits } from "../../utils/constants"
 
 export default function BonusProgramModalContent(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -18,7 +18,7 @@ export default function BonusProgramModalContent(): ReactElement {
   const bonusAmount = fromFixedPointNumber(
     {
       amount: bonusTotal,
-      decimals: tallyTokenDecimalDigits,
+      decimals: doggoTokenDecimalDigits,
     },
     2
   )

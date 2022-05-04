@@ -16,10 +16,11 @@ import delegates from "../static/delegates.json"
 import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
-import { HOUR } from "../constants"
+import { doggoTokenDecimalDigits, HOUR } from "../constants"
 import { USE_MAINNET_FORK } from "../features/features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
 import { ReferrerStats } from "../services/doggo/db"
+import { fromFixedPointNumber } from "../lib/fixed-point"
 
 export interface DAO {
   address: string
@@ -48,6 +49,7 @@ interface ClaimingState {
   }
   delegates: Delegate[]
   eligibility: Eligible | null
+  eligibilityLoading: boolean
   DAOs: DAO[]
   selectedDAO: DAO | null
   selectedDelegate: Delegate | null
@@ -80,6 +82,7 @@ const initialState: ClaimingState = {
   selectedDAO: null,
   selectedDelegate: null,
   eligibility: null,
+  eligibilityLoading: false,
   delegates: delegates
     .sort(() => Math.random() - 0.5)
     .map((delegate) => {
@@ -113,7 +116,11 @@ const claimingSlice = createSlice({
       immerState.selectedDelegate = delegate
     },
     setEligibility: (immerState, { payload: eligibility }) => {
+      immerState.eligibilityLoading = false
       immerState.eligibility = eligibility
+    },
+    setEligibilityLoading: (immerState) => {
+      immerState.eligibilityLoading = true
     },
     setClaimStep: (immerState, { payload }: { payload: number }) => {
       immerState.claimStep = payload
@@ -177,6 +184,7 @@ export const {
   chooseDAO,
   chooseDelegate,
   setEligibility,
+  setEligibilityLoading,
   saveSignature,
   currentlyClaiming,
   setClaimStep,
@@ -401,4 +409,21 @@ export const selectClaimSelections = createSelector(
 export const selectReferrerStats = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
   (claimState: ClaimingState) => claimState.referrerStats
+)
+
+export const selectEligibility = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) =>
+    fromFixedPointNumber(
+      {
+        amount: BigInt(Number(claimState.eligibility?.amount || 0n)) || 0n,
+        decimals: doggoTokenDecimalDigits,
+      },
+      0
+    )
+)
+
+export const selectEligibilityLoading = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) => claimState.eligibilityLoading
 )

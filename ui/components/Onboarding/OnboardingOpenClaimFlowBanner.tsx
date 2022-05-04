@@ -5,18 +5,19 @@ import {
   selectCurrentAccount,
   selectCurrentAccountSigningMethod,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import {
   selectClaimed,
   selectClaimError,
   selectCurrentlyClaiming,
+  selectEligibility,
+  selectEligibilityLoading,
 } from "@tallyho/tally-background/redux-slices/claim"
 
 import { SigningMethod } from "@tallyho/tally-background/utils/signing"
-import { tallyTokenDecimalDigits } from "../../utils/constants"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 function EligibleCTAContent({
   currentAccountSigningMethod,
@@ -237,15 +238,8 @@ function IneligibleCTAContent({
 }
 
 export default function OnboardingOpenClaimFlowBanner(): ReactElement {
-  const claimAmount = useBackgroundSelector((state) =>
-    fromFixedPointNumber(
-      {
-        amount: BigInt(Number(state.claim?.eligibility?.amount || 0n)) || 0n,
-        decimals: tallyTokenDecimalDigits,
-      },
-      0
-    ).toString()
-  )
+  const claimAmount = useBackgroundSelector(selectEligibility).toString()
+  const isClaimLoading = useBackgroundSelector(selectEligibilityLoading)
 
   const currentAccountSigningMethod = useBackgroundSelector(
     selectCurrentAccountSigningMethod
@@ -270,10 +264,20 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
 
   if (
     addressFinishedClaiming.split(";").includes(currentAddress) ||
-    (!hasSomethingToClaim &&
+    ((!hasSomethingToClaim || isClaimLoading) &&
       addresHasNothingToClaimClosed.split(";").includes(currentAddress))
   )
     return <></>
+
+  if (isClaimLoading)
+    return (
+      <SharedSkeletonLoader
+        height={90}
+        width={352}
+        borderRadius={16}
+        customStyles="margin: 0 0 20px; flex: 1 0 auto;"
+      />
+    )
 
   return (
     <div className="standard_width">

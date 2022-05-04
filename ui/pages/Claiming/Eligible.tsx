@@ -17,7 +17,7 @@ import ClaimReview from "../../components/Claim/ClaimReview"
 import ClaimFooter from "../../components/Claim/ClaimFooter"
 import ClaimSuccessModalContent from "../../components/Claim/ClaimSuccessModalContent"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
-import { tallyTokenDecimalDigits } from "../../utils/constants"
+import { doggoTokenDecimalDigits } from "../../utils/constants"
 import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import ClaimReferralBridge from "../../components/Claim/ClaimReferralBridge"
@@ -34,7 +34,7 @@ export default function Eligible(): ReactElement {
           fromFixedPointNumber(
             {
               amount: BigInt(Number(state.claim?.eligibility?.amount)) || 0n,
-              decimals: tallyTokenDecimalDigits,
+              decimals: doggoTokenDecimalDigits,
             },
             0
           ),
