@@ -10,7 +10,7 @@ export default function TopMenuProtocolSwitcher({
   enabled,
 }: Props): ReactElement {
   return (
-    <button type="button" onClick={() => (enabled && onClick && onClick())}>
+    <button type="button" onClick={() => enabled && onClick && onClick()}>
       Ethereum
       {enabled && <span className="icon_chevron_down" />}
       <style jsx>
