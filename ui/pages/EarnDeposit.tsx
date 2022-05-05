@@ -238,21 +238,21 @@ export default function EarnDeposit(): ReactElement {
         </li>
         <li className="content_row">
           <div className="label">Annual management fee</div>
-          <div>-0.8%</div>
+          <div>-{vault.managementFee}</div>
         </li>
         <li className="content_row category">
           <div>Estimated $DOGGO APR</div>
         </li>
         <li className="content_row">
-          <div className="label">If $DOGGO = $0.016</div>
+          <div className="label">If $DOGGO = $0.025</div>
           <div>{vault.APR?.high}</div>
         </li>
         <li className="content_row">
-          <div className="label">If $DOGGO = $0.006</div>
+          <div className="label">If $DOGGO = $0.005</div>
           <div>{vault.APR?.mid}</div>
         </li>
         <li className="content_row">
-          <div className="label">If $DOGGO = $0.0033</div>
+          <div className="label">If $DOGGO = $0.0016</div>
           <div>{vault.APR?.low}</div>
         </li>
       </ul>
