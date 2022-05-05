@@ -36,6 +36,7 @@ import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
+import { useAllEarnVaults } from "../hooks/earn-hooks"
 
 export default function EarnDeposit(): ReactElement {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
@@ -65,7 +66,7 @@ export default function EarnDeposit(): ReactElement {
   const isCurrentlyApproving = useBackgroundSelector(selectCurrentlyApproving)
   const inDepositProcess = useBackgroundSelector(selectDepositingProcess)
   const isDepositPending = useBackgroundSelector(selectCurrentlyDepositing)
-  const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
+  const isVaultDataStale = useBackgroundSelector(selectIsVaultDataStale)
 
   useEffect(() => {
     if (typeof vault?.asset?.contractAddress !== "undefined") {
@@ -90,7 +91,7 @@ export default function EarnDeposit(): ReactElement {
     isCurrentlyApproving,
   ])
 
-  const getUpdatedVault = useCallback(async () => {
+  const updateCurrentVault = useCallback(async () => {
     if (typeof vault !== "undefined") {
       const updatedVault = (await dispatch(
         updateVaults([vault])
@@ -98,14 +99,23 @@ export default function EarnDeposit(): ReactElement {
       setVaultData(updatedVault[0])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, vault?.pendingRewards, vault?.userDeposited, isValutDataStale])
+  }, [dispatch, vault?.pendingRewards, vault?.userDeposited])
+
+  // on account change reset vault data that is different for each account
+  useEffect(() => {
+    if (isVaultDataStale && vaultData)
+      setVaultData({ ...vaultData, pendingRewards: 0n, userDeposited: 0n })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVaultDataStale])
+
+  useAllEarnVaults() // update all vaults on account change
 
   useEffect(() => {
-    getUpdatedVault()
+    updateCurrentVault()
     return () => {
       dispatch(clearSignature())
     }
-  }, [dispatch, getUpdatedVault])
+  }, [dispatch, updateCurrentVault])
 
   useEffect(() => {
     if (inDepositProcess && typeof vault !== "undefined") {
@@ -132,7 +142,10 @@ export default function EarnDeposit(): ReactElement {
   )
 
   const userDeposited = fromFixedPointNumber(
-    { amount: vaultData?.userDeposited || 0n, decimals: vault.asset.decimals },
+    {
+      amount: vaultData?.userDeposited || 0n,
+      decimals: vault.asset.decimals,
+    },
     4
   )
 
@@ -248,7 +261,7 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </li>
         </ul>
-        {!isValutDataStale && (deposited || pendingRewards > 0) ? (
+        {!isVaultDataStale && (deposited || pendingRewards > 0) ? (
           <div className="wrapper">
             <li className="row">
               <div className="label">Deposited amount</div>

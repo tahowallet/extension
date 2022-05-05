@@ -1,7 +1,5 @@
 import {
-  AvailableVault,
-  selectAvailableVaults,
-  updateVaults,
+  EnrichedAvailableVault,
   clearInput,
   selectIsVaultDataStale,
 } from "@tallyho/tally-background/redux-slices/earn"
@@ -10,7 +8,7 @@ import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import classNames from "classnames"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -21,9 +19,10 @@ import EarnDepositedCard, {
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
 import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
+import { useAllEarnVaults } from "../hooks/earn-hooks"
 
 type EarnCardProps = {
-  vault: AvailableVaultsWithLockedValues
+  vault: EnrichedAvailableVault
   isComingSoon: boolean
 }
 
@@ -213,42 +212,17 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
   )
 }
 
-export type AvailableVaultsWithLockedValues = AvailableVault & {
-  localValueUserDeposited?: string
-  localValueTotalDeposited?: string
-  numberValueUserDeposited?: number
-  numberValueTotalDeposited?: number
-}
-
 export default function Earn(): ReactElement {
-  const availableVaults = useBackgroundSelector(selectAvailableVaults)
   const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
   const [panelNumber, setPanelNumber] = useState(0)
-  const [vaultsWithLockedValues, setVaultsWithLockedValues] =
-    useState<AvailableVaultsWithLockedValues[]>(availableVaults)
+  const vaultsWithLockedValues = useAllEarnVaults()
 
   const dispatch = useBackgroundDispatch()
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
-  const updateVaultsData = useCallback(async () => {
-    if (isValutDataStale) {
-      const updatedVaults = (await dispatch(
-        updateVaults(availableVaults)
-      )) as unknown as AvailableVault[]
-      setVaultsWithLockedValues(updatedVaults)
-    }
-
-    // todo find a different way to avoid loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, isValutDataStale])
-
   useEffect(() => {
     dispatch(clearInput()) // clear deposit amount input to start fresh after selecting any vault
   }, [dispatch])
-
-  useEffect(() => {
-    updateVaultsData()
-  }, [updateVaultsData])
 
   const isComingSoon = false
 
