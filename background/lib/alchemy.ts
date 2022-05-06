@@ -72,7 +72,7 @@ export async function getAssetTransfers(
       {
         ...params,
         toAddress: account,
-        category: ["token"],
+        category,
       },
     ]),
   ])

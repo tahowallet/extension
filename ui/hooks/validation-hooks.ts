@@ -4,7 +4,7 @@ import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { HexString } from "@tallyho/tally-background/types"
 import { useRef, useState } from "react"
-import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
+import { useBackgroundDispatch } from "./redux-hooks"
 
 /**
  * A handler that is called once a valid input is processed through a
@@ -145,7 +145,9 @@ export const useAddressOrNameValidation: AsyncValidationHook<
   const validatingValue = useRef<string | undefined>(undefined)
   const dispatch = useBackgroundDispatch()
 
-  const network = useBackgroundSelector((state) => state.ui.selectedNetwork)
+  const network = ETHEREUM
+  // @dev uncomment for L2 Testing
+  // const network = POLYGON
 
   const handleInputChange = async (newValue: string) => {
     setRawValue(newValue)
