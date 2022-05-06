@@ -57,6 +57,7 @@ export type AvailableVault = {
   localValueTotalDeposited?: string
   numberValueUserDeposited?: number
   numberValueTotalDeposited?: number
+  managementFee?: string
 }
 
 export type EnrichedAvailableVault = AvailableVault & {
@@ -474,6 +475,12 @@ export const updateVaults = createBackgroundAsyncThunk(
         2
       )
 
+      // TODO Check if management fee can change, if not => hardcode it
+      const targetManagementFee = (
+        await vaultContract.targetManagementFee()
+      ).toNumber()
+      const MANAGEMENT_FEE_DIVISOR = 100_000
+      const yearlyManagementFee = targetManagementFee / MANAGEMENT_FEE_DIVISOR
       return {
         ...vault,
         userDeposited: newUserLockedValue.toBigInt(),
@@ -483,6 +490,7 @@ export const updateVaults = createBackgroundAsyncThunk(
         localValueTotalDeposited: totalTVL.localizedMainCurrencyAmount,
         numberValueUserDeposited: userTVL.mainCurrencyAmount,
         numberValueTotalDeposited: totalTVL.mainCurrencyAmount,
+        managementFee: `${yearlyManagementFee * 100}%`,
         APR: vaultAPR,
       }
     })

@@ -37,6 +37,7 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
 import { useAllEarnVaults } from "../hooks/earn-hooks"
+import SharedAccordion from "../components/Shared/SharedAccordion"
 
 export default function EarnDeposit(): ReactElement {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
@@ -216,6 +217,79 @@ export default function EarnDeposit(): ReactElement {
     return "Approve asset"
   }
 
+  const AccordionHeader = (
+    <div className="accordion_header">
+      <div className="accordion_text">Total estimated vAPR</div>
+      <div className="amount">{vaultData?.APR?.totalAPR}</div>
+      <style jsx>
+        {`
+          .accordion_header {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 8px;
+            padding-right: 0px;
+          }
+          .accordion_text {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+          }
+          .amount {
+            font-size: 18px;
+            font-weight: 600;
+          }
+        `}
+      </style>
+    </div>
+  )
+
+  const AccordionContent = (
+    <div className="container">
+      <ul>
+        <li className="content_row category">
+          <div>${vault.asset.symbol} APY</div>
+          <div>{vault.APR?.yearnAPY}</div>
+        </li>
+        <li className="content_row">
+          <div className="label">Annual management fee</div>
+          <div>-{vault.managementFee}</div>
+        </li>
+        <li className="content_row category">
+          <div>Estimated $DOGGO APR</div>
+        </li>
+        <li className="content_row">
+          <div className="label">If $DOGGO = $0.025</div>
+          <div>{vault.APR?.high}</div>
+        </li>
+        <li className="content_row">
+          <div className="label">If $DOGGO = $0.005</div>
+          <div>{vault.APR?.mid}</div>
+        </li>
+        <li className="content_row">
+          <div className="label">If $DOGGO = $0.0016</div>
+          <div>{vault.APR?.low}</div>
+        </li>
+      </ul>
+      <style jsx>
+        {`
+          .container {
+            padding-bottom: 16px;
+          }
+          .content_row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 48px;
+            padding-right: 32px;
+            font-size: 14px;
+          }
+          .content_row.category {
+            padding-left: 32px;
+          }
+        `}
+      </style>
+    </div>
+  )
   return (
     <>
       <section className="primary_info">
@@ -224,7 +298,30 @@ export default function EarnDeposit(): ReactElement {
           <li className="row header">
             <div className="type">VAULT</div>
             <div className="center">
-              <SharedAssetIcon size="large" symbol={vault?.asset.symbol} />
+              {vault.icons && vault.icons?.length > 1 ? (
+                <div className="multiple_icons">
+                  <div className="single_icon_first">
+                    <SharedAssetIcon
+                      size="large"
+                      symbol={vault?.asset?.symbol}
+                      logoURL={vault.icons?.[0]}
+                    />
+                  </div>
+                  <div>
+                    <SharedAssetIcon
+                      size="large"
+                      symbol={vault?.asset?.symbol}
+                      logoURL={vault.icons?.[1]}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <SharedAssetIcon
+                  size="large"
+                  symbol={vault?.asset?.symbol}
+                  logoURL={vault.icons?.[0]}
+                />
+              )}
               <h1 className="asset_name">{vault?.asset.symbol}</h1>
             </div>
             <div>
@@ -241,9 +338,13 @@ export default function EarnDeposit(): ReactElement {
               </a>
             </div>
           </li>
-          <li className="row">
-            <div className="label">Estimated APR</div>
-            <div className="amount">{vaultData?.APR?.totalAPR}</div>
+          <li className="row np">
+            <div className="accordion_wrap">
+              <SharedAccordion
+                headerElement={AccordionHeader}
+                contentElement={AccordionContent}
+              />
+            </div>
           </li>
           <li className="row">
             <div className="label">Total value locked</div>
@@ -255,9 +356,12 @@ export default function EarnDeposit(): ReactElement {
           </li>
           <li className="row">
             <div className="label">Rewards</div>
-            <div className="rewards">
-              <img className="lock" src="./images/lock@2.png" alt="Locked" />
-              DOGGO
+            <div className="rewards_wrap">
+              <div className="rewards">
+                <img className="lock" src="./images/lock@2.png" alt="Locked" />
+                DOGGO
+              </div>
+              <div className="otherReward"> + {vault.asset.symbol}</div>
             </div>
           </li>
         </ul>
@@ -274,7 +378,8 @@ export default function EarnDeposit(): ReactElement {
             <li className="row">
               <div className="label">Available rewards</div>
               <div className="amount">
-                {pendingRewards} <span className="token">DOGGO</span>
+                {pendingRewards}
+                <span className="token">DOGGO</span>
               </div>
             </li>
             <li className="row claim">
@@ -291,9 +396,9 @@ export default function EarnDeposit(): ReactElement {
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
         panelNumber={panelNumber}
-        panelNames={["Deposit", "Withdraw", "Pool Info"]}
+        panelNames={["Pool Info", "Deposit", "Withdraw"]}
       />
-      {panelNumber === 0 ? (
+      {panelNumber === 1 ? (
         <div className="deposit_wrap">
           <SharedAssetInput
             assetsAndAmounts={accountBalances?.assetAmounts}
@@ -336,7 +441,7 @@ export default function EarnDeposit(): ReactElement {
       ) : (
         <></>
       )}
-      {panelNumber === 1 &&
+      {panelNumber === 2 &&
         (userDeposited > 0 ? (
           <div className="standard_width">
             <ul className="list">
@@ -395,7 +500,7 @@ export default function EarnDeposit(): ReactElement {
         ) : (
           <EmptyBowl />
         ))}
-      {panelNumber === 2 ? (
+      {panelNumber === 0 ? (
         <div className="standard_width ">
           <p className="pool_info">
             This token represents a Curve liquidity pool. Holders earn fees from
@@ -440,6 +545,18 @@ export default function EarnDeposit(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
+            padding: 0 16px;
+          }
+          .row + .np {
+            padding: 0;
+          }
+          .otherReward {
+            padding-left: 4px;
+          }
+          .rewards_wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           .header {
             padding-bottom: 48px;
@@ -468,16 +585,17 @@ export default function EarnDeposit(): ReactElement {
             background-color: var(--trophy-gold);
           }
           .token {
-            margin-left: 8px;
+            margin-left: 4px;
             font-size: 14px;
           }
           .divider {
             height: 1px;
+            width: 100%;
             background-color: #33514e;
           }
           .amount {
             font-size: 18px;
-            font-weight: 500;
+            font-weight: 600;
           }
           .list {
             display: flex;
@@ -510,6 +628,20 @@ export default function EarnDeposit(): ReactElement {
           .contract:hover .contract_link {
             color: #fff;
           }
+          .multiple_icons {
+            display: flex;
+          }
+          .single_icon_first {
+            z-index: 2;
+          }
+          .multiple_icons div {
+            margin: 0 -8px;
+          }
+          .accordion_wrap {
+            width: 100%;
+            border-top: 1px solid #33514e;
+            border-bottom: 1px solid #33514e;
+          }
           .external {
             mask-image: url("./images/external_small@2x.png");
             mask-size: 12px 12px;
@@ -526,7 +658,7 @@ export default function EarnDeposit(): ReactElement {
             display: flex;
             flex-flow: column;
             box-sizing: border-box;
-            padding: 12px 16px;
+            padding: 12px 0;
             gap: 12px;
             border: 1px solid #33514e;
             margin-bottom: 16px;

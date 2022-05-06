@@ -51,9 +51,9 @@ function numberFormatter(num: number, digits: number) {
   return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
 }
 
-const DOGGO_LOW_PRICE_ESTIMATE = 100000000n // $0.01
-const DOGGO_MID_PRICE_ESTIMATE = 1000000000n // $0.10
-const DOGGO_HIGH_PRICE_ESTIMATE = 5000000000n // $0.50
+const DOGGO_LOW_PRICE_ESTIMATE = 16666666n // $50M valuation
+const DOGGO_MID_PRICE_ESTIMATE = 50000000n // $150M valuation
+const DOGGO_HIGH_PRICE_ESTIMATE = 250000000n // $750M valuation
 
 const getPoolAPR = async ({
   asset,
