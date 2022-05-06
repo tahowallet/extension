@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { BTC, ETH } from "./currencies"
+import { BTC, ETH, MATIC } from "./currencies"
 
 // TODO integrate this with /api/networks
 
@@ -7,6 +7,13 @@ export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
   baseAsset: ETH,
   chainID: "1",
+  family: "EVM",
+}
+
+export const POLYGON: EVMNetwork = {
+  name: "Polygon",
+  baseAsset: MATIC,
+  chainID: "137",
   family: "EVM",
 }
 
@@ -65,7 +72,7 @@ export const FORK: EVMNetwork = {
   family: "EVM",
 }
 
-export const EVM_MAIN_NETWORKS = [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
+export const EVM_MAIN_NETWORKS = [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
 
 export const EVM_TEST_NETWORKS = [ROPSTEN, RINKEBY, GOERLI, KOVAN]
 

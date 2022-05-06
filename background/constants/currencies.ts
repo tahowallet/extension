@@ -31,6 +31,17 @@ export const ETH: FungibleAsset = {
   },
 }
 
+export const MATIC: FungibleAsset = {
+  name: "Matic",
+  symbol: "MATIC",
+  decimals: 18,
+  metadata: {
+    coinGeckoID: "matic-network",
+    tokenLists: [],
+    websiteURL: "https://polygon.technology/",
+  },
+}
+
 export const BTC: FungibleAsset = {
   name: "Bitcoin",
   symbol: "BTC",
