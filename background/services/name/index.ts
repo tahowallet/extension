@@ -1,6 +1,6 @@
 import { DomainName, HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
-import { ETHEREUM } from "../../constants/networks"
+import { EVM_MAIN_NETWORKS } from "../../constants/networks"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -93,7 +93,12 @@ export default class NameService extends BaseService<Events> {
         [address: HexString]: ResolvedNameRecord | undefined
       }
     }
-  } = { EVM: { [ETHEREUM.chainID]: {} } }
+  } = {
+    EVM: Object.fromEntries(
+      EVM_MAIN_NETWORKS.map((network) => [network.chainID, {}])
+      // e.g. { 1: {}, 137: {} }
+    ),
+  }
 
   /**
    * Create a new NameService. The service isn't initialized until
