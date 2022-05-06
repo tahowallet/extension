@@ -39,7 +39,7 @@ export default function ensResolverFor(
       }
 
       const address = await chainService
-        // Allow ENS lookups when on Arbitrum, Polygon, Optimism, etc..
+        // Use ENS to Ethereum mainnet to resolve addresses on EVM networks (Polygon, Arbitrum, etc..)
         .providerForNetwork(ETHEREUM)
         ?.resolveName(name)
 
