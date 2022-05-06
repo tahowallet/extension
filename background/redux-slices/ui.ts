@@ -2,6 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { EVMNetwork } from "../networks"
 import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -23,6 +24,7 @@ export type UIState = {
   settings: { hideDust: boolean; defaultWallet: boolean }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
+  selectedNetwork: EVMNetwork
 }
 
 export type Events = {
@@ -41,6 +43,7 @@ export const initialState: UIState = {
     address: "",
     network: ETHEREUM,
   },
+  selectedNetwork: ETHEREUM,
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
   snackbarMessage: "",
