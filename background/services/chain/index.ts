@@ -196,7 +196,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = USE_MULTI_NETWORK
       ? // Lets see what breaks
-        [POLYGON, ARBITRUM_ONE, OPTIMISM]
+        [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM]
       : [ETHEREUM]
 
     this.providers = Object.fromEntries(

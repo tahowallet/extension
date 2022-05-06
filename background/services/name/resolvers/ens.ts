@@ -33,8 +33,14 @@ export default function ensResolverFor(
       name,
       network,
     }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
+      // Lets assume that we can use ENS to look up names for any EVM compatible chain for now.
+      if (network.family !== "EVM") {
+        return undefined
+      }
+
       const address = await chainService
-        .providerForNetwork(network)
+        // Allow ENS lookups when on Arbitrum, Polygon, Optimism, etc..
+        .providerForNetwork(ETHEREUM)
         ?.resolveName(name)
 
       if (address === undefined || address === null) {
