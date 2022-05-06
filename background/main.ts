@@ -114,7 +114,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 6
+const REDUX_STATE_VERSION = 7
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -231,6 +231,86 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
     })
 
     return newState
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  7: (prevState: any) => {
+    type OldState = {
+      activities: {
+        [address: string]: {
+          ids: string[]
+          entities: {
+            [id: string]: {
+              blockHeight: number | null
+              annotation: Record<string, unknown>
+            }
+          }
+        }
+      }
+      networks: {
+        evm: {
+          "1": {
+            blocks?: {
+              [blockHeight: number]: {
+                timestamp: number | undefined
+              }
+            }
+            blockHeight: number
+          }
+        }
+      }
+    }
+
+    const oldState = prevState as OldState
+    const { activities } = oldState
+
+    type NewEntity = {
+      [id: string]: {
+        blockHeight: number | null
+        annotation: {
+          blockTimestamp?: number
+        }
+      }
+    }
+    type NewActivitiesState = {
+      [address: string]: {
+        ids: string[]
+        entities: NewEntity
+      }
+    }
+
+    const newActivitiesState: NewActivitiesState = {}
+
+    const { blocks } = oldState.networks.evm["1"]
+
+    // Grab timestamps off of blocks, add them as activity annotations
+    Object.keys(activities).forEach((accountActivitiesAddress: string) => {
+      const accountActivities = activities[accountActivitiesAddress]
+      const newEntities: NewEntity = {}
+      accountActivities.ids.forEach((activityItemID: string) => {
+        const activityItem = accountActivities.entities[activityItemID]
+        newEntities[activityItemID] = {
+          ...activityItem,
+          annotation: {
+            ...activityItem.annotation,
+            blockTimestamp: activityItem.blockHeight
+              ? blocks && blocks[activityItem.blockHeight]?.timestamp
+              : undefined,
+          },
+        }
+      })
+      newActivitiesState[accountActivitiesAddress] = {
+        ids: accountActivities.ids,
+        entities: newEntities,
+      }
+    })
+
+    const { ...newState } = oldState
+    // Remove blocks
+    delete newState.networks.evm["1"].blocks // Only mainnet exists at this time
+    return {
+      ...newState,
+      activities: newActivitiesState,
+    }
   },
 }
 
@@ -632,10 +712,14 @@ export default class Main extends BaseService<never> {
     return this.ledgerService.refreshConnectedLedger()
   }
 
-  async getAccountEthBalanceUncached(address: string): Promise<bigint> {
-    const amountBigNumber =
-      await this.chainService.providers.ethereum.getBalance(address)
-    return amountBigNumber.toBigInt()
+  async getAccountEthBalanceUncached(
+    addressNetwork: AddressOnNetwork
+  ): Promise<bigint> {
+    const accountBalance = await this.chainService.getLatestBaseAccountBalance(
+      addressNetwork
+    )
+
+    return accountBalance.assetAmount.amount
   }
 
   async connectChainService(): Promise<void> {
@@ -665,24 +749,24 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
+      // TODO support multiple networks
+      const network = ETHEREUM
+
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
       } = selectDefaultNetworkFeeSettings(this.store.getState())
 
       const { transactionRequest: populatedRequest, gasEstimationError } =
-        await this.chainService.populatePartialEVMTransactionRequest(
-          this.chainService.ethereumNetwork,
-          {
-            ...options,
-            maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-            maxPriorityFeePerGas:
-              options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-          }
-        )
+        await this.chainService.populatePartialEVMTransactionRequest(network, {
+          ...options,
+          maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+          maxPriorityFeePerGas:
+            options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+        })
 
       const { annotation } =
         await this.enrichmentService.enrichTransactionSignature(
-          this.chainService.ethereumNetwork,
+          network,
           populatedRequest,
           2 /* TODO desiredDecimals should be configurable */
         )
@@ -893,6 +977,9 @@ export default class Main extends BaseService<never> {
   }
 
   async connectKeyringService(): Promise<void> {
+    // TODO support other networks
+    const network = ETHEREUM
+
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
@@ -903,8 +990,7 @@ export default class Main extends BaseService<never> {
 
       this.chainService.addAccountToTrack({
         address,
-        // TODO support other networks
-        network: this.chainService.ethereumNetwork,
+        network,
       })
     })
 

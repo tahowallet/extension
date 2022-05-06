@@ -1,13 +1,14 @@
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import {
-  SmartContractFungibleAsset,
-  isSmartContractFungibleAsset,
-} from "../../assets"
-import {
+  AnyEVMBlock,
   AnyEVMTransaction,
   EIP1559TransactionRequest,
   EVMNetwork,
 } from "../../networks"
+import {
+  SmartContractFungibleAsset,
+  isSmartContractFungibleAsset,
+} from "../../assets"
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
@@ -104,17 +105,29 @@ export default class EnrichmentService extends BaseService<Events> {
     network: EVMNetwork,
     transaction:
       | AnyEVMTransaction
-      | (Partial<EIP1559TransactionRequest> & { from: string }),
+      | (Partial<EIP1559TransactionRequest> & {
+          from: string
+          blockHash?: string
+        }),
     desiredDecimals: number
   ): Promise<TransactionAnnotation | undefined> {
     let txAnnotation: TransactionAnnotation | undefined
 
     const resolvedTime = Date.now()
+    let block: AnyEVMBlock | undefined
+
+    if (transaction?.blockHash) {
+      block = await this.chainService.getBlockData(
+        network,
+        transaction.blockHash
+      )
+    }
 
     if (typeof transaction.to === "undefined") {
       // A missing recipient means a contract deployment.
       txAnnotation = {
         timestamp: resolvedTime,
+        blockTimestamp: block?.timestamp,
         type: "contract-deployment",
       }
     } else if (
@@ -137,6 +150,7 @@ export default class EnrichmentService extends BaseService<Events> {
       if (typeof transaction.value !== "undefined") {
         txAnnotation = {
           timestamp: resolvedTime,
+          blockTimestamp: block?.timestamp,
           type: "asset-transfer",
           senderAddress: transaction.from,
           recipientName: toName,
@@ -153,6 +167,7 @@ export default class EnrichmentService extends BaseService<Events> {
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
+          blockTimestamp: block?.timestamp,
           type: "contract-interaction",
           contractName: toName,
         }
@@ -185,6 +200,7 @@ export default class EnrichmentService extends BaseService<Events> {
         // We have an ERC-20 transfer
         txAnnotation = {
           timestamp: resolvedTime,
+          blockTimestamp: block?.timestamp,
           type: "asset-transfer",
           transactionLogoURL,
           senderAddress: erc20Tx.args.from ?? transaction.from,
@@ -210,6 +226,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
         txAnnotation = {
           timestamp: resolvedTime,
+          blockTimestamp: block?.timestamp,
           type: "asset-approval",
           transactionLogoURL,
           spenderAddress: erc20Tx.args.spender, // TODO ingest address
@@ -231,6 +248,7 @@ export default class EnrichmentService extends BaseService<Events> {
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
+          blockTimestamp: block?.timestamp,
           type: "contract-interaction",
           // Include the logo URL if we resolve it even if the interaction is
           // non-specific; the UI can choose to use it or not, but if we know the
@@ -304,6 +322,7 @@ export default class EnrichmentService extends BaseService<Events> {
                   recipientAddress,
                   recipientName,
                   timestamp: resolvedTime,
+                  blockTimestamp: block?.timestamp,
                 },
               ]
             : []

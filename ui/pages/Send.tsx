@@ -149,7 +149,7 @@ export default function Send(): ReactElement {
     <>
       <div className="standard_width">
         <div className="back_button_wrap">
-          <SharedBackButton />
+          <SharedBackButton path="/" />
         </div>
         <h1 className="header">
           <span className="icon_activity_send_medium" />
