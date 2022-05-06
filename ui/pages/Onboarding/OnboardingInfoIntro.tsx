@@ -100,7 +100,7 @@ export default function OnboardingInfoIntro(): ReactElement {
           .illustration_section {
             height: 380px;
             display: flex;
-            background-color: var(--green-95);
+            background-color: linear-gradient(180deg, #002f2b 0%, #00403b 100%);
           }
           section {
             display: flex;
