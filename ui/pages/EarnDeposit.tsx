@@ -38,6 +38,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
 import { useAllEarnVaults } from "../hooks/earn-hooks"
 import SharedAccordion from "../components/Shared/SharedAccordion"
+import SharedTooltip from "../components/Shared/SharedTooltip"
 
 export default function EarnDeposit(): ReactElement {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
@@ -251,7 +252,14 @@ export default function EarnDeposit(): ReactElement {
           <div>{vault.APR?.yearnAPY}</div>
         </li>
         <li className="content_row">
-          <div className="label">Annual management fee</div>
+          <div className="label">
+            Annual management fee
+            <span className="tooltip_inline_wrap">
+              <SharedTooltip width={130} verticalPosition="bottom">
+                Management Fee goes to the DAO treasury
+              </SharedTooltip>
+            </span>
+          </div>
           <div>-{vault.managementFee}</div>
         </li>
         <li className="content_row category">
@@ -596,6 +604,10 @@ export default function EarnDeposit(): ReactElement {
           .amount {
             font-size: 18px;
             font-weight: 600;
+          }
+          .tooltip_inline_wrap {
+            display: inline-block;
+            vertical-align: middle;
           }
           .list {
             display: flex;
