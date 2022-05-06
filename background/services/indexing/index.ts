@@ -12,7 +12,7 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
+import { FIAT_CURRENCIES, USD, BASE_ASSETS } from "../../constants"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -167,14 +167,13 @@ export default class IndexingService extends BaseService<Events> {
    *          the codebase. Fiat currencies are not included.
    */
   async getCachedAssets(network: EVMNetwork): Promise<AnyAsset[]> {
-    const baseAssets = [BTC, ETH]
     const customAssets = await this.db.getCustomAssetsByNetwork(network)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
     return mergeAssets(
-      baseAssets,
+      BASE_ASSETS,
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
@@ -523,9 +522,9 @@ export default class IndexingService extends BaseService<Events> {
     // TODO refactor for multiple price sources
     try {
       // TODO include user-preferred currencies
-      // get the prices of ETH and BTC vs major currencies
+      // get the prices of ETH, BTC, and MATIC vs major currencies
       const basicPrices = await getPrices(
-        [BTC, ETH] as CoinGeckoAsset[],
+        BASE_ASSETS as CoinGeckoAsset[],
         FIAT_CURRENCIES
       )
 
@@ -546,7 +545,11 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
     } catch (e) {
-      logger.error("Error getting base asset prices", BTC, ETH, FIAT_CURRENCIES)
+      logger.error(
+        "Error getting base asset prices",
+        BASE_ASSETS,
+        FIAT_CURRENCIES
+      )
     }
 
     // get the prices of all assets to track and save them

@@ -53,7 +53,7 @@ export const BTC: FungibleAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC]
+export const BASE_ASSETS = [ETH, BTC, MATIC]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset
