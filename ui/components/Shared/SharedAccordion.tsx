@@ -57,8 +57,10 @@ export default function SharedAccordion({
       <style jsx>{`
         .accordion_header {
           display: flex;
+          align-items: center;
           padding: 4px 8px;
           cursor: pointer;
+          background-color: ${isOpen ? "#041414" : ""};
         }
         .accordion_header_content {
           flex: 1 0 auto;
@@ -68,6 +70,7 @@ export default function SharedAccordion({
           transition: max-height 250ms ease-out;
           overflow: hidden;
           padding: 0 8px;
+          background-color: ${isOpen ? "#041414" : ""};
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
