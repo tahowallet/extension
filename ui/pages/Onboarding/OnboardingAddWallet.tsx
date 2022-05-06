@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import {
   HIDE_ADD_SEED,
   HIDE_CREATE_PHRASE,
-} from "@tallyho/tally-background/features/features"
+} from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../components/Shared/SharedButton"
