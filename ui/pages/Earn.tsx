@@ -1,15 +1,14 @@
 import {
-  AvailableVault,
-  selectAvailableVaults,
-  updateVaults,
+  EnrichedAvailableVault,
   clearInput,
+  selectIsVaultDataStale,
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import classNames from "classnames"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -20,9 +19,10 @@ import EarnDepositedCard, {
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
 import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
+import { useAllEarnVaults } from "../hooks/earn-hooks"
 
 type EarnCardProps = {
-  vault: AvailableVaultsWithLockedValues
+  vault: EnrichedAvailableVault
   isComingSoon: boolean
 }
 
@@ -212,39 +212,17 @@ function EarnCard({ vault, isComingSoon }: EarnCardProps) {
   )
 }
 
-export type AvailableVaultsWithLockedValues = AvailableVault & {
-  localValueUserDeposited?: string
-  localValueTotalDeposited?: string
-  numberValueUserDeposited?: number
-  numberValueTotalDeposited?: number
-}
-
 export default function Earn(): ReactElement {
-  const availableVaults = useBackgroundSelector(selectAvailableVaults)
+  const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
   const [panelNumber, setPanelNumber] = useState(0)
-  const [vaultsWithLockedValues, setVaultsWithLockedValues] =
-    useState<AvailableVaultsWithLockedValues[]>(availableVaults)
+  const vaultsWithLockedValues = useAllEarnVaults()
 
   const dispatch = useBackgroundDispatch()
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
-  const updateVaultsData = useCallback(async () => {
-    const updatedVaults = (await dispatch(
-      updateVaults(availableVaults)
-    )) as unknown as AvailableVault[]
-    setVaultsWithLockedValues(updatedVaults)
-
-    // todo find a different way to avoid loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch])
-
   useEffect(() => {
     dispatch(clearInput()) // clear deposit amount input to start fresh after selecting any vault
   }, [dispatch])
-
-  useEffect(() => {
-    updateVaultsData()
-  }, [updateVaultsData])
 
   const isComingSoon = false
 
@@ -274,9 +252,8 @@ export default function Earn(): ReactElement {
     .reduce((prev, curr) => prev + curr, 0)
     .toFixed(2)
 
-  const depositedVaults = vaultsWithLockedValues?.filter(
-    (vault) => vault.userDeposited > 0n
-  )
+  const depositedVaults =
+    vaultsWithLockedValues?.filter((vault) => vault.userDeposited > 0n) ?? []
 
   return (
     <>
@@ -328,29 +305,41 @@ export default function Earn(): ReactElement {
         <></>
       )}
       {panelNumber === 1 &&
-        (depositedVaults.length > 0 ? (
+        (isValutDataStale || depositedVaults.length > 0 ? (
           <section className="standard_width">
             <div className="your_deposit_heading_info">
               <div className="left">
                 <div className="label">Total deposits</div>
-                <div className="amount">
-                  ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
-                </div>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
+                  <div className="amount">
+                    ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
+                  </div>
+                </SharedSkeletonLoader>
               </div>
               <div className="right">
                 <div className="label">Total available rewards</div>
-                <div className="amount">{userPendingRewards} DOGGO</div>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
+                  <div className="amount">{userPendingRewards} DOGGO</div>
+                </SharedSkeletonLoader>
               </div>
             </div>
-            <ul className="cards_wrap">
-              {depositedVaults?.map((vault) => {
-                return (
-                  <li>
-                    <EarnDepositedCard vault={vault} />
-                  </li>
-                )
-              })}
-            </ul>
+            <SharedSkeletonLoader
+              isLoaded={!isValutDataStale}
+              height={176}
+              customStyles={`
+                margin-top: 40px;
+              `}
+            >
+              <ul className="cards_wrap">
+                {depositedVaults?.map((vault) => {
+                  return (
+                    <li>
+                      <EarnDepositedCard vault={vault} />
+                    </li>
+                  )
+                })}
+              </ul>
+            </SharedSkeletonLoader>
           </section>
         ) : (
           <EmptyBowl />

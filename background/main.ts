@@ -98,7 +98,10 @@ import {
   SignTypedDataRequest,
   SignDataRequest,
 } from "./utils/signing"
-import { emitter as earnSliceEmitter } from "./redux-slices/earn"
+import {
+  emitter as earnSliceEmitter,
+  setVaultsAsStale,
+} from "./redux-slices/earn"
 import {
   LedgerState,
   resetLedgerState,
@@ -1314,8 +1317,11 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
+
       this.store.dispatch(setEligibilityLoading())
       this.doggoService.getEligibility(addressNetwork.address)
+
+      this.store.dispatch(setVaultsAsStale())
 
       const referrerStats = await this.doggoService.getReferrerStats(
         addressNetwork
