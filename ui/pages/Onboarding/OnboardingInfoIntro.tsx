@@ -129,7 +129,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             font-weight: 400;
             line-height: 24px;
             color: var(--green-40);
-            width: 320px;
+            width: 336px;
             text-align: center;
             margin-top: 5px;
           }
@@ -144,6 +144,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             justify-content: space-between;
             height: 230px;
             text-align: center;
+            z-index: 1;
           }
         `}
       </style>
