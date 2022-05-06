@@ -242,9 +242,7 @@ export default function EarnDeposit(): ReactElement {
             Annual management fee
             <span className="tooltip_inline_wrap">
               <SharedTooltip width={130} verticalPosition="bottom">
-                <p className="tooltip">
-                  Management Fee goes to the DAO treasury
-                </p>
+                Management Fee goes to the DAO treasury
               </SharedTooltip>
             </span>
           </div>
@@ -596,9 +594,6 @@ export default function EarnDeposit(): ReactElement {
           .tooltip_inline_wrap {
             display: inline-block;
             vertical-align: middle;
-          }
-          .tooltip {
-            margin: 0;
           }
           .list {
             display: flex;
