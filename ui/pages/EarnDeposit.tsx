@@ -364,7 +364,8 @@ export default function EarnDeposit(): ReactElement {
             <li className="row">
               <div className="label">Available rewards</div>
               <div className="amount">
-                {pendingRewards} <span className="token">DOGGO</span>
+                {pendingRewards}
+                <span className="token">DOGGO</span>
               </div>
             </li>
             <li className="row claim">
@@ -570,11 +571,12 @@ export default function EarnDeposit(): ReactElement {
             background-color: var(--trophy-gold);
           }
           .token {
-            margin-left: 8px;
+            margin-left: 4px;
             font-size: 14px;
           }
           .divider {
             height: 1px;
+            width: 100%;
             background-color: #33514e;
           }
           .amount {
