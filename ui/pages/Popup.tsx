@@ -26,6 +26,7 @@ import {
 import setAnimationConditions, {
   animationStyles,
 } from "../utils/pageTransition"
+import t from "../utils/i18n"
 
 import TabBar from "../components/TabBar/TabBar"
 import TopMenu from "../components/TopMenu/TopMenu"
@@ -121,6 +122,7 @@ export function Main(): ReactElement {
       <div className="top_menu_wrap_decoy">
         <TopMenu />
       </div>
+      <div className="community_edition_label">{t("popupEdition")}</div>
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {

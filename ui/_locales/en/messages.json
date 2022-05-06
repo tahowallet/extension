@@ -1,11 +1,43 @@
 {
+  "popupEdition": {
+    "message": "Community Edition",
+    "description": "label shown in every page"
+  },
+  "overviewTotalBalance": {
+    "message": "Total balance",
+    "description": "in Overview page"
+  },
+  "overviewAddresses": {
+    "message": "Addresses",
+    "description": "in Overview page"
+  },
+  "overviewAssets": {
+    "message": "Assets",
+    "description": "in Overview page"
+  },
   "totalAccountBalance": {
     "message": "Total account balance",
-    "description": "in Wallet > WalletAccountBalanceControl"
+    "description": "in Overview > WalletAccountBalanceControl"
+  },
+  "overviewTableHeaderAsset": {
+    "message": "Asset",
+    "description": "in Overview > AssetsTable"
+  },
+  "overviewTableHeaderPrice": {
+    "message": "Price",
+    "description": "in Overview > AssetsTable"
+  },
+  "overviewTableHeaderBalance": {
+    "message": "Balance",
+    "description": "in Overview > AssetsTable"
   },
   "readOnlyNotice": {
     "message": "Read-only mode",
     "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "menuMainMenu": {
+    "message": "Main menu",
+    "description": "in pages > Menu"
   },
   "menuHideSmallAssetBalance": {
     "message": "Hide asset balance under $1",
@@ -14,5 +46,49 @@
   "menuSetAsDefault": {
     "message": "Use Tally Ho as default wallet",
     "description": "in pages > Menu"
+  },
+  "menuBugReport": {
+    "message": "Bug report",
+    "description": "in pages > Menu"
+  },
+  "menuJoinTitle": {
+    "message": "Join our community",
+    "description": "in pages > Menu"
+  },
+  "menuJoinDesc": {
+    "message": "Join our discord to give us feedback!",
+    "description": "in pages > Menu"
+  },
+  "menuJoinBtn": {
+    "message": "Join and give feedback",
+    "description": "in pages > Menu"
+  },
+  "menuExportTitle": {
+    "message": "Bug report",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionDiscordTitle": {
+    "message": "1. Join #bug-reports on Discord",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionDiscordDesc": {
+    "message": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionDiscordBtn": {
+    "message": "Join Discord",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionLogTitle": {
+    "message": "2. Export logs",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionLogDesc": {
+    "message": "To better understand your bug, we need you to export your logs.",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionLogBtn": {
+    "message": "Export logs",
+    "description": "in pages > Menu > Report bug"
   }
 }
