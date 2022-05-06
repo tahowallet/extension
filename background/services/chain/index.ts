@@ -21,13 +21,8 @@ import {
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import { HOUR } from "../../constants"
-import {
-  ETHEREUM,
-  ARBITRUM_ONE,
-  OPTIMISM,
-  POLYGON,
-} from "../../constants/networks"
-import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features/features"
+import { ETHEREUM, POLYGON } from "../../constants/networks"
+import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
