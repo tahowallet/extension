@@ -37,7 +37,6 @@
     "@ledgerhq/hw-app-eth": "^6.23.0",
     "@ledgerhq/hw-transport": "^6.20.0",
     "@ledgerhq/hw-transport-webusb": "^6.20.0",
-    "@rsksmart/rns-resolver.js": "^1.1.0",
     "@tallyho/hd-keyring": "^0.3.3",
     "@tallyho/provider-bridge-shared": "0.0.1",
     "@tallyho/window-provider": "0.0.1",

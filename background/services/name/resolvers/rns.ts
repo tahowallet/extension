@@ -1,12 +1,37 @@
-import RNSResolver from "@rsksmart/rns-resolver.js"
+import { JsonRpcProvider } from "@ethersproject/providers"
+import { Contract, utils } from "ethers"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM } from "../../../constants"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
+import logger from "../../../lib/logger"
+
+import { normalizeEVMAddress } from "../../../lib/utils"
+
+const provider = new JsonRpcProvider("https://public-node.rsk.co")
+
+// REF: https://developers.rsk.co/rif/rns/architecture/registry/
+const RNS_REGISTRY_ADDRESS = "0xcb868aeabd31e2b66f74e9a55cf064abb31a4ad5"
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+const stripHexPrefix = (hex: string): string => hex.slice(2)
+
+const RNS_REGISTRY_ABI = [
+  "function resolver(bytes32 node) public view returns (address)",
+]
+
+const RNS_ADDR_RESOLVER_ABI = [
+  "function addr(bytes32 node) public view returns (address)",
+]
+
+const RNS_NAME_RESOLVER_ABI = [
+  "function name(bytes32 node) external view returns (string)",
+]
+
+const getRegistryContract = () =>
+  new Contract(RNS_REGISTRY_ADDRESS, RNS_REGISTRY_ABI, provider)
 
 export default function rnsResolver(): NameResolver<"RNS"> {
-  const resolver = RNSResolver.forRskMainnet({})
-
   return {
     type: "RNS",
     canAttemptNameResolution(): boolean {
@@ -23,20 +48,33 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       name,
       network,
     }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
-      // TODO Set coin type based on network once multichain is supported
-      // Default coin type is 137 (RSK - RBTC)
-      const address = await resolver.addr(name)
+      const rnsRegistryContract = getRegistryContract()
+
+      const nameHash = utils.namehash(name)
+      const resolverAddress = await rnsRegistryContract.resolver(nameHash)
+
+      if (resolverAddress === ZERO_ADDRESS) {
+        logger.warn("Domain has no resolver")
+        return undefined
+      }
+
+      const addrResolverContract = new Contract(
+        resolverAddress,
+        RNS_ADDR_RESOLVER_ABI,
+        provider
+      )
+
+      const address = await addrResolverContract.addr(nameHash)
 
       if (address === undefined || address === null) {
         return undefined
       }
 
+      // TODO Support EIP-1191 compliant addresses for RSK network
+      const normalizedAddress = normalizeEVMAddress(address)
+
       return {
-        // TODO Default address encoding for rnsMainnetResolver exports
-        // the address in EIP1191 checksum format which will be rejected by ethers
-        // while signing transactions or other operations.
-        // Let's use the lowercase address for now.
-        address: address.toLowerCase(),
+        address: normalizedAddress,
         network,
       }
     },
@@ -47,9 +85,30 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       address,
       network,
     }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
-      const name = await resolver.reverse(address)
+      const rnsRegistryContract = getRegistryContract()
 
-      if (address === undefined || address === null) {
+      const reverseRecordHash = utils.namehash(
+        `${stripHexPrefix(address)}.addr.reverse`
+      )
+
+      const resolverAddress = await rnsRegistryContract.resolver(
+        reverseRecordHash
+      )
+
+      if (resolverAddress === ZERO_ADDRESS) {
+        logger.warn("Domain has no resolver")
+        return undefined
+      }
+
+      const nameResolverContract = new Contract(
+        resolverAddress,
+        RNS_NAME_RESOLVER_ABI,
+        provider
+      )
+
+      const name = await nameResolverContract.name(reverseRecordHash)
+
+      if (name === undefined || name === null) {
         return undefined
       }
 
