@@ -494,16 +494,17 @@ export default class ChainService extends BaseService<Events> {
   async getLatestBaseAccountBalance(
     addressNetwork: AddressOnNetwork
   ): Promise<AccountBalance> {
+    const { network, address } = addressNetwork
     const balance = await this.providerForNetworkOrThrow(
       addressNetwork.network
-    ).getBalance(addressNetwork.address)
+    ).getBalance(address)
     const accountBalance: AccountBalance = {
-      address: addressNetwork.address,
+      address,
       assetAmount: {
-        asset: addressNetwork.network.baseAsset,
+        asset: network.baseAsset,
         amount: balance.toBigInt(),
       },
-      network: addressNetwork.network,
+      network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
