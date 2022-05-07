@@ -114,7 +114,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_signTypedData_v3":
       case "eth_signTypedData_v4":
         return this.signTypedData({
-          account: params[0] as string,
+          account: {
+            address: params[0] as string,
+            // TODO Support variable network.
+            network: ETHEREUM,
+          },
           typedData: JSON.parse(params[1] as string),
         })
       case "eth_chainId":
@@ -273,7 +277,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signDataRequest", {
         payload: {
-          account,
+          account: {
+            address: account,
+            // TODO Support variable network.
+            network: ETHEREUM,
+          },
           signingData: data,
           messageType: type,
           rawSigningData: asciiData,

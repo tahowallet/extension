@@ -3,11 +3,10 @@ import {
   AccountTotal,
   selectKeyringByAddress,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
-import { ETHEREUM } from "@tallyho/tally-background/constants"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useBackgroundSelector } from "../../hooks"
@@ -15,7 +14,6 @@ import AccountItemActionHeader from "./AccountItemActionHeader"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
-  address: HexString
   close: () => void
 }
 
@@ -38,9 +36,10 @@ const LoudWarning = (
 
 export default function AccountItemRemovalConfirm({
   account,
-  address,
   close,
 }: AccountItemRemovalConfirmProps): ReactElement {
+  const { address, network } = account
+
   const dispatch = useDispatch()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
   const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
@@ -86,16 +85,16 @@ export default function AccountItemRemovalConfirm({
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
-            dispatch(removeAccount(address))
-            if (selectedAddress === address) {
+            dispatch(removeAccount({ address, network }))
+            if (sameEVMAddress(selectedAddress, address)) {
               const newAddress = Object.keys(accountsData).find(
                 (accountAddress) => accountAddress !== address
               )
               if (newAddress) {
                 dispatch(
                   setSelectedAccount({
-                    address: newAddress,
-                    network: ETHEREUM,
+                    address,
+                    network,
                   })
                 )
               }

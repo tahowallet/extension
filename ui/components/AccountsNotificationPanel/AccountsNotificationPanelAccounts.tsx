@@ -3,7 +3,7 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
-  selectAccountTotalsByCategory,
+  selectCurrentNetworkAccountTotalsByCategory,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
@@ -146,7 +146,9 @@ export default function AccountsNotificationPanelAccounts({
 }: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
 
-  const accountTotals = useBackgroundSelector(selectAccountTotalsByCategory)
+  const accountTotals = useBackgroundSelector(
+    selectCurrentNetworkAccountTotalsByCategory
+  )
 
   const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
 
@@ -274,7 +276,6 @@ export default function AccountsNotificationPanelAccounts({
                             >
                               <AccountItemOptionsMenu
                                 accountTotal={accountTotal}
-                                address={accountTotal.address}
                               />
                             </SharedAccountItemSummary>
                           </div>
