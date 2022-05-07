@@ -6,6 +6,7 @@ import {
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
+  CUSTOM,
 } from "../constants/network-fees"
 import { USE_MAINNET_FORK } from "../features"
 
@@ -44,6 +45,7 @@ export enum NetworkFeeTypeChosen {
   Regular = "regular",
   Express = "express",
   Instant = "instant",
+  Custom = "custom",
 }
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
@@ -57,16 +59,24 @@ export type TransactionConstruction = {
 }
 
 export type EstimatedFeesPerGas = {
-  baseFeePerGas: bigint
-  instant: BlockEstimate | undefined
-  express: BlockEstimate | undefined
-  regular: BlockEstimate | undefined
+  baseFeePerGas?: bigint
+  instant?: BlockEstimate
+  express?: BlockEstimate
+  regular?: BlockEstimate
+  custom?: BlockEstimate
 }
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
-  estimatedFeesPerGas: undefined,
+  estimatedFeesPerGas: {
+    custom: {
+      maxFeePerGas: 0n,
+      confidence: CUSTOM,
+      maxPriorityFeePerGas: 0n,
+      price: 0n,
+    },
+  },
   lastGasEstimatesRefreshed: Date.now(),
 }
 
@@ -168,57 +178,68 @@ const transactionSlice = createSlice({
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
     ) => {
-      return {
-        ...immerState,
-        estimatedFeesPerGas: {
-          baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
-          instant: {
-            maxFeePerGas:
-              (estimatedFeesPerGas.baseFeePerGas *
-                MAX_FEE_MULTIPLIER[INSTANT]) /
-              10n,
-            confidence: INSTANT,
-            maxPriorityFeePerGas:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === INSTANT
-              )?.maxPriorityFeePerGas ?? 0n,
-            price:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === INSTANT
-              )?.price ?? 0n,
-          },
-          express: {
-            maxFeePerGas:
-              (estimatedFeesPerGas.baseFeePerGas *
-                MAX_FEE_MULTIPLIER[EXPRESS]) /
-              10n,
-            confidence: EXPRESS,
-            maxPriorityFeePerGas:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === EXPRESS
-              )?.maxPriorityFeePerGas ?? 0n,
-            price:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === EXPRESS
-              )?.price ?? 0n,
-          },
-          regular: {
-            maxFeePerGas:
-              (estimatedFeesPerGas.baseFeePerGas *
-                MAX_FEE_MULTIPLIER[REGULAR]) /
-              10n,
-            confidence: REGULAR,
-            maxPriorityFeePerGas:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === REGULAR
-              )?.maxPriorityFeePerGas ?? 0n,
-            price:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === REGULAR
-              )?.price ?? 0n,
-          },
+      immerState.estimatedFeesPerGas = {
+        ...immerState.estimatedFeesPerGas,
+        baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
+        instant: {
+          maxFeePerGas:
+            (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[INSTANT]) /
+            10n,
+          confidence: INSTANT,
+          maxPriorityFeePerGas:
+            estimatedFeesPerGas.estimatedPrices.find(
+              (el) => el.confidence === INSTANT
+            )?.maxPriorityFeePerGas ?? 0n,
+          price:
+            estimatedFeesPerGas.estimatedPrices.find(
+              (el) => el.confidence === INSTANT
+            )?.price ?? 0n,
         },
-        lastGasEstimatesRefreshed: Date.now(),
+        express: {
+          maxFeePerGas:
+            (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[EXPRESS]) /
+            10n,
+          confidence: EXPRESS,
+          maxPriorityFeePerGas:
+            estimatedFeesPerGas.estimatedPrices.find(
+              (el) => el.confidence === EXPRESS
+            )?.maxPriorityFeePerGas ?? 0n,
+          price:
+            estimatedFeesPerGas.estimatedPrices.find(
+              (el) => el.confidence === EXPRESS
+            )?.price ?? 0n,
+        },
+        regular: {
+          maxFeePerGas:
+            (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[REGULAR]) /
+            10n,
+          confidence: REGULAR,
+          maxPriorityFeePerGas:
+            estimatedFeesPerGas.estimatedPrices.find(
+              (el) => el.confidence === REGULAR
+            )?.maxPriorityFeePerGas ?? 0n,
+          price:
+            estimatedFeesPerGas.estimatedPrices.find(
+              (el) => el.confidence === REGULAR
+            )?.price ?? 0n,
+        },
+      }
+      immerState.lastGasEstimatesRefreshed = Date.now()
+    },
+    setCustomGas: (
+      immerState,
+      {
+        payload: { maxPriorityFeePerGas, maxFeePerGas },
+      }: { payload: { maxPriorityFeePerGas: bigint; maxFeePerGas: bigint } }
+    ) => {
+      immerState.estimatedFeesPerGas = {
+        ...immerState.estimatedFeesPerGas,
+        custom: {
+          maxFeePerGas,
+          confidence: CUSTOM,
+          maxPriorityFeePerGas,
+          price: 41000000000n,
+        },
       }
     },
   },
@@ -238,6 +259,7 @@ export const {
   signed,
   setFeeType,
   estimatedFeesPerGas,
+  setCustomGas,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
