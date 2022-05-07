@@ -319,7 +319,6 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest & { nonce: number },
     deviceID: string,
     path: string
@@ -395,8 +394,8 @@ export default class LedgerService extends BaseService<Events> {
 
           blockHash: null,
           blockHeight: null,
-          asset: ETH,
-          network,
+          asset: transactionRequest.network.baseAsset,
+          network: transactionRequest.network,
         }
 
         return signedTx

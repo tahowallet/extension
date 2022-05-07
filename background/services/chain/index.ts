@@ -334,6 +334,7 @@ export default class ChainService extends BaseService<Events> {
       maxPriorityFeePerGas: partialRequest.maxPriorityFeePerGas ?? 0n,
       input: partialRequest.input ?? null,
       type: 2 as const,
+      network,
       chainID: network.chainID,
       nonce: partialRequest.nonce,
       annotation: partialRequest.annotation,
@@ -397,14 +398,13 @@ export default class ChainService extends BaseService<Events> {
       return transactionRequest as EIP1559TransactionRequest & { nonce: number }
     }
 
-    const { chainID } = transactionRequest
+    const { network, chainID } = transactionRequest
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+    const provider = this.providerForNetworkOrThrow(network)
 
     const chainNonce =
-      (await this.providers[ETHEREUM.name].getTransactionCount(
-        transactionRequest.from,
-        "latest"
-      )) - 1
+      (await provider.getTransactionCount(transactionRequest.from, "latest")) -
+      1
     const existingNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
         normalizedAddress
@@ -491,19 +491,20 @@ export default class ChainService extends BaseService<Events> {
     return this.db.getAccountsToTrack()
   }
 
-  async getLatestBaseAccountBalance(
-    addressNetwork: AddressOnNetwork
-  ): Promise<AccountBalance> {
-    const balance = await this.providerForNetworkOrThrow(
-      addressNetwork.network
-    ).getBalance(addressNetwork.address)
+  async getLatestBaseAccountBalance({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<AccountBalance> {
+    const balance = await this.providerForNetworkOrThrow(network).getBalance(
+      address
+    )
     const accountBalance: AccountBalance = {
-      address: addressNetwork.address,
+      address,
+      network,
       assetAmount: {
         asset: ETH,
         amount: balance.toBigInt(),
       },
-      network: addressNetwork.network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
