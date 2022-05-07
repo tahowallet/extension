@@ -7,7 +7,7 @@ import {
   MAX_FEE_MULTIPLIER,
   REGULAR,
 } from "../constants/network-fees"
-import { USE_MAINNET_FORK } from "../features/features"
+import { USE_MAINNET_FORK } from "../features"
 
 import {
   BlockEstimate,
