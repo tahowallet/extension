@@ -4,17 +4,22 @@ import {
   NetworkFeeSettings,
   NetworkFeeTypeChosen,
   selectLastGasEstimatesRefreshTime,
+  setCustomGas,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
+import {
+  ESTIMATED_FEE_MULTIPLIERS,
+  ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
+} from "@tallyho/tally-background/constants/network-fees"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { SharedTypedInput } from "../Shared/SharedInput"
-import { useBackgroundSelector } from "../../hooks"
+import SharedInput, { SharedTypedInput } from "../Shared/SharedInput"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
+import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -24,6 +29,7 @@ interface NetworkSettingsSelectProps {
 
 type GasOption = {
   confidence: string
+  estimatedSpeed: string
   type: NetworkFeeTypeChosen
   estimatedGwei: string
   maxGwei: string
@@ -47,6 +53,7 @@ const gasOptionFromEstimate = (
     70: NetworkFeeTypeChosen.Regular,
     95: NetworkFeeTypeChosen.Express,
     99: NetworkFeeTypeChosen.Instant,
+    0: NetworkFeeTypeChosen.Custom,
   }
 
   const feeAssetAmount =
@@ -61,9 +68,12 @@ const gasOptionFromEstimate = (
         )
       : undefined
   const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
-
   return {
     confidence: `${confidence}`,
+    estimatedSpeed:
+      ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL[
+        confidence
+      ],
     type: feeOptionData[confidence],
     estimatedGwei: weiToGwei(
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
@@ -112,6 +122,8 @@ export default function NetworkSettingsSelect({
   networkSettings,
   onNetworkSettingsChange,
 }: NetworkSettingsSelectProps): ReactElement {
+  const dispatch = useBackgroundDispatch()
+
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
@@ -159,25 +171,28 @@ export default function NetworkSettingsSelect({
 
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
-      const { regular, express, instant } = estimatedFeesPerGas ?? {}
+      const { regular, express, instant, custom } = estimatedFeesPerGas ?? {}
       const gasLimit =
         networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
-      if (
-        typeof instant !== "undefined" &&
-        typeof express !== "undefined" &&
-        typeof regular !== "undefined"
-      ) {
-        const basePrices = [regular, express, instant]
+      if (typeof instant !== "undefined") {
+        const basePrices = [regular, express, instant, custom]
 
-        const updatedGasOptions = basePrices.map((option) =>
-          gasOptionFromEstimate(
-            mainCurrencyPricePoint,
-            estimatedFeesPerGas.baseFeePerGas,
-            gasLimit,
-            option
-          )
-        )
+        const updatedGasOptions: GasOption[] = []
+
+        basePrices.forEach((option) => {
+          if (option) {
+            updatedGasOptions.push(
+              gasOptionFromEstimate(
+                mainCurrencyPricePoint,
+                estimatedFeesPerGas.baseFeePerGas ?? 0n,
+                gasLimit,
+                option
+              )
+            )
+          }
+        })
+
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
           (el) => el.type === currentlySelectedType
         )
@@ -190,8 +205,8 @@ export default function NetworkSettingsSelect({
     }
   }, [
     estimatedFeesPerGas,
-    networkSettings.suggestedGasLimit,
     networkSettings.gasLimit,
+    networkSettings.suggestedGasLimit,
     mainCurrencyPricePoint,
     currentlySelectedType,
   ])
@@ -204,29 +219,89 @@ export default function NetworkSettingsSelect({
     onNetworkSettingsChange({ ...networkSettings, gasLimit })
   }
 
+  function updateCustomGas(
+    customMaxBaseFee: bigint,
+    customMaxPriorityFeePerGas: bigint
+  ) {
+    dispatch(
+      setCustomGas({
+        maxPriorityFeePerGas: customMaxPriorityFeePerGas,
+        maxFeePerGas: customMaxBaseFee + customMaxPriorityFeePerGas,
+      })
+    )
+  }
+
+
   return (
     <div className="fees standard_width">
-      <div className="title">Network Fees</div>
-
-      <EstimateRefreshCountdownDivider />
-
       {gasOptions.map((option, i) => {
         return (
-          <button
-            key={option.confidence}
-            className={`option ${i === activeFeeIndex ? "active" : ""}`}
-            onClick={() => handleSelectGasOption(i)}
-            type="button"
-          >
-            <div className="option_left">
-              <div className="name">{capitalize(option.type)}</div>
-              <div className="subtext">Probability: {option.confidence}%</div>
-            </div>
-            <div className="option_right">
-              <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-              <div className="subtext">{option.dollarValue}</div>
-            </div>
-          </button>
+          <>
+            {option.type === "custom" ? (
+              <button
+                key={option.confidence}
+                className={`option ${i === activeFeeIndex ? "active" : ""}`}
+                onClick={() => handleSelectGasOption(i)}
+                type="button"
+              >
+                <div className="option_left">
+                  <div className="name">{capitalize(option.type)}</div>
+                </div>
+                <div className="input_wrap">
+                  <SharedInput
+                    label="Miner"
+                    value={`${
+                      Number(option.maxPriorityFeePerGas) / 1000000000 // @TODO Replace
+                    }`}
+                    onChange={(value) => {
+                      updateCustomGas(
+                        option.maxFeePerGas - option.maxPriorityFeePerGas,
+                        BigInt(value) * BigInt(1000000000) // @TODO Replace
+                      )
+                    }}
+                  />
+                </div>
+                <div className="option_right">
+                  <div className="input_wrap">
+                    <SharedInput
+                      value={`${
+                        (option.maxFeePerGas - option.maxPriorityFeePerGas) /
+                        BigInt(1000000000) // @TODO Replace
+                      }`}
+                      label="Max Base"
+                      onChange={(value) => {
+                        updateCustomGas(
+                          BigInt(value) * BigInt(1000000000), // @TODO Replace
+                          option.maxPriorityFeePerGas
+                        )
+                      }}
+                    />
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <button
+                key={option.confidence}
+                className={`option ${i === activeFeeIndex ? "active" : ""}`}
+                onClick={() => handleSelectGasOption(i)}
+                type="button"
+              >
+                <div className="option_left">
+                  <div className="name">{capitalize(option.type)}</div>
+                  <div className="subtext">{option.estimatedSpeed}</div>
+                </div>
+                Miner:
+                {`${Number(option.maxPriorityFeePerGas) / 1000000000}`}
+                <div className="option_right">
+                  Max Base:
+                  <div className="price">{`${
+                    BigInt(option.maxGwei) -
+                    option.maxPriorityFeePerGas / BigInt(1000000000) // @TODO Replace
+                  }`}</div>
+                </div>
+              </button>
+            )}
+          </>
         )
       })}
       <div className="info">
@@ -274,11 +349,15 @@ export default function NetworkSettingsSelect({
             align-items: center;
             background: #002522;
             box-sizing: border-box;
-            padding: 12px;
+            padding: 15px;
             margin: 8px 0;
             cursor: pointer;
             border-radius: 4px;
             border: 1px solid transparent;
+            position: relative;
+          }
+          .input_wrap {
+            width: 100px;
           }
           .option.active {
             border-color: var(--success);
@@ -292,11 +371,11 @@ export default function NetworkSettingsSelect({
           .option_left,
           .option_right {
             display: flex;
-            flex-flow: column;
             gap: 4px;
           }
           .option_left {
             text-align: left;
+            flex-direction: column;
           }
           .option_right {
             text-align: right;
