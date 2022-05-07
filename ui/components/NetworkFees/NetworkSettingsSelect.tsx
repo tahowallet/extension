@@ -10,6 +10,7 @@ import {
   ESTIMATED_FEE_MULTIPLIERS,
   ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
 } from "@tallyho/tally-background/constants/network-fees"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
@@ -231,6 +232,15 @@ export default function NetworkSettingsSelect({
     )
   }
 
+  if (CUSTOM_GAS_SELECT) {
+    return (
+      <NetworkSettingsSelectDeprecated
+        estimatedFeesPerGas={estimatedFeesPerGas}
+        networkSettings={networkSettings}
+        onNetworkSettingsChange={onNetworkSettingsChange}
+      />
+    )
+  }
 
   return (
     <div className="fees standard_width">
