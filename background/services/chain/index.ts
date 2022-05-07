@@ -18,6 +18,7 @@ import {
   SignedEVMTransaction,
   BlockPrices,
   LegacyEVMTransactionRequest,
+  sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import { HOUR } from "../../constants"
@@ -141,8 +142,10 @@ export default class ChainService extends BaseService<Events> {
    * for expiration purposes.
    */
   private transactionsToRetrieve: {
-    [networkName: string]: { hash: HexString; firstSeen: UNIXTime }[]
-  }
+    network: EVMNetwork
+    hash: HexString
+    firstSeen: UNIXTime
+  }[]
 
   static create: ServiceCreatorFunction<
     Events,
@@ -218,9 +221,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.subscribedAccounts = []
     this.subscribedNetworks = []
-    this.transactionsToRetrieve = Object.fromEntries(
-      this.supportedNetworks.map((network) => [network.name, []])
-    )
+    this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
   }
@@ -609,16 +610,13 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): Promise<void> {
-    if (!(network.name in this.transactionsToRetrieve)) {
-      this.transactionsToRetrieve[network.name] = []
-    }
+    const seen = this.transactionsToRetrieve.some(
+      ({ network: queuedNetwork, hash }) =>
+        sameNetwork(network, queuedNetwork) && hash === txHash
+    )
 
-    const toRetrieve = this.transactionsToRetrieve[network.name]
-
-    const seen = new Set((toRetrieve ?? []).map(({ hash }) => hash))
-
-    if (!seen.has(txHash)) {
-      toRetrieve.push({ hash: txHash, firstSeen })
+    if (!seen) {
+      this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
     }
   }
 
@@ -857,68 +855,94 @@ export default class ChainService extends BaseService<Events> {
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
-    // TODO make this multi network
-    const toHandle = this.transactionsToRetrieve[ETHEREUM.name].slice(
-      0,
-      TRANSACTIONS_RETRIEVED_PER_ALARM
+    const fetchedByNetwork: { [chainID: string]: number } = {}
+
+    // Drop all transactions that weren't retrieved from the queue.
+    this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
+      async ({ network, hash, firstSeen }) => {
+        fetchedByNetwork[network.chainID] ??= 0
+
+        if (
+          fetchedByNetwork[network.chainID] >= TRANSACTIONS_RETRIEVED_PER_ALARM
+        ) {
+          // Once a given network has hit its limit, include any additional
+          // transactions in the updated queue.
+          return true
+        }
+
+        // If more transactions can be retrieved in this alarm, bump the count,
+        // retrieve the transaction, and drop from the updated queue.
+        fetchedByNetwork[network.chainID] += 1
+        this.retrieveTransaction(network, hash, firstSeen)
+        return false
+      }
     )
-    this.transactionsToRetrieve[ETHEREUM.name] = this.transactionsToRetrieve[
-      ETHEREUM.name
-    ].slice(TRANSACTIONS_RETRIEVED_PER_ALARM)
+  }
 
-    const network = ETHEREUM
+  /**
+   * Retrieve a confirmed or unconfirmed transaction's details, saving the
+   * results. If the transaction is confirmed, triggers retrieval and storage
+   * of transaction receipt information as well. If lookup fails, re-queues the
+   * transaction for a future retry until a constant lifetime is exceeded, at
+   * which point the transaction is marked as dropped unless it was
+   * independently marked as successful.
+   *
+   * @param network the EVM network we're interested in
+   * @param transaction the confirmed transaction we're interested in
+   */
+  private async retrieveTransaction(
+    network: EVMNetwork,
+    hash: string,
+    firstSeen: number
+  ): Promise<void> {
+    try {
+      const result = await this.providerForNetworkOrThrow(
+        network
+      ).getTransaction(hash)
 
-    toHandle.forEach(async ({ hash, firstSeen }) => {
-      try {
-        // TODO make this multi network
-        const result = await this.providers.evm[ETHEREUM.name].getTransaction(
-          hash
+      const transaction = transactionFromEthersTransaction(result, network)
+
+      // TODO make this provider type specific
+      await this.saveTransaction(transaction, "alchemy")
+
+      if (!transaction.blockHash && !transaction.blockHeight) {
+        this.subscribeToTransactionConfirmation(
+          transaction.network,
+          transaction
+        )
+      } else if (transaction.blockHash) {
+        // Get relevant block data.
+        await this.getBlockData(transaction.network, transaction.blockHash)
+        // Retrieve gas used, status, etc
+        this.retrieveTransactionReceipt(transaction.network, transaction)
+      }
+    } catch (error) {
+      logger.error(`Error retrieving transaction ${hash}`, error)
+      if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
+        this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+      } else {
+        logger.warn(
+          `Transaction ${hash} is too old to keep looking for it; treating ` +
+            "it as expired."
         )
 
-        const transaction = transactionFromEthersTransaction(result, network)
-
-        // TODO make this provider specific
-        await this.saveTransaction(transaction, "alchemy")
-
-        if (!transaction.blockHash && !transaction.blockHeight) {
-          this.subscribeToTransactionConfirmation(
-            transaction.network,
-            transaction
-          )
-        } else if (transaction.blockHash) {
-          // Get relevant block data.
-          await this.getBlockData(transaction.network, transaction.blockHash)
-          // Retrieve gas used, status, etc
-          this.retrieveTransactionReceipt(transaction.network, transaction)
-        }
-      } catch (error) {
-        logger.error(`Error retrieving transaction ${hash}`, error)
-        if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-          this.queueTransactionHashToRetrieve(network, hash, firstSeen)
-        } else {
-          logger.warn(
-            `Transaction ${hash} is too old to keep looking for it; treating ` +
-              "it as expired."
-          )
-
-          this.db.getTransaction(network, hash).then((existingTransaction) => {
-            if (existingTransaction !== null) {
-              logger.debug(
-                "Found existing transaction for expired lookup; marking as " +
-                  "failed if no other status exists."
-              )
-              this.saveTransaction(
-                // Don't override an already-persisted successful status with
-                // an expiration-based failed status, but do set status to
-                // failure if no transaction was seen.
-                { status: 0, ...existingTransaction },
-                "local"
-              )
-            }
-          })
-        }
+        this.db.getTransaction(network, hash).then((existingTransaction) => {
+          if (existingTransaction !== null) {
+            logger.debug(
+              "Found existing transaction for expired lookup; marking as " +
+                "failed if no other status exists."
+            )
+            this.saveTransaction(
+              // Don't override an already-persisted successful status with
+              // an expiration-based failed status, but do set status to
+              // failure if no transaction was seen.
+              { status: 0, ...existingTransaction },
+              "local"
+            )
+          }
+        })
       }
-    })
+    }
   }
 
   /**
