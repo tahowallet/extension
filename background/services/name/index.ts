@@ -21,7 +21,7 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { RESOLVE_UNS_NAMES } from "../../features/features"
+import { RESOLVE_UNS_NAMES } from "../../features"
 
 export { NameResolverSystem }
 
@@ -125,6 +125,14 @@ export default class NameService extends BaseService<Events> {
       ensResolverFor(chainService),
       ...(RESOLVE_UNS_NAMES ? [unsResolver()] : []),
     ]
+
+    preferenceService.emitter.on(
+      "addressBookEntryModified",
+      async ({ network, address }) => {
+        this.clearNameCacheEntry(network.chainID, address)
+        await this.lookUpName({ network, address })
+      }
+    )
 
     chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
       try {
@@ -260,6 +268,12 @@ export default class NameService extends BaseService<Events> {
     }
 
     return nameOnNetwork
+  }
+
+  clearNameCacheEntry(chainId: string, address: HexString): void {
+    if (this.cachedResolvedNames.EVM[chainId]?.[address] !== undefined) {
+      delete this.cachedResolvedNames.EVM[chainId][address]
+    }
   }
 
   async lookUpAvatar(

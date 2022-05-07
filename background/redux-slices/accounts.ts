@@ -226,7 +226,7 @@ const accountSlice = createSlice({
         }, {})
       )
     },
-    updateENSName: (
+    updateAccountName: (
       immerState,
       {
         payload: addressNetworkName,
@@ -284,7 +284,7 @@ const accountSlice = createSlice({
 export const {
   loadAccount,
   updateAccountBalance,
-  updateENSName,
+  updateAccountName,
   updateENSAvatar,
 } = accountSlice.actions
 
@@ -319,6 +319,16 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
 
     dispatch(loadAccount(normalizedAddressNetwork.address))
     await main.addAccount(normalizedAddressNetwork)
+  }
+)
+
+export const addOrEditAddressName = createBackgroundAsyncThunk(
+  "account/addOrEditAddressName",
+  async (
+    payload: { name: string; address: HexString },
+    { extra: { main } }
+  ) => {
+    await main.addOrEditAddressName(payload)
   }
 )
 

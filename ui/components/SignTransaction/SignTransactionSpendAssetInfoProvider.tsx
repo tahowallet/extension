@@ -49,7 +49,7 @@ export default function SignTransactionSpendAssetInfoProvider({
 
   const approvalLimitDisplayValue = `${
     approvalLimitString ?? "Infinite"
-  } ${asset?.symbol.toUpperCase()}`
+  } ${asset.symbol.toUpperCase()}`
 
   const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
     null
@@ -130,15 +130,17 @@ export default function SignTransactionSpendAssetInfoProvider({
             />
           </span>
           <span className="spending_label">
-            {asset.symbol ? (
-              `Spend ${
-                asset.symbol ?? (
-                  <SharedAddress address={transactionDetails.to ?? ""} />
-                )
-              } tokens`
-            ) : (
-              <SharedSkeletonLoader />
-            )}
+            <SharedSkeletonLoader
+              isLoaded={!!asset.symbol}
+              margin="10px 0 0"
+              height={32}
+            >
+              Spend{" "}
+              {asset.symbol ?? (
+                <SharedAddress address={transactionDetails.to ?? ""} />
+              )}{" "}
+              tokens
+            </SharedSkeletonLoader>
           </span>
           <form onSubmit={(event) => event.preventDefault()}>
             <div className="spend_limit_header">
@@ -300,11 +302,9 @@ export default function SignTransactionSpendAssetInfoProvider({
           <TransactionDetailItem
             name="Spend limit"
             value={
-              asset?.symbol ? (
+              <SharedSkeletonLoader isLoaded={!!asset.symbol}>
                 approvalLimitDisplayValue
-              ) : (
-                <SharedSkeletonLoader />
-              )
+              </SharedSkeletonLoader>
             }
           />
           <TransactionDetailItem

@@ -5,6 +5,7 @@ import {
   selectAllowedPages,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { MULTI_NETWORK } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
@@ -103,7 +104,10 @@ export default function TopMenu(): ReactElement {
       </SharedSlideUpMenu>
       <div className="nav_wrap">
         <nav className="standard_width_padded">
-          <TopMenuProtocolSwitcher />
+          <TopMenuProtocolSwitcher
+            enabled={MULTI_NETWORK}
+            onClick={() => setIsProtocolListOpen(true)}
+          />
           <div className="profile_group">
             {isConnectedToDApp && (
               <button

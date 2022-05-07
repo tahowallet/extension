@@ -2,7 +2,9 @@ import { selectTransactionData } from "@tallyho/tally-background/redux-slices/tr
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import { SignTransactionInfo } from "./SignTransactionInfoBaseProvider"
+import SignTransactionLoader from "./SignTransactionLoader"
 import SignTransactionSignInfoProvider from "./SignTransactionSignInfoProvider"
+import SignTransactionContractInteractionProvider from "./SignTransactionContractInteractionProvider"
 import SignTransactionSpendAssetInfoProvider from "./SignTransactionSpendAssetInfoProvider"
 import SignTransactionSwapAssetInfoProvider from "./SignTransactionSwapAssetInfoProvider"
 import SignTransactionTransferInfoProvider from "./SignTransactionTransferInfoProvider"
@@ -17,7 +19,7 @@ export default function SignTransactionInfoProvider({
 }): ReactElement {
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
-  if (!transactionDetails) return <></>
+  if (!transactionDetails) return <SignTransactionLoader />
 
   const annotation =
     "annotation" in transactionDetails
@@ -48,6 +50,24 @@ export default function SignTransactionInfoProvider({
           transactionDetails={transactionDetails}
           annotation={annotation}
         />
+      )
+    case "contract-interaction":
+      return (
+        <>
+          {transactionDetails.value === BigInt(0) ? (
+            <SignTransactionContractInteractionProvider
+              inner={children}
+              transactionDetails={transactionDetails}
+              annotation={annotation}
+            />
+          ) : (
+            <SignTransactionSignInfoProvider
+              inner={children}
+              transactionDetails={transactionDetails}
+              annotation={annotation}
+            />
+          )}
+        </>
       )
     default:
       return (

@@ -3,7 +3,7 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
-import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features/features"
+import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
@@ -44,8 +44,7 @@ function TextArea({
           padding: 12px 16px;
           box-sizing: border-box;
         }
-        .error,
-        .error:focus {
+        .error {
           border-color: var(--error);
         }
         .error_message {
@@ -71,6 +70,12 @@ function TextArea({
           transition: font-size 0.2s ease, transform 0.2s ease,
             font-weight 0.2s ease, padding 0.2s ease;
         }
+        textarea:focus {
+          border-color: var(--trophy-gold);
+        }
+        textarea:focus ~ label {
+          color: var(--trophy-gold);
+        }
         textarea:focus ~ label,
         textarea:not(:placeholder-shown) ~ label {
           transform: translateY(-103px) translateX(-5px);
@@ -78,7 +83,8 @@ function TextArea({
           font-weight: 500;
           padding: 0px 6px;
         }
-        .error ~ label {
+        .error ~ label,
+        textarea.error:focus ~ label {
           color: var(--error);
         }
       `}</style>

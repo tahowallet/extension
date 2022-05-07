@@ -14,6 +14,7 @@ import {
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
 import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
+import SignTransactionPanelCombined from "../components/SignTransaction/SignTransactionPanelCombined"
 
 export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -37,15 +38,6 @@ export default function SignTransaction(): ReactElement {
   const isLocked = useIsSigningMethodLocked(signingMethod)
 
   if (isLocked) return <></>
-
-  if (
-    typeof transactionDetails === "undefined" ||
-    typeof signerAccountTotal === "undefined"
-  ) {
-    // TODO Some sort of unexpected state error if we end up here... Or do we
-    // go back in history? That won't work for dApp popovers though.
-    return <></>
-  }
 
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
@@ -77,9 +69,17 @@ export default function SignTransaction(): ReactElement {
           handleReject={handleReject}
           detailPanel={infoBlock}
           reviewPanel={textualInfoBlock}
-          extraPanel={<SignTransactionPanelSwitcher />}
+          extraPanel={
+            title === "Contract interaction" ? (
+              <SignTransactionPanelCombined />
+            ) : (
+              <SignTransactionPanelSwitcher />
+            )
+          }
           isTransactionSigning={isTransactionSigning}
-          isArbitraryDataSigningRequired={!!transactionDetails.input}
+          isArbitraryDataSigningRequired={
+            !!(transactionDetails?.input ?? false)
+          }
         />
       )}
     </SignTransactionInfoProvider>

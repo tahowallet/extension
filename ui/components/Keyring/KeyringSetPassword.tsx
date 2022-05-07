@@ -1,11 +1,21 @@
-import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
 import React, { ReactElement, useEffect, useState } from "react"
+import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
+import {
+  setNewDefaultWalletValue,
+  selectDefaultWallet,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
-import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useAreKeyringsUnlocked,
+  useBackgroundSelector,
+} from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import titleStyle from "../Onboarding/titleStyle"
 import SharedBackButton from "../Shared/SharedBackButton"
+import SharedBanner from "../Shared/SharedBanner"
+import SharedToggleButton from "../Shared/SharedToggleButton"
 
 export default function KeyringSetPassword(): ReactElement {
   const [password, setPassword] = useState("")
@@ -14,6 +24,7 @@ export default function KeyringSetPassword(): ReactElement {
   const history = useHistory()
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const defaultWallet = useBackgroundSelector(selectDefaultWallet)
 
   const dispatch = useBackgroundDispatch()
 
@@ -58,9 +69,19 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="wordmark" />
       </div>
       <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
-      <div className="subtitle">
-        You will NOT be able to change this password for now.
+
+      <div className="warning_wrap">
+        <SharedBanner
+          icon="notif-attention"
+          iconColor="var(--attention)"
+          iconAriaLabel="password attention"
+        >
+          <div className="warning_content">
+            You will NOT be able to change this password for now
+          </div>
+        </SharedBanner>
       </div>
+
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -81,6 +102,15 @@ export default function KeyringSetPassword(): ReactElement {
             label="Repeat Password"
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
+          />
+        </div>
+        <div className="set_as_default_ask">
+          Set Tally Ho as default wallet
+          <SharedToggleButton
+            onChange={(toggleValue) => {
+              dispatch(setNewDefaultWalletValue(toggleValue))
+            }}
+            value={defaultWallet}
           />
         </div>
         <SharedButton
@@ -129,20 +159,32 @@ export default function KeyringSetPassword(): ReactElement {
             width: 211px;
           }
           .repeat_password_wrap {
+            margin-bottom: 25px;
             margin-top: 33px;
-            margin-bottom: 50px;
+          }
+          .set_as_default_ask {
+            display: flex;
+            width: 262px;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--green-20);
+            font-weight: 500;
+            margin-bottom: 40px;
           }
           .restore {
             display: none; // TODO Implement account restoration.
             position: fixed;
             bottom: 26px;
           }
-          .subtitle {
-            color: var(--green-40);
-            width: 307px;
-            text-align: center;
+          .warning_wrap {
+            margin-top: 16px;
+            margin-bottom: 24px;
+          }
+          .warning_content {
+            color: var(--attention);
+            font-weight: 500;
+            font-size: 16px;
             line-height: 24px;
-            margin-top: 4px;
           }
         `}
       </style>

@@ -2,6 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const defaultSettings = {
@@ -29,6 +30,7 @@ export type Events = {
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
+  addOrEditAddressName: { name: string; address: HexString }
 }
 
 export const emitter = new Emittery<Events>()
