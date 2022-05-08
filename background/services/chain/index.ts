@@ -18,6 +18,7 @@ import {
   SignedEVMTransaction,
   BlockPrices,
   LegacyEVMTransactionRequest,
+  sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import { HOUR } from "../../constants"
@@ -111,7 +112,9 @@ interface Events extends ServiceLifecycleEvents {
  *   case a service needs to interact with a network directly.
  */
 export default class ChainService extends BaseService<Events> {
-  providers: { [networkName: string]: SerialFallbackProvider }
+  providers: { evm: { [networkName: string]: SerialFallbackProvider } } = {
+    evm: {},
+  }
 
   subscribedAccounts: {
     account: string
@@ -139,8 +142,10 @@ export default class ChainService extends BaseService<Events> {
    * for expiration purposes.
    */
   private transactionsToRetrieve: {
-    [networkName: string]: { hash: HexString; firstSeen: UNIXTime }[]
-  }
+    network: EVMNetwork
+    hash: HexString
+    firstSeen: UNIXTime
+  }[]
 
   static create: ServiceCreatorFunction<
     Events,
@@ -193,30 +198,30 @@ export default class ChainService extends BaseService<Events> {
       ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
       : [ETHEREUM]
 
-    this.providers = Object.fromEntries(
-      this.supportedNetworks.map((network) => [
-        network.name,
-        new SerialFallbackProvider(
-          network,
-          () =>
-            new AlchemyWebSocketProvider(
-              getNetwork(Number(network.chainID)),
-              ALCHEMY_KEY
-            ),
-          () =>
-            new AlchemyProvider(
-              getNetwork(Number(network.chainID)),
-              ALCHEMY_KEY
-            )
-        ),
-      ])
-    )
+    this.providers = {
+      evm: Object.fromEntries(
+        this.supportedNetworks.map((network) => [
+          network.chainID,
+          new SerialFallbackProvider(
+            network,
+            () =>
+              new AlchemyWebSocketProvider(
+                getNetwork(Number(network.chainID)),
+                ALCHEMY_KEY
+              ),
+            () =>
+              new AlchemyProvider(
+                getNetwork(Number(network.chainID)),
+                ALCHEMY_KEY
+              )
+          ),
+        ])
+      ),
+    }
 
     this.subscribedAccounts = []
     this.subscribedNetworks = []
-    this.transactionsToRetrieve = Object.fromEntries(
-      this.supportedNetworks.map((network) => [network.name, []])
-    )
+    this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
   }
@@ -238,6 +243,7 @@ export default class ChainService extends BaseService<Events> {
             const block = blockFromEthersBlock(network, result)
             await this.db.addBlock(block)
           }),
+
           this.subscribeToNewHeads(network),
         ])
         if (network.chainID !== ETHEREUM.chainID) {
@@ -281,7 +287,7 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers[network.name]
+    return this.providers.evm[network.chainID]
   }
 
   /**
@@ -329,6 +335,7 @@ export default class ChainService extends BaseService<Events> {
       maxPriorityFeePerGas: partialRequest.maxPriorityFeePerGas ?? 0n,
       input: partialRequest.input ?? null,
       type: 2 as const,
+      network,
       chainID: network.chainID,
       nonce: partialRequest.nonce,
       annotation: partialRequest.annotation,
@@ -392,14 +399,13 @@ export default class ChainService extends BaseService<Events> {
       return transactionRequest as EIP1559TransactionRequest & { nonce: number }
     }
 
-    const { chainID } = transactionRequest
+    const { network, chainID } = transactionRequest
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+    const provider = this.providerForNetworkOrThrow(network)
 
     const chainNonce =
-      (await this.providers[ETHEREUM.name].getTransactionCount(
-        transactionRequest.from,
-        "latest"
-      )) - 1
+      (await provider.getTransactionCount(transactionRequest.from, "latest")) -
+      1
     const existingNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
         normalizedAddress
@@ -486,19 +492,20 @@ export default class ChainService extends BaseService<Events> {
     return this.db.getAccountsToTrack()
   }
 
-  async getLatestBaseAccountBalance(
-    addressNetwork: AddressOnNetwork
-  ): Promise<AccountBalance> {
-    const balance = await this.providerForNetworkOrThrow(
-      addressNetwork.network
-    ).getBalance(addressNetwork.address)
+  async getLatestBaseAccountBalance({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<AccountBalance> {
+    const balance = await this.providerForNetworkOrThrow(network).getBalance(
+      address
+    )
     const accountBalance: AccountBalance = {
-      address: addressNetwork.address,
+      address,
+      network,
       assetAmount: {
         asset: ETH,
         amount: balance.toBigInt(),
       },
-      network: addressNetwork.network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
@@ -603,16 +610,13 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): Promise<void> {
-    if (!(network.name in this.transactionsToRetrieve)) {
-      this.transactionsToRetrieve[network.name] = []
-    }
+    const seen = this.transactionsToRetrieve.some(
+      ({ network: queuedNetwork, hash }) =>
+        sameNetwork(network, queuedNetwork) && hash === txHash
+    )
 
-    const toRetrieve = this.transactionsToRetrieve[network.name]
-
-    const seen = new Set((toRetrieve ?? []).map(({ hash }) => hash))
-
-    if (!seen.has(txHash)) {
-      toRetrieve.push({ hash: txHash, firstSeen })
+    if (!seen) {
+      this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
     }
   }
 
@@ -694,7 +698,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async send(method: string, params: unknown[]): Promise<unknown> {
-    return this.providers[ETHEREUM.name].send(method, params)
+    return this.providerForNetworkOrThrow(ETHEREUM).send(method, params)
   }
 
   /* *****************
@@ -851,66 +855,94 @@ export default class ChainService extends BaseService<Events> {
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
-    // TODO make this multi network
-    const toHandle = this.transactionsToRetrieve[ETHEREUM.name].slice(
-      0,
-      TRANSACTIONS_RETRIEVED_PER_ALARM
-    )
-    this.transactionsToRetrieve[ETHEREUM.name] = this.transactionsToRetrieve[
-      ETHEREUM.name
-    ].slice(TRANSACTIONS_RETRIEVED_PER_ALARM)
+    const fetchedByNetwork: { [chainID: string]: number } = {}
 
-    const network = ETHEREUM
+    // Drop all transactions that weren't retrieved from the queue.
+    this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
+      async ({ network, hash, firstSeen }) => {
+        fetchedByNetwork[network.chainID] ??= 0
 
-    toHandle.forEach(async ({ hash, firstSeen }) => {
-      try {
-        // TODO make this multi network
-        const result = await this.providers[ETHEREUM.name].getTransaction(hash)
-
-        const transaction = transactionFromEthersTransaction(result, network)
-
-        // TODO make this provider specific
-        await this.saveTransaction(transaction, "alchemy")
-
-        if (!transaction.blockHash && !transaction.blockHeight) {
-          this.subscribeToTransactionConfirmation(
-            transaction.network,
-            transaction
-          )
-        } else if (transaction.blockHash) {
-          // Get relevant block data.
-          await this.getBlockData(transaction.network, transaction.blockHash)
-          // Retrieve gas used, status, etc
-          this.retrieveTransactionReceipt(transaction.network, transaction)
+        if (
+          fetchedByNetwork[network.chainID] >= TRANSACTIONS_RETRIEVED_PER_ALARM
+        ) {
+          // Once a given network has hit its limit, include any additional
+          // transactions in the updated queue.
+          return true
         }
-      } catch (error) {
-        logger.error(`Error retrieving transaction ${hash}`, error)
-        if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-          this.queueTransactionHashToRetrieve(network, hash, firstSeen)
-        } else {
-          logger.warn(
-            `Transaction ${hash} is too old to keep looking for it; treating ` +
-              "it as expired."
-          )
 
-          this.db.getTransaction(network, hash).then((existingTransaction) => {
-            if (existingTransaction !== null) {
-              logger.debug(
-                "Found existing transaction for expired lookup; marking as " +
-                  "failed if no other status exists."
-              )
-              this.saveTransaction(
-                // Don't override an already-persisted successful status with
-                // an expiration-based failed status, but do set status to
-                // failure if no transaction was seen.
-                { status: 0, ...existingTransaction },
-                "local"
-              )
-            }
-          })
-        }
+        // If more transactions can be retrieved in this alarm, bump the count,
+        // retrieve the transaction, and drop from the updated queue.
+        fetchedByNetwork[network.chainID] += 1
+        this.retrieveTransaction(network, hash, firstSeen)
+        return false
       }
-    })
+    )
+  }
+
+  /**
+   * Retrieve a confirmed or unconfirmed transaction's details, saving the
+   * results. If the transaction is confirmed, triggers retrieval and storage
+   * of transaction receipt information as well. If lookup fails, re-queues the
+   * transaction for a future retry until a constant lifetime is exceeded, at
+   * which point the transaction is marked as dropped unless it was
+   * independently marked as successful.
+   *
+   * @param network the EVM network we're interested in
+   * @param transaction the confirmed transaction we're interested in
+   */
+  private async retrieveTransaction(
+    network: EVMNetwork,
+    hash: string,
+    firstSeen: number
+  ): Promise<void> {
+    try {
+      const result = await this.providerForNetworkOrThrow(
+        network
+      ).getTransaction(hash)
+
+      const transaction = transactionFromEthersTransaction(result, network)
+
+      // TODO make this provider type specific
+      await this.saveTransaction(transaction, "alchemy")
+
+      if (!transaction.blockHash && !transaction.blockHeight) {
+        this.subscribeToTransactionConfirmation(
+          transaction.network,
+          transaction
+        )
+      } else if (transaction.blockHash) {
+        // Get relevant block data.
+        await this.getBlockData(transaction.network, transaction.blockHash)
+        // Retrieve gas used, status, etc
+        this.retrieveTransactionReceipt(transaction.network, transaction)
+      }
+    } catch (error) {
+      logger.error(`Error retrieving transaction ${hash}`, error)
+      if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
+        this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+      } else {
+        logger.warn(
+          `Transaction ${hash} is too old to keep looking for it; treating ` +
+            "it as expired."
+        )
+
+        this.db.getTransaction(network, hash).then((existingTransaction) => {
+          if (existingTransaction !== null) {
+            logger.debug(
+              "Found existing transaction for expired lookup; marking as " +
+                "failed if no other status exists."
+            )
+            this.saveTransaction(
+              // Don't override an already-persisted successful status with
+              // an expiration-based failed status, but do set status to
+              // failure if no transaction was seen.
+              { status: 0, ...existingTransaction },
+              "local"
+            )
+          }
+        })
+      }
+    }
   }
 
   /**
