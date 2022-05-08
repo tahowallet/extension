@@ -199,8 +199,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.supportedNetworks = USE_MULTI_NETWORK
-      ? // Just Polygon for now since we don't need fancy Alchemy ninjitsu to get it to work.
-        [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
+      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
       : [ETHEREUM]
 
     this.providers = {
@@ -497,20 +496,20 @@ export default class ChainService extends BaseService<Events> {
     return this.db.getAccountsToTrack()
   }
 
-  async getLatestBaseAccountBalance(
-    addressNetwork: AddressOnNetwork
-  ): Promise<AccountBalance> {
-    const { network, address } = addressNetwork
-    const balance = await this.providerForNetworkOrThrow(
-      addressNetwork.network
-    ).getBalance(address)
+  async getLatestBaseAccountBalance({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<AccountBalance> {
+    const balance = await this.providerForNetworkOrThrow(network).getBalance(
+      address
+    )
     const accountBalance: AccountBalance = {
       address,
+      network,
       assetAmount: {
         asset: network.baseAsset,
         amount: balance.toBigInt(),
       },
-      network,
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
