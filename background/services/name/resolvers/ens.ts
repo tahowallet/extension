@@ -33,11 +33,6 @@ export default function ensResolverFor(
       name,
       network,
     }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
-      // Lets assume that we can use ENS to look up names for any EVM compatible chain for now.
-      if (network.family !== "EVM") {
-        return undefined
-      }
-
       const address = await chainService
         // Use ENS to Ethereum mainnet to resolve addresses on EVM networks (Polygon, Arbitrum, etc..)
         .providerForNetwork(ETHEREUM)
