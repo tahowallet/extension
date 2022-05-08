@@ -50,14 +50,14 @@ export async function getAssetTransfers(
     // excludeZeroValue: false,
   }
 
-  // Default Ethereum Mainnet categories
+  // Default Ethereum Mainnet categories per the documentation:
   // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-ethereum-mainnet
   let category = ["external", "internal", "token", "erc20", "erc1155"]
 
   if (addressOnNetwork.network.name !== "Ethereum") {
-    // Default L2 categories
+    // Default L2 categories per the documentation:
     // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
-    category = ["token", "erc20", "erc721", "erc1155"]
+    category = ["token", "erc20", "erc1155"]
   }
   // TODO handle partial failure
   const rpcResponses = await Promise.all([
