@@ -21,7 +21,12 @@ import {
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import { HOUR } from "../../constants"
-import { ETHEREUM, POLYGON } from "../../constants/networks"
+import {
+  ETHEREUM,
+  POLYGON,
+  ARBITRUM_ONE,
+  OPTIMISM,
+} from "../../constants/networks"
 import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -190,7 +195,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = USE_MULTI_NETWORK
       ? // Just Polygon for now since we don't need fancy Alchemy ninjitsu to get it to work.
-        [ETHEREUM, POLYGON]
+        [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
       : [ETHEREUM]
 
     this.providers = Object.fromEntries(
