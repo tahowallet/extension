@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAddressCount,
+  selectAccountAndTimestampedActivities,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
@@ -10,11 +13,11 @@ export default function Overview(): ReactElement {
   )
 
   const { initializationLoadingTimeExpired, numberOfAddresses } =
-    useBackgroundSelector((background) => {
+    useBackgroundSelector((state) => {
       return {
-        numberOfAddresses: Object.keys(background.account.accountsData).length,
+        numberOfAddresses: getAddressCount(state),
         initializationLoadingTimeExpired:
-          background.ui?.initializationLoadingTimeExpired,
+          state.ui?.initializationLoadingTimeExpired,
       }
     })
 

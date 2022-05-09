@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
+import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
@@ -56,7 +57,7 @@ export default function OnboardingInfoIntro(): ReactElement {
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
   const hasAccounts = useBackgroundSelector(
-    (state) => Object.keys(state.account.accountsData).length > 0
+    (state) => getAddressCount(state) > 0
   )
 
   if (redirectToAddWallet) {

@@ -104,8 +104,8 @@ const computeCombinedAssetAmountsData = (
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
   const { address, network } = state.ui.selectedAccount
-  return state.account.accountsData.evm[normalizeEVMAddress(address)][
-    network.chainID
+  return state.account.accountsData.evm[network.chainID][
+    normalizeEVMAddress(address)
   ]
 }
 export const getAssetsState = (state: RootState): AssetsState => state.assets
@@ -240,11 +240,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
     sourcesByAddress,
     mainCurrencySymbol
   ): CategorizedAccountTotals => {
-    return Object.entries(accounts.accountsData.evm)
-      .map(
-        ([address, accountDataByChainID]) =>
-          [address, accountDataByChainID[currentNetwork.chainID]] as const
-      )
+    return Object.entries(accounts.accountsData.evm[currentNetwork.chainID])
       .filter(([, accountData]) => typeof accountData !== "undefined")
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
@@ -353,4 +349,12 @@ export const selectCurrentAccountTotal = createSelector(
   selectCurrentAccount,
   (categorizedAccountTotals, currentAccount): AccountTotal | undefined =>
     findAccountTotal(categorizedAccountTotals, currentAccount)
+)
+
+export const getAddressCount = createSelector(
+  (state: RootState) => state.account.accountsData,
+  (accountsData) =>
+    Object.values(accountsData.evm).flatMap((chainAddresses) =>
+      Object.keys(chainAddresses)
+    ).length
 )
