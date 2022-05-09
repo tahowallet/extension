@@ -52,6 +52,7 @@
     "@tallyho/window-provider": "0.0.1",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
+    "webext-redux": "^2.1.7",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"
   },
