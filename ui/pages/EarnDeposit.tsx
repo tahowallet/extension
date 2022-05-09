@@ -23,7 +23,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/earn"
 
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
-import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
+import { DOGGO } from "@tallyho/tally-background/constants"
 import { HexString } from "@tallyho/tally-background/types"
 
 import { useHistory, useLocation } from "react-router-dom"
@@ -138,7 +138,7 @@ export default function EarnDeposit(): ReactElement {
   const pendingRewards = fromFixedPointNumber(
     {
       amount: vaultData?.pendingRewards || 0n,
-      decimals: doggoTokenDecimalDigits,
+      decimals: DOGGO.decimals,
     },
     2
   )

@@ -4,7 +4,7 @@ import { HexString } from "../../types"
 import { AssetsState } from "../assets"
 import { getContract, getCurrentTimestamp } from "../utils/contract-utils"
 import VAULT_ABI from "../../lib/vault"
-import { doggoTokenDecimalDigits } from "../../constants"
+import { DOGGO } from "../../constants"
 import getDoggoPrice from "./getDoggoPrice"
 import getTokenPrice from "./getTokenPrice"
 import { sameEVMAddress } from "../../lib/utils"
@@ -27,7 +27,7 @@ function getYearlyRewardsValue(
   periodsPerYear: BigNumber
 ) {
   const rewardsRemainingValue = huntingGroundRemainingRewards
-    .div(BigNumber.from("10").pow(doggoTokenDecimalDigits))
+    .div(BigNumber.from("10").pow(DOGGO.decimals))
     .mul(rewardTokenPrice)
     .div(BigNumber.from("10").pow(10))
   const totalYearlyRewardsValue = rewardsRemainingValue.mul(periodsPerYear)

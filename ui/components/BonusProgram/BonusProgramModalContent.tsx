@@ -3,12 +3,12 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectReferrerStats } from "@tallyho/tally-background/redux-slices/claim"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { DOGGO } from "@tallyho/tally-background/constants"
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import { doggoTokenDecimalDigits } from "../../utils/constants"
 
 export default function BonusProgramModalContent(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -18,7 +18,7 @@ export default function BonusProgramModalContent(): ReactElement {
   const bonusAmount = fromFixedPointNumber(
     {
       amount: bonusTotal,
-      decimals: doggoTokenDecimalDigits,
+      decimals: DOGGO.decimals,
     },
     2
   )

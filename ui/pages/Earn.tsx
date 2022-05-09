@@ -5,7 +5,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
-import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
+import { DOGGO } from "@tallyho/tally-background/constants"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
 import React, { ReactElement, useEffect, useState } from "react"
@@ -245,7 +245,7 @@ export default function Earn(): ReactElement {
   const userPendingRewards = vaultsWithLockedValues
     ?.map((item) => {
       return fromFixedPointNumber(
-        { amount: item.pendingRewards, decimals: doggoTokenDecimalDigits },
+        { amount: item.pendingRewards, decimals: DOGGO.decimals },
         2
       )
     })
