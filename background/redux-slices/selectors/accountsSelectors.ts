@@ -23,6 +23,8 @@ import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./keyringsSelectors"
+import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
+import { DOGGO } from "../../constants/assets"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -76,16 +78,21 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
+      const isForciblyDisplayed =
+        assetAmount.asset.symbol === DOGGO.symbol ||
+        // TODO Update filter to let through only the base asset of the current
+        // TODO network.
+        BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol] !== undefined
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      // TODO Update below to be network responsive
-      const isPresent =
-        assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
+      const isPresent = assetAmount.decimalAmount > 0
 
       // Hide dust and missing amounts.
-      return hideDust ? isNotDust && isPresent : isPresent
+      return (
+        isForciblyDisplayed || (hideDust ? isNotDust && isPresent : isPresent)
+      )
     })
 
   return { combinedAssetAmounts, totalMainCurrencyAmount }
