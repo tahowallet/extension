@@ -12,7 +12,7 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
+import { BASE_ASSETS, BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -523,10 +523,7 @@ export default class IndexingService extends BaseService<Events> {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
-      const basicPrices = await getPrices(
-        [BTC, ETH] as CoinGeckoAsset[],
-        FIAT_CURRENCIES
-      )
+      const basicPrices = await getPrices(BASE_ASSETS, FIAT_CURRENCIES)
 
       // kick off db writes and event emission, don't wait for the promises to
       // settle
@@ -545,7 +542,11 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
     } catch (e) {
-      logger.error("Error getting base asset prices", BTC, ETH, FIAT_CURRENCIES)
+      logger.error(
+        "Error getting base asset prices",
+        BASE_ASSETS,
+        FIAT_CURRENCIES
+      )
     }
 
     // get the prices of all assets to track and save them
