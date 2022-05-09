@@ -50,10 +50,14 @@ function waitAnd<T, E extends Promise<T>>(
  * ms to back off before making the next attempt.
  */
 function backedOffMs(backoffCount: number): number {
-  const backoffSlotStart = BASE_BACKOFF_MS * 2 ** backoffCount
-  const backoffSlotEnd = BASE_BACKOFF_MS * 2 ** (backoffCount + 1)
+  if (backoffCount === 0) {
+    return BASE_BACKOFF_MS
+  }
+  return 1_000
+  // const backoffSlotStart = BASE_BACKOFF_MS * 2 ** backoffCount
+  // const backoffSlotEnd = BASE_BACKOFF_MS * 2 ** (backoffCount + 1)
 
-  return backoffSlotStart + Math.random() * (backoffSlotEnd - backoffSlotStart)
+  // return backoffSlotStart + Math.random() * (backoffSlotEnd - backoffSlotStart)
 }
 
 /**
