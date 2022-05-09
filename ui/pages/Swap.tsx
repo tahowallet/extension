@@ -14,7 +14,7 @@ import {
   SwapQuoteRequest,
   fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { HIDE_SWAP_REWARDS } from "@tallyho/tally-background/features/features"
+import { HIDE_SWAP_REWARDS } from "@tallyho/tally-background/features"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,

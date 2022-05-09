@@ -21,7 +21,7 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { RESOLVE_UNS_NAMES } from "../../features/features"
+import { RESOLVE_UNS_NAMES } from "../../features"
 
 export { NameResolverSystem }
 

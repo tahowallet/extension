@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { EARN_COMING_SOON } from "@tallyho/tally-background/features/features"
+import { EARN_COMING_SOON } from "@tallyho/tally-background/features"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
 import SignData from "../pages/SignData"

@@ -18,7 +18,7 @@ import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
 import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
-import { USE_MAINNET_FORK } from "../../features/features"
+import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
 
 interface ProviderManager {

@@ -5,7 +5,7 @@ import { parseUnits } from "ethers/lib/utils"
 import Emittery from "emittery"
 
 import { AnyAsset } from "../assets"
-import { USE_MAINNET_FORK } from "../features/features"
+import { USE_MAINNET_FORK } from "../features"
 import { ERC20_ABI } from "../lib/erc20"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import VAULT_ABI from "../lib/vault"

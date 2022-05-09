@@ -11,7 +11,7 @@ import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { USE_MAINNET_FORK } from "../../features/features"
+import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
 import { SigningMethod } from "../../utils/signing"
 
@@ -115,21 +115,22 @@ export default class SigningService extends BaseService<Events> {
   }
 
   private async signTransactionWithNonce(
-    network: EVMNetwork,
     transactionWithNonce: EIP1559TransactionRequest & { nonce: number },
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
     switch (signingMethod.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
-          network,
           transactionWithNonce,
           signingMethod.deviceID,
           signingMethod.path
         )
       case "keyring":
         return this.keyringService.signTransaction(
-          { address: transactionWithNonce.from, network },
+          {
+            address: transactionWithNonce.from,
+            network: transactionWithNonce.network,
+          },
           transactionWithNonce
         )
       default:
@@ -157,20 +158,11 @@ export default class SigningService extends BaseService<Events> {
     transactionRequest: EIP1559TransactionRequest,
     signingMethod: SigningMethod
   ): Promise<SignedEVMTransaction> {
-    const network = USE_MAINNET_FORK
-      ? FORK
-      : EVM_NETWORKS_BY_CHAIN_ID[transactionRequest.chainID]
-
-    if (typeof network === "undefined") {
-      throw new Error(`Unknown chain ID ${transactionRequest.chainID}.`)
-    }
-
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
     try {
       const signedTx = await this.signTransactionWithNonce(
-        network,
         transactionWithNonce,
         signingMethod
       )
