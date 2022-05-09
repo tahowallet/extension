@@ -4,7 +4,7 @@ import { Eligible } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
-import { ETHEREUM } from "../../constants"
+import { DOGGO, ETHEREUM } from "../../constants"
 import { sameNetwork } from "../../networks"
 import { ClaimWithFriends } from "./contracts"
 import IndexingService from "../indexing"
@@ -63,6 +63,7 @@ export default class DoggoService extends BaseService<Events> {
     huntingGrounds.forEach(({ network, asset }) => {
       this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
     })
+    this.indexingService.addAssetToTrack(DOGGO)
 
     this.indexingService.addAssetToTrack({
       contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
