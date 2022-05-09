@@ -94,6 +94,41 @@ const computeCombinedAssetAmountsData = (
         isForciblyDisplayed || (hideDust ? isNotDust && isPresent : isPresent)
       )
     })
+    .sort((asset1, asset2) => {
+      // Always sort DOGGO above everything.
+      if (asset1.asset.symbol === DOGGO.symbol) {
+        return -1
+      }
+      if (asset2.asset.symbol === DOGGO.symbol) {
+        return 1
+      }
+
+      const leftIsBaseAsset = asset1.asset.symbol in BASE_ASSETS_BY_SYMBOL
+      const rightIsBaseAsset = asset2.asset.symbol in BASE_ASSETS_BY_SYMBOL
+
+      // Always sort base assets above non-base assets.
+      if (leftIsBaseAsset !== rightIsBaseAsset) {
+        return leftIsBaseAsset ? -1 : 1
+      }
+
+      // If the assets are both base assets or neither is a base asset, compare
+      // by main currency amount.
+      if (
+        asset1.mainCurrencyAmount !== undefined &&
+        asset2.mainCurrencyAmount !== undefined
+      ) {
+        return asset2.mainCurrencyAmount - asset1.mainCurrencyAmount
+      }
+
+      if (asset1.mainCurrencyAmount === asset2.mainCurrencyAmount) {
+        // If both assets are missing a main currency amount, compare symbols
+        // lexicographically.
+        return asset1.asset.symbol.localeCompare(asset2.asset.symbol)
+      }
+
+      // If only one asset has a main currency amount, it wins.
+      return asset1.mainCurrencyAmount === undefined ? 1 : -1
+    })
 
   return { combinedAssetAmounts, totalMainCurrencyAmount }
 }
