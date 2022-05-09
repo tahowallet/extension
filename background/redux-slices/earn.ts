@@ -23,7 +23,7 @@ import { enrichAssetAmountWithMainCurrencyValues } from "./utils/asset-utils"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
 import YEARN_VAULT_ABI from "../lib/yearnVault"
-import { getPoolAPR, getTokenPrice } from "./earn-utils"
+import { getPoolAPR, getTokenPrice, tokenIcons } from "./earn-utils"
 
 export type ApprovalTargetAllowance = {
   contractAddress: HexString
@@ -105,7 +105,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
     },
-    icons: ["https://cryptologos.cc/logos/thumbs/aave.png?v=022"],
+    icons: tokenIcons.AAVE,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -125,7 +125,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
     },
-    icons: ["ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg"],
+    icons: tokenIcons.UNI,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -145,10 +145,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x3A283D9c08E8b55966afb64C515f5143cf907611",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
-      "ipfs://bafybeicpyu35mpptkxvbcfbzmlaefiqlj7layt5oolcbjh5cc5vfkyi7c4",
-    ],
+    icons: tokenIcons.crvCVXETH,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -168,10 +165,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x29059568bB40344487d62f7450E78b8E6C74e0e5",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
-      "https://cryptologos.cc/logos/thumbs/yearn-finance.png?v=022",
-    ],
+    icons: tokenIcons["YFIETH-f"],
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -191,9 +185,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
     },
-    icons: [
-      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F/logo.png",
-    ],
+    icons: tokenIcons.SNX,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -213,7 +205,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2",
     },
-    icons: ["https://cryptologos.cc/logos/thumbs/sushiswap.png?v=022"],
+    icons: tokenIcons.SUSHI,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -233,9 +225,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0xf4d2888d29D722226FafA5d9B24F9164c092421E",
     },
-    icons: [
-      "ipfs://bafybeia64nloazn7cxgwema5o26l2zjbxufb5kb5dxea6dbpretuxoappq",
-    ],
+    icons: tokenIcons.LOOKS,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -255,7 +245,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC",
     },
-    icons: ["https://s2.coinmarketcap.com/static/img/coins/64x64/5566.png"],
+    icons: tokenIcons.KEEP,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -275,10 +265,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0xCb08717451aaE9EF950a2524E33B6DCaBA60147B",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
-      "ipfs://bafybeib53hx56um4xexwtaqjo3u3ridppnpblfucqdbotwlqcadlfyc2a4",
-    ],
+    icons: tokenIcons.crvTETH,
     totalRewards: BigNumber.from("0x165a0bc0").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
@@ -298,10 +285,7 @@ export const initialVaults: AvailableVault[] = [
       decimals: 18,
       contractAddress: "0x93a08986ec9a74CB9E001702F30202f3749ceDC4",
     },
-    icons: [
-      "https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880",
-      "https://avatars.githubusercontent.com/u/77035304?s=200&v=4",
-    ],
+    icons: tokenIcons.DOGGOETH,
     totalRewards: BigNumber.from("0x8f0d1800").toBigInt(),
     userDeposited: 0n,
     totalDeposited: 0n,
