@@ -1,4 +1,6 @@
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { POLYGON } from "@tallyho/tally-background/constants"
+import { MULTI_NETWORK } from "@tallyho/tally-background/features"
 import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
@@ -145,9 +147,11 @@ export const useAddressOrNameValidation: AsyncValidationHook<
   const validatingValue = useRef<string | undefined>(undefined)
   const dispatch = useBackgroundDispatch()
 
-  const { network } = useBackgroundSelector(selectCurrentAccount)
-  // @dev uncomment for L2 Testing
-  // const network = POLYGON
+  let { network } = useBackgroundSelector(selectCurrentAccount)
+
+  if (MULTI_NETWORK) {
+    network = POLYGON
+  }
 
   const handleInputChange = async (newValue: string) => {
     setRawValue(newValue)

@@ -5,6 +5,8 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { HexString } from "@tallyho/tally-background/types"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { MULTI_NETWORK } from "@tallyho/tally-background/features"
+import { POLYGON } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
@@ -17,10 +19,11 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
     AddressOnNetwork | undefined
   >(undefined)
 
-  const { network } = useBackgroundSelector(selectCurrentAccount)
+  let { network } = useBackgroundSelector(selectCurrentAccount)
 
-  // @dev uncomment for L2 testing
-  // const network = POLYGON
+  if (MULTI_NETWORK) {
+    network = POLYGON
+  }
 
   const handleNewAddress = (newAddress: HexString | undefined) => {
     if (newAddress === undefined) {
