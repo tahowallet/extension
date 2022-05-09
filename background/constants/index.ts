@@ -28,5 +28,7 @@ export const COMMUNITY_MULTISIG_ADDRESS =
 
 export const doggoTokenDecimalDigits = 18
 
+export * from "./assets"
+export * from "./base-assets"
 export * from "./currencies"
 export * from "./networks"

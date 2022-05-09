@@ -21,9 +21,7 @@ import {
   sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import { HOUR } from "../../constants"
-import { ETH } from "../../constants/currencies"
-import { ETHEREUM, ARBITRUM_ONE, OPTIMISM } from "../../constants/networks"
+import { ETH, HOUR, ETHEREUM, ARBITRUM_ONE, OPTIMISM } from "../../constants"
 import {
   MULTI_NETWORK as USE_MULTI_NETWORK,
   USE_MAINNET_FORK,

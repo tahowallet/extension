@@ -167,14 +167,13 @@ export default class IndexingService extends BaseService<Events> {
    *          the codebase. Fiat currencies are not included.
    */
   async getCachedAssets(network: EVMNetwork): Promise<AnyAsset[]> {
-    const baseAssets = [BTC, ETH]
     const customAssets = await this.db.getCustomAssetsByNetwork(network)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    return mergeAssets(
-      baseAssets,
+    return mergeAssets<FungibleAsset>(
+      BASE_ASSETS,
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
