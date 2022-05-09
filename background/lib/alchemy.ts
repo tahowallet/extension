@@ -152,7 +152,7 @@ export async function getTokenBalances(
 
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
     address,
-    uniqueTokens.length ? uniqueTokens : "DEFAULT_TOKENS",
+    uniqueTokens.length > 0 ? uniqueTokens : "DEFAULT_TOKENS",
   ])
 
   if (!isValidAlchemyTokenBalanceResponse(json)) {
