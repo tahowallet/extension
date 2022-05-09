@@ -290,7 +290,9 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers.evm[network.chainID]
+    return USE_MAINNET_FORK
+      ? this.providers.evm[ETHEREUM.chainID]
+      : this.providers.evm[network.chainID]
   }
 
   /**

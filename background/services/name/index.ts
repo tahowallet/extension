@@ -206,7 +206,7 @@ export default class NameService extends BaseService<Events> {
       normalizeAddressOnNetwork(addressOnNetwork)
 
     const cachedResolvedNameRecord =
-      this.cachedResolvedNames[network.family][network.chainID][
+      this.cachedResolvedNames[network.family]?.[network.chainID]?.[
         normalizedAddress
       ]
 
