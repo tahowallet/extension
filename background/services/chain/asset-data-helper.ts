@@ -19,7 +19,7 @@ import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
 import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
 import { USE_MAINNET_FORK } from "../../features"
-import { FORK } from "../../constants"
+import { DOGGO, FORK } from "../../constants"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -80,7 +80,7 @@ export default class AssetDataHelper {
         "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC", // KEEP
         "0xCb08717451aaE9EF950a2524E33B6DCaBA60147B", // crvTETH
         "0x93a08986ec9a74CB9E001702F30202f3749ceDC4", // DOGGOETH
-        "0xA0DDAEd22e3a8aa512C85a13F426165861922801", // DOGGO
+        DOGGO.contractAddress, // DOGGO
         "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
       ]
       const balances = tokens.map(async (token) => {
