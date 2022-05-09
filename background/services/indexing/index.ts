@@ -25,7 +25,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
-import { sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -402,7 +402,7 @@ export default class IndexingService extends BaseService<Events> {
       [contractAddress: string]: SmartContractFungibleAsset
     }>((acc, asset) => {
       const newAcc = { ...acc }
-      newAcc[asset.contractAddress.toLowerCase()] = asset
+      newAcc[normalizeEVMAddress(asset.contractAddress)] = asset
       return newAcc
     }, {})
 
@@ -410,7 +410,7 @@ export default class IndexingService extends BaseService<Events> {
     const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
-          listedAssetByAddress[contractAddress] ??
+          listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
           (await this.getKnownSmartContractAsset(
             addressNetwork.network,
             contractAddress
