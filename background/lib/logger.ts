@@ -77,11 +77,11 @@ function saveLog(
   const formattedInput = input
   for (let i = 0; i < input.length; i += 1) {
     const log = input[i]
-    if (log instanceof Object) {
+    if (typeof log === "object") {
       try {
         formattedInput[i] = JSON.stringify(log)
       } catch (e) {
-        // if we can't stringify thats OK
+        // if we can't stringify thats OK, we'll still see [object Object] in the logs.
       }
     }
   }
