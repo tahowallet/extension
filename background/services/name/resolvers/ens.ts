@@ -23,7 +23,7 @@ export default function ensResolverFor(
     canAttemptAddressResolution({ name, network }: NameOnNetwork): boolean {
       return (
         name.endsWith(".eth") &&
-        !!supportedNetworks.find((supportedNetwork) =>
+        supportedNetworks.some((supportedNetwork) =>
           sameNetwork(network, supportedNetwork)
         )
       )
