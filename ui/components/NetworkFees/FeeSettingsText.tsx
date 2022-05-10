@@ -51,14 +51,7 @@ export default function FeeSettingsText(): ReactElement {
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
     typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(
-          weiToGwei(
-            (estimatedFeesPerGas?.baseFeePerGas *
-              ESTIMATED_FEE_MULTIPLIERS_BY_TYPE[selectedFeeType]) /
-              10n
-          ),
-          0
-        )
+      ? truncateDecimalAmount(weiToGwei(networkSettings.values.maxFeePerGas), 0)
       : ""
 
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
