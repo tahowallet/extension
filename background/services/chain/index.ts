@@ -257,7 +257,7 @@ export default class ChainService extends BaseService<Events> {
       }
     }
 
-    Promise.all(
+    Promise.allSettled(
       accounts
         .flatMap((an) => [
           // subscribe to all account transactions
