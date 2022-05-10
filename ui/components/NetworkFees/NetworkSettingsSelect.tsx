@@ -33,10 +33,13 @@ type GasOption = {
   estimatedSpeed: string
   type: NetworkFeeTypeChosen
   estimatedGwei: string
+  maxPriorityGwei: string
   maxGwei: string
   dollarValue: string
   price: bigint
   estimatedFeePerGas: bigint
+  baseMaxFeePerGas: bigint
+  baseMaxGwei: string
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
 }
@@ -79,10 +82,13 @@ const gasOptionFromEstimate = (
     estimatedGwei: weiToGwei(
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
+    maxPriorityGwei: weiToGwei(maxPriorityFeePerGas),
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
     dollarValue: dollarValue ? `$${dollarValue}` : "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
+    baseMaxFeePerGas: BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas),
+    baseMaxGwei: weiToGwei(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)),
     price,
     maxFeePerGas,
     maxPriorityFeePerGas,
@@ -227,9 +233,14 @@ export default function NetworkSettingsSelect({
     dispatch(
       setCustomGas({
         maxPriorityFeePerGas: customMaxPriorityFeePerGas,
-        maxFeePerGas: customMaxBaseFee + customMaxPriorityFeePerGas,
+        maxFeePerGas:
+          BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
       })
     )
+  }
+
+  function gweiFloatToWei(float: number): bigint {
+    return (BigInt(float * 100) / 100n) * BigInt(1000000000)
   }
 
   if (CUSTOM_GAS_SELECT) {
@@ -260,13 +271,11 @@ export default function NetworkSettingsSelect({
                 <div className="input_wrap">
                   <SharedInput
                     label="Miner"
-                    value={`${
-                      Number(option.maxPriorityFeePerGas) / 1000000000 // @TODO Replace
-                    }`}
+                    value={`${parseFloat(option.maxPriorityGwei)}`}
                     onChange={(value) => {
                       updateCustomGas(
-                        option.maxFeePerGas - option.maxPriorityFeePerGas,
-                        BigInt(value) * BigInt(1000000000) // @TODO Replace
+                        option.baseMaxFeePerGas,
+                        gweiFloatToWei(parseFloat(value))
                       )
                     }}
                   />
@@ -274,14 +283,11 @@ export default function NetworkSettingsSelect({
                 <div className="option_right">
                   <div className="input_wrap">
                     <SharedInput
-                      value={`${
-                        (option.maxFeePerGas - option.maxPriorityFeePerGas) /
-                        BigInt(1000000000) // @TODO Replace
-                      }`}
+                      value={`${option.baseMaxGwei}`}
                       label="Max Base"
                       onChange={(value) => {
                         updateCustomGas(
-                          BigInt(value) * BigInt(1000000000), // @TODO Replace
+                          gweiFloatToWei(parseFloat(value)), // @TODO Replace
                           option.maxPriorityFeePerGas
                         )
                       }}
@@ -301,13 +307,10 @@ export default function NetworkSettingsSelect({
                   <div className="subtext">{option.estimatedSpeed}</div>
                 </div>
                 Miner:
-                {`${Number(option.maxPriorityFeePerGas) / 1000000000}`}
+                {`${option.maxPriorityGwei}`}
                 <div className="option_right">
                   Max Base:
-                  <div className="price">{`${
-                    BigInt(option.maxGwei) -
-                    option.maxPriorityFeePerGas / BigInt(1000000000) // @TODO Replace
-                  }`}</div>
+                  <div className="price">{`${option.baseMaxGwei}`}</div>
                 </div>
               </button>
             )}
