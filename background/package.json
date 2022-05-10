@@ -37,6 +37,7 @@
     "@ledgerhq/hw-app-eth": "^6.23.0",
     "@ledgerhq/hw-transport": "^6.20.0",
     "@ledgerhq/hw-transport-webusb": "^6.20.0",
+    "@redux-devtools/remote": "^0.7.4",
     "@tallyho/hd-keyring": "^0.3.3",
     "@tallyho/provider-bridge-shared": "0.0.1",
     "@tallyho/window-provider": "0.0.1",
@@ -56,14 +57,13 @@
     "webextension-polyfill": "^0.8.0"
   },
   "devDependencies": {
+    "@redux-devtools/cli": "^1.0.7",
     "@reduxjs/toolkit": "^1.6.1",
     "@types/webextension-polyfill": "^0.8.0",
     "crypto-browserify": "^3.12.0",
     "mockzilla": "^0.12.0",
     "mockzilla-webextension": "^0.13.0",
     "redux": "^4.1.1",
-    "remote-redux-devtools": "^0.5.16",
-    "remotedev-server": "^0.3.1",
     "ts-node": "^10.4.0",
     "webext-redux": "^2.1.7"
   }

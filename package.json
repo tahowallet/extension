@@ -20,7 +20,7 @@
     "generate:validators": "ts-node background/generate-validators.ts",
     "build": "webpack --mode=production",
     "dev": "webpack --mode=development --watch",
-    "devtools": "remotedev --hostname=localhost --port=8000",
+    "devtools": "redux-devtools --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
     "lint:config": "prettier -c '**/*.@(json|yaml|toml)'",
@@ -52,6 +52,7 @@
     "@tallyho/window-provider": "0.0.1",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
+    "webext-redux": "^2.1.7",
     "webext-options-sync": "^2.0.1",
     "webextension-polyfill": "^0.7.0"
   },
