@@ -246,7 +246,7 @@ export default class ChainService extends BaseService<Events> {
 
           this.subscribeToNewHeads(network),
         ])
-        if (network.chainID !== ETHEREUM.chainID) {
+        if (network.chainID === ETHEREUM.chainID) {
           // only block start to get Ethereum data
           await promises
         }
