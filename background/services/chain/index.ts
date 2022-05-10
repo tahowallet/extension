@@ -234,7 +234,8 @@ export default class ChainService extends BaseService<Events> {
     // get the latest blocks and subscribe for all support networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    this.supportedNetworks.forEach(async (network) => {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const network of this.supportedNetworks) {
       const provider = this.providerForNetwork(network)
       if (provider) {
         const promises = Promise.all([
@@ -248,12 +249,13 @@ export default class ChainService extends BaseService<Events> {
         ])
         if (network.chainID === ETHEREUM.chainID) {
           // only block start to get Ethereum data
+          // eslint-disable-next-line no-await-in-loop
           await promises
         }
       } else {
         logger.error(`Couldn't find provider for supported network ${network}`)
       }
-    })
+    }
 
     Promise.all(
       accounts
