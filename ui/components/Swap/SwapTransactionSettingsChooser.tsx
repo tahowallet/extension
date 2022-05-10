@@ -134,7 +134,6 @@ export default function SwapTransactionSettingsChooser({
             flex-grow: 2;
           }
           .row {
-            padding: 15px 0px;
             display: flex;
             align-items: center;
           }

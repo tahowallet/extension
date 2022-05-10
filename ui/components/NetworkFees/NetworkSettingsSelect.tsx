@@ -387,9 +387,6 @@ export default function NetworkSettingsSelect({
             text-align: left;
             flex-direction: column;
           }
-          .option_right {
-            text-align: right;
-          }
           .name,
           .price {
             color: var(--green--5);
