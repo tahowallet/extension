@@ -246,7 +246,9 @@ export default class ChainService extends BaseService<Events> {
           }),
 
           this.subscribeToNewHeads(network),
-        ])
+        ]).catch((e) => {
+          logger.error(e)
+        })
         if (network.chainID === ETHEREUM.chainID) {
           // only block start to get Ethereum data
           // eslint-disable-next-line no-await-in-loop
@@ -261,9 +263,13 @@ export default class ChainService extends BaseService<Events> {
       accounts
         .flatMap((an) => [
           // subscribe to all account transactions
-          this.subscribeToAccountTransactions(an),
+          this.subscribeToAccountTransactions(an).catch((e) => {
+            logger.error(e)
+          }),
           // do a base-asset balance check for every account
-          this.getLatestBaseAccountBalance(an).then(() => {}),
+          this.getLatestBaseAccountBalance(an).catch((e) => {
+            logger.error(e)
+          }),
         ])
         .concat(
           // TODO make multi-network
@@ -277,8 +283,17 @@ export default class ChainService extends BaseService<Events> {
                 logger.debug(
                   `Queuing pending transaction ${hash} for status lookup.`
                 )
-                this.queueTransactionHashToRetrieve(ETHEREUM, hash, firstSeen)
+                this.queueTransactionHashToRetrieve(
+                  ETHEREUM,
+                  hash,
+                  firstSeen
+                ).catch((e) => {
+                  logger.error(e)
+                })
               })
+            })
+            .catch((e) => {
+              logger.error(e)
             })
         )
     )
