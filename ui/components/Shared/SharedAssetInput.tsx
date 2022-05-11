@@ -197,6 +197,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             border-radius: 4px;
             border: 1px solid var(--green-60);
             padding-left: 16px;
+            padding-right: 56px;
             box-sizing: border-box;
             color: var(--green-40);
           }

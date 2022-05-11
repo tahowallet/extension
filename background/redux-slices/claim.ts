@@ -65,7 +65,7 @@ interface ClaimingState {
 
 const DOGGO_TOKEN_ADDRESS = DOGGO.contractAddress
 export const VOTE_WITH_FRIENDS_ADDRESS =
-  "0x81448b6aB39a3146000D1b2876A83cAb0696c56c"
+  "0x0036B3a9D385Ce2CC072cf4A26dE29aE3283DEd0"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address

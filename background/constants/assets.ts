@@ -10,7 +10,7 @@ export const DOGGO: SmartContractFungibleAsset = {
   name: "Doggo",
   symbol: "DOGGO",
   decimals: 18,
-  contractAddress: "0xA0DDAEd22e3a8aa512C85a13F426165861922801",
+  contractAddress: "0xdce3d2c2186e3E92af121F477dE76cBED2fc979F",
   homeNetwork: ETHEREUM,
   metadata: {
     tokenLists: [],

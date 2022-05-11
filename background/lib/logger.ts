@@ -74,11 +74,24 @@ function saveLog(
   input: unknown[],
   stackTrace: string[] | undefined
 ) {
+  const formattedInput = input
+  for (let i = 0; i < input.length; i += 1) {
+    const log = input[i]
+    if (typeof log === "object") {
+      try {
+        formattedInput[i] = JSON.stringify(log)
+      } catch (e) {
+        // if we can't stringify thats OK, we'll still see [object Object] in the logs.
+      }
+    }
+  }
   localStorage.setItem(
     "logs",
     `${(localStorage.getItem("logs") ?? "").slice(
       -50000
-    )}${purgeSensitiveFailSafe(`${logLabel}\n${input}\n${stackTrace}`)}\n\n`
+    )}${purgeSensitiveFailSafe(
+      `${logLabel}\n${formattedInput}\n${stackTrace}`
+    )}\n\n`
   )
 }
 
