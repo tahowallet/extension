@@ -17,6 +17,7 @@ interface Props<T> {
   parseAndValidate: (
     value: string
   ) => { parsed: T | undefined } | { error: string }
+  step?: number
 }
 
 export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
@@ -30,6 +31,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     onFocus,
     value: currentValue,
     errorMessage,
+    step = 1,
     autoFocus = false,
     autoSelect = false,
     parseAndValidate,
@@ -78,6 +80,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         className={classNames({
           error: errorMessage ?? parserError !== undefined,
         })}
+        step={step}
         ref={inputRef}
       />
       <label htmlFor={id}>{label}</label>
