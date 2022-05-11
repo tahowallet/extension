@@ -271,7 +271,7 @@ export default function NetworkSettingsSelect({
                 <div className="input_wrap">
                   <SharedInput
                     label="Miner"
-                    value={`${parseFloat(option.maxPriorityGwei)}`}
+                    value={`${option.maxPriorityGwei}`}
                     onChange={(value) => {
                       updateCustomGas(
                         option.baseMaxFeePerGas,
