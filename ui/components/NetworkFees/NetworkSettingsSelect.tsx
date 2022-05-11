@@ -344,6 +344,7 @@ export default function NetworkSettingsSelect({
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"
+            step={1000}
           />
         </div>
         <div className="max_fee">
