@@ -16,7 +16,7 @@ import delegates from "../static/delegates.json"
 import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
-import { doggoTokenDecimalDigits, HOUR } from "../constants"
+import { DOGGO, HOUR } from "../constants"
 import { USE_MAINNET_FORK } from "../features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
 import { ReferrerStats } from "../services/doggo/db"
@@ -63,7 +63,7 @@ interface ClaimingState {
   referrerStats: ReferrerStats
 }
 
-export const DOGGO_TOKEN_ADDRESS = "0xdce3d2c2186e3E92af121F477dE76cBED2fc979F"
+const DOGGO_TOKEN_ADDRESS = DOGGO.contractAddress
 export const VOTE_WITH_FRIENDS_ADDRESS =
   "0x0036B3a9D385Ce2CC072cf4A26dE29aE3283DEd0"
 
@@ -417,7 +417,7 @@ export const selectEligibility = createSelector(
     fromFixedPointNumber(
       {
         amount: BigInt(Number(claimState.eligibility?.amount || 0n)) || 0n,
-        decimals: doggoTokenDecimalDigits,
+        decimals: DOGGO.decimals,
       },
       0
     )

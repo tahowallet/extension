@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { BTC, ETH } from "./currencies"
+import { BTC, ETH } from "./base-assets"
 
 // TODO integrate this with /api/networks
 
