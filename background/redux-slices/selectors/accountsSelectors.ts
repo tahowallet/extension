@@ -25,6 +25,7 @@ import {
 } from "./keyringsSelectors"
 import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
 import { DOGGO } from "../../constants/assets"
+import { HIDE_TOKEN_FEATURES } from "../../features"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -79,7 +80,7 @@ const computeCombinedAssetAmountsData = (
     })
     .filter((assetAmount) => {
       const isForciblyDisplayed =
-        assetAmount.asset.symbol === DOGGO.symbol ||
+        (!HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol) ||
         // TODO Update filter to let through only the base asset of the current
         // TODO network.
         BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol] !== undefined
