@@ -434,10 +434,10 @@ export const updateVaults = createBackgroundAsyncThunk(
       const newUserLockedValue = userLockedValue
         .mul(pricePerShare)
         .div(BigNumber.from("10").pow(yearnVaultDecimals))
-      const totalSupply: BigNumber = await vaultContract.totalSupply()
-      const newTotalTVL = totalSupply
-        .mul(pricePerShare)
-        .div(BigNumber.from("10").pow(yearnVaultDecimals))
+      const totalSupply: BigNumber = await vaultContract.getTVL()
+      const newTotalTVL = totalSupply.div(
+        BigNumber.from("10").pow(yearnVaultDecimals)
+      )
 
       const earned: BigNumber = await vaultContract.earned(account)
 
