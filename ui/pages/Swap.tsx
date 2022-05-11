@@ -332,6 +332,18 @@ export default function Swap(): ReactElement {
           return
         }
 
+        if (
+          swapTransactionSettings.networkSettings.gasLimit !== BigInt(quote.gas)
+        ) {
+          setSwapTransactionSettings({
+            ...swapTransactionSettings,
+            networkSettings: {
+              ...swapTransactionSettings.networkSettings,
+              gasLimit: BigInt(quote.gas),
+              suggestedGasLimit: BigInt(quote.estimatedGas),
+            },
+          })
+        }
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
 
@@ -354,13 +366,7 @@ export default function Swap(): ReactElement {
         }
       }
     },
-    [
-      buyAsset,
-      dispatch,
-      sellAsset,
-      swapTransactionSettings.networkSettings.values.maxFeePerGas,
-      swapTransactionSettings.slippageTolerance,
-    ]
+    [buyAsset, dispatch, sellAsset, swapTransactionSettings]
   )
 
   const updateSellAsset = useCallback(
