@@ -5,7 +5,10 @@ import {
   selectAllowedPages,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { MULTI_NETWORK } from "@tallyho/tally-background/features"
+import {
+  HIDE_TOKEN_FEATURES,
+  MULTI_NETWORK,
+} from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
@@ -133,14 +136,16 @@ export default function TopMenu(): ReactElement {
                 }}
               />
             )}
-            <button
-              type="button"
-              aria-label="Rewards program"
-              className="gift_button"
-              onClick={() => {
-                setIsBonusProgramOpen(!isBonusProgramOpen)
-              }}
-            />
+            {!HIDE_TOKEN_FEATURES && (
+              <button
+                type="button"
+                aria-label="Rewards program"
+                className="gift_button"
+                onClick={() => {
+                  setIsBonusProgramOpen(!isBonusProgramOpen)
+                }}
+              />
+            )}
             <TopMenuProfileButton
               onClick={() => {
                 setIsNotificationsOpen(!isNotificationsOpen)

@@ -6,6 +6,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
+import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -61,7 +62,7 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
-        <OnboardingOpenClaimFlowBanner />
+        {!HIDE_TOKEN_FEATURES && <OnboardingOpenClaimFlowBanner />}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}

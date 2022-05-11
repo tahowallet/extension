@@ -14,7 +14,10 @@ import {
   SwapQuoteRequest,
   fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { HIDE_SWAP_REWARDS } from "@tallyho/tally-background/features"
+import {
+  HIDE_SWAP_REWARDS,
+  HIDE_TOKEN_FEATURES,
+} from "@tallyho/tally-background/features"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -445,31 +448,35 @@ export default function Swap(): ReactElement {
         <div className="standard_width swap_wrap">
           <div className="header">
             <SharedActivityHeader label="Swap Assets" activity="swap" />
-            {HIDE_SWAP_REWARDS ? (
+            {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
-              // TODO: Add onClick function after design is ready
-              <SharedIcon
-                icon="cog@2x.png"
-                width={20}
-                color="var(--green-60)"
-                hoverColor="#fff"
-                customStyles="margin: 17px 0 25px;"
-              />
+              !HIDE_SWAP_REWARDS && (
+                // TODO: Add onClick function after design is ready
+                <SharedIcon
+                  icon="cog@2x.png"
+                  width={20}
+                  color="var(--green-60)"
+                  hoverColor="#fff"
+                  customStyles="margin: 17px 0 25px;"
+                />
+              )
             )}
           </div>
-          {HIDE_SWAP_REWARDS ? (
-            <SharedBanner
-              id="swap_rewards"
-              canBeClosed
-              icon="notif-announcement"
-              iconColor="var(--link)"
-              customStyles="margin-bottom: 16px"
-            >
-              Swap rewards coming soon
-            </SharedBanner>
-          ) : (
+          {HIDE_TOKEN_FEATURES ? (
             <></>
+          ) : (
+            HIDE_SWAP_REWARDS && (
+              <SharedBanner
+                id="swap_rewards"
+                canBeClosed
+                icon="notif-announcement"
+                iconColor="var(--link)"
+                customStyles="margin-bottom: 16px"
+              >
+                Swap rewards coming soon
+              </SharedBanner>
+            )
           )}
           <div className="form">
             <div className="form_input">
