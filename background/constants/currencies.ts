@@ -1,4 +1,4 @@
-import { FiatCurrency, FungibleAsset } from "../assets"
+import { FiatCurrency } from "../assets"
 
 export const USD: FiatCurrency = {
   name: "United States Dollar",
@@ -19,37 +19,3 @@ export const CNY: FiatCurrency = {
 }
 
 export const FIAT_CURRENCIES = [USD, EUR, CNY]
-
-export const ETH: FungibleAsset = {
-  name: "Ether",
-  symbol: "ETH",
-  decimals: 18,
-  metadata: {
-    coinGeckoID: "ethereum",
-    tokenLists: [],
-    websiteURL: "https://ethereum.org",
-  },
-}
-
-export const BTC: FungibleAsset = {
-  name: "Bitcoin",
-  symbol: "BTC",
-  decimals: 8,
-  metadata: {
-    coinGeckoID: "bitcoin",
-    tokenLists: [],
-    websiteURL: "https://bitcoin.org",
-  },
-}
-
-export const BASE_ASSETS = [ETH, BTC]
-
-export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
-  [assetSymbol: string]: FungibleAsset
-}>((acc, asset) => {
-  const newAcc = {
-    ...acc,
-  }
-  newAcc[asset.symbol] = asset
-  return newAcc
-}, {})

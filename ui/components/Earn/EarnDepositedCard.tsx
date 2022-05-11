@@ -5,7 +5,7 @@ import {
   APRData,
   AvailableVault,
 } from "@tallyho/tally-background/redux-slices/earn"
-import { doggoTokenDecimalDigits } from "@tallyho/tally-background/constants"
+import { DOGGO } from "@tallyho/tally-background/constants"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
@@ -37,7 +37,7 @@ export default function EarnDepositedCard({
   const availableRewards = fromFixedPointNumber(
     {
       amount: vault.pendingRewards,
-      decimals: doggoTokenDecimalDigits,
+      decimals: DOGGO.decimals,
     },
     2
   )
