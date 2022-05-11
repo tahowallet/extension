@@ -36,7 +36,6 @@ type GasOption = {
   maxPriorityGwei: string
   maxGwei: string
   dollarValue: string
-  price: bigint
   estimatedFeePerGas: bigint
   baseMaxFeePerGas: bigint
   baseMaxGwei: string
@@ -89,7 +88,6 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     baseMaxFeePerGas: BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas),
     baseMaxGwei: weiToGwei(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)),
-    price,
     maxFeePerGas,
     maxPriorityFeePerGas,
   }

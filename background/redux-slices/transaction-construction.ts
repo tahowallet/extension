@@ -74,7 +74,6 @@ export const initialState: TransactionConstruction = {
       maxFeePerGas: 1n,
       confidence: CUSTOM,
       maxPriorityFeePerGas: 1n,
-      price: 1n,
     },
   },
   lastGasEstimatesRefreshed: Date.now(),
@@ -238,7 +237,6 @@ const transactionSlice = createSlice({
           maxFeePerGas,
           confidence: CUSTOM,
           maxPriorityFeePerGas,
-          price: 41000000000n,
         },
       }
     },
