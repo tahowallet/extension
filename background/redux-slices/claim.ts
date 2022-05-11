@@ -63,9 +63,9 @@ interface ClaimingState {
   referrerStats: ReferrerStats
 }
 
-export const DOGGO_TOKEN_ADDRESS = "0xA0DDAEd22e3a8aa512C85a13F426165861922801"
+export const DOGGO_TOKEN_ADDRESS = "0xdce3d2c2186e3E92af121F477dE76cBED2fc979F"
 export const VOTE_WITH_FRIENDS_ADDRESS =
-  "0x81448b6aB39a3146000D1b2876A83cAb0696c56c"
+  "0x0036B3a9D385Ce2CC072cf4A26dE29aE3283DEd0"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
