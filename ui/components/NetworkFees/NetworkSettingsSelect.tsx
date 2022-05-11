@@ -241,7 +241,7 @@ export default function NetworkSettingsSelect({
     return (BigInt(float * 100) / 100n) * BigInt(1000000000)
   }
 
-  if (CUSTOM_GAS_SELECT) {
+  if (!CUSTOM_GAS_SELECT) {
     return (
       <NetworkSettingsSelectDeprecated
         estimatedFeesPerGas={estimatedFeesPerGas}
