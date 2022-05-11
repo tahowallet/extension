@@ -71,10 +71,10 @@ export const initialState: TransactionConstruction = {
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
   estimatedFeesPerGas: {
     custom: {
-      maxFeePerGas: 0n,
+      maxFeePerGas: 1n,
       confidence: CUSTOM,
-      maxPriorityFeePerGas: 0n,
-      price: 0n,
+      maxPriorityFeePerGas: 1n,
+      price: 1n,
     },
   },
   lastGasEstimatesRefreshed: Date.now(),
