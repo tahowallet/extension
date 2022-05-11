@@ -1,7 +1,7 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
-import devToolsEnhancer from "remote-redux-devtools"
+import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
 import { decodeJSON, encodeJSON, normalizeEVMAddress } from "./lib/utils"
