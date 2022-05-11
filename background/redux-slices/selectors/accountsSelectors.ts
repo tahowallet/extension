@@ -240,7 +240,9 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
     sourcesByAddress,
     mainCurrencySymbol
   ): CategorizedAccountTotals => {
-    return Object.entries(accounts.accountsData.evm[currentNetwork.chainID])
+    return Object.entries(
+      accounts.accountsData.evm[currentNetwork.chainID] ?? []
+    )
       .filter(([, accountData]) => typeof accountData !== "undefined")
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
