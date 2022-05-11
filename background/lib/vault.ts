@@ -416,6 +416,19 @@ const VAULT_ABI = [
   },
   {
     inputs: [],
+    name: "depositsAllowedAfter",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "duration",
     outputs: [
       {
@@ -503,6 +516,19 @@ const VAULT_ABI = [
     name: "getReward",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getTVL",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -777,6 +803,19 @@ const VAULT_ABI = [
   },
   {
     inputs: [],
+    name: "sharesPerDepositedUnderlying",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "sweepFees",
     outputs: [],
     stateMutability: "nonpayable",
@@ -793,6 +832,26 @@ const VAULT_ABI = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "timelockRewardsWithdrawalAllowedAfter",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "timelockedRewardsWithdrawal",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
