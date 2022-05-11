@@ -20,6 +20,7 @@ import { EVMNetwork, SmartContract } from "../../networks"
 import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
 import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
+import { DOGGO_TOKEN_ADDRESS } from "../../redux-slices/claim"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -79,8 +80,8 @@ export default class AssetDataHelper {
         "0xf4d2888d29D722226FafA5d9B24F9164c092421E", // LOOKS
         "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC", // KEEP
         "0xCb08717451aaE9EF950a2524E33B6DCaBA60147B", // crvTETH
-        "0x93a08986ec9a74CB9E001702F30202f3749ceDC4", // DOGGOETH
-        "0xA0DDAEd22e3a8aa512C85a13F426165861922801", // DOGGO
+        "0x9Dbb61D8977c28B4821e21bc17124E98327cF002", // DOGGOETH
+        DOGGO_TOKEN_ADDRESS, // DOGGO
         "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
       ]
       const balances = tokens.map(async (token) => {
