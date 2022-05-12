@@ -181,11 +181,11 @@ export default function NetworkSettingsSelect({
         networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
       if (typeof instant !== "undefined") {
-        const basePrices = [regular, express, instant, custom]
+        const baseFees = [regular, express, instant, custom]
 
         const updatedGasOptions: GasOption[] = []
 
-        basePrices.forEach((option) => {
+        baseFees.forEach((option) => {
           if (option) {
             updatedGasOptions.push(
               gasOptionFromEstimate(
