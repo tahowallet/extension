@@ -379,12 +379,14 @@ export const removeAccount = createBackgroundAsyncThunk(
 
     await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
 
-    const state = getState() as { accounts: AccountState }
+    const {
+      accounts: { accountsData },
+    } = getState() as { accounts: AccountState }
 
     // Remove the corresponding keyring account iff there are no networks left
     // for this address.
     if (
-      Object.values(state.accounts.accountsData.evm).some(
+      Object.values(accountsData.evm).some(
         (chainAddresses) => normalizedAddress in chainAddresses
       )
     ) {
