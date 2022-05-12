@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import ClaimAmountBanner from "./ClaimAmountBanner"
+import ClaimReferralBridge from "./ClaimReferralBridge"
 
 export default function ClaimIntro(props: {
   claimAmount: number
@@ -8,6 +9,7 @@ export default function ClaimIntro(props: {
 
   return (
     <div className="claim standard_width">
+      <ClaimReferralBridge />
       <div className="title">You’re about to claim</div>
       <ClaimAmountBanner amount={claimAmount} />
       <p className="list_title">Here are your next steps:</p>

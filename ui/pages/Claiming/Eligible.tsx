@@ -20,7 +20,6 @@ import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { doggoTokenDecimalDigits } from "../../utils/constants"
 import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
-import ClaimReferralBridge from "../../components/Claim/ClaimReferralBridge"
 
 export default function Eligible(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -123,7 +122,6 @@ export default function Eligible(): ReactElement {
 
   return (
     <div className="wrap">
-      <ClaimReferralBridge />
       {infoModalVisible ? (
         <ClaimInfoModal setModalVisible={setInfoModalVisible} />
       ) : null}
