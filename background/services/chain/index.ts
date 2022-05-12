@@ -517,9 +517,24 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
-    this.getLatestBaseAccountBalance(addressNetwork)
-    this.subscribeToAccountTransactions(addressNetwork)
-    this.loadRecentAssetTransfers(addressNetwork)
+    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
+        e
+      )
+    })
+    this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error subscribing to account transactions",
+        e
+      )
+    })
+    this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error loading recent asset transfers",
+        e
+      )
+    })
   }
 
   async getBlockHeight(network: EVMNetwork): Promise<number> {
