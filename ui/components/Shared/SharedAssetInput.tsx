@@ -388,16 +388,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
   return (
     <>
-      <label
-        className="label"
-        htmlFor={
-          typeof selectedAsset === "undefined"
-            ? "asset_selector"
-            : "asset_amount_input"
-        }
-      >
-        {label}
-      </label>
+      <label className="label">{label}</label>
 
       {typeof selectedAssetAndAmount !== "undefined" &&
       hasAmounts(selectedAssetAndAmount) ? (
