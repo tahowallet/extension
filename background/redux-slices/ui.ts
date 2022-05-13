@@ -2,6 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { EVMNetwork } from "../networks"
 import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 
