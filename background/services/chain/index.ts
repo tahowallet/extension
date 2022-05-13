@@ -238,7 +238,6 @@ export default class ChainService extends BaseService<Events> {
     // get the latest blocks and subscribe for all support networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    // eslint-disable-next-line no-restricted-syntax
     this.supportedNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
