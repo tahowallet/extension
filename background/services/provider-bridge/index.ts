@@ -195,9 +195,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async notifyContentScriptsAboutAddressChange(
-    newAddress?: string
-  ): Promise<void> {
+  notifyContentScriptsAboutAddressChange(newAddress?: string): void {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
@@ -258,7 +256,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       delete this.#pendingPermissionsRequests[permission.origin]
     }
 
-    await this.notifyContentScriptsAboutAddressChange()
+    this.notifyContentScriptsAboutAddressChange()
   }
 
   async checkPermission(

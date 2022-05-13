@@ -929,7 +929,7 @@ export default class Main extends BaseService<never> {
   async connectEnrichmentService(): Promise<void> {
     this.enrichmentService.emitter.on(
       "enrichedEVMTransaction",
-      async (transactionData) => {
+      (transactionData) => {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
