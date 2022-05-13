@@ -31,7 +31,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     onFocus,
     value: currentValue,
     errorMessage,
-    step = 1,
+    step = undefined,
     autoFocus = false,
     autoSelect = false,
     parseAndValidate,
