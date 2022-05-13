@@ -22,8 +22,12 @@ import {
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import { HOUR } from "../../constants"
-import { ETH } from "../../constants/currencies"
-import { ETHEREUM, ARBITRUM_ONE, OPTIMISM } from "../../constants/networks"
+import {
+  ETHEREUM,
+  POLYGON,
+  ARBITRUM_ONE,
+  OPTIMISM,
+} from "../../constants/networks"
 import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -195,7 +199,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.supportedNetworks = USE_MULTI_NETWORK
-      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
+      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
       : [ETHEREUM]
 
     this.providers = {
@@ -503,7 +507,7 @@ export default class ChainService extends BaseService<Events> {
       address,
       network,
       assetAmount: {
-        asset: ETH,
+        asset: network.baseAsset,
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
@@ -826,10 +830,15 @@ export default class ChainService extends BaseService<Events> {
     endBlock: bigint
   ): Promise<void> {
     // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTranfers endpoint
-    if (addressOnNetwork.network.chainID !== "1") {
+    // as neither have Alchemy's assetTransfers endpoint
+    if (
+      addressOnNetwork.network.chainID !== "1" /* Ethereum */ &&
+      addressOnNetwork.network.chainID !== "137" /* Polygon */
+    ) {
       logger.error(
-        `Asset transfer check not supported on network ${addressOnNetwork.network}`
+        `Asset transfer check not supported on network ${JSON.stringify(
+          addressOnNetwork.network
+        )}`
       )
     }
 
