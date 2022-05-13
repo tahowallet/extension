@@ -1,12 +1,61 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { useDispatch } from "react-redux"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../../components/Shared/SharedButton"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
-import titleStyle from "../../components/Onboarding/titleStyle"
 import { useBackgroundSelector } from "../../hooks"
+import SharedBackButton from "../../components/Shared/SharedBackButton"
+import {
+  OnboardingBox,
+  OnboardingHeader,
+  OnboardingSubheader,
+  OnboardingContainer,
+  OnboardingMessageHeader,
+} from "./styles"
 
-export default function OnboardingSaveSeed(): ReactElement {
+function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
+  return (
+    <>
+      <div className="onboarding_box">
+        <div className="message_header">
+          <img
+            className="message_icon"
+            src="./images/message_warning.png"
+            alt="warning"
+          />
+          <span>Before you start</span>
+        </div>
+        <p>
+          It&apos;s important to write down your secret recovery phrase and
+          store it somewere safe.
+        </p>
+        <p>This is the only way to recover your accounts and funds.</p>
+        <p>You will not be able to export your recovery phrase later.</p>
+      </div>
+      <SharedButton type="primary" size="medium" onClick={onAccept}>
+        Reveal my secret recovery phrase
+      </SharedButton>
+      <style jsx>{`
+        .onboarding_box {
+          ${OnboardingBox}
+          padding-top: 20px;
+        }
+        .onboarding_box p {
+          margin: 8px 0;
+        }
+        .message_header {
+          ${OnboardingMessageHeader}
+          color: var(--attention);
+        }
+        .message_icon {
+          margin-right: 20px;
+        }
+      `}</style>
+    </>
+  )
+}
+
+function SeedContainer(): ReactElement {
   const dispatch = useDispatch()
 
   const freshMnemonic = useBackgroundSelector((state) => {
@@ -14,14 +63,8 @@ export default function OnboardingSaveSeed(): ReactElement {
   })
 
   return (
-    <section>
-      <div className="top">
-        <div className="wordmark" />
-      </div>
-      <OnboardingStepsIndicator activeStep={1} />
-      <h1 className="serif_header center_text title">
-        Write down your recovery phrase
-      </h1>
+    <>
+      <h3 className="subtitle">This is the only way to restore your wallet</h3>
       <div className="words_group">
         {freshMnemonic && (
           <>
@@ -31,10 +74,10 @@ export default function OnboardingSaveSeed(): ReactElement {
               <div className="column words">
                 {freshMnemonic?.slice(0, 12).map((word) => {
                   return (
-                    <>
+                    <React.Fragment key={word}>
                       {word}
                       <br />
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </div>
@@ -47,10 +90,10 @@ export default function OnboardingSaveSeed(): ReactElement {
               <div className="column words">
                 {freshMnemonic?.slice(12, 24).map((word) => {
                   return (
-                    <>
+                    <React.Fragment key={word}>
                       {word}
                       <br />
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </div>
@@ -69,7 +112,7 @@ export default function OnboardingSaveSeed(): ReactElement {
         </SharedButton>
         <SharedButton
           type="tertiary"
-          size="medium"
+          size="small"
           iconMedium="copy"
           onClick={() => {
             navigator.clipboard.writeText(freshMnemonic?.join(" ") ?? "")
@@ -79,55 +122,75 @@ export default function OnboardingSaveSeed(): ReactElement {
           Copy phrase to clipboard
         </SharedButton>
       </div>
+      <style jsx>{`
+        .subtitle {
+          ${OnboardingSubheader}
+        }
+        .words_group {
+          ${OnboardingBox}
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .numbers {
+          width: 18px;
+          text-align: right;
+        }
+        .column {
+          color: var(--green-20);
+          font-weight: 600;
+          line-height: 24px;
+          text-align: right;
+        }
+        .column_wrap {
+          display: flex;
+          height: 288px;
+        }
+        .dashes {
+          width: 12px;
+          margin-right: 8px;
+          margin-left: 5px;
+        }
+        .words {
+          width: 69px;
+          text-align: left;
+        }
+        .button_group {
+          align-items: center;
+          height: 86px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+      `}</style>
+    </>
+  )
+}
+
+export default function OnboardingSaveSeed(): ReactElement {
+  const [revealSeed, setRevealSeed] = useState(false)
+
+  return (
+    <section className="onboarding_container">
+      <div className="top">
+        <SharedBackButton path="/" />
+        <div className="wordmark" />
+      </div>
+      <OnboardingStepsIndicator activeStep={1} />
+      <h1 className="serif_header center_text">
+        Save and store your recovery phrase
+      </h1>
+      {revealSeed ? (
+        <SeedContainer />
+      ) : (
+        <WarningMessage onAccept={() => setRevealSeed(true)} />
+      )}
       <style jsx>
         {`
-          ${titleStyle}
-          .words_group {
-            display: flex;
-            width: 250px;
-            justify-content: space-between;
-            height: 272px;
-            margin-bottom: 40px;
-            margin-top: 5px;
-          }
           .serif_header {
-            font-size: 31px;
-            margin-top: 12px;
-            margin-bottom: 5px;
+            ${OnboardingHeader}
           }
-          .numbers {
-            width: 18px;
-            text-align: right;
-          }
-          section {
-            padding-top: 25px;
-          }
-          .column {
-            height: 142px;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 600;
-            line-height: 24px;
-            text-align: right;
-          }
-          .column_wrap {
-            display: flex;
-          }
-          .dashes {
-            width: 12px;
-            margin-right: 8px;
-            margin-left: 5px;
-          }
-          .words {
-            width: 69px;
-            text-align: left;
-          }
-          .button_group {
-            align-items: center;
-            height: 86px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+          .onboarding_container {
+            ${OnboardingContainer}
           }
           .top {
             display: flex;
