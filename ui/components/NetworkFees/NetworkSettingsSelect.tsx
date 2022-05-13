@@ -36,7 +36,6 @@ type GasOption = {
   maxPriorityGwei: string
   maxGwei: string
   dollarValue: string
-  price: bigint
   estimatedFeePerGas: bigint
   baseMaxFeePerGas: bigint
   baseMaxGwei: string
@@ -89,7 +88,6 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     baseMaxFeePerGas: BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas),
     baseMaxGwei: weiToGwei(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)),
-    price,
     maxFeePerGas,
     maxPriorityFeePerGas,
   }
@@ -183,11 +181,11 @@ export default function NetworkSettingsSelect({
         networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
       if (typeof instant !== "undefined") {
-        const basePrices = [regular, express, instant, custom]
+        const baseFees = [regular, express, instant, custom]
 
         const updatedGasOptions: GasOption[] = []
 
-        basePrices.forEach((option) => {
+        baseFees.forEach((option) => {
           if (option) {
             updatedGasOptions.push(
               gasOptionFromEstimate(
@@ -243,7 +241,7 @@ export default function NetworkSettingsSelect({
     return (BigInt(float * 100) / 100n) * BigInt(1000000000)
   }
 
-  if (CUSTOM_GAS_SELECT) {
+  if (!CUSTOM_GAS_SELECT) {
     return (
       <NetworkSettingsSelectDeprecated
         estimatedFeesPerGas={estimatedFeesPerGas}
@@ -271,7 +269,7 @@ export default function NetworkSettingsSelect({
                 <div className="input_wrap">
                   <SharedInput
                     label="Miner"
-                    value={`${parseFloat(option.maxPriorityGwei)}`}
+                    value={`${option.maxPriorityGwei}`}
                     onChange={(value) => {
                       updateCustomGas(
                         option.baseMaxFeePerGas,

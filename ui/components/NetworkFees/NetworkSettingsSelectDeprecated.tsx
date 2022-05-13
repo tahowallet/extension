@@ -28,7 +28,6 @@ type GasOption = {
   estimatedGwei: string
   maxGwei: string
   dollarValue: string
-  price: bigint
   estimatedFeePerGas: bigint
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
@@ -72,7 +71,6 @@ const gasOptionFromEstimate = (
     dollarValue: dollarValue ? `$${dollarValue}` : "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
-    price,
     maxFeePerGas,
     maxPriorityFeePerGas,
   }
