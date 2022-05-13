@@ -52,3 +52,17 @@ export const getSignerAddress = async (): Promise<string> => {
   const signerAddress = await signer.getAddress()
   return signerAddress
 }
+
+export const getNonce = async (): Promise<number> => {
+  const provider = getProvider()
+  const signer = provider.getSigner()
+  const signerAddress = await signer.getAddress()
+  const nonce = provider.getTransactionCount(signerAddress)
+  return nonce
+}
+
+export const getCurrentTimestamp = async (): Promise<number> => {
+  const provider = getProvider()
+  const { timestamp } = await provider.getBlock(provider.getBlockNumber())
+  return timestamp
+}
