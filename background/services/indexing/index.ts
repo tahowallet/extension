@@ -217,9 +217,9 @@ export default class IndexingService extends BaseService<Events> {
     assetLookups: [],
   }
 
-  async notifyEnrichedTransaction(
+  notifyEnrichedTransaction(
     enrichedEVMTransaction: EnrichedEVMTransaction
-  ): Promise<void> {
+  ): void {
     const jointAnnotations =
       typeof enrichedEVMTransaction.annotation === "undefined"
         ? []
