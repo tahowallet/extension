@@ -1,55 +1,92 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
+import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
 
-const steps = [
-  {
-    image: {
-      width: 273,
-      height: 245.06,
-      fileName: "illustration_onboarding_welcome",
-      extraStyles: `margin-top: 25px;`,
-    },
-    title: "Welcome to Tally Ho!",
-    body: "The community owned & operated wallet.",
-    buttonCopy: "Continue",
-  },
-  {
-    image: {
-      width: 267,
-      height: 251,
-      fileName: "illustration_onboarding_dao",
-      extraStyles: ``,
-    },
-    title: "Tally Ho! is a DAO",
-    body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
-    buttonCopy: "Continue",
-  },
-  {
-    image: {
-      width: 244.22,
-      height: 247.24,
-      fileName: "illustration_onboarding_community_edition",
-      extraStyles: `margin-top: 21px;`,
-    },
-    title: "Test Responsibly",
-    body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
-    buttonCopy: "Continue",
-  },
-  {
-    image: {
-      width: 267,
-      height: 236.6,
-      fileName: "illustration_onboarding_default",
-      extraStyles: `margin-top: 21px;`,
-    },
-    title: "Tally Ho set as default",
-    body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
-    buttonCopy: "Get started",
-  },
-]
+const steps = HIDE_TOKEN_FEATURES
+  ? [
+      {
+        image: {
+          width: 273,
+          height: 245.06,
+          fileName: "illustration_onboarding_welcome",
+          extraStyles: `margin-top: 25px;`,
+        },
+        title: "Welcome to Tally Ho!",
+        body: "The community owned & operated wallet.",
+        buttonCopy: "Continue",
+      },
+      {
+        image: {
+          width: 267,
+          height: 251,
+          fileName: "illustration_onboarding_dao",
+          extraStyles: `margin-top: 21px;`,
+        },
+        title: "Tally Ho! is a DAO",
+        body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
+        buttonCopy: "Continue",
+      },
+      {
+        image: {
+          width: 244.22,
+          height: 247.24,
+          fileName: "illustration_onboarding_community_edition",
+          extraStyles: `margin-top: 21px;`,
+        },
+        title: "Test Responsibly",
+        body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
+        buttonCopy: "Continue",
+      },
+      {
+        image: {
+          width: 267,
+          height: 236.6,
+          fileName: "illustration_onboarding_default",
+          extraStyles: `margin-top: 21px;`,
+        },
+        title: "Tally Ho set as default",
+        body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
+        buttonCopy: "Get started",
+      },
+    ]
+  : [
+      {
+        image: {
+          width: 384,
+          height: 336,
+          fileName: "onboarding/graphic_different",
+          extraStyles: ``,
+        },
+        title: "Tally Ho! is different",
+        body: "Tally Ho! is the first community-owned wallet for Web3 and DeFi. If you own $DOGGO tokens, you are an owner. ",
+        buttonCopy: "Continue",
+      },
+      {
+        image: {
+          width: 384,
+          height: 336,
+          fileName: "onboarding/graphic_token",
+          extraStyles: ``,
+        },
+        title: "The $DOGGO token",
+        body: `You can earn $DOGGO in many ways! Check out the Earn and Swap tabs.`,
+        buttonCopy: "Continue",
+      },
+      {
+        image: {
+          width: 384,
+          height: 336,
+          fileName: "onboarding/graphic_drop",
+          extraStyles: ``,
+        },
+        title: "$DOGGO token drop",
+        body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
+        buttonCopy: "Get started",
+      },
+    ]
 
 export default function OnboardingInfoIntro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
@@ -77,7 +114,7 @@ export default function OnboardingInfoIntro(): ReactElement {
       <div className="bottom_part">
         <div className="bottom_content">
           <SharedProgressIndicator
-            numberOfSteps={4}
+            numberOfSteps={steps.length}
             activeStep={activeStep}
             onProgressStepClicked={(step) => {
               setActiveStep(step)
@@ -111,7 +148,7 @@ export default function OnboardingInfoIntro(): ReactElement {
           .illustration_section {
             height: 380px;
             display: flex;
-            background-color: var(--green-95);
+            background: linear-gradient(180deg, #002f2b 0%, #00403b 100%);
           }
           section {
             display: flex;
@@ -133,13 +170,14 @@ export default function OnboardingInfoIntro(): ReactElement {
             height: 141px;
             align-self: flex-end;
             justify-self: flex-end;
+            z-index: 1;
           }
           p {
             font-size: 16px;
             font-weight: 400;
             line-height: 24px;
             color: var(--green-40);
-            width: 320px;
+            width: 336px;
             text-align: center;
             margin-top: 5px;
           }
@@ -154,6 +192,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             justify-content: space-between;
             height: 230px;
             text-align: center;
+            z-index: 1;
           }
         `}
       </style>
@@ -169,7 +208,7 @@ export default function OnboardingInfoIntro(): ReactElement {
             left: 0;
             right: 0;
             margin: 0 auto;
-            margin-top: 21px;
+            margin-top: 0;
             position: absolute;
             animation: fadeIn ease 0.5s;
             ${steps[activeStep - 1].image.extraStyles}

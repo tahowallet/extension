@@ -1,0 +1,72 @@
+[
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Aave",
+    "avatar": "aave_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "DXdao",
+    "avatar": "dxdao_logo@2x.png"
+  },
+  {
+    "address": "0x1766975b6a6b8c236a0e64bb165b30bb1880f848",
+    "name": "ENS",
+    "avatar": "ens_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "FWB",
+    "avatar": "fwb_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Gitcoin",
+    "avatar": "gitcoin_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Gnosis",
+    "avatar": "gnosis_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "KeeperDAO",
+    "avatar": "keeper_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "PleasrDAO",
+    "avatar": "pleasr_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Radicle",
+    "avatar": "radicle_logo@2x.png"
+  },
+  {
+    "address": "0x855cf4e983919e963e64c763d7c14db53b35baa6",
+    "name": "SushiSwap",
+    "avatar": "sushi_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Synthetix",
+    "avatar": "synthetix_logo@2x.png"
+  },
+  {
+    "address": "0xe41435876ed4f9b777c06441819289b2499aa427",
+    "name": "Uniswap",
+    "avatar": "uniswap_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "Yearn",
+    "avatar": "yearn_logo@2x.png"
+  },
+  {
+    "address": "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    "name": "BanklessDAO",
+    "avatar": "bankless_logo@2x.png"
+  }
+]
