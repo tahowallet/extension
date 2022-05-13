@@ -21,14 +21,17 @@ import {
   sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import { HOUR } from "../../constants"
 import {
+  HOUR,
   ETHEREUM,
-  POLYGON,
   ARBITRUM_ONE,
+  POLYGON,
   OPTIMISM,
-} from "../../constants/networks"
-import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features"
+} from "../../constants"
+import {
+  MULTI_NETWORK as USE_MULTI_NETWORK,
+  USE_MAINNET_FORK,
+} from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
@@ -291,7 +294,9 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers.evm[network.chainID]
+    return USE_MAINNET_FORK
+      ? this.providers.evm[ETHEREUM.chainID]
+      : this.providers.evm[network.chainID]
   }
 
   /**
@@ -647,9 +652,13 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
+    if (USE_MAINNET_FORK) {
+      return 350000n
+    }
     const estimate = await this.providerForNetworkOrThrow(network).estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
+
     // Add 10% more gas as a safety net
     const uppedEstimate = estimate.add(estimate.div(10))
     return BigInt(uppedEstimate.toString())

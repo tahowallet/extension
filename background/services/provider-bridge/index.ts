@@ -24,10 +24,12 @@ import {
 } from "./authorization"
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
+import { WEBSITE_ORIGIN } from "../../constants/website"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: Record<string, PermissionRequest>
+  setClaimReferrer: string
 }
 
 /**
@@ -128,6 +130,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
       }
+    } else if (event.request.method === "tally_setClaimReferrer") {
+      const referrer = event.request.params[0]
+      if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
+        logger.warn(`invalid 'setClaimReferrer' request`)
+        return
+      }
+
+      this.emitter.emit("setClaimReferrer", String(referrer))
+
+      response.result = null
     } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
@@ -195,9 +207,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async notifyContentScriptsAboutAddressChange(
-    newAddress?: string
-  ): Promise<void> {
+  notifyContentScriptsAboutAddressChange(newAddress?: string): void {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
@@ -258,7 +268,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       delete this.#pendingPermissionsRequests[permission.origin]
     }
 
-    await this.notifyContentScriptsAboutAddressChange()
+    this.notifyContentScriptsAboutAddressChange()
   }
 
   async checkPermission(

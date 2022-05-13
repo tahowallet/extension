@@ -23,6 +23,9 @@ import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./keyringsSelectors"
+import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
+import { DOGGO } from "../../constants/assets"
+import { HIDE_TOKEN_FEATURES } from "../../features"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -76,16 +79,56 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
+      const isForciblyDisplayed =
+        (!HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol) ||
+        // TODO Update filter to let through only the base asset of the current
+        // TODO network.
+        BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol] !== undefined
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      // TODO Update below to be network responsive
-      const isPresent =
-        assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
+      const isPresent = assetAmount.decimalAmount > 0
 
       // Hide dust and missing amounts.
-      return hideDust ? isNotDust && isPresent : isPresent
+      return (
+        isForciblyDisplayed || (hideDust ? isNotDust && isPresent : isPresent)
+      )
+    })
+    .sort((asset1, asset2) => {
+      // Always sort DOGGO above everything.
+      if (asset1.asset.symbol === DOGGO.symbol) {
+        return -1
+      }
+      if (asset2.asset.symbol === DOGGO.symbol) {
+        return 1
+      }
+
+      const leftIsBaseAsset = asset1.asset.symbol in BASE_ASSETS_BY_SYMBOL
+      const rightIsBaseAsset = asset2.asset.symbol in BASE_ASSETS_BY_SYMBOL
+
+      // Always sort base assets above non-base assets.
+      if (leftIsBaseAsset !== rightIsBaseAsset) {
+        return leftIsBaseAsset ? -1 : 1
+      }
+
+      // If the assets are both base assets or neither is a base asset, compare
+      // by main currency amount.
+      if (
+        asset1.mainCurrencyAmount !== undefined &&
+        asset2.mainCurrencyAmount !== undefined
+      ) {
+        return asset2.mainCurrencyAmount - asset1.mainCurrencyAmount
+      }
+
+      if (asset1.mainCurrencyAmount === asset2.mainCurrencyAmount) {
+        // If both assets are missing a main currency amount, compare symbols
+        // lexicographically.
+        return asset1.asset.symbol.localeCompare(asset2.asset.symbol)
+      }
+
+      // If only one asset has a main currency amount, it wins.
+      return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
 
   return { combinedAssetAmounts, totalMainCurrencyAmount }

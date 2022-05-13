@@ -1,4 +1,4 @@
-import { FiatCurrency, FungibleAsset } from "../assets"
+import { FiatCurrency, FungibleAsset, CoinGeckoAsset } from "../assets"
 
 export const USD: FiatCurrency = {
   name: "United States Dollar",
@@ -20,7 +20,7 @@ export const CNY: FiatCurrency = {
 
 export const FIAT_CURRENCIES = [USD, EUR, CNY]
 
-export const ETH: FungibleAsset = {
+export const ETH: FungibleAsset & CoinGeckoAsset = {
   name: "Ether",
   symbol: "ETH",
   decimals: 18,
@@ -31,7 +31,7 @@ export const ETH: FungibleAsset = {
   },
 }
 
-export const MATIC: FungibleAsset = {
+export const MATIC: FungibleAsset & CoinGeckoAsset = {
   name: "Matic",
   symbol: "MATIC",
   decimals: 18,
@@ -42,7 +42,7 @@ export const MATIC: FungibleAsset = {
   },
 }
 
-export const BTC: FungibleAsset = {
+export const BTC: FungibleAsset & CoinGeckoAsset = {
   name: "Bitcoin",
   symbol: "BTC",
   decimals: 8,

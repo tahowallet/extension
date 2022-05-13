@@ -254,6 +254,7 @@ export default function NetworkSettingsSelectDeprecated({
             label="Gas limit"
             type="number"
             focusedLabelBackgroundColor="var(--green-95)"
+            step={1000}
           />
         </div>
         <div className="max_fee">
