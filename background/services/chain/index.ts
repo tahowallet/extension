@@ -21,7 +21,13 @@ import {
   sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import { ETH, HOUR, ETHEREUM, ARBITRUM_ONE, OPTIMISM } from "../../constants"
+import {
+  HOUR,
+  ETHEREUM,
+  ARBITRUM_ONE,
+  POLYGON,
+  OPTIMISM,
+} from "../../constants"
 import {
   MULTI_NETWORK as USE_MULTI_NETWORK,
   USE_MAINNET_FORK,
@@ -196,7 +202,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.supportedNetworks = USE_MULTI_NETWORK
-      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
+      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
       : [ETHEREUM]
 
     this.providers = {
@@ -506,7 +512,7 @@ export default class ChainService extends BaseService<Events> {
       address,
       network,
       assetAmount: {
-        asset: ETH,
+        asset: network.baseAsset,
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
@@ -520,9 +526,24 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
-    this.getLatestBaseAccountBalance(addressNetwork)
-    this.subscribeToAccountTransactions(addressNetwork)
-    this.loadRecentAssetTransfers(addressNetwork)
+    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
+        e
+      )
+    })
+    this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error subscribing to account transactions",
+        e
+      )
+    })
+    this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error loading recent asset transfers",
+        e
+      )
+    })
   }
 
   async getBlockHeight(network: EVMNetwork): Promise<number> {
@@ -818,10 +839,15 @@ export default class ChainService extends BaseService<Events> {
     endBlock: bigint
   ): Promise<void> {
     // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTranfers endpoint
-    if (addressOnNetwork.network.chainID !== "1") {
+    // as neither have Alchemy's assetTransfers endpoint
+    if (
+      addressOnNetwork.network.chainID !== "1" /* Ethereum */ &&
+      addressOnNetwork.network.chainID !== "137" /* Polygon */
+    ) {
       logger.error(
-        `Asset transfer check not supported on network ${addressOnNetwork.network}`
+        `Asset transfer check not supported on network ${JSON.stringify(
+          addressOnNetwork.network
+        )}`
       )
     }
 

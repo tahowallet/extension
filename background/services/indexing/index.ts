@@ -12,7 +12,7 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { BASE_ASSETS, BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
+import { FIAT_CURRENCIES, USD, BASE_ASSETS } from "../../constants"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -671,6 +671,7 @@ export default class IndexingService extends BaseService<Events> {
         await this.chainService.getAccountsToTrack()
       ).map(async (addressOnNetwork) => {
         await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
+        await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
       })
     )
   }
