@@ -1,4 +1,4 @@
-import { ESTIMATED_FEE_MULTIPLIERS_BY_TYPE } from "@tallyho/tally-background/constants/network-fees"
+import React, { ReactElement } from "react"
 import {
   truncateDecimalAmount,
   weiToGwei,
@@ -12,7 +12,6 @@ import {
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
-import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 
 const getFeeDollarValue = (

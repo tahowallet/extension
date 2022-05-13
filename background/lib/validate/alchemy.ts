@@ -5,7 +5,7 @@ const alchemyAssetTransferJTD = {
     asset: { type: "string", nullable: true },
     hash: { type: "string" },
     blockNum: { type: "string" },
-    category: { enum: ["token", "internal", "external"] },
+    category: { enum: ["token", "internal", "external", "erc20", "erc1155"] },
     from: { type: "string", nullable: true },
     to: { type: "string", nullable: true },
     erc721TokenId: { type: "string", nullable: true },
