@@ -235,10 +235,10 @@ export default class ChainService extends BaseService<Events> {
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
     // eslint-disable-next-line no-restricted-syntax
-    for (const network of this.supportedNetworks) {
+    this.supportedNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
-        const promises = Promise.all([
+        Promise.all([
           provider.getBlockNumber().then(async (n) => {
             const result = await provider.getBlock(n)
             const block = blockFromEthersBlock(network, result)
@@ -247,17 +247,12 @@ export default class ChainService extends BaseService<Events> {
 
           this.subscribeToNewHeads(network),
         ]).catch((e) => {
-          logger.error(e)
+          logger.error("Error getting block number or new head", e)
         })
-        if (network.chainID === ETHEREUM.chainID) {
-          // only block start to get Ethereum data
-          // eslint-disable-next-line no-await-in-loop
-          await promises
-        }
       } else {
         logger.error(`Couldn't find provider for supported network ${network}`)
       }
-    }
+    })
 
     Promise.allSettled(
       accounts
