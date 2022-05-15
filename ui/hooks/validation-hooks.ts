@@ -1,10 +1,12 @@
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
-import { ETHEREUM } from "@tallyho/tally-background/constants"
+import { POLYGON } from "@tallyho/tally-background/constants"
+import { MULTI_NETWORK } from "@tallyho/tally-background/features"
 import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
 import { useRef, useState } from "react"
-import { useBackgroundDispatch } from "./redux-hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
  * A handler that is called once a valid input is processed through a
@@ -145,6 +147,12 @@ export const useAddressOrNameValidation: AsyncValidationHook<
   const validatingValue = useRef<string | undefined>(undefined)
   const dispatch = useBackgroundDispatch()
 
+  let { network } = useBackgroundSelector(selectCurrentAccount)
+
+  if (MULTI_NETWORK) {
+    network = POLYGON
+  }
+
   const handleInputChange = async (newValue: string) => {
     setRawValue(newValue)
 
@@ -160,7 +168,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
       validatingValue.current = trimmed
 
       const resolved = (await dispatch(
-        resolveNameOnNetwork({ name: trimmed, network: ETHEREUM })
+        resolveNameOnNetwork({ name: trimmed, network })
       )) as unknown as AddressOnNetwork | undefined
 
       // Asynchronicity means we could already have started validating another

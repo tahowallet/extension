@@ -12,7 +12,7 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../../constants"
+import { FIAT_CURRENCIES, USD, BASE_ASSETS } from "../../constants"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -25,7 +25,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
-import { sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -167,14 +167,13 @@ export default class IndexingService extends BaseService<Events> {
    *          the codebase. Fiat currencies are not included.
    */
   async getCachedAssets(network: EVMNetwork): Promise<AnyAsset[]> {
-    const baseAssets = [BTC, ETH]
     const customAssets = await this.db.getCustomAssetsByNetwork(network)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    return mergeAssets(
-      baseAssets,
+    return mergeAssets<FungibleAsset>(
+      BASE_ASSETS,
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
@@ -218,9 +217,9 @@ export default class IndexingService extends BaseService<Events> {
     assetLookups: [],
   }
 
-  async notifyEnrichedTransaction(
+  notifyEnrichedTransaction(
     enrichedEVMTransaction: EnrichedEVMTransaction
-  ): Promise<void> {
+  ): void {
     const jointAnnotations =
       typeof enrichedEVMTransaction.annotation === "undefined"
         ? []
@@ -403,7 +402,7 @@ export default class IndexingService extends BaseService<Events> {
       [contractAddress: string]: SmartContractFungibleAsset
     }>((acc, asset) => {
       const newAcc = { ...acc }
-      newAcc[asset.contractAddress.toLowerCase()] = asset
+      newAcc[normalizeEVMAddress(asset.contractAddress)] = asset
       return newAcc
     }, {})
 
@@ -411,7 +410,7 @@ export default class IndexingService extends BaseService<Events> {
     const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
-          listedAssetByAddress[contractAddress] ??
+          listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
           (await this.getKnownSmartContractAsset(
             addressNetwork.network,
             contractAddress
@@ -524,10 +523,7 @@ export default class IndexingService extends BaseService<Events> {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
-      const basicPrices = await getPrices(
-        [BTC, ETH] as CoinGeckoAsset[],
-        FIAT_CURRENCIES
-      )
+      const basicPrices = await getPrices(BASE_ASSETS, FIAT_CURRENCIES)
 
       // kick off db writes and event emission, don't wait for the promises to
       // settle
@@ -546,7 +542,11 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
     } catch (e) {
-      logger.error("Error getting base asset prices", BTC, ETH, FIAT_CURRENCIES)
+      logger.error(
+        "Error getting base asset prices",
+        BASE_ASSETS,
+        FIAT_CURRENCIES
+      )
     }
 
     // get the prices of all assets to track and save them
@@ -671,6 +671,7 @@ export default class IndexingService extends BaseService<Events> {
         await this.chainService.getAccountsToTrack()
       ).map(async (addressOnNetwork) => {
         await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
+        await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
       })
     )
   }

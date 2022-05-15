@@ -197,6 +197,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             border-radius: 4px;
             border: 1px solid var(--green-60);
             padding-left: 16px;
+            padding-right: 56px;
             box-sizing: border-box;
             color: var(--green-40);
           }
@@ -296,8 +297,15 @@ function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
   asset: T,
   assetsToSearch: AnyAssetWithOptionalAmount<T>[]
 ) {
-  return assetsToSearch.find(({ asset: listAsset }) =>
-    isSameAsset(asset, listAsset)
+  return (
+    assetsToSearch.find(({ asset: listAsset }) =>
+      isSameAsset(asset, listAsset)
+    ) ?? {
+      // If not found, default balance to zero
+      asset: { ...asset, decimals: 1 },
+      localizedDecimalAmount: "0",
+      amount: BigInt(0),
+    }
   )
 }
 
@@ -358,7 +366,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
       parsedGivenAmount,
       selectedAssetAndAmount.asset.decimals
     )
-    if (decimalMatched.amount > selectedAssetAndAmount.amount) {
+    if (
+      decimalMatched.amount > selectedAssetAndAmount.amount ||
+      selectedAssetAndAmount.amount <= 0
+    ) {
       return "Insufficient balance"
     }
 
@@ -498,6 +509,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
             padding: 0px 16px;
             box-sizing: border-box;
             position: relative;

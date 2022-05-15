@@ -19,7 +19,7 @@ export const internalProviderPort = {
     this.listeners.push(listener)
   },
   removeEventListener(toRemove: (message: any) => unknown): void {
-    this.listeners.filter((listener) => listener !== toRemove)
+    this.listeners = this.listeners.filter((listener) => listener !== toRemove)
   },
   origin: window.location.origin,
   postMessage(message: any): void {
@@ -51,4 +51,18 @@ export const getSignerAddress = async (): Promise<string> => {
   const signer = provider.getSigner()
   const signerAddress = await signer.getAddress()
   return signerAddress
+}
+
+export const getNonce = async (): Promise<number> => {
+  const provider = getProvider()
+  const signer = provider.getSigner()
+  const signerAddress = await signer.getAddress()
+  const nonce = provider.getTransactionCount(signerAddress)
+  return nonce
+}
+
+export const getCurrentTimestamp = async (): Promise<number> => {
+  const provider = getProvider()
+  const { timestamp } = await provider.getBlock(provider.getBlockNumber())
+  return timestamp
 }

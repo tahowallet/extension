@@ -45,7 +45,7 @@ function TextArea({
           box-sizing: border-box;
         }
         .error {
-          border-color: var(--error);
+          border-color: var(--trophy-gold);
         }
         .error_message {
           color: var(--error);

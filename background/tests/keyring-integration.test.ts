@@ -10,7 +10,7 @@ import KeyringService, {
 } from "../services/keyring"
 import { KeyringTypes } from "../types"
 import { EIP1559TransactionRequest } from "../networks"
-import { ETHEREUM } from "../constants"
+import { ETH, ETHEREUM } from "../constants"
 import logger from "../lib/logger"
 
 const originalCrypto = global.crypto
@@ -51,6 +51,7 @@ const validTransactionRequests: {
     maxPriorityFeePerGas: 0n,
     gasLimit: 0n,
     chainID: "0",
+    network: { name: "none", chainID: "0", baseAsset: ETH, family: "EVM" },
   },
 }
 

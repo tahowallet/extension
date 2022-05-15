@@ -1,6 +1,5 @@
 import { DomainName, HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
-import { ETHEREUM } from "../../constants/networks"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -94,7 +93,9 @@ export default class NameService extends BaseService<Events> {
         [address: HexString]: ResolvedNameRecord | undefined
       }
     }
-  } = { EVM: { [ETHEREUM.chainID]: {} } }
+  } = {
+    EVM: {},
+  }
 
   /**
    * Create a new NameService. The service isn't initialized until
@@ -207,8 +208,12 @@ export default class NameService extends BaseService<Events> {
     const { address: normalizedAddress, network } =
       normalizeAddressOnNetwork(addressOnNetwork)
 
+    if (!this.cachedResolvedNames[network.family][network.chainID]) {
+      this.cachedResolvedNames[network.family][network.chainID] = {}
+    }
+
     const cachedResolvedNameRecord =
-      this.cachedResolvedNames[network.family][network.chainID][
+      this.cachedResolvedNames[network.family]?.[network.chainID]?.[
         normalizedAddress
       ]
 
