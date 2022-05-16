@@ -28,20 +28,6 @@ interface NetworkSettingsSelectProps {
   onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
 }
 
-type GasOption = {
-  confidence: string
-  estimatedSpeed: string
-  type: NetworkFeeTypeChosen
-  estimatedGwei: string
-  maxPriorityGwei: string
-  maxGwei: string
-  dollarValue: string
-  estimatedFeePerGas: bigint
-  baseMaxFeePerGas: bigint
-  baseMaxGwei: string
-  maxFeePerGas: bigint
-  maxPriorityFeePerGas: bigint
-}
 
 // Map a BlockEstimate from the backend to a GasOption for the UI.
 const gasOptionFromEstimate = (

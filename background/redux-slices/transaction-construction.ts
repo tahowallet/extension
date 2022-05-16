@@ -91,6 +91,21 @@ export type Events = {
   broadcastSignedTransaction: SignedEVMTransaction
 }
 
+export type GasOption = {
+  confidence: string
+  estimatedSpeed: string
+  type: NetworkFeeTypeChosen
+  estimatedGwei: string
+  maxPriorityGwei: string
+  maxGwei: string
+  dollarValue: string
+  estimatedFeePerGas: bigint
+  baseMaxFeePerGas: bigint
+  baseMaxGwei: string
+  maxFeePerGas: bigint
+  maxPriorityFeePerGas: bigint
+}
+
 export const emitter = new Emittery<Events>()
 
 // Async thunk to pass transaction options from the store to the background via an event
