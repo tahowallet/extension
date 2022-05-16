@@ -19,7 +19,7 @@ const listItemInfo = [
   },
   {
     network: POLYGON,
-    info: /* ( ͡° ͜ʖ ͡°) */ "L2 scaling solution",
+    info: "L2 scaling solution",
     width: 24,
     height: 24,
   },
