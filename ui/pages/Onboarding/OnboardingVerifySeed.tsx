@@ -38,9 +38,7 @@ export default function OnboardingVerifySeed(): ReactElement {
       {verificationStep === "success" && (
         <VerifySeedSuccess mnemonic={mnemonic} />
       )}
-      {verificationStep === "error" && (
-        <VerifySeedError setStep={setVerificationStep} />
-      )}
+      {verificationStep === "error" && <VerifySeedError />}
 
       <style jsx>
         {`
@@ -55,6 +53,7 @@ export default function OnboardingVerifySeed(): ReactElement {
           }
           .top {
             display: flex;
+            justify-content: center;
             width: 100%;
             height: 47px;
           }
@@ -63,10 +62,6 @@ export default function OnboardingVerifySeed(): ReactElement {
             background-size: cover;
             width: 95px;
             height: 25px;
-            position: absolute;
-            left: 0px;
-            right: 0px;
-            margin: 0 auto;
           }
         `}
       </style>

@@ -53,6 +53,7 @@ function VerifySeedSuccess({ mnemonic }: { mnemonic: string[] }): ReactElement {
           }
           .message_icon {
             margin-right: 20px;
+            height: 54px;
           }
         `}
       </style>

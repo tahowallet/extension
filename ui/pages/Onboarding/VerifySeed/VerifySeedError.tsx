@@ -1,13 +1,11 @@
 import React, { ReactElement } from "react"
-import { Link } from "react-router-dom"
+import { Link, useHistory } from "react-router-dom"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
 
-function VerifySeedError({
-  setStep,
-}: {
-  setStep: (step: "verification") => void
-}): ReactElement {
+function VerifySeedError(): ReactElement {
+  const history = useHistory()
+
   return (
     <>
       <div className="onboarding_box">
@@ -26,7 +24,7 @@ function VerifySeedError({
         <p>
           If you prefer you can{" "}
           <Link to="/">
-            <span className="link">start a new wallet</span>
+            <span className="link">create a new wallet</span>
           </Link>
           .
         </p>
@@ -34,7 +32,7 @@ function VerifySeedError({
       <SharedButton
         size="medium"
         type="primary"
-        onClick={() => setStep("verification")}
+        onClick={() => history.push("/onboarding/save-seed")}
       >
         Try again
       </SharedButton>
@@ -56,6 +54,7 @@ function VerifySeedError({
           }
           .message_icon {
             margin-right: 20px;
+            height: 54px;
           }
         `}
       </style>

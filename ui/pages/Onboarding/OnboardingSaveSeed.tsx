@@ -1,6 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import { useDispatch } from "react-redux"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
 import { useBackgroundSelector } from "../../hooks"
@@ -48,6 +49,7 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
           color: var(--attention);
         }
         .message_icon {
+          height: 54px;
           margin-right: 20px;
         }
       `}</style>
@@ -138,12 +140,12 @@ function SeedContainer(): ReactElement {
         .column {
           color: var(--green-20);
           font-weight: 600;
-          line-height: 24px;
+          line-height: 32px;
           text-align: right;
         }
         .column_wrap {
           display: flex;
-          height: 288px;
+          height: 382px;
         }
         .dashes {
           width: 12px;
@@ -167,7 +169,15 @@ function SeedContainer(): ReactElement {
 }
 
 export default function OnboardingSaveSeed(): ReactElement {
-  const [revealSeed, setRevealSeed] = useState(false)
+  const historyPre: unknown = useHistory()
+  const history = historyPre as {
+    entries: { pathname: string }[]
+  }
+
+  const hasNewSeed =
+    history.entries.at(-2)?.pathname ===
+    "/onboarding/onboarding-interstitial-create-phrase"
+  const [revealSeed, setRevealSeed] = useState(!hasNewSeed)
 
   return (
     <section className="onboarding_container">
@@ -194,6 +204,7 @@ export default function OnboardingSaveSeed(): ReactElement {
           }
           .top {
             display: flex;
+            justify-content: space-between;
             width: 100%;
             height: 40px;
           }
@@ -202,10 +213,7 @@ export default function OnboardingSaveSeed(): ReactElement {
             background-size: cover;
             width: 95px;
             height: 25px;
-            position: absolute;
-            left: 0px;
-            right: 0px;
-            margin: 0 auto;
+            margin-right: calc(50% - 95px / 2);
           }
         `}
       </style>
