@@ -10,27 +10,27 @@ import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 
-const networks = [
+const listItemInfo = [
   {
-    ...ETHEREUM,
+    network: ETHEREUM,
     info: "Mainnet",
     width: 18,
     height: 29,
   },
   {
-    ...POLYGON,
+    network: POLYGON,
     info: /* ( ͡° ͜ʖ ͡°) */ "L2 scaling solution",
     width: 24,
     height: 24,
   },
   {
-    ...ARBITRUM_ONE,
+    network: ARBITRUM_ONE,
     info: "L2 scaling solution",
     width: 23.2,
     height: 26,
   },
   {
-    ...OPTIMISM,
+    network: OPTIMISM,
     info: "L2 scaling solution",
     width: 24,
     height: 24,
@@ -55,14 +55,14 @@ export default function TopMenuProtocolList(): ReactElement {
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {networks.map((network) => (
+        {listItemInfo.map((info) => (
           <TopMenuProtocolListItem
-            isSelected={sameNetwork(currentNetwork, network)}
-            key={network.name}
-            name={network.name}
-            info={network.info}
-            width={network.width}
-            height={network.height}
+            isSelected={sameNetwork(currentNetwork, info.network)}
+            key={info.network.name}
+            network={info.network}
+            height={info.height}
+            width={info.width}
+            info={info.info}
           />
         ))}
       </ul>
