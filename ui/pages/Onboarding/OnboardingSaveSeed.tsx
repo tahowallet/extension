@@ -27,7 +27,7 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
         </div>
         <p>
           It&apos;s important to write down your secret recovery phrase and
-          store it somewere safe.
+          store it somewhere safe.
         </p>
         <p>This is the only way to recover your accounts and funds.</p>
         <p>You will not be able to export your recovery phrase later.</p>

@@ -6,7 +6,7 @@ import { OnboardingBox, OnboardingMessageHeader } from "../styles"
 function VerifySeedError({
   setStep,
 }: {
-  setStep: (s: "verification") => void
+  setStep: (step: "verification") => void
 }): ReactElement {
   return (
     <>

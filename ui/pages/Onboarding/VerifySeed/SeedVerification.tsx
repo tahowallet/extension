@@ -1,7 +1,6 @@
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import SharedButton from "../../../components/Shared/SharedButton"
-import { useBackgroundSelector } from "../../../hooks"
 import { OnboardingBox } from "../styles"
 
 type Word = {
@@ -11,9 +10,9 @@ type Word = {
 }
 
 function SeedWord(
-  props: Word & { onClick: (index: number, word?: string) => void }
+  props: Word & { onSubmit: (index: number, word?: string) => void }
 ): ReactElement {
-  const { index, word, isActive = false, onClick } = props
+  const { index, word, isActive = false, onSubmit } = props
   return (
     <>
       <div
@@ -21,11 +20,11 @@ function SeedWord(
           is_active: isActive,
           is_filled: !!word,
         })}
-        onClick={() => onClick(index, word)}
+        onClick={() => onSubmit(index, word)}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            onClick(index, word)
+            onSubmit(index, word)
           }
         }}
         role="button"
@@ -174,7 +173,7 @@ function SeedVerification({
             index={index}
             word={word}
             isActive={isActive}
-            onClick={handleClick}
+            onSubmit={handleClick}
           />
         ))}
       </div>
