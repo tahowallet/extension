@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
-import { HexString } from "../types"
+import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const defaultSettings = {
@@ -31,7 +31,6 @@ export type Events = {
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
-  addOrEditAddressName: { name: string; address: HexString }
 }
 
 export const emitter = new Emittery<Events>()
@@ -73,7 +72,7 @@ const uiSlice = createSlice({
     ) => {
       immerState.selectedAccount = addressNetwork
     },
-    setSelectedNetwork: (
+    changeSelectedNetwork: (
       immerState,
       { payload: network }: { payload: EVMNetwork }
     ) => {
@@ -125,10 +124,23 @@ export const {
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
-  setSelectedNetwork,
 } = uiSlice.actions
 
 export default uiSlice.reducer
+
+export const setSelectedNetwork = createBackgroundAsyncThunk(
+  "ui/setSelectedNetwork",
+  async (network: EVMNetwork, { getState, dispatch }) => {
+    const state = getState() as { ui: UIState; account: AccountState }
+    const { ui, account } = state
+    dispatch(uiSlice.actions.changeSelectedNetwork(network))
+    if (
+      !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
+    ) {
+      dispatch(addAddressNetwork({ ...ui.selectedAccount, network }))
+    }
+  }
+)
 
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
