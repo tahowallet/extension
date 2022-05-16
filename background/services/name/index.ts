@@ -21,7 +21,7 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { RESOLVE_UNS_NAMES, RESOLVE_RNS_NAMES } from "../../features"
+import { RESOLVE_RNS_NAMES } from "../../features"
 
 export { NameResolverSystem }
 
@@ -125,7 +125,7 @@ export default class NameService extends BaseService<Events> {
       // Third-party resolvers are used when the user has not defined a name
       // for the given resource.
       ensResolverFor(chainService),
-      ...(RESOLVE_UNS_NAMES ? [unsResolver()] : []),
+      unsResolver(),
       ...(RESOLVE_RNS_NAMES ? [rnsResolver()] : []),
     ]
 
