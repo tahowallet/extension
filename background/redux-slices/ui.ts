@@ -3,6 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
+import { clearSwapQuote } from "./0x-swap"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -148,6 +149,7 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     const state = getState() as { ui: UIState; account: AccountState }
     const { ui, account } = state
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
+    dispatch(clearSwapQuote())
     if (
       !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
     ) {
