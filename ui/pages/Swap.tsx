@@ -18,7 +18,10 @@ import {
   HIDE_SWAP_REWARDS,
   HIDE_TOKEN_FEATURES,
 } from "@tallyho/tally-background/features"
-import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccountBalances,
+  selectCurrentNetwork,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
   FungibleAsset,
@@ -32,6 +35,7 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
@@ -77,6 +81,8 @@ export default function Swap(): ReactElement {
     { symbol: string; contractAddress?: string } | undefined
   >()
 
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
@@ -89,7 +95,7 @@ export default function Swap(): ReactElement {
         SmartContractFungibleAsset | FungibleAsset
       > =>
         isSmartContractFungibleAsset(assetAmount.asset) ||
-        assetAmount.asset.symbol === "ETH"
+        assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
     ) ?? []
 
   const {
@@ -142,12 +148,28 @@ export default function Swap(): ReactElement {
     // together.
     const knownAssets: AnyAsset[] = state.assets
     return knownAssets.filter(
-      (asset): asset is SmartContractFungibleAsset | FungibleAsset =>
-        (isSmartContractFungibleAsset(asset) ||
-          // Explicity add ETH even though it is not an ERC-20 token
-          // @TODO change as part of multi-network refactor.
-          (isFungibleAsset(asset) && asset.symbol === "ETH")) &&
-        asset.symbol !== sellAsset?.symbol
+      (asset): asset is SmartContractFungibleAsset | FungibleAsset => {
+        // We don't want to buy the same asset we're selling.
+        if (asset.symbol === sellAsset?.symbol) {
+          return false
+        }
+
+        if (isSmartContractFungibleAsset(asset)) {
+          // No cross-chain swaps (yet!!)
+          if (sameNetwork(asset.homeNetwork, currentNetwork)) {
+            return true
+          }
+        }
+        if (
+          // Explicitly add a network's base asset.
+          isFungibleAsset(asset) &&
+          // Just checking on symbol is a pretty weak check - can we do better?
+          asset.symbol === currentNetwork.baseAsset.symbol
+        ) {
+          return true
+        }
+        return false
+      }
     )
   })
 
