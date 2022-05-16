@@ -1,27 +1,36 @@
+import {
+  ARBITRUM_ONE,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "@tallyho/tally-background/constants"
+import { sameNetwork } from "@tallyho/tally-background/networks"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 
 const networks = [
   {
-    name: "Ethereum",
+    ...ETHEREUM,
     info: "Mainnet",
     width: 18,
     height: 29,
   },
   {
-    name: "Polygon",
+    ...POLYGON,
     info: /* ( ͡° ͜ʖ ͡°) */ "L2 scaling solution",
     width: 24,
     height: 24,
   },
   {
-    name: "Arbitrum",
+    ...ARBITRUM_ONE,
     info: "L2 scaling solution",
     width: 23.2,
     height: 26,
   },
   {
-    name: "Optimism",
+    ...OPTIMISM,
     info: "L2 scaling solution",
     width: 24,
     height: 24,
@@ -41,12 +50,14 @@ const networks = [
 ]
 
 export default function TopMenuProtocolList(): ReactElement {
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {networks.map((network, index) => (
+        {networks.map((network) => (
           <TopMenuProtocolListItem
-            isSelected={index === 0}
+            isSelected={sameNetwork(currentNetwork, network)}
             key={network.name}
             name={network.name}
             info={network.info}
@@ -54,15 +65,6 @@ export default function TopMenuProtocolList(): ReactElement {
             height={network.height}
           />
         ))}
-        {/* <li className="divider">
-          <div className="divider_label">Testnet</div>
-          <div className="divider_line" />
-        </li>
-        {Array(3)
-          .fill("")
-          .map((_, index) => (
-            <TopMenuProtocolListItem key={index.toString()} />
-          ))} */}
       </ul>
       <style jsx>
         {`
