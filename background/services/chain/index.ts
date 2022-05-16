@@ -21,10 +21,17 @@ import {
   sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import { HOUR } from "../../constants"
-import { ETH } from "../../constants/currencies"
-import { ETHEREUM, ARBITRUM_ONE, OPTIMISM } from "../../constants/networks"
-import { MULTI_NETWORK as USE_MULTI_NETWORK } from "../../features"
+import {
+  HOUR,
+  ETHEREUM,
+  ARBITRUM_ONE,
+  POLYGON,
+  OPTIMISM,
+} from "../../constants"
+import {
+  MULTI_NETWORK as USE_MULTI_NETWORK,
+  USE_MAINNET_FORK,
+} from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
@@ -195,7 +202,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.supportedNetworks = USE_MULTI_NETWORK
-      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM]
+      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
       : [ETHEREUM]
 
     this.providers = {
@@ -287,7 +294,9 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return this.providers.evm[network.chainID]
+    return USE_MAINNET_FORK
+      ? this.providers.evm[ETHEREUM.chainID]
+      : this.providers.evm[network.chainID]
   }
 
   /**
@@ -503,7 +512,7 @@ export default class ChainService extends BaseService<Events> {
       address,
       network,
       assetAmount: {
-        asset: ETH,
+        asset: network.baseAsset,
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
@@ -517,9 +526,24 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
-    this.getLatestBaseAccountBalance(addressNetwork)
-    this.subscribeToAccountTransactions(addressNetwork)
-    this.loadRecentAssetTransfers(addressNetwork)
+    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
+        e
+      )
+    })
+    this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error subscribing to account transactions",
+        e
+      )
+    })
+    this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error loading recent asset transfers",
+        e
+      )
+    })
   }
 
   async getBlockHeight(network: EVMNetwork): Promise<number> {
@@ -628,9 +652,13 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest
   ): Promise<bigint> {
+    if (USE_MAINNET_FORK) {
+      return 350000n
+    }
     const estimate = await this.providerForNetworkOrThrow(network).estimateGas(
       ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
     )
+
     // Add 10% more gas as a safety net
     const uppedEstimate = estimate.add(estimate.div(10))
     return BigInt(uppedEstimate.toString())
@@ -811,10 +839,15 @@ export default class ChainService extends BaseService<Events> {
     endBlock: bigint
   ): Promise<void> {
     // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTranfers endpoint
-    if (addressOnNetwork.network.chainID !== "1") {
+    // as neither have Alchemy's assetTransfers endpoint
+    if (
+      addressOnNetwork.network.chainID !== "1" /* Ethereum */ &&
+      addressOnNetwork.network.chainID !== "137" /* Polygon */
+    ) {
       logger.error(
-        `Asset transfer check not supported on network ${addressOnNetwork.network}`
+        `Asset transfer check not supported on network ${JSON.stringify(
+          addressOnNetwork.network
+        )}`
       )
     }
 

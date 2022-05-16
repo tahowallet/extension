@@ -138,6 +138,10 @@ label {
   pointer-events: none;
 }
 
+.no_click {
+  pointer-events: none;
+}
+
 .divider {
   width: 80%;
   height: 2px;

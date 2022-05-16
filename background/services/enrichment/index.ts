@@ -270,11 +270,11 @@ export default class EnrichmentService extends BaseService<Events> {
         (
           await Promise.allSettled(
             [
-              ...new Set(
+              ...new Set([
                 ...erc20TransferLogs.map(
                   ({ recipientAddress }) => recipientAddress
-                )
-              ),
+                ),
+              ]),
             ].map(
               async (address) =>
                 [
