@@ -67,8 +67,17 @@ const uiSlice = createSlice({
       ...state,
       showingActivityDetailID: transactionID,
     }),
-    setSelectedAccount: (immerState, { payload: addressNetwork }) => {
+    setSelectedAccount: (
+      immerState,
+      { payload: addressNetwork }: { payload: AddressOnNetwork }
+    ) => {
       immerState.selectedAccount = addressNetwork
+    },
+    setSelectedNetwork: (
+      immerState,
+      { payload: network }: { payload: EVMNetwork }
+    ) => {
+      immerState.selectedAccount.network = network
     },
     initializationLoadingTimeHitLimit: (state) => ({
       ...state,
@@ -116,6 +125,7 @@ export const {
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
+  setSelectedNetwork,
 } = uiSlice.actions
 
 export default uiSlice.reducer
