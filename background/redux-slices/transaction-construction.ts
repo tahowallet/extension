@@ -108,6 +108,23 @@ export type GasOption = {
 
 export const emitter = new Emittery<Events>()
 
+const makeBlockEstimate = (
+  type: number,
+  estimatedFeesPerGas: BlockPrices
+): BlockEstimate => {
+  return {
+    maxFeePerGas:
+      (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[type]) / 10n,
+    confidence: type,
+    maxPriorityFeePerGas:
+      estimatedFeesPerGas.estimatedPrices.find((el) => el.confidence === type)
+        ?.maxPriorityFeePerGas ?? 0n,
+    price:
+      estimatedFeesPerGas.estimatedPrices.find((el) => el.confidence === type)
+        ?.price ?? 0n,
+  }
+}
+
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionOptions = createBackgroundAsyncThunk(
   "transaction-construction/update-options",
@@ -195,48 +212,9 @@ const transactionSlice = createSlice({
       immerState.estimatedFeesPerGas = {
         ...immerState.estimatedFeesPerGas,
         baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
-        instant: {
-          maxFeePerGas:
-            (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[INSTANT]) /
-            10n,
-          confidence: INSTANT,
-          maxPriorityFeePerGas:
-            estimatedFeesPerGas.estimatedPrices.find(
-              (el) => el.confidence === INSTANT
-            )?.maxPriorityFeePerGas ?? 0n,
-          price:
-            estimatedFeesPerGas.estimatedPrices.find(
-              (el) => el.confidence === INSTANT
-            )?.price ?? 0n,
-        },
-        express: {
-          maxFeePerGas:
-            (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[EXPRESS]) /
-            10n,
-          confidence: EXPRESS,
-          maxPriorityFeePerGas:
-            estimatedFeesPerGas.estimatedPrices.find(
-              (el) => el.confidence === EXPRESS
-            )?.maxPriorityFeePerGas ?? 0n,
-          price:
-            estimatedFeesPerGas.estimatedPrices.find(
-              (el) => el.confidence === EXPRESS
-            )?.price ?? 0n,
-        },
-        regular: {
-          maxFeePerGas:
-            (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[REGULAR]) /
-            10n,
-          confidence: REGULAR,
-          maxPriorityFeePerGas:
-            estimatedFeesPerGas.estimatedPrices.find(
-              (el) => el.confidence === REGULAR
-            )?.maxPriorityFeePerGas ?? 0n,
-          price:
-            estimatedFeesPerGas.estimatedPrices.find(
-              (el) => el.confidence === REGULAR
-            )?.price ?? 0n,
-        },
+        instant: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
+        express: makeBlockEstimate(EXPRESS, estimatedFeesPerGas),
+        regular: makeBlockEstimate(REGULAR, estimatedFeesPerGas),
       }
       immerState.lastGasEstimatesRefreshed = Date.now()
     },
