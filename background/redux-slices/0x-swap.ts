@@ -13,6 +13,8 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
+import { EVMNetwork } from "../networks"
+import { UIState } from "./ui"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -103,12 +105,27 @@ export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
 
-// Use gated features if there is an API key available in the build.
-const zeroXApiBase =
-  typeof process.env.ZEROX_API_KEY !== "undefined" &&
-  process.env.ZEROX_API_KEY.trim() !== ""
-    ? "gated.api.0x.org"
-    : "api.0x.org"
+const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
+  "1": "api.0x.org", // Ethereum
+  "137": "polygon.api.0x.org", // Polygon
+}
+
+const get0xApiBase = (network: EVMNetwork) => {
+  // Use gated features if there is an API key available in the build.
+  const prefix =
+    typeof process.env.ZEROX_API_KEY !== "undefined" &&
+    process.env.ZEROX_API_KEY.trim() !== ""
+      ? "gated."
+      : ""
+
+  const base = chainIdTo0xApiBase[network.chainID]
+  if (!base) {
+    throw new Error(`Swaps not supported on ${network.name}`)
+  }
+
+  return `${prefix}${base}`
+}
+
 const gatedParameters = {
   affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
   feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
@@ -128,9 +145,12 @@ const gatedHeaders: { [header: string]: string } =
 function build0xUrlFromSwapRequest(
   requestPath: string,
   { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
+  network: EVMNetwork,
   additionalParameters: Record<string, string>
 ): URL {
-  const requestUrl = new URL(`https://${zeroXApiBase}/swap/v1${requestPath}`)
+  const requestUrl = new URL(
+    `https://${get0xApiBase(network)}/swap/v1${requestPath}`
+  )
   const tradeAmount = utils.parseUnits(
     "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
     "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals
@@ -186,14 +206,21 @@ function build0xUrlFromSwapRequest(
  */
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
-  async (quoteRequest: SwapQuoteRequest, { dispatch }) => {
+  async (quoteRequest: SwapQuoteRequest, { getState, dispatch }) => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
-    const requestUrl = build0xUrlFromSwapRequest("/quote", quoteRequest, {
-      intentOnFilling: "true",
-      takerAddress: tradeAddress,
-    })
+    const { ui } = getState() as { ui: UIState }
+
+    const requestUrl = build0xUrlFromSwapRequest(
+      "/quote",
+      quoteRequest,
+      ui.selectedAccount.network,
+      {
+        intentOnFilling: "true",
+        takerAddress: tradeAddress,
+      }
+    )
 
     const apiData = await fetchJson({
       url: requestUrl.toString(),
@@ -226,14 +253,21 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
   async (
     quoteRequest: SwapQuoteRequest,
-    { dispatch }
+    { getState, dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
-    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
-      takerAddress: tradeAddress,
-    })
+    const { ui } = getState() as { ui: UIState }
+
+    const requestUrl = build0xUrlFromSwapRequest(
+      "/price",
+      quoteRequest,
+      ui.selectedAccount.network,
+      {
+        takerAddress: tradeAddress,
+      }
+    )
 
     const apiData = await fetchJson({
       url: requestUrl.toString(),
