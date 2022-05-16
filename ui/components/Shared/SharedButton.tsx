@@ -17,6 +17,7 @@ interface Props {
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
+    | "twitter"
   size: "small" | "medium" | "large"
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
@@ -58,6 +59,7 @@ interface PropsWithMediumIcon extends Props {
     | "switch"
     | "wallet"
     | "discord"
+    | "github"
   iconSmall?: never
 }
 
@@ -155,7 +157,8 @@ export default function SharedButton(
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { deemphasized_white: type === "deemphasizedWhite" },
-        { warning: type === "warning" }
+        { warning: type === "warning" },
+        { twitter: type === "twitter" }
       )}
       onClick={handleClick}
     >
@@ -171,7 +174,7 @@ export default function SharedButton(
         })}
       >
         {children}
-        {iconMedium || iconSmall ? (
+        {iconMedium || iconSmall || type === "twitter" ? (
           <span
             className={classNames(
               { icon_button: true },
@@ -307,6 +310,19 @@ export default function SharedButton(
           }
           .tertiary:active .icon_button {
             background-color: var(--gold-80);
+          }
+          .twitter {
+            background-color: #3a90e9;
+            color: #fff;
+          }
+          .twitter:hover {
+            color: #fff;
+            background-color: #5cacff;
+          }
+          .twitter .icon_button,
+          .twitter:hover .icon_button {
+            mask-image: url("./images/twitter.svg");
+            background-color: #fff;
           }
           .white {
             color: #ffffff;

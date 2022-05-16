@@ -21,7 +21,7 @@ function ReadOnlyNotice(): ReactElement {
           height: 40px;
           background: rgba(238, 178, 24, 0.1);
           border-radius: 2px;
-          margin-top: 6px;
+          margin: 6px 0 10px;
           font-weight: 500;
           font-size: 16px;
           display: flex;
@@ -144,7 +144,7 @@ export default function WalletAccountBalanceControl(
           height={48}
           width={250}
           borderRadius={14}
-          margin="12px 0"
+          customStyles="margin: 12px 0"
           isLoaded={!shouldIndicateLoading}
         >
           <div className="balance_label">{t("totalAccountBalance")}</div>
@@ -156,50 +156,56 @@ export default function WalletAccountBalanceControl(
             </span>
           </span>
         </SharedSkeletonLoader>
-        {currentAccountSigningMethod ? (
-          <>
-            {hasSavedSeed ? (
-              <div className="send_receive_button_wrap">
-                <SharedButton
-                  iconSmall="send"
-                  size="medium"
-                  type="tertiary"
-                  linkTo="/send"
-                  iconPosition="left"
-                >
-                  Send
-                </SharedButton>
-                <SharedButton
-                  onClick={handleClick}
-                  iconSmall="receive"
-                  size="medium"
-                  type="tertiary"
-                  iconPosition="left"
-                >
-                  Receive
-                </SharedButton>
-              </div>
-            ) : (
-              <div className="save_seed_button_wrap">
-                <SharedButton
-                  iconSmall="arrow-right"
-                  size="large"
-                  type="warning"
-                  linkTo="/onboarding/2"
-                >
-                  First, secure your recovery seed
-                </SharedButton>
-              </div>
-            )}
-          </>
-        ) : (
-          <ReadOnlyNotice />
-        )}
+
+        <SharedSkeletonLoader
+          isLoaded={!shouldIndicateLoading}
+          width={180}
+          customStyles="margin-bottom: 10px;"
+        >
+          {currentAccountSigningMethod ? (
+            <>
+              {hasSavedSeed ? (
+                <div className="send_receive_button_wrap">
+                  <SharedButton
+                    iconSmall="send"
+                    size="medium"
+                    type="tertiary"
+                    linkTo="/send"
+                    iconPosition="left"
+                  >
+                    Send
+                  </SharedButton>
+                  <SharedButton
+                    onClick={handleClick}
+                    iconSmall="receive"
+                    size="medium"
+                    type="tertiary"
+                    iconPosition="left"
+                  >
+                    Receive
+                  </SharedButton>
+                </div>
+              ) : (
+                <div className="save_seed_button_wrap">
+                  <SharedButton
+                    iconSmall="arrow-right"
+                    size="large"
+                    type="warning"
+                    linkTo="/onboarding/2"
+                  >
+                    First, secure your recovery seed
+                  </SharedButton>
+                </div>
+              )}
+            </>
+          ) : (
+            <ReadOnlyNotice />
+          )}
+        </SharedSkeletonLoader>
       </div>
       <style jsx>
         {`
           .wrap {
-            height: 146px;
             display: flex;
             justify-contnet: space-between;
             align-items: center;
@@ -222,6 +228,9 @@ export default function WalletAccountBalanceControl(
             display: flex;
             width: 180px;
             justify-content: space-between;
+          }
+          .balance_actions {
+            margin-bottom: 20px;
           }
           .balance_label {
             width: 160px;

@@ -5,11 +5,12 @@ export default function SharedSkeletonLoader(props: {
   width?: number
   height?: number
   borderRadius?: number
-  margin?: string
   children?: React.ReactNode
   isLoaded?: boolean
+  customStyles?: string
 }): ReactElement {
-  const { width, height, borderRadius, margin, isLoaded, children } = props
+  const { width, height, borderRadius, isLoaded, customStyles, children } =
+    props
 
   if (isLoaded) return <>{children}</>
 
@@ -22,8 +23,8 @@ export default function SharedSkeletonLoader(props: {
             height: ${height}px;
             background-color: var(--hunter-green);
             border-radius: ${borderRadius}px;
-            margin: ${margin};
             animation: pulse 1.1s infinite;
+            ${customStyles}
           }
           @keyframes pulse {
             0% {
@@ -44,6 +45,6 @@ export default function SharedSkeletonLoader(props: {
 SharedSkeletonLoader.defaultProps = {
   height: 24,
   borderRadius: 8,
-  margin: "0",
   isLoaded: false,
+  customStyles: "",
 }

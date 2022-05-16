@@ -14,6 +14,10 @@ import {
   SwapQuoteRequest,
   fetchSwapQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
+import {
+  HIDE_SWAP_REWARDS,
+  HIDE_TOKEN_FEATURES,
+} from "@tallyho/tally-background/features"
 import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -37,6 +41,9 @@ import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
+import SharedIcon from "../components/Shared/SharedIcon"
+import SharedBanner from "../components/Shared/SharedBanner"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -439,7 +446,38 @@ export default function Swap(): ReactElement {
           )}
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
-          <SharedActivityHeader label="Swap Assets" activity="swap" />
+          <div className="header">
+            <SharedActivityHeader label="Swap Assets" activity="swap" />
+            {HIDE_TOKEN_FEATURES ? (
+              <></>
+            ) : (
+              !HIDE_SWAP_REWARDS && (
+                // TODO: Add onClick function after design is ready
+                <SharedIcon
+                  icon="cog@2x.png"
+                  width={20}
+                  color="var(--green-60)"
+                  hoverColor="#fff"
+                  customStyles="margin: 17px 0 25px;"
+                />
+              )
+            )}
+          </div>
+          {HIDE_TOKEN_FEATURES ? (
+            <></>
+          ) : (
+            HIDE_SWAP_REWARDS && (
+              <SharedBanner
+                id="swap_rewards"
+                canBeClosed
+                icon="notif-announcement"
+                iconColor="var(--link)"
+                customStyles="margin-bottom: 16px"
+              >
+                Swap rewards coming soon
+              </SharedBanner>
+            )
+          )}
           <div className="form">
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
@@ -479,10 +517,14 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              <SwapTransactionSettingsChooser
-                swapTransactionSettings={swapTransactionSettings}
-                onSwapTransactionSettingsSave={setSwapTransactionSettings}
-              />
+              {HIDE_SWAP_REWARDS ? (
+                <SwapTransactionSettingsChooser
+                  swapTransactionSettings={swapTransactionSettings}
+                  onSwapTransactionSettingsSave={setSwapTransactionSettings}
+                />
+              ) : (
+                <SwapRewardsCard />
+              )}
             </div>
             <div className="footer standard_width_padded">
               {
@@ -532,6 +574,11 @@ export default function Swap(): ReactElement {
         {`
           .swap_wrap {
             margin-top: -9px;
+          }
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
           }
           .network_fee_group {
             display: flex;

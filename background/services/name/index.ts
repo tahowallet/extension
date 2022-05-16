@@ -1,6 +1,5 @@
 import { DomainName, HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
-import { ETHEREUM } from "../../constants/networks"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -21,7 +20,6 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { RESOLVE_UNS_NAMES } from "../../features"
 
 export { NameResolverSystem }
 
@@ -93,7 +91,9 @@ export default class NameService extends BaseService<Events> {
         [address: HexString]: ResolvedNameRecord | undefined
       }
     }
-  } = { EVM: { [ETHEREUM.chainID]: {} } }
+  } = {
+    EVM: {},
+  }
 
   /**
    * Create a new NameService. The service isn't initialized until
@@ -123,7 +123,7 @@ export default class NameService extends BaseService<Events> {
       // Third-party resolvers are used when the user has not defined a name
       // for the given resource.
       ensResolverFor(chainService),
-      ...(RESOLVE_UNS_NAMES ? [unsResolver()] : []),
+      unsResolver(),
     ]
 
     preferenceService.emitter.on(
@@ -205,8 +205,12 @@ export default class NameService extends BaseService<Events> {
     const { address: normalizedAddress, network } =
       normalizeAddressOnNetwork(addressOnNetwork)
 
+    if (!this.cachedResolvedNames[network.family][network.chainID]) {
+      this.cachedResolvedNames[network.family][network.chainID] = {}
+    }
+
     const cachedResolvedNameRecord =
-      this.cachedResolvedNames[network.family][network.chainID][
+      this.cachedResolvedNames[network.family]?.[network.chainID]?.[
         normalizedAddress
       ]
 
