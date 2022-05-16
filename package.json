@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.13.3",
+  "version": "0.13.4",
   "description": "Tally Ho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -52,8 +52,8 @@
     "@tallyho/window-provider": "0.0.1",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
-    "webext-redux": "^2.1.7",
     "webext-options-sync": "^2.0.1",
+    "webext-redux": "^2.1.7",
     "webextension-polyfill": "^0.7.0"
   },
   "devDependencies": {
