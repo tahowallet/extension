@@ -72,12 +72,6 @@ const uiSlice = createSlice({
     ) => {
       immerState.selectedAccount = addressNetwork
     },
-    changeSelectedNetwork: (
-      immerState,
-      { payload: network }: { payload: EVMNetwork }
-    ) => {
-      immerState.selectedAccount.network = network
-    },
     initializationLoadingTimeHitLimit: (state) => ({
       ...state,
       initializationLoadingTimeExpired: true,
@@ -128,20 +122,6 @@ export const {
 
 export default uiSlice.reducer
 
-export const setSelectedNetwork = createBackgroundAsyncThunk(
-  "ui/setSelectedNetwork",
-  async (network: EVMNetwork, { getState, dispatch }) => {
-    const state = getState() as { ui: UIState; account: AccountState }
-    const { ui, account } = state
-    dispatch(uiSlice.actions.changeSelectedNetwork(network))
-    if (
-      !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
-    ) {
-      dispatch(addAddressNetwork({ ...ui.selectedAccount, network }))
-    }
-  }
-)
-
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
   "ui/setNewDefaultWalletValue",
@@ -159,6 +139,20 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     await emitter.emit("newSelectedAccount", addressNetwork)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
+  }
+)
+
+export const setSelectedNetwork = createBackgroundAsyncThunk(
+  "ui/setSelectedNetwork",
+  async (network: EVMNetwork, { getState, dispatch }) => {
+    const state = getState() as { ui: UIState; account: AccountState }
+    const { ui, account } = state
+    dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
+    if (
+      !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
+    ) {
+      dispatch(addAddressNetwork({ ...ui.selectedAccount, network }))
+    }
   }
 )
 
