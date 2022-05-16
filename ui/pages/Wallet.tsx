@@ -1,17 +1,23 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundSelector } from "../hooks"
+import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
+
+import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
+import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+
+  const dispatch = useBackgroundDispatch()
 
   const hasAccounts = useBackgroundSelector(
     (state) => Object.keys(state.account.accountsData).length > 0
@@ -19,6 +25,15 @@ export default function Wallet(): ReactElement {
 
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
+  const claimState = useBackgroundSelector((state) => state.claim)
+
+  useEffect(() => {
+    dispatch(
+      checkAlreadyClaimed({
+        claimState,
+      })
+    )
+  }, [claimState, dispatch])
 
   const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
     assetAmounts: [],
@@ -47,6 +62,7 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
+        {!HIDE_TOKEN_FEATURES && <OnboardingOpenClaimFlowBanner />}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
@@ -84,10 +100,9 @@ export default function Wallet(): ReactElement {
             width: 100%;
           }
           .panel {
-            height: 302px;
-            overflow-y: auto;
             padding-top: 16px;
             box-sizing: border-box;
+            min-height: 277px;
           }
           .panel::-webkit-scrollbar {
             display: none;
