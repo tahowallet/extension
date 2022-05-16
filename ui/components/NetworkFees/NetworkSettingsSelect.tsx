@@ -5,6 +5,7 @@ import {
   NetworkFeeTypeChosen,
   selectLastGasEstimatesRefreshTime,
   setCustomGas,
+  GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   ESTIMATED_FEE_MULTIPLIERS,
@@ -17,10 +18,14 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import SharedInput, { SharedTypedInput } from "../Shared/SharedInput"
+import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import capitalize from "../../utils/capitalize"
 import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
+
+import {
+  NetworkSettingsSelectOptionButton,
+  NetworkSettingsSelectOptionButtonCustom,
+} from "./NetworkSettingsSelectOptionButtons"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -28,13 +33,12 @@ interface NetworkSettingsSelectProps {
   onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
 }
 
-
 // Map a BlockEstimate from the backend to a GasOption for the UI.
 const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, price, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -223,10 +227,6 @@ export default function NetworkSettingsSelect({
     )
   }
 
-  function gweiFloatToWei(float: number): bigint {
-    return (BigInt(float * 100) / 100n) * BigInt(1000000000)
-  }
-
   if (!CUSTOM_GAS_SELECT) {
     return (
       <NetworkSettingsSelectDeprecated
@@ -243,60 +243,23 @@ export default function NetworkSettingsSelect({
         return (
           <>
             {option.type === "custom" ? (
-              <button
-                key={option.confidence}
-                className={`option ${i === activeFeeIndex ? "active" : ""}`}
-                onClick={() => handleSelectGasOption(i)}
-                type="button"
-              >
-                <div className="option_left">
-                  <div className="name">{capitalize(option.type)}</div>
-                </div>
-                <div className="input_wrap">
-                  <SharedInput
-                    label="Miner"
-                    value={`${option.maxPriorityGwei}`}
-                    onChange={(value) => {
-                      updateCustomGas(
-                        option.baseMaxFeePerGas,
-                        gweiFloatToWei(parseFloat(value))
-                      )
-                    }}
-                  />
-                </div>
-                <div className="option_right">
-                  <div className="input_wrap">
-                    <SharedInput
-                      value={`${option.baseMaxGwei}`}
-                      label="Max Base"
-                      onChange={(value) => {
-                        updateCustomGas(
-                          gweiFloatToWei(parseFloat(value)), // @TODO Replace
-                          option.maxPriorityFeePerGas
-                        )
-                      }}
-                    />
-                  </div>
-                </div>
-              </button>
+              <NetworkSettingsSelectOptionButtonCustom
+                option={option}
+                isActive={i === activeFeeIndex}
+                handleSelectGasOption={() => handleSelectGasOption(i)}
+                updateCustomGas={(
+                  customMaxBaseFee: bigint,
+                  customMaxPriorityFeePerGas: bigint
+                ) =>
+                  updateCustomGas(customMaxBaseFee, customMaxPriorityFeePerGas)
+                }
+              />
             ) : (
-              <button
-                key={option.confidence}
-                className={`option ${i === activeFeeIndex ? "active" : ""}`}
-                onClick={() => handleSelectGasOption(i)}
-                type="button"
-              >
-                <div className="option_left">
-                  <div className="name">{capitalize(option.type)}</div>
-                  <div className="subtext">{option.estimatedSpeed}</div>
-                </div>
-                Miner:
-                {`${option.maxPriorityGwei}`}
-                <div className="option_right">
-                  Max Base:
-                  <div className="price">{`${option.baseMaxGwei}`}</div>
-                </div>
-              </button>
+              <NetworkSettingsSelectOptionButton
+                option={option}
+                isActive={i === activeFeeIndex}
+                handleSelectGasOption={() => handleSelectGasOption(i)}
+              />
             )}
           </>
         )
@@ -340,49 +303,6 @@ export default function NetworkSettingsSelect({
       </div>
       <style jsx>
         {`
-          .option {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #002522;
-            box-sizing: border-box;
-            padding: 15px;
-            margin: 8px 0;
-            cursor: pointer;
-            border-radius: 4px;
-            border: 1px solid transparent;
-            position: relative;
-          }
-          .input_wrap {
-            width: 100px;
-          }
-          .option.active {
-            box-shadow: var(--shadow);
-            border: 1px solid var(--success);
-          }
-          .option.active .name {
-            color: var(--success);
-          }
-          .option_left,
-          .option_right {
-            display: flex;
-            gap: 4px;
-          }
-          .option_left {
-            text-align: left;
-            flex-direction: column;
-          }
-          .name,
-          .price {
-            color: var(--green--5);
-            font-size: 18px;
-            font-weight: 600;
-          }
-          .subtext {
-            color: var(--green-60);
-            font-size: 14px;
-          }
           .max_fee {
             display: flex;
             flex-flow: column;
@@ -392,11 +312,6 @@ export default function NetworkSettingsSelect({
           .max_label {
             font-size: 14px;
             color: var(--green-40);
-          }
-          .currentlySelected {
-            color: var(--success);
-            opacity: 0.8;
-            font-size: 10px;
           }
           .info {
             display: flex;
