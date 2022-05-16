@@ -77,7 +77,7 @@ export default function SwapTransactionSettingsChooser({
               <div className="row row_fee">
                 <NetworkSettingsSelect
                   estimatedFeesPerGas={estimatedFeesPerGas}
-                  networkSettings={networkSettings}
+                  networkSettings={swapTransactionSettings.networkSettings}
                   onNetworkSettingsChange={setNetworkSettings}
                 />
               </div>
