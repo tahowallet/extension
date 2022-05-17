@@ -380,8 +380,8 @@ export const removeAccount = createBackgroundAsyncThunk(
     await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
 
     const {
-      accounts: { accountsData },
-    } = getState() as { accounts: AccountState }
+      account: { accountsData },
+    } = getState() as { account: AccountState }
 
     // Remove the corresponding keyring account iff there are no networks left
     // for this address.
