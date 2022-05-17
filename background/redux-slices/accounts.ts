@@ -165,19 +165,31 @@ const accountSlice = createSlice({
     },
     deleteAccount: (
       immerState,
-      { payload: { address, network } }: { payload: AddressOnNetwork }
+      { payload: { address } }: { payload: AddressOnNetwork }
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
-      if (immerState.accountsData.evm[network.chainID]?.[normalizedAddress]) {
-        // If the account data does not exist, deleting is a noop.
+      const { evm } = immerState.accountsData
+
+      if (
+        // One of the chains
+        !Object.keys(evm ?? {}).some((chainID) =>
+          // has an address equal to the one we're trying to remove
+          Object.keys(evm[chainID]).some(
+            (addressOnChain) => addressOnChain === normalizedAddress
+          )
+        )
+      ) {
+        // If none of the chains we're tracking has a matching address - this is a noop.
         return
       }
 
-      const { [normalizedAddress]: _, ...withoutEntryToRemove } =
-        immerState.accountsData.evm[network.chainID]
+      // Delete the account from all chains.
+      Object.keys(evm).forEach((chainId) => {
+        const { [normalizedAddress]: _, ...withoutEntryToRemove } = evm[chainId]
 
-      immerState.accountsData.evm[network.chainID] = withoutEntryToRemove
+        immerState.accountsData.evm[chainId] = withoutEntryToRemove
+      })
     },
     updateAccountBalance: (
       immerState,
@@ -371,26 +383,11 @@ export const addOrEditAddressName = createBackgroundAsyncThunk(
 
 export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
-  async (
-    addressOnNetwork: AddressOnNetwork,
-    { getState, dispatch, extra: { main } }
-  ) => {
+  async (addressOnNetwork: AddressOnNetwork, { dispatch, extra: { main } }) => {
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
 
     await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
 
-    const {
-      account: { accountsData },
-    } = getState() as { account: AccountState }
-
-    // Remove the corresponding keyring account iff there are no networks left
-    // for this address.
-    if (
-      Object.values(accountsData.evm).some(
-        (chainAddresses) => normalizedAddress in chainAddresses
-      )
-    ) {
-      main.removeAccount(normalizedAddress, { type: "keyring" })
-    }
+    main.removeAccount(normalizedAddress, { type: "keyring" })
   }
 )
