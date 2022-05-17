@@ -414,6 +414,7 @@ export default class KeyringService extends BaseService<Events> {
       })
       this.#removeKeyring(keyring.id)
     }
+    await this.persistKeyrings()
     this.emitKeyrings()
   }
 
