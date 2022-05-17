@@ -18,7 +18,7 @@ export const POLYGON: EVMNetwork = {
 }
 
 export const ARBITRUM_ONE: EVMNetwork = {
-  name: "Arbitrum One",
+  name: "Arbitrum",
   baseAsset: ETH,
   chainID: "42161",
   family: "EVM",

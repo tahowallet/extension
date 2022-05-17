@@ -1,27 +1,36 @@
+import {
+  ARBITRUM_ONE,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "@tallyho/tally-background/constants"
+import { sameNetwork } from "@tallyho/tally-background/networks"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 
-const networks = [
+const listItemInfo = [
   {
-    name: "Ethereum",
+    network: ETHEREUM,
     info: "Mainnet",
     width: 18,
     height: 29,
   },
   {
-    name: "Polygon",
-    info: /* ( ͡° ͜ʖ ͡°) */ "L2 scaling solution",
+    network: POLYGON,
+    info: "L2 scaling solution",
     width: 24,
     height: 24,
   },
   {
-    name: "Arbitrum",
+    network: ARBITRUM_ONE,
     info: "L2 scaling solution",
     width: 23.2,
     height: 26,
   },
   {
-    name: "Optimism",
+    network: OPTIMISM,
     info: "L2 scaling solution",
     width: 24,
     height: 24,
@@ -41,28 +50,21 @@ const networks = [
 ]
 
 export default function TopMenuProtocolList(): ReactElement {
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {networks.map((network, index) => (
+        {listItemInfo.map((info) => (
           <TopMenuProtocolListItem
-            isSelected={index === 0}
-            key={network.name}
-            name={network.name}
-            info={network.info}
-            width={network.width}
-            height={network.height}
+            isSelected={sameNetwork(currentNetwork, info.network)}
+            key={info.network.name}
+            network={info.network}
+            height={info.height}
+            width={info.width}
+            info={info.info}
           />
         ))}
-        {/* <li className="divider">
-          <div className="divider_label">Testnet</div>
-          <div className="divider_line" />
-        </li>
-        {Array(3)
-          .fill("")
-          .map((_, index) => (
-            <TopMenuProtocolListItem key={index.toString()} />
-          ))} */}
       </ul>
       <style jsx>
         {`
