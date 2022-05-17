@@ -31,7 +31,6 @@ export type Events = {
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
-  addOrEditAddressName: { name: string; address: HexString }
 }
 
 export const emitter = new Emittery<Events>()
