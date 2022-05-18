@@ -47,7 +47,9 @@ export default function AccountItemRemovalConfirm({
     selectedAddress: state.ui.selectedAccount.address,
     accountsData: state.account.accountsData,
   }))
-  const onlyOneAddressVisible = keyring?.addresses.length === 1
+  const readOnlyAccount = typeof keyring === "undefined"
+  const lastAddressInKeyring = keyring?.addresses.length === 1
+  const showLoudWarning = readOnlyAccount || lastAddressInKeyring
   return (
     <div className="remove_address_option">
       <div className="header">
@@ -68,7 +70,7 @@ export default function AccountItemRemovalConfirm({
         </li>
       </ul>
       <div className="remove_address_details">
-        {onlyOneAddressVisible ? LoudWarning : RegularWarning}
+        {showLoudWarning ? LoudWarning : RegularWarning}
       </div>
       <div className="button_container">
         <SharedButton
