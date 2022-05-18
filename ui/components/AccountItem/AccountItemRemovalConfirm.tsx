@@ -8,9 +8,10 @@ import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
-import { useBackgroundSelector } from "../../hooks"
+import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
 import AccountItemActionHeader from "./AccountItemActionHeader"
 
 interface AccountItemRemovalConfirmProps {
@@ -42,6 +43,8 @@ export default function AccountItemRemovalConfirm({
   close,
 }: AccountItemRemovalConfirmProps): ReactElement {
   const dispatch = useDispatch()
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const history = useHistory()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
   const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
     selectedAddress: state.ui.selectedAccount.address,
@@ -88,21 +91,26 @@ export default function AccountItemRemovalConfirm({
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
-            dispatch(removeAccount(address))
-            if (selectedAddress === address) {
-              const newAddress = Object.keys(accountsData).find(
-                (accountAddress) => accountAddress !== address
-              )
-              if (newAddress) {
-                dispatch(
-                  setSelectedAccount({
-                    address: newAddress,
-                    network: ETHEREUM,
-                  })
+            // don't prompt for unlock if removing read-only account.
+            if (readOnlyAccount || areKeyringsUnlocked) {
+              dispatch(removeAccount(address))
+              if (selectedAddress === address) {
+                const newAddress = Object.keys(accountsData).find(
+                  (accountAddress) => accountAddress !== address
                 )
+                if (newAddress) {
+                  dispatch(
+                    setSelectedAccount({
+                      address: newAddress,
+                      network: ETHEREUM,
+                    })
+                  )
+                }
               }
+              close()
+            } else {
+              history.push("/keyring/unlock")
             }
-            close()
           }}
         >
           Yes, I want to remove it
