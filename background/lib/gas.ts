@@ -37,7 +37,9 @@ export default async function getBlockPrices(
     provider.getBlock("latest"),
     provider.getFeeData(),
   ])
-  const baseFeePerGas = currentBlock?.baseFeePerGas?.toBigInt()
+
+  const baseFeePerGas =
+    (currentBlock?.baseFeePerGas?.toBigInt() || 0n) * 1_000_000_000n
 
   if (feeData.gasPrice === null) {
     logger.warn("Not receiving accurate gas prices from provider", feeData)
