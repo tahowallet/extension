@@ -294,8 +294,10 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
 export const selectDefaultNetworkFeeSettings = createSelector(
   ({
     transactionConstruction,
+    networks,
   }: {
     transactionConstruction: TransactionConstruction
+    networks: any
   }) => ({
     feeType: transactionConstruction.feeTypeSelected,
     selectedFeesPerGas:
@@ -303,14 +305,21 @@ export const selectDefaultNetworkFeeSettings = createSelector(
         transactionConstruction.feeTypeSelected
       ],
     suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
+    baseFeePerGas: networks.evm[1].baseFeePerGas, // @TODO: Support multi-network
   }),
-  ({ feeType, selectedFeesPerGas, suggestedGasLimit }): NetworkFeeSettings => ({
+  ({
+    feeType,
+    selectedFeesPerGas,
+    suggestedGasLimit,
+    baseFeePerGas,
+  }): NetworkFeeSettings => ({
     feeType,
     gasLimit: undefined,
     suggestedGasLimit,
     values: {
       maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
       maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
+      baseFeePerGas,
     },
   })
 )
