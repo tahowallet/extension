@@ -96,7 +96,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   block: AnyEVMBlock
   transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
-  blockPrices: BlockPrices
+  blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
 }
 
 /**
@@ -720,7 +720,7 @@ export default class ChainService extends BaseService<Events> {
     await Promise.allSettled(
       this.subscribedNetworks.map(async ({ network, provider }) => {
         const blockPrices = await getBlockPrices(network, provider)
-        this.emitter.emit("blockPrices", blockPrices)
+        this.emitter.emit("blockPrices", { blockPrices, network })
       })
     )
   }

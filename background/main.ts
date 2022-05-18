@@ -930,8 +930,10 @@ export default class Main extends BaseService<never> {
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(estimatedFeesPerGas(blockPrices))
+    this.chainService.emitter.on("blockPrices", ({ blockPrices, network }) => {
+      this.store.dispatch(
+        estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
+      )
     })
 
     // Report on transactions for basic activity. Fancier stuff is handled via
