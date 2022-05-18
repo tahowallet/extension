@@ -38,6 +38,7 @@ export type NetworkFeeSettings = {
   values: {
     maxFeePerGas: bigint
     maxPriorityFeePerGas: bigint
+    baseFeePerGas?: bigint
   }
 }
 
