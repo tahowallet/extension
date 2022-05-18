@@ -27,6 +27,8 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isTally = true
 
+  isMetaMask = false
+
   bridgeListeners = new Map()
 
   providerInfo = {
@@ -66,6 +68,8 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
+        this.isMetaMask = result.defaultWallet
+
         if (!result.defaultWallet) {
           // if tally is NOT set to be default wallet
           // AND we have other providers that tried to inject into window.ethereum
