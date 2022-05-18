@@ -58,12 +58,16 @@ export default function FeeSettingsText(): ReactElement {
   const gweiValue = `${estimatedGweiAmount} Gwei`
   const dollarValue = getFeeDollarValue(mainCurrencyPricePoint, networkSettings)
 
-  if (!dollarValue) return <div>~{gweiValue}</div>
-
   return (
     <div>
-      ~${dollarValue}
-      <span className="fee_gwei">({gweiValue})</span>
+      {!networkSettings.gasLimit ? (
+        <>TBD</>
+      ) : (
+        <>
+          ~${dollarValue}
+          <span className="fee_gwei">({gweiValue})</span>
+        </>
+      )}
       <style jsx>{`
         .fee_gwei {
           color: var(--green-60);
