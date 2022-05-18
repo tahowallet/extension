@@ -823,7 +823,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
       // TODO support multiple networks
-      const network = ETHEREUM
+      const { network } = options
 
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
