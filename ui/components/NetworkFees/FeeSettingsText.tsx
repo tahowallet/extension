@@ -18,31 +18,38 @@ const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
   networkSettings: NetworkFeeSettings
 ): string | undefined => {
-  const {
-    values: { maxFeePerGas, maxPriorityFeePerGas },
-  } = networkSettings
-  const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
+  if (networkSettings.values?.baseFeePerGas) {
+    const gasLimit =
+      networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
-  if (!gasLimit || !currencyPrice) return undefined
+    if (!gasLimit || !currencyPrice) return undefined
 
-  const [asset] = currencyPrice.pair
-  const { localizedMainCurrencyAmount } =
-    enrichAssetAmountWithMainCurrencyValues(
-      {
-        asset,
-        amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
-      },
-      currencyPrice,
-      2
-    )
+    const [asset] = currencyPrice.pair
+    const { localizedMainCurrencyAmount } =
+      enrichAssetAmountWithMainCurrencyValues(
+        {
+          asset,
+          amount: networkSettings.values?.baseFeePerGas * gasLimit,
+        },
+        currencyPrice,
+        2
+      )
 
-  return localizedMainCurrencyAmount
+    return localizedMainCurrencyAmount
+  }
+  return undefined
 }
 
-export default function FeeSettingsText(): ReactElement {
+export default function FeeSettingsText({
+  customNetworkSetting,
+}: {
+  customNetworkSetting?: NetworkFeeSettings
+}): ReactElement {
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const selectedFeeType = useBackgroundSelector(selectFeeType)
-  const networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
+  let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
+  networkSettings = customNetworkSetting ?? networkSettings
+
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
   )
@@ -50,7 +57,10 @@ export default function FeeSettingsText(): ReactElement {
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
     typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(weiToGwei(networkSettings.values.maxFeePerGas), 0)
+      ? truncateDecimalAmount(
+          weiToGwei(networkSettings.values?.baseFeePerGas ?? 0n),
+          0
+        )
       : ""
 
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
