@@ -1,18 +1,11 @@
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService from "../keyring"
 import LedgerService from "../ledger"
-import {
-  EIP1559TransactionRequest,
-  EVMNetwork,
-  SignedEVMTransaction,
-} from "../../networks"
-import { EVM_NETWORKS_BY_CHAIN_ID } from "../../constants/networks"
+import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { USE_MAINNET_FORK } from "../../features"
-import { FORK } from "../../constants"
 import { SigningMethod } from "../../utils/signing"
 
 type SigningErrorReason = "userRejected" | "genericError"
@@ -145,6 +138,7 @@ export default class SigningService extends BaseService<Events> {
     switch (signingMethod.type) {
       case "keyring":
         await this.keyringService.hideAccount(address)
+        await this.chainService.removeAccountToTrack(address)
         break
       case "ledger":
         // @TODO Implement removal of ledger accounts.
