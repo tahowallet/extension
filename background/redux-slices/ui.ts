@@ -6,6 +6,7 @@ import { EVMNetwork } from "../networks"
 import { clearSwapQuote } from "./0x-swap"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { getProvider } from "./utils/contract-utils"
 
 const defaultSettings = {
   hideDust: false,
@@ -150,6 +151,12 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     const { ui, account } = state
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
     dispatch(clearSwapQuote())
+    const provider = getProvider()
+    provider.send("wallet_switchEthereumChain", [
+      {
+        chainId: `0x${Number(network.chainID).toString(16)}`,
+      },
+    ])
     if (
       !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
     ) {
