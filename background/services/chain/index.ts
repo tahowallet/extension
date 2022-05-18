@@ -725,8 +725,12 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  async send(method: string, params: unknown[]): Promise<unknown> {
-    return this.providerForNetworkOrThrow(ETHEREUM).send(method, params)
+  async send(
+    method: string,
+    params: unknown[],
+    network: EVMNetwork
+  ): Promise<unknown> {
+    return this.providerForNetworkOrThrow(network).send(method, params)
   }
 
   /* *****************
