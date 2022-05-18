@@ -502,7 +502,7 @@ export default class KeyringService extends BaseService<Events> {
       v: tx.v,
       blockHash: null,
       blockHeight: null,
-      asset: ETH,
+      asset: network.baseAsset,
       network: USE_MAINNET_FORK ? FORK : network,
     }
 

@@ -1,5 +1,4 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement, useRef, useState } from "react"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -9,13 +8,12 @@ import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
-  address: HexString
 }
 
 export default function AccountItemOptionsMenu({
   accountTotal,
-  address,
 }: AccountItemOptionsMenuProps): ReactElement {
+  const { address, network } = accountTotal
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
@@ -42,7 +40,7 @@ export default function AccountItemOptionsMenu({
           style={{ cursor: "default" }}
         >
           <AccountItemEditName
-            address={address}
+            addressOnNetwork={{ address, network }}
             account={accountTotal}
             close={() => setShowEditName(false)}
           />
@@ -63,7 +61,6 @@ export default function AccountItemOptionsMenu({
           style={{ cursor: "default" }}
         >
           <AccountItemRemovalConfirm
-            address={address}
             account={accountTotal}
             close={() => setShowAddressRemoveConfirm(false)}
           />

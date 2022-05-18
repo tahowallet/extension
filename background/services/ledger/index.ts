@@ -14,7 +14,7 @@ import {
 } from "ethers/lib/utils"
 import {
   EIP1559TransactionRequest,
-  EVMNetwork,
+  sameNetwork,
   SignedEVMTransaction,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
@@ -23,8 +23,9 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { ETH } from "../../constants"
+import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { AddressOnNetwork } from "../../accounts"
 
 enum LedgerType {
   UNKNOWN,
@@ -478,7 +479,14 @@ export default class LedgerService extends BaseService<Events> {
     }
   }
 
-  async signMessage(address: string, message: string): Promise<string> {
+  async signMessage(
+    { address, network }: AddressOnNetwork,
+    message: string
+  ): Promise<string> {
+    if (!sameNetwork(network, ETHEREUM)) {
+      throw new Error("Unsupported network for Ledger signing")
+    }
+
     if (!this.transport) {
       throw new Error("Uninitialized transport!")
     }
