@@ -34,7 +34,7 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
 
   const gasEstimates = (await res.json()) as PolygonGasResponse
 
-  const baseFeePerGas = gweiToWei(gasEstimates.estimatedBaseFee)
+  const baseFeePerGas = BigInt(Math.ceil(gasEstimates.estimatedBaseFee * 1e9))
 
   return {
     network: POLYGON,
@@ -101,7 +101,7 @@ export default async function getBlockPrices(
   if (network.name === "Polygon") {
     try {
       return await getPolygonGasPrices(
-        feeData?.gasPrice?.toBigInt() ||
+        feeData?.gasPrice?.toBigInt() ??
           0n /* @TODO what do we do if this is 0n */
       )
     } catch (e) {

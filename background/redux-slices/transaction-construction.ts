@@ -182,9 +182,12 @@ const transactionSlice = createSlice({
             baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
             instant: {
               maxFeePerGas:
+                estimatedFeesPerGas.estimatedPrices.find(
+                  (el) => el.confidence === INSTANT
+                )?.maxFeePerGas ??
                 (estimatedFeesPerGas.baseFeePerGas *
                   MAX_FEE_MULTIPLIER[INSTANT]) /
-                10n,
+                  10n,
               confidence: INSTANT,
               maxPriorityFeePerGas:
                 estimatedFeesPerGas.estimatedPrices.find(
@@ -197,9 +200,12 @@ const transactionSlice = createSlice({
             },
             express: {
               maxFeePerGas:
+                estimatedFeesPerGas.estimatedPrices.find(
+                  (el) => el.confidence === EXPRESS
+                )?.maxFeePerGas ??
                 (estimatedFeesPerGas.baseFeePerGas *
                   MAX_FEE_MULTIPLIER[EXPRESS]) /
-                10n,
+                  10n,
               confidence: EXPRESS,
               maxPriorityFeePerGas:
                 estimatedFeesPerGas.estimatedPrices.find(
@@ -212,9 +218,12 @@ const transactionSlice = createSlice({
             },
             regular: {
               maxFeePerGas:
+                estimatedFeesPerGas.estimatedPrices.find(
+                  (el) => el.confidence === REGULAR
+                )?.maxFeePerGas ??
                 (estimatedFeesPerGas.baseFeePerGas *
                   MAX_FEE_MULTIPLIER[REGULAR]) /
-                10n,
+                  10n,
               confidence: REGULAR,
               maxPriorityFeePerGas:
                 estimatedFeesPerGas.estimatedPrices.find(

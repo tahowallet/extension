@@ -162,7 +162,6 @@ export default function Swap(): ReactElement {
         }
 
         if (isSmartContractFungibleAsset(asset)) {
-          // No cross-chain swaps (yet!!)
           if (sameNetwork(asset.homeNetwork, currentNetwork)) {
             return true
           }
