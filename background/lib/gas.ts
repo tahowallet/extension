@@ -12,6 +12,65 @@ import { gweiToWei } from "./utils"
 // `process.env` variables in the bundled output
 const BLOCKNATIVE_API_KEY = process.env.BLOCKNATIVE_API_KEY // eslint-disable-line prefer-destructuring
 
+type PolygonFeeDetails = {
+  maxPriorityFee: number // gwei
+  maxFee: number // gwei
+}
+
+type PolygonGasResponse = {
+  safeLow: PolygonFeeDetails
+  standard: PolygonFeeDetails
+  fast: PolygonFeeDetails
+  estimatedBaseFee: number // gwei
+  blockTime: number
+  blockNumber: number
+}
+
+// Not perfect but works most of the time.  Our fallback method does not work at all for polygon.
+const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
+  const res = await fetch("https://gasstation-mainnet.matic.network/v2", {
+    method: "get",
+  })
+
+  const gasEstimates = (await res.json()) as PolygonGasResponse
+
+  const baseFeePerGas = gweiToWei(gasEstimates.estimatedBaseFee)
+
+  return {
+    network: POLYGON,
+    blockNumber: gasEstimates.blockNumber,
+    baseFeePerGas,
+    estimatedTransactionCount: null,
+    estimatedPrices: [
+      {
+        confidence: 99,
+        maxPriorityFeePerGas: gweiToWei(
+          Math.ceil(gasEstimates.fast.maxPriorityFee)
+        ),
+        maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.fast.maxFee)),
+        price, // this estimate isn't great
+      },
+      {
+        confidence: 95,
+        maxPriorityFeePerGas: gweiToWei(
+          Math.ceil(gasEstimates.standard.maxPriorityFee)
+        ),
+        maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.standard.maxFee)),
+        price,
+      },
+      {
+        confidence: 70,
+        maxPriorityFeePerGas: gweiToWei(
+          Math.ceil(gasEstimates.safeLow.maxPriorityFee)
+        ),
+        maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.safeLow.maxFee)),
+        price,
+      },
+    ],
+    dataSource: "local",
+  }
+}
+
 export default async function getBlockPrices(
   network: EVMNetwork,
   provider: Provider
@@ -109,65 +168,6 @@ export default async function getBlockPrices(
         maxPriorityFeePerGas,
         maxFeePerGas,
         price: gasPrice,
-      },
-    ],
-    dataSource: "local",
-  }
-}
-
-type PolygonFeeDetails = {
-  maxPriorityFee: number // gwei
-  maxFee: number // gwei
-}
-
-type PolygonGasResponse = {
-  safeLow: PolygonFeeDetails
-  standard: PolygonFeeDetails
-  fast: PolygonFeeDetails
-  estimatedBaseFee: number // gwei
-  blockTime: number
-  blockNumber: number
-}
-
-// Not perfect but works most of the time.  Our fallback method does not work at all for polygon.
-const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
-  const res = await fetch("https://gasstation-mainnet.matic.network/v2", {
-    method: "get",
-  })
-
-  const gasEstimates = (await res.json()) as PolygonGasResponse
-
-  const baseFeePerGas = gweiToWei(gasEstimates.estimatedBaseFee)
-
-  return {
-    network: POLYGON,
-    blockNumber: gasEstimates.blockNumber,
-    baseFeePerGas,
-    estimatedTransactionCount: null,
-    estimatedPrices: [
-      {
-        confidence: 99,
-        maxPriorityFeePerGas: gweiToWei(
-          Math.ceil(gasEstimates.fast.maxPriorityFee)
-        ),
-        maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.fast.maxFee)),
-        price, // this estimate isn't great
-      },
-      {
-        confidence: 95,
-        maxPriorityFeePerGas: gweiToWei(
-          Math.ceil(gasEstimates.standard.maxPriorityFee)
-        ),
-        maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.standard.maxFee)),
-        price,
-      },
-      {
-        confidence: 70,
-        maxPriorityFeePerGas: gweiToWei(
-          Math.ceil(gasEstimates.safeLow.maxPriorityFee)
-        ),
-        maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.safeLow.maxFee)),
-        price,
       },
     ],
     dataSource: "local",
