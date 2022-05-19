@@ -6,10 +6,11 @@ import {
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
-import { useBackgroundSelector } from "../../hooks"
+import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
 import AccountItemActionHeader from "./AccountItemActionHeader"
 
 interface AccountItemRemovalConfirmProps {
@@ -41,12 +42,16 @@ export default function AccountItemRemovalConfirm({
   const { address, network } = account
 
   const dispatch = useDispatch()
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const history = useHistory()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
   const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
     selectedAddress: state.ui.selectedAccount.address,
     accountsData: state.account.accountsData,
   }))
-  const onlyOneAddressVisible = keyring?.addresses.length === 1
+  const readOnlyAccount = typeof keyring === "undefined"
+  const lastAddressInKeyring = keyring?.addresses.length === 1
+  const showLoudWarning = readOnlyAccount || lastAddressInKeyring
   return (
     <div className="remove_address_option">
       <div className="header">
@@ -67,7 +72,7 @@ export default function AccountItemRemovalConfirm({
         </li>
       </ul>
       <div className="remove_address_details">
-        {onlyOneAddressVisible ? LoudWarning : RegularWarning}
+        {showLoudWarning ? LoudWarning : RegularWarning}
       </div>
       <div className="button_container">
         <SharedButton
@@ -85,21 +90,26 @@ export default function AccountItemRemovalConfirm({
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
-            dispatch(removeAccount({ address, network }))
-            if (sameEVMAddress(selectedAddress, address)) {
-              const newAddress = Object.keys(accountsData).find(
-                (accountAddress) => accountAddress !== address
-              )
-              if (newAddress) {
-                dispatch(
-                  setSelectedAccount({
-                    address,
-                    network,
-                  })
+            // don't prompt for unlock if removing read-only account.
+            if (readOnlyAccount || areKeyringsUnlocked) {
+              dispatch(removeAccount({ address, network }))
+              if (sameEVMAddress(selectedAddress, address)) {
+                const newAddress = Object.keys(accountsData).find(
+                  (accountAddress) => accountAddress !== address
                 )
+                if (newAddress) {
+                  dispatch(
+                    setSelectedAccount({
+                      address,
+                      network,
+                    })
+                  )
+                }
               }
+              close()
+            } else {
+              history.push("/keyring/unlock")
             }
-            close()
           }}
         >
           Yes, I want to remove it
