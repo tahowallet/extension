@@ -4,7 +4,6 @@ import logger from "./logger"
 import Blocknative, {
   BlocknativeNetworkIds,
 } from "../third-party-data/blocknative"
-import { BigNumber } from "ethers"
 import { BlockPrices, EVMNetwork } from "../networks"
 import { ETHEREUM, POLYGON } from "../constants/networks"
 import { gweiToWei } from "./utils"

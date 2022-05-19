@@ -14,7 +14,7 @@ import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
 import { EVMNetwork } from "../networks"
-import { UIState } from "./ui"
+import type { UIState } from "./ui"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset

@@ -47,6 +47,11 @@ type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
   input?: string
 }
 
+// https://eips.ethereum.org/EIPS/eip-3326
+type SwitchEthereumChainParameter = {
+  chainId: string
+}
+
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
@@ -205,7 +210,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           account: params[1] as string,
         })
       case "wallet_switchEthereumChain": {
-        const newChainId = (params[0] as any).chainId
+        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
         const newNetwork = EVM_MAIN_NETWORKS.find(
           (network) =>
             network.chainID === newChainId ||
