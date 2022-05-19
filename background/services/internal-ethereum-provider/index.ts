@@ -182,7 +182,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTransaction(
           params[0] as JsonRpcTransactionRequest
         ).then(async (signed) => {
-          console.log("inside eth_sendTransaction")
           await this.chainService.broadcastSignedTransaction(signed)
           return signed.hash
         })
@@ -212,7 +211,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
             network.chainID === newChainId ||
             `0x${Number(network.chainID).toString(16)}` === newChainId
         )
-        console.log({ newNetwork })
         if (newNetwork) {
           this.activeNetwork = newNetwork
         }
@@ -260,11 +258,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     if (typeof from === "undefined") {
       throw new Error("Transactions must have a from address for signing.")
     }
-
-    console.log(
-      "asking for transactionSignatureRequest with network: ",
-      this.activeNetwork
-    )
 
     return new Promise<SignedEVMTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
