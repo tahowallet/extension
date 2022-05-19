@@ -501,6 +501,10 @@ export default class ChainService extends BaseService<Events> {
     return this.db.getAccountsToTrack()
   }
 
+  async removeAccountToTrack(address: string): Promise<void> {
+    await this.db.removeAccountToTrack(address)
+  }
+
   async getLatestBaseAccountBalance({
     address,
     network,
