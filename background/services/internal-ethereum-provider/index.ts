@@ -48,7 +48,7 @@ type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
 }
 
 // https://eips.ethereum.org/EIPS/eip-3326
-type SwitchEthereumChainParameter = {
+export type SwitchEthereumChainParameter = {
   chainId: string
 }
 
@@ -218,8 +218,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         )
         if (newNetwork) {
           this.activeNetwork = newNetwork
+          return null
         }
-        return 0
+        throw new Error("Unsupported Chain")
       }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
