@@ -112,6 +112,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
+  // @TODO Persist this in db so we get correct network on app startup.
   private activeNetwork = ETHEREUM
 
   async routeSafeRPCRequest(
@@ -127,7 +128,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTypedData({
           account: {
             address: params[0] as string,
-            // TODO Support variable network.
             network: this.activeNetwork,
           },
           typedData: JSON.parse(params[1] as string),
@@ -302,7 +302,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         payload: {
           account: {
             address: account,
-            // TODO Support variable network.
             network: this.activeNetwork,
           },
           signingData: data,

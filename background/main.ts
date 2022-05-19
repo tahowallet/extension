@@ -743,7 +743,7 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signingMethod: SigningMethod
   ): Promise<void> {
-    // TODO Adjust to handle multiple networks.
+    // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signingMethod)
   }
 
@@ -822,7 +822,6 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
-      // TODO support multiple networks
       const { network } = options
 
       const {
