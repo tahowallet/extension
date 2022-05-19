@@ -16,6 +16,10 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
+// TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
+//       so let's do this only on the websites that need this feature
+const impersonateMetamaskWhitelist = ["opensea.io"]
+
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
@@ -68,7 +72,13 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        this.isMetaMask = result.defaultWallet
+        if (
+          impersonateMetamaskWhitelist.some((host) =>
+            window.location.host.includes(host)
+          )
+        ) {
+          this.isMetaMask = result.defaultWallet
+        }
 
         if (!result.defaultWallet) {
           // if tally is NOT set to be default wallet
