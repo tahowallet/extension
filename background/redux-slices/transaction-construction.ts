@@ -21,7 +21,7 @@ import {
   EnrichedEVMTransactionSignatureRequest,
 } from "../services/enrichment"
 import { SigningMethod } from "../utils/signing"
-import ui, { UIState } from "./ui"
+import { UIState } from "./ui"
 
 import { createBackgroundAsyncThunk } from "./utils"
 

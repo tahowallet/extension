@@ -75,6 +75,7 @@ import {
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
+  EstimatedFeesPerGas,
 } from "./redux-slices/transaction-construction"
 import { allAliases } from "./redux-slices/utils"
 import {
@@ -370,6 +371,36 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
     return {
       ...prevState,
       account: newAccountState,
+    }
+  },
+  9: (prevState: Record<string, unknown>) => {
+    // Migrate the by-address-keyed account data in the accounts slice to be
+    // keyed by account AND network chainID, as well as nested under an `evm`
+    // key.
+    type OldTransactionConstructionState = {
+      estimatedFeesPerGas: EstimatedFeesPerGas | unknown
+      [others: string]: unknown
+    }
+    type NewTransactionConstructionState = {
+      estimatedFeesPerGas: {
+        [chainId: string]: EstimatedFeesPerGas | unknown
+      }
+      [others: string]: unknown
+    }
+
+    const oldTransactionConstructionState =
+      prevState.transactionConstruction as OldTransactionConstructionState
+
+    const newTransactionConstructionState: NewTransactionConstructionState = {
+      ...oldTransactionConstructionState,
+      estimatedFeesPerGas: {
+        [ETHEREUM.chainID]: oldTransactionConstructionState.estimatedFeesPerGas,
+      },
+    }
+
+    return {
+      ...prevState,
+      transactionConstruction: newTransactionConstructionState,
     }
   },
 }
