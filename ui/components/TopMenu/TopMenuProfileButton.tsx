@@ -1,4 +1,7 @@
-import { selectCurrentAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccount,
+  selectCurrentAccountTotal,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState, useRef } from "react"
 import { useDispatch } from "react-redux"
@@ -12,8 +15,10 @@ export default function TopMenuProfileButton(props: {
   onClick?: () => void
 }): ReactElement {
   const dispatch = useDispatch()
-  const { shortenedAddress, name, avatarURL, address } =
+  const { name, avatarURL, address } =
     useBackgroundSelector(selectCurrentAccountTotal) ?? {}
+
+  const { truncatedAddress } = useBackgroundSelector(selectCurrentAccount) ?? {}
 
   const [shouldDisplayTooltip, setShouldDisplayTooltip] = useState(false)
   const timerRef = useRef<number | undefined>(undefined)
@@ -51,12 +56,12 @@ export default function TopMenuProfileButton(props: {
         onClick={handleClick}
         onMouseEnter={showTooltip}
       >
-        {typeof shortenedAddress === "undefined" ? (
+        {typeof truncatedAddress === "undefined" ? (
           <></>
         ) : (
           <>
             <SharedCurrentAccountInformation
-              shortenedAddress={shortenedAddress}
+              shortenedAddress={truncatedAddress}
               name={name}
               avatarURL={avatarURL}
               showHoverStyle

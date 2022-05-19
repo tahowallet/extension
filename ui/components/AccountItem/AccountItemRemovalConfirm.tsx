@@ -3,12 +3,11 @@ import {
   AccountTotal,
   selectKeyringByAddress,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
-import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { useHistory } from "react-router-dom"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
@@ -16,7 +15,6 @@ import AccountItemActionHeader from "./AccountItemActionHeader"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
-  address: HexString
   close: () => void
 }
 
@@ -39,9 +37,10 @@ const LoudWarning = (
 
 export default function AccountItemRemovalConfirm({
   account,
-  address,
   close,
 }: AccountItemRemovalConfirmProps): ReactElement {
+  const { address, network } = account
+
   const dispatch = useDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const history = useHistory()
@@ -93,16 +92,16 @@ export default function AccountItemRemovalConfirm({
             e.stopPropagation()
             // don't prompt for unlock if removing read-only account.
             if (readOnlyAccount || areKeyringsUnlocked) {
-              dispatch(removeAccount(address))
-              if (selectedAddress === address) {
+              dispatch(removeAccount({ address, network }))
+              if (sameEVMAddress(selectedAddress, address)) {
                 const newAddress = Object.keys(accountsData).find(
                   (accountAddress) => accountAddress !== address
                 )
                 if (newAddress) {
                   dispatch(
                     setSelectedAccount({
-                      address: newAddress,
-                      network: ETHEREUM,
+                      address,
+                      network,
                     })
                   )
                 }
