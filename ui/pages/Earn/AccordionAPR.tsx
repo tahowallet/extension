@@ -38,13 +38,13 @@ export const AccordionAPRContent = ({
 }: {
   vault: AvailableVault
 }): ReactElement => (
-  <div className="container">
+  <>
     <ul>
-      <li className="content_row category">
+      <li className="category">
         <div>${vault.asset.symbol} APY</div>
         <div>{vault.APR?.yearnAPY}</div>
       </li>
-      <li className="content_row">
+      <li>
         <div className="label">
           Annual management fee
           <span className="tooltip_inline_wrap">
@@ -55,28 +55,29 @@ export const AccordionAPRContent = ({
         </div>
         <div>-{vault.managementFee}</div>
       </li>
-      <li className="content_row category">
+      <li className=" category">
         <div>Estimated $DOGGO APR</div>
       </li>
-      <li className="content_row">
+      <li>
         <div className="label">If $DOGGO = $0.025</div>
         <div>{vault.APR?.high}</div>
       </li>
-      <li className="content_row">
+      <li>
         <div className="label">If $DOGGO = $0.005</div>
         <div>{vault.APR?.mid}</div>
       </li>
-      <li className="content_row">
+      <li>
         <div className="label">If $DOGGO = $0.0016</div>
         <div>{vault.APR?.low}</div>
       </li>
     </ul>
     <style jsx>
       {`
-        .container {
-          padding-bottom: 16px;
+        ul {
+          display: block;
+          padding-bottom: 10px;
         }
-        .content_row {
+        li {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -84,10 +85,10 @@ export const AccordionAPRContent = ({
           padding-right: 32px;
           font-size: 14px;
         }
-        .content_row.category {
+        li.category {
           padding-left: 32px;
         }
       `}
     </style>
-  </div>
+  </>
 )

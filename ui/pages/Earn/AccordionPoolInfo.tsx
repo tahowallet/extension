@@ -59,7 +59,7 @@ export const AccordionPoolInfoContent = ({
       <SharedAssetIcon
         size="medium"
         symbol={vault?.asset?.symbol}
-        logoURL={vault?.icons?.[0]}
+        logoURL={vault?.icons?.[1] ?? vault?.icons?.[0]}
       />
       <p className="pool_row">
         ${vault?.asset.symbol} APY will be auto compounded and withdraw-able

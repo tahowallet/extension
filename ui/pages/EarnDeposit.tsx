@@ -271,7 +271,7 @@ export default function EarnDeposit(): ReactElement {
               </a>
             </div>
           </li>
-          <li className="row np">
+          <li className="row no_padding">
             {vaultData && (
               <div className="accordion_wrap">
                 <SharedAccordion
@@ -299,7 +299,7 @@ export default function EarnDeposit(): ReactElement {
               <div className="otherReward"> + {vault.asset.symbol}</div>
             </div>
           </li>
-          <li className="row np">
+          <li className="row no_padding">
             <div className="accordion_wrap">
               <SharedAccordion
                 headerElement={<AccordionPoolInfoHeader />}
@@ -475,7 +475,7 @@ export default function EarnDeposit(): ReactElement {
             align-items: baseline;
             padding: 0 16px;
           }
-          .row + .np {
+          .row + .no_padding {
             padding: 0;
           }
           .otherReward {
