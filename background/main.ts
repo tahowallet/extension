@@ -133,7 +133,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 7
+const REDUX_STATE_VERSION = 9
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -371,6 +371,20 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       ...prevState,
       account: newAccountState,
     }
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  9: (prevState: any) => {
+    const { ...newState } = prevState
+    newState.transactionConstruction.estimatedFeesPerGas = {
+      ...newState.transactionConstruction.estimatedFeesPerGas,
+      custom: {
+        maxFeePerGas: 1n,
+        confidence: 0,
+        maxPriorityFeePerGas: 1n,
+      },
+    }
+
+    return newState
   },
 }
 
