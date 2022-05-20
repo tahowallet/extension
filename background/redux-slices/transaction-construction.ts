@@ -99,11 +99,11 @@ export type GasOption = {
   maxPriorityGwei: string
   maxGwei: string
   dollarValue: string
-  estimatedFeePerGas: bigint
-  baseMaxFeePerGas: bigint
+  estimatedFeePerGas: bigint // wei
+  baseMaxFeePerGas: bigint // wei
   baseMaxGwei: string
-  maxFeePerGas: bigint
-  maxPriorityFeePerGas: bigint
+  maxFeePerGas: bigint // wei
+  maxPriorityFeePerGas: bigint // wei
 }
 
 export const emitter = new Emittery<Events>()
