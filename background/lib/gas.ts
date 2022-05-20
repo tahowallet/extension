@@ -27,6 +27,9 @@ type PolygonGasResponse = {
 }
 
 // Not perfect but works most of the time.  Our fallback method does not work at all for polygon.
+// This is because the baseFeePerGas on polygon can be so small (oftentimes sub 100 wei (not gwei)) that
+// estimating maxFeePerGas as a function of baseFeePerGas almost always results in a "transaction underpriced"
+// being returned from alchemy because our maxFeePerGas is below its acceptance threshhold.
 const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
   const res = await fetch("https://gasstation-mainnet.matic.network/v2", {
     method: "get",
