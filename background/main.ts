@@ -133,7 +133,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 7
+const REDUX_STATE_VERSION = 9
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -330,6 +330,61 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       ...newState,
       activities: newActivitiesState,
     }
+  },
+  8: (prevState: Record<string, unknown>) => {
+    // Migrate the by-address-keyed account data in the accounts slice to be
+    // keyed by account AND network chainID, as well as nested under an `evm`
+    // key.
+    type OldAccountState = {
+      accountsData: {
+        [address: string]: unknown
+      }
+      [others: string]: unknown
+    }
+    type NewAccountState = {
+      accountsData: {
+        evm: {
+          [address: string]: {
+            [chainID: string]: unknown
+          }
+        }
+      }
+      [others: string]: unknown
+    }
+
+    const { accountsData: oldAccountsData, ...oldAccountState } =
+      prevState.account as OldAccountState
+
+    const newAccountState: NewAccountState = {
+      ...oldAccountState,
+      accountsData: {
+        evm: Object.fromEntries(
+          Object.entries(oldAccountsData).map(([address, data]) => [
+            normalizeEVMAddress(address),
+            { [ETHEREUM.chainID]: data },
+          ])
+        ),
+      },
+    }
+
+    return {
+      ...prevState,
+      account: newAccountState,
+    }
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  9: (prevState: any) => {
+    const { ...newState } = prevState
+    newState.transactionConstruction.estimatedFeesPerGas = {
+      ...newState.transactionConstruction.estimatedFeesPerGas,
+      custom: {
+        maxFeePerGas: 1n,
+        confidence: 0,
+        maxPriorityFeePerGas: 1n,
+      },
+    }
+
+    return newState
   },
 }
 
@@ -687,16 +742,14 @@ export default class Main extends BaseService<never> {
   }
 
   addOrEditAddressName({
-    name,
     address,
-  }: {
-    name: string
-    address: HexString
-  }): void {
+    network,
+    name,
+  }: AddressOnNetwork & { name: string }): void {
     this.preferenceService.addOrEditNameInAddressBook({
-      network: ETHEREUM,
-      name,
       address,
+      network,
+      name,
     })
   }
 
@@ -704,6 +757,7 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signingMethod: SigningMethod
   ): Promise<void> {
+    // TODO Adjust to handle multiple networks.
     await this.signingService.removeAccount(address, signingMethod)
   }
 
@@ -713,21 +767,21 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
-    for (let i = 0; i < accounts.length; i += 1) {
-      const { path, address } = accounts[i]
+    await Promise.all(
+      accounts.map(async ({ path, address }) => {
+        await this.ledgerService.saveAddress(path, address)
 
-      // eslint-disable-next-line no-await-in-loop
-      await this.ledgerService.saveAddress(path, address)
-
-      const addressNetwork = {
-        address,
-        network: ETHEREUM,
-      }
-      this.store.dispatch(loadAccount(address))
-      // eslint-disable-next-line no-await-in-loop
-      await this.chainService.addAccountToTrack(addressNetwork)
-      this.store.dispatch(setNewSelectedAccount(addressNetwork))
-    }
+        // FIXME Handle multi-network in Ledger.
+        const addressNetwork = {
+          address,
+          network: ETHEREUM,
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(addressNetwork))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      })
+    )
   }
 
   async deriveLedgerAddress(path: string): Promise<string> {
@@ -852,7 +906,7 @@ export default class Main extends BaseService<never> {
         signingMethod,
       }: {
         typedData: EIP712TypedData
-        account: HexString
+        account: AddressOnNetwork
         signingMethod: SigningMethod
       }) => {
         try {
@@ -884,7 +938,7 @@ export default class Main extends BaseService<never> {
     const existingAccounts = await this.chainService.getAccountsToTrack()
     existingAccounts.forEach((addressNetwork) => {
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(addressNetwork.address))
+      this.store.dispatch(loadAccount(addressNetwork))
 
       // Force a refresh of the account balance to populate the store.
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
@@ -1010,20 +1064,28 @@ export default class Main extends BaseService<never> {
   }
 
   async connectKeyringService(): Promise<void> {
-    // TODO support other networks
-    const network = ETHEREUM
-
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
     this.keyringService.emitter.on("address", (address) => {
+      // FIXME Should be .selectedNetwork once that exists.
+      // FIXME Also, UI-wise, is this correct behavior? It ties the current
+      // FIXME acount (right-side popover) to the network (left-side popover)
+      // FIXME in a weird way.
+      const selectedNetwork = this.store.getState().ui.selectedAccount.network
+
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(address))
+      this.store.dispatch(
+        loadAccount({
+          address,
+          network: selectedNetwork,
+        })
+      )
 
       this.chainService.addAccountToTrack({
         address,
-        network,
+        network: selectedNetwork,
       })
     })
 
