@@ -7,3 +7,4 @@ app/extension-scripts/api/playground/
 .env
 *.rest
 .DS_Store
+.vscode

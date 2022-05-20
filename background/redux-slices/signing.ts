@@ -9,7 +9,8 @@ import {
 } from "../utils/signing"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EnrichedSignTypedDataRequest } from "../services/enrichment"
-import { EIP712TypedData, HexString } from "../types"
+import { EIP712TypedData } from "../types"
+import { AddressOnNetwork } from "../accounts"
 
 type SignOperation<T> = {
   request: T
@@ -19,14 +20,14 @@ type SignOperation<T> = {
 type Events = {
   requestSignTypedData: {
     typedData: EIP712TypedData
-    account: HexString
+    account: AddressOnNetwork
     signingMethod: SigningMethod
   }
   requestSignData: {
     signingData: ExpectedSigningData
     messageType: SignDataMessageType
     rawSigningData: string
-    account: HexString
+    account: AddressOnNetwork
     signingMethod: SigningMethod
   }
   signatureRejected: never
