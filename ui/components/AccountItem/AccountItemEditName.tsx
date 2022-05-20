@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { HexString } from "@tallyho/tally-background/types"
 import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
 import { useDispatch } from "react-redux"
+import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemActionHeader from "./AccountItemActionHeader"
@@ -10,13 +10,13 @@ import SharedInput from "../Shared/SharedInput"
 
 interface AccountItemEditNameProps {
   account: AccountTotal
-  address: HexString
+  addressOnNetwork: AddressOnNetwork
   close: () => void
 }
 
 export default function AccountItemEditName({
   account,
-  address,
+  addressOnNetwork,
   close,
 }: AccountItemEditNameProps): ReactElement {
   const dispatch = useDispatch()
@@ -49,13 +49,13 @@ export default function AccountItemEditName({
       }
       dispatch(
         addOrEditAddressName({
+          ...addressOnNetwork,
           name: newName,
-          address,
         })
       )
       close()
     },
-    [address, close, dispatch, error, newName]
+    [addressOnNetwork, close, dispatch, error, newName]
   )
 
   return (

@@ -1,6 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
+  getAddressCount,
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -20,7 +21,7 @@ export default function Wallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const hasAccounts = useBackgroundSelector(
-    (state) => Object.keys(state.account.accountsData).length > 0
+    (state) => getAddressCount(state) > 0
   )
 
   //  accountLoading, hasWalletErrorCode
