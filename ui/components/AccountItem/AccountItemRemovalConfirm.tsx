@@ -94,13 +94,13 @@ export default function AccountItemRemovalConfirm({
             if (readOnlyAccount || areKeyringsUnlocked) {
               dispatch(removeAccount({ address, network }))
               if (sameEVMAddress(selectedAddress, address)) {
-                const newAddress = Object.keys(accountsData).find(
-                  (accountAddress) => accountAddress !== address
-                )
+                const newAddress = Object.keys(
+                  accountsData.evm[network.chainID]
+                ).find((accountAddress) => accountAddress !== address)
                 if (newAddress) {
                   dispatch(
                     setSelectedAccount({
-                      address,
+                      address: newAddress,
                       network,
                     })
                   )
