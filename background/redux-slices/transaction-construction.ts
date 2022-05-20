@@ -16,6 +16,7 @@ import {
   EIP1559TransactionRequest,
   SignedEVMTransaction,
 } from "../networks"
+import { NetworksState } from "./networks"
 import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
@@ -297,7 +298,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
     networks,
   }: {
     transactionConstruction: TransactionConstruction
-    networks: any
+    networks: NetworksState
   }) => ({
     feeType: transactionConstruction.feeTypeSelected,
     selectedFeesPerGas:
@@ -319,7 +320,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
     values: {
       maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
       maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
-      baseFeePerGas,
+      baseFeePerGas: baseFeePerGas ?? undefined,
     },
   })
 )
