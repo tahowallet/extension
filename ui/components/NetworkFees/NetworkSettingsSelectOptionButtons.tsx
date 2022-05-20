@@ -39,7 +39,7 @@ export function NetworkSettingsSelectOptionButton({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: #002522;
+          background: var(--hunter-green);
           box-sizing: border-box;
           padding: 15px;
           margin: 8px 0;
@@ -151,7 +151,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: #002522;
+          background: var(--hunter-green);
           box-sizing: border-box;
           padding: 15px;
           margin: 8px 0;
