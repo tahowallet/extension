@@ -343,3 +343,15 @@ Firefox requires to upload source code if minifier is used and to be able to com
 - rm -rf .git
 - cd ..
 - zip -r tallyho-firefox.zip tallyho-firefox
+
+## Localization
+
+Tally currently only support English as the default language. We distil english strings to [\_locales](https://github.com/tallycash/extension/blob/main/ui/_locales/en/messages.json) to prepare for localization.
+
+For other languages, we use [weblate](https://hosted.weblate.org/projects/tallycash/extension/) to manage localization and will commit back to the github periodically when ready.
+
+<a href="https://hosted.weblate.org/engage/tallycash/">
+<img src="https://hosted.weblate.org/widgets/tallycash/-/extension/multi-auto.svg" alt="Translation status" />
+</a>
+
+For new language we will use language code defined in [Support locales](https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support), and will deliver after these translations are QA'ed.
