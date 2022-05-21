@@ -120,7 +120,8 @@ const get0xApiBase = (network: EVMNetwork) => {
 
   const base = chainIdTo0xApiBase[network.chainID]
   if (!base) {
-    throw new Error(`Swaps not supported on ${network.name}`)
+    logger.error(`0x swaps are not supported on ${network.name}`)
+    return null
   }
 
   return `${prefix}${base}`
