@@ -5,6 +5,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundSelector } from "../../hooks"
+import { POLYGON } from "@tallyho/tally-background/constants"
 
 interface DetailRowItemProps {
   label: string
@@ -117,12 +118,14 @@ export default function WalletActivityDetails(
     window
       .open(
         `https://${
-          network.name === "Polygon" ? "polygonscan.com" : "etherscan.io"
+          network.chainID === POLYGON.chainID
+            ? "polygonscan.com"
+            : "etherscan.io"
         }/tx/${activityItem.hash}`,
         "_blank"
       )
       ?.focus()
-  }, [activityItem?.hash, network.name])
+  }, [activityItem?.hash, network.chainID])
 
   if (!activityItem) return <></>
 

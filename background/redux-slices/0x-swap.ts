@@ -12,7 +12,7 @@ import {
 } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
-import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
+import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
 import { EVMNetwork } from "../networks"
 import type { UIState } from "./ui"
 
@@ -106,8 +106,8 @@ export default swapSlice.reducer
 export const SWAP_FEE = 0.005
 
 const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
-  "1": "api.0x.org", // Ethereum
-  "137": "polygon.api.0x.org", // Polygon
+  [ETHEREUM.chainID]: "api.0x.org",
+  [POLYGON.chainID]: "polygon.api.0x.org",
 }
 
 const get0xApiBase = (network: EVMNetwork) => {

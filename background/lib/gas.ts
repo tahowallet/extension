@@ -101,7 +101,7 @@ export default async function getBlockPrices(
 
   const baseFeePerGas = currentBlock?.baseFeePerGas?.toBigInt()
 
-  if (network.name === "Polygon") {
+  if (network.chainID === POLYGON.chainID) {
     try {
       return await getPolygonGasPrices(
         feeData?.gasPrice?.toBigInt() ??
