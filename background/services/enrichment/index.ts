@@ -214,6 +214,10 @@ export default class EnrichmentService extends BaseService<Events> {
             desiredDecimals
           ),
         }
+        // Warn if we're sending the token to its own contract
+        if (sameEVMAddress(erc20Tx.args.to, transaction.to)) {
+          txAnnotation.warnings = ["send-to-token"]
+        }
       } else if (
         matchingFungibleAsset &&
         erc20Tx &&
