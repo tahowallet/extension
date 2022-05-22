@@ -154,7 +154,7 @@ export default class EnrichmentService extends BaseService<Events> {
           type: "asset-transfer",
           senderAddress: transaction.from,
           recipientName: toName,
-          recipientAddress: transaction.to, // TODO ingest address
+          recipientAddress: transaction.to,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
               asset: network.baseAsset,
@@ -204,7 +204,7 @@ export default class EnrichmentService extends BaseService<Events> {
           type: "asset-transfer",
           transactionLogoURL,
           senderAddress: erc20Tx.args.from ?? transaction.from,
-          recipientAddress: erc20Tx.args.to, // TODO ingest address
+          recipientAddress: erc20Tx.args.to,
           recipientName: toName,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
@@ -229,7 +229,7 @@ export default class EnrichmentService extends BaseService<Events> {
           blockTimestamp: block?.timestamp,
           type: "asset-approval",
           transactionLogoURL,
-          spenderAddress: erc20Tx.args.spender, // TODO ingest address
+          spenderAddress: erc20Tx.args.spender,
           spenderName,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
