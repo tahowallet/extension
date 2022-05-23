@@ -134,7 +134,7 @@ const devToolsSanitizer = (input: unknown) => {
 
 // The version of persisted Redux state the extension is expecting. Any previous
 // state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 7
+const REDUX_STATE_VERSION = 9
 
 type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
 
@@ -373,7 +373,21 @@ const REDUX_MIGRATIONS: { [version: number]: Migration } = {
       account: newAccountState,
     }
   },
-  9: (prevState: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  9: (prevState: any) => {
+    const { ...newState } = prevState
+    newState.transactionConstruction.estimatedFeesPerGas = {
+      ...newState.transactionConstruction.estimatedFeesPerGas,
+      custom: {
+        maxFeePerGas: 1n,
+        confidence: 0,
+        maxPriorityFeePerGas: 1n,
+      },
+    }
+
+    return newState
+  },
+  10: (prevState: Record<string, unknown>) => {
     // Migrate the by-address-keyed account data in the accounts slice to be
     // keyed by account AND network chainID, as well as nested under an `evm`
     // key.
