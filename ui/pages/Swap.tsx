@@ -85,6 +85,8 @@ export default function Swap(): ReactElement {
 
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
   const ownedSellAssetAmounts =
@@ -329,6 +331,7 @@ export default function Swap(): ReactElement {
             : { buyAmount: amount },
         slippageTolerance: swapTransactionSettings.slippageTolerance,
         gasPrice: swapTransactionSettings.networkSettings.values.maxFeePerGas,
+        network: selectedNetwork,
       }
 
       // If there's a different quote in progress, reset all loading states as
@@ -395,6 +398,7 @@ export default function Swap(): ReactElement {
       sellAsset,
       swapTransactionSettings.networkSettings.values.maxFeePerGas,
       swapTransactionSettings.slippageTolerance,
+      selectedNetwork,
     ]
   )
 

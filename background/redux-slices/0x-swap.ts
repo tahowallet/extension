@@ -14,7 +14,6 @@ import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
 import { EVMNetwork } from "../networks"
-import type { UIState } from "./ui"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -34,6 +33,7 @@ export type SwapQuoteRequest = {
   amount: SwapAmount
   slippageTolerance: number
   gasPrice: bigint
+  network: EVMNetwork
 }
 
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
@@ -145,12 +145,17 @@ const gatedHeaders: { [header: string]: string } =
 // stringified or otherwise massaged.
 function build0xUrlFromSwapRequest(
   requestPath: string,
-  { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
-  network: EVMNetwork,
+  {
+    assets,
+    amount,
+    slippageTolerance,
+    gasPrice,
+    network: selectedNetwork,
+  }: SwapQuoteRequest,
   additionalParameters: Record<string, string>
 ): URL {
   const requestUrl = new URL(
-    `https://${get0xApiBase(network)}/swap/v1${requestPath}`
+    `https://${get0xApiBase(selectedNetwork)}/swap/v1${requestPath}`
   )
   const tradeAmount = utils.parseUnits(
     "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
@@ -207,21 +212,14 @@ function build0xUrlFromSwapRequest(
  */
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
-  async (quoteRequest: SwapQuoteRequest, { getState, dispatch }) => {
+  async (quoteRequest: SwapQuoteRequest, { dispatch }) => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
-    const { ui } = getState() as { ui: UIState }
-
-    const requestUrl = build0xUrlFromSwapRequest(
-      "/quote",
-      quoteRequest,
-      ui.selectedAccount.network,
-      {
-        intentOnFilling: "true",
-        takerAddress: tradeAddress,
-      }
-    )
+    const requestUrl = build0xUrlFromSwapRequest("/quote", quoteRequest, {
+      intentOnFilling: "true",
+      takerAddress: tradeAddress,
+    })
 
     const apiData = await fetchJson({
       url: requestUrl.toString(),
@@ -254,21 +252,14 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
   async (
     quoteRequest: SwapQuoteRequest,
-    { getState, dispatch }
+    { dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
-    const { ui } = getState() as { ui: UIState }
-
-    const requestUrl = build0xUrlFromSwapRequest(
-      "/price",
-      quoteRequest,
-      ui.selectedAccount.network,
-      {
-        takerAddress: tradeAddress,
-      }
-    )
+    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
+      takerAddress: tradeAddress,
+    })
 
     const apiData = await fetchJson({
       url: requestUrl.toString(),

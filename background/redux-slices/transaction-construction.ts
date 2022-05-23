@@ -176,7 +176,7 @@ const transactionSlice = createSlice({
       return {
         ...immerState,
         estimatedFeesPerGas: {
-          ...immerState.estimatedFeesPerGas,
+          ...(immerState.estimatedFeesPerGas ?? {}),
           [network.chainID]: {
             baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
             instant: {
