@@ -14,8 +14,8 @@ type OldAccountState = {
 type NewAccountState = {
   accountsData: {
     evm: {
-      [address: string]: {
-        [chainID: string]: unknown
+      [chainID: string]: {
+        [address: string]: unknown
       }
     }
   }
@@ -31,12 +31,14 @@ export default (
   const newAccountState: NewAccountState = {
     ...oldAccountState,
     accountsData: {
-      evm: Object.fromEntries(
-        Object.entries(oldAccountsData).map(([address, data]) => [
-          normalizeEVMAddress(address),
-          { [ETHEREUM.chainID]: data },
-        ])
-      ),
+      evm: {
+        [ETHEREUM.chainID]: Object.fromEntries(
+          Object.entries(oldAccountsData).map(([address, data]) => [
+            normalizeEVMAddress(address),
+            data,
+          ])
+        ),
+      },
     },
   }
 
