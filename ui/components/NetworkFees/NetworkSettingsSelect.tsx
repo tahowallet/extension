@@ -14,7 +14,10 @@ import {
   GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  selectMainCurrencyPricePoint,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
@@ -121,6 +124,7 @@ export default function NetworkSettingsSelect({
   const dispatch = useBackgroundDispatch()
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
@@ -224,6 +228,7 @@ export default function NetworkSettingsSelect({
         maxPriorityFeePerGas: customMaxPriorityFeePerGas,
         maxFeePerGas:
           BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
+        network: selectedNetwork,
       })
     )
   }
