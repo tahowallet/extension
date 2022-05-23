@@ -2,7 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
-import { EVMNetwork } from "../networks"
+import { EVMNetwork, toHexChainID } from "../networks"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { getProvider } from "./utils/contract-utils"
@@ -153,7 +153,7 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     // dogfood our switchEthereumChain handler
     provider.send("wallet_switchEthereumChain", [
       {
-        chainId: `0x${Number(network.chainID).toString(16)}`,
+        chainId: toHexChainID(network.chainID),
       },
     ])
     if (
