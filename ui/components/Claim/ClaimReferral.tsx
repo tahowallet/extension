@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import {
   chooseDAO,
   selectClaimSelections,
@@ -7,25 +7,24 @@ import {
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
+import { HexString } from "@tallyho/tally-background/types"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import SharedAddressInput from "../Shared/SharedAddressInput"
 
-function DAOButton(props: {
-  address: string
-  name: string
-  avatar: string
-  isActive: boolean
-}) {
-  const { address, name, avatar, isActive } = props
-  const dispatch = useBackgroundDispatch()
+function DAOButton(
+  props: DAO & {
+    isActive: boolean
+    onClick: (dao: DAO) => void
+  }
+) {
+  const { address, name, avatar, isActive, onClick } = props
 
   return (
     <button
       type="button"
       className={classNames("option", { active: isActive })}
-      onClick={() => {
-        dispatch(chooseDAO({ address, name, avatar }))
-      }}
+      onClick={() => onClick({ address, name, avatar })}
     >
       <div className="icon" />
       <div className="name">{name}</div>
@@ -71,10 +70,21 @@ function DAOButton(props: {
   )
 }
 
+function getInitialCustomDAO(selectedDAO: DAO | null, DAOs: DAO[]) {
+  if (!selectedDAO) return undefined
+
+  const isCustom = !DAOs.some(
+    (current) => current.address === selectedDAO.address
+  )
+
+  return isCustom ? selectedDAO.name ?? selectedDAO.address : undefined
+}
+
 export default function ClaimReferral(props: {
   DAOs: DAO[]
   claimAmount: number
 }): ReactElement {
+  const dispatch = useBackgroundDispatch()
   const { DAOs, claimAmount } = props
   const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
   const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
@@ -83,6 +93,23 @@ export default function ClaimReferral(props: {
     claimAmount * 0.05,
     2
   )
+  const [customDAO, setCustomDAO] = useState<string | undefined>(
+    getInitialCustomDAO(selectedDAO, DAOs)
+  )
+
+  const setSelectedDAO = (newDAO: DAO | null) => dispatch(chooseDAO(newDAO))
+
+  const handleInputChange = (
+    value: { address: HexString; name?: string } | undefined
+  ) => {
+    setCustomDAO(value?.name ?? value?.address)
+
+    if (value) {
+      setSelectedDAO(value)
+    } else {
+      setSelectedDAO(null)
+    }
+  }
 
   return (
     <div className="claim standard_width">
@@ -103,9 +130,21 @@ export default function ClaimReferral(props: {
               name={name}
               avatar={avatar}
               isActive={selectedDAO?.name === name}
+              onClick={setSelectedDAO}
             />
           )
         })}
+      </div>
+      <div className="input_wrap">
+        <SharedAddressInput
+          value={customDAO}
+          onFocus={() =>
+            customDAO
+              ? setSelectedDAO({ address: customDAO })
+              : setSelectedDAO(null)
+          }
+          onAddressChange={handleInputChange}
+        />
       </div>
       <style jsx>
         {`
@@ -143,6 +182,10 @@ export default function ClaimReferral(props: {
             line-height: 42px;
             font-family: Quincy CF;
             margin: 0px 8px;
+          }
+          .input_wrap {
+            position: relative;
+            margin: 8px 0 24px;
           }
         `}
       </style>

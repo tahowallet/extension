@@ -25,12 +25,14 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
     network = POLYGON
   }
 
-  const handleNewAddress = (newAddress: HexString | undefined) => {
-    if (newAddress === undefined) {
+  const handleNewAddress = (
+    value: { address: HexString; name?: string } | undefined
+  ) => {
+    if (value === undefined) {
       setAddressOnNetwork(undefined)
     } else {
       setAddressOnNetwork({
-        address: newAddress,
+        address: value.address,
         network,
       })
     }

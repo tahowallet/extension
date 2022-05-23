@@ -1,21 +1,27 @@
 import React, { ReactElement } from "react"
 import {
+  chooseDAO,
+  resetReferrer,
   Referrer,
   selectClaimSelections,
+  chooseDelegate,
 } from "@tallyho/tally-background/redux-slices/claim"
 import SharedButton from "../Shared/SharedButton"
 import AmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedAddressAvatar from "../Shared/SharedAddressAvatar"
 
 export default function ClaimReview({
   claimAmount,
-  backToChoose,
+  backToChooseDelegate,
+  backToChooseReferrer,
 }: {
   claimAmount: number
-  backToChoose: () => void
+  backToChooseReferrer: () => void
+  backToChooseDelegate: () => void
 }): ReactElement {
+  const dispatch = useBackgroundDispatch()
   const { selectedDelegate, selectedDAO } = useBackgroundSelector(
     selectClaimSelections
   )
@@ -23,14 +29,36 @@ export default function ClaimReview({
     (state) => state.claim.referrer
   )
 
+  const discardReferrer = () => {
+    dispatch(resetReferrer())
+    dispatch(chooseDAO(null))
+    backToChooseReferrer()
+  }
+
+  const discardDelegate = () => {
+    dispatch(chooseDelegate(null))
+    backToChooseDelegate()
+  }
+
   return (
     <div className="claim standard_width">
       <div className="title">Review claim</div>
       <div className="description_review">You will receive</div>
       <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
-        name={referrer?.ensName ?? referrer?.address ?? selectedDAO?.name ?? ""}
-        avatar={referrer ? undefined : `./images/DAOs/${selectedDAO?.avatar}`}
+        discard={discardReferrer}
+        name={
+          referrer?.ensName ??
+          referrer?.address ??
+          selectedDAO?.name ??
+          selectedDAO?.address ??
+          ""
+        }
+        avatar={
+          referrer || !selectedDAO?.avatar
+            ? undefined
+            : `./images/DAOs/${selectedDAO?.avatar}`
+        }
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
@@ -49,7 +77,7 @@ export default function ClaimReview({
             <SharedButton
               type="tertiaryGray"
               size="small"
-              onClick={backToChoose}
+              onClick={discardDelegate}
             >
               Change
             </SharedButton>

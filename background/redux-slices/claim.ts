@@ -24,8 +24,8 @@ import { fromFixedPointNumber } from "../lib/fixed-point"
 
 export interface DAO {
   address: string
-  name: string
-  avatar: string
+  name?: string
+  avatar?: string
 }
 
 export interface Delegate {

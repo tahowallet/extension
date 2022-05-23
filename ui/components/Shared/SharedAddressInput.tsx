@@ -6,15 +6,21 @@ import SharedInput from "./SharedInput"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 type Props = {
+  value?: string
   label: string
-  onAddressChange: (value: HexString | undefined) => void
+  onAddressChange: (
+    value: { address: HexString; name?: string } | undefined
+  ) => void
+  onFocus?: () => void
   id?: string
   placeholder?: string
 }
 
 export default function SharedAddressInput({
+  value,
   label,
   onAddressChange,
+  onFocus,
   id,
   placeholder,
 }: Props): ReactElement {
@@ -24,8 +30,10 @@ export default function SharedAddressInput({
   return (
     <>
       <SharedInput
+        value={value}
         label={label}
         onChange={handleInputChange}
+        onFocus={onFocus}
         errorMessage={errorMessage}
         id={id}
         placeholder={placeholder}

@@ -111,9 +111,10 @@ export default function Eligible(): ReactElement {
       component: (
         <ClaimReview
           claimAmount={claimAmountWithBonus}
-          backToChoose={() => {
+          backToChooseDelegate={() => {
             setStep(step - 1)
           }}
+          backToChooseReferrer={() => setStep(step - 3)}
         />
       ),
       canAdvance: true,
