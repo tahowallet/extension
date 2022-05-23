@@ -15,6 +15,7 @@ import {
   EIP1559TransactionRequest,
   EVMNetwork,
   SignedEVMTransaction,
+  toHexChainID,
 } from "../../networks"
 import { ETHEREUM, EVM_MAIN_NETWORKS } from "../../constants/networks"
 import {
@@ -137,7 +138,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         // allowed to have an RPC call made to it. Ideally this would be based
         // on a user's idea of a dApp connection rather than a network-specific
         // modality, requiring it to be constantly "switched"
-        return `0x${BigInt(this.activeNetwork.chainID).toString(16)}`
+        return toHexChainID(this.activeNetwork.chainID)
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
@@ -214,7 +215,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const newNetwork = EVM_MAIN_NETWORKS.find(
           (network) =>
             network.chainID === newChainId ||
-            `0x${Number(network.chainID).toString(16)}` === newChainId
+            toHexChainID(network.chainID) === newChainId
         )
         if (newNetwork) {
           this.activeNetwork = newNetwork
