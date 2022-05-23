@@ -1,4 +1,5 @@
 import { Provider } from "@ethersproject/abstract-provider"
+import { fetchJson } from "@ethersproject/web"
 
 import logger from "./logger"
 import Blocknative, {
@@ -7,7 +8,6 @@ import Blocknative, {
 import { BlockPrices, EVMNetwork } from "../networks"
 import { ETHEREUM, POLYGON } from "../constants/networks"
 import { gweiToWei } from "./utils"
-import { fetchJson } from "@ethersproject/web"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -33,9 +33,9 @@ type PolygonGasResponse = {
 // being returned from alchemy because our maxFeePerGas is below its acceptance threshhold.
 const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
   // @TODO Validate this response using ajv
-  const gasEstimates = await fetchJson(
+  const gasEstimates = (await fetchJson(
     "https://gasstation-mainnet.matic.network/v2"
-  )
+  )) as PolygonGasResponse
 
   const baseFeePerGas = BigInt(Math.ceil(gasEstimates.estimatedBaseFee * 1e9))
 
