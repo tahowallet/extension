@@ -71,12 +71,12 @@ import {
   transactionRequest,
   updateTransactionOptions,
   clearTransactionState,
-  selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
   EstimatedFeesPerGas,
 } from "./redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
 import {
   requestPermission,

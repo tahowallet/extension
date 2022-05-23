@@ -3,8 +3,8 @@ import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
   NetworkFeeTypeChosen,
-  selectLastGasEstimatesRefreshTime,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
