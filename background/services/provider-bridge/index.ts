@@ -328,7 +328,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           return await this.routeSafeRequest(
             method,
-            [params[1], params[0]],
+            params,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "personal_sign":
