@@ -193,6 +193,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           )
         )
       case "eth_sign": // --- important wallet methods ---
+        return this.signData({
+          hexData: params[1] as string,
+          account: params[0] as string,
+        })
       case "personal_sign":
         return this.signData({
           hexData: params[0] as string,
