@@ -110,7 +110,7 @@ import {
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
-import { clearApprovalInProgress } from "./redux-slices/0x-swap"
+import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
 
@@ -1398,6 +1398,7 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
+      this.store.dispatch(clearSwapQuote())
       this.store.dispatch(setEligibilityLoading())
       this.doggoService.getEligibility(addressNetwork.address)
 
