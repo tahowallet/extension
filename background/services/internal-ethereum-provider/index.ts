@@ -220,7 +220,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           this.activeNetwork = newNetwork
           return null
         }
-        throw new Error("Unsupported Chain")
+        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
