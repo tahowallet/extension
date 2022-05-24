@@ -1,7 +1,8 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { GasOption } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import capitalize from "../../utils/capitalize"
 import SharedInput, { SharedTypedInput } from "../Shared/SharedInput"
+import { useBackgroundSelector } from "../../hooks"
 
 function gweiFloatToWei(float: number): bigint {
   return (BigInt(float * 100) / 100n) * BigInt(1000000000)
@@ -109,6 +110,10 @@ export function NetworkSettingsSelectOptionButtonCustom({
     customMaxPriorityFeePerGas: bigint
   ) => void
 }): ReactElement {
+  const [errorMessage, setErrorMessage] = useState("")
+  const baseGasFee = useBackgroundSelector(
+    (state) => state.networks.evm[1].baseFeePerGas
+  )
   return (
     <button
       key={option.confidence}
@@ -141,7 +146,16 @@ export function NetworkSettingsSelectOptionButtonCustom({
                 gweiFloatToWei(parseFloat(value)), // @TODO Replace
                 option.maxPriorityFeePerGas
               )
+              if (
+                baseGasFee &&
+                gweiFloatToWei(parseFloat(value)) < baseGasFee
+              ) {
+                setErrorMessage("Below current base gas")
+              } else {
+                setErrorMessage("")
+              }
             }}
+            errorMessage={errorMessage}
           />
         </div>
       </div>
