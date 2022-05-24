@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import t from "../../utils/i18n"
 
 interface Props {
   assets: CompleteAssetAmount[]
@@ -33,9 +34,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
     <table className="standard_width">
       <thead>
         <tr>
-          <th>Asset</th>
-          <th>Price</th>
-          <th>Balance</th>
+          <th>{t("overviewTableHeaderAsset")}</th>
+          <th>{t("overviewTableHeaderPrice")}</th>
+          <th>{t("overviewTableHeaderBalance")}</th>
         </tr>
       </thead>
       <tbody>
