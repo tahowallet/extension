@@ -93,6 +93,7 @@ export default function ClaimReferral(props: {
     claimAmount * 0.05,
     2
   )
+  const [isCustomDAOEmpty, setIsCustomDAOEmpty] = useState<boolean>(false)
   const [customDAO, setCustomDAO] = useState<string | undefined>(
     getInitialCustomDAO(selectedDAO, DAOs)
   )
@@ -109,6 +110,21 @@ export default function ClaimReferral(props: {
     } else {
       setSelectedDAO(null)
     }
+  }
+
+  const handleInputFocus = () => {
+    setIsCustomDAOEmpty(false)
+
+    if (customDAO) {
+      setSelectedDAO({ address: customDAO })
+    } else {
+      setSelectedDAO(null)
+    }
+  }
+
+  const onDAOButtonClick = (dao: DAO) => {
+    setSelectedDAO(dao)
+    setIsCustomDAOEmpty(true)
   }
 
   return (
@@ -130,7 +146,7 @@ export default function ClaimReferral(props: {
               name={name}
               avatar={avatar}
               isActive={selectedDAO?.name === name}
-              onClick={setSelectedDAO}
+              onClick={onDAOButtonClick}
             />
           )
         })}
@@ -138,12 +154,9 @@ export default function ClaimReferral(props: {
       <div className="input_wrap">
         <SharedAddressInput
           value={customDAO}
-          onFocus={() =>
-            customDAO
-              ? setSelectedDAO({ address: customDAO })
-              : setSelectedDAO(null)
-          }
+          onFocus={handleInputFocus}
           onAddressChange={handleInputChange}
+          isEmpty={isCustomDAOEmpty}
         />
       </div>
       <style jsx>

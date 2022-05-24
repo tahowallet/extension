@@ -14,6 +14,7 @@ type Props = {
   onFocus?: () => void
   id?: string
   placeholder?: string
+  isEmpty?: boolean
 }
 
 export default function SharedAddressInput({
@@ -23,6 +24,7 @@ export default function SharedAddressInput({
   onFocus,
   id,
   placeholder,
+  isEmpty,
 }: Props): ReactElement {
   const { errorMessage, handleInputChange, isValidating } =
     useAddressOrNameValidation(onAddressChange)
@@ -37,6 +39,7 @@ export default function SharedAddressInput({
         errorMessage={errorMessage}
         id={id}
         placeholder={placeholder}
+        isEmpty={isEmpty}
       />
       {isValidating ? (
         <div className="validating_spinner">
