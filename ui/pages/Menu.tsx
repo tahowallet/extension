@@ -81,7 +81,7 @@ export default function Menu(): ReactElement {
             linkTo="/menu/export-logs"
           >
             <div className="bug_report_row">
-              <div className="action_name">Bug report</div>
+              <div className="action_name">{t("menuBugReport")}</div>
               <SharedIcon
                 icon="icons/s/continue.svg"
                 width={16}
@@ -116,7 +116,7 @@ export default function Menu(): ReactElement {
   return (
     <>
       <section className="standard_width_padded">
-        <h1>Main menu</h1>
+        <h1>{t("menuMainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
@@ -127,8 +127,8 @@ export default function Menu(): ReactElement {
           ))}
         </ul>
         <div className="community_cta_wrap">
-          <h2>Join our community</h2>
-          <p>Join our discord to give us feedback!</p>
+          <h2>{t("menuJoinTitle")}</h2>
+          <p>{t("menuJoinDesc")}</p>
           <SharedButton
             type="primary"
             size="large"
@@ -138,7 +138,7 @@ export default function Menu(): ReactElement {
               window.open(`https://chat.tally.cash/`, "_blank")?.focus()
             }}
           >
-            Join and give feedback
+            {t("menuJoinBtn")}
           </SharedButton>
         </div>
         <div className="version">
