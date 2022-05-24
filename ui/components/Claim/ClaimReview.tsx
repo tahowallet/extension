@@ -1,15 +1,12 @@
 import React, { ReactElement } from "react"
 import {
-  chooseDAO,
-  resetReferrer,
   Referrer,
   selectClaimSelections,
-  chooseDelegate,
 } from "@tallyho/tally-background/redux-slices/claim"
 import SharedButton from "../Shared/SharedButton"
 import AmountBanner from "./ClaimAmountBanner"
 import ClaimDelegateChoiceProfile from "./ClaimDelegateChoiceProfile"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { useBackgroundSelector } from "../../hooks"
 import SharedAddressAvatar from "../Shared/SharedAddressAvatar"
 
 export default function ClaimReview({
@@ -21,7 +18,6 @@ export default function ClaimReview({
   backToChooseReferrer: () => void
   backToChooseDelegate: () => void
 }): ReactElement {
-  const dispatch = useBackgroundDispatch()
   const { selectedDelegate, selectedDAO } = useBackgroundSelector(
     selectClaimSelections
   )
@@ -29,24 +25,13 @@ export default function ClaimReview({
     (state) => state.claim.referrer
   )
 
-  const discardReferrer = () => {
-    dispatch(resetReferrer())
-    dispatch(chooseDAO(null))
-    backToChooseReferrer()
-  }
-
-  const discardDelegate = () => {
-    dispatch(chooseDelegate(null))
-    backToChooseDelegate()
-  }
-
   return (
     <div className="claim standard_width">
       <div className="title">Review claim</div>
       <div className="description_review">You will receive</div>
       <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
-        discard={discardReferrer}
+        discard={backToChooseReferrer}
         name={
           referrer?.ensName ??
           referrer?.address ??
@@ -77,7 +62,7 @@ export default function ClaimReview({
             <SharedButton
               type="tertiaryGray"
               size="small"
-              onClick={discardDelegate}
+              onClick={backToChooseDelegate}
             >
               Change
             </SharedButton>
