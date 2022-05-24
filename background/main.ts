@@ -1009,6 +1009,13 @@ export default class Main extends BaseService<never> {
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
+
+    uiSliceEmitter.on("newSelectedNetwork", (network) => {
+      this.internalEthereumProviderService.routeSafeRPCRequest(
+        "wallet_switchEthereumChain",
+        [{ chainId: network.chainID }]
+      )
+    })
   }
 
   async connectProviderBridgeService(): Promise<void> {
