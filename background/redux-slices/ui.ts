@@ -150,12 +150,7 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     const { ui, account } = state
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
     const provider = getProvider()
-    // dogfood our switchEthereumChain handler
-    provider.send("wallet_switchEthereumChain", [
-      {
-        chainId: toHexChainID(network.chainID),
-      },
-    ])
+    await provider.switchChain(network)
     if (
       !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
     ) {
