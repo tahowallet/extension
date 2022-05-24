@@ -208,6 +208,11 @@ export class ChainDatabase extends Dexie {
     await this.accountsToTrack.put(addressNetwork)
   }
 
+  async removeAccountToTrack(address: string): Promise<void> {
+    // @TODO Network Specific deletion when we support it.
+    await this.accountsToTrack.where("address").equals(address).delete()
+  }
+
   async setAccountsToTrack(
     addressesAndNetworks: Set<AddressOnNetwork>
   ): Promise<void> {

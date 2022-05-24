@@ -1,8 +1,12 @@
 import React, { ReactElement } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAddressCount,
+  selectAccountAndTimestampedActivities,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import t from "../utils/i18n"
 
 export default function Overview(): ReactElement {
   const { combinedData } = useBackgroundSelector(
@@ -10,11 +14,11 @@ export default function Overview(): ReactElement {
   )
 
   const { initializationLoadingTimeExpired, numberOfAddresses } =
-    useBackgroundSelector((background) => {
+    useBackgroundSelector((state) => {
       return {
-        numberOfAddresses: Object.keys(background.account.accountsData).length,
+        numberOfAddresses: getAddressCount(state),
         initializationLoadingTimeExpired:
-          background.ui?.initializationLoadingTimeExpired,
+          state.ui?.initializationLoadingTimeExpired,
       }
     })
 
@@ -22,7 +26,9 @@ export default function Overview(): ReactElement {
     <>
       <header className="standard_width">
         <div className="header_primary_content">
-          <span className="total_balance_label">Total balance</span>
+          <span className="total_balance_label">
+            {t("overviewTotalBalance")}
+          </span>
           <div className="primary_balance">
             {initializationLoadingTimeExpired ||
             combinedData?.totalMainCurrencyValue ? (
@@ -39,11 +45,11 @@ export default function Overview(): ReactElement {
         </div>
         <div className="sub_info_row">
           <div className="info_group_item">
-            <span className="info_left">Addresses</span>
+            <span className="info_left">{t("overviewAddresses")}</span>
             {numberOfAddresses}
           </div>
           <div className="info_group_item">
-            <span className="info_left">Assets</span>
+            <span className="info_left">{t("overviewAssets")}</span>
             {combinedData.assets.length}
           </div>
         </div>

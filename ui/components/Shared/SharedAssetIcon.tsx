@@ -10,7 +10,7 @@ interface Props {
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
-  const hardcodedIcons = ["ETH"]
+  const hardcodedIcons = ["ETH", "DOGGO"]
   const hasHardcodedIcon = hardcodedIcons.includes(symbol)
 
   // Passes IPFS and Arweave through HTTP gateway
@@ -45,6 +45,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             border-radius: 80px;
             overflow: hidden;
             background-color: var(--castle-black);
+            flex-shrink: 0;
           }
           .token_icon_fallback {
             width: 100%;
@@ -81,8 +82,9 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           align-items: center;
           justify-content: center;
           ${hasHardcodedIcon
-            ? `background: url("${`./images/${symbol.toLowerCase()}@2x.png`}") center no-repeat;
-            background-size: 45% auto;`
+            ? `background: url("${`./images/assets/${symbol.toLowerCase()}.png`}");
+            background-size: cover;
+            `
             : `background: url("${httpURL}");
             background-size: cover;`}
         }
