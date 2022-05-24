@@ -6,6 +6,7 @@ import {
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
+  CUSTOM,
 } from "../constants/network-fees"
 import { USE_MAINNET_FORK } from "../features"
 
@@ -44,6 +45,7 @@ export enum NetworkFeeTypeChosen {
   Regular = "regular",
   Express = "express",
   Instant = "instant",
+  Custom = "custom",
 }
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
@@ -57,16 +59,23 @@ export type TransactionConstruction = {
 }
 
 export type EstimatedFeesPerGas = {
-  baseFeePerGas: bigint
-  instant: BlockEstimate | undefined
-  express: BlockEstimate | undefined
-  regular: BlockEstimate | undefined
+  baseFeePerGas?: bigint
+  instant?: BlockEstimate
+  express?: BlockEstimate
+  regular?: BlockEstimate
+  custom?: BlockEstimate
 }
 
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
-  estimatedFeesPerGas: undefined,
+  estimatedFeesPerGas: {
+    custom: {
+      maxFeePerGas: 1n,
+      confidence: CUSTOM,
+      maxPriorityFeePerGas: 1n,
+    },
+  },
   lastGasEstimatesRefreshed: Date.now(),
 }
 
@@ -82,7 +91,39 @@ export type Events = {
   broadcastSignedTransaction: SignedEVMTransaction
 }
 
+export type GasOption = {
+  confidence: string
+  estimatedSpeed: string
+  type: NetworkFeeTypeChosen
+  estimatedGwei: string
+  maxPriorityGwei: string
+  maxGwei: string
+  dollarValue: string
+  estimatedFeePerGas: bigint // wei
+  baseMaxFeePerGas: bigint // wei
+  baseMaxGwei: string
+  maxFeePerGas: bigint // wei
+  maxPriorityFeePerGas: bigint // wei
+}
+
 export const emitter = new Emittery<Events>()
+
+const makeBlockEstimate = (
+  type: number,
+  estimatedFeesPerGas: BlockPrices
+): BlockEstimate => {
+  return {
+    maxFeePerGas:
+      (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[type]) / 10n,
+    confidence: type,
+    maxPriorityFeePerGas:
+      estimatedFeesPerGas.estimatedPrices.find((el) => el.confidence === type)
+        ?.maxPriorityFeePerGas ?? 0n,
+    price:
+      estimatedFeesPerGas.estimatedPrices.find((el) => el.confidence === type)
+        ?.price ?? 0n,
+  }
+}
 
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionOptions = createBackgroundAsyncThunk(
@@ -168,57 +209,28 @@ const transactionSlice = createSlice({
       immerState,
       { payload: estimatedFeesPerGas }: { payload: BlockPrices }
     ) => {
-      return {
-        ...immerState,
-        estimatedFeesPerGas: {
-          baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
-          instant: {
-            maxFeePerGas:
-              (estimatedFeesPerGas.baseFeePerGas *
-                MAX_FEE_MULTIPLIER[INSTANT]) /
-              10n,
-            confidence: INSTANT,
-            maxPriorityFeePerGas:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === INSTANT
-              )?.maxPriorityFeePerGas ?? 0n,
-            price:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === INSTANT
-              )?.price ?? 0n,
-          },
-          express: {
-            maxFeePerGas:
-              (estimatedFeesPerGas.baseFeePerGas *
-                MAX_FEE_MULTIPLIER[EXPRESS]) /
-              10n,
-            confidence: EXPRESS,
-            maxPriorityFeePerGas:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === EXPRESS
-              )?.maxPriorityFeePerGas ?? 0n,
-            price:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === EXPRESS
-              )?.price ?? 0n,
-          },
-          regular: {
-            maxFeePerGas:
-              (estimatedFeesPerGas.baseFeePerGas *
-                MAX_FEE_MULTIPLIER[REGULAR]) /
-              10n,
-            confidence: REGULAR,
-            maxPriorityFeePerGas:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === REGULAR
-              )?.maxPriorityFeePerGas ?? 0n,
-            price:
-              estimatedFeesPerGas.estimatedPrices.find(
-                (el) => el.confidence === REGULAR
-              )?.price ?? 0n,
-          },
+      immerState.estimatedFeesPerGas = {
+        ...immerState.estimatedFeesPerGas,
+        baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
+        instant: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
+        express: makeBlockEstimate(EXPRESS, estimatedFeesPerGas),
+        regular: makeBlockEstimate(REGULAR, estimatedFeesPerGas),
+      }
+      immerState.lastGasEstimatesRefreshed = Date.now()
+    },
+    setCustomGas: (
+      immerState,
+      {
+        payload: { maxPriorityFeePerGas, maxFeePerGas },
+      }: { payload: { maxPriorityFeePerGas: bigint; maxFeePerGas: bigint } }
+    ) => {
+      immerState.estimatedFeesPerGas = {
+        ...immerState.estimatedFeesPerGas,
+        custom: {
+          maxFeePerGas,
+          confidence: CUSTOM,
+          maxPriorityFeePerGas,
         },
-        lastGasEstimatesRefreshed: Date.now(),
       }
     },
   },
@@ -238,6 +250,7 @@ export const {
   signed,
   setFeeType,
   estimatedFeesPerGas,
+  setCustomGas,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
