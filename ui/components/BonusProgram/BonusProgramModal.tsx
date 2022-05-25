@@ -9,8 +9,9 @@ import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import SharedTwitterButton from "../Shared/SharedTwitterButton"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
-export default function BonusProgramModalContent(): ReactElement {
+function BonusProgramModalContent(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const { referredUsers, bonusTotal } =
@@ -221,5 +222,24 @@ export default function BonusProgramModalContent(): ReactElement {
         `}
       </style>
     </div>
+  )
+}
+
+export default function BonusProgramModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}): ReactElement {
+  return (
+    <SharedSlideUpMenu
+      isOpen={isOpen}
+      close={onClose}
+      size="custom"
+      customSize="497px"
+    >
+      <BonusProgramModalContent />
+    </SharedSlideUpMenu>
   )
 }
