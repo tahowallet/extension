@@ -1,5 +1,5 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
-import { Contract, utils } from "ethers"
+import { Contract, utils, constants } from "ethers"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM } from "../../../constants"
 import { sameNetwork } from "../../../networks"
@@ -12,7 +12,6 @@ const provider = new JsonRpcProvider("https://public-node.rsk.co")
 
 // REF: https://developers.rsk.co/rif/rns/architecture/registry/
 const RNS_REGISTRY_ADDRESS = "0xcb868aeabd31e2b66f74e9a55cf064abb31a4ad5"
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 const stripHexPrefix = (hex: string): string => hex.slice(2)
 
@@ -53,7 +52,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       const nameHash = utils.namehash(name)
       const resolverAddress = await rnsRegistryContract.resolver(nameHash)
 
-      if (resolverAddress === ZERO_ADDRESS) {
+      if (resolverAddress === constants.AddressZero) {
         logger.warn("Domain has no resolver")
         return undefined
       }
@@ -95,8 +94,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
         reverseRecordHash
       )
 
-      if (resolverAddress === ZERO_ADDRESS) {
-        logger.warn("Domain has no resolver")
+      if (resolverAddress === constants.AddressZero) {
         return undefined
       }
 
