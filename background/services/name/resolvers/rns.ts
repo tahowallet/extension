@@ -8,7 +8,7 @@ import logger from "../../../lib/logger"
 
 import { normalizeEVMAddress } from "../../../lib/utils"
 
-const provider = new JsonRpcProvider("https://public-node.rsk.co")
+const rskNetworkProvider = new JsonRpcProvider("https://public-node.rsk.co")
 
 // REF: https://developers.rsk.co/rif/rns/architecture/registry/
 const RNS_REGISTRY_ADDRESS = "0xcb868aeabd31e2b66f74e9a55cf064abb31a4ad5"
@@ -28,7 +28,7 @@ const RNS_NAME_RESOLVER_ABI = [
 ]
 
 const getRegistryContract = () =>
-  new Contract(RNS_REGISTRY_ADDRESS, RNS_REGISTRY_ABI, provider)
+  new Contract(RNS_REGISTRY_ADDRESS, RNS_REGISTRY_ABI, rskNetworkProvider)
 
 export default function rnsResolver(): NameResolver<"RNS"> {
   return {
@@ -60,7 +60,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       const addrResolverContract = new Contract(
         resolverAddress,
         RNS_ADDR_RESOLVER_ABI,
-        provider
+        rskNetworkProvider
       )
 
       const address = await addrResolverContract.addr(nameHash)
@@ -101,7 +101,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       const nameResolverContract = new Contract(
         resolverAddress,
         RNS_NAME_RESOLVER_ABI,
-        provider
+        rskNetworkProvider
       )
 
       const name = await nameResolverContract.name(reverseRecordHash)
