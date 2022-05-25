@@ -139,6 +139,7 @@ export default class SigningService extends BaseService<Events> {
     switch (signingMethod.type) {
       case "keyring":
         await this.keyringService.hideAccount(address)
+        await this.chainService.removeAccountToTrack(address)
         break
       case "ledger":
         // @TODO Implement removal of ledger accounts.

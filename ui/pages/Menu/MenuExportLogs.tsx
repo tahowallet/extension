@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import dayjs from "dayjs"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
+import t from "../../utils/i18n"
 
 export default function MenuExportLogs(): ReactElement {
   const base64LogContent = Buffer.from(
@@ -15,13 +16,10 @@ export default function MenuExportLogs(): ReactElement {
 
   return (
     <div className="standard_width_padded">
-      <SharedPageHeader>Bug report</SharedPageHeader>
+      <SharedPageHeader>{t("menuExportTitle")}</SharedPageHeader>
       <section>
-        <h2>1. Join #bug-reports on Discord</h2>
-        <p>
-          Visit us on our Discord channel, and report your bug there. Make sure
-          to include the logs.
-        </p>
+        <h2>{t("menuExportOptionDiscordTitle")}</h2>
+        <p>{t("menuExportOptionDiscordDesc")}</p>
         <SharedButton
           type="secondary"
           size="medium"
@@ -31,12 +29,12 @@ export default function MenuExportLogs(): ReactElement {
             window.open(`https://chat.tally.cash/`, "_blank")?.focus()
           }}
         >
-          Join Discord
+          {t("menuExportOptionDiscordBtn")}
         </SharedButton>
       </section>
       <section>
-        <h2>2. Export logs</h2>
-        <p>To better understand your bug, we need you to export your logs.</p>
+        <h2>{t("menuExportOptionLogTitle")}</h2>
+        <p>{t("menuExportOptionLogDesc")}</p>
         <a
           href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
           download={logFileName}
@@ -47,7 +45,7 @@ export default function MenuExportLogs(): ReactElement {
             iconSmall="download"
             iconPosition="left"
           >
-            Export logs
+            {t("menuExportOptionLogBtn")}
           </SharedButton>
         </a>
       </section>

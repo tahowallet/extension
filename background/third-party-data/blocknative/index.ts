@@ -110,7 +110,7 @@ export default class Blocknative {
         (estimate: BlockEstimate) => {
           return {
             confidence: estimate.confidence,
-            price: gweiToWei(estimate.price),
+            price: gweiToWei(estimate.price ?? 0),
             maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
             maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
           }
