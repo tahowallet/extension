@@ -277,9 +277,9 @@ export default function NetworkSettingsSelect({
               }
               try {
                 const parsed = BigInt(value)
-                if (parsed < 0n) {
+                if (parsed < 21000n) {
                   return {
-                    error: "Gas Limit must be greater than 0",
+                    error: "Gas limit too low",
                   }
                 }
 
@@ -317,6 +317,7 @@ export default function NetworkSettingsSelect({
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 22px;
           }
           .limit {
             margin: 16px 0;
