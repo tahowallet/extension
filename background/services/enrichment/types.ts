@@ -30,7 +30,13 @@ export type BaseTransactionAnnotation = {
    * The timestamp of the transaction's associated block if available.
    */
   blockTimestamp: UNIXTime | undefined
+  /*
+   *
+   */
+  warnings?: Warning[]
 }
+
+export type Warning = "send-to-token" | "send-to-contract" | "approve-eoa"
 
 export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
