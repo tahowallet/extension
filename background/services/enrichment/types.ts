@@ -1,6 +1,10 @@
 import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
-import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
+import {
+  AnyEVMTransaction,
+  EIP1559TransactionRequest,
+  EVMNetwork,
+} from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
@@ -85,6 +89,7 @@ export type EnrichedEVMTransaction = AnyEVMTransaction & {
 export type EnrichedEVMTransactionSignatureRequest =
   (Partial<EIP1559TransactionRequest> & { from: string }) & {
     annotation?: TransactionAnnotation
+    network: EVMNetwork
   }
 
 export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {

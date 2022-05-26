@@ -16,7 +16,7 @@ import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   useIsDappPopup,
   useBackgroundDispatch,

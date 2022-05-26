@@ -11,7 +11,6 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../assets"
-import { ETH } from "../constants"
 import { AnyEVMTransaction, EVMNetwork, SmartContract } from "../networks"
 import {
   isValidAlchemyAssetTransferResponse,
