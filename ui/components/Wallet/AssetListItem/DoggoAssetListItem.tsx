@@ -48,8 +48,8 @@ export default function DoggoAssetListItem({
             >
               <div>DOGGO tokens are locked.</div>
               <div>
-                Untill DOGGO is unlocked you will not be able to transfer or
-                sell your tokens. But you can earn more by sharing referral link
+                Until DOGGO is unlocked you will not be able to transfer or sell
+                your tokens, but you can earn more by sharing your referral link
                 or farming.
               </div>
             </SharedTooltip>
