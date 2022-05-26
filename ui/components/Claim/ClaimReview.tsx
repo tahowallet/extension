@@ -18,7 +18,7 @@ export default function ClaimReview({
   backToChooseReferrer: () => void
   backToChooseDelegate: () => void
 }): ReactElement {
-  const { selectedDelegate, selectedDAO } = useBackgroundSelector(
+  const { selectedDelegate, selectedForBonus } = useBackgroundSelector(
     selectClaimSelections
   )
   const referrer: Referrer | null = useBackgroundSelector(
@@ -35,14 +35,14 @@ export default function ClaimReview({
         name={
           referrer?.ensName ??
           referrer?.address ??
-          selectedDAO?.name ??
-          selectedDAO?.address ??
+          selectedForBonus?.name ??
+          selectedForBonus?.address ??
           ""
         }
         avatar={
-          referrer || !selectedDAO?.avatar
+          referrer || !selectedForBonus?.avatar
             ? undefined
-            : `./images/DAOs/${selectedDAO?.avatar}`
+            : `./images/DAOs/${selectedForBonus?.avatar}`
         }
       />
       <div className="description_review">Chosen delegate</div>

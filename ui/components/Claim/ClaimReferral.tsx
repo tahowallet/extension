@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import {
-  chooseDAO,
+  chooseSelectedForBonus,
   selectClaimSelections,
   DAO,
 } from "@tallyho/tally-background/redux-slices/claim"
@@ -70,14 +70,16 @@ function DAOButton(
   )
 }
 
-function getInitialCustomDAO(selectedDAO: DAO | null, DAOs: DAO[]) {
-  if (!selectedDAO) return undefined
+function getInitialCustomDAO(selectedForBonus: DAO | null, DAOs: DAO[]) {
+  if (!selectedForBonus) return undefined
 
   const isCustom = !DAOs.some(
-    (current) => current.address === selectedDAO.address
+    (current) => current.address === selectedForBonus.address
   )
 
-  return isCustom ? selectedDAO.name ?? selectedDAO.address : undefined
+  return isCustom
+    ? selectedForBonus.name ?? selectedForBonus.address
+    : undefined
 }
 
 export default function ClaimReferral(props: {
@@ -86,7 +88,7 @@ export default function ClaimReferral(props: {
 }): ReactElement {
   const dispatch = useBackgroundDispatch()
   const { DAOs, claimAmount } = props
-  const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
+  const { selectedForBonus } = useBackgroundSelector(selectClaimSelections)
   const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
   const amountWithBonus = formatCurrencyAmount(
     mainCurrency,
@@ -94,36 +96,37 @@ export default function ClaimReferral(props: {
     2
   )
   const [isCustomDAOEmpty, setIsCustomDAOEmpty] = useState<boolean>(false)
-  const [customDAO, setCustomDAO] = useState<string | undefined>(
-    getInitialCustomDAO(selectedDAO, DAOs)
-  )
+  const [customAddressForBonus, setCustomAddressForBonus] = useState<
+    string | undefined
+  >(getInitialCustomDAO(selectedForBonus, DAOs))
 
-  const setSelectedDAO = (newDAO: DAO | null) => dispatch(chooseDAO(newDAO))
+  const setSelectedForBonus = (newDAO: DAO | null) =>
+    dispatch(chooseSelectedForBonus(newDAO))
 
   const handleInputChange = (
     value: { address: HexString; name?: string } | undefined
   ) => {
-    setCustomDAO(value?.name ?? value?.address)
+    setCustomAddressForBonus(value?.name ?? value?.address)
 
     if (value) {
-      setSelectedDAO(value)
+      setSelectedForBonus(value)
     } else {
-      setSelectedDAO(null)
+      setSelectedForBonus(null)
     }
   }
 
   const handleInputFocus = () => {
     setIsCustomDAOEmpty(false)
 
-    if (customDAO) {
-      setSelectedDAO({ address: customDAO })
+    if (customAddressForBonus) {
+      setSelectedForBonus({ address: customAddressForBonus })
     } else {
-      setSelectedDAO(null)
+      setSelectedForBonus(null)
     }
   }
 
   const onDAOButtonClick = (dao: DAO) => {
-    setSelectedDAO(dao)
+    setSelectedForBonus(dao)
     setIsCustomDAOEmpty(true)
   }
 
@@ -145,7 +148,7 @@ export default function ClaimReferral(props: {
               address={address}
               name={name}
               avatar={avatar}
-              isActive={selectedDAO?.name === name}
+              isActive={selectedForBonus?.name === name}
               onClick={onDAOButtonClick}
             />
           )
@@ -153,7 +156,7 @@ export default function ClaimReferral(props: {
       </div>
       <div className="input_wrap">
         <SharedAddressInput
-          value={customDAO}
+          value={customAddressForBonus}
           onFocus={handleInputFocus}
           onAddressChange={handleInputChange}
           isEmpty={isCustomDAOEmpty}
