@@ -1,19 +1,23 @@
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import {
-  EstimatedFeesPerGas,
-  NetworkFeeSettings,
-  NetworkFeeTypeChosen,
-  selectLastGasEstimatesRefreshTime,
-  setCustomGas,
-  GasOption,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   ESTIMATED_FEE_MULTIPLIERS,
   ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
 } from "@tallyho/tally-background/constants/network-fees"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import {
+  EstimatedFeesPerGas,
+  NetworkFeeSettings,
+  NetworkFeeTypeChosen,
+  setCustomGas,
+  GasOption,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
+
+import {
+  selectCurrentNetwork,
+  selectMainCurrencyPricePoint,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
@@ -120,6 +124,7 @@ export default function NetworkSettingsSelect({
   const dispatch = useBackgroundDispatch()
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
@@ -223,6 +228,7 @@ export default function NetworkSettingsSelect({
         maxPriorityFeePerGas: customMaxPriorityFeePerGas,
         maxFeePerGas:
           BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
+        network: selectedNetwork,
       })
     )
   }

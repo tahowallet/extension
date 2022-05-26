@@ -304,3 +304,14 @@ export function sameNetwork(
     network1.name === network2.name
   )
 }
+
+/**
+ * Returns a 0x-prefixed hexadecimal representation of a number or string chainID
+ * while also handling cases where an already hexlified chainID is passed in.
+ */
+export function toHexChainID(chainID: string | number): string {
+  if (typeof chainID === "string" && chainID.startsWith("0x")) {
+    return chainID
+  }
+  return `0x${BigInt(chainID).toString(16)}`
+}

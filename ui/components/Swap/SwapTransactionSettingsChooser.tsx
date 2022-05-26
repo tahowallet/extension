@@ -1,9 +1,11 @@
 import {
   NetworkFeeSettings,
-  selectDefaultNetworkFeeSettings,
-  selectEstimatedFeesPerGas,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  selectDefaultNetworkFeeSettings,
+  selectEstimatedFeesPerGas,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
@@ -112,7 +114,9 @@ export default function SwapTransactionSettingsChooser({
         </span>
         <span className="label">
           Estimated network fee
-          <FeeSettingsText />
+          <FeeSettingsText
+            customNetworkSetting={swapTransactionSettings.networkSettings}
+          />
         </span>
         <span className="label">
           Tally Ho fee for the DAO

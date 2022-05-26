@@ -2,9 +2,10 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
-import { EVMNetwork } from "../networks"
+import { EVMNetwork, toHexChainID } from "../networks"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { getProvider } from "./utils/contract-utils"
 
 const defaultSettings = {
   hideDust: false,
@@ -31,6 +32,7 @@ export type Events = {
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
+  newSelectedNetwork: EVMNetwork
 }
 
 export const emitter = new Emittery<Events>()
@@ -145,6 +147,7 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
 export const setSelectedNetwork = createBackgroundAsyncThunk(
   "ui/setSelectedNetwork",
   async (network: EVMNetwork, { getState, dispatch }) => {
+    emitter.emit("newSelectedNetwork", network)
     const state = getState() as { ui: UIState; account: AccountState }
     const { ui, account } = state
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
