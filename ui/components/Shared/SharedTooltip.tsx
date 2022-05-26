@@ -7,6 +7,7 @@ interface Props {
   width: number
   height?: number
   children: React.ReactNode
+  // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
     isShowingTooltip,
   }: {
