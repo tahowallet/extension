@@ -71,11 +71,11 @@ import {
   transactionRequest,
   updateTransactionOptions,
   clearTransactionState,
-  selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
 } from "./redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
 import {
   requestPermission,
@@ -109,7 +109,7 @@ import {
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
-import { clearApprovalInProgress } from "./redux-slices/0x-swap"
+import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
 import {
@@ -479,7 +479,7 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signingMethod: SigningMethod
   ): Promise<void> {
-    // TODO Adjust to handle multiple networks.
+    // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signingMethod)
   }
 
@@ -558,8 +558,7 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
-      // TODO support multiple networks
-      const network = ETHEREUM
+      const { network } = options
 
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
@@ -666,8 +665,10 @@ export default class Main extends BaseService<never> {
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(estimatedFeesPerGas(blockPrices))
+    this.chainService.emitter.on("blockPrices", ({ blockPrices, network }) => {
+      this.store.dispatch(
+        estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
+      )
     })
 
     // Report on transactions for basic activity. Fancier stuff is handled via
@@ -1102,6 +1103,7 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
+      this.store.dispatch(clearSwapQuote())
       this.store.dispatch(setEligibilityLoading())
       this.doggoService.getEligibility(addressNetwork.address)
 

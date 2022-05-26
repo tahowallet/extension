@@ -1,10 +1,12 @@
 import React, { ReactElement, useState } from "react"
 import {
   NetworkFeeSettings,
-  selectEstimatedFeesPerGas,
-  selectTransactionData,
   updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  selectEstimatedFeesPerGas,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"

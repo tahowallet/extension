@@ -2,9 +2,10 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
-import { EVMNetwork } from "../networks"
+import { EVMNetwork, toHexChainID } from "../networks"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { getProvider } from "./utils/contract-utils"
 
 const defaultSettings = {
   hideDust: false,
@@ -148,6 +149,13 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     const state = getState() as { ui: UIState; account: AccountState }
     const { ui, account } = state
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
+    const provider = getProvider()
+    // dogfood our switchEthereumChain handler
+    provider.send("wallet_switchEthereumChain", [
+      {
+        chainId: toHexChainID(network.chainID),
+      },
+    ])
     if (
       !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
     ) {
