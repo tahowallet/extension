@@ -344,6 +344,7 @@ export default class EnrichmentService extends BaseService<Events> {
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {
       ...transaction,
+      network,
       annotation: await this.resolveTransactionAnnotation(
         network,
         transaction,

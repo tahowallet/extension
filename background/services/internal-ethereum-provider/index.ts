@@ -11,8 +11,13 @@ import logger from "../../lib/logger"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
-import { ETHEREUM } from "../../constants/networks"
+import {
+  EIP1559TransactionRequest,
+  EVMNetwork,
+  SignedEVMTransaction,
+  toHexChainID,
+} from "../../networks"
+import { ETHEREUM, EVM_MAIN_NETWORKS } from "../../constants/networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
@@ -43,6 +48,11 @@ type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
   input?: string
 }
 
+// https://eips.ethereum.org/EIPS/eip-3326
+export type SwitchEthereumChainParameter = {
+  chainId: string
+}
+
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
@@ -51,7 +61,7 @@ type DAppRequestEvent<T, E> = {
 
 type Events = ServiceLifecycleEvents & {
   transactionSignatureRequest: DAppRequestEvent<
-    Partial<EIP1559TransactionRequest> & { from: string },
+    Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork },
     SignedEVMTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
@@ -103,6 +113,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
+  // @TODO Persist this in db so we get correct network on app startup.
+  private activeNetwork = ETHEREUM
+
   async routeSafeRPCRequest(
     method: string,
     params: RPCRequest["params"]
@@ -116,8 +129,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTypedData({
           account: {
             address: params[0] as string,
-            // TODO Support variable network.
-            network: ETHEREUM,
+            network: this.activeNetwork,
           },
           typedData: JSON.parse(params[1] as string),
         })
@@ -126,7 +138,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         // allowed to have an RPC call made to it. Ideally this would be based
         // on a user's idea of a dApp connection rather than a network-specific
         // modality, requiring it to be constantly "switched"
-        return `0x${BigInt(ETHEREUM.chainID).toString(16)}`
+        return toHexChainID(this.activeNetwork.chainID)
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
@@ -166,7 +178,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "net_version":
       case "web3_clientVersion":
       case "web3_sha3":
-        return this.chainService.send(method, params)
+        return this.chainService.send(method, params, this.activeNetwork)
       case "eth_accounts": {
         // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
         const { address } = await this.preferenceService.getSelectedAccount()
@@ -202,6 +214,19 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           hexData: params[0] as string,
           account: params[1] as string,
         })
+      case "wallet_switchEthereumChain": {
+        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+        const newNetwork = EVM_MAIN_NETWORKS.find(
+          (network) =>
+            network.chainID === newChainId ||
+            toHexChainID(network.chainID) === newChainId
+        )
+        if (newNetwork) {
+          this.activeNetwork = newNetwork
+          return null
+        }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
+      }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
@@ -224,7 +249,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "wallet_accountsChanged":
       case "wallet_addEthereumChain":
       case "wallet_registerOnboarding":
-      case "wallet_switchEthereumChain":
       default:
         throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
     }
@@ -251,6 +275,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         payload: {
           ...convertedRequest,
           from,
+          network: this.activeNetwork,
         },
         resolver: resolve,
         rejecter: reject,
@@ -283,8 +308,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         payload: {
           account: {
             address: account,
-            // TODO Support variable network.
-            network: ETHEREUM,
+            network: this.activeNetwork,
           },
           signingData: data,
           messageType: type,
