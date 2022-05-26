@@ -1,46 +1,97 @@
-import { AnyAsset } from "@tallyho/tally-background/assets"
-import { HexString } from "@tallyho/tally-background/types"
+import {
+  EnrichedAvailableVault,
+  clearInput,
+  selectIsVaultDataStale,
+} from "@tallyho/tally-background/redux-slices/earn"
+import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { DOGGO } from "@tallyho/tally-background/constants"
+import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import classNames from "classnames"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import EarnDepositedCard, {
+  getDisplayAPR,
+} from "../components/Earn/EarnDepositedCard"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
+import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
+import { useAllEarnVaults } from "../hooks/earn-hooks"
 
 type EarnCardProps = {
-  asset: (AnyAsset & { contractAddress: HexString }) | undefined
+  vault: EnrichedAvailableVault
+  isComingSoon: boolean
 }
 
-function EarnCard({ asset }: EarnCardProps) {
+function EarnCard({ vault, isComingSoon }: EarnCardProps) {
   return (
     <Link
       to={{
         pathname: "/earn/deposit",
         state: {
-          asset,
+          vaultAddress: vault.vaultAddress,
         },
       }}
       className="earn"
     >
-      <div className="card">
+      <div className={classNames("card", { coming_soon: isComingSoon })}>
         <div className="asset_icon_wrap">
-          <SharedAssetIcon size="large" symbol={asset?.symbol} />
+          {vault.icons && vault.icons?.length > 1 ? (
+            <div className="multiple_icons">
+              <div className="single_icon_first">
+                <SharedAssetIcon
+                  size="large"
+                  symbol={vault?.asset?.symbol}
+                  logoURL={vault.icons?.[0]}
+                />
+              </div>
+              <div>
+                <SharedAssetIcon
+                  size="large"
+                  symbol={vault?.asset?.symbol}
+                  logoURL={vault.icons?.[1]}
+                />
+              </div>
+            </div>
+          ) : (
+            <SharedAssetIcon
+              size="large"
+              symbol={vault?.asset?.symbol}
+              logoURL={vault.icons?.[0]}
+            />
+          )}
         </div>
-        <span className="token_name">{asset?.symbol}</span>
-        <span className="apy_info_label">Estimated APR</span>
-        <span className="apy_percent">250%</span>
+        <span className="token_name">{vault?.asset?.symbol}</span>
+        <div className="info">
+          <div className="label">Total estimated vAPR</div>
+          <div className="value">{getDisplayAPR(vault.APR)}</div>
+        </div>
         <div className="divider" />
         <div className="info">
           <div className="label">TVL</div>
-          <div className="tvl">$22.800.322</div>
+          <div className="value">
+            {vault.localValueTotalDeposited ? (
+              `$${vault.localValueTotalDeposited}`
+            ) : (
+              <SharedSkeletonLoader height={24} width={120} />
+            )}
+          </div>
         </div>
         <div className="divider" />
         <div className="info">
           <div className="label">Reward</div>
-          <div className="rewards">
-            <img className="lock" src="./images/lock@2.png" alt="Locked" />
-            TALLY
+          <div className="rewardsWrap">
+            <div className="doggoRewards">
+              <img className="lock" src="./images/lock@2.png" alt="Locked" />
+              DOGGO
+            </div>
+            <div className="otherReward"> + {vault.asset.symbol}</div>
           </div>
         </div>
+        {isComingSoon && <div className="coming_soon_notice">Coming soon</div>}
         <style jsx>{`
           .card {
             width: 160px;
@@ -54,13 +105,17 @@ function EarnCard({ asset }: EarnCardProps) {
             margin-top: 26px;
             margin-bottom: 16px;
             transition: all 0.2s ease;
+            color: white;
           }
           .card:hover {
-            box-shadow: 0px 10px 12px 0px #0014138a;
-            background: linear-gradient(180deg, #284340 0%, #193330 100%);
+            background: linear-gradient(180deg, #034f4b 0%, #033633 100%);
+            box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.04),
+              0px 14px 16px rgba(0, 20, 19, 0.14),
+              0px 10px 12px rgba(0, 20, 19, 0.54);
           }
-          .tvl {
+          .value {
             font-size: 18px;
+            line-height: 24px;
             font-weight: bold;
           }
           .info {
@@ -72,17 +127,39 @@ function EarnCard({ asset }: EarnCardProps) {
             align-items: center;
             color: white;
           }
-          .rewards {
+          .rewardsWrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+            margin-top: 4px;
+          }
+          .doggoRewards {
             display: flex;
             align-items: center;
             border-radius: 4px;
             padding: 4px;
             background-color: var(--hunter-green);
           }
+          .otherReward {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            padding-left: 2px;
+          }
+
           .asset_icon_wrap {
-            border: solid var(--green-95) 3px;
             border-radius: 500px;
             margin-top: -18px;
+          }
+          .multiple_icons {
+            display: flex;
+          }
+          .single_icon_first {
+            z-index: 2;
+          }
+          .multiple_icons div {
+            margin: 0 -8px;
           }
           .token_name {
             font-weight: bold;
@@ -91,8 +168,8 @@ function EarnCard({ asset }: EarnCardProps) {
             font-weight: 500;
             line-height: 24px;
             text-transform: uppercase;
-            margin-top: 3px;
-            margin-bottom: 4px;
+            margin-top: 4px;
+            margin-bottom: 8px;
           }
           .lock {
             height: 13px;
@@ -102,17 +179,6 @@ function EarnCard({ asset }: EarnCardProps) {
           .apy_info_label {
             color: var(--green-40);
             font-size: 14px;
-            line-height: 17px;
-            margin-bottom: -4px;
-          }
-          .apy_percent {
-            color: var(--success);
-            font-family: "Quincy CF";
-            font-size: 36px;
-            font-weight: 500;
-            line-height: 42px;
-            text-align: center;
-            margin-bottom: 4px;
           }
           .icon_rewards_locked {
             background: url("./images/reward_locked@2x.png") center no-repeat;
@@ -124,7 +190,21 @@ function EarnCard({ asset }: EarnCardProps) {
           }
           .divider {
             width: 128px;
+            height: unset;
+            opacity: 100%;
             border-bottom: 1px solid var(--green-120);
+          }
+          .coming_soon_notice {
+            color: var(--attention);
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 32px;
+            text-align: center;
+            margin-top: -140px;
+          }
+          .coming_soon
+            > *:not(.asset_icon_wrap, .token_name, .coming_soon_notice) {
+            opacity: 0.1;
           }
         `}</style>
       </div>
@@ -133,43 +213,90 @@ function EarnCard({ asset }: EarnCardProps) {
 }
 
 export default function Earn(): ReactElement {
+  const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
   const [panelNumber, setPanelNumber] = useState(0)
+  const vaultsWithLockedValues = useAllEarnVaults()
 
-  const assets = [
-    {
-      name: "Dai Token",
-      symbol: "DAI",
-      contractAddress: "0x6b175474e89094c44da98b954eedeac495271d0f",
-    } as AnyAsset & { contractAddress: HexString },
-    {
-      name: "Keep",
-      symbol: "KEEP",
-      contractAddress: "0x85eee30c52b0b379b046fb0f85f4f3dc3009afec",
-    } as AnyAsset & { contractAddress: HexString },
-  ]
+  const dispatch = useBackgroundDispatch()
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+
+  useEffect(() => {
+    dispatch(clearInput()) // clear deposit amount input to start fresh after selecting any vault
+  }, [dispatch])
+
+  const isComingSoon = false
+
+  const totalTVL = vaultsWithLockedValues
+    ?.map((item) => {
+      return typeof item.numberValueTotalDeposited !== "undefined"
+        ? item.numberValueTotalDeposited
+        : 0
+    })
+    .reduce((prev, curr) => prev + curr, 0)
+
+  const userTVL = vaultsWithLockedValues
+    ?.map((item) => {
+      return typeof item.numberValueUserDeposited !== "undefined"
+        ? item.numberValueUserDeposited
+        : 0
+    })
+    .reduce((prev, curr) => prev + curr, 0)
+
+  const userPendingRewards = vaultsWithLockedValues
+    ?.map((item) => {
+      return fromFixedPointNumber(
+        { amount: item.pendingRewards, decimals: DOGGO.decimals },
+        2
+      )
+    })
+    .reduce((prev, curr) => prev + curr, 0)
+    .toFixed(2)
+
+  const depositedVaults =
+    vaultsWithLockedValues?.filter((vault) => vault.userDeposited > 0n) ?? []
 
   return (
     <>
-      <header>
-        <div className="left">
-          <div className="pre_title">Total value locked</div>
-          <div className="balance">
-            <span className="currency_sign">$</span>23,928,292
+      {isComingSoon ? (
+        <header className="coming_soon_header">
+          <div className="left">
+            <div className="serif_header">Time left till launch</div>
           </div>
-        </div>
-        <div className="right" />
-      </header>
+          <div className="right clock">
+            <div className="time_segment">
+              <div className="serif_header number">2</div>
+              <div className="time_label">Days</div>
+            </div>
+            <div className="time_segment">
+              <div className="serif_header number">14</div>
+              <div className="time_label">Hours</div>
+            </div>
+          </div>
+        </header>
+      ) : (
+        <header>
+          <div className="left">
+            <div className="pre_title">Total value locked</div>
+            <div className="balance">
+              <span className="currency_sign">$</span>
+              {formatCurrencyAmount(mainCurrencySymbol, totalTVL || 0, 2)}
+            </div>
+          </div>
+          <div className="right" />
+        </header>
+      )}
       <SharedPanelSwitcher
         setPanelNumber={setPanelNumber}
         panelNumber={panelNumber}
-        panelNames={["Vaults", "LP Pools", "Your deposits"]}
+        panelNames={["Pools", "Your deposits"]}
       />
       {panelNumber === 0 ? (
         <section className="standard_width">
           <ul className="cards_wrap">
-            {assets.map((asset) => (
+            {vaultsWithLockedValues?.map((vault) => (
               <li>
-                <EarnCard asset={asset} />
+                {/* TODO Replace isComing soon with a check if current Timestamp > vault.poolStartTime */}
+                <EarnCard vault={vault} isComingSoon={false} />
               </li>
             ))}
           </ul>
@@ -177,13 +304,46 @@ export default function Earn(): ReactElement {
       ) : (
         <></>
       )}
-      {panelNumber === 1 ? (
-        <section className="standard_width">
-          <p>Coming soon</p>
-        </section>
-      ) : (
-        <></>
-      )}
+      {panelNumber === 1 &&
+        (isValutDataStale || depositedVaults.length > 0 ? (
+          <section className="standard_width">
+            <div className="your_deposit_heading_info">
+              <div className="left">
+                <div className="label">Total deposits</div>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
+                  <div className="amount">
+                    ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
+                  </div>
+                </SharedSkeletonLoader>
+              </div>
+              <div className="right">
+                <div className="label">Total available rewards</div>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
+                  <div className="amount">{userPendingRewards} DOGGO</div>
+                </SharedSkeletonLoader>
+              </div>
+            </div>
+            <SharedSkeletonLoader
+              isLoaded={!isValutDataStale}
+              height={176}
+              customStyles={`
+                margin-top: 40px;
+              `}
+            >
+              <ul className="cards_wrap">
+                {depositedVaults?.map((vault) => {
+                  return (
+                    <li>
+                      <EarnDepositedCard vault={vault} />
+                    </li>
+                  )
+                })}
+              </ul>
+            </SharedSkeletonLoader>
+          </section>
+        ) : (
+          <EmptyBowl />
+        ))}
       <style jsx>
         {`
           .cards_wrap {
@@ -232,6 +392,94 @@ export default function Earn(): ReactElement {
             display: flex;
             justify-content: flex-end;
             flex-direction: column;
+          }
+          .your_deposit_heading_info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px;
+          }
+          .your_deposit_heading_info .amount {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 24px;
+          }
+          .your_deposit_heading_info .label {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 16px;
+            margin-bottom: 6px;
+          }
+          .your_deposit_heading_info .right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+          }
+          .serif_header {
+            color: var(--trophy-gold);
+          }
+          .bone_illustration {
+            background: url("./images/illustration_bones@2x.png");
+            background-size: cover;
+            width: 106px;
+            height: 101px;
+            margin-bottom: 16px;
+          }
+          .lp_pool_panel_wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 46px;
+          }
+          .coming_soon_header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: -110px;
+            margin-top: -50px;
+          }
+          .coming_soon_header .left {
+            width: 166px;
+          }
+          .coming_soon_header .right {
+            display: flex;
+            flex-direction: row;
+            width: 161px;
+            grid-gap: 3px;
+          }
+          .time_segment {
+            width: 55px;
+            text-align: center;
+            padding: 0px 13px;
+          }
+          .clock {
+            background: url("./images/clock_bg@2x.png");
+            background-size: cover;
+            width: 206px;
+            height: 139px;
+            flex-shrink: 0;
+            flex-grow: 1;
+            margin-top: 40px;
+          }
+          .number {
+            color: var(--success);
+            font-size: 60px;
+            font-weight: 500;
+            line-height: 42px;
+            text-align: center;
+            margin-top: 19px;
+          }
+          .time_label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 16px;
+            text-align: center;
+          }
+          .left .serif_header {
+            font-size: 36px;
+            line-height: 42px;
           }
         `}
       </style>

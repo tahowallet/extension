@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundSelector } from "../../hooks"
 

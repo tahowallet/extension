@@ -20,7 +20,7 @@ import {
 } from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH, FORK, MINUTE } from "../../constants"
+import { FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { USE_MAINNET_FORK } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
@@ -414,6 +414,7 @@ export default class KeyringService extends BaseService<Events> {
       })
       this.#removeKeyring(keyring.id)
     }
+    await this.persistKeyrings()
     this.emitKeyrings()
   }
 
@@ -502,7 +503,7 @@ export default class KeyringService extends BaseService<Events> {
       v: tx.v,
       blockHash: null,
       blockHeight: null,
-      asset: ETH,
+      asset: network.baseAsset,
       network: USE_MAINNET_FORK ? FORK : network,
     }
 

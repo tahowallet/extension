@@ -4,7 +4,13 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 
-import { decodeJSON, encodeJSON } from "./lib/utils"
+import {
+  decodeJSON,
+  encodeJSON,
+  getEthereumNetwork,
+  isProbablyEVMAddress,
+  normalizeEVMAddress,
+} from "./lib/utils"
 
 import {
   BaseService,
@@ -18,6 +24,7 @@ import {
   ProviderBridgeService,
   TelemetryService,
   ServiceCreatorFunction,
+  DoggoService,
   LedgerService,
   SigningService,
 } from "./services"
@@ -25,6 +32,7 @@ import {
 import { EIP712TypedData, HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
+import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -35,6 +43,12 @@ import {
 } from "./redux-slices/accounts"
 import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  setEligibility,
+  setEligibilityLoading,
+  setReferrer,
+  setReferrerStats,
+} from "./redux-slices/claim"
 import {
   emitter as keyringSliceEmitter,
   keyringLocked,
@@ -57,11 +71,11 @@ import {
   transactionRequest,
   updateTransactionOptions,
   clearTransactionState,
-  selectDefaultNetworkFeeSettings,
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
 } from "./redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
 import {
   requestPermission,
@@ -85,14 +99,23 @@ import {
   SignDataRequest,
 } from "./utils/signing"
 import {
+  emitter as earnSliceEmitter,
+  setVaultsAsStale,
+} from "./redux-slices/earn"
+import {
   LedgerState,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
 import { ETHEREUM } from "./constants"
-import { clearApprovalInProgress } from "./redux-slices/0x-swap"
+import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import { ReferrerStats } from "./services/doggo/db"
+import {
+  migrateReduxState,
+  REDUX_STATE_VERSION,
+} from "./redux-slices/migrations"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -110,233 +133,6 @@ const devToolsSanitizer = (input: unknown) => {
     default:
       return input
   }
-}
-
-// The version of persisted Redux state the extension is expecting. Any previous
-// state without this version, or with a lower version, ought to be migrated.
-const REDUX_STATE_VERSION = 7
-
-type Migration = (prevState: Record<string, unknown>) => Record<string, unknown>
-
-// An object mapping a version number to a state migration. Each migration for
-// version n is expected to take a state consistent with version n-1, and return
-// state consistent with version n.
-const REDUX_MIGRATIONS: { [version: number]: Migration } = {
-  2: (prevState: Record<string, unknown>) => {
-    // Migrate the old currentAccount SelectedAccount type to a bare
-    // selectedAccount AddressNetwork type. Note the avoidance of imported types
-    // so this migration will work in the future, regardless of other code changes
-    type BroadAddressNetwork = {
-      address: string
-      network: Record<string, unknown>
-    }
-    type OldState = {
-      ui: {
-        currentAccount?: {
-          addressNetwork: BroadAddressNetwork
-          truncatedAddress: string
-        }
-      }
-    }
-    const newState = { ...prevState }
-    const addressNetwork = (prevState as OldState)?.ui?.currentAccount
-      ?.addressNetwork
-    delete (newState as OldState)?.ui?.currentAccount
-    newState.selectedAccount = addressNetwork as BroadAddressNetwork
-    return newState
-  },
-  3: (prevState: Record<string, unknown>) => {
-    const { assets, ...newState } = prevState
-
-    // Clear assets collection; these should be immediately repopulated by the
-    // IndexingService in startService.
-    newState.assets = []
-
-    return newState
-  },
-  4: (prevState: Record<string, unknown>) => {
-    // Migrate the ETH-only block data in store.accounts.blocks[blockHeight] to
-    // a new networks slice. Block data is now network-specific, keyed by EVM
-    // chainID in store.networks.networkData[chainId].blocks
-    type OldState = {
-      account?: {
-        blocks?: { [blockHeight: number]: unknown }
-      }
-    }
-    type NetworkState = {
-      evm: {
-        [chainID: string]: {
-          blockHeight: number | null
-          blocks: {
-            [blockHeight: number]: unknown
-          }
-        }
-      }
-    }
-
-    const oldState = prevState as OldState
-
-    const networks: NetworkState = {
-      evm: {
-        "1": {
-          blocks: { ...oldState.account?.blocks },
-          blockHeight:
-            Math.max(
-              ...Object.keys(oldState.account?.blocks ?? {}).map((s) =>
-                parseInt(s, 10)
-              )
-            ) || null,
-        },
-      },
-    }
-
-    const { blocks, ...oldStateAccountWithoutBlocks } = oldState.account ?? {
-      blocks: undefined,
-    }
-
-    return {
-      ...prevState,
-      // Drop blocks from account slice.
-      account: oldStateAccountWithoutBlocks,
-      // Add new networks slice data.
-      networks,
-    }
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  5: (prevState: any) => {
-    const { ...newState } = prevState
-    newState.keyrings.keyringMetadata = {}
-
-    return newState
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  6: (prevState: any) => {
-    const { ...newState } = prevState
-
-    // A user might be upgrading from version without the `ledger` key in the redux store - so we
-    // initialize it here if that is the case.
-    if (!newState.ledger) {
-      newState.ledger = {
-        currentDeviceID: null,
-        devices: {},
-        usbDeviceCount: 0,
-      }
-      return newState
-    }
-
-    Object.keys(newState.ledger.devices).forEach((deviceId) => {
-      ;(newState.ledger as LedgerState).devices[
-        deviceId
-      ].isArbitraryDataSigningEnabled = false
-    })
-
-    return newState
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  7: (prevState: any) => {
-    type OldState = {
-      activities: {
-        [address: string]: {
-          ids: string[]
-          entities: {
-            [id: string]: {
-              blockHeight: number | null
-              annotation: Record<string, unknown>
-            }
-          }
-        }
-      }
-      networks: {
-        evm: {
-          "1": {
-            blocks?: {
-              [blockHeight: number]: {
-                timestamp: number | undefined
-              }
-            }
-            blockHeight: number
-          }
-        }
-      }
-    }
-
-    const oldState = prevState as OldState
-    const { activities } = oldState
-
-    type NewEntity = {
-      [id: string]: {
-        blockHeight: number | null
-        annotation: {
-          blockTimestamp?: number
-        }
-      }
-    }
-    type NewActivitiesState = {
-      [address: string]: {
-        ids: string[]
-        entities: NewEntity
-      }
-    }
-
-    const newActivitiesState: NewActivitiesState = {}
-
-    const { blocks } = oldState.networks.evm["1"]
-
-    // Grab timestamps off of blocks, add them as activity annotations
-    Object.keys(activities).forEach((accountActivitiesAddress: string) => {
-      const accountActivities = activities[accountActivitiesAddress]
-      const newEntities: NewEntity = {}
-      accountActivities.ids.forEach((activityItemID: string) => {
-        const activityItem = accountActivities.entities[activityItemID]
-        newEntities[activityItemID] = {
-          ...activityItem,
-          annotation: {
-            ...activityItem.annotation,
-            blockTimestamp: activityItem.blockHeight
-              ? blocks && blocks[activityItem.blockHeight]?.timestamp
-              : undefined,
-          },
-        }
-      })
-      newActivitiesState[accountActivitiesAddress] = {
-        ids: accountActivities.ids,
-        entities: newEntities,
-      }
-    })
-
-    const { ...newState } = oldState
-    // Remove blocks
-    delete newState.networks.evm["1"].blocks // Only mainnet exists at this time
-    return {
-      ...newState,
-      activities: newActivitiesState,
-    }
-  },
-}
-
-// Migrate a previous version of the Redux state to that expected by the current
-// code base.
-function migrateReduxState(
-  previousState: Record<string, unknown>,
-  previousVersion?: number
-): Record<string, unknown> {
-  const resolvedVersion = previousVersion ?? 1
-  let migratedState: Record<string, unknown> = previousState
-
-  if (resolvedVersion < REDUX_STATE_VERSION) {
-    const outstandingMigrations = Object.entries(REDUX_MIGRATIONS)
-      .sort()
-      .filter(([version]) => parseInt(version, 10) > resolvedVersion)
-      .map(([, migration]) => migration)
-    migratedState = outstandingMigrations.reduce(
-      (state: Record<string, unknown>, migration: Migration) => {
-        return migration(state)
-      },
-      migratedState
-    )
-  }
-
-  return migratedState
 }
 
 const reduxCache: Middleware = (store) => (next) => (action) => {
@@ -434,6 +230,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService
     )
+    const doggoService = DoggoService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -480,6 +277,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
+      await doggoService,
       await telemetryService,
       await ledgerService,
       await signingService
@@ -530,6 +328,11 @@ export default class Main extends BaseService<never> {
      * knowledge.
      */
     private providerBridgeService: ProviderBridgeService,
+    /**
+     * A promise to the claim service, which saves the eligibility data
+     * for efficient storage and retrieval.
+     */
+    private doggoService: DoggoService,
     /**
      * A promise to the telemetry service, which keeps track of extension
      * storage usage and (eventually) other statistics.
@@ -601,6 +404,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
+      this.doggoService.startService(),
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
@@ -619,6 +423,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
+      this.doggoService.stopService(),
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
@@ -636,6 +441,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
+    this.connectDoggoService()
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
@@ -658,16 +464,14 @@ export default class Main extends BaseService<never> {
   }
 
   addOrEditAddressName({
-    name,
     address,
-  }: {
-    name: string
-    address: HexString
-  }): void {
+    network,
+    name,
+  }: AddressOnNetwork & { name: string }): void {
     this.preferenceService.addOrEditNameInAddressBook({
-      network: ETHEREUM,
-      name,
       address,
+      network,
+      name,
     })
   }
 
@@ -675,6 +479,7 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signingMethod: SigningMethod
   ): Promise<void> {
+    // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signingMethod)
   }
 
@@ -684,21 +489,21 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
-    for (let i = 0; i < accounts.length; i += 1) {
-      const { path, address } = accounts[i]
+    await Promise.all(
+      accounts.map(async ({ path, address }) => {
+        await this.ledgerService.saveAddress(path, address)
 
-      // eslint-disable-next-line no-await-in-loop
-      await this.ledgerService.saveAddress(path, address)
-
-      const addressNetwork = {
-        address,
-        network: ETHEREUM,
-      }
-      this.store.dispatch(loadAccount(address))
-      // eslint-disable-next-line no-await-in-loop
-      await this.chainService.addAccountToTrack(addressNetwork)
-      this.store.dispatch(setNewSelectedAccount(addressNetwork))
-    }
+        // FIXME Handle multi-network in Ledger.
+        const addressNetwork = {
+          address,
+          network: ETHEREUM,
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(addressNetwork))
+        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+      })
+    )
   }
 
   async deriveLedgerAddress(path: string): Promise<string> {
@@ -742,6 +547,10 @@ export default class Main extends BaseService<never> {
       )
     })
 
+    earnSliceEmitter.on("earnDeposit", (message) => {
+      this.store.dispatch(setSnackbarMessage(message))
+    })
+
     this.chainService.emitter.on("transactionSendFailure", () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction failed to broadcast.")
@@ -749,8 +558,7 @@ export default class Main extends BaseService<never> {
     })
 
     transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
-      // TODO support multiple networks
-      const network = ETHEREUM
+      const { network } = options
 
       const {
         values: { maxFeePerGas, maxPriorityFeePerGas },
@@ -819,7 +627,7 @@ export default class Main extends BaseService<never> {
         signingMethod,
       }: {
         typedData: EIP712TypedData
-        account: HexString
+        account: AddressOnNetwork
         signingMethod: SigningMethod
       }) => {
         try {
@@ -851,14 +659,16 @@ export default class Main extends BaseService<never> {
     const existingAccounts = await this.chainService.getAccountsToTrack()
     existingAccounts.forEach((addressNetwork) => {
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(addressNetwork.address))
+      this.store.dispatch(loadAccount(addressNetwork))
 
       // Force a refresh of the account balance to populate the store.
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    this.chainService.emitter.on("blockPrices", (blockPrices) => {
-      this.store.dispatch(estimatedFeesPerGas(blockPrices))
+    this.chainService.emitter.on("blockPrices", ({ blockPrices, network }) => {
+      this.store.dispatch(
+        estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
+      )
     })
 
     // Report on transactions for basic activity. Fancier stuff is handled via
@@ -929,7 +739,7 @@ export default class Main extends BaseService<never> {
   async connectEnrichmentService(): Promise<void> {
     this.enrichmentService.emitter.on(
       "enrichedEVMTransaction",
-      async (transactionData) => {
+      (transactionData) => {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
@@ -977,20 +787,28 @@ export default class Main extends BaseService<never> {
   }
 
   async connectKeyringService(): Promise<void> {
-    // TODO support other networks
-    const network = ETHEREUM
-
     this.keyringService.emitter.on("keyrings", (keyrings) => {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
     this.keyringService.emitter.on("address", (address) => {
+      // FIXME Should be .selectedNetwork once that exists.
+      // FIXME Also, UI-wise, is this correct behavior? It ties the current
+      // FIXME acount (right-side popover) to the network (left-side popover)
+      // FIXME in a weird way.
+      const selectedNetwork = this.store.getState().ui.selectedAccount.network
+
       // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(address))
+      this.store.dispatch(
+        loadAccount({
+          address,
+          network: selectedNetwork,
+        })
+      )
 
       this.chainService.addAccountToTrack({
         address,
-        network,
+        network: selectedNetwork,
       })
     })
 
@@ -1208,6 +1026,39 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.providerBridgeService.emitter.on(
+      "setClaimReferrer",
+      async (referral: string) => {
+        const isAddress = isProbablyEVMAddress(referral)
+        const network = getEthereumNetwork()
+        const ensName = isAddress
+          ? (
+              await this.nameService.lookUpName({
+                address: referral,
+                network,
+              })
+            )?.name
+          : referral
+        const address = isAddress
+          ? referral
+          : (
+              await this.nameService.lookUpEthereumAddress({
+                name: referral,
+                network,
+              })
+            )?.address
+
+        if (typeof address !== "undefined") {
+          this.store.dispatch(
+            setReferrer({
+              address,
+              ensName,
+            })
+          )
+        }
+      }
+    )
+
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await this.providerBridgeService.grantPermission(permission)
     })
@@ -1252,6 +1103,17 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
+      this.store.dispatch(clearSwapQuote())
+      this.store.dispatch(setEligibilityLoading())
+      this.doggoService.getEligibility(addressNetwork.address)
+
+      this.store.dispatch(setVaultsAsStale())
+
+      const referrerStats = await this.doggoService.getReferrerStats(
+        addressNetwork
+      )
+      this.store.dispatch(setReferrerStats(referrerStats))
+
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
       )
@@ -1273,6 +1135,39 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("refreshBackgroundPage", async () => {
       window.location.reload()
     })
+  }
+
+  async connectDoggoService(): Promise<void> {
+    this.doggoService.emitter.on(
+      "newEligibility",
+      async (eligibility: Eligible) => {
+        await this.store.dispatch(setEligibility(eligibility))
+      }
+    )
+
+    this.doggoService.emitter.on(
+      "newReferral",
+      async (
+        referral: {
+          referrer: AddressOnNetwork
+        } & ReferrerStats
+      ) => {
+        const { referrer, referredUsers, bonusTotal } = referral
+        const { selectedAccount } = this.store.getState().ui
+
+        if (
+          normalizeEVMAddress(referrer.address) ===
+          normalizeEVMAddress(selectedAccount.address)
+        ) {
+          this.store.dispatch(
+            setReferrerStats({
+              referredUsers,
+              bonusTotal,
+            })
+          )
+        }
+      }
+    )
   }
 
   connectTelemetryService(): void {

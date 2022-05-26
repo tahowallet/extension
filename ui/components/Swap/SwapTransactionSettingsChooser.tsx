@@ -1,9 +1,11 @@
 import {
   NetworkFeeSettings,
-  selectDefaultNetworkFeeSettings,
-  selectEstimatedFeesPerGas,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  selectDefaultNetworkFeeSettings,
+  selectEstimatedFeesPerGas,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
@@ -77,7 +79,7 @@ export default function SwapTransactionSettingsChooser({
               <div className="row row_fee">
                 <NetworkSettingsSelect
                   estimatedFeesPerGas={estimatedFeesPerGas}
-                  networkSettings={networkSettings}
+                  networkSettings={swapTransactionSettings.networkSettings}
                   onNetworkSettingsChange={setNetworkSettings}
                 />
               </div>
@@ -134,7 +136,6 @@ export default function SwapTransactionSettingsChooser({
             flex-grow: 2;
           }
           .row {
-            padding: 15px 0px;
             display: flex;
             align-items: center;
           }

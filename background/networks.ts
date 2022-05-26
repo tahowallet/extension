@@ -277,7 +277,7 @@ export type BlockEstimate = {
    * For legacy (pre-EIP1559) transactions, the gas price that results in the
    * above likelihood of inclusion.
    */
-  price: bigint
+  price?: bigint
   /**
    * For EIP1559 transactions, the max priority fee per gas that results in the
    * above likelihood of inclusion.
@@ -303,4 +303,15 @@ export function sameNetwork(
     network1.chainID === network2.chainID &&
     network1.name === network2.name
   )
+}
+
+/**
+ * Returns a 0x-prefixed hexadecimal representation of a number or string chainID
+ * while also handling cases where an already hexlified chainID is passed in.
+ */
+export function toHexChainID(chainID: string | number): string {
+  if (typeof chainID === "string" && chainID.startsWith("0x")) {
+    return chainID
+  }
+  return `0x${BigInt(chainID).toString(16)}`
 }

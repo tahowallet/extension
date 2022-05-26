@@ -1,258 +1,59 @@
-import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory } from "react-router-dom"
-import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
-import SharedButton from "../../components/Shared/SharedButton"
+import React, { ReactElement, useState } from "react"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
-import titleStyle from "../../components/Onboarding/titleStyle"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import SeedVerification from "./VerifySeed/SeedVerification"
+import {
+  OnboardingContainer,
+  OnboardingHeader,
+  OnboardingSubheader,
+} from "./styles"
+import VerifySeedSuccess from "./VerifySeed/VerifySeedSuccess"
+import VerifySeedError from "./VerifySeed/VerifySeedError"
+import { useBackgroundSelector } from "../../hooks"
 
-function SuccessMessage({ mnemonic }: { mnemonic: string[] }) {
-  const dispatch = useBackgroundDispatch()
-  const history = useHistory()
-
-  return (
-    <div className="success_wrap">
-      <span className="message">Congratulations!</span>
-      <div className="subtitle">You can now safely use your wallet</div>
-      <div className="button_container">
-        <SharedButton
-          size="medium"
-          type="primary"
-          onClick={async () => {
-            await dispatch(
-              importKeyring({
-                mnemonic: mnemonic.join(" "),
-                source: "internal",
-              })
-            )
-            history.push("/")
-          }}
-        >
-          Take me to my wallet
-        </SharedButton>
-      </div>
-      <style jsx>
-        {`
-          .success_wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            margin-top: 16px;
-          }
-          .message {
-            color: #fff;
-            font-size: 22px;
-            font-weight: 500;
-            line-height: 32px;
-          }
-          .subtitle {
-            color: var(--green-60);
-            font-size: 16px;
-            font-weight: 500;
-            line-height: 24px;
-            margin-bottom: 17px;
-          }
-          .button_container {
-            width: fit-content;
-          }
-        `}
-      </style>
-    </div>
-  )
-}
+type VerificationStep = "verification" | "success" | "error"
 
 export default function OnboardingVerifySeed(): ReactElement {
-  const mnemonicToVerify = useBackgroundSelector((state) => {
+  const [verificationStep, setVerificationStep] =
+    useState<VerificationStep>("verification")
+  const mnemonic = useBackgroundSelector((state) => {
     return state.keyrings.keyringToVerify?.mnemonic
   })
 
-  const [selectedInOrder, setSelectedInOrder] = useState<number[]>([])
-
-  const [notYetChosenMnemonicWordIndexes, setNotYetChosenMnemonicWordIndexes] =
-    useState<number[]>([])
-
-  // A random set of 8 from the mnemonic used for verification UI
-  const [randomizedMnemonicIndexes, setRandomizedMnemonicIndexes] = useState<
-    number[]
-  >([])
-
-  useEffect(() => {
-    if (mnemonicToVerify) {
-      const randomizedIndexes = mnemonicToVerify
-        ?.map((_, index) => index)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 8)
-
-      setRandomizedMnemonicIndexes(randomizedIndexes)
-      setNotYetChosenMnemonicWordIndexes(randomizedIndexes)
-    }
-  }, [mnemonicToVerify])
-
-  // To display the order of verification in the UI (the unfilled numbers "1 -", "7 -", etc)
-  const sortedIndexesOfRandomOrderedMnemonicPart = [
-    ...randomizedMnemonicIndexes,
-  ].sort((a, b) => {
-    if (a === 0) {
-      return -1
-    }
-    return (a && b && a - b) || 0
-  })
-
-  function hasUserSelectedCorrectOrder() {
-    return !selectedInOrder.some(
-      (selectedIndex, i) =>
-        sortedIndexesOfRandomOrderedMnemonicPart[i] !== selectedIndex
-    )
-  }
-
-  const handleAdd = (mnemonicWordIndex: number) => {
-    setNotYetChosenMnemonicWordIndexes(
-      notYetChosenMnemonicWordIndexes.filter((index: number) => {
-        return index !== mnemonicWordIndex
-      })
-    )
-    setSelectedInOrder([...selectedInOrder, mnemonicWordIndex])
-  }
-
-  const handleRemove = (mnemonicWordIndex: number) => {
-    setNotYetChosenMnemonicWordIndexes([
-      ...notYetChosenMnemonicWordIndexes,
-      mnemonicWordIndex,
-    ])
-    setSelectedInOrder(
-      selectedInOrder.filter((index: number) => {
-        return index !== mnemonicWordIndex
-      })
-    )
-  }
-
-  const columnEnds = [
-    [0, 4],
-    [4, 8],
-  ]
-
-  if (!mnemonicToVerify) return <span>Recovery phrase not created</span>
+  if (!mnemonic) return <span>Recovery phrase not created</span>
 
   return (
-    <section>
+    <section className="onboarding_container">
       <div className="top">
         <div className="wordmark" />
       </div>
       <OnboardingStepsIndicator activeStep={2} />
-      <h1 className="serif_header center_text title">
+      <h1 className="serif_header center_text">
         Verify secret recovery phrase
       </h1>
       <div className="subtitle">Add the missing words in order</div>
-      <div className="words_group">
-        {columnEnds.map((positions) => {
-          const posOne = positions[0]
-          const posTwo = positions[1]
-          return (
-            <div className="column_wrap" key={`column_starting_${posOne}`}>
-              <div className="column numbers">
-                {sortedIndexesOfRandomOrderedMnemonicPart
-                  ?.slice(posOne, posTwo)
-                  .map((n) => typeof n === "number" && n + 1)
-                  .join(" ")}
-              </div>
-              <div className="column dashes">- - - -</div>
-              <div className="column words">
-                {selectedInOrder
-                  .slice(posOne, posTwo)
-                  .map((mnemonicWordIndex) => (
-                    <div
-                      className="button_spacing"
-                      key={`word_selected_${mnemonicWordIndex}`}
-                    >
-                      <SharedButton
-                        type="deemphasizedWhite"
-                        size="small"
-                        onClick={() => {
-                          handleRemove(mnemonicWordIndex)
-                        }}
-                        iconSmall="close"
-                      >
-                        {mnemonicToVerify[mnemonicWordIndex]}
-                      </SharedButton>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <ul className="standard_width_padded button_group center_horizontal bottom">
-        {notYetChosenMnemonicWordIndexes?.length === 0 ? (
-          <>
-            {mnemonicToVerify && hasUserSelectedCorrectOrder() ? (
-              <SuccessMessage mnemonic={mnemonicToVerify} />
-            ) : (
-              <span className="error_message">Incorrect order</span>
-            )}
-          </>
-        ) : (
-          notYetChosenMnemonicWordIndexes?.map((mnemonicWordIndex) => (
-            <li
-              className="button_spacing"
-              key={`word_choice_${mnemonicWordIndex}`}
-            >
-              <SharedButton
-                type="primary"
-                size="small"
-                onClick={() => {
-                  handleAdd(mnemonicWordIndex)
-                }}
-              >
-                {mnemonicToVerify[mnemonicWordIndex]}
-              </SharedButton>
-            </li>
-          ))
-        )}
-      </ul>
+
+      {verificationStep === "verification" && (
+        <SeedVerification setStep={setVerificationStep} mnemonic={mnemonic} />
+      )}
+      {verificationStep === "success" && (
+        <VerifySeedSuccess mnemonic={mnemonic} />
+      )}
+      {verificationStep === "error" && <VerifySeedError />}
+
       <style jsx>
         {`
-          ${titleStyle}
-          .button_group {
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
-          }
           .serif_header {
-            font-size: 31px;
-            margin-top: 16px;
-            width: 228px;
-            margin-bottom: 7px;
+            ${OnboardingHeader}
+          }
+          .onboarding_container {
+            ${OnboardingContainer}
           }
           .subtitle {
-            margin-bottom: 22px;
-          }
-          .button_spacing {
-            margin-right: 8px;
-            margin-bottom: 8px;
-          }
-          .bottom {
-            height: 160px;
-            position: absolute;
-            bottom: 20px;
-          }
-          section {
-            padding-top: 25px;
-          }
-          .selected_wrap {
-            max-height: 159px;
-            overflow-y: scroll;
-            overflow-anchor: none;
-          }
-          .error_message {
-            color: var(--error);
-            text-align: center;
-            width: 100%;
-            font-size: 18px;
-            margin-top: 20px;
+            ${OnboardingSubheader}
           }
           .top {
             display: flex;
+            justify-content: center;
             width: 100%;
             height: 47px;
           }
@@ -261,40 +62,6 @@ export default function OnboardingVerifySeed(): ReactElement {
             background-size: cover;
             width: 95px;
             height: 25px;
-            position: absolute;
-            left: 0px;
-            right: 0px;
-            margin: 0 auto;
-          }
-          .column {
-            height: 142px;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 600;
-            line-height: 38.5px;
-            text-align: right;
-          }
-          .column_wrap {
-            display: flex;
-            width: 167px;
-          }
-          .dashes {
-            margin-right: 8px;
-            margin-left: 5px;
-            width: 12px;
-          }
-          .words {
-            width: 69px;
-            text-align: left;
-          }
-          .numbers {
-            width: 18px;
-            text-align: right;
-          }
-          .words_group {
-            display: flex;
-            width: 351px;
-            justify-content: space-between;
           }
         `}
       </style>

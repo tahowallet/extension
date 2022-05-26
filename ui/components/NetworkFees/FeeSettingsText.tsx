@@ -1,18 +1,17 @@
-import { ESTIMATED_FEE_MULTIPLIERS_BY_TYPE } from "@tallyho/tally-background/constants/network-fees"
+import React, { ReactElement } from "react"
 import {
   truncateDecimalAmount,
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
+import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
-  NetworkFeeSettings,
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
-import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 
 const getFeeDollarValue = (
@@ -51,14 +50,7 @@ export default function FeeSettingsText(): ReactElement {
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
     typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(
-          weiToGwei(
-            (estimatedFeesPerGas?.baseFeePerGas *
-              ESTIMATED_FEE_MULTIPLIERS_BY_TYPE[selectedFeeType]) /
-              10n
-          ),
-          0
-        )
+      ? truncateDecimalAmount(weiToGwei(networkSettings.values.maxFeePerGas), 0)
       : ""
 
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>

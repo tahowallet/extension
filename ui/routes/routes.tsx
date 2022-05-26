@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { EARN_COMING_SOON } from "@tallyho/tally-background/features"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
 import SignData from "../pages/SignData"
@@ -13,6 +14,7 @@ import OnboardingInterstitialCreatePhrase from "../pages/Onboarding/OnboardingIn
 import Overview from "../pages/Overview"
 import SingleAsset from "../pages/SingleAsset"
 import Earn from "../pages/Earn"
+import ComingSoon from "../pages/ComingSoon"
 import EarnDeposit from "../pages/EarnDeposit"
 import Menu from "../pages/Menu"
 import Send from "../pages/Send"
@@ -20,6 +22,7 @@ import Swap from "../pages/Swap"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
+import Eligible from "../pages/Claiming/Eligible"
 import MenuExportLogs from "../pages/Menu/MenuExportLogs"
 
 interface PageList {
@@ -120,7 +123,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/earn",
-    Component: Earn,
+    Component: EARN_COMING_SOON ? ComingSoon : Earn,
     hasTabBar: true,
     hasTopBar: true,
     persistOnClose: true,
@@ -180,6 +183,13 @@ const pageList: PageList[] = [
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
+  },
+  {
+    path: "/eligible",
+    Component: Eligible,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: true,
   },
   {
     path: "/",

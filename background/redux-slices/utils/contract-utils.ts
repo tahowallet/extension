@@ -52,3 +52,9 @@ export const getSignerAddress = async (): Promise<string> => {
   const signerAddress = await signer.getAddress()
   return signerAddress
 }
+
+export const getCurrentTimestamp = async (): Promise<number> => {
+  const provider = getProvider()
+  const { timestamp } = await provider.getBlock(provider.getBlockNumber())
+  return timestamp
+}

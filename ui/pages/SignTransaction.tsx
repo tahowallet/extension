@@ -1,11 +1,16 @@
 import React, { ReactElement, useState } from "react"
 import {
   rejectTransactionSignature,
-  selectIsTransactionLoaded,
-  selectTransactionData,
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectIsTransactionLoaded,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  getAccountTotal,
+  selectCurrentNetwork,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -19,6 +24,7 @@ import SignTransactionPanelCombined from "../components/SignTransaction/SignTran
 export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -26,7 +32,10 @@ export default function SignTransaction(): ReactElement {
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
-      return getAccountTotal(state, transactionDetails.from)
+      return getAccountTotal(state, {
+        address: transactionDetails.from,
+        network: currentNetwork,
+      })
     }
     return undefined
   })
