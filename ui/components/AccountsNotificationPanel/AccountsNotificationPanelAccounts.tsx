@@ -5,9 +5,9 @@ import {
   AccountTotal,
   selectCurrentNetworkAccountTotalsByCategory,
   selectCurrentAccount,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
-import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   normalizeEVMAddress,
@@ -147,6 +147,7 @@ export default function AccountsNotificationPanelAccounts({
   onCurrentAddressChange,
 }: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const accountTotals = useBackgroundSelector(
     selectCurrentNetworkAccountTotalsByCategory
@@ -163,7 +164,7 @@ export default function AccountsNotificationPanelAccounts({
     dispatch(
       setNewSelectedAccount({
         address,
-        network: ETHEREUM,
+        network: selectedNetwork,
       })
     )
   }
