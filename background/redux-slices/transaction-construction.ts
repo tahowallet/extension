@@ -63,6 +63,8 @@ export type TransactionConstruction = {
 
 export type EstimatedFeesPerGas = {
   baseFeePerGas?: bigint
+  maxPriorityFeePerGas?: bigint
+  maxFeePerGas?: bigint
   instant?: BlockEstimate
   express?: BlockEstimate
   regular?: BlockEstimate
