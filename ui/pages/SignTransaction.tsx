@@ -1,10 +1,12 @@
 import React, { ReactElement, useState } from "react"
 import {
   rejectTransactionSignature,
-  selectIsTransactionLoaded,
-  selectTransactionData,
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  selectIsTransactionLoaded,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   getAccountTotal,
   selectCurrentNetwork,

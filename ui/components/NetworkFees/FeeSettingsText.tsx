@@ -3,12 +3,12 @@ import {
   truncateDecimalAmount,
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
+import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
-  NetworkFeeSettings,
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"

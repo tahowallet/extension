@@ -1,4 +1,4 @@
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import { SignTransactionInfo } from "./SignTransactionInfoBaseProvider"
