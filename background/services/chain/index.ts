@@ -244,7 +244,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
-        const promises = Promise.all([
+        Promise.all([
           provider.getBlockNumber().then(async (n) => {
             const result = await provider.getBlock(n)
             const block = blockFromEthersBlock(network, result)
@@ -252,23 +252,25 @@ export default class ChainService extends BaseService<Events> {
           }),
 
           this.subscribeToNewHeads(network),
-        ])
-        if (network.chainID !== ETHEREUM.chainID) {
-          // only block start to get Ethereum data
-          await promises
-        }
+        ]).catch((e) => {
+          logger.error("Error getting block number or new head", e)
+        })
       } else {
         logger.error(`Couldn't find provider for supported network ${network}`)
       }
     })
 
-    Promise.all(
+    Promise.allSettled(
       accounts
         .flatMap((an) => [
           // subscribe to all account transactions
-          this.subscribeToAccountTransactions(an),
+          this.subscribeToAccountTransactions(an).catch((e) => {
+            logger.error(e)
+          }),
           // do a base-asset balance check for every account
-          this.getLatestBaseAccountBalance(an).then(() => {}),
+          this.getLatestBaseAccountBalance(an).catch((e) => {
+            logger.error(e)
+          }),
         ])
         .concat(
           // TODO make multi-network
@@ -282,8 +284,17 @@ export default class ChainService extends BaseService<Events> {
                 logger.debug(
                   `Queuing pending transaction ${hash} for status lookup.`
                 )
-                this.queueTransactionHashToRetrieve(ETHEREUM, hash, firstSeen)
+                this.queueTransactionHashToRetrieve(
+                  ETHEREUM,
+                  hash,
+                  firstSeen
+                ).catch((e) => {
+                  logger.error(e)
+                })
               })
+            })
+            .catch((e) => {
+              logger.error(e)
             })
         )
     )

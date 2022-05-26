@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { FORK } from "../constants"
 import {
@@ -17,6 +17,7 @@ import {
   EVMNetwork,
   SignedEVMTransaction,
 } from "../networks"
+import { NetworksState } from "./networks"
 import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
@@ -39,6 +40,7 @@ export type NetworkFeeSettings = {
   values: {
     maxFeePerGas: bigint
     maxPriorityFeePerGas: bigint
+    baseFeePerGas?: bigint
   }
 }
 
@@ -61,6 +63,8 @@ export type TransactionConstruction = {
 
 export type EstimatedFeesPerGas = {
   baseFeePerGas?: bigint
+  maxPriorityFeePerGas?: bigint
+  maxFeePerGas?: bigint
   instant?: BlockEstimate
   express?: BlockEstimate
   regular?: BlockEstimate
@@ -301,4 +305,37 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
       )
     )
   }
+)
+
+export const selectDefaultNetworkFeeSettings = createSelector(
+  ({
+    transactionConstruction,
+    networks,
+  }: {
+    transactionConstruction: TransactionConstruction
+    networks: NetworksState
+  }) => ({
+    feeType: transactionConstruction.feeTypeSelected,
+    selectedFeesPerGas:
+      transactionConstruction.estimatedFeesPerGas?.[
+        transactionConstruction.feeTypeSelected
+      ],
+    suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
+    baseFeePerGas: networks.evm[1].baseFeePerGas, // @TODO: Support multi-network
+  }),
+  ({
+    feeType,
+    selectedFeesPerGas,
+    suggestedGasLimit,
+    baseFeePerGas,
+  }): NetworkFeeSettings => ({
+    feeType,
+    gasLimit: undefined,
+    suggestedGasLimit,
+    values: {
+      maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
+      baseFeePerGas: baseFeePerGas ?? undefined,
+    },
+  })
 )
