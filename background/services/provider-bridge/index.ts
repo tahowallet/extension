@@ -324,6 +324,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
             showExtensionPopup(AllowedQueryParamPage.signData)
           )
         case "eth_sign":
+          checkPermissionSign(params[0] as HexString, enablingPermission)
+
+          return await this.routeSafeRequest(
+            method,
+            params,
+            showExtensionPopup(AllowedQueryParamPage.personalSignData)
+          )
         case "personal_sign":
           checkPermissionSign(params[1] as HexString, enablingPermission)
 

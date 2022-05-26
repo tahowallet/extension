@@ -12,7 +12,8 @@ import {
 } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
-import { COMMUNITY_MULTISIG_ADDRESS } from "../constants"
+import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
+import { EVMNetwork } from "../networks"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -32,6 +33,7 @@ export type SwapQuoteRequest = {
   amount: SwapAmount
   slippageTolerance: number
   gasPrice: bigint
+  network: EVMNetwork
 }
 
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
@@ -103,12 +105,28 @@ export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
 
-// Use gated features if there is an API key available in the build.
-const zeroXApiBase =
-  typeof process.env.ZEROX_API_KEY !== "undefined" &&
-  process.env.ZEROX_API_KEY.trim() !== ""
-    ? "gated.api.0x.org"
-    : "api.0x.org"
+const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
+  [ETHEREUM.chainID]: "api.0x.org",
+  [POLYGON.chainID]: "polygon.api.0x.org",
+}
+
+const get0xApiBase = (network: EVMNetwork) => {
+  // Use gated features if there is an API key available in the build.
+  const prefix =
+    typeof process.env.ZEROX_API_KEY !== "undefined" &&
+    process.env.ZEROX_API_KEY.trim() !== ""
+      ? "gated."
+      : ""
+
+  const base = chainIdTo0xApiBase[network.chainID]
+  if (!base) {
+    logger.error(`0x swaps are not supported on ${network.name}`)
+    return null
+  }
+
+  return `${prefix}${base}`
+}
+
 const gatedParameters = {
   affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
   feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
@@ -127,10 +145,18 @@ const gatedHeaders: { [header: string]: string } =
 // stringified or otherwise massaged.
 function build0xUrlFromSwapRequest(
   requestPath: string,
-  { assets, amount, slippageTolerance, gasPrice }: SwapQuoteRequest,
+  {
+    assets,
+    amount,
+    slippageTolerance,
+    gasPrice,
+    network: selectedNetwork,
+  }: SwapQuoteRequest,
   additionalParameters: Record<string, string>
 ): URL {
-  const requestUrl = new URL(`https://${zeroXApiBase}/swap/v1${requestPath}`)
+  const requestUrl = new URL(
+    `https://${get0xApiBase(selectedNetwork)}/swap/v1${requestPath}`
+  )
   const tradeAmount = utils.parseUnits(
     "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
     "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals

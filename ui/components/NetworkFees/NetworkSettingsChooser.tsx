@@ -1,9 +1,9 @@
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
-  selectDefaultNetworkFeeSettings,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import React, { ReactElement, useState } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
