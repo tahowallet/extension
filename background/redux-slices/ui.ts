@@ -32,6 +32,7 @@ export type Events = {
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
+  newSelectedNetwork: EVMNetwork
 }
 
 export const emitter = new Emittery<Events>()
@@ -146,16 +147,10 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
 export const setSelectedNetwork = createBackgroundAsyncThunk(
   "ui/setSelectedNetwork",
   async (network: EVMNetwork, { getState, dispatch }) => {
+    emitter.emit("newSelectedNetwork", network)
     const state = getState() as { ui: UIState; account: AccountState }
     const { ui, account } = state
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
-    const provider = getProvider()
-    // dogfood our switchEthereumChain handler
-    provider.send("wallet_switchEthereumChain", [
-      {
-        chainId: toHexChainID(network.chainID),
-      },
-    ])
     if (
       !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
     ) {

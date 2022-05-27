@@ -114,7 +114,9 @@ export default function SwapTransactionSettingsChooser({
         </span>
         <span className="label">
           Estimated network fee
-          <FeeSettingsText />
+          <FeeSettingsText
+            customNetworkSetting={swapTransactionSettings.networkSettings}
+          />
         </span>
         <span className="label">
           Tally Ho fee for the DAO
