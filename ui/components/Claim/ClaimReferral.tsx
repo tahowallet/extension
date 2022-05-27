@@ -15,16 +15,16 @@ import SharedAddressInput from "../Shared/SharedAddressInput"
 function DAOButton(
   props: DAO & {
     isActive: boolean
-    onClick: (dao: DAO) => void
+    onSelect: (dao: DAO) => void
   }
 ) {
-  const { address, name, avatar, isActive, onClick } = props
+  const { address, name, avatar, isActive, onSelect } = props
 
   return (
     <button
       type="button"
       className={classNames("option", { active: isActive })}
-      onClick={() => onClick({ address, name, avatar })}
+      onClick={() => onSelect({ address, name, avatar })}
     >
       <div className="icon" />
       <div className="name">{name}</div>
@@ -125,7 +125,7 @@ export default function ClaimReferral(props: {
     }
   }
 
-  const onDAOButtonClick = (dao: DAO) => {
+  const selectDAO = (dao: DAO) => {
     setSelectedForBonus(dao)
     setIsCustomDAOEmpty(true)
   }
@@ -149,7 +149,7 @@ export default function ClaimReferral(props: {
               name={name}
               avatar={avatar}
               isActive={selectedForBonus?.name === name}
-              onClick={onDAOButtonClick}
+              onSelect={selectDAO}
             />
           )
         })}
