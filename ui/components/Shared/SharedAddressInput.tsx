@@ -6,17 +6,25 @@ import SharedInput from "./SharedInput"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 type Props = {
+  value?: string
   label: string
-  onAddressChange: (value: HexString | undefined) => void
+  onAddressChange: (
+    value: { address: HexString; name?: string } | undefined
+  ) => void
+  onFocus?: () => void
   id?: string
   placeholder?: string
+  isEmpty?: boolean
 }
 
 export default function SharedAddressInput({
+  value,
   label,
   onAddressChange,
+  onFocus,
   id,
   placeholder,
+  isEmpty,
 }: Props): ReactElement {
   const { errorMessage, handleInputChange, isValidating } =
     useAddressOrNameValidation(onAddressChange)
@@ -24,11 +32,14 @@ export default function SharedAddressInput({
   return (
     <>
       <SharedInput
+        value={value}
         label={label}
         onChange={handleInputChange}
+        onFocus={onFocus}
         errorMessage={errorMessage}
         id={id}
         placeholder={placeholder}
+        isEmpty={isEmpty}
       />
       {isValidating ? (
         <div className="validating_spinner">

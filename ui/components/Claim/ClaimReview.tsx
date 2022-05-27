@@ -11,12 +11,14 @@ import SharedAddressAvatar from "../Shared/SharedAddressAvatar"
 
 export default function ClaimReview({
   claimAmount,
-  backToChoose,
+  backToChooseDelegate,
+  backToChooseReferrer,
 }: {
   claimAmount: number
-  backToChoose: () => void
+  backToChooseReferrer: () => void
+  backToChooseDelegate: () => void
 }): ReactElement {
-  const { selectedDelegate, selectedDAO } = useBackgroundSelector(
+  const { selectedDelegate, selectedForBonus } = useBackgroundSelector(
     selectClaimSelections
   )
   const referrer: Referrer | null = useBackgroundSelector(
@@ -29,8 +31,19 @@ export default function ClaimReview({
       <div className="description_review">You will receive</div>
       <AmountBanner amount={claimAmount} showLabel showBonus />
       <ClaimDelegateChoiceProfile
-        name={referrer?.ensName ?? referrer?.address ?? selectedDAO?.name ?? ""}
-        avatar={referrer ? undefined : `./images/DAOs/${selectedDAO?.avatar}`}
+        discard={backToChooseReferrer}
+        name={
+          referrer?.ensName ??
+          referrer?.address ??
+          selectedForBonus?.name ??
+          selectedForBonus?.address ??
+          ""
+        }
+        avatar={
+          referrer || !selectedForBonus?.avatar
+            ? undefined
+            : `./images/DAOs/${selectedForBonus?.avatar}`
+        }
       />
       <div className="description_review">Chosen delegate</div>
       <div className="content">
@@ -49,7 +62,7 @@ export default function ClaimReview({
             <SharedButton
               type="tertiaryGray"
               size="small"
-              onClick={backToChoose}
+              onClick={backToChooseDelegate}
             >
               Change
             </SharedButton>
