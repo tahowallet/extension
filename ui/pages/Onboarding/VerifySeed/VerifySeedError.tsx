@@ -23,7 +23,7 @@ function VerifySeedError(): ReactElement {
         </p>
         <p>
           If you prefer you can{" "}
-          <Link to="/">
+          <Link to="/onboarding/onboarding-interstitial-create-phrase">
             <span className="link">create a new wallet</span>
           </Link>
           .
