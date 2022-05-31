@@ -39,7 +39,6 @@ const ERC20_EVENTS = {
   Approval: EventFragment.from(
     "Approval(address indexed owner, address indexed spender, uint amount)"
   ),
-  Deposit: EventFragment.from("Deposit(address indexed dst, uint wad)"),
 }
 
 export const ERC20_ABI = Object.values<Fragment>(ERC20_FUNCTIONS).concat(
