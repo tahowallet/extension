@@ -81,7 +81,7 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
             contractAddress,
             amount: (decodedDeposit.wad as BigNumber).toBigInt(),
             recipientAddress: decodedDeposit.dst,
-            // This makes sense... right?  e.g. you send the WETH contract ETH and it gives you MATIC.  Other option here is to have recipientAddress and senderAddress be equivalent.
+            // This makes sense... right?  e.g. you send the WETH contract ETH and it gives you WETH.  Other option here is to have recipientAddress and senderAddress be equivalent.
             senderAddress: contractAddress,
           }
         }
