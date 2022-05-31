@@ -57,9 +57,9 @@ export type WrappedAssetDepositLog = {
  *
  * @param logs An arbitrary list of EVMLogs, some of which may represent ERC20
  *        `Deposit` events.
- * @return Information on any logs that were parsable as ERC20 `Transfer`
- *         events. This does _not_ mean they are guaranteed to be ERC20
- *         `Transfer` events, simply that they can be parsed as such.
+ * @return Information on any logs that were parsable as `Deposit` or `Withdrawal`
+ *         events. This does _not_ mean they are guaranteed to be Wrapped
+ *         `Deposit` or `Withdrawal` events, simply that they can be parsed as such.
  */
 export function parseLogsForWrappedDepositsAndWithdrawals(
   logs: EVMLog[]
