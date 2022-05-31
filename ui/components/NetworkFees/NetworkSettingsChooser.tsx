@@ -43,7 +43,7 @@ export default function NetworkSettingsChooser({
             type="primary"
             onClick={saveNetworkSettings}
           >
-            Save
+            Save settings
           </SharedButton>
         </div>
       </div>

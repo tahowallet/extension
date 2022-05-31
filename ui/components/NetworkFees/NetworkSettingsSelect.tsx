@@ -301,7 +301,7 @@ export default function NetworkSettingsSelect({
           />
         </div>
         <div className="max_fee">
-          <span className="max_label">Max Fee</span>
+          <span className="max_label">Total Max</span>
           <div className="price">
             {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
           </div>
@@ -323,6 +323,8 @@ export default function NetworkSettingsSelect({
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 42px;
+            margin-bottom: 6px;
           }
           .limit {
             margin: 16px 0;

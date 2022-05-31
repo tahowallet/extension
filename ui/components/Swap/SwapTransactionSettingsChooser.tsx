@@ -76,6 +76,9 @@ export default function SwapTransactionSettingsChooser({
                 <span className="settings_label">Slippage tolerance</span>
                 <span>1%</span>
               </div>
+              <span className="settings_label network_fee_label">
+                Network fees (Gwei)
+              </span>
               <div className="row row_fee">
                 <NetworkSettingsSelect
                   estimatedFeesPerGas={estimatedFeesPerGas}
@@ -90,7 +93,7 @@ export default function SwapTransactionSettingsChooser({
                     type="primary"
                     onClick={saveSettings}
                   >
-                    Save
+                    Save settings
                   </SharedButton>
                 </div>
               </div>
@@ -125,6 +128,11 @@ export default function SwapTransactionSettingsChooser({
       </div>
       <style jsx>
         {`
+          .confirm {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+          }
           .labels_wrap {
             border-radius: 4px;
             background-color: var(--green-95);
@@ -151,12 +159,16 @@ export default function SwapTransactionSettingsChooser({
             align-items: flex-start;
           }
           .settings_label {
-            height: 17px;
-            color: var(--green-40);
+            color: var(--green-5);
             font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+          }
+          .network_fee_label {
+            margin-top: 26px;
+            display: block;
+            margin-bottom: 10px;
           }
           .settings_label_fee {
             margin-bottom: 7px;
@@ -174,10 +186,12 @@ export default function SwapTransactionSettingsChooser({
           }
           .settings_wrap {
             width: 384px;
-            margin-top: 36px;
             padding: 0px 17px;
+            height: 100vh;
+            padding-top: 52px;
             box-sizing: border-box;
             background-color: var(--green-95);
+            margin-top: -23px;
           }
           .label:first-of-type {
             margin-bottom: 7px;
