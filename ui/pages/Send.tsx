@@ -6,9 +6,9 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   NetworkFeeSettings,
-  selectEstimatedFeesPerGas,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   FungibleAsset,
   isFungibleAssetAmount,
@@ -143,7 +143,9 @@ export default function Send(): ReactElement {
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
-  } = useAddressOrNameValidation(setDestinationAddress)
+  } = useAddressOrNameValidation((value) =>
+    setDestinationAddress(value?.address)
+  )
 
   return (
     <>

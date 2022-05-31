@@ -1,7 +1,7 @@
-import { Web3Provider } from "@ethersproject/providers"
 import TallyWindowProvider from "@tallyho/window-provider"
 import { Contract, ethers, ContractInterface } from "ethers"
 import Emittery from "emittery"
+import TallyWeb3Provider from "../../tally-provider"
 
 type InternalProviderPortEvents = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,8 +33,8 @@ export const internalProviderPort = {
 
 export const internalProvider = new TallyWindowProvider(internalProviderPort)
 
-export function getProvider(this: unknown): Web3Provider {
-  return new Web3Provider(internalProvider)
+export function getProvider(this: unknown): TallyWeb3Provider {
+  return new TallyWeb3Provider(internalProvider)
 }
 
 export const getContract = async (

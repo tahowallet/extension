@@ -48,7 +48,7 @@ export default function Eligible(): ReactElement {
   const { accountData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
-  const { selectedDelegate, selectedDAO } = useBackgroundSelector(
+  const { selectedDelegate, selectedForBonus } = useBackgroundSelector(
     selectClaimSelections
   )
   const hasAccounts = useBackgroundSelector(
@@ -92,7 +92,7 @@ export default function Eligible(): ReactElement {
         ) : (
           <ClaimReferral DAOs={DAOs} claimAmount={claimAmount} />
         ),
-      canAdvance: Boolean(selectedDAO) || Boolean(referrer),
+      canAdvance: Boolean(selectedForBonus) || Boolean(referrer),
     },
     {
       component: <ClaimManifesto claimAmount={claimAmountWithBonus} />,
@@ -111,9 +111,10 @@ export default function Eligible(): ReactElement {
       component: (
         <ClaimReview
           claimAmount={claimAmountWithBonus}
-          backToChoose={() => {
+          backToChooseDelegate={() => {
             setStep(step - 1)
           }}
+          backToChooseReferrer={() => setStep(step - 3)}
         />
       ),
       canAdvance: true,

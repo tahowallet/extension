@@ -17,6 +17,7 @@ const defaultPreferences: Preferences = {
       "https://wrapped.tokensoft.eth.link", // Wrapped tokens
       "https://tokenlist.aave.eth.link", // Aave-listed tokens and interest-bearing assets
       "https://raw.githubusercontent.com/compound-finance/token-list/master/compound.tokenlist.json", // Compound-listed tokens and interest-bearing assets
+      "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json", // Polygon Default Tokens
     ],
   },
   currency: USD,

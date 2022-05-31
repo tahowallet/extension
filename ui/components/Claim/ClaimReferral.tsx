@@ -1,31 +1,30 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import {
-  chooseDAO,
+  chooseSelectedForBonus,
   selectClaimSelections,
   DAO,
 } from "@tallyho/tally-background/redux-slices/claim"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
+import { HexString } from "@tallyho/tally-background/types"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import SharedAddressInput from "../Shared/SharedAddressInput"
 
-function DAOButton(props: {
-  address: string
-  name: string
-  avatar: string
-  isActive: boolean
-}) {
-  const { address, name, avatar, isActive } = props
-  const dispatch = useBackgroundDispatch()
+function DAOButton(
+  props: DAO & {
+    isActive: boolean
+    onSelect: (dao: DAO) => void
+  }
+) {
+  const { address, name, avatar, isActive, onSelect } = props
 
   return (
     <button
       type="button"
       className={classNames("option", { active: isActive })}
-      onClick={() => {
-        dispatch(chooseDAO({ address, name, avatar }))
-      }}
+      onClick={() => onSelect({ address, name, avatar })}
     >
       <div className="icon" />
       <div className="name">{name}</div>
@@ -71,18 +70,65 @@ function DAOButton(props: {
   )
 }
 
+function getInitialCustomDAO(selectedForBonus: DAO | null, DAOs: DAO[]) {
+  if (!selectedForBonus) return undefined
+
+  const isCustom = !DAOs.some(
+    (current) => current.address === selectedForBonus.address
+  )
+
+  return isCustom
+    ? selectedForBonus.name ?? selectedForBonus.address
+    : undefined
+}
+
 export default function ClaimReferral(props: {
   DAOs: DAO[]
   claimAmount: number
 }): ReactElement {
+  const dispatch = useBackgroundDispatch()
   const { DAOs, claimAmount } = props
-  const { selectedDAO } = useBackgroundSelector(selectClaimSelections)
+  const { selectedForBonus } = useBackgroundSelector(selectClaimSelections)
   const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
   const amountWithBonus = formatCurrencyAmount(
     mainCurrency,
     claimAmount * 0.05,
     2
   )
+  const [isCustomDAOEmpty, setIsCustomDAOEmpty] = useState<boolean>(false)
+  const [customAddressForBonus, setCustomAddressForBonus] = useState<
+    string | undefined
+  >(getInitialCustomDAO(selectedForBonus, DAOs))
+
+  const setSelectedForBonus = (newDAO: DAO | null) =>
+    dispatch(chooseSelectedForBonus(newDAO))
+
+  const handleInputChange = (
+    value: { address: HexString; name?: string } | undefined
+  ) => {
+    setCustomAddressForBonus(value?.name ?? value?.address)
+
+    if (value) {
+      setSelectedForBonus(value)
+    } else {
+      setSelectedForBonus(null)
+    }
+  }
+
+  const handleInputFocus = () => {
+    setIsCustomDAOEmpty(false)
+
+    if (customAddressForBonus) {
+      setSelectedForBonus({ address: customAddressForBonus })
+    } else {
+      setSelectedForBonus(null)
+    }
+  }
+
+  const selectDAO = (dao: DAO) => {
+    setSelectedForBonus(dao)
+    setIsCustomDAOEmpty(true)
+  }
 
   return (
     <div className="claim standard_width">
@@ -102,10 +148,19 @@ export default function ClaimReferral(props: {
               address={address}
               name={name}
               avatar={avatar}
-              isActive={selectedDAO?.name === name}
+              isActive={selectedForBonus?.name === name}
+              onSelect={selectDAO}
             />
           )
         })}
+      </div>
+      <div className="input_wrap">
+        <SharedAddressInput
+          value={customAddressForBonus}
+          onFocus={handleInputFocus}
+          onAddressChange={handleInputChange}
+          isEmpty={isCustomDAOEmpty}
+        />
       </div>
       <style jsx>
         {`
@@ -143,6 +198,10 @@ export default function ClaimReferral(props: {
             line-height: 42px;
             font-family: Quincy CF;
             margin: 0px 8px;
+          }
+          .input_wrap {
+            position: relative;
+            margin: 8px 0 24px;
           }
         `}
       </style>
