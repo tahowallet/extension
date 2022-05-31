@@ -5,15 +5,6 @@ export const ESTIMATED_FEE_MULTIPLIERS: { [confidence: number]: bigint } = {
   0: 20n,
 }
 
-export const ESTIMATED_FEE_MULTIPLIERS_BY_TYPE: {
-  [feeType: string]: bigint
-} = {
-  regular: 11n,
-  express: 13n,
-  instant: 18n,
-  custom: 20n,
-}
-
 export const MAX_FEE_MULTIPLIER: { [confidence: number]: bigint } = {
   70: 13n,
   95: 15n,
