@@ -143,7 +143,9 @@ export default function Send(): ReactElement {
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
-  } = useAddressOrNameValidation(setDestinationAddress)
+  } = useAddressOrNameValidation((value) =>
+    setDestinationAddress(value?.address)
+  )
 
   return (
     <>

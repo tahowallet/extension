@@ -18,6 +18,7 @@ interface Props<T> {
     value: string
   ) => { parsed: T | undefined } | { error: string }
   step?: number
+  isEmpty?: boolean
 }
 
 export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
@@ -35,6 +36,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     autoFocus = false,
     autoSelect = false,
     parseAndValidate,
+    isEmpty = false,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -71,21 +73,25 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             ? " "
             : placeholder
         }
-        value={inputValue}
+        value={isEmpty ? "" : inputValue}
         spellCheck={false}
         onInput={(event: ChangeEvent<HTMLInputElement>) =>
           handleInputChange(event.target.value)
         }
         onFocus={onFocus}
         className={classNames({
-          error: errorMessage ?? parserError !== undefined,
+          error: !isEmpty && (errorMessage ?? parserError !== undefined),
         })}
         step={step}
         ref={inputRef}
       />
       <label htmlFor={id}>{label}</label>
-      {errorMessage && <div className="error_message">{errorMessage}</div>}
-      {parserError && <div className="error_message">{parserError}</div>}
+      {!isEmpty && errorMessage && (
+        <div className="error_message">{errorMessage}</div>
+      )}
+      {!isEmpty && parserError && (
+        <div className="error_message">{parserError}</div>
+      )}
       <style jsx>
         {`
           input {
