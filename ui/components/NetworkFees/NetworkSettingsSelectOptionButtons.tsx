@@ -110,7 +110,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
     customMaxPriorityFeePerGas: bigint
   ) => void
 }): ReactElement {
-  const [errorMessage, setErrorMessage] = useState("")
+  const [warningMessage, setWarningMessage] = useState("")
   const baseGasFee = useBackgroundSelector(
     (state) => state.networks.evm[1].baseFeePerGas
   )
@@ -150,12 +150,12 @@ export function NetworkSettingsSelectOptionButtonCustom({
                 baseGasFee &&
                 gweiFloatToWei(parseFloat(value)) < baseGasFee
               ) {
-                setErrorMessage("Below current base gas")
+                setWarningMessage("Low")
               } else {
-                setErrorMessage("")
+                setWarningMessage("")
               }
             }}
-            errorMessage={errorMessage}
+            warningMessage={warningMessage}
           />
         </div>
       </div>
