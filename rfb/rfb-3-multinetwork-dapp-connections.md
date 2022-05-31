@@ -1,6 +1,6 @@
 # RFB 3: Multinetwork dApp Connections
 
-# Mental Models
+## Mental Models
 
 1. The extension is connected to every supported chain all the time — meaning it has a live connection simultaneously — but presents only a single connection to the dApps.
 2. Redux store is a normal service for UI/app state/ settings. It can call other services “directly" — through async thunks —, it is persisted, has its migrations, and other services can also query it.
@@ -12,9 +12,9 @@
      - The common thing about them is that their functionality is tightly coupled with a network.
      - These are mostly the parts that can make changes to the chain.
 
-# Proposal
+## Proposal
 
-## dApp Settings
+### dApp Settings
 
 > How do we persist the network of a given dapp? (likely preference service - but maybe a new service?). Also we’ll probably want > an in-memory store as well to avoid doing a bunch of i/o every time we get rpc requests.
 
@@ -29,7 +29,7 @@ So we should refactor the `dapp-permission` slice to be more generic and store a
 - Back and forth through events.
 - ~~Query the persisted store in local storage~~ // This is just for the record. We should not do this if we can avoid.
 
-### dApp Permissions
+#### dApp Permissions
 
 In that redux slice the permissions are stored with url + network + address compound key.
 
@@ -38,7 +38,7 @@ In that redux slice the permissions are stored with url + network + address comp
 > @VladUXUI has mentioned that permissions are not network bound, and it’s [not shown on the wireframe](https://www.figma.com/file/u4TLZucujEeVkdgwaQ9D7y/On-dApp-Connections-and-Multiple-Networks?node-id=121%3A2996).
 > This feels a bit strange, so I would like to have a clear decision/understanding about it.
 
-### Current Connection Per dApps
+#### Current Connection Per dApps
 
 [This issue](https://github.com/tallycash/extension/issues/1532#issuecomment-1139410588) belongs to this topic.
 
@@ -69,7 +69,7 @@ This changes when
   }
 ```
 
-## Current Connection Context For dApp RPC Calls
+### Current Connection Context For dApp RPC Calls
 
 > We'll need get rid of activeChain and add network context to every rpc request (context that dapps will not be sending us). Things like eth_estimateGas, eth_getBalance, eth_blockNumber all need a way of being network aware
 
@@ -77,13 +77,13 @@ The lookup of the current dapp context should happen in the `InternalEthereumPro
 
 > We might need an additional layer in the future just like with the `SigningService` but we should worry about that we want to support non EVM chains.
 
-### `eth_chainId`
+#### `eth_chainId`
 
 > Many dapps periodically ping eth_chainId - we’ll need to refactor our response there to send our persisted chainId for a given > dapp.
 
 We can handle that in the `InternalEthereumProviderService`, the same way we handle the current context lookup.
 
-## `InternalEthereumProviderService` vs direct calls
+### `InternalEthereumProviderService` vs direct calls
 
 > There’s gonna be complexity in how we handle parts of the code where we dogfood our internal ethereum provider versus parts where we skip that step and call our services directly via main
 
