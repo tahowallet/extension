@@ -15,9 +15,17 @@
     "message": "Assets",
     "description": "in Overview page"
   },
-  "totalAccountBalance": {
-    "message": "Total account balance",
-    "description": "in Overview > WalletAccountBalanceControl"
+  "overviewTableHeaderAsset": {
+    "message": "Asset",
+    "description": "in Overview > AssetsTable"
+  },
+  "overviewTableHeaderPrice": {
+    "message": "Price",
+    "description": "in Overview > AssetsTable"
+  },
+  "overviewTableHeaderBalance": {
+    "message": "Balance",
+    "description": "in Overview > AssetsTable"
   },
   "ProtocolMainnet": {
     "message": "Mainnet",
@@ -35,17 +43,25 @@
     "message": "Connected",
     "description": "in TopMenu > TopMenuProtocolListItem"
   },
+  "readOnlyNotice": {
+    "message": "Read-only mode",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "totalAccountBalance": {
+    "message": "Total account balance",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
   "walletSend": {
     "message": "Send",
-    "description": "in Overview > WalletAccountBalanceControl"
+    "description": "in Wallet > WalletAccountBalanceControl"
   },
   "walletReceive": {
     "message": "Receive",
-    "description": "in Overview > WalletAccountBalanceControl"
+    "description": "in Wallet > WalletAccountBalanceControl"
   },
   "walletSecureSeed": {
     "message": "First, secure your recovery seed",
-    "description": "in Overview > WalletAccountBalanceControl"
+    "description": "in Wallet > WalletAccountBalanceControl"
   },
   "walletSendAsset": {
     "message": "Send Asset",
@@ -74,22 +90,6 @@
   "walletReceiveAddressDesc": {
     "message": "Only send Ethereum Mainnet compatible assets to this address.",
     "description": "in pages > Receive"
-  },
-  "overviewTableHeaderAsset": {
-    "message": "Asset",
-    "description": "in Overview > AssetsTable"
-  },
-  "overviewTableHeaderPrice": {
-    "message": "Price",
-    "description": "in Overview > AssetsTable"
-  },
-  "overviewTableHeaderBalance": {
-    "message": "Balance",
-    "description": "in Overview > AssetsTable"
-  },
-  "readOnlyNotice": {
-    "message": "Read-only mode",
-    "description": "in Wallet > WalletAccountBalanceControl"
   },
   "menuMainMenu": {
     "message": "Main menu",
