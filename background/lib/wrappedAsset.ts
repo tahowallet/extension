@@ -66,13 +66,15 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
             contractAddress,
             amount: (decodedDeposit.wad as BigNumber).toBigInt(),
             recipientAddress: decodedDeposit.dst,
-            // This makes sense... right?  e.g. you send the WETH contract ETH and it gives you WETH.  Other option here is to have recipientAddress and senderAddress be equivalent.
             senderAddress: contractAddress,
           }
         }
-
+      } catch (e) {
+        // swallow the error if we can't decode a Deposit - try to decode Withdrawal
+      }
+      try {
         const decodedWithdrawal = WRAPPED_ASSET_INTERFACE.decodeEventLog(
-          WRAPPED_ASSET_EVENTS.Deposit,
+          WRAPPED_ASSET_EVENTS.Withdrawal,
           data,
           topics
         )
@@ -88,10 +90,10 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
             senderAddress: decodedWithdrawal.src,
           }
         }
-        return undefined
       } catch (_) {
         return undefined
       }
+      return undefined
     })
     .filter(
       (info): info is WrappedAssetDepositLog => typeof info !== "undefined"
