@@ -267,7 +267,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
     // Look up logs and resolve subannotations, if available.
     if ("logs" in transaction && typeof transaction.logs !== "undefined") {
-      const subannotations = await this.parseSubAnnotations(
+      const subannotations = await this.annotationsFromLogs(
         transaction.logs,
         network,
         desiredDecimals,
@@ -283,7 +283,7 @@ export default class EnrichmentService extends BaseService<Events> {
     return txAnnotation
   }
 
-  async parseSubAnnotations(
+  async annotationsFromLogs(
     logs: EVMLog[],
     network: EVMNetwork,
     desiredDecimals: number,
