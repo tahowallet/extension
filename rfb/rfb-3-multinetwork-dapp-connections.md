@@ -44,29 +44,13 @@ So we should refactor the `dapp-permission` slice to be more generic and store a
 
 #### dApp Permissions
 
-In that redux slice the permissions are stored with url + network + address compound key.
-
-⚠️TBD: Do we separate permissions for accounts by network? So if a dApp has permission for 0xdeadbeef on mainnet then it will also have permission on polygon?
-
-> @VladUXUI has mentioned that permissions are not network bound, and it’s [not shown on the wireframe](https://www.figma.com/file/u4TLZucujEeVkdgwaQ9D7y/On-dApp-Connections-and-Multiple-Networks?node-id=121%3A2996).
-> This feels a bit strange, so I would like to have a clear decision/understanding about it.
-
-#### Current Connection Per dApps
-
-[This issue](https://github.com/tallycash/extension/issues/1532#issuecomment-1139410588) belongs to this topic.
-
-This would be the other part of the redux slice: dApp URL <> active network, selected account.
-
-This changes when
-
-- the user makes the change through the UI
-- or the dApp uses the RPC methods eg. `wallet_switchEthereumChain`
+In that redux slice the permissions are stored with in `chainID -> address -> object` nested object style.
 
 ```
 {
   permissionRequests: { [url: string]: PermissionRequest }
-  allowedPages: { [origin_accountAddress_networkID: string]: PermissionRequest }
-  activeConnections: { [origin: string]: { accountAddress: string, networkID: number } }
+  allowed: { [origin_accountAddress_networkID: string]: PermissionRequest }
+  activeConnections: ...
 }
 ```
 
@@ -77,9 +61,26 @@ This changes when
     faviconUrl: string
     title: string
     state: "request" | "allow" | "deny"
-    accountAddress: string,
-+   networkID: number
+    addressOnNetwork: AddressOnNetwork
   }
+```
+
+#### Current Connection Per dApps
+
+[This issue](https://github.com/tallycash/extension/issues/1532#issuecomment-1139410588) belongs to this topic.
+
+This would be the other part of the redux slice: dApp URL <> active network, selected account.
+
+This changes when
+
+- or the dApp uses the RPC methods eg. `wallet_switchEthereumChain`
+
+```
+{
+  permissionRequests: ...
+  allowed: ...
+  activeConnections: { [origin: string]: AddressOnNetwork}
+}
 ```
 
 ### Current Connection Context For dApp RPC Calls
