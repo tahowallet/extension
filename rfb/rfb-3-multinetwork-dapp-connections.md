@@ -12,6 +12,19 @@
      - The common thing about them is that their functionality is tightly coupled with a network.
      - These are mostly the parts that can make changes to the chain.
 
+## Product decisions / FAQ
+
+- > Permissions are network bound or not (the question here is: do we need to track different permissions by network, or only by address?).
+  - [Decision thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/GKW_YsOIDVoqoo9LV4fx5RIwHDh)
+  - Permissions are network bound, we need to be able differentiate between networks
+    - it’s possible to have permission for `0xdeadbeef` on mainnet but not on polygon
+    - it's possible to have permission for `0xdeadbeef` on mainnet and polygon but not on arbitrum
+- > The question of whether the current network is synced between a dApp and the extension popover (the question here is: do internal dApps need the same model to handle this as external dApps?).
+  - [Discussion thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/8Y_PUeEyibY-z698qCsnDp77wGa)
+  - They are not synced
+- > The question of what calls current do or don't carry chain information (the questions here are: what is the delta between where the current RPC sits and where we would like it to in a perfect world where all calls carry chain ids? At what level do we need to track chain id?)
+  - ❗️ TODO
+
 ## Proposal
 
 ### dApp Settings
