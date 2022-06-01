@@ -112,7 +112,8 @@ export function NetworkSettingsSelectOptionButtonCustom({
 }): ReactElement {
   const [warningMessage, setWarningMessage] = useState("")
   const baseGasFee = useBackgroundSelector(
-    (state) => state.networks.evm[1].baseFeePerGas
+    (state) =>
+      state.networks.evm[state.ui.selectedAccount.network.chainID].baseFeePerGas
   )
   return (
     <button
