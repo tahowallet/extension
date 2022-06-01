@@ -19,6 +19,22 @@
     "message": "Total account balance",
     "description": "in Overview > WalletAccountBalanceControl"
   },
+  "ProtocolMainnet": {
+    "message": "Mainnet",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "ProtocolL2": {
+    "message": "L2 scaling solution",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "ProtocolCompatibleChain": {
+    "message": "Ethereum-compatible blockchain",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "ProtocolConnected": {
+    "message": "Connected",
+    "description": "in TopMenu > TopMenuProtocolListItem"
+  },
   "walletSend": {
     "message": "Send",
     "description": "in Overview > WalletAccountBalanceControl"
