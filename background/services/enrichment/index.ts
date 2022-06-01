@@ -31,6 +31,7 @@ import { SignTypedDataRequest } from "../../utils/signing"
 import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
 import { ETHEREUM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
+import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 
 export * from "./types"
 
@@ -316,11 +317,9 @@ export default class EnrichmentService extends BaseService<Events> {
           )
         )
       )
-        .filter(
-          (result): result is PromiseFulfilledResult<[string, string]> =>
-            result.status === "fulfilled" && result.value[1] !== undefined
-        )
+        .filter(isFulfilledPromise)
         .map(({ value }) => value)
+        .filter(([, name]) => isDefined(name))
     )
 
     const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
