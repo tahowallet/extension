@@ -126,15 +126,20 @@ function newAccountData(
 }
 
 function getOrCreateAccountData(
-  data: AccountData | "loading",
+  accountsState: AccountState,
   account: HexString,
-  network: EVMNetwork,
-  existingAccountsCount: number
+  network: EVMNetwork
 ): AccountData {
-  if (data === "loading" || !data) {
+  const accountData = accountsState.accountsData.evm[network.chainID][account]
+
+  const existingAccountsCount = Object.keys(
+    accountsState.accountsData.evm[network.chainID]
+  ).filter((key) => key !== account).length
+
+  if (accountData === "loading" || !accountData) {
     return newAccountData(account, network, existingAccountsCount)
   }
-  return data
+  return accountData
 }
 
 // TODO Much of the combinedData bits should probably be done in a Reselect
@@ -282,12 +287,9 @@ const accountSlice = createSlice({
       const baseAccountData = getOrCreateAccountData(
         // TODO Figure out the best way to handle default name assignment
         // TODO across networks.
-        immerState.accountsData.evm[network.chainID][normalizedAddress],
+        immerState,
         normalizedAddress,
-        network,
-        Object.keys(immerState.accountsData.evm[network.chainID]).filter(
-          (key) => key !== normalizedAddress
-        ).length
+        network
       )
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
@@ -317,12 +319,9 @@ const accountSlice = createSlice({
       // TODO Figure out the best way to handle default name assignment
       // TODO across networks.
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData.evm[network.chainID][normalizedAddress],
+        immerState,
         normalizedAddress,
-        network,
-        Object.keys(immerState.accountsData.evm[network.chainID]).filter(
-          (key) => key !== normalizedAddress
-        ).length
+        network
       )
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
