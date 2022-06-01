@@ -1,8 +1,11 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { POLYGON } from "@tallyho/tally-background/constants"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
+import { useBackgroundSelector } from "../../hooks"
 
 interface DetailRowItemProps {
   label: string
@@ -109,11 +112,20 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem } = props
 
+  const network = useBackgroundSelector(selectCurrentNetwork)
+
   const openExplorer = useCallback(() => {
     window
-      .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
+      .open(
+        `https://${
+          network.chainID === POLYGON.chainID
+            ? "polygonscan.com"
+            : "etherscan.io"
+        }/tx/${activityItem.hash}`,
+        "_blank"
+      )
       ?.focus()
-  }, [activityItem?.hash])
+  }, [activityItem?.hash, network.chainID])
 
   if (!activityItem) return <></>
 
@@ -130,7 +142,7 @@ export default function WalletActivityDetails(
             iconMedium="new-tab"
             onClick={openExplorer}
           >
-            Etherscan
+            {network.name === "Polygon" ? "Polygonscan" : "Etherscan"}
           </SharedButton>
         </div>
       </div>

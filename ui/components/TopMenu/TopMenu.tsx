@@ -13,7 +13,7 @@ import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/d
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
-import BonusProgramModalContent from "../BonusProgram/BonusProgramModalContent"
+import BonusProgramModal from "../BonusProgram/BonusProgramModal"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import TopMenuConnectedDAppInfo from "./TopMenuConnectedDAppInfo"
@@ -89,16 +89,12 @@ export default function TopMenu(): ReactElement {
           disconnect={deny}
         />
       ) : null}
-      <SharedSlideUpMenu
+      <BonusProgramModal
         isOpen={isBonusProgramOpen}
-        close={() => {
+        onClose={() => {
           setIsBonusProgramOpen(false)
         }}
-        size="custom"
-        customSize="497px"
-      >
-        <BonusProgramModalContent />
-      </SharedSlideUpMenu>
+      />
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         close={() => {

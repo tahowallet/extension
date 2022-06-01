@@ -20,7 +20,7 @@ import {
 } from "../../types"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import BaseService from "../base"
-import { ETH, FORK, MINUTE } from "../../constants"
+import { FORK, MINUTE } from "../../constants"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
 import { USE_MAINNET_FORK } from "../../features"
 import { AddressOnNetwork } from "../../accounts"

@@ -1,9 +1,9 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
+import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
   NetworkFeeTypeChosen,
-  selectLastGasEstimatesRefreshTime,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
