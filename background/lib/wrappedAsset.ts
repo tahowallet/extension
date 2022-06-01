@@ -2,27 +2,12 @@ import { BigNumber, ethers } from "ethers"
 import { EventFragment, Fragment, FunctionFragment } from "ethers/lib/utils"
 import { EVMLog } from "../networks"
 import { HexString } from "../types"
+import { ERC20_FUNCTIONS } from "./erc20"
 
 export const WRAPPED_ASSET_FUNCTIONS = {
-  allowance: FunctionFragment.from(
-    "allowance(address owner, address spender) view returns (uint256)"
-  ),
-  approve: FunctionFragment.from(
-    "approve(address guy, uint256 wad) returns (bool)"
-  ),
-  balanceOf: FunctionFragment.from(
-    "balanceOf(address owner) view returns (uint256)"
-  ),
-  decimals: FunctionFragment.from("decimals() view returns (uint8)"),
-  name: FunctionFragment.from("name() view returns (string)"),
-  symbol: FunctionFragment.from("symbol() view returns (string)"),
-  totalSupply: FunctionFragment.from("totalSupply() view returns (uint256)"),
-  transfer: FunctionFragment.from(
-    "transfer(address to, uint wad) returns (bool)"
-  ),
-  transferFrom: FunctionFragment.from(
-    "transferFrom(address src, address dst, uint wad) returns (bool)"
-  ),
+  ...ERC20_FUNCTIONS,
+  deposit: FunctionFragment.from("deposit() public payable"),
+  withdraw: FunctionFragment.from("withdraw(uint wad) public"),
 }
 
 const WRAPPED_ASSET_EVENTS = {
