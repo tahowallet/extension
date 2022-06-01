@@ -292,9 +292,8 @@ export default class EnrichmentService extends BaseService<Events> {
   ): Promise<TransactionAnnotation[]> {
     const assets = await this.indexingService.getCachedAssets(network)
 
-    const erc20TransferLogs = [
+    const tokenTransferLogs = [
       ...parseLogsForERC20Transfers(logs),
-      // Wrapped Deposits and Withdrawals are not actually ERC-20 transfers but we coerce them into the same type so... 🦆 Typing FTW.
       ...parseLogsForWrappedDepositsAndWithdrawals(logs),
     ]
 
@@ -304,7 +303,7 @@ export default class EnrichmentService extends BaseService<Events> {
         await Promise.allSettled(
           [
             ...new Set([
-              ...erc20TransferLogs.map(
+              ...tokenTransferLogs.map(
                 ({ recipientAddress }) => recipientAddress
               ),
             ]),
@@ -324,7 +323,7 @@ export default class EnrichmentService extends BaseService<Events> {
         .map(({ value }) => value)
     )
 
-    const subannotations = erc20TransferLogs.flatMap<TransactionAnnotation>(
+    const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
       ({ contractAddress, amount, senderAddress, recipientAddress }) => {
         // See if the address matches a fungible asset.
         const matchingFungibleAsset = assets.find(
