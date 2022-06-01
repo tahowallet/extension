@@ -33,23 +33,20 @@
 - > The question of whether the current network is synced between a dApp and the extension popover (the question here is: do internal dApps need the same model to handle this as external dApps?).
   - [Discussion thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/8Y_PUeEyibY-z698qCsnDp77wGa)
   - They are not synced
+- [What should be the initial default address and network](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/mFivf2mZ7YAhKm5OPQIfxoVVkoW)
+- [Common address and network for internal dApps or independent](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/-dXUTwSD3bXZ9enPRczVmEoDR1X)
 
 ## TODO
 
 - [ ] which methods need the additional chain context / which one have it baked in
   - > The question of what calls current do or don't carry chain information (the questions here are: what is the delta between where the current RPC sits and where we would like it to in a perfect world where all calls carry chain ids? At what level do we need to track chain id?)
   - > Let's make an exhaustive list of what methods currently do and don't include `chainId`. For example, I believe `eth_estimateGas` does in fact include it, at least optionally (see [the ethers `TransactionRequest` type](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/abstract-provider/src.ts/index.ts#L28) and [the Ethers `hexlifyTransaction` function](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L671), which is used [in gas estimation](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L558-L560)).
-- [ ] How do we get the current connection data for the dapp initially?
-- [ ] communication flow + events of account changing for a dApp
-- [ ] db structure for internal ethereum provider
 
 ## TBD
 
 - Refactoring the permission handling in the `ProviderBridgeService` to the nested structure should be out of scope for this RFB. The transformation of the data should happen in the main.
 
-## Proposal
-
-### dApp Settings
+## dApp Settings
 
 > How do we persist the network of a given dapp? (likely preference service - but maybe a new service?). Also we’ll probably want > an in-memory store as well to avoid doing a bunch of i/o every time we get rpc requests.
 
@@ -61,9 +58,9 @@ When initializing the app we emit an event from the services with the current pa
 
 So we should refactor the `dapp-permission` slice to be more generic and store all the settings for dApps. Also rename it to be `dapp`.
 
-#### dApp Permissions
+### dApp Permissions
 
-##### Redux
+#### Redux
 
 In that redux slice the permissions are stored with in `chainID -> address -> object` nested object style.
 
@@ -88,26 +85,29 @@ In that redux slice the permissions are stored with in `chainID -> address -> ob
   }
 ```
 
-##### ProviderBridgeService
+#### ProviderBridgeService
 
 ⚠️ caveat: Refactoring the permission handling in the `ProviderBridgeService` to the nested structure should be out of scope for this RFB. The transformation of the data should happen in main.
 
 No changes should be need.
 
-##### Redux <> ProviderBridgeService communication flow
+#### Redux <> ProviderBridgeService communication flow
 
 No changes should be need.
 
-##### Batching permissions
+#### Batching permissions
 
 From the perspective of permissions multi-network or multi-account permission grant should
 be broken down, to multiple single permission grant or deny.
 
 Note: This code path will be used rarely and the amount of inserts won't be significant so we don't need to worry about indexedDB write speed here (for now).
 
-#### Current Connection Per dApps
+### Current Connection Per dApps
 
-##### Redux
+- [ ] communication flow + events of account changing for a dApp
+- [ ] db structure for internal ethereum provider
+
+#### Redux
 
 This would be the other part of the redux slice: dApp URL <> active network, selected account.
 
@@ -121,15 +121,33 @@ This changes when the dApp uses the RPC methods eg. `wallet_switchEthereumChain`
 }
 ```
 
-##### InternalEthereumProviderService
+#### InternalEthereumProviderService
 
 [This issue](https://github.com/tallycash/extension/issues/1532#issuecomment-1139410588) belongs to this topic.
 
 The current connections for the dApps will be stored in the `InternalEthereumProviderService` because the augmentation of current network will be necessary for our internal dApps as well.
 
-Our internal dApps should share a common network and address selector which will serve as a default for new dApps — in cases that it's not obvious from the permission request/context.
+⚠️ [Pending product verification](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/-dXUTwSD3bXZ9enPRczVmEoDR1X) Our internal dApps should share a common network and address selector which will serve as a default for new dApps — in cases that it's not obvious from the permission request/context.
 
-###### QnA
+##### Default network and account
+
+⚠️ [Pending product verification](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/mFivf2mZ7YAhKm5OPQIfxoVVkoW)
+
+In this new paradigm we still need to be able to select an initial value to be used.
+
+This should be changeable setting on the settings page, the default should be mainnet and the 1st address.
+
+This value should be set on window-provider.
+
+##### Initial active connection
+
+When connecting to a dApp the chainID needs to be set on the window-provider. The default network should be used for this.
+
+When permission is granted the default address and chain should be used if given permission. If not, then the first the was granted.
+
+❗️The user can change networks e.g. on uniswap before granting permission but there is no way for us to know what it is and the dApp follows what the wallet sets on window-provider. So we can use the default value as active connection when permission is granted.
+
+##### QnA
 
 - > We'll need get rid of activeChain and add network context to every rpc request (context that dapps will not be sending us). Things like eth_estimateGas, eth_getBalance, eth_blockNumber all need a way of being network aware
   - The lookup of the current dapp context should happen in the `InternalEthereumProviderService` and provide it as a parameter to the chain service calls.
@@ -150,3 +168,9 @@ Our internal dApps should share a common network and address selector which will
     connectPopupMonitor
     onPopupDisconnected
     ```
+
+## Work Breakdown
+
+- [ ] create a feature flag
+- [ ] update the permission handling on the redux side
+- [ ] refactor `InternalEthereumProvider`
