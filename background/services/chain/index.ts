@@ -911,7 +911,7 @@ export default class ChainService extends BaseService<Events> {
 
     // Drop all transactions that weren't retrieved from the queue.
     this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-      async ({ network, hash, firstSeen }) => {
+      ({ network, hash, firstSeen }) => {
         fetchedByNetwork[network.chainID] ??= 0
 
         if (
