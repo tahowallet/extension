@@ -19,6 +19,46 @@
     "message": "Total account balance",
     "description": "in Overview > WalletAccountBalanceControl"
   },
+  "walletSend": {
+    "message": "Send",
+    "description": "in Overview > WalletAccountBalanceControl"
+  },
+  "walletReceive": {
+    "message": "Receive",
+    "description": "in Overview > WalletAccountBalanceControl"
+  },
+  "walletSecureSeed": {
+    "message": "First, secure your recovery seed",
+    "description": "in Overview > WalletAccountBalanceControl"
+  },
+  "walletSendAsset": {
+    "message": "Send Asset",
+    "description": "in pages > Send"
+  },
+  "walletAssetAmount": {
+    "message": "Asset / Amount",
+    "description": "in pages > Send"
+  },
+  "walletSendTo": {
+    "message": "Send To:",
+    "description": "in pages > Send"
+  },
+  "walletEstimatedFee": {
+    "message": "Estimated network fee",
+    "description": "in pages > Send"
+  },
+  "walletSendButton": {
+    "message": "Send",
+    "description": "in pages > Send"
+  },
+  "walletReceiveAddress": {
+    "message": "Receive address",
+    "description": "in pages > Receive"
+  },
+  "walletReceiveAddressDesc": {
+    "message": "Only send Ethereum Mainnet compatible assets to this address.",
+    "description": "in pages > Receive"
+  },
   "overviewTableHeaderAsset": {
     "message": "Asset",
     "description": "in Overview > AssetsTable"
