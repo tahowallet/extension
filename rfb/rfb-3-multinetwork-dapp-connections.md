@@ -22,8 +22,9 @@
 - > The question of whether the current network is synced between a dApp and the extension popover (the question here is: do internal dApps need the same model to handle this as external dApps?).
   - [Discussion thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/8Y_PUeEyibY-z698qCsnDp77wGa)
   - They are not synced
-- > The question of what calls current do or don't carry chain information (the questions here are: what is the delta between where the current RPC sits and where we would like it to in a perfect world where all calls carry chain ids? At what level do we need to track chain id?)
-  - ❗️ TODO
+- ❗️ TODO which methods need the additional chain context / which one have it baked in
+  - > The question of what calls current do or don't carry chain information (the questions here are: what is the delta between where the current RPC sits and where we would like it to in a perfect world where all calls carry chain ids? At what level do we need to track chain id?)
+  - > Let's make an exhaustive list of what methods currently do and don't include `chainId`. For example, I believe `eth_estimateGas` does in fact include it, at least optionally (see [the ethers `TransactionRequest` type](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/abstract-provider/src.ts/index.ts#L28) and [the Ethers `hexlifyTransaction` function](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L671), which is used [in gas estimation](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L558-L560)).
 
 ## Proposal
 
