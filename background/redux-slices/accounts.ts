@@ -92,8 +92,20 @@ export const initialState = {
 function newAccountData(
   address: HexString,
   network: EVMNetwork,
-  existingAccountsCount: number
+  accountsState: AccountState
 ): AccountData {
+  const existingAccountsCount = Object.keys(
+    accountsState.accountsData.evm[network.chainID]
+  ).filter((key) => key !== address).length
+
+  const sameAccountOnDifferentChain = Object.values(
+    accountsState.accountsData.evm
+  )
+    .flatMap((chain) => Object.values(chain))
+    .find(
+      (accountData): accountData is AccountData =>
+        accountData !== "loading" && accountData.address === address
+    )
   const defaultNameIndex =
     // Skip potentially-used names at the beginning of the array if relevant,
     // see below.
@@ -107,7 +119,9 @@ function newAccountData(
             (existingAccountsCount % availableDefaultNames.length)
         )
     )
-  const defaultAccountName = availableDefaultNames[defaultNameIndex]
+  const defaultAccountName =
+    sameAccountOnDifferentChain?.defaultName ??
+    availableDefaultNames[defaultNameIndex]
 
   // Move used default names to the start so they can be skipped above.
   availableDefaultNames.splice(defaultNameIndex, 1)
@@ -126,18 +140,14 @@ function newAccountData(
 }
 
 function getOrCreateAccountData(
-  accountsState: AccountState,
+  accountState: AccountState,
   account: HexString,
   network: EVMNetwork
 ): AccountData {
-  const accountData = accountsState.accountsData.evm[network.chainID][account]
-
-  const existingAccountsCount = Object.keys(
-    accountsState.accountsData.evm[network.chainID]
-  ).filter((key) => key !== account).length
+  const accountData = accountState.accountsData.evm[network.chainID][account]
 
   if (accountData === "loading" || !accountData) {
-    return newAccountData(account, network, existingAccountsCount)
+    return newAccountData(account, network, accountState)
   }
   return accountData
 }
@@ -225,13 +235,7 @@ const accountSlice = createSlice({
           immerState.accountsData.evm[network.chainID][normalizedAddress] = {
             // TODO Figure out the best way to handle default name assignment
             // TODO across networks.
-            ...newAccountData(
-              address,
-              network,
-              Object.keys(immerState.accountsData.evm[network.chainID]).filter(
-                (key) => !sameEVMAddress(key, address)
-              ).length
-            ),
+            ...newAccountData(address, network, immerState),
             balances: {
               [updatedAssetSymbol]: updatedAccountBalance,
             },
