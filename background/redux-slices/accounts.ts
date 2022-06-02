@@ -8,7 +8,7 @@ import {
   AssetDecimalAmount,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
-import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
+import { normalizeEVMAddress } from "../lib/utils"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
