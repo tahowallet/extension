@@ -3,6 +3,7 @@ import {
   truncateDecimalAmount,
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   selectDefaultNetworkFeeSettings,
@@ -70,7 +71,7 @@ export default function FeeSettingsText({
 
   return (
     <div>
-      {!networkSettings.gasLimit ? (
+      {!networkSettings.gasLimit && CUSTOM_GAS_SELECT ? (
         <>TBD</>
       ) : (
         <>
