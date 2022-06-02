@@ -78,6 +78,8 @@ export default function FeeSettingsText({
     baseFeePerGas
   )
 
+  if (!dollarValue) return <div>~{gweiValue}</div>
+
   return (
     <div>
       {!networkSettings.gasLimit && CUSTOM_GAS_SELECT ? (
