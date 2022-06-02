@@ -56,7 +56,7 @@ export enum KeyringTypes {
 export type EIP712DomainType = {
   name?: string
   version?: string
-  chainId?: number
+  chainId?: number | string
   verifyingContract?: HexString
 }
 
