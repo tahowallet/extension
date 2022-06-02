@@ -15,7 +15,10 @@ import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
-import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccountSigningMethod,
+  selectKeyringStatus,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   useIsDappPopup,
@@ -44,7 +47,7 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  keyringStatus: "locked" | "unlocked" | "uninitialized"
+  isLocked: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -60,8 +63,7 @@ function transformLocation(
   }
 
   if (isTransactionPendingSignature) {
-    pathname =
-      keyringStatus === "unlocked" ? "/sign-transaction" : "/keyring/unlock"
+    pathname = isLocked ? "/keyring/unlock" : "/sign-transaction"
   }
 
   return {
@@ -112,7 +114,10 @@ export function Main(): ReactElement {
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature
   )
+  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const isLocked =
+    signingMethod?.type === "keyring" ? keyringStatus !== "unlocked" : false
 
   useConnectPopupMonitor()
 
@@ -127,7 +132,7 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              keyringStatus
+              isLocked
             )
 
             const normalizedPathname =
