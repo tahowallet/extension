@@ -21,7 +21,7 @@ const defaultPreferences: Preferences = {
     ],
   },
   currency: USD,
-  defaultWallet: true,
+  defaultWallet: false,
   selectedAccount: {
     address: "",
     network: ETHEREUM,
