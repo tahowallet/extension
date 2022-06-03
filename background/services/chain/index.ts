@@ -21,13 +21,7 @@ import {
   sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import {
-  HOUR,
-  ETHEREUM,
-  ARBITRUM_ONE,
-  POLYGON,
-  OPTIMISM,
-} from "../../constants"
+import { HOUR, ETHEREUM, EVM_MAIN_NETWORKS } from "../../constants"
 import {
   MULTI_NETWORK as USE_MULTI_NETWORK,
   USE_MAINNET_FORK,
@@ -201,9 +195,7 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
-    this.supportedNetworks = USE_MULTI_NETWORK
-      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
-      : [ETHEREUM]
+    this.supportedNetworks = USE_MULTI_NETWORK ? EVM_MAIN_NETWORKS : [ETHEREUM]
 
     this.providers = {
       evm: Object.fromEntries(
