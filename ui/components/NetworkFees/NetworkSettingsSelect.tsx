@@ -125,6 +125,10 @@ export default function NetworkSettingsSelect({
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const customGas = useBackgroundSelector((state) => {
+    return state.transactionConstruction.customFeesPerGas
+  })
+
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
@@ -193,6 +197,17 @@ export default function NetworkSettingsSelect({
           }
         })
 
+        if (customGas) {
+          updatedGasOptions.push(
+            gasOptionFromEstimate(
+              mainCurrencyPricePoint,
+              estimatedFeesPerGas.baseFeePerGas ?? 0n,
+              gasLimit,
+              customGas
+            )
+          )
+        }
+
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
           (el) => el.type === currentlySelectedType
         )
@@ -208,6 +223,7 @@ export default function NetworkSettingsSelect({
     networkSettings.gasLimit,
     networkSettings.suggestedGasLimit,
     mainCurrencyPricePoint,
+    customGas,
     currentlySelectedType,
   ])
 
