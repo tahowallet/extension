@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import { GasOption } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import capitalize from "../../utils/capitalize"
 import SharedInput, { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
@@ -111,10 +112,11 @@ export function NetworkSettingsSelectOptionButtonCustom({
   ) => void
 }): ReactElement {
   const [warningMessage, setWarningMessage] = useState("")
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const baseGasFee = useBackgroundSelector(
-    (state) =>
-      state.networks.evm[state.ui.selectedAccount.network.chainID].baseFeePerGas
+    (state) => state.networks.evm[selectedNetwork.chainID].baseFeePerGas
   )
+
   return (
     <button
       key={option.confidence}
