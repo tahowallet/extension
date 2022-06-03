@@ -47,7 +47,7 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  isLocked: boolean
+  needsKeyringUnlock: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -63,7 +63,7 @@ function transformLocation(
   }
 
   if (isTransactionPendingSignature) {
-    pathname = isLocked ? "/keyring/unlock" : "/sign-transaction"
+    pathname = needsKeyringUnlock ? "/keyring/unlock" : "/sign-transaction"
   }
 
   return {
@@ -116,8 +116,11 @@ export function Main(): ReactElement {
   )
   const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
-  const isLocked =
-    signingMethod?.type === "keyring" ? keyringStatus !== "unlocked" : false
+
+  const needsKeyringUnlock =
+    isTransactionPendingSignature &&
+    signingMethod?.type === "keyring" &&
+    keyringStatus !== "unlocked"
 
   useConnectPopupMonitor()
 
@@ -132,7 +135,7 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              isLocked
+              needsKeyringUnlock
             )
 
             const normalizedPathname =
