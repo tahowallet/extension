@@ -35,7 +35,7 @@ import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import EmptyBowl from "../components/Earn/EmptyBowl/EmptyBowl"
+import EmptyBowl from "../components/Earn/EmptyBowl"
 import { useAllEarnVaults } from "../hooks/earn-hooks"
 import SharedAccordion from "../components/Shared/SharedAccordion"
 
