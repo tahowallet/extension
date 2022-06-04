@@ -27,19 +27,19 @@
     "message": "Balance",
     "description": "in Overview > AssetsTable"
   },
-  "ProtocolMainnet": {
+  "protocolMainnet": {
     "message": "Mainnet",
     "description": "in TopMenu > TopMenuProtocolList"
   },
-  "ProtocolL2": {
+  "protocolL2": {
     "message": "L2 scaling solution",
     "description": "in TopMenu > TopMenuProtocolList"
   },
-  "ProtocolCompatibleChain": {
+  "protocolCompatibleChain": {
     "message": "Ethereum-compatible blockchain",
     "description": "in TopMenu > TopMenuProtocolList"
   },
-  "ProtocolConnected": {
+  "protocolConnected": {
     "message": "Connected",
     "description": "in TopMenu > TopMenuProtocolListItem"
   },

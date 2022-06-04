@@ -14,31 +14,31 @@ import t from "../../utils/i18n"
 const listItemInfo = [
   {
     network: ETHEREUM,
-    info: t("ProtocolMainnet"),
+    info: t("protocolMainnet"),
     width: 18,
     height: 29,
   },
   {
     network: POLYGON,
-    info: t("ProtocolL2"),
+    info: t("protocolL2"),
     width: 24,
     height: 24,
   },
   {
     network: ARBITRUM_ONE,
-    info: t("ProtocolL2"),
+    info: t("protocolL2"),
     width: 23.2,
     height: 26,
   },
   {
     network: OPTIMISM,
-    info: t("ProtocolL2"),
+    info: t("protocolL2"),
     width: 24,
     height: 24,
   },
   // {
   //   name: "Binance Smart Chain",
-  //   info: t("ProtocolCompatibleChain"),
+  //   info: t("protocolCompatibleChain"),
   //   width: 24,
   //   height: 24,
   // },

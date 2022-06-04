@@ -36,7 +36,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         <div className="sub_title">
           {info}
           {isSelected && (
-            <span className="status">{t("ProtocolConnected")}</span>
+            <span className="status">{t("protocolConnected")}</span>
           )}
         </div>
       </div>
