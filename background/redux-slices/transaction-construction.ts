@@ -6,7 +6,6 @@ import {
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
-  CUSTOM,
 } from "../constants/network-fees"
 import { USE_MAINNET_FORK } from "../features"
 
