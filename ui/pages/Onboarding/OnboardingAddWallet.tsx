@@ -12,7 +12,7 @@ const accountCreateButtonInfos = [
         label: "Import recovery phrase",
         icon: "./images/add_wallet/import.svg",
         url: "/onboarding/import-metamask",
-        featureFlag: true,
+        isAvailable: true,
       },
       {
         label: "Connect to Ledger",
@@ -21,13 +21,13 @@ const accountCreateButtonInfos = [
           window.open("/tab.html#/ledger", "_blank")?.focus()
           window.close()
         },
-        featureFlag: isLedgerSupported,
+        isAvailable: isLedgerSupported,
       },
       {
         label: "Read-only address",
         icon: "./images/add_wallet/preview.svg",
         url: "/onboarding/view-only-wallet",
-        featureFlag: true,
+        isAvailable: true,
       },
     ],
   },
@@ -38,7 +38,7 @@ const accountCreateButtonInfos = [
         label: "Create new wallet",
         icon: "./images/add_wallet/create_tally.svg",
         url: "/onboarding/onboarding-interstitial-create-phrase",
-        featureFlag: true,
+        isAvailable: true,
       },
     ],
   },
@@ -139,8 +139,8 @@ export default function OnboardingStartTheHunt(): ReactElement {
               <h2>{creationSection.title}</h2>
               <ul>
                 {creationSection.items.map(
-                  ({ label, icon, url, featureFlag, onClick }) =>
-                    featureFlag ? (
+                  ({ label, icon, url, isAvailable, onClick }) =>
+                    isAvailable ? (
                       <AddWalletRow icon={icon} url={url} onClick={onClick}>
                         {label}
                       </AddWalletRow>
