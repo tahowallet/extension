@@ -5,6 +5,7 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
+import t from "../utils/i18n"
 
 export default function Receive(): ReactElement {
   const dispatch = useDispatch()
@@ -17,11 +18,9 @@ export default function Receive(): ReactElement {
     <section>
       <h1>
         <span className="icon_activity_send_medium" />
-        Receive address
+        {t("walletReceiveAddress")}
       </h1>
-      <div className="sub_title">
-        Only send Ethereum Mainnet compatible assets to this address.
-      </div>
+      <div className="sub_title">{t("walletReceiveAddressDesc")}</div>
       <div className="qr_code">
         <QRCode value={currentAccount.address} size={128} />
       </div>
