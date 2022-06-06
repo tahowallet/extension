@@ -261,7 +261,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const { address } = await this.preferenceService.getSelectedAccount()
 
     // TODO make this multi-network friendly
-    await this.db.deletePermission(permission.origin, address)
+    await this.db.deletePermission(
+      permission.origin,
+      address,
+      permission.chainID
+    )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")

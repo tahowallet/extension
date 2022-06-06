@@ -78,7 +78,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
           .modify((permission) => {
             // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
             // eslint-disable-next-line no-param-reassign
-            permission.chainID = 1
+            permission.chainID = "1"
           })
       )
 
@@ -131,9 +131,12 @@ export class ProviderBridgeServiceDatabase extends Dexie {
 
   async deletePermission(
     origin: string,
-    accountAddress: string
+    accountAddress: string,
+    chainID: string
   ): Promise<number> {
-    return this.dAppPermissions.where({ origin, accountAddress }).delete()
+    return this.dAppPermissions
+      .where({ origin, accountAddress, chainID })
+      .delete()
   }
 
   async checkPermission(
