@@ -59,7 +59,17 @@ export default function TopMenuProtocolList({
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   return (
-    <div className="standard_width_padded center_horizontal">
+    <div
+      className="standard_width_padded center_horizontal"
+      role="button"
+      tabIndex={0}
+      onKeyDown={() => {
+        close()
+      }}
+      onClick={() => {
+        close()
+      }}
+    >
       <ul>
         {listItemInfo.map((info) => (
           <TopMenuProtocolListItem
@@ -69,7 +79,6 @@ export default function TopMenuProtocolList({
             height={info.height}
             width={info.width}
             info={info.info}
-            close={close}
           />
         ))}
       </ul>
