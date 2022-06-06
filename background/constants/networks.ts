@@ -1,8 +1,6 @@
 import { EVMNetwork, Network } from "../networks"
 import { BTC, ETH, MATIC } from "./currencies"
 
-// TODO integrate this with /api/networks
-
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
   baseAsset: ETH,
