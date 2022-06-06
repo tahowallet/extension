@@ -57,6 +57,7 @@ export type TransactionConstruction = {
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
+  customFeesPerGas?: EstimatedFeesPerGas["custom"]
   lastGasEstimatesRefreshed: number
   feeTypeSelected: NetworkFeeTypeChosen
 }
@@ -75,6 +76,11 @@ export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
   estimatedFeesPerGas: {},
+  customFeesPerGas: {
+    maxFeePerGas: 0n,
+    maxPriorityFeePerGas: 0n,
+    confidence: 0,
+  },
   lastGasEstimatesRefreshed: Date.now(),
 }
 
@@ -176,6 +182,11 @@ const transactionSlice = createSlice({
           ]?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
       },
       transactionLikelyFails,
+      customFeesPerGas: {
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        confidence: 0,
+      },
     }),
     clearTransactionState: (
       state,
@@ -187,6 +198,11 @@ const transactionSlice = createSlice({
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
+      customFeesPerGas: {
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        confidence: 0,
+      },
     }),
     setFeeType: (
       state,
@@ -194,6 +210,11 @@ const transactionSlice = createSlice({
     ): TransactionConstruction => ({
       ...state,
       feeTypeSelected: payload,
+      customFeesPerGas: {
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        confidence: 0,
+      },
     }),
 
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
@@ -238,16 +259,10 @@ const transactionSlice = createSlice({
         }
       }
     ) => {
-      immerState.estimatedFeesPerGas = {
-        ...immerState.estimatedFeesPerGas,
-        [network.chainID]: {
-          ...immerState.estimatedFeesPerGas[network.chainID],
-          custom: {
-            maxFeePerGas,
-            confidence: CUSTOM,
-            maxPriorityFeePerGas,
-          },
-        },
+      immerState.customFeesPerGas = {
+        maxPriorityFeePerGas,
+        maxFeePerGas,
+        confidence: 0,
       }
     },
   },
