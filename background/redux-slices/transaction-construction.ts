@@ -239,12 +239,11 @@ const transactionSlice = createSlice({
     setCustomGas: (
       immerState,
       {
-        payload: { maxPriorityFeePerGas, maxFeePerGas, network },
+        payload: { maxPriorityFeePerGas, maxFeePerGas },
       }: {
         payload: {
           maxPriorityFeePerGas: bigint
           maxFeePerGas: bigint
-          network: EVMNetwork
         }
       }
     ) => {
