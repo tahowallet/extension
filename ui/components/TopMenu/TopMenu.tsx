@@ -102,7 +102,7 @@ export default function TopMenu(): ReactElement {
         }}
       >
         <TopMenuProtocolList
-          close={() => {
+          onProtocolChange={() => {
             setIsProtocolListOpen(false)
           }}
         />

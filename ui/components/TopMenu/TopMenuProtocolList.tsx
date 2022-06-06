@@ -50,26 +50,16 @@ const listItemInfo = [
 ]
 
 interface TopMenuProtocolListProps {
-  close: () => void
+  onProtocolChange: () => void
 }
 
 export default function TopMenuProtocolList({
-  close,
+  onProtocolChange,
 }: TopMenuProtocolListProps): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   return (
-    <div
-      className="standard_width_padded center_horizontal"
-      role="button"
-      tabIndex={0}
-      onKeyDown={() => {
-        close()
-      }}
-      onClick={() => {
-        close()
-      }}
-    >
+    <div className="standard_width_padded center_horizontal">
       <ul>
         {listItemInfo.map((info) => (
           <TopMenuProtocolListItem
@@ -79,6 +69,7 @@ export default function TopMenuProtocolList({
             height={info.height}
             width={info.width}
             info={info.info}
+            onSelect={onProtocolChange}
           />
         ))}
       </ul>

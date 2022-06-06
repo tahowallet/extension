@@ -10,10 +10,11 @@ interface Props {
   height: number
   network: EVMNetwork
   isSelected: boolean
+  onSelect: () => void
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
-  const { width, height, info, isSelected, network } = props
+  const { width, height, info, isSelected, network, onSelect } = props
 
   const dispatch = useDispatch()
 
@@ -22,6 +23,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
       className={classNames({ select: isSelected })}
       onClick={() => {
         dispatch(setSelectedNetwork(network))
+        onSelect()
       }}
       role="presentation"
     >
