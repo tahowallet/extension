@@ -159,6 +159,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       const { address: accountAddress, network } =
         await this.preferenceService.getSelectedAccount()
       const permissionRequest: PermissionRequest = {
+        key: `${origin}_${accountAddress}_${network.chainID}`,
         origin,
         chainID: network.chainID,
         faviconUrl,
