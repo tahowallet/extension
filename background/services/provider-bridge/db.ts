@@ -141,9 +141,10 @@ export class ProviderBridgeServiceDatabase extends Dexie {
 
   async checkPermission(
     origin: string,
-    accountAddress: string
+    accountAddress: string,
+    chainID: string
   ): Promise<PermissionRequest | undefined> {
-    return this.dAppPermissions.get({ origin, accountAddress })
+    return this.dAppPermissions.get({ origin, accountAddress, chainID })
   }
 }
 
