@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
+import { EVM_MAIN_NETWORKS } from "../constants"
 
 export type DAppPermissionState = {
   permissionRequests: { [url: string]: PermissionRequest }
@@ -25,7 +26,13 @@ export const emitter = new Emittery<Events>()
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
   async (permission: PermissionRequest) => {
-    await emitter.emit("grantPermission", permission)
+    EVM_MAIN_NETWORKS.forEach((network) => {
+      emitter.emit("grantPermission", {
+        ...permission,
+        chainID: network.chainID,
+      })
+    })
+
     return permission
   }
 )
