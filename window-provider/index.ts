@@ -18,7 +18,11 @@ import { EventEmitter } from "events"
 
 // TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
 //       so let's do this only on the websites that need this feature
-const impersonateMetamaskWhitelist = ["opensea.io", "bridge.umbria.network", "tokemak.xyz"]
+const impersonateMetamaskWhitelist = [
+  "opensea.io",
+  "bridge.umbria.network",
+  "tokemak.xyz",
+]
 
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
