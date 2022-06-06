@@ -119,7 +119,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return this.dAppPermissions
       .toArray()
       .then((permissionsArray) =>
-        keyBy(permissionsArray, ["origin", "accountAddress"])
+        keyBy(permissionsArray, ["origin", "accountAddress", "chainID"])
       )
   }
 
