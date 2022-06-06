@@ -253,6 +253,9 @@ const transactionSlice = createSlice({
         confidence: 0,
       }
     },
+    clearCustomGas: (immerState) => {
+      immerState.customFeesPerGas = defaultCustomGas
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(updateTransactionOptions.pending, (immerState) => {
@@ -271,6 +274,7 @@ export const {
   setFeeType,
   estimatedFeesPerGas,
   setCustomGas,
+  clearCustomGas,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
