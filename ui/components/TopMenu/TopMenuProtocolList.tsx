@@ -1,9 +1,14 @@
 import {
-  // ARBITRUM_ONE,
+  ARBITRUM_ONE,
   ETHEREUM,
-  // OPTIMISM,
+  OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
+import {
+  SUPPORT_ARBITRUM,
+  SUPPORT_OPTIMISM,
+  SUPPORT_POLYGON,
+} from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
@@ -17,24 +22,36 @@ const listItemInfo = [
     width: 18,
     height: 29,
   },
-  {
-    network: POLYGON,
-    info: "L2 scaling solution",
-    width: 24,
-    height: 24,
-  },
-  // {
-  //   network: ARBITRUM_ONE,
-  //   info: "L2 scaling solution",
-  //   width: 23.2,
-  //   height: 26,
-  // },
-  // {
-  //   network: OPTIMISM,
-  //   info: "L2 scaling solution",
-  //   width: 24,
-  //   height: 24,
-  // },
+  ...(SUPPORT_POLYGON
+    ? [
+        {
+          network: POLYGON,
+          info: "L2 scaling solution",
+          width: 24,
+          height: 24,
+        },
+      ]
+    : []),
+  ...(SUPPORT_ARBITRUM
+    ? [
+        {
+          network: ARBITRUM_ONE,
+          info: "L2 scaling solution",
+          width: 23.2,
+          height: 26,
+        },
+      ]
+    : []),
+  ...(SUPPORT_OPTIMISM
+    ? [
+        {
+          network: OPTIMISM,
+          info: "L2 scaling solution",
+          width: 24,
+          height: 24,
+        },
+      ]
+    : []),
   // {
   //   name: "Binance Smart Chain",
   //   info: "Ethereum-compatible blockchain",

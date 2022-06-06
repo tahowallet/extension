@@ -22,10 +22,7 @@ import {
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import { HOUR, ETHEREUM, EVM_MAIN_NETWORKS } from "../../constants"
-import {
-  MULTI_NETWORK as USE_MULTI_NETWORK,
-  USE_MAINNET_FORK,
-} from "../../features"
+import { USE_MAINNET_FORK } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
@@ -156,8 +153,6 @@ export default class ChainService extends BaseService<Events> {
     return new this(await getOrCreateDB(), await preferenceService)
   }
 
-  supportedNetworks: EVMNetwork[]
-
   assetData: AssetDataHelper
 
   private constructor(
@@ -195,11 +190,9 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
-    this.supportedNetworks = USE_MULTI_NETWORK ? EVM_MAIN_NETWORKS : [ETHEREUM]
-
     this.providers = {
       evm: Object.fromEntries(
-        this.supportedNetworks.map((network) => [
+        EVM_MAIN_NETWORKS.map((network) => [
           network.chainID,
           new SerialFallbackProvider(
             network,
@@ -233,7 +226,7 @@ export default class ChainService extends BaseService<Events> {
     // get the latest blocks and subscribe for all support networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    this.supportedNetworks.forEach(async (network) => {
+    EVM_MAIN_NETWORKS.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
         Promise.all([
@@ -314,7 +307,7 @@ export default class ChainService extends BaseService<Events> {
         "Request received for operation on unsupported network",
         network,
         "expected",
-        this.supportedNetworks
+        EVM_MAIN_NETWORKS
       )
       throw new Error(`Unexpected network ${network}`)
     }
