@@ -72,15 +72,17 @@ export type EstimatedFeesPerGas = {
   custom?: BlockEstimate
 }
 
+const defaultCustomGas = {
+  maxFeePerGas: 0n,
+  maxPriorityFeePerGas: 0n,
+  confidence: 0,
+}
+
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
   estimatedFeesPerGas: {},
-  customFeesPerGas: {
-    maxFeePerGas: 0n,
-    maxPriorityFeePerGas: 0n,
-    confidence: 0,
-  },
+  customFeesPerGas: defaultCustomGas,
   lastGasEstimatesRefreshed: Date.now(),
 }
 
@@ -182,11 +184,7 @@ const transactionSlice = createSlice({
           ]?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
       },
       transactionLikelyFails,
-      customFeesPerGas: {
-        maxFeePerGas: 0n,
-        maxPriorityFeePerGas: 0n,
-        confidence: 0,
-      },
+      customFeesPerGas: defaultCustomGas,
     }),
     clearTransactionState: (
       state,
@@ -198,11 +196,7 @@ const transactionSlice = createSlice({
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
-      customFeesPerGas: {
-        maxFeePerGas: 0n,
-        maxPriorityFeePerGas: 0n,
-        confidence: 0,
-      },
+      customFeesPerGas: defaultCustomGas,
     }),
     setFeeType: (
       state,
@@ -210,11 +204,7 @@ const transactionSlice = createSlice({
     ): TransactionConstruction => ({
       ...state,
       feeTypeSelected: payload,
-      customFeesPerGas: {
-        maxFeePerGas: 0n,
-        maxPriorityFeePerGas: 0n,
-        confidence: 0,
-      },
+      customFeesPerGas: defaultCustomGas,
     }),
 
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
