@@ -21,6 +21,12 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
+const getKeyFromPermissionRequest = (
+  permissionRequest: PermissionRequest
+): string => {
+  return `${permissionRequest.origin}_${permissionRequest.accountAddress}_${permissionRequest.chainID}`
+}
+
 // Async thunk to bubble the permissionGrant action from  store to emitter.
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
@@ -56,14 +62,17 @@ const dappPermissionSlice = createSlice({
       state,
       { payload: request }: { payload: PermissionRequest }
     ) => {
-      if (state.permissionRequests[request.key]?.state !== "allow") {
+      if (
+        state.permissionRequests[getKeyFromPermissionRequest(request)]
+          ?.state !== "allow"
+      ) {
         return {
           ...state,
           permissionRequests: {
             // Quick fix: store only the latest permission request.
             // TODO: put this back when we fixed the performance issues and/or updated our UI to handle multiple requests
             // ...state.permissionRequests,
-            [request.key]: { ...request },
+            [getKeyFromPermissionRequest(request)]: { ...request },
           },
         }
       }
@@ -77,13 +86,15 @@ const dappPermissionSlice = createSlice({
         grantPermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
-          delete updatedPermissionRequests[permission.key]
+          delete updatedPermissionRequests[
+            getKeyFromPermissionRequest(permission)
+          ]
 
           return {
             permissionRequests: updatedPermissionRequests,
             allowedPages: {
               ...state.allowedPages,
-              [permission.key]: permission,
+              [getKeyFromPermissionRequest(permission)]: permission,
             },
           }
         }
@@ -92,11 +103,13 @@ const dappPermissionSlice = createSlice({
         denyOrRevokePermission.fulfilled,
         (state, { payload: permission }: { payload: PermissionRequest }) => {
           const updatedPermissionRequests = { ...state.permissionRequests }
-          delete updatedPermissionRequests[permission.key]
+          delete updatedPermissionRequests[
+            getKeyFromPermissionRequest(permission)
+          ]
 
           // remove page from the allowedPages list
           const updatedAllowedPages = { ...state.allowedPages }
-          delete updatedAllowedPages[permission.key]
+          delete updatedAllowedPages[getKeyFromPermissionRequest(permission)]
 
           return {
             permissionRequests: updatedPermissionRequests,

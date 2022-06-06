@@ -152,11 +152,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
-      const { address: accountAddress } =
+      const { address: accountAddress, network } =
         await this.preferenceService.getSelectedAccount()
       const permissionRequest: PermissionRequest = {
-        key: `${origin}_${accountAddress}`,
         origin,
+        chainID: network.chainID,
         faviconUrl,
         title,
         state: "request",

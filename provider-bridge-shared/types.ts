@@ -1,7 +1,7 @@
 export type PermissionRequest = {
-  key: string
   origin: string
   faviconUrl: string
+  chainID: string
   title: string
   state: "request" | "allow" | "deny"
   accountAddress: string
