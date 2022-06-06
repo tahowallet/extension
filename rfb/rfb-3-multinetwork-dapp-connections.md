@@ -168,9 +168,3 @@ When permission is granted the default address and chain should be used if given
     connectPopupMonitor
     onPopupDisconnected
     ```
-
-## Work Breakdown
-
-- [ ] create a feature flag
-- [ ] update the permission handling on the redux side
-- [ ] refactor `InternalEthereumProvider`
