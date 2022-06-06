@@ -12,7 +12,6 @@ import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
-import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
@@ -142,7 +141,6 @@ export function Main(): ReactElement {
             // the user or explicitly added. That said, we can still certainly "POP" via
             // history.goBack(). This case is not yet accounted for.
             if (
-              PERSIST_UI_LOCATION &&
               pagePreferences[normalizedPathname].persistOnClose &&
               routeProps.history.action === "PUSH"
             ) {
