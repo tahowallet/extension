@@ -42,10 +42,6 @@
   - > The question of what calls current do or don't carry chain information (the questions here are: what is the delta between where the current RPC sits and where we would like it to in a perfect world where all calls carry chain ids? At what level do we need to track chain id?)
   - > Let's make an exhaustive list of what methods currently do and don't include `chainId`. For example, I believe `eth_estimateGas` does in fact include it, at least optionally (see [the ethers `TransactionRequest` type](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/abstract-provider/src.ts/index.ts#L28) and [the Ethers `hexlifyTransaction` function](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L671), which is used [in gas estimation](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L558-L560)).
 
-## TBD
-
-- Refactoring the permission handling in the `ProviderBridgeService` to the nested structure should be out of scope for this RFB. The transformation of the data should happen in the main.
-
 ## dApp Settings
 
 > How do we persist the network of a given dapp? (likely preference service - but maybe a new service?). Also we’ll probably want > an in-memory store as well to avoid doing a bunch of i/o every time we get rpc requests.
@@ -76,20 +72,16 @@ In that redux slice the permissions are stored with in `chainID -> address -> ob
 
 ```
   export type PermissionRequest = {
--    key: string
     origin: string
     faviconUrl: string
     title: string
     state: "request" | "allow" | "deny"
-+    addressOnNetwork: AddressOnNetwork
+    addressOnNetwork: AddressOnNetwork
   }
 ```
 
 #### ProviderBridgeService
 
-⚠️ caveat: Refactoring the permission handling in the `ProviderBridgeService` to the nested structure should be out of scope for this RFB. The transformation of the data should happen in main.
-
-No changes should be need.
 
 #### Redux <> ProviderBridgeService communication flow
 
