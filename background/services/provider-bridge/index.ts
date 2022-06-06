@@ -276,12 +276,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async checkPermission(
-    origin: string,
-    address?: string
+    origin: string
   ): Promise<PermissionRequest | undefined> {
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
-    const currentAddress = address ?? selectedAddress
+    const currentAddress = selectedAddress
     // TODO make this multi-network friendly
     return this.db.checkPermission(origin, currentAddress)
   }
