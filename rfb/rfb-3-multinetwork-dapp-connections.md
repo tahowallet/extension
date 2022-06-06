@@ -85,8 +85,9 @@ In that redux slice the permissions are stored with in `chainID -> address -> ob
 Because of the changes in the `PermissionRequest` type we need to create a migration in `ProviderBridgeServiceDatabase`.
 The permissions will be queried often — on every RPC call — but written rarely, so we should optimize for read performance.
 This means that we need to add the `chainID` to the primary index. This will require
- - [the same back-and-forth as outlined in this comment](https://github.com/tallycash/extension/blob/b1edcac0805b678c839005fb80d993d55850a0ab/background/services/provider-bridge/db.ts#L29)
- - augmenting the existing permissions with the mainnet `AddressOnNetwork` related data
+
+- [the same back-and-forth as outlined in this comment](https://github.com/tallycash/extension/blob/b1edcac0805b678c839005fb80d993d55850a0ab/background/services/provider-bridge/db.ts#L29)
+- augmenting the existing permissions with the mainnet `AddressOnNetwork` related data
 
 From the perspective of permissions multi-network or multi-account permission grant should be broken down, to multiple single permission grant or deny.
 
