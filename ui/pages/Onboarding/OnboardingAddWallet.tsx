@@ -1,8 +1,4 @@
 import React, { ReactElement } from "react"
-import {
-  HIDE_ADD_SEED,
-  HIDE_CREATE_PHRASE,
-} from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -16,7 +12,7 @@ const accountCreateButtonInfos = [
         label: "Import recovery phrase",
         icon: "./images/add_wallet/import.svg",
         url: "/onboarding/import-metamask",
-        featureFlag: !HIDE_ADD_SEED,
+        featureFlag: true,
       },
       {
         label: "Connect to Ledger",
@@ -42,7 +38,7 @@ const accountCreateButtonInfos = [
         label: "Create new wallet",
         icon: "./images/add_wallet/create_tally.svg",
         url: "/onboarding/onboarding-interstitial-create-phrase",
-        featureFlag: !HIDE_CREATE_PHRASE,
+        featureFlag: true,
       },
     ],
   },
