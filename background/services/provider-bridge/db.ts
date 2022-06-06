@@ -66,6 +66,53 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     this.version(5).stores({
       [tempTable]: null,
     })
+
+    this.version(6)
+      .stores({
+        [mainTable]: "&[origin+accountAddress],origin,accountAddress,chainID",
+      })
+      .upgrade((tx) =>
+        tx
+          .table(mainTable)
+          .toCollection()
+          .modify((permission) => {
+            // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
+            // eslint-disable-next-line no-param-reassign
+            permission.chainID = 1
+          })
+      )
+
+    this.version(7)
+      .stores({
+        migrations: null,
+        [tempTable]: "&[origin+accountAddress],origin,accountAddress,chainID",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table(mainTable)
+          .toArray()
+          .then((rows) => tx.table(tempTable).bulkAdd(rows))
+      })
+
+    this.version(8).stores({
+      [mainTable]: null,
+    })
+
+    this.version(9)
+      .stores({
+        [mainTable]:
+          "&[origin+accountAddress+chainID],origin,accountAddress,chainID",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table(tempTable)
+          .toArray()
+          .then((rows) => tx.table(mainTable).bulkAdd(rows))
+      })
+
+    this.version(10).stores({
+      [tempTable]: null,
+    })
   }
 
   async getAllPermission(): Promise<Record<string, PermissionRequest>> {
