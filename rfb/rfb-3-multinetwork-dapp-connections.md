@@ -1,6 +1,20 @@
 # RFB 3: Multinetwork dApp Connections
 
-## Mental Models
+## 1. Background
+
+Currently our extension is defaulting to ethereum mainnet, and in many cases we don't have the network as a concept in our data structures.
+We also rely on a global, extension wide account selector.
+
+## 2. Proposal
+
+### 2.1. Goal
+
+We want to change the functionality of our dApp connections to
+
+- decouple dApp connections from the global selector and make it possible for the dApps to operate independently from each other in terms of current account and current network
+- introduce the concept of networks where it's missing and make it so that we can track reliably throughout the dApp permission handling, and communication cycle.
+
+#### Mental Models
 
 1. The extension is connected to every supported chain all the time — meaning it has a live connection simultaneously — but presents only a single connection to the dApps.
 2. Redux store is a special glue layer in our architecture between the services and the UI.
@@ -23,20 +37,9 @@
      - The common thing about them is that their functionality is tightly coupled with a network.
      - These are mostly the parts that can make changes to the chain.
 
-## Product decisions / FAQ
+### 2.2. Implementation
 
-- > Permissions are network bound or not (the question here is: do we need to track different permissions by network, or only by address?).
-  - [Decision thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/GKW_YsOIDVoqoo9LV4fx5RIwHDh)
-  - Permissions are network bound, we need to be able differentiate between networks
-    - it’s possible to have permission for `0xdeadbeef` on mainnet but not on polygon
-    - it's possible to have permission for `0xdeadbeef` on mainnet and polygon but not on arbitrum
-- > The question of whether the current network is synced between a dApp and the extension popover (the question here is: do internal dApps need the same model to handle this as external dApps?).
-  - [Discussion thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/8Y_PUeEyibY-z698qCsnDp77wGa)
-  - They are not synced
-- [What should be the initial default address and network](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/mFivf2mZ7YAhKm5OPQIfxoVVkoW)
-- [Common address and network for internal dApps or independent](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/-dXUTwSD3bXZ9enPRczVmEoDR1X)
-
-## dApp Settings
+#### dApp Settings
 
 This should be broken down into 2 pieces: permission and current connection,
 
@@ -46,9 +49,9 @@ When initializing the app we emit an event from the services with the current pa
 
 So we should refactor the `dapp-permission` slice to be more generic and store all the settings for dApps. Also rename it to be `dapp`.
 
-### dApp Permissions
+##### dApp Permissions
 
-#### Redux
+###### Redux
 
 In that redux slice the permissions are stored with in `NetworkFamily -> chainID -> address -> object` nested object style.
 
@@ -76,7 +79,7 @@ In that redux slice the permissions are stored with in `NetworkFamily -> chainID
   }
 ```
 
-#### ProviderBridgeService
+###### ProviderBridgeService
 
 Because of the changes in the `PermissionRequest` type we need to create a migration in `ProviderBridgeServiceDatabase`.
 The permissions will be queried often — on every RPC call — but written rarely, so we should optimize for read performance.
@@ -91,9 +94,17 @@ Note: When UI sends multiple permission request in a short period of time — be
 
 ⚠️ The methods in `authorization.ts` also needs to be updated to check for chainID. e.g.: `checkPermissionSign`
 
-### Current Connection Per dApps
+#### Current Connection Per dApps
 
-#### Redux
+###### Initial active connection
+
+When connecting to a dApp the chainID needs to be set on the window-provider. The default network should be used for this.
+
+When permission is granted the default address and chain should be used if given permission. If not, then the first the was granted.
+
+❗️The user can change networks e.g. on uniswap before granting permission but there is no way for us to know what it is and the dApp follows what the wallet sets on window-provider. So we can use the default value as active connection when permission is granted.
+
+###### Redux
 
 This would be the other part of the redux slice: dApp URL <> active network, selected account.
 
@@ -107,17 +118,17 @@ This changes when the dApp uses the RPC methods eg. `wallet_switchEthereumChain`
 }
 ```
 
-#### InternalEthereumProviderService
+###### InternalEthereumProviderService
 
 The current connections for the dApps will be stored in the `InternalEthereumProviderService` because the augmentation of current network will be necessary for our internal dApps as well.
 
 Our internal dApps — swap, send etc — will use the global account and network selected.
 
-⚠️ Note: the selected account related solution is currently located in the `PreferenceService`. We need to move the logic to the `InternalEthereumProvider` and migrate the existing settings.
+⚠️ Note: the selected account related solution is currently located in the `PreferenceService`. We need to move the logic to the `InternalEthereumProvider` and migrate the existing settings. We do this migration in the `main.ts` but we will need to clean up `PreferenceService` after this implementation is released.
 
 ⚠️ Note: the [else here](https://github.com/tallycash/extension/blob/0c12499d711290a0de9f28898be44f87fe6d664f/background/main.ts#L1098) should be removed as part of this work.
 
-##### Initialization flow
+####### Initialization flow
 
 - `InternalEthereumService`
   - on first db initialization it creates the db with the schema
@@ -141,7 +152,7 @@ Our internal dApps — swap, send etc — will use the global account and networ
     - calls the `setSelectedAddressOnNetwork` method on `InternalEthereumProvider` which persists all dApps with the current address and network information
   - normal mode: (if the payload is not empty) dispatches `setSelectedAddressOnNetwork` which overwrites the data in redux
 
-##### Update flow
+####### Update flow
 
 - User changes network or account in the global selector
 - `setNewSelectedSelectedAddressOnNetwork` is dispatched
@@ -152,7 +163,7 @@ Our internal dApps — swap, send etc — will use the global account and networ
   - notify the content scripts
   - check referrals
 
-##### Incoming RPC call augmentation flow
+####### Incoming RPC call augmentation flow
 
 Every incoming RPC call from the dApps should be augmented with the information of selected networks.
 This will be done in `InternalEthereumProvider` when calling `ChainService` as an additional argument for the method calls.
@@ -168,16 +179,19 @@ These are the following methods:
 - `eth_estimateGas`
 - `eth_call`
 
-##### Default network and account
+## 3. Future work
 
-In this new paradigm we still need to be able to select an initial value to be used.
+- Decouple dApp connections from the global address and network selector (and also provide a separate UI for it)
+- [Make the default account and network configurable](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/mFivf2mZ7YAhKm5OPQIfxoVVkoW)
+- [Common address and network for internal dApps or independent](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/-dXUTwSD3bXZ9enPRczVmEoDR1X)
 
-The global current address and current network should be used as a default network and account. This is relevant only relevant in certain situations, listed in the following sections.
+## Related links / Product decisions
 
-##### Initial active connection
-
-When connecting to a dApp the chainID needs to be set on the window-provider. The default network should be used for this.
-
-When permission is granted the default address and chain should be used if given permission. If not, then the first the was granted.
-
-❗️The user can change networks e.g. on uniswap before granting permission but there is no way for us to know what it is and the dApp follows what the wallet sets on window-provider. So we can use the default value as active connection when permission is granted.
+- > Permissions are network bound or not (the question here is: do we need to track different permissions by network, or only by address?).
+  - [Decision thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/GKW_YsOIDVoqoo9LV4fx5RIwHDh)
+  - Permissions are network bound, we need to be able differentiate between networks
+    - it’s possible to have permission for `0xdeadbeef` on mainnet but not on polygon
+    - it's possible to have permission for `0xdeadbeef` on mainnet and polygon but not on arbitrum
+- > The question of whether the current network is synced between a dApp and the extension popover (the question here is: do internal dApps need the same model to handle this as external dApps?).
+  - [Discussion thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/8Y_PUeEyibY-z698qCsnDp77wGa)
+  - They are not synced
