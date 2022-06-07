@@ -38,8 +38,6 @@
 
 ## dApp Settings
 
-> How do we persist the network of a given dapp? (likely preference service - but maybe a new service?). Also we’ll probably want > an in-memory store as well to avoid doing a bunch of i/o every time we get rpc requests.
-
 This should be broken down into 2 pieces: permission and current connection,
 
 We store these information in services but have a redux slice contain all of these for the UI.
@@ -56,7 +54,7 @@ In that redux slice the permissions are stored with in `NetworkFamily -> chainID
 
 ```
 {
-  permissionRequests: { [url: string]: PermissionRequest },
+  permissionRequests: { [origin: string]: PermissionRequest },
   allowed: {
     [networkFamily: NetworkFamily]: {
       [chainID: string]: {
@@ -110,8 +108,6 @@ This changes when the dApp uses the RPC methods eg. `wallet_switchEthereumChain`
 ```
 
 #### InternalEthereumProviderService
-
-[This issue](https://github.com/tallycash/extension/issues/1532#issuecomment-1139410588) belongs to this topic.
 
 The current connections for the dApps will be stored in the `InternalEthereumProviderService` because the augmentation of current network will be necessary for our internal dApps as well.
 
@@ -176,9 +172,7 @@ These are the following methods:
 
 In this new paradigm we still need to be able to select an initial value to be used.
 
-The global current address and current network should be used as a default network and account. T
-
-his is relevant only relevant in certain situations, listed in the following sections.
+The global current address and current network should be used as a default network and account. This is relevant only relevant in certain situations, listed in the following sections.
 
 ##### Initial active connection
 
@@ -187,25 +181,3 @@ When connecting to a dApp the chainID needs to be set on the window-provider. Th
 When permission is granted the default address and chain should be used if given permission. If not, then the first the was granted.
 
 ❗️The user can change networks e.g. on uniswap before granting permission but there is no way for us to know what it is and the dApp follows what the wallet sets on window-provider. So we can use the default value as active connection when permission is granted.
-
-##### QnA
-
-- > We'll need get rid of activeChain and add network context to every rpc request (context that dapps will not be sending us). Things like eth_estimateGas, eth_getBalance, eth_blockNumber all need a way of being network aware
-  - The lookup of the current dapp context should happen in the `InternalEthereumProviderService` and provide it as a parameter to the chain service calls.
-- > Many dapps periodically ping eth_chainId - we’ll need to refactor our response there to send our persisted chainId for a given > dapp.
-  - We can handle that in the `InternalEthereumProviderService`, the same way we handle the current context lookup.
-- > There’s gonna be complexity in how we handle parts of the code where we dogfood our internal ethereum provider versus parts where we skip that step and call our services directly via main
-  - When we use internal dApps we should use our internal provider path.
-  - For extension specific calls it's ok to make the calls directly through main. See the direct calls we have now. None of these belongs to chain communication, but kind of like utility functionality
-    ```
-    addAccount
-    addOrEditAddressName
-    removeAccount
-    importLedgerAccounts
-    deriveLedgerAddress
-    connectLedger
-    getAccountEthBalanceUncached
-    resolveNameOnNetwork
-    connectPopupMonitor
-    onPopupDisconnected
-    ```
