@@ -244,7 +244,6 @@ export default function NetworkSettingsSelect({
         maxPriorityFeePerGas: customMaxPriorityFeePerGas,
         maxFeePerGas:
           BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
-        network: selectedNetwork,
       })
     )
   }
