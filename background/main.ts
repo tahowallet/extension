@@ -74,6 +74,7 @@ import {
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
+  clearCustomGas,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -1010,6 +1011,7 @@ export default class Main extends BaseService<never> {
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }]
       )
+      this.store.dispatch(clearCustomGas())
     })
   }
 
