@@ -36,12 +36,6 @@
 - [What should be the initial default address and network](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/mFivf2mZ7YAhKm5OPQIfxoVVkoW)
 - [Common address and network for internal dApps or independent](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/-dXUTwSD3bXZ9enPRczVmEoDR1X)
 
-## TODO
-
-- [ ] which methods need the additional chain context / which one have it baked in
-  - > The question of what calls current do or don't carry chain information (the questions here are: what is the delta between where the current RPC sits and where we would like it to in a perfect world where all calls carry chain ids? At what level do we need to track chain id?)
-  - > Let's make an exhaustive list of what methods currently do and don't include `chainId`. For example, I believe `eth_estimateGas` does in fact include it, at least optionally (see [the ethers `TransactionRequest` type](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/abstract-provider/src.ts/index.ts#L28) and [the Ethers `hexlifyTransaction` function](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L671), which is used [in gas estimation](https://github.com/ethers-io/ethers.js/blob/8b62aeff9cce44cbd16ff41f8fc01ebb101f8265/packages/providers/src.ts/json-rpc-provider.ts#L558-L560)).
-
 ## dApp Settings
 
 > How do we persist the network of a given dapp? (likely preference service - but maybe a new service?). Also we’ll probably want > an in-memory store as well to avoid doing a bunch of i/o every time we get rpc requests.
@@ -93,10 +87,9 @@ From the perspective of permissions multi-network or multi-account permission gr
 
 Note: When UI sends multiple permission request in a short period of time — because the UI will be multi-address + multi-network, but we will insert a separate permission for every address+network+origin triplet — we don't need to worry about the indexedDB write performance, because this code path won't be used often and the number of inserted permissions won't be significant.
 
-### Current Connection Per dApps
+⚠️ The methods in `authorization.ts` also needs to be updated to check for chainID. e.g.: `checkPermissionSign`
 
-- [ ] communication flow + events of account changing for a dApp
-- [ ] db structure for internal ethereum provider
+### Current Connection Per dApps
 
 #### Redux
 
@@ -120,11 +113,68 @@ The current connections for the dApps will be stored in the `InternalEthereumPro
 
 Our internal dApps — swap, send etc — will use the global account and network selected.
 
+⚠️ Note: the selected account related solution is currently located in the `PreferenceService`. We need to move the logic to the `InternalEthereumProvider` and migrate the existing settings.
+
+⚠️ Note: the [else here](https://github.com/tallycash/extension/blob/0c12499d711290a0de9f28898be44f87fe6d664f/background/main.ts#L1098) should be removed as part of this work.
+
+##### Initialization flow
+
+- `InternalEthereumService`
+  - on first db initialization it creates the db with the schema
+    - migration will happen in main to avoid dependency circles between `ProviderBridgeService` and `InternalEthereumProvider`
+  - in `internalStartService`
+    - it reads
+      - all the persisted account + network for every dApp that has been granted permission
+      - the current selected account from `PreferenceService`
+    - populates and fires `initializeSelectedAddressOnNetwork`
+      ```
+      interface Events extends ServiceLifecycleEvents {
+        ...
+        initializeSelectedAddressOnNetwork: { [origin: string]: AddressOnNetwork }
+        ...
+      }
+      ```
+- in main there is a listener for `initializeSelectedAddressOnNetwork`
+  - migration mode: (if the payload is empty): it reads all the dapp permissions that has already been granted and
+    - reads all the permissions granted from `ProviderBridgeService` and the selected address
+    - populates the payload with current selected address and network and dispatches the `setSelectedAddressOnNetwork`
+    - calls the `setSelectedAddressOnNetwork` method on `InternalEthereumProvider` which persists all dApps with the current address and network information
+  - normal mode: (if the payload is not empty) dispatches `setSelectedAddressOnNetwork` which overwrites the data in redux
+
+##### Update flow
+
+- User changes network or account in the global selector
+- `setNewSelectedSelectedAddressOnNetwork` is dispatched
+  - ⚠️ note: We don't make the distinction here whether the account or the network was changed. This information will be important in the `window-provider` but it will take care of it in it's own scope.
+  - redux is updated
+- in main we update the [uiSliceEmitter > newAddressOnNetwork listener](https://github.com/tallycash/extension/blob/0c12499d711290a0de9f28898be44f87fe6d664f/background/main.ts#L1110)
+  - persist the change in `InternalEthereumProvider`
+  - notify the content scripts
+  - check referrals
+
+##### Incoming RPC call augmentation flow
+
+Every incoming RPC call from the dApps should be augmented with the information of selected networks.
+This will be done in `InternalEthereumProvider` when calling `ChainService` as an additional argument for the method calls.
+
+‼️ Security concern:
+Based on the [ethereum JSON RPC APIs spec](https://github.com/ethereum/execution-apis) calls that have transactions as a parameter have the chainID. We need to validate, that the call param is the same as one that the user has selected.
+
+These are the following methods:
+
+- `eth_sendRawTransaction`
+- `eth_sendTransaction`
+- `eth_signTransaction`
+- `eth_estimateGas`
+- `eth_call`
+
 ##### Default network and account
 
 In this new paradigm we still need to be able to select an initial value to be used.
 
-The global current address and current network should be used as a default network and account.
+The global current address and current network should be used as a default network and account. T
+
+his is relevant only relevant in certain situations, listed in the following sections.
 
 ##### Initial active connection
 
