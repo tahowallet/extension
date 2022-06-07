@@ -4,6 +4,7 @@ import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
+import { EVM_MAIN_NETWORKS } from "../../constants"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -83,6 +84,25 @@ export class ChainDatabase extends Dexie {
         "&[hash+network.name],hash,from,[from+network.name],to,[to+network.name],nonce,[nonce+from+network.name],blockHash,blockNumber,network.name,firstSeen,dataSource",
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
+    })
+
+    this.version(2).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .toArray()
+        .then((accounts) => {
+          const addresses = new Set<string>()
+
+          accounts.forEach(({ address }) => addresses.add(address))
+
+          EVM_MAIN_NETWORKS.forEach((network) => {
+            ;[...addresses].forEach((address) => {
+              tx.table("accountsToTrack").put({
+                network,
+                address,
+              })
+            })
+          })
+        })
     })
 
     this.chainTransactions.hook(
