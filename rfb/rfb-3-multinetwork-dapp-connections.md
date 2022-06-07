@@ -120,15 +120,11 @@ The current connections for the dApps will be stored in the `InternalEthereumPro
 
 Our internal dApps — swap, send etc — will use the global account and network selected.
 
-⚠️ [Pending product verification](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/-dXUTwSD3bXZ9enPRczVmEoDR1X) We are exploring whether our internal dApps should share a common selected/current address+network or they should be independent. In the meantime we will use the global account + network.
-
 ##### Default network and account
 
 In this new paradigm we still need to be able to select an initial value to be used.
 
 The global current address and current network should be used as a default network and account.
-
-⚠️ [Pending product verification](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/mFivf2mZ7YAhKm5OPQIfxoVVkoW) We are exploring the options on how to handle default network and account when the global selector is gone.
 
 ##### Initial active connection
 
