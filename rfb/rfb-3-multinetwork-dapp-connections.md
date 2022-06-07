@@ -3,7 +3,7 @@
 ## 1. Background
 
 Currently our extension is defaulting to ethereum mainnet, and in many cases we don't have the network as a concept in our data structures.
-We also rely on a global, extension wide account selector.
+We also rely on a global, extension wide account selector and our dApps share the same selected network and account.
 
 ## 2. Proposal
 
@@ -11,7 +11,7 @@ We also rely on a global, extension wide account selector.
 
 We want to change the functionality of our dApp connections to
 
-- decouple dApp connections from the global selector and make it possible for the dApps to operate independently from each other in terms of current account and current network
+- be independent of each other (as a preparatory work for fully decoupling them from extension global state)
 - introduce the concept of networks where it's missing and make it so that we can track reliably throughout the dApp permission handling, and communication cycle.
 
 #### Mental Models
@@ -39,9 +39,7 @@ We want to change the functionality of our dApp connections to
 
 ### 2.2. Implementation
 
-#### dApp Settings
-
-This should be broken down into 2 pieces: permission and current connection,
+This should be broken down into 2 pieces: permission and current connection.
 
 We store these information in services but have a redux slice contain all of these for the UI.
 
@@ -49,9 +47,9 @@ When initializing the app we emit an event from the services with the current pa
 
 So we should refactor the `dapp-permission` slice to be more generic and store all the settings for dApps. Also rename it to be `dapp`.
 
-##### dApp Permissions
+#### dApp Permissions
 
-###### Redux
+##### Redux
 
 In that redux slice the permissions are stored with in `NetworkFamily -> chainID -> address -> object` nested object style.
 
@@ -79,7 +77,7 @@ In that redux slice the permissions are stored with in `NetworkFamily -> chainID
   }
 ```
 
-###### ProviderBridgeService
+##### ProviderBridgeService
 
 Because of the changes in the `PermissionRequest` type we need to create a migration in `ProviderBridgeServiceDatabase`.
 The permissions will be queried often — on every RPC call — but written rarely, so we should optimize for read performance.
@@ -96,7 +94,7 @@ Note: When UI sends multiple permission request in a short period of time — be
 
 #### Current Connection Per dApps
 
-###### Initial active connection
+##### Initial active connection
 
 When connecting to a dApp the chainID needs to be set on the window-provider. The default network should be used for this.
 
@@ -104,7 +102,7 @@ When permission is granted the default address and chain should be used if given
 
 ❗️The user can change networks e.g. on uniswap before granting permission but there is no way for us to know what it is and the dApp follows what the wallet sets on window-provider. So we can use the default value as active connection when permission is granted.
 
-###### Redux
+##### Redux
 
 This would be the other part of the redux slice: dApp URL <> active network, selected account.
 
@@ -118,7 +116,7 @@ This changes when the dApp uses the RPC methods eg. `wallet_switchEthereumChain`
 }
 ```
 
-###### InternalEthereumProviderService
+##### InternalEthereumProviderService
 
 The current connections for the dApps will be stored in the `InternalEthereumProviderService` because the augmentation of current network will be necessary for our internal dApps as well.
 
@@ -128,7 +126,7 @@ Our internal dApps — swap, send etc — will use the global account and networ
 
 ⚠️ Note: the [else here](https://github.com/tallycash/extension/blob/0c12499d711290a0de9f28898be44f87fe6d664f/background/main.ts#L1098) should be removed as part of this work.
 
-####### Initialization flow
+###### Initialization flow
 
 - `InternalEthereumService`
   - on first db initialization it creates the db with the schema
@@ -152,18 +150,18 @@ Our internal dApps — swap, send etc — will use the global account and networ
     - calls the `setSelectedAddressOnNetwork` method on `InternalEthereumProvider` which persists all dApps with the current address and network information
   - normal mode: (if the payload is not empty) dispatches `setSelectedAddressOnNetwork` which overwrites the data in redux
 
-####### Update flow
+###### Update flow
 
 - User changes network or account in the global selector
 - `setNewSelectedSelectedAddressOnNetwork` is dispatched
   - ⚠️ note: We don't make the distinction here whether the account or the network was changed. This information will be important in the `window-provider` but it will take care of it in it's own scope.
-  - redux is updated
+  - redux is updated for every dApp that has been granted permission
 - in main we update the [uiSliceEmitter > newAddressOnNetwork listener](https://github.com/tallycash/extension/blob/0c12499d711290a0de9f28898be44f87fe6d664f/background/main.ts#L1110)
-  - persist the change in `InternalEthereumProvider`
-  - notify the content scripts
+  - persist the change in `InternalEthereumProvider` for every dApp that has been granted permission
+  - notify the content scripts for every dApp that has an live connection / open port
   - check referrals
 
-####### Incoming RPC call augmentation flow
+###### Incoming RPC call augmentation flow
 
 Every incoming RPC call from the dApps should be augmented with the information of selected networks.
 This will be done in `InternalEthereumProvider` when calling `ChainService` as an additional argument for the method calls.
