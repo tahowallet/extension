@@ -52,13 +52,17 @@ So we should refactor the `dapp-permission` slice to be more generic and store a
 
 #### Redux
 
-In that redux slice the permissions are stored with in `chainID -> address -> object` nested object style.
+In that redux slice the permissions are stored with in `NetworkFamily -> chainID -> address -> object` nested object style.
 
 ```
 {
   permissionRequests: { [url: string]: PermissionRequest },
-  allowed: { [chainID: string | number]: {
-      [address: string]: { [origin: string]: PermissionRequest }
+  allowed: {
+    [networkFamily: NetworkFamily]: {
+      [chainID: string]: {
+        [address: string]: { [origin: string]: PermissionRequest }
+      }
+    }
   },
   activeConnections: ...
 }
