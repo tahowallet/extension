@@ -1,10 +1,8 @@
 import ChainService from "../../chain"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ETHEREUM, POLYGON } from "../../../constants"
+import { ETHEREUM, EVM_MAIN_NETWORKS } from "../../../constants"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
-
-const supportedNetworks = [ETHEREUM, POLYGON]
 
 export default function ensResolverFor(
   chainService: ChainService
@@ -23,7 +21,7 @@ export default function ensResolverFor(
     canAttemptAddressResolution({ name, network }: NameOnNetwork): boolean {
       return (
         name.endsWith(".eth") &&
-        supportedNetworks.some((supportedNetwork) =>
+        EVM_MAIN_NETWORKS.some((supportedNetwork) =>
           sameNetwork(network, supportedNetwork)
         )
       )
