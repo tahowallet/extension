@@ -96,6 +96,8 @@ Note: When UI sends multiple permission request in a short period of time — be
 
 ##### Initial active connection
 
+Default account and network: The global current address and current network should be used as a default network and account, until pending future work overrides it.
+
 When connecting to a dApp the chainID needs to be set on the window-provider. The default network should be used for this.
 
 When permission is granted the default address and chain should be used if given permission. If not, then the first the was granted.
