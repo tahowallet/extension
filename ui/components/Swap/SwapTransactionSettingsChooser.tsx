@@ -84,18 +84,8 @@ export default function SwapTransactionSettingsChooser({
                   estimatedFeesPerGas={estimatedFeesPerGas}
                   networkSettings={swapTransactionSettings.networkSettings}
                   onNetworkSettingsChange={setNetworkSettings}
+                  onSave={saveSettings}
                 />
-              </div>
-              <div className="row">
-                <div className="confirm">
-                  <SharedButton
-                    size="medium"
-                    type="primary"
-                    onClick={saveSettings}
-                  >
-                    Save settings
-                  </SharedButton>
-                </div>
               </div>
             </div>
           </SharedSlideUpMenu>
@@ -132,6 +122,9 @@ export default function SwapTransactionSettingsChooser({
             width: 100%;
             display: flex;
             justify-content: flex-end;
+            position: fixed;
+            bottom: 13px;
+            left: 0px;
           }
           .labels_wrap {
             border-radius: 4px;
@@ -152,7 +145,7 @@ export default function SwapTransactionSettingsChooser({
           .row_slippage {
             display: flex;
             justify-content: space-between;
-            padding-bottom: 8px;
+            padding-bottom: 30px;
           }
           .row_fee {
             flex-direction: column;

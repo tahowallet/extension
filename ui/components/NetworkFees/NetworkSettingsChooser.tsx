@@ -36,18 +36,9 @@ export default function NetworkSettingsChooser({
           estimatedFeesPerGas={estimatedFeesPerGas}
           networkSettings={networkSettings}
           onNetworkSettingsChange={setNetworkSettings}
+          onSave={saveNetworkSettings}
         />
-        <div className="confirm">
-          <SharedButton
-            size="medium"
-            type="primary"
-            onClick={saveNetworkSettings}
-          >
-            Save settings
-          </SharedButton>
-        </div>
       </div>
-
       <style jsx>
         {`
           .wrapper {

@@ -30,11 +30,13 @@ import {
   NetworkSettingsSelectOptionButton,
   NetworkSettingsSelectOptionButtonCustom,
 } from "./NetworkSettingsSelectOptionButtons"
+import SharedButton from "../Shared/SharedButton"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   networkSettings: NetworkFeeSettings
   onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
+  onSave: () => void
 }
 
 // Map a BlockEstimate from the backend to a GasOption for the UI.
@@ -120,6 +122,7 @@ export default function NetworkSettingsSelect({
   estimatedFeesPerGas,
   networkSettings,
   onNetworkSettingsChange,
+  onSave,
 }: NetworkSettingsSelectProps): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -285,43 +288,50 @@ export default function NetworkSettingsSelect({
           </>
         )
       })}
-      <div className="info">
-        <div className="limit">
-          <SharedTypedInput
-            id="gasLimit"
-            value={networkSettings.gasLimit?.toString() ?? ""}
-            placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
-            onChange={setGasLimit}
-            parseAndValidate={(value) => {
-              if (value.trim() === "") {
-                return { parsed: undefined }
-              }
-              try {
-                const parsed = BigInt(value)
-                if (parsed < 0n) {
-                  return {
-                    error: "Gas Limit must be greater than 0",
-                  }
+      <footer>
+        <div className="info">
+          <div className="limit">
+            <SharedTypedInput
+              id="gasLimit"
+              value={networkSettings.gasLimit?.toString() ?? ""}
+              placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
+              onChange={setGasLimit}
+              parseAndValidate={(value) => {
+                if (value.trim() === "") {
+                  return { parsed: undefined }
                 }
+                try {
+                  const parsed = BigInt(value)
+                  if (parsed < 0n) {
+                    return {
+                      error: "Gas Limit must be greater than 0",
+                    }
+                  }
 
-                return { parsed }
-              } catch (e) {
-                return { error: "Gas Limit must be a number" }
-              }
-            }}
-            label="Gas limit"
-            type="number"
-            focusedLabelBackgroundColor="var(--green-95)"
-            step={1000}
-          />
-        </div>
-        <div className="max_fee">
-          <span className="max_label">Total Max</span>
-          <div className="price">
-            {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+                  return { parsed }
+                } catch (e) {
+                  return { error: "Gas Limit must be a number" }
+                }
+              }}
+              label="Gas limit"
+              type="number"
+              focusedLabelBackgroundColor="var(--green-95)"
+              step={1000}
+            />
+          </div>
+          <div className="max_fee">
+            <span className="max_label">Total Max</span>
+            <div className="price">
+              {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+            </div>
           </div>
         </div>
-      </div>
+        <div className="confirm">
+          <SharedButton size="medium" type="primary" onClick={onSave}>
+            Save settings
+          </SharedButton>
+        </div>
+      </footer>
       <style jsx>
         {`
           .max_fee {
@@ -341,10 +351,18 @@ export default function NetworkSettingsSelect({
             margin-top: 42px;
             margin-bottom: 6px;
           }
+          footer {
+            position: fixed;
+            bottom: 16px;
+            width: inherit;
+          }
           .limit {
             margin: 16px 0;
             width: 40%;
             position: relative;
+          }
+          .confirm {
+            float: right;
           }
         `}
       </style>
