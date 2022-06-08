@@ -5,14 +5,18 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
-  CoinGeckoAsset,
   FungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { FIAT_CURRENCIES, USD, BASE_ASSETS } from "../../constants"
+import {
+  FIAT_CURRENCIES,
+  USD,
+  BASE_ASSETS,
+  EVM_MAIN_NETWORKS,
+} from "../../constants"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -113,7 +117,7 @@ export default class IndexingService extends BaseService<Events> {
     this.connectChainServiceEvents()
 
     // on launch, push any assets we have cached for all supported networks
-    this.chainService.supportedNetworks.forEach(async (network) => {
+    EVM_MAIN_NETWORKS.forEach(async (network) => {
       this.emitter.emit("assets", await this.getCachedAssets(network))
     })
 
@@ -556,9 +560,9 @@ export default class IndexingService extends BaseService<Events> {
     const activeAssetsToTrack = assetsToTrack.filter(
       (asset) =>
         asset.symbol === "ETH" ||
-        this.chainService.supportedNetworks
-          .map((n) => n.chainID)
-          .includes(asset.homeNetwork.chainID)
+        EVM_MAIN_NETWORKS.map((n) => n.chainID).includes(
+          asset.homeNetwork.chainID
+        )
     )
 
     try {
@@ -635,7 +639,7 @@ export default class IndexingService extends BaseService<Events> {
           }
         }
 
-        this.chainService.supportedNetworks.forEach(async (network) => {
+        EVM_MAIN_NETWORKS.forEach(async (network) => {
           this.emitter.emit("assets", await this.getCachedAssets(network))
         })
       })
@@ -660,9 +664,9 @@ export default class IndexingService extends BaseService<Events> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      this.chainService.supportedNetworks
-        .map((n) => n.chainID)
-        .includes(asset.homeNetwork.chainID)
+      EVM_MAIN_NETWORKS.map((n) => n.chainID).includes(
+        asset.homeNetwork.chainID
+      )
     )
 
     // wait on balances being written to the db, don't wait on event emission

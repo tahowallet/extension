@@ -1,5 +1,10 @@
 import { EVMNetwork, Network } from "../networks"
 import { BTC, ETH, MATIC } from "./currencies"
+import {
+  SUPPORT_POLYGON,
+  SUPPORT_ARBITRUM,
+  SUPPORT_OPTIMISM,
+} from "../features"
 
 // TODO integrate this with /api/networks
 
@@ -71,8 +76,12 @@ export const FORK: EVMNetwork = {
   chainID: process.env.MAINNET_FORK_CHAIN_ID ?? "1337",
   family: "EVM",
 }
-
-export const EVM_MAIN_NETWORKS = [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
+export const EVM_MAIN_NETWORKS = [
+  ETHEREUM,
+  ...(SUPPORT_POLYGON ? [POLYGON] : []),
+  ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
+  ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
+]
 
 export const EVM_TEST_NETWORKS = [ROPSTEN, RINKEBY, GOERLI, KOVAN]
 
