@@ -48,6 +48,12 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
+import t from "../utils/i18n"
+
+const REQUESTED_QUOTE = {
+  BUY: "buy",
+  SELL: "sell",
+}
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -265,18 +271,15 @@ export default function Swap(): ReactElement {
 
   const approveAsset = async () => {
     if (typeof sellAsset === "undefined") {
-      logger.error("Attempting to approve transfer without a sell asset.")
+      logger.error(t("swapErrorNoSellAsset"))
       return
     }
     if (typeof approvalTarget === "undefined") {
-      logger.error("Attempting to approve transfer without an approval target.")
+      logger.error(t("swapErrorNoApprovalTarget"))
       return
     }
     if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(
-        "Attempting to approve transfer of a non-contract asset.",
-        sellAsset
-      )
+      logger.error(t("swapErrorNonContractAsset"), sellAsset)
       return
     }
 
@@ -290,24 +293,25 @@ export default function Swap(): ReactElement {
 
   const updateSwapData = useCallback(
     async (
-      requestedQuote: "buy" | "sell",
+      requestedQuote: REQUESTED_QUOTE.BUY | REQUESTED_QUOTE.SELL,
       amount: string,
       // Fixed asset in the swap.
       fixedAsset?: SmartContractFungibleAsset | FungibleAsset | undefined,
       quoteAsset?: SmartContractFungibleAsset | FungibleAsset | undefined
     ): Promise<void> => {
-      if (requestedQuote === "sell") {
+      if (requestedQuote === REQUESTED_QUOTE.SELL) {
         setBuyAmount("")
       } else {
         setSellAmount("")
       }
 
       const quoteSellAsset =
-        requestedQuote === "buy"
+        requestedQuote === REQUESTED_QUOTE.BUY
           ? fixedAsset ?? sellAsset
           : quoteAsset ?? sellAsset
       const quoteBuyAsset =
-        requestedQuote === "sell" && typeof fixedAsset !== "undefined"
+        requestedQuote === REQUESTED_QUOTE.SELL &&
+        typeof fixedAsset !== "undefined"
           ? fixedAsset ?? buyAsset
           : quoteAsset ?? buyAsset
 
@@ -326,7 +330,7 @@ export default function Swap(): ReactElement {
           buyAsset: quoteBuyAsset,
         },
         amount:
-          requestedQuote === "sell"
+          requestedQuote === REQUESTED_QUOTE.SELL
             ? { sellAmount: amount }
             : { buyAmount: amount },
         slippageTolerance: swapTransactionSettings.slippageTolerance,
@@ -341,7 +345,7 @@ export default function Swap(): ReactElement {
         setSellAmountLoading(false)
       }
 
-      if (requestedQuote === "sell") {
+      if (requestedQuote === REQUESTED_QUOTE.SELL) {
         setBuyAmountLoading(true)
       } else {
         setSellAmountLoading(true)
@@ -385,7 +389,7 @@ export default function Swap(): ReactElement {
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
 
-        if (requestedQuote === "sell") {
+        if (requestedQuote === REQUESTED_QUOTE.SELL) {
           setBuyAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.buyAmount),
@@ -412,7 +416,7 @@ export default function Swap(): ReactElement {
       setSellAsset(asset)
       // Updating the sell asset quotes the new sell asset against the existing
       // buy amount.
-      updateSwapData("buy", buyAmount, asset)
+      updateSwapData(REQUESTED_QUOTE.BUY, buyAmount, asset)
     },
     [buyAmount, updateSwapData]
   )
@@ -421,7 +425,7 @@ export default function Swap(): ReactElement {
       setBuyAsset(asset)
       // Updating the buy asset quotes the new buy asset against the existing
       // sell amount.
-      updateSwapData("sell", sellAmount, asset)
+      updateSwapData(REQUESTED_QUOTE.SELL, sellAmount, asset)
     },
     [sellAmount, updateSwapData]
   )
@@ -431,7 +435,7 @@ export default function Swap(): ReactElement {
     setBuyAsset(sellAsset)
     setSellAmount(buyAmount)
 
-    updateSwapData("sell", buyAmount, sellAsset, buyAsset)
+    updateSwapData(REQUESTED_QUOTE.SELL, buyAmount, sellAsset, buyAsset)
   }, [buyAmount, buyAsset, sellAsset, updateSwapData])
 
   useEffect(() => {
@@ -441,7 +445,9 @@ export default function Swap(): ReactElement {
       typeof savedSellAsset !== "undefined"
     ) {
       updateSwapData(
-        "sellAmount" in savedSwapAmount ? "sell" : "buy",
+        "sellAmount" in savedSwapAmount
+          ? REQUESTED_QUOTE.SELL
+          : REQUESTED_QUOTE.BUY,
         "sellAmount" in savedSwapAmount
           ? savedSwapAmount.sellAmount
           : savedSwapAmount.buyAmount,
@@ -484,7 +490,7 @@ export default function Swap(): ReactElement {
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <div className="header">
-            <SharedActivityHeader label="Swap Assets" activity="swap" />
+            <SharedActivityHeader label={t("swapTitle")} activity="swap" />
             {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
@@ -529,7 +535,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("sell", newAmount)
                   }
                 }}
-                label="Swap from:"
+                label={t("swapFrom")}
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
@@ -550,7 +556,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("buy", newAmount)
                   }
                 }}
-                label="Swap to:"
+                label={t("swapTo")}
               />
             </div>
             <div className="settings_wrap">
@@ -599,7 +605,7 @@ export default function Swap(): ReactElement {
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
                   >
-                    Get final quote
+                    {t("swapGetFinalQuote")}
                   </SharedButton>
                 )
               }
