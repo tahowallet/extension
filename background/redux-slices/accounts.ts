@@ -8,7 +8,7 @@ import {
   AssetDecimalAmount,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
-import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
+import { normalizeEVMAddress } from "../lib/utils"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -92,8 +92,20 @@ export const initialState = {
 function newAccountData(
   address: HexString,
   network: EVMNetwork,
-  existingAccountsCount: number
+  accountsState: AccountState
 ): AccountData {
+  const existingAccountsCount = Object.keys(
+    accountsState.accountsData.evm[network.chainID]
+  ).filter((key) => key !== address).length
+
+  const sameAccountOnDifferentChain = Object.values(
+    accountsState.accountsData.evm
+  )
+    .flatMap((chain) => Object.values(chain))
+    .find(
+      (accountData): accountData is AccountData =>
+        accountData !== "loading" && accountData.address === address
+    )
   const defaultNameIndex =
     // Skip potentially-used names at the beginning of the array if relevant,
     // see below.
@@ -107,7 +119,9 @@ function newAccountData(
             (existingAccountsCount % availableDefaultNames.length)
         )
     )
-  const defaultAccountName = availableDefaultNames[defaultNameIndex]
+  const defaultAccountName =
+    sameAccountOnDifferentChain?.defaultName ??
+    availableDefaultNames[defaultNameIndex]
 
   // Move used default names to the start so they can be skipped above.
   availableDefaultNames.splice(defaultNameIndex, 1)
@@ -126,15 +140,16 @@ function newAccountData(
 }
 
 function getOrCreateAccountData(
-  data: AccountData | "loading",
+  accountState: AccountState,
   account: HexString,
-  network: EVMNetwork,
-  existingAccountsCount: number
+  network: EVMNetwork
 ): AccountData {
-  if (data === "loading" || !data) {
-    return newAccountData(account, network, existingAccountsCount)
+  const accountData = accountState.accountsData.evm[network.chainID][account]
+
+  if (accountData === "loading" || !accountData) {
+    return newAccountData(account, network, accountState)
   }
-  return data
+  return accountData
 }
 
 // TODO Much of the combinedData bits should probably be done in a Reselect
@@ -220,13 +235,7 @@ const accountSlice = createSlice({
           immerState.accountsData.evm[network.chainID][normalizedAddress] = {
             // TODO Figure out the best way to handle default name assignment
             // TODO across networks.
-            ...newAccountData(
-              address,
-              network,
-              Object.keys(immerState.accountsData.evm[network.chainID]).filter(
-                (key) => !sameEVMAddress(key, address)
-              ).length
-            ),
+            ...newAccountData(address, network, immerState),
             balances: {
               [updatedAssetSymbol]: updatedAccountBalance,
             },
@@ -282,12 +291,9 @@ const accountSlice = createSlice({
       const baseAccountData = getOrCreateAccountData(
         // TODO Figure out the best way to handle default name assignment
         // TODO across networks.
-        immerState.accountsData.evm[network.chainID][normalizedAddress],
+        immerState,
         normalizedAddress,
-        network,
-        Object.keys(immerState.accountsData.evm[network.chainID]).filter(
-          (key) => key !== normalizedAddress
-        ).length
+        network
       )
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
@@ -317,12 +323,9 @@ const accountSlice = createSlice({
       // TODO Figure out the best way to handle default name assignment
       // TODO across networks.
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData.evm[network.chainID][normalizedAddress],
+        immerState,
         normalizedAddress,
-        network,
-        Object.keys(immerState.accountsData.evm[network.chainID]).filter(
-          (key) => key !== normalizedAddress
-        ).length
+        network
       )
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
