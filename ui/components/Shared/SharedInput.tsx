@@ -12,6 +12,7 @@ interface Props<T> {
   onChange?: (value: T | undefined) => void
   onFocus?: () => void
   errorMessage?: string
+  warningMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
   parseAndValidate: (
@@ -32,6 +33,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     onFocus,
     value: currentValue,
     errorMessage,
+    warningMessage,
     step = undefined,
     autoFocus = false,
     autoSelect = false,
@@ -87,10 +89,13 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
       />
       <label htmlFor={id}>{label}</label>
       {!isEmpty && errorMessage && (
-        <div className="error_message">{errorMessage}</div>
+        <div className="validation_message">{errorMessage}</div>
+      )}
+      {!isEmpty && warningMessage && (
+        <div className="validation_message warning">{warningMessage}</div>
       )}
       {!isEmpty && parserError && (
-        <div className="error_message">{parserError}</div>
+        <div className="validation_message">{parserError}</div>
       )}
       <style jsx>
         {`
@@ -114,7 +119,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           .error {
             border-color: var(--error);
           }
-          .error_message {
+          .validation_message {
             color: var(--error);
             position: absolute;
             font-weight: 500;
@@ -122,6 +127,9 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             line-height: 20px;
             margin-top: 3px;
             margin-left: 5px;
+          }
+          .warning {
+            color: var(--trophy-gold);
           }
           label {
             position: absolute;

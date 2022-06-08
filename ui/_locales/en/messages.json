@@ -15,10 +15,6 @@
     "message": "Assets",
     "description": "in Overview page"
   },
-  "totalAccountBalance": {
-    "message": "Total account balance",
-    "description": "in Overview > WalletAccountBalanceControl"
-  },
   "overviewTableHeaderAsset": {
     "message": "Asset",
     "description": "in Overview > AssetsTable"
@@ -31,9 +27,69 @@
     "message": "Balance",
     "description": "in Overview > AssetsTable"
   },
+  "protocolMainnet": {
+    "message": "Mainnet",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "protocolL2": {
+    "message": "L2 scaling solution",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "protocolCompatibleChain": {
+    "message": "Ethereum-compatible blockchain",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "protocolConnected": {
+    "message": "Connected",
+    "description": "in TopMenu > TopMenuProtocolListItem"
+  },
   "readOnlyNotice": {
     "message": "Read-only mode",
     "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "totalAccountBalance": {
+    "message": "Total account balance",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletSend": {
+    "message": "Send",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletReceive": {
+    "message": "Receive",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletSecureSeed": {
+    "message": "First, secure your recovery seed",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletSendAsset": {
+    "message": "Send Asset",
+    "description": "in pages > Send"
+  },
+  "walletAssetAmount": {
+    "message": "Asset / Amount",
+    "description": "in pages > Send"
+  },
+  "walletSendTo": {
+    "message": "Send To:",
+    "description": "in pages > Send"
+  },
+  "walletEstimatedFee": {
+    "message": "Estimated network fee",
+    "description": "in pages > Send"
+  },
+  "walletSendButton": {
+    "message": "Send",
+    "description": "in pages > Send"
+  },
+  "walletReceiveAddress": {
+    "message": "Receive address",
+    "description": "in pages > Receive"
+  },
+  "walletReceiveAddressDesc": {
+    "message": "Only send Ethereum Mainnet compatible assets to this address.",
+    "description": "in pages > Receive"
   },
   "menuMainMenu": {
     "message": "Main menu",
