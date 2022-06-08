@@ -4,7 +4,7 @@ import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 
 interface Props<T> {
   id?: string
-  label: string
+  label?: string
   focusedLabelBackgroundColor: string
   placeholder?: string
   type: "password" | "text" | "number"
@@ -20,7 +20,7 @@ interface Props<T> {
   ) => { parsed: T | undefined } | { error: string }
   step?: number
   isEmpty?: boolean
-  isSmall: boolean
+  isSmall?: boolean
 }
 
 export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
