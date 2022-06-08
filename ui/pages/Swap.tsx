@@ -50,11 +50,6 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import t from "../utils/i18n"
 
-const REQUESTED_QUOTE = {
-  BUY: "buy",
-  SELL: "sell",
-}
-
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
   if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
@@ -293,25 +288,24 @@ export default function Swap(): ReactElement {
 
   const updateSwapData = useCallback(
     async (
-      requestedQuote: REQUESTED_QUOTE.BUY | REQUESTED_QUOTE.SELL,
+      requestedQuote: "buy" | "sell",
       amount: string,
       // Fixed asset in the swap.
       fixedAsset?: SmartContractFungibleAsset | FungibleAsset | undefined,
       quoteAsset?: SmartContractFungibleAsset | FungibleAsset | undefined
     ): Promise<void> => {
-      if (requestedQuote === REQUESTED_QUOTE.SELL) {
+      if (requestedQuote === "sell") {
         setBuyAmount("")
       } else {
         setSellAmount("")
       }
 
       const quoteSellAsset =
-        requestedQuote === REQUESTED_QUOTE.BUY
+        requestedQuote === "buy"
           ? fixedAsset ?? sellAsset
           : quoteAsset ?? sellAsset
       const quoteBuyAsset =
-        requestedQuote === REQUESTED_QUOTE.SELL &&
-        typeof fixedAsset !== "undefined"
+        requestedQuote === "sell" && typeof fixedAsset !== "undefined"
           ? fixedAsset ?? buyAsset
           : quoteAsset ?? buyAsset
 
@@ -330,7 +324,7 @@ export default function Swap(): ReactElement {
           buyAsset: quoteBuyAsset,
         },
         amount:
-          requestedQuote === REQUESTED_QUOTE.SELL
+          requestedQuote === "sell"
             ? { sellAmount: amount }
             : { buyAmount: amount },
         slippageTolerance: swapTransactionSettings.slippageTolerance,
@@ -345,7 +339,7 @@ export default function Swap(): ReactElement {
         setSellAmountLoading(false)
       }
 
-      if (requestedQuote === REQUESTED_QUOTE.SELL) {
+      if (requestedQuote === "sell") {
         setBuyAmountLoading(true)
       } else {
         setSellAmountLoading(true)
@@ -389,7 +383,7 @@ export default function Swap(): ReactElement {
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
 
-        if (requestedQuote === REQUESTED_QUOTE.SELL) {
+        if (requestedQuote === "sell") {
           setBuyAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.buyAmount),
@@ -416,7 +410,7 @@ export default function Swap(): ReactElement {
       setSellAsset(asset)
       // Updating the sell asset quotes the new sell asset against the existing
       // buy amount.
-      updateSwapData(REQUESTED_QUOTE.BUY, buyAmount, asset)
+      updateSwapData("buy", buyAmount, asset)
     },
     [buyAmount, updateSwapData]
   )
@@ -425,7 +419,7 @@ export default function Swap(): ReactElement {
       setBuyAsset(asset)
       // Updating the buy asset quotes the new buy asset against the existing
       // sell amount.
-      updateSwapData(REQUESTED_QUOTE.SELL, sellAmount, asset)
+      updateSwapData("sell", sellAmount, asset)
     },
     [sellAmount, updateSwapData]
   )
@@ -435,7 +429,7 @@ export default function Swap(): ReactElement {
     setBuyAsset(sellAsset)
     setSellAmount(buyAmount)
 
-    updateSwapData(REQUESTED_QUOTE.SELL, buyAmount, sellAsset, buyAsset)
+    updateSwapData("sell", buyAmount, sellAsset, buyAsset)
   }, [buyAmount, buyAsset, sellAsset, updateSwapData])
 
   useEffect(() => {
@@ -445,9 +439,7 @@ export default function Swap(): ReactElement {
       typeof savedSellAsset !== "undefined"
     ) {
       updateSwapData(
-        "sellAmount" in savedSwapAmount
-          ? REQUESTED_QUOTE.SELL
-          : REQUESTED_QUOTE.BUY,
+        "sellAmount" in savedSwapAmount ? "sell" : "buy",
         "sellAmount" in savedSwapAmount
           ? savedSwapAmount.sellAmount
           : savedSwapAmount.buyAmount,
