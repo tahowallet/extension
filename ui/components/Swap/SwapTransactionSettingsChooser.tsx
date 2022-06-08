@@ -76,9 +76,6 @@ export default function SwapTransactionSettingsChooser({
                 <span className="settings_label">Slippage tolerance</span>
                 <span>1%</span>
               </div>
-              <span className="settings_label network_fee_label">
-                Network fees (Gwei)
-              </span>
               <div className="row row_fee">
                 <NetworkSettingsSelect
                   estimatedFeesPerGas={estimatedFeesPerGas}

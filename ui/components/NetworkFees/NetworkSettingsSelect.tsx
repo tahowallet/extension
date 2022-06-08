@@ -263,6 +263,9 @@ export default function NetworkSettingsSelect({
 
   return (
     <div className="fees standard_width">
+      <span className="settings_label network_fee_label">
+        Network fees (Gwei)
+      </span>
       {gasOptions.map((option, i) => {
         return (
           <>
@@ -334,6 +337,17 @@ export default function NetworkSettingsSelect({
       </footer>
       <style jsx>
         {`
+          .settings_label {
+            color: var(--green-5);
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+          }
+          .network_fee_label {
+            width: 100%;
+            display: block;
+            margin-bottom: 10px;
+          }
           .max_fee {
             display: flex;
             flex-flow: column;
