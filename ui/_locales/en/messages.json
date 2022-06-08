@@ -135,6 +135,26 @@
     "message": "Insufficient balance",
     "description": "in Shared > SharedAssetInput"
   },
+  "transactionSettingsTitle": {
+    "message": "Transaction settings",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsSlippageTolerance": {
+    "message": "Slippage tolerance",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsSettings": {
+    "message": "Transaction settings",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsEstimatedFee": {
+    "message": "Estimated network fee",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsDAOFee": {
+    "message": "Tally Ho fee for the DAO",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
   "menuMainMenu": {
     "message": "Main menu",
     "description": "in pages > Menu"
