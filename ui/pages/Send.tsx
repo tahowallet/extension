@@ -38,6 +38,7 @@ import {
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import t from "../utils/i18n"
 
 export default function Send(): ReactElement {
   const location = useLocation<FungibleAsset>()
@@ -155,12 +156,12 @@ export default function Send(): ReactElement {
         </div>
         <h1 className="header">
           <span className="icon_activity_send_medium" />
-          <div className="title">Send Asset</div>
+          <div className="title">{t("walletSendAsset")}</div>
         </h1>
         <div className="form">
           <div className="form_input">
             <SharedAssetInput
-              label="Asset / Amount"
+              label={t("walletAssetAmount")}
               onAssetSelect={setSelectedAsset}
               assetsAndAmounts={fungibleAssetAmounts}
               onAmountChange={(value, errorMessage) => {
@@ -179,7 +180,7 @@ export default function Send(): ReactElement {
             </div>
           </div>
           <div className="form_input send_to_field">
-            <label htmlFor="send_address">Send To:</label>
+            <label htmlFor="send_address">{t("walletSendTo")}</label>
             <input
               id="send_address"
               type="text"
@@ -215,7 +216,7 @@ export default function Send(): ReactElement {
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
-            <p>Estimated network fee</p>
+            <p>{t("walletEstimatedFee")}</p>
             <FeeSettingsButton
               onClick={() => setNetworkSettingsModalOpen(true)}
             />
@@ -234,7 +235,7 @@ export default function Send(): ReactElement {
               isFormSubmit
               isLoading={isSendingTransactionRequest}
             >
-              Send
+              {t("walletSendButton")}
             </SharedButton>
           </div>
         </div>

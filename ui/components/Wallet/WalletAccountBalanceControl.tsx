@@ -173,7 +173,7 @@ export default function WalletAccountBalanceControl(
                     linkTo="/send"
                     iconPosition="left"
                   >
-                    Send
+                    {t("walletSend")}
                   </SharedButton>
                   <SharedButton
                     onClick={handleClick}
@@ -182,7 +182,7 @@ export default function WalletAccountBalanceControl(
                     type="tertiary"
                     iconPosition="left"
                   >
-                    Receive
+                    {t("walletReceive")}
                   </SharedButton>
                 </div>
               ) : (
@@ -193,7 +193,7 @@ export default function WalletAccountBalanceControl(
                     type="warning"
                     linkTo="/onboarding/2"
                   >
-                    First, secure your recovery seed
+                    {t("walletSecureSeed")}
                   </SharedButton>
                 </div>
               )}
