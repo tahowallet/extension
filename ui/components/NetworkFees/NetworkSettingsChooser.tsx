@@ -45,8 +45,8 @@ export default function NetworkSettingsChooser({
             height: 100%;
             display: flex;
             flex-flow: column;
-            justify-content: space-between;
             margin-left: 12px;
+            align-items: center;
           }
           .fees {
             background-color: var(--green-95);
@@ -86,7 +86,7 @@ export default function NetworkSettingsChooser({
             background-color: var(--hunter-green);
             width: 100%;
             display: flex;
-            position: absolute;
+            position: fixed;
             bottom: 0;
             right: 0;
             box-sizing: border-box;
