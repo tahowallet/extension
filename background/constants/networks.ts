@@ -1,10 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
 import { BTC, ETH, MATIC } from "./currencies"
-import {
-  SUPPORT_POLYGON,
-  SUPPORT_ARBITRUM,
-  SUPPORT_OPTIMISM,
-} from "../features"
 
 // TODO integrate this with /api/networks
 
