@@ -229,8 +229,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           }
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
       }
-      // eslint-disable-next-line no-fallthrough
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
