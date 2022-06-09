@@ -32,7 +32,6 @@ export class InternalEtheremProviderDatabase extends Dexie {
     chainId: string,
     origin: string
   ): Promise<string | undefined> {
-    await this.activeChainId.where({ origin }).delete()
     return this.activeChainId.put({ origin, chainId })
   }
 
