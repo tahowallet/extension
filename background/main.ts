@@ -74,6 +74,7 @@ import {
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
+  clearCustomGas,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -107,7 +108,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM } from "./constants"
+import { ETHEREUM, EVM_MAIN_NETWORKS } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
@@ -791,23 +792,19 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
-      // FIXME Should be .selectedNetwork once that exists.
-      // FIXME Also, UI-wise, is this correct behavior? It ties the current
-      // FIXME acount (right-side popover) to the network (left-side popover)
-      // FIXME in a weird way.
-      const selectedNetwork = this.store.getState().ui.selectedAccount.network
+      EVM_MAIN_NETWORKS.forEach((network) => {
+        // Mark as loading and wire things up.
+        this.store.dispatch(
+          loadAccount({
+            address,
+            network,
+          })
+        )
 
-      // Mark as loading and wire things up.
-      this.store.dispatch(
-        loadAccount({
+        this.chainService.addAccountToTrack({
           address,
-          network: selectedNetwork,
+          network,
         })
-      )
-
-      this.chainService.addAccountToTrack({
-        address,
-        network: selectedNetwork,
       })
     })
 
@@ -1014,6 +1011,7 @@ export default class Main extends BaseService<never> {
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }]
       )
+      this.store.dispatch(clearCustomGas())
     })
   }
 

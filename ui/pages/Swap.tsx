@@ -48,6 +48,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
+import t from "../utils/i18n"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -265,18 +266,15 @@ export default function Swap(): ReactElement {
 
   const approveAsset = async () => {
     if (typeof sellAsset === "undefined") {
-      logger.error("Attempting to approve transfer without a sell asset.")
+      logger.error(t("swapErrorNoSellAsset"))
       return
     }
     if (typeof approvalTarget === "undefined") {
-      logger.error("Attempting to approve transfer without an approval target.")
+      logger.error(t("swapErrorNoApprovalTarget"))
       return
     }
     if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(
-        "Attempting to approve transfer of a non-contract asset.",
-        sellAsset
-      )
+      logger.error(t("swapErrorNonContractAsset"), sellAsset)
       return
     }
 
@@ -484,7 +482,7 @@ export default function Swap(): ReactElement {
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <div className="header">
-            <SharedActivityHeader label="Swap Assets" activity="swap" />
+            <SharedActivityHeader label={t("swapTitle")} activity="swap" />
             {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
@@ -529,7 +527,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("sell", newAmount)
                   }
                 }}
-                label="Swap from:"
+                label={t("swapFrom")}
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
@@ -550,7 +548,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("buy", newAmount)
                   }
                 }}
-                label="Swap to:"
+                label={t("swapTo")}
               />
             </div>
             <div className="settings_wrap">
@@ -599,7 +597,7 @@ export default function Swap(): ReactElement {
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
                   >
-                    Get final quote
+                    {t("swapGetFinalQuote")}
                   </SharedButton>
                 )
               }

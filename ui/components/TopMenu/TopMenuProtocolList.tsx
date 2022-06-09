@@ -4,6 +4,11 @@ import {
   OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
+import {
+  SUPPORT_ARBITRUM,
+  SUPPORT_OPTIMISM,
+  SUPPORT_POLYGON,
+} from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
@@ -18,24 +23,36 @@ const listItemInfo = [
     width: 18,
     height: 29,
   },
-  {
-    network: POLYGON,
-    info: t("protocolL2"),
-    width: 24,
-    height: 24,
-  },
-  {
-    network: ARBITRUM_ONE,
-    info: t("protocolL2"),
-    width: 23.2,
-    height: 26,
-  },
-  {
-    network: OPTIMISM,
-    info: t("protocolL2"),
-    width: 24,
-    height: 24,
-  },
+  ...(SUPPORT_POLYGON
+    ? [
+        {
+          network: POLYGON,
+          info: t("protocolL2"),
+          width: 24,
+          height: 24,
+        },
+      ]
+    : []),
+  ...(SUPPORT_ARBITRUM
+    ? [
+        {
+          network: ARBITRUM_ONE,
+          info: t("protocolL2"),
+          width: 23.2,
+          height: 26,
+        },
+      ]
+    : []),
+  ...(SUPPORT_OPTIMISM
+    ? [
+        {
+          network: OPTIMISM,
+          info: t("protocolL2"),
+          width: 24,
+          height: 24,
+        },
+      ]
+    : []),
   // {
   //   name: "Binance Smart Chain",
   //   info: t("protocolCompatibleChain"),

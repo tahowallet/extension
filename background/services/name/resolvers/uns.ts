@@ -1,10 +1,8 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ETHEREUM, POLYGON } from "../../../constants"
+import { EVM_MAIN_NETWORKS } from "../../../constants"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
-
-const supportedNetworks = [ETHEREUM, POLYGON]
 
 /**
  * Lookup a UNS domain name and fetch the owners address
@@ -82,7 +80,7 @@ export default function unsResolver(): NameResolver<"UNS"> {
     canAttemptAddressResolution({ name, network }: NameOnNetwork): boolean {
       return (
         isValidUNSDomainName(name) &&
-        supportedNetworks.some((supportedNetwork) =>
+        EVM_MAIN_NETWORKS.some((supportedNetwork) =>
           sameNetwork(network, supportedNetwork)
         )
       )
