@@ -6,7 +6,7 @@ import { EVM_MAIN_NETWORKS } from "../constants"
 
 export type DAppPermissionState = {
   permissionRequests: { [url: string]: PermissionRequest }
-  allowedPages: { [origin_accountAddress: string]: PermissionRequest }
+  allowedPages: { [origin_accountAddress_chainId: string]: PermissionRequest }
 }
 
 export const initialState: DAppPermissionState = {
