@@ -28,7 +28,11 @@ import {
   EnrichedSignTypedDataRequest,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
-import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
+import {
+  enrichEIP2612SignTypedDataRequest,
+  getDistinctRecipentAddressesFromERC20Logs,
+  isEIP2612TypedData,
+} from "./utils"
 import { ETHEREUM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
@@ -302,13 +306,7 @@ export default class EnrichmentService extends BaseService<Events> {
     const namesByAddress = Object.fromEntries(
       (
         await Promise.allSettled(
-          [
-            ...new Set([
-              ...tokenTransferLogs.map(
-                ({ recipientAddress }) => recipientAddress
-              ),
-            ]),
-          ].map(
+          getDistinctRecipentAddressesFromERC20Logs(tokenTransferLogs).map(
             async (address) =>
               [
                 normalizeEVMAddress(address),
