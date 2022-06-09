@@ -17,7 +17,7 @@ import {
   SignedEVMTransaction,
   toHexChainID,
 } from "../../networks"
-import { ETHEREUM, EVM_MAIN_NETWORKS } from "../../constants/networks"
+import { ETHEREUM } from "../../constants/networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
@@ -216,7 +216,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         })
       case "wallet_switchEthereumChain": {
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const newNetwork = EVM_MAIN_NETWORKS.find(
+        const newNetwork = this.chainService.supportedNetworks.find(
           (network) =>
             network.chainID === newChainId ||
             toHexChainID(network.chainID) === newChainId
