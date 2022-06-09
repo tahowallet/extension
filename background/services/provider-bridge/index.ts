@@ -285,10 +285,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeSafeRequest(
     method: string,
     params: unknown[],
+    origin: string,
     popupPromise: Promise<browser.Windows.Window>
   ): Promise<unknown> {
     const response = await this.internalEthereumProviderService
-      .routeSafeRPCRequest(method, params)
+      .routeSafeRPCRequest(method, params, origin)
       .finally(async () => {
         // Close the popup once we're done submitting.
         const popup = await popupPromise
@@ -321,6 +322,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            enablingPermission.origin,
             showExtensionPopup(AllowedQueryParamPage.signData)
           )
         case "eth_sign":
@@ -329,6 +331,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            enablingPermission.origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "personal_sign":
@@ -337,6 +340,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            enablingPermission.origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "eth_signTransaction":
@@ -349,13 +353,15 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            enablingPermission.origin,
             showExtensionPopup(AllowedQueryParamPage.signTransaction)
           )
 
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
-            params
+            params,
+            enablingPermission.origin
           )
         }
       }
