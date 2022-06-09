@@ -4,10 +4,14 @@ import { EVMLog } from "../networks"
 import { HexString } from "../types"
 import { ERC20_FUNCTIONS } from "./erc20"
 
+// This seems to be the general ABI for wrapped assets.  There is no standard or EIP - but it seems to be
+// what is in use in the wild, for example:
+// WETH: https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2#code
+// WMATIC: https://polygonscan.com/address/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270#code
 export const WRAPPED_ASSET_FUNCTIONS = {
   ...ERC20_FUNCTIONS,
   deposit: FunctionFragment.from("deposit() public payable"),
-  withdraw: FunctionFragment.from("withdraw(uint wad) public"),
+  withdraw: FunctionFragment.from("withdraw(uint amount) public"),
 }
 
 const WRAPPED_ASSET_EVENTS = {
