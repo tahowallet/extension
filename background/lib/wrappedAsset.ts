@@ -11,9 +11,10 @@ export const WRAPPED_ASSET_FUNCTIONS = {
 }
 
 const WRAPPED_ASSET_EVENTS = {
-  // What the heck does `wad` stand for?
-  Deposit: EventFragment.from("Deposit(address indexed dst, uint wad)"),
-  Withdrawal: EventFragment.from("Withdrawal(address indexed src, uint wad)"),
+  Deposit: EventFragment.from("Deposit(address indexed dst, uint amount)"),
+  Withdrawal: EventFragment.from(
+    "Withdrawal(address indexed src, uint amount)"
+  ),
 }
 
 export const WRAPPED_ASSET_ABI = Object.values<Fragment>(
