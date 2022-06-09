@@ -9,6 +9,7 @@ import {
 
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -143,6 +144,7 @@ export default function SwapTransactionSettingsChooser({
             flex-grow: 2;
           }
           .row {
+            padding: ${CUSTOM_GAS_SELECT ? "unset" : "15px 0px"};
             display: flex;
             align-items: center;
           }
