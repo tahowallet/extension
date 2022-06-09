@@ -31,6 +31,7 @@ import {
   parseSigningData,
 } from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
+import { SUPPORT_POLYGON } from "../../features"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -215,17 +216,20 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           account: params[1] as string,
         })
       case "wallet_switchEthereumChain": {
-        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const newNetwork = this.chainService.supportedNetworks.find(
-          (network) =>
-            network.chainID === newChainId ||
-            toHexChainID(network.chainID) === newChainId
-        )
-        if (newNetwork) {
-          this.activeNetwork = newNetwork
-          return null
+        if (SUPPORT_POLYGON) {
+          const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+          const newNetwork = this.chainService.supportedNetworks.find(
+            (network) =>
+              network.chainID === newChainId ||
+              toHexChainID(network.chainID) === newChainId
+          )
+          if (newNetwork) {
+            this.activeNetwork = newNetwork
+            return null
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
-        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
