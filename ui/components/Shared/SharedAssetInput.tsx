@@ -19,6 +19,7 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
+import t from "../../utils/i18n"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -153,7 +154,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             type="text"
             ref={searchInput}
             className="search_input"
-            placeholder="Search by name or address"
+            placeholder={t("assetInputSearch")}
             spellCheck={false}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
@@ -359,7 +360,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
     if (typeof parsedGivenAmount === "undefined") {
-      return "Invalid amount"
+      return t("assetInputErrorInvalidAmount")
     }
 
     const decimalMatched = convertFixedPointNumber(
@@ -370,7 +371,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       decimalMatched.amount > selectedAssetAndAmount.amount ||
       selectedAssetAndAmount.amount <= 0
     ) {
-      return "Insufficient balance"
+      return t("assetInputErrorInsufficientBalance")
     }
 
     return undefined
@@ -457,7 +458,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               onClick={toggleIsAssetMenuOpen}
               iconSmall="dropdown"
             >
-              Select token
+              {t("assetInputSelectToken")}
             </SharedButton>
           )}
         </div>

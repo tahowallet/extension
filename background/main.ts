@@ -108,7 +108,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, EVM_MAIN_NETWORKS } from "./constants"
+import { ETHEREUM } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
@@ -792,7 +792,7 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
-      EVM_MAIN_NETWORKS.forEach((network) => {
+      this.chainService.supportedNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({
