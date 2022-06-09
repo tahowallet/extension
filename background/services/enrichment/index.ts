@@ -329,30 +329,32 @@ export default class EnrichmentService extends BaseService<Events> {
             sameEVMAddress(asset.contractAddress, contractAddress)
         )
 
+        if (!matchingFungibleAsset) {
+          return []
+        }
+
         // Try to find a resolved name for the recipient; we should probably
         // do this for the sender as well, but one thing at a time.
         const recipientName =
           namesByAddress[normalizeEVMAddress(recipientAddress)]
 
-        return typeof matchingFungibleAsset !== "undefined"
-          ? [
+        return [
+          {
+            type: "asset-transfer",
+            assetAmount: enrichAssetAmountWithDecimalValues(
               {
-                type: "asset-transfer",
-                assetAmount: enrichAssetAmountWithDecimalValues(
-                  {
-                    asset: matchingFungibleAsset,
-                    amount,
-                  },
-                  desiredDecimals
-                ),
-                senderAddress,
-                recipientAddress,
-                recipientName,
-                timestamp: resolvedTime,
-                blockTimestamp: block?.timestamp,
+                asset: matchingFungibleAsset,
+                amount,
               },
-            ]
-          : []
+              desiredDecimals
+            ),
+            senderAddress,
+            recipientAddress,
+            recipientName,
+            timestamp: resolvedTime,
+            blockTimestamp: block?.timestamp,
+          },
+        ]
       }
     )
 
