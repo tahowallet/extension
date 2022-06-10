@@ -1,6 +1,6 @@
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { POLYGON } from "@tallyho/tally-background/constants"
-import { MULTI_NETWORK } from "@tallyho/tally-background/features"
+import { SUPPORT_POLYGON } from "@tallyho/tally-background/features"
 import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
@@ -149,7 +149,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
 
   let { network } = useBackgroundSelector(selectCurrentAccount)
 
-  if (MULTI_NETWORK) {
+  if (SUPPORT_POLYGON) {
     network = POLYGON
   }
 

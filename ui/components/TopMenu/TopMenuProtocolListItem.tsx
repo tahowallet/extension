@@ -3,6 +3,7 @@ import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import t from "../../utils/i18n"
 
 interface Props {
   info: string
@@ -10,10 +11,11 @@ interface Props {
   height: number
   network: EVMNetwork
   isSelected: boolean
+  onSelect: () => void
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
-  const { width, height, info, isSelected, network } = props
+  const { width, height, info, isSelected, network, onSelect } = props
 
   const dispatch = useDispatch()
 
@@ -22,6 +24,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
       className={classNames({ select: isSelected })}
       onClick={() => {
         dispatch(setSelectedNetwork(network))
+        onSelect()
       }}
       role="presentation"
     >
@@ -34,7 +37,9 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         <div className="title">{network.name}</div>
         <div className="sub_title">
           {info}
-          {isSelected && <span className="status">Connected</span>}
+          {isSelected && (
+            <span className="status">{t("protocolConnected")}</span>
+          )}
         </div>
       </div>
       <style jsx>

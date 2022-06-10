@@ -9,11 +9,13 @@ import {
 
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
+import t from "../../utils/i18n"
 
 export type SwapTransactionSettings = {
   slippageTolerance: number
@@ -61,7 +63,7 @@ export default function SwapTransactionSettingsChooser({
   return (
     <>
       {isSettingsLocked ? (
-        <div className="top_label label">Transaction settings</div>
+        <div className="top_label label">{t("transactionSettingsTitle")}</div>
       ) : (
         <>
           <SharedSlideUpMenu
@@ -73,7 +75,9 @@ export default function SwapTransactionSettingsChooser({
           >
             <div className="settings_wrap">
               <div className="row row_slippage">
-                <span className="settings_label">Slippage tolerance</span>
+                <span className="settings_label">
+                  {t("transactionSettingsSlippageTolerance")}
+                </span>
                 <span>1%</span>
               </div>
               <div className="row row_fee">
@@ -98,7 +102,9 @@ export default function SwapTransactionSettingsChooser({
           </SharedSlideUpMenu>
 
           <div className="top_label label">
-            <label htmlFor="open-settings">Transaction settings</label>
+            <label htmlFor="open-settings">
+              {t("transactionSettingsSettings")}
+            </label>
             <button type="button" id="open-settings" onClick={openSettings}>
               <span className="icon_cog" />
             </button>
@@ -107,19 +113,19 @@ export default function SwapTransactionSettingsChooser({
       )}
       <div className="labels_wrap standard_width">
         <span className="label">
-          Slippage tolerance
+          {t("transactionSettingsSlippageTolerance")}
           <div className="info">
             {swapTransactionSettings.slippageTolerance * 100}%
           </div>
         </span>
         <span className="label">
-          Estimated network fee
+          {t("transactionSettingsEstimatedFee")}
           <FeeSettingsText
             customNetworkSetting={swapTransactionSettings.networkSettings}
           />
         </span>
         <span className="label">
-          Tally Ho fee for the DAO
+          {t("transactionSettingsDAOFee")}
           <div className="info">{SWAP_FEE * 100}%</div>
         </span>
       </div>
@@ -138,6 +144,7 @@ export default function SwapTransactionSettingsChooser({
             flex-grow: 2;
           }
           .row {
+            padding: ${CUSTOM_GAS_SELECT ? "unset" : "15px 0px"};
             display: flex;
             align-items: center;
           }

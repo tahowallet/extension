@@ -24,12 +24,14 @@ import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
-  ARBITRUM_ONE,
   POLYGON,
+  ARBITRUM_ONE,
   OPTIMISM,
 } from "../../constants"
 import {
-  MULTI_NETWORK as USE_MULTI_NETWORK,
+  SUPPORT_ARBITRUM,
+  SUPPORT_OPTIMISM,
+  SUPPORT_POLYGON,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -201,9 +203,12 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
-    this.supportedNetworks = USE_MULTI_NETWORK
-      ? [ETHEREUM, ARBITRUM_ONE, OPTIMISM, POLYGON]
-      : [ETHEREUM]
+    this.supportedNetworks = [
+      ETHEREUM,
+      ...(SUPPORT_POLYGON ? [POLYGON] : []),
+      ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
+      ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
+    ]
 
     this.providers = {
       evm: Object.fromEntries(
@@ -911,7 +916,7 @@ export default class ChainService extends BaseService<Events> {
 
     // Drop all transactions that weren't retrieved from the queue.
     this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-      async ({ network, hash, firstSeen }) => {
+      ({ network, hash, firstSeen }) => {
         fetchedByNetwork[network.chainID] ??= 0
 
         if (

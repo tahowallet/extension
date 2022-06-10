@@ -5,6 +5,7 @@ import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
 import { EIP712TypedData } from "../../types"
 import { EIP2612TypedData } from "../../utils/signing"
+import { ERC20TransferLog } from "../../lib/erc20"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData
@@ -73,4 +74,10 @@ export async function enrichEIP2612SignTypedDataRequest(
       expiry: dayjs.unix(Number(message.deadline)).format("DD MMM YYYY"),
     },
   }
+}
+
+export function getDistinctRecipentAddressesFromERC20Logs(
+  logs: ERC20TransferLog[]
+): string[] {
+  return [...new Set([...logs.map(({ recipientAddress }) => recipientAddress)])]
 }
