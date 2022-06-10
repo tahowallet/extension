@@ -5,7 +5,6 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
-  CoinGeckoAsset,
   FungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,

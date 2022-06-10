@@ -1,21 +1,20 @@
 import React, { ReactElement } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { MULTI_NETWORK } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../../hooks"
 
 type Props = {
   onClick?: () => void
-  enabled?: boolean
 }
 
 export default function TopMenuProtocolSwitcher({
   onClick,
-  enabled,
 }: Props): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   return (
-    <button type="button" onClick={() => enabled && onClick?.()}>
+    <button type="button" onClick={() => MULTI_NETWORK && onClick?.()}>
       {currentNetwork.name}
-      {enabled && <span className="icon_chevron_down" />}
+      {MULTI_NETWORK && <span className="icon_chevron_down" />}
       <style jsx>
         {`
           button {
@@ -23,7 +22,9 @@ export default function TopMenuProtocolSwitcher({
             display: flex;
             align-items: center;
             user-select: none;
-            cursor: unset;
+          }
+          button:hover {
+            color: #fff;
           }
           .icon_chevron_down {
             mask-image: url("./images/chevron_down.svg");

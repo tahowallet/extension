@@ -7,7 +7,7 @@ import { EIP191Data, EIP712TypedData, HexString } from "../types"
 export type EIP712DomainType = {
   name?: string
   version?: string
-  chainId?: number
+  chainId?: number | string
   verifyingContract?: HexString
 }
 

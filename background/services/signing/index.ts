@@ -195,12 +195,17 @@ export default class SigningService extends BaseService<Events> {
   }): Promise<string> {
     try {
       let signedData: string
+      const chainId =
+        typeof typedData.domain.chainId === "string"
+          ? // eslint-disable-next-line radix
+            parseInt(typedData.domain.chainId)
+          : typedData.domain.chainId
       if (
         typedData.domain.chainId !== undefined &&
         // Let parseInt infer radix by prefix; chainID can be hex or decimal,
         // though it should generally be hex.
         // eslint-disable-next-line radix
-        typedData.domain.chainId !== parseInt(account.network.chainID)
+        chainId !== parseInt(account.network.chainID)
       ) {
         throw new Error(
           "Attempting to sign typed data with mismatched chain IDs."

@@ -6,7 +6,6 @@ import {
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
-  CUSTOM,
 } from "../constants/network-fees"
 import { USE_MAINNET_FORK } from "../features"
 
@@ -57,6 +56,7 @@ export type TransactionConstruction = {
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
+  customFeesPerGas?: EstimatedFeesPerGas["custom"]
   lastGasEstimatesRefreshed: number
   feeTypeSelected: NetworkFeeTypeChosen
 }
@@ -71,10 +71,17 @@ export type EstimatedFeesPerGas = {
   custom?: BlockEstimate
 }
 
+const defaultCustomGas = {
+  maxFeePerGas: 0n,
+  maxPriorityFeePerGas: 0n,
+  confidence: 0,
+}
+
 export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
   estimatedFeesPerGas: {},
+  customFeesPerGas: defaultCustomGas,
   lastGasEstimatesRefreshed: Date.now(),
 }
 
@@ -176,6 +183,7 @@ const transactionSlice = createSlice({
           ]?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
       },
       transactionLikelyFails,
+      customFeesPerGas: defaultCustomGas,
     }),
     clearTransactionState: (
       state,
@@ -187,6 +195,7 @@ const transactionSlice = createSlice({
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
+      customFeesPerGas: defaultCustomGas,
     }),
     setFeeType: (
       state,
@@ -194,6 +203,7 @@ const transactionSlice = createSlice({
     ): TransactionConstruction => ({
       ...state,
       feeTypeSelected: payload,
+      customFeesPerGas: defaultCustomGas,
     }),
 
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
@@ -229,26 +239,22 @@ const transactionSlice = createSlice({
     setCustomGas: (
       immerState,
       {
-        payload: { maxPriorityFeePerGas, maxFeePerGas, network },
+        payload: { maxPriorityFeePerGas, maxFeePerGas },
       }: {
         payload: {
           maxPriorityFeePerGas: bigint
           maxFeePerGas: bigint
-          network: EVMNetwork
         }
       }
     ) => {
-      immerState.estimatedFeesPerGas = {
-        ...immerState.estimatedFeesPerGas,
-        [network.chainID]: {
-          ...immerState.estimatedFeesPerGas[network.chainID],
-          custom: {
-            maxFeePerGas,
-            confidence: CUSTOM,
-            maxPriorityFeePerGas,
-          },
-        },
+      immerState.customFeesPerGas = {
+        maxPriorityFeePerGas,
+        maxFeePerGas,
+        confidence: 0,
       }
+    },
+    clearCustomGas: (immerState) => {
+      immerState.customFeesPerGas = defaultCustomGas
     },
   },
   extraReducers: (builder) => {
@@ -268,6 +274,7 @@ export const {
   setFeeType,
   estimatedFeesPerGas,
   setCustomGas,
+  clearCustomGas,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
