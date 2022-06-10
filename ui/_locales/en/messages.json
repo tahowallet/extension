@@ -91,6 +91,70 @@
     "message": "Only send Ethereum Mainnet compatible assets to this address.",
     "description": "in pages > Receive"
   },
+  "swapTitle": {
+    "message": "Swap Assets",
+    "description": "in pages > Swap"
+  },
+  "swapFrom": {
+    "message": "Swap from:",
+    "description": "in pages > Swap"
+  },
+  "swapTo": {
+    "message": "Swap to:",
+    "description": "in pages > Swap"
+  },
+  "swapErrorNoSellAsset": {
+    "message": "Attempting to approve transfer without a sell asset.",
+    "description": "in pages > Swap"
+  },
+  "swapErrorNoApprovalTarget": {
+    "message": "Attempting to approve transfer without an approval target.",
+    "description": "in pages > Swap"
+  },
+  "swapErrorNonContractAsset": {
+    "message": "Attempting to approve transfer of a non-contract asset.",
+    "description": "in pages > Swap"
+  },
+  "swapGetFinalQuote": {
+    "message": "Get final quote",
+    "description": "in pages > Swap"
+  },
+  "assetInputSearch": {
+    "message": "Search by name or address",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "assetInputSelectToken": {
+    "message": "Select token",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "assetInputErrorInvalidAmount": {
+    "message": "Invalid amount",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "assetInputErrorInsufficientBalance": {
+    "message": "Insufficient balance",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "transactionSettingsTitle": {
+    "message": "Transaction settings",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsSlippageTolerance": {
+    "message": "Slippage tolerance",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsSettings": {
+    "message": "Transaction settings",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsEstimatedFee": {
+    "message": "Estimated network fee",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsDAOFee": {
+    "message": "Tally Ho fee for the DAO",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
   "menuMainMenu": {
     "message": "Main menu",
     "description": "in pages > Menu"

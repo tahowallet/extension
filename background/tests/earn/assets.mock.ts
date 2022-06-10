@@ -1,3 +1,4 @@
+import { ETHEREUM } from "../../constants"
 import { AssetsState } from "../../redux-slices/assets"
 
 const assets: AssetsState = [
@@ -5,16 +6,7 @@ const assets: AssetsState = [
     name: "Wrapped Ether",
     symbol: "WETH",
     decimals: 18,
-    homeNetwork: {
-      name: "Ethereum",
-      baseAsset: {
-        name: "Ether",
-        symbol: "ETH",
-        decimals: 18,
-      },
-      chainID: "1",
-      family: "EVM",
-    },
+    homeNetwork: ETHEREUM,
     contractAddress: "0x0",
     prices: [
       {
@@ -22,16 +14,7 @@ const assets: AssetsState = [
           {
             contractAddress: "0x0",
             decimals: 18,
-            homeNetwork: {
-              name: "Ethereum",
-              baseAsset: {
-                name: "Ether",
-                symbol: "ETH",
-                decimals: 18,
-              },
-              chainID: "1",
-              family: "EVM",
-            },
+            homeNetwork: ETHEREUM,
             name: "Wrapped Ether",
             symbol: "WETH",
           },
@@ -51,16 +34,7 @@ const assets: AssetsState = [
           {
             contractAddress: "0x0",
             decimals: 18,
-            homeNetwork: {
-              name: "Ethereum",
-              baseAsset: {
-                name: "Ether",
-                symbol: "ETH",
-                decimals: 18,
-              },
-              chainID: "1",
-              family: "EVM",
-            },
+            homeNetwork: ETHEREUM,
             name: "Wrapped Ether",
             symbol: "WETH",
           },
@@ -79,16 +53,7 @@ const assets: AssetsState = [
     name: "Uniswap",
     symbol: "UNI",
     decimals: 18,
-    homeNetwork: {
-      name: "Ethereum",
-      baseAsset: {
-        name: "Ether",
-        symbol: "ETH",
-        decimals: 18,
-      },
-      chainID: "1",
-      family: "EVM",
-    },
+    homeNetwork: ETHEREUM,
     contractAddress: "0x0",
     prices: [
       {
@@ -98,16 +63,7 @@ const assets: AssetsState = [
             symbol: "UNI",
             decimals: 18,
             contractAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-            homeNetwork: {
-              name: "Ethereum",
-              baseAsset: {
-                name: "Ether",
-                symbol: "ETH",
-                decimals: 18,
-              },
-              chainID: "1",
-              family: "EVM",
-            },
+            homeNetwork: ETHEREUM,
           },
           {
             name: "United States Dollar",
@@ -126,16 +82,7 @@ const assets: AssetsState = [
             name: "Uniswap",
             symbol: "UNI",
             decimals: 18,
-            homeNetwork: {
-              name: "Ethereum",
-              baseAsset: {
-                name: "Ether",
-                symbol: "ETH",
-                decimals: 18,
-              },
-              chainID: "1",
-              family: "EVM",
-            },
+            homeNetwork: ETHEREUM,
             contractAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
           },
           {
