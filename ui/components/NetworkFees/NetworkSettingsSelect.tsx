@@ -1,6 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   ESTIMATED_FEE_MULTIPLIERS,
   ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
@@ -14,10 +13,7 @@ import {
   GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
-import {
-  selectCurrentNetwork,
-  selectMainCurrencyPricePoint,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
