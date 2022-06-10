@@ -3,7 +3,7 @@ import { GasOption } from "@tallyho/tally-background/redux-slices/transaction-co
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import capitalize from "../../utils/capitalize"
-import SharedInput, { SharedTypedInput } from "../Shared/SharedInput"
+import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 
 function gweiFloatToWei(float: number): bigint {
