@@ -1,11 +1,13 @@
 import React, { ReactElement } from "react"
 
 // TODO: get numbers and labels from timeLeft
-export default function Clock({
-  timeLeft,
-}: {
-  timeLeft?: number
-}): ReactElement {
+
+// {
+//   timeLeft,
+// }: {
+//   timeLeft?: number
+// }
+export default function Clock(): ReactElement {
   return (
     <div className="clock">
       <div className="clock_segment">
