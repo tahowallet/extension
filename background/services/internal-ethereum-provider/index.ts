@@ -17,7 +17,6 @@ import {
   SignedEVMTransaction,
   toHexChainID,
 } from "../../networks"
-import { ETHEREUM } from "../../constants/networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,

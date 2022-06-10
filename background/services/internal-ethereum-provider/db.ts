@@ -1,5 +1,4 @@
 import Dexie from "dexie"
-import { ETHEREUM } from "../../constants"
 
 export class InternalEtheremProviderDatabase extends Dexie {
   private activeChainId!: Dexie.Table<{ chainId: string }, string>
