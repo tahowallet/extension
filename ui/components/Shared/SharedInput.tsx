@@ -176,8 +176,10 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           .small {
             width: 48px;
             height: 32px;
-            padding: 2px;
+            padding: 6px;
+            box-sizing: border-box;
             border-width: 1px;
+            text-align: right;
           }
         `}
       </style>

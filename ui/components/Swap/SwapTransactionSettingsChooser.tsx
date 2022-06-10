@@ -142,7 +142,7 @@ export default function SwapTransactionSettingsChooser({
           .row_slippage {
             display: flex;
             justify-content: space-between;
-            padding-bottom: 30px;
+            padding-bottom: 38px;
           }
           .row_fee {
             flex-direction: column;
@@ -178,7 +178,7 @@ export default function SwapTransactionSettingsChooser({
             width: 384px;
             padding: 0px 17px;
             height: 100vh;
-            padding-top: 52px;
+            padding-top: 58px;
             box-sizing: border-box;
             background-color: var(--green-95);
             margin-top: -23px;

@@ -96,7 +96,6 @@ export default function NetworkSettingsChooser({
           .network_fee {
             display: flex;
             justify-content: space-between;
-            font-size: 14px;
             line-height: 16px;
             color: var(--green-40);
             margin-bottom: 12px;
