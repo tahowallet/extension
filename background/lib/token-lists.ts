@@ -12,6 +12,18 @@ import {
   prioritizedAssetSimilarityKeys,
 } from "./asset-similarity"
 
+// We allow `any` here because we don't know what we'll get back from a 3rd party api.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const cleanTokenListResponse = (json: any, url: string) => {
+  if (url.includes("api-polygon-tokens.polygon.technology")) {
+    if (typeof json === "object" && json !== null && "tags" in json) {
+      const { tags, ...cleanedJson } = json
+      return cleanedJson
+    }
+  }
+  return json
+}
+
 export async function fetchAndValidateTokenList(
   url: string
 ): Promise<TokenListAndReference> {
@@ -20,12 +32,13 @@ export async function fetchAndValidateTokenList(
     throw new Error(`Error resolving token list at ${url}`)
   }
   const json = await response.json()
+  const cleanedJSON = cleanTokenListResponse(json, url)
 
-  if (!isValidUniswapTokenListResponse(json)) {
+  if (!isValidUniswapTokenListResponse(cleanedJSON)) {
     throw new Error(`Invalid token list at ${url}`)
   }
   return {
-    tokenList: json as TokenList,
+    tokenList: cleanedJSON as TokenList,
     url,
   }
 }
