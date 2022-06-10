@@ -1,5 +1,6 @@
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import Dexie from "dexie"
+import { ETHEREUM, POLYGON } from "../../constants"
 
 function keyBy(
   permissionsArray: Array<PermissionRequest>,
@@ -71,14 +72,14 @@ export class ProviderBridgeServiceDatabase extends Dexie {
       .stores({
         [mainTable]: "&[origin+accountAddress],origin,accountAddress,chainID",
       })
-      .upgrade((tx) =>
+      .upgrade(async (tx) =>
         tx
           .table(mainTable)
           .toCollection()
           .modify((permission) => {
             // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
             // eslint-disable-next-line no-param-reassign
-            permission.chainID = "1"
+            permission.chainID = ETHEREUM.chainID
           })
       )
 
@@ -103,11 +104,21 @@ export class ProviderBridgeServiceDatabase extends Dexie {
         [mainTable]:
           "&[origin+accountAddress+chainID],origin,accountAddress,chainID",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade(async (tx) => {
+        await tx
           .table(tempTable)
           .toArray()
           .then((rows) => tx.table(mainTable).bulkAdd(rows))
+
+        const allPermission = await tx.table(mainTable).toArray()
+        await Promise.all(
+          allPermission.map(async (permission) => {
+            await tx.table(mainTable).put({
+              ...permission,
+              chainID: POLYGON.chainID,
+            })
+          })
+        )
       })
 
     this.version(10).stores({
