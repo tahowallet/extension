@@ -118,12 +118,20 @@ const makeBlockEstimate = (
   type: number,
   estimatedFeesPerGas: BlockPrices
 ): BlockEstimate => {
+  let maxFeePerGas = estimatedFeesPerGas.estimatedPrices.find(
+    (el) => el.confidence === type
+  )?.maxFeePerGas
+
+  if (typeof maxFeePerGas === "undefined") {
+    // Fallback
+    maxFeePerGas = estimatedFeesPerGas.baseFeePerGas
+  }
+
+  // Exaggerate differences between options
+  maxFeePerGas = (maxFeePerGas * MAX_FEE_MULTIPLIER[type]) / 10n
+
   return {
-    maxFeePerGas:
-      estimatedFeesPerGas.estimatedPrices.find(
-        (el) => el.confidence === INSTANT
-      )?.maxFeePerGas ??
-      (estimatedFeesPerGas.baseFeePerGas * MAX_FEE_MULTIPLIER[INSTANT]) / 10n,
+    maxFeePerGas,
     confidence: type,
     maxPriorityFeePerGas:
       estimatedFeesPerGas.estimatedPrices.find((el) => el.confidence === type)
