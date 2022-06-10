@@ -67,7 +67,13 @@ const listItemInfo = [
   // },
 ]
 
-export default function TopMenuProtocolList(): ReactElement {
+interface TopMenuProtocolListProps {
+  onProtocolChange: () => void
+}
+
+export default function TopMenuProtocolList({
+  onProtocolChange,
+}: TopMenuProtocolListProps): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   return (
@@ -81,6 +87,7 @@ export default function TopMenuProtocolList(): ReactElement {
             height={info.height}
             width={info.width}
             info={info.info}
+            onSelect={onProtocolChange}
           />
         ))}
       </ul>

@@ -21,8 +21,19 @@ import {
   sameNetwork,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
-import { HOUR, ETHEREUM, EVM_MAIN_NETWORKS } from "../../constants"
-import { USE_MAINNET_FORK } from "../../features"
+import {
+  HOUR,
+  ETHEREUM,
+  POLYGON,
+  ARBITRUM_ONE,
+  OPTIMISM,
+} from "../../constants"
+import {
+  SUPPORT_ARBITRUM,
+  SUPPORT_OPTIMISM,
+  SUPPORT_POLYGON,
+  USE_MAINNET_FORK,
+} from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, ChainDatabase } from "./db"
@@ -153,6 +164,8 @@ export default class ChainService extends BaseService<Events> {
     return new this(await getOrCreateDB(), await preferenceService)
   }
 
+  supportedNetworks: EVMNetwork[]
+
   assetData: AssetDataHelper
 
   private constructor(
@@ -190,9 +203,16 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
+    this.supportedNetworks = [
+      ETHEREUM,
+      ...(SUPPORT_POLYGON ? [POLYGON] : []),
+      ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
+      ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
+    ]
+
     this.providers = {
       evm: Object.fromEntries(
-        EVM_MAIN_NETWORKS.map((network) => [
+        this.supportedNetworks.map((network) => [
           network.chainID,
           new SerialFallbackProvider(
             network,
@@ -226,7 +246,7 @@ export default class ChainService extends BaseService<Events> {
     // get the latest blocks and subscribe for all support networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    EVM_MAIN_NETWORKS.forEach(async (network) => {
+    this.supportedNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
         Promise.all([
@@ -307,7 +327,7 @@ export default class ChainService extends BaseService<Events> {
         "Request received for operation on unsupported network",
         network,
         "expected",
-        EVM_MAIN_NETWORKS
+        this.supportedNetworks
       )
       throw new Error(`Unexpected network ${network}`)
     }

@@ -1,4 +1,5 @@
 import { FiatCurrency, FungibleAsset, CoinGeckoAsset } from "../assets"
+import { SUPPORT_POLYGON } from "../features"
 
 export const USD: FiatCurrency = {
   name: "United States Dollar",
@@ -53,7 +54,7 @@ export const BTC: FungibleAsset & CoinGeckoAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC]
+export const BASE_ASSETS = [ETH, BTC, ...(SUPPORT_POLYGON ? [MATIC] : [])]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset
