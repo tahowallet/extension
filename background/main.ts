@@ -1064,7 +1064,14 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
-      await this.providerBridgeService.grantPermission(permission)
+      await Promise.all(
+        this.chainService.supportedNetworks.map(async (network) => {
+          await this.providerBridgeService.grantPermission({
+            ...permission,
+            chainID: network.chainID,
+          })
+        })
+      )
     })
 
     providerBridgeSliceEmitter.on(
