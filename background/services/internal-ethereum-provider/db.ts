@@ -38,6 +38,8 @@ export class InternalEtheremProviderDatabase extends Dexie {
   async getActiveChainIdForOrigin(origin: string): Promise<string> {
     const activeChainId = await this.activeChainId.get({ origin })
     if (!activeChainId) {
+      // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
+      // use the default network.
       const defaultChainId = (await this.getInternalActiveChain()).chainId
       return defaultChainId
     }
