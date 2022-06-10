@@ -6,7 +6,6 @@ import {
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import React, { ReactElement, useState } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 
 interface NetworkSettingsChooserProps {
