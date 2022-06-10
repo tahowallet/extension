@@ -22,7 +22,9 @@ export default function TopMenuProtocolSwitcher({
             display: flex;
             align-items: center;
             user-select: none;
-            cursor: unset;
+          }
+          button:hover {
+            color: #fff;
           }
           .icon_chevron_down {
             mask-image: url("./images/chevron_down.svg");

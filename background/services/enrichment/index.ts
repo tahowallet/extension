@@ -3,6 +3,7 @@ import {
   AnyEVMBlock,
   AnyEVMTransaction,
   EIP1559TransactionRequest,
+  EVMLog,
   EVMNetwork,
 } from "../../networks"
 import {
@@ -27,8 +28,14 @@ import {
   EnrichedSignTypedDataRequest,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
-import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
+import {
+  enrichEIP2612SignTypedDataRequest,
+  getDistinctRecipentAddressesFromERC20Logs,
+  isEIP2612TypedData,
+} from "./utils"
 import { ETHEREUM } from "../../constants"
+import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
+import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 
 export * from "./types"
 
@@ -265,72 +272,12 @@ export default class EnrichmentService extends BaseService<Events> {
 
     // Look up logs and resolve subannotations, if available.
     if ("logs" in transaction && typeof transaction.logs !== "undefined") {
-      const assets = await this.indexingService.getCachedAssets(network)
-
-      const erc20TransferLogs = parseLogsForERC20Transfers(transaction.logs)
-
-      // Look up transfer log names, then flatten to an address -> name map.
-      const namesByAddress = Object.fromEntries(
-        (
-          await Promise.allSettled(
-            [
-              ...new Set([
-                ...erc20TransferLogs.map(
-                  ({ recipientAddress }) => recipientAddress
-                ),
-              ]),
-            ].map(
-              async (address) =>
-                [
-                  normalizeEVMAddress(address),
-                  (
-                    await this.nameService.lookUpName({ address, network })
-                  )?.name,
-                ] as const
-            )
-          )
-        )
-          .filter(
-            (result): result is PromiseFulfilledResult<[string, string]> =>
-              result.status === "fulfilled" && result.value[1] !== undefined
-          )
-          .map(({ value }) => value)
-      )
-
-      const subannotations = erc20TransferLogs.flatMap<TransactionAnnotation>(
-        ({ contractAddress, amount, senderAddress, recipientAddress }) => {
-          // See if the address matches a fungible asset.
-          const matchingFungibleAsset = assets.find(
-            (asset): asset is SmartContractFungibleAsset =>
-              isSmartContractFungibleAsset(asset) &&
-              sameEVMAddress(asset.contractAddress, contractAddress)
-          )
-
-          // Try to find a resolved name for the recipient; we should probably
-          // do this for the sender as well, but one thing at a time.
-          const recipientName =
-            namesByAddress[normalizeEVMAddress(recipientAddress)]
-
-          return typeof matchingFungibleAsset !== "undefined"
-            ? [
-                {
-                  type: "asset-transfer",
-                  assetAmount: enrichAssetAmountWithDecimalValues(
-                    {
-                      asset: matchingFungibleAsset,
-                      amount,
-                    },
-                    desiredDecimals
-                  ),
-                  senderAddress,
-                  recipientAddress,
-                  recipientName,
-                  timestamp: resolvedTime,
-                  blockTimestamp: block?.timestamp,
-                },
-              ]
-            : []
-        }
+      const subannotations = await this.annotationsFromLogs(
+        transaction.logs,
+        network,
+        desiredDecimals,
+        resolvedTime,
+        block
       )
 
       if (subannotations.length > 0) {
@@ -339,6 +286,79 @@ export default class EnrichmentService extends BaseService<Events> {
     }
 
     return txAnnotation
+  }
+
+  async annotationsFromLogs(
+    logs: EVMLog[],
+    network: EVMNetwork,
+    desiredDecimals: number,
+    resolvedTime: number,
+    block: AnyEVMBlock | undefined
+  ): Promise<TransactionAnnotation[]> {
+    const assets = await this.indexingService.getCachedAssets(network)
+
+    const tokenTransferLogs = [
+      ...parseLogsForERC20Transfers(logs),
+      ...parseLogsForWrappedDepositsAndWithdrawals(logs),
+    ]
+
+    // Look up transfer log names, then flatten to an address -> name map.
+    const namesByAddress = Object.fromEntries(
+      (
+        await Promise.allSettled(
+          getDistinctRecipentAddressesFromERC20Logs(tokenTransferLogs).map(
+            async (address) =>
+              [
+                normalizeEVMAddress(address),
+                (await this.nameService.lookUpName({ address, network }))?.name,
+              ] as const
+          )
+        )
+      )
+        .filter(isFulfilledPromise)
+        .map(({ value }) => value)
+        .filter(([, name]) => isDefined(name))
+    )
+
+    const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
+      ({ contractAddress, amount, senderAddress, recipientAddress }) => {
+        // See if the address matches a fungible asset.
+        const matchingFungibleAsset = assets.find(
+          (asset): asset is SmartContractFungibleAsset =>
+            isSmartContractFungibleAsset(asset) &&
+            sameEVMAddress(asset.contractAddress, contractAddress)
+        )
+
+        if (!matchingFungibleAsset) {
+          return []
+        }
+
+        // Try to find a resolved name for the recipient; we should probably
+        // do this for the sender as well, but one thing at a time.
+        const recipientName =
+          namesByAddress[normalizeEVMAddress(recipientAddress)]
+
+        return [
+          {
+            type: "asset-transfer",
+            assetAmount: enrichAssetAmountWithDecimalValues(
+              {
+                asset: matchingFungibleAsset,
+                amount,
+              },
+              desiredDecimals
+            ),
+            senderAddress,
+            recipientAddress,
+            recipientName,
+            timestamp: resolvedTime,
+            blockTimestamp: block?.timestamp,
+          },
+        ]
+      }
+    )
+
+    return subannotations
   }
 
   async enrichTransactionSignature(
