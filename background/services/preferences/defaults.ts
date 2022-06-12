@@ -12,7 +12,7 @@ const defaultPreferences: Preferences = {
         )
       ).href, // the Tally community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
-      "https://yearn.science/static/tokenlist.json", // the Yearn list
+      "https://meta.yearn.finance/api/tokens/list", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
       "https://wrapped.tokensoft.eth.link", // Wrapped tokens
       "https://tokenlist.aave.eth.link", // Aave-listed tokens and interest-bearing assets
