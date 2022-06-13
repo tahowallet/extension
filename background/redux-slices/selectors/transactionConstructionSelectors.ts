@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectCurrentNetwork } from "."
+import { NetworksState } from "../networks"
 import {
   TransactionConstruction,
   NetworkFeeSettings,
@@ -8,10 +9,11 @@ import {
 export const selectDefaultNetworkFeeSettings = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction,
+  (state: { networks: NetworksState }) => state.networks,
   selectCurrentNetwork,
-  (transactionConstruction, network): NetworkFeeSettings => {
+  (transactionConstruction, networks, currentNetwork): NetworkFeeSettings => {
     const selectedFeesPerGas =
-      transactionConstruction.estimatedFeesPerGas?.[network.chainID]?.[
+      transactionConstruction.estimatedFeesPerGas?.[currentNetwork.chainID]?.[
         transactionConstruction.feeTypeSelected
       ]
     return {
@@ -21,6 +23,8 @@ export const selectDefaultNetworkFeeSettings = createSelector(
       values: {
         maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
+        baseFeePerGas:
+          networks.evm[currentNetwork.chainID].baseFeePerGas ?? undefined, // @TODO: Support multi-network
       },
     }
   }
