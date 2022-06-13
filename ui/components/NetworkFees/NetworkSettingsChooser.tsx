@@ -47,58 +47,6 @@ export default function NetworkSettingsChooser({
             margin-left: 12px;
             align-items: center;
           }
-          .fees {
-            background-color: var(--green-95);
-            margin: 0 auto;
-            display: flex;
-            flex-flow: column;
-          }
-          .divider {
-            border-radius: 4px;
-            height: 2px;
-            width: 384px;
-            position: relative;
-            left: -16px;
-            margin: 12px 0;
-          }
-          .divider-cover {
-            background: #667c7a;
-            border-radius: 4px;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            transition: all 0.3s ease;
-          }
-          .divider-background {
-            background: #33514e;
-            border-radius: 4px;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            transition: all 0.3s ease;
-          }
-          .title {
-            font-size: 22px;
-            font-weight: 600;
-          }
-          .confirm {
-            background-color: var(--hunter-green);
-            width: 100%;
-            display: flex;
-            position: fixed;
-            bottom: 0;
-            right: 0;
-            box-sizing: border-box;
-            justify-content: flex-end;
-            padding: 20px 16px;
-          }
-          .network_fee {
-            display: flex;
-            justify-content: space-between;
-            line-height: 16px;
-            color: var(--green-40);
-            margin-bottom: 12px;
-          }
         `}
       </style>
     </>
