@@ -90,7 +90,7 @@ export interface SignatureRequest {
 }
 
 export type Events = {
-  updateOptions: EnrichedEVMTransactionSignatureRequest
+  updateTransaction: EnrichedEVMTransactionSignatureRequest
   requestSignature: SignatureRequest
   signatureRejected: never
   broadcastSignedTransaction: SignedEVMTransaction
@@ -134,10 +134,10 @@ const makeBlockEstimate = (
 }
 
 // Async thunk to pass transaction options from the store to the background via an event
-export const updateTransactionOptions = createBackgroundAsyncThunk(
-  "transaction-construction/update-options",
+export const updateTransactionData = createBackgroundAsyncThunk(
+  "transaction-construction/update-transaction",
   async (options: EnrichedEVMTransactionSignatureRequest) => {
-    await emitter.emit("updateOptions", options)
+    await emitter.emit("updateTransaction", options)
   }
 )
 
@@ -257,7 +257,7 @@ const transactionSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(updateTransactionOptions.pending, (immerState) => {
+    builder.addCase(updateTransactionData.pending, (immerState) => {
       immerState.status = TransactionConstructionStatus.Pending
       immerState.signedTransaction = undefined
     })
