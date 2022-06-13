@@ -29,8 +29,9 @@ export default function TopMenu(): ReactElement {
     {} as PermissionRequest
   )
   const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
-
-  const allowedPages = useBackgroundSelector(selectAllowedPages)
+  const allowedPages = useBackgroundSelector((state) =>
+    selectAllowedPages(state)
+  )
 
   const initPermissionAndOrigin = useCallback(async () => {
     const { url } = await browser.tabs
@@ -42,11 +43,13 @@ export default function TopMenu(): ReactElement {
         tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
       )
 
+    const { origin } = url ? new URL(url) : { origin: "" }
+
     if (!url) return
 
-    const { origin } = new URL(url)
-
-    const allowPermission = allowedPages[origin]
+    const allowPermission = allowedPages.find(
+      (permission) => permission.origin === origin
+    )
 
     if (allowPermission) {
       setCurrentPermission(allowPermission)
@@ -62,9 +65,16 @@ export default function TopMenu(): ReactElement {
 
   const deny = useCallback(async () => {
     if (typeof currentPermission !== "undefined") {
-      // Deletes the permission for the currently selected (in-app) network.
-      const permission = allowedPages[currentPermission.origin]
-      await dispatch(denyOrRevokePermission(permission))
+      // Deletes all permissions corresponding to the currently selected
+      // account and origin
+      await Promise.all(
+        allowedPages.map(async (permission) => {
+          if (permission.origin === currentPermission.origin) {
+            return dispatch(denyOrRevokePermission(permission))
+          }
+          return undefined
+        })
+      )
     }
     window.close()
   }, [dispatch, currentPermission, allowedPages])

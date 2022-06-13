@@ -1,4 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { RootState } from ".."
 import { DAppPermissionState } from "../dapp"
 import { selectCurrentAccount } from "./uiSelectors"
@@ -28,9 +29,20 @@ export const selectCurrentPendingPermission = createSelector(
 export const selectAllowedPages = createSelector(
   (state: RootState) => getProviderBridgeState(state).allowed,
   selectCurrentAccount,
-  (allowedPages, currentAccount) =>
-    // Decompose the origin -> permission mapping and leave only the origin ->
-    // permissions that reference the current account address and network.
-    // EVM only for now
-    allowedPages.evm[currentAccount.network.chainID]?.[currentAccount.address]
+  (allowed, currentAccount): PermissionRequest[] => {
+    // Return an array of all permissions corresponding to
+    // the currently selected account
+    const permissions: PermissionRequest[] = []
+
+    Object.keys(allowed.evm).forEach(([chainId]) => {
+      Object.keys(allowed.evm[chainId]).forEach((address) => {
+        if (address === currentAccount.address) {
+          Object.values(allowed.evm[chainId][address]).forEach((permission) => {
+            permissions.push(permission)
+          })
+        }
+      })
+    })
+    return permissions
+  }
 )
