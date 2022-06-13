@@ -16,7 +16,7 @@ const buttonStyle = `
     font-size: 16px;
     color: var(--green-40);
   }
-  .option {
+  .network_option {
     width: 100%;
     height: 56px;
     padding: 0px 15px;
@@ -31,23 +31,23 @@ const buttonStyle = `
     border: 1px solid transparent;
     position: relative;
   }
-  .option.active {
+  .network_option.active {
     border-color: var(--success);
     box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
       0px 6px 8px rgba(0, 20, 19, 0.24), 0px 2px 4px rgba(0, 20, 19, 0.34);
   }
-  .option.active .name {
+  .network_option.active .name {
     color: var(--success);
   }
-  .option_left,
-  .option_right {
+  .network_option_left,
+  .network_option_right {
     display: flex;
   }
-  .option_right {
+  .network_option_right {
     align-items: center;
     justify-content: space-between;
   }
-  .option_left {
+  .network_option_left {
     text-align: left;
     flex-direction: column;
     width: 70px;
@@ -97,18 +97,18 @@ export function NetworkSettingsSelectOptionButton({
   return (
     <button
       key={option.confidence}
-      className={classNames("option", {
+      className={classNames("network_option", {
         active: isActive,
       })}
       onClick={handleSelectGasOption}
       type="button"
     >
-      <div className="option_left">
+      <div className="network_option_left">
         <div className="name">{capitalize(option.type)}</div>
         <div className="subtext">{option.estimatedSpeed}</div>
       </div>
 
-      <div className="option_right">
+      <div className="network_option_right">
         <div className="miner_wrap">
           <span className="subtext_large miner">
             <span className="r_label">Miner:</span>
@@ -152,18 +152,18 @@ export function NetworkSettingsSelectOptionButtonCustom({
   return (
     <button
       key={option.confidence}
-      className={classNames("option", {
+      className={classNames("network_option", {
         active: isActive,
         option_warning: warningMessage,
       })}
       onClick={handleSelectGasOption}
       type="button"
     >
-      <div className="option_left">
+      <div className="network_option_left">
         <div className="name">{capitalize(option.type)}</div>
       </div>
 
-      <div className="option_right">
+      <div className="network_option_right">
         <div className="miner_wrap">
           <span className="subtext_large r_label">Miner:</span>
           <div className="input_wrap">
@@ -209,7 +209,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
           .miner_wrap {
             width: 112px;
           }
-          .option_warning {
+          .network_option_warning {
             align-items: baseline;
             padding-top: 11px;
             height: 74px;
