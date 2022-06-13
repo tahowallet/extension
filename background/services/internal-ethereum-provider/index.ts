@@ -31,7 +31,7 @@ import {
 } from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
 import { SUPPORT_POLYGON } from "../../features"
-import { getOrCreateDB, InternalEtheremProviderDatabase } from "./db"
+import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -87,7 +87,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   private constructor(
-    private db: InternalEtheremProviderDatabase,
+    private db: InternalEthereumProviderDatabase,
     private chainService: ChainService,
     private preferenceService: PreferenceService
   ) {
@@ -293,14 +293,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   async getActiveNetwork(): Promise<EVMNetwork> {
     const activeChainId = await this.db.getActiveChainId()
-    const activeNetwork = (await this.getSupportedNetworkByChainId(
+    const activeNetwork = this.getSupportedNetworkByChainId(
       activeChainId
-    )) as EVMNetwork
+    ) as EVMNetwork
     return activeNetwork
   }
 
   getSupportedNetworkByChainId(chainID: string): EVMNetwork | undefined {
-    const [network] = this.chainService.supportedNetworks.filter(
+    const network = this.chainService.supportedNetworks.find(
       (supportedNetwork) =>
         toHexChainID(supportedNetwork.chainID) === toHexChainID(chainID)
     )
