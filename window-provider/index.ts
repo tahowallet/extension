@@ -94,6 +94,7 @@ export default class TallyWindowProvider extends EventEmitter {
           if (
             !window.walletRouter?.hasProvider(this.providerInfo.checkIdentity)
           ) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             window.walletRouter?.addProvider(window.tally!)
           }
 
