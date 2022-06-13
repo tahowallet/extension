@@ -224,6 +224,7 @@ export default function NetworkSettingsSelect({
         estimatedFeesPerGas={estimatedFeesPerGas}
         networkSettings={networkSettings}
         onNetworkSettingsChange={onNetworkSettingsChange}
+        onSave={onSave}
       />
     )
   }
