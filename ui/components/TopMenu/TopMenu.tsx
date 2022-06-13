@@ -62,21 +62,9 @@ export default function TopMenu(): ReactElement {
 
   const deny = useCallback(async () => {
     if (typeof currentPermission !== "undefined") {
-      // TODO refactor when we have per-network permission deletion designed.
-      await Promise.all(
-        Object.entries(allowedPages).map(async ([key, permission]) => {
-          if (
-            key.startsWith(
-              `${currentPermission.origin}_${currentPermission.accountAddress}`
-            )
-          ) {
-            return dispatch(
-              denyOrRevokePermission({ ...permission, state: "deny" })
-            )
-          }
-          return undefined
-        })
-      )
+      // Deletes the permission for the currently selected (in-app) network.
+      const permission = allowedPages[currentPermission.origin]
+      await dispatch(denyOrRevokePermission(permission))
     }
     window.close()
   }, [dispatch, currentPermission, allowedPages])
