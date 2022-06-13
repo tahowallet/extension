@@ -82,7 +82,7 @@ import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
   initializeAllowedPages,
-} from "./redux-slices/dapp-permission"
+} from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
   rejectDataSignature,

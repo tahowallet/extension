@@ -1,10 +1,10 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { DAppPermissionState } from "../dapp-permission"
+import { DAppPermissionState } from "../dapp"
 import { selectCurrentAccount } from "./uiSelectors"
 
 export const getProviderBridgeState = (state: RootState): DAppPermissionState =>
-  state.dappPermission
+  state.dapp
 
 export const selectPermissionRequests = createSelector(
   getProviderBridgeState,

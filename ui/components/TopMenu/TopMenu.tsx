@@ -3,7 +3,7 @@ import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
-import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
+import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 

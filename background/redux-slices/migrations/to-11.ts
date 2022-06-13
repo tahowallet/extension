@@ -31,7 +31,7 @@ type OldState = {
 }
 
 type NewState = {
-  dappPermission: {
+  dapp: {
     allowed: PermissionMap
   }
 }
@@ -67,14 +67,16 @@ export default (prevState: Record<string, unknown>): NewState => {
     oldDappPermissionsState.dappPermission
 
   const newDappPermissionsState: NewState = {
-    dappPermission: {
+    dapp: {
       ...restOfOldDappPermission,
       allowed,
     },
   }
 
+  const { dappPermission: __, ...restOfPrevState } = prevState
+
   return {
-    ...prevState,
+    ...restOfPrevState,
     ...newDappPermissionsState,
   }
 }

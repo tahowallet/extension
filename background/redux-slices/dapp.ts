@@ -51,7 +51,7 @@ export const denyOrRevokePermission = createBackgroundAsyncThunk(
   }
 )
 
-const dappPermissionSlice = createSlice({
+const dappSlice = createSlice({
   name: "dapp-permission",
   initialState,
   reducers: {
@@ -134,7 +134,6 @@ const dappPermissionSlice = createSlice({
   },
 })
 
-export const { requestPermission, initializeAllowedPages } =
-  dappPermissionSlice.actions
+export const { requestPermission, initializeAllowedPages } = dappSlice.actions
 
-export default dappPermissionSlice.reducer
+export default dappSlice.reducer
