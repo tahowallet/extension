@@ -1,7 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import {
   NetworkFeeSettings,
-  updateTransactionOptions,
+  updateTransactionData,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   selectEstimatedFeesPerGas,
@@ -25,7 +25,7 @@ export default function SignTransactionDetailPanel(): ReactElement {
 
   const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
     dispatch(
-      updateTransactionOptions({
+      updateTransactionData({
         ...transactionDetails,
         gasLimit: networkSetting.gasLimit ?? transactionDetails.gasLimit,
       })

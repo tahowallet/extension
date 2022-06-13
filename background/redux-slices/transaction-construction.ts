@@ -1,4 +1,4 @@
-import { createSlice, createSelector } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { FORK } from "../constants"
 import {
@@ -16,7 +16,6 @@ import {
   EVMNetwork,
   SignedEVMTransaction,
 } from "../networks"
-import { NetworksState } from "./networks"
 import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
@@ -91,7 +90,7 @@ export interface SignatureRequest {
 }
 
 export type Events = {
-  updateOptions: EnrichedEVMTransactionSignatureRequest
+  updateTransaction: EnrichedEVMTransactionSignatureRequest
   requestSignature: SignatureRequest
   signatureRejected: never
   broadcastSignedTransaction: SignedEVMTransaction
@@ -143,10 +142,10 @@ const makeBlockEstimate = (
 }
 
 // Async thunk to pass transaction options from the store to the background via an event
-export const updateTransactionOptions = createBackgroundAsyncThunk(
-  "transaction-construction/update-options",
+export const updateTransactionData = createBackgroundAsyncThunk(
+  "transaction-construction/update-transaction",
   async (options: EnrichedEVMTransactionSignatureRequest) => {
-    await emitter.emit("updateOptions", options)
+    await emitter.emit("updateTransaction", options)
   }
 )
 
@@ -266,7 +265,7 @@ const transactionSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(updateTransactionOptions.pending, (immerState) => {
+    builder.addCase(updateTransactionData.pending, (immerState) => {
       immerState.status = TransactionConstructionStatus.Pending
       immerState.signedTransaction = undefined
     })
@@ -320,37 +319,4 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
       )
     )
   }
-)
-
-export const selectDefaultNetworkFeeSettings = createSelector(
-  ({
-    transactionConstruction,
-    networks,
-  }: {
-    transactionConstruction: TransactionConstruction
-    networks: NetworksState
-  }) => ({
-    feeType: transactionConstruction.feeTypeSelected,
-    selectedFeesPerGas:
-      transactionConstruction.estimatedFeesPerGas?.[
-        transactionConstruction.feeTypeSelected
-      ],
-    suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
-    baseFeePerGas: networks.evm[1].baseFeePerGas, // @TODO: Support multi-network
-  }),
-  ({
-    feeType,
-    selectedFeesPerGas,
-    suggestedGasLimit,
-    baseFeePerGas,
-  }): NetworkFeeSettings => ({
-    feeType,
-    gasLimit: undefined,
-    suggestedGasLimit,
-    values: {
-      maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
-      maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
-      baseFeePerGas: baseFeePerGas ?? undefined,
-    },
-  })
 )
