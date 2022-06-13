@@ -13,7 +13,7 @@ import to11 from "./to-11"
  * The version of persisted Redux state the extension is expecting. Any previous
  * state without this version, or with a lower version, ought to be migrated.
  */
-export const REDUX_STATE_VERSION = 10
+export const REDUX_STATE_VERSION = 11
 
 /**
  * Common type for all migration functions.
