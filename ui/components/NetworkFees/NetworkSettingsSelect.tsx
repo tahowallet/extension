@@ -1,6 +1,5 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   ESTIMATED_FEE_MULTIPLIERS,
   ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
@@ -14,10 +13,7 @@ import {
   GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
-import {
-  selectCurrentNetwork,
-  selectMainCurrencyPricePoint,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
@@ -87,34 +83,6 @@ const gasOptionFromEstimate = (
   }
 }
 
-function EstimateRefreshCountdownDivider() {
-  const [timeRemaining, setTimeRemaining] = useState(0)
-  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-
-  const getSecondsTillGasUpdate = useCallback(() => {
-    const now = Date.now()
-    setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
-  }, [gasTime])
-
-  useEffect(() => {
-    getSecondsTillGasUpdate()
-    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
-    return () => {
-      clearTimeout(interval)
-    }
-  })
-
-  return (
-    <div className="divider">
-      <div className="divider-background" />
-      <div
-        className="divider-cover"
-        style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
-      />
-    </div>
-  )
-}
-
 export default function NetworkSettingsSelect({
   // FIXME Map this to GasOption[] in a selector.
   estimatedFeesPerGas,
@@ -124,7 +92,6 @@ export default function NetworkSettingsSelect({
   const dispatch = useBackgroundDispatch()
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
-  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const customGas = useBackgroundSelector((state) => {
     return state.transactionConstruction.customFeesPerGas
   })
