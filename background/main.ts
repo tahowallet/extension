@@ -933,7 +933,7 @@ export default class Main extends BaseService<never> {
           clear()
           switch (response.type) {
             case "success-data":
-              resolver(response.signedData)
+              resolver(response as any)
               break
             default:
               rejecter()

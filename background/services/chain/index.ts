@@ -693,6 +693,7 @@ export default class ChainService extends BaseService<Events> {
   async broadcastSignedTransaction(
     transaction: SignedEVMTransaction
   ): Promise<void> {
+    logger.log("serializing transaction")
     try {
       const serialized = utils.serializeTransaction(
         ethersTransactionFromSignedTransaction(transaction),

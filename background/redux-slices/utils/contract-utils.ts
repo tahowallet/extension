@@ -26,7 +26,10 @@ export const internalProviderPort = {
     this.emitter.emit("message", message)
   },
   postResponse(message: any): void {
-    this.listeners.forEach((listener) => listener(message))
+    this.listeners.forEach((listener) => {
+      console.log("posting response", message)
+      return listener(message)
+    })
   },
 }
 /* eslint-enable @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types */

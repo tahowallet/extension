@@ -14,6 +14,7 @@ import {
   TallyAccountPayload,
   isTallyAccountPayload,
 } from "@tallyho/provider-bridge-shared"
+import logger from "@tallyho/tally-background/lib/logger"
 import { EventEmitter } from "events"
 
 // TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
@@ -48,6 +49,7 @@ export default class TallyWindowProvider extends EventEmitter {
     super()
 
     const internalListener = (event: unknown) => {
+      console.log("an event: ", event)
       let result: TallyConfigPayload | TallyAccountPayload
       if (
         isWindowResponseEvent(event) &&
@@ -131,6 +133,7 @@ export default class TallyWindowProvider extends EventEmitter {
       typeof methodOrRequest === "string" &&
       typeof paramsOrCallback !== "function"
     ) {
+      logger.log("foofoofoo", methodOrRequest)
       return this.request({ method: methodOrRequest, params: paramsOrCallback })
     }
 
@@ -228,7 +231,7 @@ export default class TallyWindowProvider extends EventEmitter {
         ) {
           this.handleAddressChange.bind(this)(result)
         }
-
+        logger.log("resolving with: ", result)
         resolve(result)
       }
 

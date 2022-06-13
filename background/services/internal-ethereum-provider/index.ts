@@ -93,6 +93,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       try {
         const response = {
           id: event.id,
+          jsonrpc: "2.0",
           result: await this.routeSafeRPCRequest(
             event.request.method,
             event.request.params
@@ -186,12 +187,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return [address]
       }
       case "eth_sendTransaction":
-        return this.signTransaction(
-          params[0] as JsonRpcTransactionRequest
-        ).then(async (signed) => {
-          await this.chainService.broadcastSignedTransaction(signed)
-          return signed.hash
-        })
+        return this.signTransaction(params[0] as JsonRpcTransactionRequest)
+          .then(async (signed) => {
+            await this.chainService.broadcastSignedTransaction(signed)
+            return signed.hash
+          })
+          .catch((e) => {
+            logger.log("in catch: ", e)
+          })
       case "eth_signTransaction":
         return this.signTransaction(
           params[0] as JsonRpcTransactionRequest
@@ -231,6 +234,21 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         }
         throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
       }
+      case "wallet_addEthereumChain":
+        if (SUPPORT_POLYGON) {
+          const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+          const newNetwork = this.chainService.supportedNetworks.find(
+            (network) =>
+              network.chainID === newChainId ||
+              toHexChainID(network.chainID) === newChainId
+          )
+          if (newNetwork) {
+            this.activeNetwork = newNetwork
+            return null
+          }
+          throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
+        }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
@@ -251,7 +269,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "metamask_watchAsset":
       case "net_peerCount":
       case "wallet_accountsChanged":
-      case "wallet_addEthereumChain":
       case "wallet_registerOnboarding":
       default:
         throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)

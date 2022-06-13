@@ -120,7 +120,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const faviconUrl = completeTab?.favIconUrl ?? ""
     const title = completeTab?.title ?? ""
 
-    const response: PortResponseEvent = { id: event.id, result: [] }
+    const response: PortResponseEvent = {
+      id: event.id,
+      jsonrpc: "2.0",
+      result: [],
+    }
 
     const originPermission = await this.checkPermission(origin)
     if (isTallyConfigPayload(event.request)) {
@@ -199,6 +203,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     this.openPorts.forEach((p) => {
       p.postMessage({
         id: "tallyHo",
+        jsonrpc: "2.0",
         result: {
           method: "tally_getConfig",
           defaultWallet: newDefaultWalletValue,
@@ -214,6 +219,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       if (await this.checkPermission(origin)) {
         port.postMessage({
           id: "tallyHo",
+          jsonrpc: "2.0",
           result: {
             method: "tally_accountChanged",
             address: [newAddress],
@@ -222,6 +228,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       } else {
         port.postMessage({
           id: "tallyHo",
+          jsonrpc: "2.0",
           result: {
             method: "tally_accountChanged",
             address: [],

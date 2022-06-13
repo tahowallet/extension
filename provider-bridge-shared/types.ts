@@ -10,7 +10,7 @@ export type PermissionRequest = {
 export type WindowResponseEvent = {
   origin: string
   source: unknown
-  data: { id: string; target: string; result: unknown }
+  data: { id: string; jsonrpc: "2.0"; target: string; result: unknown }
 }
 export type RPCRequest = {
   method: string
@@ -25,6 +25,7 @@ export type WindowRequestEvent = {
 
 export type PortResponseEvent = {
   id: string
+  jsonrpc: "2.0"
   result: unknown
 }
 
