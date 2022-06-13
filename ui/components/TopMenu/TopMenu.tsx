@@ -98,7 +98,11 @@ export default function TopMenu(): ReactElement {
           setIsProtocolListOpen(false)
         }}
       >
-        <TopMenuProtocolList />
+        <TopMenuProtocolList
+          onProtocolChange={() => {
+            setIsProtocolListOpen(false)
+          }}
+        />
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isNotificationsOpen}
