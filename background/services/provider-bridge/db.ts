@@ -2,18 +2,14 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import Dexie from "dexie"
 import { ETHEREUM, POLYGON } from "../../constants"
 
-function keyBy(
-  permissionsArray: Array<PermissionRequest>,
-  keyOrKeysArray: keyof PermissionRequest | Array<keyof PermissionRequest>,
-  separator = "_"
-): Record<string, PermissionRequest> {
-  return permissionsArray.reduce((acc, current) => {
-    const key = Array.isArray(keyOrKeysArray)
-      ? keyOrKeysArray.map((k) => current[k]).join(separator)
-      : current[keyOrKeysArray]
-    acc[key] = current
-    return acc
-  }, {} as Record<string, PermissionRequest>)
+export type PermissionMap = {
+  evm: {
+    [chainID: string]: {
+      [address: string]: {
+        [origin: string]: PermissionRequest
+      }
+    }
+  }
 }
 
 export class ProviderBridgeServiceDatabase extends Dexie {
@@ -126,12 +122,18 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     })
   }
 
-  async getAllPermission(): Promise<Record<string, PermissionRequest>> {
-    return this.dAppPermissions
-      .toArray()
-      .then((permissionsArray) =>
-        keyBy(permissionsArray, ["origin", "accountAddress", "chainID"])
-      )
+  async getAllPermission(): Promise<PermissionMap> {
+    const permissions = await this.dAppPermissions.toArray()
+
+    const permissionMap: PermissionMap = { evm: {} }
+    permissions.forEach((permission) => {
+      permissionMap.evm[permission.chainID] ??= {}
+      permissionMap.evm[permission.chainID][permission.accountAddress] ??= {}
+      permissionMap.evm[permission.chainID][permission.accountAddress][
+        permission.origin
+      ] = permission
+    })
+    return permissionMap
   }
 
   async setPermission(

@@ -26,15 +26,11 @@ export const selectCurrentPendingPermission = createSelector(
 )
 
 export const selectAllowedPages = createSelector(
-  (state: RootState) => getProviderBridgeState(state).allowedPages,
+  (state: RootState) => getProviderBridgeState(state).allowed,
   selectCurrentAccount,
   (allowedPages, currentAccount) =>
     // Decompose the origin -> permission mapping and leave only the origin ->
-    // permissions that reference the current account address.
-    Object.fromEntries(
-      Object.entries(allowedPages).filter(
-        ([, { accountAddress }]) =>
-          accountAddress.toLowerCase() === currentAccount.address.toLowerCase()
-      )
-    )
+    // permissions that reference the current account address and network.
+    // EVM only for now
+    allowedPages.evm[currentAccount.network.chainID]?.[currentAccount.address]
 )

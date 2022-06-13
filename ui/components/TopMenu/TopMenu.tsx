@@ -1,10 +1,7 @@
 import React, { ReactElement, useState, useEffect, useCallback } from "react"
 import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
-import {
-  selectAllowedPages,
-  selectCurrentAccount,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
@@ -34,7 +31,6 @@ export default function TopMenu(): ReactElement {
   const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
 
   const allowedPages = useBackgroundSelector(selectAllowedPages)
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
 
   const initPermissionAndOrigin = useCallback(async () => {
     const { url } = await browser.tabs
@@ -50,10 +46,7 @@ export default function TopMenu(): ReactElement {
 
     const { origin } = new URL(url)
 
-    const allowPermission =
-      allowedPages[
-        `${origin}_${currentAccount.address}_${currentAccount.network.chainID}`
-      ]
+    const allowPermission = allowedPages[origin]
 
     if (allowPermission) {
       setCurrentPermission(allowPermission)
@@ -61,7 +54,7 @@ export default function TopMenu(): ReactElement {
     } else {
       setIsConnectedToDApp(false)
     }
-  }, [allowedPages, setCurrentPermission, currentAccount])
+  }, [allowedPages, setCurrentPermission])
 
   useEffect(() => {
     initPermissionAndOrigin()

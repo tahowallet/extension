@@ -4,13 +4,23 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export type DAppPermissionState = {
-  permissionRequests: { [url: string]: PermissionRequest }
-  allowedPages: { [origin_accountAddress_chainId: string]: PermissionRequest }
+  permissionRequests: { [origin: string]: PermissionRequest }
+  allowed: {
+    evm: {
+      [chainID: string]: {
+        [address: string]: {
+          [origin: string]: PermissionRequest
+        }
+      }
+    }
+  }
+  allowedPages: undefined
 }
 
 export const initialState: DAppPermissionState = {
   permissionRequests: {},
-  allowedPages: {},
+  allowed: { evm: {} },
+  allowedPages: undefined,
 }
 
 export type Events = {
@@ -46,13 +56,22 @@ const dappPermissionSlice = createSlice({
   initialState,
   reducers: {
     initializeAllowedPages: (
-      state,
-      { payload: allowedPages }: { payload: Record<string, PermissionRequest> }
-    ) => {
-      return {
-        ...state,
-        allowedPages: { ...allowedPages },
+      immerState,
+      {
+        payload: allowed,
+      }: {
+        payload: {
+          evm: {
+            [chainID: string]: {
+              [address: string]: {
+                [origin: string]: PermissionRequest
+              }
+            }
+          }
+        }
       }
+    ) => {
+      immerState.allowed = allowed
     },
     requestPermission: (
       state,
@@ -77,33 +96,39 @@ const dappPermissionSlice = createSlice({
     builder
       .addCase(
         grantPermission.fulfilled,
-        (state, { payload: permission }: { payload: PermissionRequest }) => {
-          const updatedPermissionRequests = { ...state.permissionRequests }
+        (
+          immerState,
+          { payload: permission }: { payload: PermissionRequest }
+        ) => {
+          const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.key]
 
-          return {
-            permissionRequests: updatedPermissionRequests,
-            allowedPages: {
-              ...state.allowedPages,
-              [permission.key]: permission,
-            },
-          }
+          immerState.allowed.evm[permission.chainID] ??= {}
+          immerState.allowed.evm[permission.chainID][
+            permission.accountAddress
+          ] ??= {}
+          immerState.allowed.evm[permission.chainID][permission.accountAddress][
+            permission.origin
+          ] = permission
         }
       )
       .addCase(
         denyOrRevokePermission.fulfilled,
-        (state, { payload: permission }: { payload: PermissionRequest }) => {
-          const updatedPermissionRequests = { ...state.permissionRequests }
+        (
+          immerState,
+          { payload: permission }: { payload: PermissionRequest }
+        ) => {
+          const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.key]
 
-          // remove page from the allowedPages list
-          const updatedAllowedPages = { ...state.allowedPages }
-          delete updatedAllowedPages[permission.key]
+          const { [permission.origin]: _, ...withoutOriginToRemove } =
+            immerState.allowed.evm[permission.chainID][
+              permission.accountAddress
+            ]
 
-          return {
-            permissionRequests: updatedPermissionRequests,
-            allowedPages: updatedAllowedPages,
-          }
+          immerState.allowed.evm[permission.chainID][
+            permission.accountAddress
+          ] = withoutOriginToRemove
         }
       )
   },

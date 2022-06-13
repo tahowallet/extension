@@ -116,6 +116,7 @@ import {
   migrateReduxState,
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
+import { PermissionMap } from "./services/provider-bridge/db"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -138,6 +139,7 @@ const devToolsSanitizer = (input: unknown) => {
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
+  ;(window as any).store = store
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -1035,7 +1037,7 @@ export default class Main extends BaseService<never> {
 
     this.providerBridgeService.emitter.on(
       "initializeAllowedPages",
-      async (allowedPages: Record<string, PermissionRequest>) => {
+      async (allowedPages: PermissionMap) => {
         this.store.dispatch(initializeAllowedPages(allowedPages))
       }
     )
