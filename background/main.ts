@@ -108,7 +108,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM } from "./constants"
+import { ETHEREUM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
@@ -1074,7 +1074,14 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
-      await this.providerBridgeService.grantPermission(permission)
+      await Promise.all(
+        [ETHEREUM, POLYGON].map(async (network) => {
+          await this.providerBridgeService.grantPermission({
+            ...permission,
+            chainID: network.chainID,
+          })
+        })
+      )
     })
 
     providerBridgeSliceEmitter.on(
