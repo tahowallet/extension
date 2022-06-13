@@ -5,7 +5,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 
 export type DAppPermissionState = {
   permissionRequests: { [url: string]: PermissionRequest }
-  allowedPages: { [origin_accountAddress: string]: PermissionRequest }
+  allowedPages: { [origin_accountAddress_chainId: string]: PermissionRequest }
 }
 
 export const initialState: DAppPermissionState = {
@@ -25,7 +25,9 @@ export const emitter = new Emittery<Events>()
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
   async (permission: PermissionRequest) => {
-    await emitter.emit("grantPermission", permission)
+    emitter.emit("grantPermission", {
+      ...permission,
+    })
     return permission
   }
 )
