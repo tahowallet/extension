@@ -5,7 +5,7 @@ type ActiveChainId = {
   chainId: string
   origin: string
 }
-export class InternalEtheremProviderDatabase extends Dexie {
+export class InternalEthereumProviderDatabase extends Dexie {
   private activeChainId!: Dexie.Table<ActiveChainId, string>
 
   constructor() {
@@ -47,6 +47,6 @@ export class InternalEtheremProviderDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<InternalEtheremProviderDatabase> {
-  return new InternalEtheremProviderDatabase()
+export async function getOrCreateDB(): Promise<InternalEthereumProviderDatabase> {
+  return new InternalEthereumProviderDatabase()
 }
