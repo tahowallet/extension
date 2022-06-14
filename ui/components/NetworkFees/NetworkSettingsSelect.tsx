@@ -273,6 +273,7 @@ export default function NetworkSettingsSelect({
                 }
                 try {
                   const parsed = BigInt(value)
+                  // @TODO Consider nontypical gas minimums when adding networks
                   if (parsed < 21000n) {
                     return {
                       error: "Gas Limit must be higher than 21000",
