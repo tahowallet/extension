@@ -146,7 +146,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = await this.routeContentScriptRPCRequest(
         originPermission,
         event.request.method,
-        event.request.params
+        event.request.params,
+        origin
       )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
@@ -176,7 +177,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
         response.result = await this.routeContentScriptRPCRequest(
           persistedPermission,
           "eth_accounts",
-          event.request.params
+          event.request.params,
+          origin
         )
       } else {
         // if user does NOT agree, then reject
@@ -303,7 +305,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeContentScriptRPCRequest(
     enablingPermission: PermissionRequest,
     method: string,
-    params: RPCRequest["params"]
+    params: RPCRequest["params"],
+    origin: string
   ): Promise<unknown> {
     try {
       switch (method) {
@@ -322,7 +325,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            enablingPermission.origin,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.signData)
           )
         case "eth_sign":
@@ -331,7 +334,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            enablingPermission.origin,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "personal_sign":
@@ -340,7 +343,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            enablingPermission.origin,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "eth_signTransaction":
@@ -353,7 +356,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
-            enablingPermission.origin,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.signTransaction)
           )
 
@@ -361,7 +364,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
             params,
-            enablingPermission.origin
+            origin
           )
         }
       }

@@ -31,7 +31,11 @@ import {
 } from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
 import { SUPPORT_POLYGON } from "../../features"
-import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
+import {
+  ActiveChainId,
+  getOrCreateDB,
+  InternalEthereumProviderDatabase,
+} from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
 
 // A type representing the transaction requests that come in over JSON-RPC
@@ -273,6 +277,23 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     }
   }
 
+  private async getInternalActiveChain(): Promise<ActiveChainId> {
+    return this.db.getActiveChainIdForOrigin(
+      TALLY_INTERNAL_ORIGIN
+    ) as Promise<ActiveChainId>
+  }
+
+  async getActiveChainIdForOrigin(origin: string): Promise<string> {
+    const activeChainId = await this.db.getActiveChainIdForOrigin(origin)
+    if (!activeChainId) {
+      // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
+      // use the default network.
+      const defaultChainId = (await this.getInternalActiveChain()).chainId
+      return defaultChainId
+    }
+    return activeChainId?.chainId
+  }
+
   private async signTransaction(
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
@@ -308,7 +329,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   async getActiveNetworkForOrigin(origin: string): Promise<EVMNetwork> {
-    const activeChainId = await this.db.getActiveChainIdForOrigin(origin)
+    const activeChainId = await this.getActiveChainIdForOrigin(origin)
     const activeNetwork = this.getSupportedNetworkByChainId(
       activeChainId
     ) as EVMNetwork
