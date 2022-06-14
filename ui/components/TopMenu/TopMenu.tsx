@@ -5,10 +5,7 @@ import {
   selectAllowedPages,
   selectCurrentAccount,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import {
-  HIDE_TOKEN_FEATURES,
-  MULTI_NETWORK,
-} from "@tallyho/tally-background/features"
+import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
@@ -53,7 +50,10 @@ export default function TopMenu(): ReactElement {
 
     const { origin } = new URL(url)
 
-    const allowPermission = allowedPages[`${origin}_${currentAccount.address}`]
+    const allowPermission =
+      allowedPages[
+        `${origin}_${currentAccount.address}_${currentAccount.network.chainID}`
+      ]
 
     if (allowPermission) {
       setCurrentPermission(allowPermission)
@@ -69,12 +69,24 @@ export default function TopMenu(): ReactElement {
 
   const deny = useCallback(async () => {
     if (typeof currentPermission !== "undefined") {
-      await dispatch(
-        denyOrRevokePermission({ ...currentPermission, state: "deny" })
+      // TODO refactor when we have per-network permission deletion designed.
+      await Promise.all(
+        Object.entries(allowedPages).map(async ([key, permission]) => {
+          if (
+            key.startsWith(
+              `${currentPermission.origin}_${currentPermission.accountAddress}`
+            )
+          ) {
+            return dispatch(
+              denyOrRevokePermission({ ...permission, state: "deny" })
+            )
+          }
+          return undefined
+        })
       )
     }
     window.close()
-  }, [dispatch, currentPermission])
+  }, [dispatch, currentPermission, allowedPages])
 
   return (
     <>
@@ -101,7 +113,11 @@ export default function TopMenu(): ReactElement {
           setIsProtocolListOpen(false)
         }}
       >
-        <TopMenuProtocolList />
+        <TopMenuProtocolList
+          onProtocolChange={() => {
+            setIsProtocolListOpen(false)
+          }}
+        />
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isNotificationsOpen}
@@ -116,7 +132,6 @@ export default function TopMenu(): ReactElement {
       <div className="nav_wrap">
         <nav className="standard_width_padded">
           <TopMenuProtocolSwitcher
-            enabled={MULTI_NETWORK}
             onClick={() => setIsProtocolListOpen(true)}
           />
           <div className="profile_group">

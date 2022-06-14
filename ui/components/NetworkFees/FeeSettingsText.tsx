@@ -3,22 +3,27 @@ import {
   truncateDecimalAmount,
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  selectMainCurrencyPricePoint,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../../hooks"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
-  networkSettings: NetworkFeeSettings
+  networkSettings: NetworkFeeSettings,
+  baseFeePerGas?: bigint
 ): string | undefined => {
-  if (networkSettings.values?.baseFeePerGas) {
+  if (baseFeePerGas) {
     const gasLimit =
       networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
@@ -29,12 +34,11 @@ const getFeeDollarValue = (
       enrichAssetAmountWithMainCurrencyValues(
         {
           asset,
-          amount: networkSettings.values?.baseFeePerGas * gasLimit,
+          amount: baseFeePerGas * gasLimit,
         },
         currencyPrice,
         2
       )
-
     return localizedMainCurrencyAmount
   }
   return undefined
@@ -45,32 +49,41 @@ export default function FeeSettingsText({
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const selectedFeeType = useBackgroundSelector(selectFeeType)
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
+  const baseFeePerGas =
+    useBackgroundSelector((state) => {
+      return state.networks.evm[currentNetwork.chainID].baseFeePerGas
+    }) ?? networkSettings.values?.baseFeePerGas
 
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
   )
+  const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
     typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(
-          weiToGwei(networkSettings.values?.baseFeePerGas ?? 0n),
-          0
-        )
+      ? truncateDecimalAmount(weiToGwei(baseFeePerGas ?? 0n), 0)
       : ""
 
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
 
   const gweiValue = `${estimatedGweiAmount} Gwei`
-  const dollarValue = getFeeDollarValue(mainCurrencyPricePoint, networkSettings)
+  const dollarValue = getFeeDollarValue(
+    mainCurrencyPricePoint,
+    networkSettings,
+    baseFeePerGas
+  )
+
+  if (!dollarValue) return <div>~{gweiValue}</div>
 
   return (
     <div>
-      {!networkSettings.gasLimit ? (
+      {!gasLimit && CUSTOM_GAS_SELECT ? (
         <>TBD</>
       ) : (
         <>

@@ -38,7 +38,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, price, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen

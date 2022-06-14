@@ -2,10 +2,9 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
-import { EVMNetwork, toHexChainID } from "../networks"
+import { EVMNetwork } from "../networks"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
-import { getProvider } from "./utils/contract-utils"
 
 const defaultSettings = {
   hideDust: false,

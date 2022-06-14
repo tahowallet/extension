@@ -69,11 +69,12 @@ import {
   estimatedFeesPerGas,
   emitter as transactionConstructionSliceEmitter,
   transactionRequest,
-  updateTransactionOptions,
+  updateTransactionData,
   clearTransactionState,
   TransactionConstructionStatus,
   rejectTransactionSignature,
   transactionSigned,
+  clearCustomGas,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -107,7 +108,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM } from "./constants"
+import { ETHEREUM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import { SignatureResponse, TXSignatureResponse } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
@@ -556,45 +557,55 @@ export default class Main extends BaseService<never> {
       )
     })
 
-    transactionConstructionSliceEmitter.on("updateOptions", async (options) => {
-      const { network } = options
+    transactionConstructionSliceEmitter.on(
+      "updateTransaction",
+      async (options) => {
+        const { network } = options
 
-      const {
-        values: { maxFeePerGas, maxPriorityFeePerGas },
-      } = selectDefaultNetworkFeeSettings(this.store.getState())
+        const {
+          values: { maxFeePerGas, maxPriorityFeePerGas },
+        } = selectDefaultNetworkFeeSettings(this.store.getState())
 
-      const { transactionRequest: populatedRequest, gasEstimationError } =
-        await this.chainService.populatePartialEVMTransactionRequest(network, {
-          ...options,
-          maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-          maxPriorityFeePerGas:
-            options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-        })
+        const { transactionRequest: populatedRequest, gasEstimationError } =
+          await this.chainService.populatePartialEVMTransactionRequest(
+            network,
+            {
+              ...options,
+              maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+              maxPriorityFeePerGas:
+                options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+            }
+          )
 
-      const { annotation } =
-        await this.enrichmentService.enrichTransactionSignature(
-          network,
-          populatedRequest,
-          2 /* TODO desiredDecimals should be configurable */
-        )
-      const enrichedPopulatedRequest = { ...populatedRequest, annotation }
+        const { annotation } =
+          await this.enrichmentService.enrichTransactionSignature(
+            network,
+            populatedRequest,
+            2 /* TODO desiredDecimals should be configurable */
+          )
 
-      if (typeof gasEstimationError === "undefined") {
-        this.store.dispatch(
-          transactionRequest({
-            transactionRequest: enrichedPopulatedRequest,
-            transactionLikelyFails: false,
-          })
-        )
-      } else {
-        this.store.dispatch(
-          transactionRequest({
-            transactionRequest: enrichedPopulatedRequest,
-            transactionLikelyFails: true,
-          })
-        )
+        const enrichedPopulatedRequest = {
+          ...populatedRequest,
+          annotation,
+        }
+
+        if (typeof gasEstimationError === "undefined") {
+          this.store.dispatch(
+            transactionRequest({
+              transactionRequest: enrichedPopulatedRequest,
+              transactionLikelyFails: false,
+            })
+          )
+        } else {
+          this.store.dispatch(
+            transactionRequest({
+              transactionRequest: enrichedPopulatedRequest,
+              transactionLikelyFails: true,
+            })
+          )
+        }
       }
-    })
+    )
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
@@ -791,23 +802,19 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
-      // FIXME Should be .selectedNetwork once that exists.
-      // FIXME Also, UI-wise, is this correct behavior? It ties the current
-      // FIXME acount (right-side popover) to the network (left-side popover)
-      // FIXME in a weird way.
-      const selectedNetwork = this.store.getState().ui.selectedAccount.network
+      this.chainService.supportedNetworks.forEach((network) => {
+        // Mark as loading and wire things up.
+        this.store.dispatch(
+          loadAccount({
+            address,
+            network,
+          })
+        )
 
-      // Mark as loading and wire things up.
-      this.store.dispatch(
-        loadAccount({
+        this.chainService.addAccountToTrack({
           address,
-          network: selectedNetwork,
+          network,
         })
-      )
-
-      this.chainService.addAccountToTrack({
-        address,
-        network: selectedNetwork,
       })
     })
 
@@ -861,7 +868,7 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
-        this.store.dispatch(updateTransactionOptions(payload))
+        this.store.dispatch(updateTransactionData(payload))
 
         const clear = () => {
           // Mutual dependency to handleAndClear.
@@ -1014,6 +1021,7 @@ export default class Main extends BaseService<never> {
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }]
       )
+      this.store.dispatch(clearCustomGas())
     })
   }
 
@@ -1066,7 +1074,14 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
-      await this.providerBridgeService.grantPermission(permission)
+      await Promise.all(
+        [ETHEREUM, POLYGON].map(async (network) => {
+          await this.providerBridgeService.grantPermission({
+            ...permission,
+            chainID: network.chainID,
+          })
+        })
+      )
     })
 
     providerBridgeSliceEmitter.on(

@@ -1,3 +1,4 @@
+import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
 
 /**
@@ -8,10 +9,11 @@ export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
-type NetworkBaseAsset = {
+export type NetworkBaseAsset = {
   symbol: string
   name: string
   decimals: number
+  coinType: Slip44CoinType
 }
 
 /**
