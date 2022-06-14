@@ -1,28 +1,41 @@
 import Dexie from "dexie"
+import { ETHEREUM } from "../../constants"
+import { EVMNetwork } from "../../networks"
+import { TALLY_INTERNAL_ORIGIN } from "./constants"
+
+export type ActiveNetwork = {
+  origin: string
+  network: EVMNetwork
+}
 
 export class InternalEthereumProviderDatabase extends Dexie {
-  private activeChainId!: Dexie.Table<{ chainId: string }, string>
+  private activeNetwork!: Dexie.Table<ActiveNetwork, string>
 
   constructor() {
     super("tally/internal-ethereum-provider")
 
     this.version(1).stores({
-      activeChainId: "&chainId",
+      activeNetwork: "&origin,chainId,network, address",
     })
 
-    this.activeChainId.put({
-      chainId: "1",
+    this.activeNetwork.put({
+      origin: TALLY_INTERNAL_ORIGIN,
+      // New installs will default to having `Ethereum` as their active chain.
+      network: ETHEREUM,
     })
   }
 
-  async setActiveChainId(chainId: string): Promise<string | undefined> {
-    await this.activeChainId.clear()
-    return this.activeChainId.put({ chainId })
+  async setActiveChainIdForOrigin(
+    origin: string,
+    network: EVMNetwork
+  ): Promise<string | undefined> {
+    return this.activeNetwork.put({ origin, network })
   }
 
-  async getActiveChainId(): Promise<string> {
-    const [activeChainId] = await this.activeChainId.toArray()
-    return activeChainId.chainId
+  async getActiveNetworkForOrigin(
+    origin: string
+  ): Promise<ActiveNetwork | undefined> {
+    return this.activeNetwork.get({ origin })
   }
 }
 
