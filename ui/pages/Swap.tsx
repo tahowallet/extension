@@ -642,7 +642,6 @@ export default function Swap(): ReactElement {
             display: flex;
             justify-content: center;
             margin-top: 24px;
-            padding-bottom: 20px;
           }
           .total_label {
             width: 33px;

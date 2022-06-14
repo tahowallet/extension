@@ -26,11 +26,13 @@ import {
   NetworkSettingsSelectOptionButton,
   NetworkSettingsSelectOptionButtonCustom,
 } from "./NetworkSettingsSelectOptionButtons"
+import SharedButton from "../Shared/SharedButton"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   networkSettings: NetworkFeeSettings
   onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
+  onSave: () => void
 }
 
 // Map a BlockEstimate from the backend to a GasOption for the UI.
@@ -88,6 +90,7 @@ export default function NetworkSettingsSelect({
   estimatedFeesPerGas,
   networkSettings,
   onNetworkSettingsChange,
+  onSave,
 }: NetworkSettingsSelectProps): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -221,12 +224,16 @@ export default function NetworkSettingsSelect({
         estimatedFeesPerGas={estimatedFeesPerGas}
         networkSettings={networkSettings}
         onNetworkSettingsChange={onNetworkSettingsChange}
+        onSave={onSave}
       />
     )
   }
 
   return (
     <div className="fees standard_width">
+      <span className="settings_label network_fee_label">
+        Network fees (Gwei)
+      </span>
       {gasOptions.map((option, i) => {
         return (
           <>
@@ -252,45 +259,63 @@ export default function NetworkSettingsSelect({
           </>
         )
       })}
-      <div className="info">
-        <div className="limit">
-          <SharedTypedInput
-            id="gasLimit"
-            value={networkSettings.gasLimit?.toString() ?? ""}
-            placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
-            onChange={setGasLimit}
-            parseAndValidate={(value) => {
-              if (value.trim() === "") {
-                return { parsed: undefined }
-              }
-              try {
-                const parsed = BigInt(value)
-                if (parsed < 21000n) {
-                  return {
-                    error: "Gas limit too low",
-                  }
+      <footer>
+        <div className="info">
+          <div className="limit">
+            <SharedTypedInput
+              id="gasLimit"
+              value={networkSettings.gasLimit?.toString() ?? ""}
+              placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
+              onChange={setGasLimit}
+              parseAndValidate={(value) => {
+                if (value.trim() === "") {
+                  return { parsed: undefined }
                 }
+                try {
+                  const parsed = BigInt(value)
+                  if (parsed < 21000n) {
+                    return {
+                      error: "Gas Limit too low",
+                    }
+                  }
 
-                return { parsed }
-              } catch (e) {
-                return { error: "Gas Limit must be a number" }
-              }
-            }}
-            label="Gas limit"
-            type="number"
-            focusedLabelBackgroundColor="var(--green-95)"
-            step={1000}
-          />
-        </div>
-        <div className="max_fee">
-          <span className="max_label">Max Fee</span>
-          <div className="price">
-            {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+                  return { parsed }
+                } catch (e) {
+                  return { error: "Gas Limit must be a number" }
+                }
+              }}
+              label="Gas limit"
+              type="number"
+              focusedLabelBackgroundColor="var(--green-95)"
+              step={1000}
+            />
+          </div>
+          <div className="max_fee">
+            <span className="max_label">Total Max</span>
+            <div className="price">
+              {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+            </div>
           </div>
         </div>
-      </div>
+        <div className="confirm">
+          <SharedButton size="medium" type="primary" onClick={onSave}>
+            Save settings
+          </SharedButton>
+        </div>
+      </footer>
       <style jsx>
         {`
+          .settings_label {
+            color: var(--green-5);
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+          }
+          .network_fee_label {
+            width: 100%;
+            display: block;
+            margin-bottom: 10px;
+          }
           .max_fee {
             display: flex;
             flex-flow: column;
@@ -305,12 +330,21 @@ export default function NetworkSettingsSelect({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 22px;
+            margin-top: 42px;
+            margin-bottom: 6px;
+          }
+          footer {
+            position: fixed;
+            bottom: 16px;
+            width: inherit;
           }
           .limit {
             margin: 16px 0;
             width: 40%;
             position: relative;
+          }
+          .confirm {
+            float: right;
           }
         `}
       </style>
