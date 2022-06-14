@@ -87,12 +87,18 @@ if (!window.walletRouter) {
 
 Object.defineProperty(window, "ethereum", {
   get() {
-    return new Proxy(window.walletRouter!.currentProvider, {
+    if (!window.walletRouter) {
+      throw new Error(
+        "window.walletRouter is expected to be set to change the injected provider on window.ethereum."
+      )
+    }
+
+    return new Proxy(window.walletRouter.currentProvider, {
       get(target, prop, receiver) {
         if (
           window.walletRouter &&
-          !(prop in window.walletRouter!.currentProvider) &&
-          prop in window.walletRouter!
+          !(prop in window.walletRouter.currentProvider) &&
+          prop in window.walletRouter
         ) {
           // let's publish the api of `window.walletRoute` also on `window.ethereum` for better discoverability
 
