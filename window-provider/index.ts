@@ -94,8 +94,12 @@ export default class TallyWindowProvider extends EventEmitter {
           if (
             !window.walletRouter?.hasProvider(this.providerInfo.checkIdentity)
           ) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            window.walletRouter?.addProvider(window.tally!)
+            if (!window.tally) {
+              throw new Error(
+                "Expected window.tally to be set but it is not. Tally Ho provider configured incorrectly."
+              )
+            }
+            window.walletRouter?.addProvider(window.tally)
           }
 
           window.walletRouter?.setCurrentProvider(
