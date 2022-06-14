@@ -15,11 +15,13 @@ import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-backgrou
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import capitalize from "../../utils/capitalize"
+import SharedButton from "../Shared/SharedButton"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   networkSettings: NetworkFeeSettings
   onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
+  onSave: () => void
 }
 
 type GasOption = {
@@ -108,6 +110,7 @@ export default function NetworkSettingsSelectDeprecated({
   // FIXME Map this to GasOption[] in a selector.
   estimatedFeesPerGas,
   networkSettings,
+  onSave,
   onNetworkSettingsChange,
 }: NetworkSettingsSelectProps): ReactElement {
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
@@ -264,6 +267,11 @@ export default function NetworkSettingsSelectDeprecated({
           </div>
         </div>
       </div>
+      <div className="confirm">
+        <SharedButton size="medium" type="primary" onClick={onSave}>
+          Save settings
+        </SharedButton>
+      </div>
       <style jsx>
         {`
           .option {
@@ -329,11 +337,15 @@ export default function NetworkSettingsSelectDeprecated({
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 26px;
           }
           .limit {
             margin: 16px 0;
             width: 40%;
             position: relative;
+          }
+          .confirm {
+            float: right;
           }
         `}
       </style>
