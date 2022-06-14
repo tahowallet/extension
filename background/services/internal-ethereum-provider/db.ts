@@ -1,28 +1,39 @@
 import Dexie from "dexie"
+import { TALLY_INTERNAL_ORIGIN } from "./constants"
+
+export type ActiveChainId = {
+  chainId: string
+  origin: string
+}
 
 export class InternalEthereumProviderDatabase extends Dexie {
-  private activeChainId!: Dexie.Table<{ chainId: string }, string>
+  private activeChainId!: Dexie.Table<ActiveChainId, string>
 
   constructor() {
     super("tally/internal-ethereum-provider")
 
     this.version(1).stores({
-      activeChainId: "&chainId",
+      activeChainId: "&origin,chainId",
     })
 
     this.activeChainId.put({
+      origin: TALLY_INTERNAL_ORIGIN,
+      // New installs will default to having `Ethereum` as their active chain.
       chainId: "1",
     })
   }
 
-  async setActiveChainId(chainId: string): Promise<string | undefined> {
-    await this.activeChainId.clear()
-    return this.activeChainId.put({ chainId })
+  async setActiveChainIdForOrigin(
+    chainId: string,
+    origin: string
+  ): Promise<string | undefined> {
+    return this.activeChainId.put({ origin, chainId })
   }
 
-  async getActiveChainId(): Promise<string> {
-    const [activeChainId] = await this.activeChainId.toArray()
-    return activeChainId.chainId
+  async getActiveChainIdForOrigin(
+    origin: string
+  ): Promise<ActiveChainId | undefined> {
+    return this.activeChainId.get({ origin })
   }
 }
 
