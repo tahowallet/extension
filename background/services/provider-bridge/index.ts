@@ -122,7 +122,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    const originPermission = await this.checkPermission(origin)
+    const {
+      network: { chainID },
+    } = await this.preferenceService.getSelectedAccount()
+
+    const originPermission = await this.checkPermission(origin, chainID)
     if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
@@ -153,11 +157,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
-      const { address: accountAddress } =
+      const { address: accountAddress, network } =
         await this.preferenceService.getSelectedAccount()
       const permissionRequest: PermissionRequest = {
-        key: `${origin}_${accountAddress}`,
+        key: `${origin}_${accountAddress}_${network.chainID}`,
         origin,
+        chainID: network.chainID,
         faviconUrl,
         title,
         state: "request",
@@ -170,7 +175,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       await blockUntilUserAction
 
-      const persistedPermission = await this.checkPermission(origin)
+      const persistedPermission = await this.checkPermission(
+        origin,
+        network.chainID
+      )
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
@@ -213,7 +221,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
-      if (await this.checkPermission(origin)) {
+      const {
+        network: { chainID },
+      } = await this.preferenceService.getSelectedAccount()
+      if (await this.checkPermission(origin, chainID)) {
         port.postMessage({
           id: "tallyHo",
           result: {
@@ -263,7 +274,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const { address } = await this.preferenceService.getSelectedAccount()
 
     // TODO make this multi-network friendly
-    await this.db.deletePermission(permission.origin, address)
+    await this.db.deletePermission(
+      permission.origin,
+      address,
+      permission.chainID
+    )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
@@ -275,13 +290,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async checkPermission(
     origin: string,
-    address?: string
+    chainID: string
   ): Promise<PermissionRequest | undefined> {
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
-    const currentAddress = address ?? selectedAddress
+    const currentAddress = selectedAddress
     // TODO make this multi-network friendly
-    return this.db.checkPermission(origin, currentAddress)
+    return this.db.checkPermission(origin, currentAddress, chainID)
   }
 
   async routeSafeRequest(

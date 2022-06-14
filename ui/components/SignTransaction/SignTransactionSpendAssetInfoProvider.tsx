@@ -8,7 +8,7 @@ import {
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { isMaxUint256 } from "@tallyho/tally-background/lib/utils"
-import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
@@ -99,7 +99,7 @@ export default function SignTransactionSpendAssetInfoProvider({
       [spenderAddress, hexlify(bigintAmount)]
     )
     dispatch(
-      updateTransactionOptions({
+      updateTransactionData({
         ...transactionDetails,
         input: updatedInput,
       })

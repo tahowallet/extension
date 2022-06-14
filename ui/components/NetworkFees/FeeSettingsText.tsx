@@ -62,6 +62,7 @@ export default function FeeSettingsText({
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
   )
+  const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
@@ -82,7 +83,7 @@ export default function FeeSettingsText({
 
   return (
     <div>
-      {!networkSettings.gasLimit && CUSTOM_GAS_SELECT ? (
+      {!gasLimit && CUSTOM_GAS_SELECT ? (
         <>TBD</>
       ) : (
         <>
