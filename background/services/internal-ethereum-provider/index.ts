@@ -320,17 +320,17 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       throw new Error("Transactions must have a from address for signing.")
     }
 
+    const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
+
     return new Promise<SignedEVMTransaction>((resolve, reject) => {
-      this.getActiveOrDefaultNetwork(origin).then((activeNetwork) => {
-        this.emitter.emit("transactionSignatureRequest", {
-          payload: {
-            ...convertedRequest,
-            from,
-            network: activeNetwork,
-          },
-          resolver: resolve,
-          rejecter: reject,
-        })
+      this.emitter.emit("transactionSignatureRequest", {
+        payload: {
+          ...convertedRequest,
+          from,
+          network: activeNetwork,
+        },
+        resolver: resolve,
+        rejecter: reject,
       })
     })
   }
@@ -365,22 +365,21 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ) {
     const asciiData = hexToAscii(hexData)
     const { data, type } = parseSigningData(asciiData)
+    const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
     return new Promise<string>((resolve, reject) => {
-      this.getActiveOrDefaultNetwork(origin).then((activeNetwork) => {
-        this.emitter.emit("signDataRequest", {
-          payload: {
-            account: {
-              address: account,
-              network: activeNetwork,
-            },
-            signingData: data,
-            messageType: type,
-            rawSigningData: asciiData,
+      this.emitter.emit("signDataRequest", {
+        payload: {
+          account: {
+            address: account,
+            network: activeNetwork,
           },
-          resolver: resolve,
-          rejecter: reject,
-        })
+          signingData: data,
+          messageType: type,
+          rawSigningData: asciiData,
+        },
+        resolver: resolve,
+        rejecter: reject,
       })
     })
   }
