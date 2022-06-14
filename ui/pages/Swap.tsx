@@ -592,7 +592,10 @@ export default function Swap(): ReactElement {
                     isDisabled={
                       typeof latestQuoteRequest.current === "undefined" ||
                       sellAmountLoading ||
-                      buyAmountLoading
+                      buyAmountLoading ||
+                      !sellAsset ||
+                      !sellAmount ||
+                      !buyAsset
                     }
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
