@@ -275,7 +275,7 @@ export default function NetworkSettingsSelect({
                   const parsed = BigInt(value)
                   if (parsed < 21000n) {
                     return {
-                      error: "Gas Limit too low",
+                      error: "Gas Limit must be higher than 21000",
                     }
                   }
 
