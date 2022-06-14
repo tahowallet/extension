@@ -10,7 +10,6 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
-  weiToGwei,
 } from "./lib/utils"
 
 import {
@@ -118,6 +117,7 @@ import {
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
 import { selectCurrentAccountAssetBalance } from "./redux-slices/selectors"
+import getMinMainAssetAmountForTransaction from "./utils/transaction"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -563,14 +563,13 @@ export default class Main extends BaseService<never> {
       "updateTransaction",
       async (options) => {
         const { network } = options
-        const baseAssetSymbol = network.baseAsset.symbol
 
         const {
           values: { maxFeePerGas, maxPriorityFeePerGas },
         } = selectDefaultNetworkFeeSettings(this.store.getState())
         const mainAssetBalance = selectCurrentAccountAssetBalance(
           this.store.getState(),
-          baseAssetSymbol
+          network.baseAsset.symbol
         )
 
         const { transactionRequest: populatedRequest, gasEstimationError } =
@@ -596,19 +595,9 @@ export default class Main extends BaseService<never> {
           annotation,
         }
 
-        const gasFee = BigInt(
-          weiToGwei(
-            enrichedPopulatedRequest.gasLimit *
-              (enrichedPopulatedRequest.maxFeePerGas +
-                enrichedPopulatedRequest.maxPriorityFeePerGas)
-          ).split(".")[0]
+        const mainAssetNeeded = getMinMainAssetAmountForTransaction(
+          enrichedPopulatedRequest
         )
-
-        const mainAssetNeeded =
-          annotation?.type === "asset-transfer" &&
-          annotation.assetAmount.asset.symbol === baseAssetSymbol
-            ? enrichedPopulatedRequest.value + gasFee
-            : gasFee
 
         if (mainAssetBalance && mainAssetBalance?.amount < mainAssetNeeded) {
           this.store.dispatch(
