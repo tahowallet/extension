@@ -37,6 +37,7 @@ import {
   InternalEthereumProviderDatabase,
 } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
+import { ETHEREUM } from "../../constants"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -124,6 +125,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       }
     })
   }
+
+  // @TODO Persist this in db so we get correct network on app startup.
+  private activeNetwork = ETHEREUM
 
   async routeSafeRPCRequest(
     method: string,
@@ -284,14 +288,17 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   async getActiveOrDefaultNetwork(origin: string): Promise<EVMNetwork> {
-    const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
-    if (!activeNetwork) {
-      // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
-      // use the default network.
-      const defaultNetwork = (await this.getInternalActiveChain()).network
-      return defaultNetwork
+    if (SUPPORT_POLYGON) {
+      const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
+      if (!activeNetwork) {
+        // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
+        // use the default network.
+        const defaultNetwork = (await this.getInternalActiveChain()).network
+        return defaultNetwork
+      }
+      return activeNetwork.network
     }
-    return activeNetwork.network
+    return this.activeNetwork
   }
 
   private async signTransaction(
