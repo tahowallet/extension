@@ -32,7 +32,7 @@ import {
 import { hexToAscii } from "../../lib/utils"
 import { SUPPORT_POLYGON } from "../../features"
 import {
-  ActiveChainId,
+  ActiveNetwork,
   getOrCreateDB,
   InternalEthereumProviderDatabase,
 } from "./db"
@@ -139,7 +139,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTypedData({
           account: {
             address: params[0] as string,
-            network: await this.getActiveNetworkForOrigin(origin),
+            network: await this.getActiveOrDefaultNetwork(origin),
           },
           typedData: JSON.parse(params[1] as string),
         })
@@ -149,7 +149,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         // on a user's idea of a dApp connection rather than a network-specific
         // modality, requiring it to be constantly "switched"
         return toHexChainID(
-          (await this.getActiveNetworkForOrigin(origin)).chainID
+          (await this.getActiveOrDefaultNetwork(origin)).chainID
         )
       case "eth_blockNumber":
       case "eth_call":
@@ -193,7 +193,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.chainService.send(
           method,
           params,
-          await this.getActiveNetworkForOrigin(origin)
+          await this.getActiveOrDefaultNetwork(origin)
         )
       case "eth_accounts": {
         // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
@@ -243,7 +243,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
           const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
           if (supportedNetwork) {
-            await this.db.setActiveChainIdForOrigin(newChainId, origin)
+            await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
             return null
           }
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
@@ -277,21 +277,21 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     }
   }
 
-  private async getInternalActiveChain(): Promise<ActiveChainId> {
-    return this.db.getActiveChainIdForOrigin(
+  private async getInternalActiveChain(): Promise<ActiveNetwork> {
+    return this.db.getActiveNetworkForOrigin(
       TALLY_INTERNAL_ORIGIN
-    ) as Promise<ActiveChainId>
+    ) as Promise<ActiveNetwork>
   }
 
-  async getActiveChainIdForOrigin(origin: string): Promise<string> {
-    const activeChainId = await this.db.getActiveChainIdForOrigin(origin)
-    if (!activeChainId) {
+  async getActiveOrDefaultNetwork(origin: string): Promise<EVMNetwork> {
+    const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
+    if (!activeNetwork) {
       // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
       // use the default network.
-      const defaultChainId = (await this.getInternalActiveChain()).chainId
-      return defaultChainId
+      const defaultNetwork = (await this.getInternalActiveChain()).network
+      return defaultNetwork
     }
-    return activeChainId?.chainId
+    return activeNetwork.network
   }
 
   private async signTransaction(
@@ -314,7 +314,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     }
 
     return new Promise<SignedEVMTransaction>((resolve, reject) => {
-      this.getActiveNetworkForOrigin(origin).then((activeNetwork) => {
+      this.getActiveOrDefaultNetwork(origin).then((activeNetwork) => {
         this.emitter.emit("transactionSignatureRequest", {
           payload: {
             ...convertedRequest,
@@ -326,14 +326,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         })
       })
     })
-  }
-
-  async getActiveNetworkForOrigin(origin: string): Promise<EVMNetwork> {
-    const activeChainId = await this.getActiveChainIdForOrigin(origin)
-    const activeNetwork = this.getSupportedNetworkByChainId(
-      activeChainId
-    ) as EVMNetwork
-    return activeNetwork
   }
 
   getSupportedNetworkByChainId(chainID: string): EVMNetwork | undefined {
@@ -368,7 +360,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     const { data, type } = parseSigningData(asciiData)
 
     return new Promise<string>((resolve, reject) => {
-      this.getActiveNetworkForOrigin(origin).then((activeNetwork) => {
+      this.getActiveOrDefaultNetwork(origin).then((activeNetwork) => {
         this.emitter.emit("signDataRequest", {
           payload: {
             account: {
