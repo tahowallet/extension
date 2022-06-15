@@ -17,6 +17,7 @@ import {
 import {
   HIDE_SWAP_REWARDS,
   HIDE_TOKEN_FEATURES,
+  SUPPORT_POLYGON,
 } from "@tallyho/tally-background/features"
 import {
   selectCurrentAccountBalances,
@@ -44,7 +45,11 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useSkipFirstRenderEffect,
+} from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
@@ -146,11 +151,13 @@ export default function Swap(): ReactElement {
     undefined
   )
 
-  useEffect(() => {
-    setSellAsset(undefined)
-    setBuyAsset(undefined)
-    setSellAmount("")
-    setBuyAmount("")
+  useSkipFirstRenderEffect(() => {
+    if (SUPPORT_POLYGON) {
+      setSellAsset(undefined)
+      setBuyAsset(undefined)
+      setSellAmount("")
+      setBuyAmount("")
+    }
   }, [currentNetwork.chainID, dispatch])
 
   const buyAssets = useBackgroundSelector((state) => {
