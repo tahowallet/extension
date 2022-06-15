@@ -151,7 +151,7 @@ export default function Swap(): ReactElement {
     setBuyAsset(undefined)
     setSellAmount("")
     setBuyAmount("")
-  }, [currentNetwork])
+  }, [currentNetwork.chainID, dispatch])
 
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
