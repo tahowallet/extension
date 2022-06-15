@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import browser from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
@@ -35,6 +36,16 @@ export function connectProviderBridge(): void {
       `%c content: background > inpage: ${JSON.stringify(data)}`,
       "background: #222; color: #bada55"
     )
+
+    if (data.data) {
+      const parsedData = JSON.parse(data.data)
+      data.data = {}
+      data.data.data = parsedData
+      delete data.result
+      delete data.id
+      delete data.jsonrpc
+    }
+
     window.postMessage(
       {
         ...data,

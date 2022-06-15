@@ -204,6 +204,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
       ).toJSON()
     }
 
+    if (
+      origin.includes("opensea") &&
+      event.request.method === "personal_sign"
+    ) {
+      ;(response as any).data = JSON.stringify(response)
+    }
+
     port.postMessage(response)
   }
 
