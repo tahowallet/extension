@@ -103,7 +103,7 @@ export default function Wallet(): ReactElement {
           .panel {
             padding-top: 16px;
             box-sizing: border-box;
-            min-height: 277px;
+            height: 302px;
           }
           .panel::-webkit-scrollbar {
             display: none;
