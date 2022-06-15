@@ -408,20 +408,26 @@ export default function Swap(): ReactElement {
   const updateSellAsset = useCallback(
     (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setSellAsset(asset)
-      // Updating the sell asset quotes the new sell asset against the existing
-      // buy amount.
-      updateSwapData("buy", buyAmount, asset)
+
+      if (buyAsset && buyAmount !== "") {
+        // Updating the sell asset quotes the new sell asset against the existing
+        // buy amount.
+        updateSwapData("buy", buyAmount, asset)
+      }
     },
-    [buyAmount, updateSwapData]
+    [buyAmount, buyAsset, updateSwapData]
   )
   const updateBuyAsset = useCallback(
     (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setBuyAsset(asset)
-      // Updating the buy asset quotes the new buy asset against the existing
-      // sell amount.
-      updateSwapData("sell", sellAmount, asset)
+
+      if (sellAsset && sellAmount !== "") {
+        // Updating the buy asset quotes the new buy asset against the existing
+        // sell amount.
+        updateSwapData("sell", sellAmount, asset)
+      }
     },
-    [sellAmount, updateSwapData]
+    [sellAmount, sellAsset, updateSwapData]
   )
 
   const flipSwap = useCallback(() => {
