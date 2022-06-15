@@ -1,7 +1,3 @@
-// This migration transitions the by-address-keyed account data in the
-// accounts slice to be keyed by account AND network chainID, as well as nested
-// under an `evm` key.
-
 import { POLYGON } from "../../constants"
 
 type PermissionRequest = {
@@ -37,9 +33,8 @@ type NewState = {
 }
 
 export default (prevState: Record<string, unknown>): NewState => {
-  // Migrate the by-address-keyed account data in the accounts slice to be
-  // keyed by account AND network chainID, as well as nested under an `evm`
-  // key.
+  // Migrate the by-origin-and-address-keyed permission data in the dapp slice to be
+  // a nested map of evm => chainId => address => origin.
 
   const oldDappPermissionsState = prevState as OldState
 
@@ -53,6 +48,9 @@ export default (prevState: Record<string, unknown>): NewState => {
       allowed.evm[permission.chainID][permission.accountAddress][
         permission.origin
       ] ??= permission
+
+      // We've made the product decision to copy Ethereum permissions to polygon as part of the
+      // multi-chain feature so we do that below.
 
       // Polygon Permissions
       allowed.evm[POLYGON.chainID] ??= {}

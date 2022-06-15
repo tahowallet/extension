@@ -42,10 +42,9 @@ export default function TopMenu(): ReactElement {
       .then((tabs) =>
         tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
       )
-
-    const { origin } = url ? new URL(url) : { origin: "" }
-
     if (!url) return
+
+    const { origin } = new URL(url)
 
     const allowPermission = allowedPages.find(
       (permission) => permission.origin === origin
