@@ -271,7 +271,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     // FIXME proper error handling if this happens - should not tho
-    if (permission.state !== "deny" || !permission.accountAddress) return
+    if (permission.state !== "deny" || !permission.accountAddress) {
+      return
+    }
 
     const { address } = await this.preferenceService.getSelectedAccount()
 

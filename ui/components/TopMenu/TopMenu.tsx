@@ -69,7 +69,9 @@ export default function TopMenu(): ReactElement {
       await Promise.all(
         allowedPages.map(async (permission) => {
           if (permission.origin === currentPermission.origin) {
-            return dispatch(denyOrRevokePermission(permission))
+            return dispatch(
+              denyOrRevokePermission({ ...permission, state: "deny" })
+            )
           }
           return undefined
         })
