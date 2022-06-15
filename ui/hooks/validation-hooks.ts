@@ -157,6 +157,8 @@ export const useAddressOrNameValidation: AsyncValidationHook<
       onValidChange(undefined)
     } else if (isProbablyEVMAddress(trimmed)) {
       onValidChange({ address: trimmed })
+    } else if (!trimmed.includes(".")) {
+      onValidChange(undefined)
     } else {
       setIsValidating(true)
       validatingValue.current = trimmed
