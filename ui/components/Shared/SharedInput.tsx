@@ -4,7 +4,7 @@ import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 
 interface Props<T> {
   id?: string
-  label: string
+  label?: string
   focusedLabelBackgroundColor: string
   placeholder?: string
   type: "password" | "text" | "number"
@@ -20,6 +20,7 @@ interface Props<T> {
   ) => { parsed: T | undefined } | { error: string }
   step?: number
   isEmpty?: boolean
+  isSmall?: boolean
 }
 
 export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
@@ -39,6 +40,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     autoSelect = false,
     parseAndValidate,
     isEmpty = false,
+    isSmall = false,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -83,6 +85,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         onFocus={onFocus}
         className={classNames({
           error: !isEmpty && (errorMessage ?? parserError !== undefined),
+          small: isSmall,
         })}
         step={step}
         ref={inputRef}
@@ -169,6 +172,14 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           .error ~ label,
           input.error:focus ~ label {
             color: var(--error);
+          }
+          .small {
+            width: 48px;
+            height: 32px;
+            padding: 6px;
+            box-sizing: border-box;
+            border-width: 1px;
+            text-align: right;
           }
         `}
       </style>
