@@ -515,6 +515,14 @@ export default function SharedAssetInput<T extends AnyAsset>(
             box-sizing: border-box;
             position: relative;
           }
+          // Using :global() to target child component
+          label:hover ~ .asset_wrap > div > :global(button:hover) {
+            background: unset;
+            color: var(--trophy-gold);
+          }
+          label:hover ~ .asset_wrap > div > :global(button:hover .icon_button) {
+            background-color: var(--trophy-gold);
+          }
           .asset_input {
             width: 100%;
             height: 34px;
