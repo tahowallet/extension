@@ -1,5 +1,6 @@
 import { HexString } from "@tallyho/tally-background/types"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
+import { useDelayContentChange } from "../../hooks"
 import { useAddressOrNameValidation } from "../../hooks/validation-hooks"
 
 import SharedInput from "./SharedInput"
@@ -26,15 +27,27 @@ export default function SharedAddressInput({
   placeholder,
   isEmpty,
 }: Props): ReactElement {
+  const [inputValue, setInputValue] = useState(value ?? "")
+  const debouncedValue = useDelayContentChange(
+    inputValue,
+    !!inputValue.length,
+    500
+  )
+
   const { errorMessage, handleInputChange, isValidating } =
     useAddressOrNameValidation(onAddressChange)
+
+  useEffect(
+    () => handleInputChange(debouncedValue),
+    [debouncedValue, handleInputChange]
+  )
 
   return (
     <>
       <SharedInput
-        value={value}
+        value={inputValue}
         label={label}
-        onChange={handleInputChange}
+        onChange={setInputValue}
         onFocus={onFocus}
         errorMessage={errorMessage}
         id={id}

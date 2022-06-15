@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import {
   chooseSelectedForBonus,
   selectClaimSelections,
@@ -100,20 +100,23 @@ export default function ClaimReferral(props: {
     string | undefined
   >(getInitialCustomDAO(selectedForBonus, DAOs))
 
-  const setSelectedForBonus = (newDAO: DAO | null) =>
-    dispatch(chooseSelectedForBonus(newDAO))
+  const setSelectedForBonus = useCallback(
+    (newDAO: DAO | null) => dispatch(chooseSelectedForBonus(newDAO)),
+    [dispatch]
+  )
 
-  const handleInputChange = (
-    value: { address: HexString; name?: string } | undefined
-  ) => {
-    setCustomAddressForBonus(value?.name ?? value?.address)
+  const handleInputChange = useCallback(
+    (value: { address: HexString; name?: string } | undefined) => {
+      setCustomAddressForBonus(value?.name ?? value?.address)
 
-    if (value) {
-      setSelectedForBonus(value)
-    } else {
-      setSelectedForBonus(null)
-    }
-  }
+      if (value) {
+        setSelectedForBonus(value)
+      } else {
+        setSelectedForBonus(null)
+      }
+    },
+    [setSelectedForBonus]
+  )
 
   const handleInputFocus = () => {
     setIsCustomDAOEmpty(false)
