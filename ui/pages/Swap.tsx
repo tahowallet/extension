@@ -129,21 +129,24 @@ export default function Swap(): ReactElement {
     assets: { sellAsset: locationAsset },
   }
 
-  const [sellAsset, setSellAsset] = useState<
-    FungibleAsset | SmartContractFungibleAsset | undefined
-  >(undefined)
-  const [buyAsset, setBuyAsset] = useState<
-    FungibleAsset | SmartContractFungibleAsset | undefined
-  >(undefined)
-  const [sellAmount, setSellAmount] = useState("")
-  const [buyAmount, setBuyAmount] = useState("")
+  const [sellAsset, setSellAsset] = useState(savedSellAsset)
+  const [buyAsset, setBuyAsset] = useState(savedBuyAsset)
+  const [sellAmount, setSellAmount] = useState(
+    typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
+      ? savedSwapAmount.sellAmount
+      : ""
+  )
+  const [buyAmount, setBuyAmount] = useState(
+    typeof savedSwapAmount !== "undefined" && "buyAmount" in savedSwapAmount
+      ? savedSwapAmount.buyAmount
+      : ""
+  )
   const [needsApproval, setNeedsApproval] = useState(false)
   const [approvalTarget, setApprovalTarget] = useState<string | undefined>(
     undefined
   )
 
   useEffect(() => {
-    dispatch(clearSwapQuote())
     setSellAsset(undefined)
     setBuyAsset(undefined)
     setSellAmount("")
