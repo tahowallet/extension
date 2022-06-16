@@ -227,6 +227,16 @@ export const selectCurrentAccountBalances = createSelector(
   }
 )
 
+export const selectCurrentAccountAssetBalance = createSelector(
+  selectCurrentAccountBalances,
+  (_: RootState, assetSymbol: string) => assetSymbol,
+  (assetsBalances, assetSymbol) => {
+    return assetsBalances?.assetAmounts.find(
+      (asset) => asset.asset.symbol === assetSymbol
+    )
+  }
+)
+
 export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
