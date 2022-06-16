@@ -17,6 +17,7 @@ import {
 import {
   HIDE_SWAP_REWARDS,
   HIDE_TOKEN_FEATURES,
+  SUPPORT_POLYGON,
 } from "@tallyho/tally-background/features"
 import {
   selectCurrentAccountBalances,
@@ -44,10 +45,15 @@ import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useSkipFirstRenderEffect,
+} from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
+import t from "../utils/i18n"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -145,12 +151,14 @@ export default function Swap(): ReactElement {
     undefined
   )
 
-  useEffect(() => {
-    setSellAsset(undefined)
-    setBuyAsset(undefined)
-    setSellAmount("")
-    setBuyAmount("")
-  }, [currentNetwork])
+  useSkipFirstRenderEffect(() => {
+    if (SUPPORT_POLYGON) {
+      setSellAsset(undefined)
+      setBuyAsset(undefined)
+      setSellAmount("")
+      setBuyAmount("")
+    }
+  }, [currentNetwork.chainID, dispatch])
 
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
@@ -265,18 +273,15 @@ export default function Swap(): ReactElement {
 
   const approveAsset = async () => {
     if (typeof sellAsset === "undefined") {
-      logger.error("Attempting to approve transfer without a sell asset.")
+      logger.error(t("swapErrorNoSellAsset"))
       return
     }
     if (typeof approvalTarget === "undefined") {
-      logger.error("Attempting to approve transfer without an approval target.")
+      logger.error(t("swapErrorNoApprovalTarget"))
       return
     }
     if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(
-        "Attempting to approve transfer of a non-contract asset.",
-        sellAsset
-      )
+      logger.error(t("swapErrorNonContractAsset"), sellAsset)
       return
     }
 
@@ -410,20 +415,26 @@ export default function Swap(): ReactElement {
   const updateSellAsset = useCallback(
     (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setSellAsset(asset)
-      // Updating the sell asset quotes the new sell asset against the existing
-      // buy amount.
-      updateSwapData("buy", buyAmount, asset)
+
+      if (buyAsset && buyAmount !== "") {
+        // Updating the sell asset quotes the new sell asset against the existing
+        // buy amount.
+        updateSwapData("buy", buyAmount, asset)
+      }
     },
-    [buyAmount, updateSwapData]
+    [buyAmount, buyAsset, updateSwapData]
   )
   const updateBuyAsset = useCallback(
     (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setBuyAsset(asset)
-      // Updating the buy asset quotes the new buy asset against the existing
-      // sell amount.
-      updateSwapData("sell", sellAmount, asset)
+
+      if (sellAsset && sellAmount !== "") {
+        // Updating the buy asset quotes the new buy asset against the existing
+        // sell amount.
+        updateSwapData("sell", sellAmount, asset)
+      }
     },
-    [sellAmount, updateSwapData]
+    [sellAmount, sellAsset, updateSwapData]
   )
 
   const flipSwap = useCallback(() => {
@@ -484,7 +495,7 @@ export default function Swap(): ReactElement {
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <div className="header">
-            <SharedActivityHeader label="Swap Assets" activity="swap" />
+            <SharedActivityHeader label={t("swapTitle")} activity="swap" />
             {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
@@ -529,7 +540,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("sell", newAmount)
                   }
                 }}
-                label="Swap from:"
+                label={t("swapFrom")}
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
@@ -550,7 +561,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("buy", newAmount)
                   }
                 }}
-                label="Swap to:"
+                label={t("swapTo")}
               />
             </div>
             <div className="settings_wrap">
@@ -594,12 +605,15 @@ export default function Swap(): ReactElement {
                     isDisabled={
                       typeof latestQuoteRequest.current === "undefined" ||
                       sellAmountLoading ||
-                      buyAmountLoading
+                      buyAmountLoading ||
+                      !sellAsset ||
+                      !sellAmount ||
+                      !buyAsset
                     }
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
                   >
-                    Get final quote
+                    {t("swapGetFinalQuote")}
                   </SharedButton>
                 )
               }
@@ -644,7 +658,6 @@ export default function Swap(): ReactElement {
             display: flex;
             justify-content: center;
             margin-top: 24px;
-            padding-bottom: 20px;
           }
           .total_label {
             width: 33px;

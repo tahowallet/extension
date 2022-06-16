@@ -50,7 +50,10 @@ export default function TopMenu(): ReactElement {
 
     const { origin } = new URL(url)
 
-    const allowPermission = allowedPages[`${origin}_${currentAccount.address}`]
+    const allowPermission =
+      allowedPages[
+        `${origin}_${currentAccount.address}_${currentAccount.network.chainID}`
+      ]
 
     if (allowPermission) {
       setCurrentPermission(allowPermission)
@@ -66,12 +69,24 @@ export default function TopMenu(): ReactElement {
 
   const deny = useCallback(async () => {
     if (typeof currentPermission !== "undefined") {
-      await dispatch(
-        denyOrRevokePermission({ ...currentPermission, state: "deny" })
+      // TODO refactor when we have per-network permission deletion designed.
+      await Promise.all(
+        Object.entries(allowedPages).map(async ([key, permission]) => {
+          if (
+            key.startsWith(
+              `${currentPermission.origin}_${currentPermission.accountAddress}`
+            )
+          ) {
+            return dispatch(
+              denyOrRevokePermission({ ...permission, state: "deny" })
+            )
+          }
+          return undefined
+        })
       )
     }
     window.close()
-  }, [dispatch, currentPermission])
+  }, [dispatch, currentPermission, allowedPages])
 
   return (
     <>
@@ -98,7 +113,11 @@ export default function TopMenu(): ReactElement {
           setIsProtocolListOpen(false)
         }}
       >
-        <TopMenuProtocolList />
+        <TopMenuProtocolList
+          onProtocolChange={() => {
+            setIsProtocolListOpen(false)
+          }}
+        />
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isNotificationsOpen}

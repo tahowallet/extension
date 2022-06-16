@@ -9,11 +9,12 @@ import {
 
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
+import t from "../../utils/i18n"
 
 export type SwapTransactionSettings = {
   slippageTolerance: number
@@ -61,7 +62,7 @@ export default function SwapTransactionSettingsChooser({
   return (
     <>
       {isSettingsLocked ? (
-        <div className="top_label label">Transaction settings</div>
+        <div className="top_label label">{t("transactionSettingsTitle")}</div>
       ) : (
         <>
           <SharedSlideUpMenu
@@ -73,7 +74,9 @@ export default function SwapTransactionSettingsChooser({
           >
             <div className="settings_wrap">
               <div className="row row_slippage">
-                <span className="settings_label">Slippage tolerance</span>
+                <span className="settings_label">
+                  {t("transactionSettingsSlippageTolerance")}
+                </span>
                 <span>1%</span>
               </div>
               <div className="row row_fee">
@@ -81,24 +84,16 @@ export default function SwapTransactionSettingsChooser({
                   estimatedFeesPerGas={estimatedFeesPerGas}
                   networkSettings={swapTransactionSettings.networkSettings}
                   onNetworkSettingsChange={setNetworkSettings}
+                  onSave={saveSettings}
                 />
-              </div>
-              <div className="row">
-                <div className="confirm">
-                  <SharedButton
-                    size="medium"
-                    type="primary"
-                    onClick={saveSettings}
-                  >
-                    Save
-                  </SharedButton>
-                </div>
               </div>
             </div>
           </SharedSlideUpMenu>
 
           <div className="top_label label">
-            <label htmlFor="open-settings">Transaction settings</label>
+            <label htmlFor="open-settings">
+              {t("transactionSettingsSettings")}
+            </label>
             <button type="button" id="open-settings" onClick={openSettings}>
               <span className="icon_cog" />
             </button>
@@ -107,24 +102,32 @@ export default function SwapTransactionSettingsChooser({
       )}
       <div className="labels_wrap standard_width">
         <span className="label">
-          Slippage tolerance
+          {t("transactionSettingsSlippageTolerance")}
           <div className="info">
             {swapTransactionSettings.slippageTolerance * 100}%
           </div>
         </span>
         <span className="label">
-          Estimated network fee
+          {t("transactionSettingsEstimatedFee")}
           <FeeSettingsText
             customNetworkSetting={swapTransactionSettings.networkSettings}
           />
         </span>
         <span className="label">
-          Tally Ho fee for the DAO
+          {t("transactionSettingsDAOFee")}
           <div className="info">{SWAP_FEE * 100}%</div>
         </span>
       </div>
       <style jsx>
         {`
+          .confirm {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            position: fixed;
+            bottom: 13px;
+            left: 0px;
+          }
           .labels_wrap {
             border-radius: 4px;
             background-color: var(--green-95);
@@ -138,25 +141,30 @@ export default function SwapTransactionSettingsChooser({
             flex-grow: 2;
           }
           .row {
+            padding: ${CUSTOM_GAS_SELECT ? "unset" : "15px 0px"};
             display: flex;
             align-items: center;
           }
           .row_slippage {
             display: flex;
             justify-content: space-between;
-            padding-bottom: 8px;
+            padding-bottom: 38px;
           }
           .row_fee {
             flex-direction: column;
             align-items: flex-start;
           }
           .settings_label {
-            height: 17px;
-            color: var(--green-40);
+            color: var(--green-5);
             font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+          }
+          .network_fee_label {
+            margin-top: 26px;
+            display: block;
+            margin-bottom: 10px;
           }
           .settings_label_fee {
             margin-bottom: 7px;
@@ -174,10 +182,12 @@ export default function SwapTransactionSettingsChooser({
           }
           .settings_wrap {
             width: 384px;
-            margin-top: 36px;
             padding: 0px 17px;
+            height: 100vh;
+            padding-top: 58px;
             box-sizing: border-box;
             background-color: var(--green-95);
+            margin-top: -23px;
           }
           .label:first-of-type {
             margin-bottom: 7px;
