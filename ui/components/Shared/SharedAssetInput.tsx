@@ -24,7 +24,6 @@ import t from "../../utils/i18n"
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
 const SYMBOL_PRIORITY_LIST = [
-  "UST",
   "KEEP",
   "ENS",
   "CRV",
@@ -539,6 +538,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             font-weight: 500;
             line-height: 32px;
             text-align: right;
+            text-overflow: ellipsis;
           }
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {

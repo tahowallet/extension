@@ -3,7 +3,7 @@ import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
@@ -147,39 +147,42 @@ export const useAddressOrNameValidation: AsyncValidationHook<
 
   const { network } = useBackgroundSelector(selectCurrentAccount)
 
-  const handleInputChange = async (newValue: string) => {
-    setRawValue(newValue)
+  const handleInputChange = useCallback(
+    async (newValue: string) => {
+      setRawValue(newValue)
 
-    const trimmed = newValue.trim()
+      const trimmed = newValue.trim()
 
-    setErrorMessage(undefined)
-    if (trimmed === "") {
-      onValidChange(undefined)
-    } else if (isProbablyEVMAddress(trimmed)) {
-      onValidChange({ address: trimmed })
-    } else {
-      setIsValidating(true)
-      validatingValue.current = trimmed
+      setErrorMessage(undefined)
+      if (trimmed === "") {
+        onValidChange(undefined)
+      } else if (isProbablyEVMAddress(trimmed)) {
+        onValidChange({ address: trimmed })
+      } else {
+        setIsValidating(true)
+        validatingValue.current = trimmed
 
-      const resolved = (await dispatch(
-        resolveNameOnNetwork({ name: trimmed, network })
-      )) as unknown as AddressOnNetwork | undefined
+        const resolved = (await dispatch(
+          resolveNameOnNetwork({ name: trimmed, network })
+        )) as unknown as AddressOnNetwork | undefined
 
-      // Asynchronicity means we could already have started validating another
-      // value before this validation completed; ignore those cases.
-      if (validatingValue.current === trimmed) {
-        if (resolved === undefined) {
-          onValidChange(undefined)
-          setErrorMessage("Address could not be found")
-        } else {
-          onValidChange({ name: trimmed, address: resolved.address })
+        // Asynchronicity means we could already have started validating another
+        // value before this validation completed; ignore those cases.
+        if (validatingValue.current === trimmed) {
+          if (resolved === undefined) {
+            onValidChange(undefined)
+            setErrorMessage("Address could not be found")
+          } else {
+            onValidChange({ name: trimmed, address: resolved.address })
+          }
+
+          setIsValidating(false)
+          validatingValue.current = undefined
         }
-
-        setIsValidating(false)
-        validatingValue.current = undefined
       }
-    }
-  }
+    },
+    [dispatch, network, onValidChange]
+  )
 
   return {
     rawValue,
