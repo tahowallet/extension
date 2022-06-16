@@ -5,7 +5,6 @@ import {
   selectDefaultWallet,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
-import zxcvbn from "zxcvbn"
 import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
@@ -36,19 +35,12 @@ export default function KeyringSetPassword(): ReactElement {
   }, [history, areKeyringsUnlocked])
 
   const validatePassword = (): boolean => {
-    if (password.length < 12) {
-      // Less than 12 won't reliably give users a score of 3 or more.
-      setPasswordErrorMessage("Must be at least 12 characters")
+    if (password.length < 8) {
+      setPasswordErrorMessage("Must be at least 8 characters")
       return false
     }
     if (password !== passwordConfirmation) {
       setPasswordErrorMessage("Passwords don’t match")
-      return false
-    }
-    const evaluation = zxcvbn(password)
-
-    if (evaluation.score < 3) {
-      setPasswordErrorMessage("Password too weak")
       return false
     }
     return true

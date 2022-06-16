@@ -152,7 +152,7 @@
     "description": "in Swap > SwapTransactionSettingsChooser"
   },
   "transactionSettingsDAOFee": {
-    "message": "Tally Ho fee for the DAO",
+    "message": "DAO fee",
     "description": "in Swap > SwapTransactionSettingsChooser"
   },
   "menuMainMenu": {

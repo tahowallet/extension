@@ -122,7 +122,7 @@ export function getEthereumNetwork(): EVMNetwork {
   return ETHEREUM
 }
 
-export function isProbablyEVMAddress(str: string): str is HexString {
+export function isProbablyEVMAddress(str: string): boolean {
   if (normalizeHexAddress(str).startsWith("0x") && str.length === 42) {
     return true
   }
