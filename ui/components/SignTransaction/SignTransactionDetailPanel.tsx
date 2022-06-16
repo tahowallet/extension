@@ -54,7 +54,8 @@ export default function SignTransactionDetailPanel(): ReactElement {
         <span className="detail_item">
           <SharedBanner icon="notif-attention" iconColor="var(--attention)">
             <span className="detail_warning">
-              Not enough ETH for network fees
+              Not enough {transactionDetails.network.baseAsset.symbol} for
+              network fees
             </span>
           </SharedBanner>
         </span>
