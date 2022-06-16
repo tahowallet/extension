@@ -682,7 +682,7 @@ export default function Swap(): ReactElement {
             margin-top: -5px;
             margin-bottom: -32px;
             position: relative;
-
+            z-index: 1;
             font-size: 0;
           }
           .settings_wrap {
