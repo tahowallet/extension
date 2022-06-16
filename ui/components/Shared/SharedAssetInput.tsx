@@ -327,6 +327,9 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
+  // TODO: use https://reactjs.org/docs/hooks-reference.html#useid once we update to version 18
+  const [inputId] = useState(Math.floor(Math.random() * 100))
+
   const toggleIsAssetMenuOpen = useCallback(() => {
     if (!isAssetOptionsLocked) {
       setOpenAssetMenu((currentlyOpen) => !currentlyOpen)
@@ -402,8 +405,8 @@ export default function SharedAssetInput<T extends AnyAsset>(
         className="label"
         htmlFor={
           typeof selectedAsset === "undefined"
-            ? "asset_selector"
-            : "asset_amount_input"
+            ? `asset_selector${inputId}`
+            : `asset_amount_input${inputId}`
         }
       >
         {label}
@@ -450,7 +453,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             />
           ) : (
             <SharedButton
-              id="asset_selector"
+              id={`asset_selector${inputId}`}
               type="secondary"
               size="medium"
               isDisabled={isDisabled || disableDropdown}
@@ -463,7 +466,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
         </div>
 
         <input
-          id="asset_amount_input"
+          id={`asset_amount_input${inputId}`}
           className="input_amount"
           type="number"
           step="any"
@@ -513,6 +516,14 @@ export default function SharedAssetInput<T extends AnyAsset>(
             padding: 0px 16px;
             box-sizing: border-box;
             position: relative;
+          }
+          // Using :global() to target child component
+          label:hover ~ .asset_wrap > div > :global(button:hover) {
+            background: unset;
+            color: var(--trophy-gold);
+          }
+          label:hover ~ .asset_wrap > div > :global(button:hover .icon_button) {
+            background-color: var(--trophy-gold);
           }
           .asset_input {
             width: 100%;
