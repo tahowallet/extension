@@ -538,6 +538,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             font-weight: 500;
             line-height: 32px;
             text-align: right;
+            text-overflow: ellipsis;
           }
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {
