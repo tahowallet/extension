@@ -11,6 +11,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedBanner from "../Shared/SharedBanner"
 
 export default function SignTransactionDetailPanel(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -47,6 +48,17 @@ export default function SignTransactionDetailPanel(): ReactElement {
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
+      {transactionDetails.annotation?.warnings?.includes(
+        "insufficient-funds"
+      ) && (
+        <span className="detail_item">
+          <SharedBanner icon="notif-attention" iconColor="var(--attention)">
+            <span className="detail_warning">
+              Not enough ETH for network fees
+            </span>
+          </SharedBanner>
+        </span>
+      )}
       <span className="detail_item">
         Estimated network fee
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
@@ -61,6 +73,7 @@ export default function SignTransactionDetailPanel(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 10px;
           }
           .detail_items_wrap {
             display: flex;
@@ -70,6 +83,12 @@ export default function SignTransactionDetailPanel(): ReactElement {
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
+          }
+          .detail_warning {
+            font-size: 16px;
+            line-height: 24px;
+            font-weight: 500;
+            color: var(--attention);
           }
         `}
       </style>
