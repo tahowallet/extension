@@ -19,18 +19,19 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
 
   const { network } = useBackgroundSelector(selectCurrentAccount)
 
-  const handleNewAddress = (
-    value: { address: HexString; name?: string } | undefined
-  ) => {
-    if (value === undefined) {
-      setAddressOnNetwork(undefined)
-    } else {
-      setAddressOnNetwork({
-        address: value.address,
-        network,
-      })
-    }
-  }
+  const handleNewAddress = useCallback(
+    (value: { address: HexString; name?: string } | undefined) => {
+      if (value === undefined) {
+        setAddressOnNetwork(undefined)
+      } else {
+        setAddressOnNetwork({
+          address: value.address,
+          network,
+        })
+      }
+    },
+    [network]
+  )
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
     if (addressOnNetwork === undefined) {
