@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
+import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 
 export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
@@ -103,13 +104,12 @@ const dappSlice = createSlice({
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.key]
 
-          immerState.allowed.evm[permission.chainID] ??= {}
-          immerState.allowed.evm[permission.chainID][
-            permission.accountAddress
-          ] ??= {}
-          immerState.allowed.evm[permission.chainID][permission.accountAddress][
-            permission.origin
-          ] = permission
+          const allowedPermission = keyPermissionsByChainIdAddressOrigin(
+            [permission],
+            immerState.allowed
+          )
+
+          immerState.allowed = allowedPermission
         }
       )
       .addCase(

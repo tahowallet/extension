@@ -116,7 +116,7 @@ import {
   migrateReduxState,
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
-import { PermissionMap } from "./services/provider-bridge/db"
+import { PermissionMap } from "./services/provider-bridge/utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly

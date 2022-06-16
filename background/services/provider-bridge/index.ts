@@ -13,11 +13,7 @@ import {
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
-import {
-  getOrCreateDB,
-  PermissionMap,
-  ProviderBridgeServiceDatabase,
-} from "./db"
+import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
@@ -29,6 +25,7 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
+import { PermissionMap } from "./utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
