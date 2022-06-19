@@ -110,7 +110,11 @@ import {
 } from "./redux-slices/ledger"
 import { ETHEREUM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
-import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import {
+  SignatureResponse,
+  SignerType,
+  TXSignatureResponse,
+} from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
 import {
   migrateReduxState,
@@ -478,10 +482,10 @@ export default class Main extends BaseService<never> {
 
   async removeAccount(
     address: HexString,
-    signingMethod: SigningMethod
+    signerType: SignerType
   ): Promise<void> {
     // TODO Adjust to handle specific network.
-    await this.signingService.removeAccount(address, signingMethod)
+    await this.signingService.removeAccount(address, signerType)
   }
 
   async importLedgerAccounts(

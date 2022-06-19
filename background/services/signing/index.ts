@@ -134,9 +134,9 @@ export default class SigningService extends BaseService<Events> {
 
   async removeAccount(
     address: HexString,
-    signingMethod: SigningMethod
+    signerType: SignerType
   ): Promise<void> {
-    switch (signingMethod.type) {
+    switch (signerType) {
       case "keyring":
         await this.keyringService.hideAccount(address)
         await this.chainService.removeAccountToTrack(address)
