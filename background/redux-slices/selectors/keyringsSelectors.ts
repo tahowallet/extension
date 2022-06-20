@@ -1,6 +1,7 @@
 import { createSelector, OutputSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Keyring } from "../../services/keyring"
+import { HexString } from "../../types"
 
 export const selectKeyringStatus = createSelector(
   (state: RootState) => state.keyrings.status,
@@ -27,7 +28,7 @@ export const selectKeyringsByAddresses = createSelector(
   (
     keyrings
   ): {
-    [keyringId: string]: Keyring
+    [address: HexString]: Keyring
   } =>
     Object.fromEntries(
       keyrings.flatMap((keyring) =>
@@ -43,7 +44,7 @@ export const selectSourcesByAddress = createSelector(
     keyrings,
     keyringMetadata
   ): {
-    [keyringId: string]: "import" | "internal"
+    [address: HexString]: "import" | "internal"
   } =>
     Object.fromEntries(
       keyrings

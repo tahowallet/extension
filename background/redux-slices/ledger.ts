@@ -1,11 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { ETH, ETHEREUM } from "../constants"
+import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
 export interface LedgerAccountState {
   path: string
-  address: string | null
+  address: HexString | null
   fetchingAddress: boolean
   balance: string | null
   fetchingBalance: boolean
