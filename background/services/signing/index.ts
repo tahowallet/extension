@@ -7,6 +7,7 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { AddressOnNetwork } from "../../accounts"
+import { assertUnreachable } from "../../lib/utils/type-guards"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
@@ -129,7 +130,7 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce
         )
       default:
-        throw new Error(`Unreachable!`)
+        return assertUnreachable(accountSigner)
     }
   }
 
@@ -146,7 +147,7 @@ export default class SigningService extends BaseService<Events> {
         // @TODO Implement removal of ledger accounts.
         break
       default:
-        throw new Error("Unknown signingMethod type.")
+        assertUnreachable(signerType)
     }
   }
 
@@ -269,7 +270,7 @@ export default class SigningService extends BaseService<Events> {
           })
           break
         default:
-          throw new Error(`Unreachable!`)
+          assertUnreachable(accountSigner)
       }
 
       this.emitter.emit("personalSigningResponse", {
