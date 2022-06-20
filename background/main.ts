@@ -117,8 +117,6 @@ import {
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
-import { selectCurrentAccountAssetBalance } from "./redux-slices/selectors"
-import getMinMainAssetAmountForTransaction from "./utils/transaction"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
