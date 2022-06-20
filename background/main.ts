@@ -511,10 +511,14 @@ export default class Main extends BaseService<never> {
     )
   }
 
-  async deriveLedgerAddress(path: string): Promise<string> {
+  async deriveLedgerAddress(
+    deviceID: string,
+    derivationPath: string
+  ): Promise<string> {
     return this.signingService.deriveAddress({
       type: "ledger",
-      accountID: path,
+      deviceID,
+      path: derivationPath,
     })
   }
 
@@ -842,7 +846,7 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
-        accountID: keyringID,
+        keyringID,
       })
     })
 

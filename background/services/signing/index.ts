@@ -1,12 +1,11 @@
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
-import KeyringService from "../keyring"
-import LedgerService from "../ledger"
+import KeyringService, { KeyringAccountSigner } from "../keyring"
+import LedgerService, { LedgerAccountSigner } from "../ledger"
 import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { SigningMethod } from "../../utils/signing"
 import { AddressOnNetwork } from "../../accounts"
 
 type SigningErrorReason = "userRejected" | "genericError"
@@ -35,17 +34,20 @@ type Events = ServiceLifecycleEvents & {
   personalSigningResponse: SignatureResponse
 }
 
-type SignerType = "keyring" | HardwareSignerType
-type HardwareSignerType = "ledger"
+/**
+ * An AccountSigner carries the appropriate information for a given signer to
+ * act on a signing request. The `type` field always carries the signer type,
+ * but the rest of the object is signer-specific and should be treated as
+ * opaque outside of the specific signer's service.
+ */
+export type AccountSigner = KeyringAccountSigner | HardwareAccountSigner
+export type HardwareAccountSigner = LedgerAccountSigner
+
+export type SignerType = AccountSigner["type"]
 
 type AddressHandler = {
   address: string
   signer: SignerType
-}
-
-type AccountSigner = {
-  type: SignerType
-  accountID: string
 }
 
 function getSigningErrorReason(err: unknown): SigningErrorReason {
@@ -98,11 +100,11 @@ export default class SigningService extends BaseService<Events> {
 
   async deriveAddress(signerID: AccountSigner): Promise<HexString> {
     if (signerID.type === "ledger") {
-      return this.ledgerService.deriveAddress(signerID.accountID)
+      return this.ledgerService.deriveAddress(signerID)
     }
 
     if (signerID.type === "keyring") {
-      return this.keyringService.deriveAddress(signerID.accountID)
+      return this.keyringService.deriveAddress(signerID)
     }
 
     throw new Error(`Unknown signerID: ${signerID}`)
@@ -110,14 +112,13 @@ export default class SigningService extends BaseService<Events> {
 
   private async signTransactionWithNonce(
     transactionWithNonce: EIP1559TransactionRequest & { nonce: number },
-    signingMethod: SigningMethod
+    accountSigner: AccountSigner
   ): Promise<SignedEVMTransaction> {
-    switch (signingMethod.type) {
+    switch (accountSigner.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
           transactionWithNonce,
-          signingMethod.deviceID,
-          signingMethod.path
+          accountSigner
         )
       case "keyring":
         return this.keyringService.signTransaction(
@@ -151,7 +152,7 @@ export default class SigningService extends BaseService<Events> {
 
   async signTransaction(
     transactionRequest: EIP1559TransactionRequest,
-    signingMethod: SigningMethod
+    accountSigner: AccountSigner
   ): Promise<SignedEVMTransaction> {
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
@@ -159,7 +160,7 @@ export default class SigningService extends BaseService<Events> {
     try {
       const signedTx = await this.signTransactionWithNonce(
         transactionWithNonce,
-        signingMethod
+        accountSigner
       )
 
       this.emitter.emit("signingTxResponse", {
@@ -191,7 +192,7 @@ export default class SigningService extends BaseService<Events> {
   }: {
     typedData: EIP712TypedData
     account: AddressOnNetwork
-    signingMethod: SigningMethod
+    signingMethod: AccountSigner
   }): Promise<string> {
     try {
       let signedData: string
@@ -249,12 +250,12 @@ export default class SigningService extends BaseService<Events> {
   async signData(
     addressOnNetwork: AddressOnNetwork,
     message: string,
-    signingMethod: SigningMethod
+    accountSigner: AccountSigner
   ): Promise<string> {
     this.signData = this.signData.bind(this)
     try {
       let signedData
-      switch (signingMethod.type) {
+      switch (accountSigner.type) {
         case "ledger":
           signedData = await this.ledgerService.signMessage(
             addressOnNetwork,
