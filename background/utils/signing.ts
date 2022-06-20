@@ -1,7 +1,6 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
 import { SiweMessage } from "siwe"
 import { AddressOnNetwork } from "../accounts"
-import { AccountSigner } from "../services/signing"
 
 import { EIP191Data, EIP712TypedData, HexString } from "../types"
 
@@ -27,8 +26,6 @@ export type SignTypedDataRequest = {
   account: AddressOnNetwork
   typedData: EIP712TypedData
 }
-
-export type SigningMethod = AccountSigner
 
 export type ExpectedSigningData = EIP191Data | EIP4361Data
 

@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
-import { selectCurrentAccountSigningMethod } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -123,9 +123,7 @@ export default function WalletAccountBalanceControl(
   // TODO When non-imported accounts are supported, generalize this.
   const hasSavedSeed = true
 
-  const currentAccountSigningMethod = useBackgroundSelector(
-    selectCurrentAccountSigningMethod
-  )
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -162,7 +160,7 @@ export default function WalletAccountBalanceControl(
           width={180}
           customStyles="margin-bottom: 10px;"
         >
-          {currentAccountSigningMethod ? (
+          {currentAccountSigner ? (
             <>
               {hasSavedSeed ? (
                 <div className="send_receive_button_wrap">

@@ -29,7 +29,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, HexString, KeyringTypes } from "./types"
+import { HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -94,11 +94,7 @@ import {
   signDataRequest,
 } from "./redux-slices/signing"
 
-import {
-  SigningMethod,
-  SignTypedDataRequest,
-  SignDataRequest,
-} from "./utils/signing"
+import { SignTypedDataRequest, SignDataRequest } from "./utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
@@ -625,10 +621,13 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
-      async ({ transaction, method }) => {
+      async ({ transaction, accountSigner }) => {
         try {
           const signedTransactionResult =
-            await this.signingService.signTransaction(transaction, method)
+            await this.signingService.signTransaction(
+              transaction,
+              accountSigner
+            )
           await this.store.dispatch(transactionSigned(signedTransactionResult))
         } catch (exception) {
           logger.error("Error signing transaction", exception)
@@ -640,20 +639,12 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignTypedData",
-      async ({
-        typedData,
-        account,
-        signingMethod,
-      }: {
-        typedData: EIP712TypedData
-        account: AddressOnNetwork
-        signingMethod: SigningMethod
-      }) => {
+      async ({ typedData, account, accountSigner }) => {
         try {
           const signedData = await this.signingService.signTypedData({
             typedData,
             account,
-            signingMethod,
+            accountSigner,
           })
           this.store.dispatch(signedTypedData(signedData))
         } catch (err) {
@@ -664,11 +655,11 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignData",
-      async ({ rawSigningData, account, signingMethod }) => {
+      async ({ rawSigningData, account, accountSigner }) => {
         const signedData = await this.signingService.signData(
           account,
           rawSigningData,
-          signingMethod
+          accountSigner
         )
         this.store.dispatch(signedDataAction(signedData))
       }

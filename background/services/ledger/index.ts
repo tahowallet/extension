@@ -427,8 +427,7 @@ export default class LedgerService extends BaseService<Events> {
   async signTypedData(
     typedData: EIP712TypedData,
     account: HexString,
-    deviceID: string,
-    path: string
+    { deviceID, path: derivationPath }: LedgerAccountSigner
   ): Promise<string> {
     return this.runSerialized(async () => {
       if (!this.transport) {
@@ -448,10 +447,10 @@ export default class LedgerService extends BaseService<Events> {
 
       const accountData = await this.db.getAccountByAddress(account)
 
-      this.checkCanSign(accountData, path, deviceID)
+      this.checkCanSign(accountData, derivationPath, deviceID)
 
       const signature = await eth.signEIP712HashedMessage(
-        path,
+        derivationPath,
         hashedDomain,
         hashedMessage
       )

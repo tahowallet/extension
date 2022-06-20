@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
-  selectCurrentAccountSigningMethod,
+  selectCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
@@ -26,9 +26,7 @@ export default function SingleAsset(): ReactElement {
       ? locationAsset.contractAddress
       : undefined
 
-  const currentAccountSigningMethod = useBackgroundSelector(
-    selectCurrentAccountSigningMethod
-  )
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const filteredActivities = useBackgroundSelector((state) =>
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
@@ -125,7 +123,7 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {currentAccountSigningMethod ? (
+            {currentAccountSigner ? (
               <>
                 <SharedButton
                   type="primary"

@@ -189,11 +189,11 @@ export default class SigningService extends BaseService<Events> {
   async signTypedData({
     typedData,
     account,
-    signingMethod,
+    accountSigner,
   }: {
     typedData: EIP712TypedData
     account: AddressOnNetwork
-    signingMethod: AccountSigner
+    accountSigner: AccountSigner
   }): Promise<string> {
     try {
       let signedData: string
@@ -214,13 +214,12 @@ export default class SigningService extends BaseService<Events> {
         )
       }
 
-      switch (signingMethod.type) {
+      switch (accountSigner.type) {
         case "ledger":
           signedData = await this.ledgerService.signTypedData(
             typedData,
             account.address,
-            signingMethod.deviceID,
-            signingMethod.path
+            accountSigner
           )
           break
         case "keyring":
