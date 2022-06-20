@@ -568,10 +568,6 @@ export default class Main extends BaseService<never> {
         const {
           values: { maxFeePerGas, maxPriorityFeePerGas },
         } = selectDefaultNetworkFeeSettings(this.store.getState())
-        const mainAssetBalance = selectCurrentAccountAssetBalance(
-          this.store.getState(),
-          network.baseAsset.symbol
-        )
 
         const { transactionRequest: populatedRequest, gasEstimationError } =
           await this.chainService.populatePartialEVMTransactionRequest(
@@ -594,16 +590,6 @@ export default class Main extends BaseService<never> {
         const enrichedPopulatedRequest = {
           ...populatedRequest,
           annotation,
-        }
-
-        const mainAssetNeeded = getMinMainAssetAmountForTransaction(
-          enrichedPopulatedRequest
-        )
-
-        if (mainAssetBalance && mainAssetBalance?.amount < mainAssetNeeded) {
-          this.store.dispatch(
-            setSnackbarMessage("Probably not enough funds to pay gas fee")
-          )
         }
 
         if (typeof gasEstimationError === "undefined") {
