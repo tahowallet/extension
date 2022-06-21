@@ -315,6 +315,9 @@ export default function Send(): ReactElement {
             background-color: var(--green-95);
             padding: 0px 16px;
           }
+          input#send_address::placeholder {
+            color: var(--green-40);
+          }
           input#send_address ~ .error {
             color: var(--error);
             font-weight: 500;
