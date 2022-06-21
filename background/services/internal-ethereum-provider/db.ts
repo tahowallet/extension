@@ -1,7 +1,5 @@
 import Dexie from "dexie"
-import { ETHEREUM } from "../../constants"
 import { EVMNetwork } from "../../networks"
-import { TALLY_INTERNAL_ORIGIN } from "./constants"
 
 export type ActiveNetwork = {
   origin: string
@@ -14,17 +12,9 @@ export class InternalEthereumProviderDatabase extends Dexie {
   constructor() {
     super("tally/internal-ethereum-provider")
 
-    this.version(1)
-      .stores({
-        activeNetwork: "&origin,chainId,network, address",
-      })
-      .upgrade((tx) => {
-        return tx.table("activeNetwork").put({
-          origin: TALLY_INTERNAL_ORIGIN,
-          // New installs will default to having `Ethereum` as their active chain.
-          network: ETHEREUM,
-        })
-      })
+    this.version(1).stores({
+      activeNetwork: "&origin,chainId,network, address",
+    })
   }
 
   async setActiveChainIdForOrigin(
