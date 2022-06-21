@@ -149,6 +149,16 @@ export default class TallyWindowProvider extends EventEmitter {
     return Promise.reject(new Error("Unsupported function parameters"))
   }
 
+  sendAsync(
+    request: RequestArgument,
+    callback: (error: unknown, response: unknown) => void
+  ): Promise<unknown> | void {
+    return this.request(request).then(
+      (response) => callback(null, { result: response }),
+      (error) => callback(error, null)
+    )
+  }
+
   // Provider-wide counter for requests.
   private requestID = 0n
 
