@@ -36,7 +36,11 @@ export type BaseTransactionAnnotation = {
   warnings?: Warning[]
 }
 
-export type Warning = "send-to-token" | "send-to-contract" | "approve-eoa"
+export type Warning =
+  | "send-to-token"
+  | "send-to-contract"
+  | "approve-eoa"
+  | "insufficient-funds"
 
 export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
