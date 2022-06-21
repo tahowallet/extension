@@ -269,7 +269,10 @@ export default function Send(): ReactElement {
             margin-top: 30px;
           }
           .form_input {
-            margin-bottom: 22px;
+            margin-bottom: 14px;
+          }
+          .form {
+            margin-top: 20px;
           }
           .label_right {
             margin-right: 6px;
