@@ -1,5 +1,7 @@
 import Dexie from "dexie"
+import { ETHEREUM } from "../../constants"
 import { EVMNetwork } from "../../networks"
+import { TALLY_INTERNAL_ORIGIN } from "./constants"
 
 export type ActiveNetwork = {
   origin: string
@@ -15,6 +17,17 @@ export class InternalEthereumProviderDatabase extends Dexie {
     this.version(1).stores({
       activeNetwork: "&origin,chainId,network, address",
     })
+
+    this.initialize()
+  }
+
+  async initialize(): Promise<void> {
+    const existingActiveNetwork = await this.activeNetwork.where({
+      origin: TALLY_INTERNAL_ORIGIN,
+    })
+    if (!existingActiveNetwork) {
+      this.setActiveChainIdForOrigin(TALLY_INTERNAL_ORIGIN, ETHEREUM)
+    }
   }
 
   async setActiveChainIdForOrigin(
