@@ -144,7 +144,7 @@ export default class SigningService extends BaseService<Events> {
           await this.keyringService.hideAccount(address)
           break
         case "ledger":
-          // @TODO Implement removal of ledger accounts.
+          await this.ledgerService.removeAddress(address)
           break
         default:
           assertUnreachable(signerType)
