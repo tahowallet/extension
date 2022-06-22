@@ -136,19 +136,21 @@ export default class SigningService extends BaseService<Events> {
 
   async removeAccount(
     address: HexString,
-    signerType: SignerType
+    signerType?: SignerType
   ): Promise<void> {
-    switch (signerType) {
-      case "keyring":
-        await this.keyringService.hideAccount(address)
-        await this.chainService.removeAccountToTrack(address)
-        break
-      case "ledger":
-        // @TODO Implement removal of ledger accounts.
-        break
-      default:
-        assertUnreachable(signerType)
+    if (signerType) {
+      switch (signerType) {
+        case "keyring":
+          await this.keyringService.hideAccount(address)
+          break
+        case "ledger":
+          // @TODO Implement removal of ledger accounts.
+          break
+        default:
+          assertUnreachable(signerType)
+      }
     }
+    await this.chainService.removeAccountToTrack(address)
   }
 
   async signTransaction(
