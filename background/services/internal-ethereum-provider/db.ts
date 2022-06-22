@@ -18,16 +18,11 @@ export class InternalEthereumProviderDatabase extends Dexie {
       activeNetwork: "&origin,chainId,network, address",
     })
 
-    this.initialize()
-  }
-
-  async initialize(): Promise<void> {
-    const existingActiveNetwork = await this.activeNetwork.get({
-      origin: TALLY_INTERNAL_ORIGIN,
+    this.on("populate", (tx) => {
+      return tx.db
+        .table("activeNetwork")
+        .add({ origin: TALLY_INTERNAL_ORIGIN, ETHEREUM })
     })
-    if (!existingActiveNetwork) {
-      await this.setActiveChainIdForOrigin(TALLY_INTERNAL_ORIGIN, ETHEREUM)
-    }
   }
 
   async setActiveChainIdForOrigin(
