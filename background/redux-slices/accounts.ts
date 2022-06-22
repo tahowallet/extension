@@ -9,6 +9,7 @@ import {
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
+import { SigningMethod } from "../utils/signing"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -386,11 +387,18 @@ export const addOrEditAddressName = createBackgroundAsyncThunk(
 
 export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
-  async (addressOnNetwork: AddressOnNetwork, { dispatch, extra: { main } }) => {
+  async (
+    payload: {
+      addressOnNetwork: AddressOnNetwork
+      signingMethod?: SigningMethod
+    },
+    { dispatch, extra: { main } }
+  ) => {
+    const { addressOnNetwork, signingMethod } = payload
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
 
     await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
 
-    main.removeAccount(normalizedAddress, { type: "keyring" })
+    main.removeAccount(normalizedAddress, signingMethod)
   }
 )

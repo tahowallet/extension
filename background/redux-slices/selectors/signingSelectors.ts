@@ -5,7 +5,7 @@ import { selectKeyringSigningAddresses } from "./keyringsSelectors"
 import { selectLedgerSigningMethodEntries } from "./ledgerSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 
-export const selectAddressSigningMethods = createSelector(
+export const selectAccountsSigningMethods = createSelector(
   selectKeyringSigningAddresses,
   selectLedgerSigningMethodEntries,
   (signingAddresses, ledgerSigningMethodEntries) =>
@@ -21,7 +21,7 @@ export const selectAddressSigningMethods = createSelector(
 )
 
 export const selectCurrentAccountSigningMethod = createSelector(
-  selectAddressSigningMethods,
+  selectAccountsSigningMethods,
   (state: RootState) => selectCurrentAccount(state),
   (signingAccounts, selectedAccount): SigningMethod | null =>
     signingAccounts[selectedAccount.address] ?? null

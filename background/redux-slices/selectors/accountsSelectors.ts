@@ -25,7 +25,7 @@ import {
   sameEVMAddress,
   truncateAddress,
 } from "../../lib/utils"
-import { selectAddressSigningMethods } from "./signingSelectors"
+import { selectAccountsSigningMethods } from "./signingSelectors"
 import { SigningMethod } from "../../utils/signing"
 import {
   selectKeyringsByAddresses,
@@ -280,7 +280,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectCurrentNetwork,
-  selectAddressSigningMethods,
+  selectAccountsSigningMethods,
   selectKeyringsByAddresses,
   selectSourcesByAddress,
   selectMainCurrencySymbol,

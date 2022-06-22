@@ -134,19 +134,21 @@ export default class SigningService extends BaseService<Events> {
 
   async removeAccount(
     address: HexString,
-    signingMethod: SigningMethod
+    signingMethod?: SigningMethod
   ): Promise<void> {
-    switch (signingMethod.type) {
-      case "keyring":
-        await this.keyringService.hideAccount(address)
-        await this.chainService.removeAccountToTrack(address)
-        break
-      case "ledger":
-        // @TODO Implement removal of ledger accounts.
-        break
-      default:
-        throw new Error("Unknown signingMethod type.")
-    }
+    if (signingMethod)
+      switch (signingMethod.type) {
+        case "keyring":
+          await this.keyringService.hideAccount(address)
+          break
+        case "ledger":
+          // @TODO Implement removal of ledger accounts.
+          break
+        default:
+          throw new Error("Unknown signingMethod type.")
+      }
+
+    await this.chainService.removeAccountToTrack(address)
   }
 
   async signTransaction(

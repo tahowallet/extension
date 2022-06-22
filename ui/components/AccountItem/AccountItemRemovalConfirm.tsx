@@ -1,11 +1,12 @@
 import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   AccountTotal,
+  selectAccountsSigningMethods,
   selectKeyringByAddress,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
-import { setSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedButton from "../Shared/SharedButton"
@@ -49,6 +50,8 @@ export default function AccountItemRemovalConfirm({
     selectedAddress: state.ui.selectedAccount.address,
     accountsData: state.account.accountsData,
   }))
+  const signingMethods = useBackgroundSelector(selectAccountsSigningMethods)
+  const selectedAddressSigningMethod = signingMethods[selectedAddress]
   const readOnlyAccount = typeof keyring === "undefined"
   const lastAddressInKeyring = keyring?.addresses.length === 1
   const showLoudWarning = readOnlyAccount || lastAddressInKeyring
@@ -92,14 +95,19 @@ export default function AccountItemRemovalConfirm({
             e.stopPropagation()
             // don't prompt for unlock if removing read-only account.
             if (readOnlyAccount || areKeyringsUnlocked) {
-              dispatch(removeAccount({ address, network }))
+              dispatch(
+                removeAccount({
+                  addressOnNetwork: { address, network },
+                  signingMethod: selectedAddressSigningMethod,
+                })
+              )
               if (sameEVMAddress(selectedAddress, address)) {
                 const newAddress = Object.keys(
                   accountsData.evm[network.chainID]
                 ).find((accountAddress) => accountAddress !== address)
                 if (newAddress) {
                   dispatch(
-                    setSelectedAccount({
+                    setNewSelectedAccount({
                       address: newAddress,
                       network,
                     })

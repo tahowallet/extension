@@ -478,7 +478,7 @@ export default class Main extends BaseService<never> {
 
   async removeAccount(
     address: HexString,
-    signingMethod: SigningMethod
+    signingMethod?: SigningMethod
   ): Promise<void> {
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signingMethod)
