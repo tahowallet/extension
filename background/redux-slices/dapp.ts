@@ -80,14 +80,14 @@ const dappSlice = createSlice({
       state,
       { payload: request }: { payload: PermissionRequest }
     ) => {
-      if (state.permissionRequests[request.key]?.state !== "allow") {
+      if (state.permissionRequests[request.origin]?.state !== "allow") {
         return {
           ...state,
           permissionRequests: {
             // Quick fix: store only the latest permission request.
             // TODO: put this back when we fixed the performance issues and/or updated our UI to handle multiple requests
             // ...state.permissionRequests,
-            [request.key]: { ...request },
+            [request.origin]: { ...request },
           },
         }
       }
@@ -104,7 +104,7 @@ const dappSlice = createSlice({
           { payload: permission }: { payload: PermissionRequest }
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
-          delete updatedPermissionRequests[permission.key]
+          delete updatedPermissionRequests[permission.origin]
 
           // Support Both networks regardless of which one initiated grant request
           const permissions = [ETHEREUM, POLYGON].map((network) => ({
@@ -127,7 +127,7 @@ const dappSlice = createSlice({
           { payload: permission }: { payload: PermissionRequest }
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
-          delete updatedPermissionRequests[permission.key]
+          delete updatedPermissionRequests[permission.origin]
 
           const { [permission.origin]: _, ...withoutOriginToRemove } =
             immerState.allowed.evm[permission.chainID][
