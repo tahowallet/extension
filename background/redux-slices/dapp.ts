@@ -3,6 +3,8 @@ import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
+import { ETHEREUM, POLYGON } from "../constants"
+import { SUPPORT_POLYGON } from "../features"
 
 export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
@@ -104,8 +106,14 @@ const dappSlice = createSlice({
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.key]
 
+          // Support Both networks regardless of which one initiated grant request
+          const permissions = [ETHEREUM, POLYGON].map((network) => ({
+            ...permission,
+            chainID: network.chainID,
+          }))
+
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
-            [permission],
+            SUPPORT_POLYGON ? permissions : [permission],
             immerState.allowed
           )
 
