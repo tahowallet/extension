@@ -149,6 +149,23 @@ export default class TallyWindowProvider extends EventEmitter {
     return Promise.reject(new Error("Unsupported function parameters"))
   }
 
+  // deprecated EIP-1193 method
+  // added as some dapps are still using it
+  sendAsync(
+    request: RequestArgument & { id?: number; jsonrpc?: string },
+    callback: (error: unknown, response: unknown) => void
+  ): Promise<unknown> | void {
+    return this.request(request).then(
+      (response) =>
+        callback(null, {
+          result: response,
+          id: request.id,
+          jsonrpc: request.jsonrpc,
+        }),
+      (error) => callback(error, null)
+    )
+  }
+
   // Provider-wide counter for requests.
   private requestID = 0n
 
