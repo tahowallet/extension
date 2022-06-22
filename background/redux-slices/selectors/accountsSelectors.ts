@@ -32,7 +32,7 @@ import {
   selectSourcesByAddress,
 } from "./keyringsSelectors"
 import { AddressOnNetwork } from "../../accounts"
-import { sameNetwork } from "../../networks"
+import { EVMNetwork, sameNetwork } from "../../networks"
 import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
@@ -47,6 +47,7 @@ const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   mainCurrencySymbol: string,
+  currentNetwork: EVMNetwork,
   hideDust: boolean
 ): {
   combinedAssetAmounts: CompleteAssetAmount[]
@@ -89,11 +90,11 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
+      const baseAsset = BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
       const isForciblyDisplayed =
         (!HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol) ||
-        // TODO Update filter to let through only the base asset of the current
-        // TODO network.
-        BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol] !== undefined
+        (currentNetwork.baseAsset.name === baseAsset?.name &&
+          currentNetwork.baseAsset.symbol === baseAsset?.symbol)
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
           ? true
@@ -156,14 +157,16 @@ export const getAssetsState = (state: RootState): AssetsState => state.assets
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
+  selectCurrentNetwork,
   selectHideDust,
   selectMainCurrencySymbol,
-  (account, assets, hideDust, mainCurrencySymbol) => {
+  (account, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
+        currentNetwork,
         hideDust
       )
 
@@ -195,9 +198,10 @@ export const selectMainCurrencyPricePoint = createSelector(
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
+  selectCurrentNetwork,
   selectHideDust,
   selectMainCurrencySymbol,
-  (currentAccount, assets, hideDust, mainCurrencySymbol) => {
+  (currentAccount, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -211,6 +215,7 @@ export const selectCurrentAccountBalances = createSelector(
         assetAmounts,
         assets,
         mainCurrencySymbol,
+        currentNetwork,
         hideDust
       )
 
