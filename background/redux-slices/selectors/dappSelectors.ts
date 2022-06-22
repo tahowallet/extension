@@ -34,7 +34,7 @@ export const selectAllowedPages = createSelector(
     // the currently selected account
     const permissions: PermissionRequest[] = []
 
-    Object.keys(allowed.evm).forEach(([chainId]) => {
+    Object.keys(allowed.evm).forEach((chainId) => {
       Object.keys(allowed.evm[chainId]).forEach((address) => {
         if (address === currentAccount.address) {
           Object.values(allowed.evm[chainId][address]).forEach((permission) => {
