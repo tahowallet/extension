@@ -117,8 +117,7 @@ import {
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
-import { selectCurrentAccountAssetBalance } from "./redux-slices/selectors"
-import getMinMainAssetAmountForTransaction from "./utils/transaction"
+import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -568,10 +567,6 @@ export default class Main extends BaseService<never> {
         const {
           values: { maxFeePerGas, maxPriorityFeePerGas },
         } = selectDefaultNetworkFeeSettings(this.store.getState())
-        const mainAssetBalance = selectCurrentAccountAssetBalance(
-          this.store.getState(),
-          network.baseAsset.symbol
-        )
 
         const { transactionRequest: populatedRequest, gasEstimationError } =
           await this.chainService.populatePartialEVMTransactionRequest(
@@ -594,16 +589,6 @@ export default class Main extends BaseService<never> {
         const enrichedPopulatedRequest = {
           ...populatedRequest,
           annotation,
-        }
-
-        const mainAssetNeeded = getMinMainAssetAmountForTransaction(
-          enrichedPopulatedRequest
-        )
-
-        if (mainAssetBalance && mainAssetBalance?.amount < mainAssetNeeded) {
-          this.store.dispatch(
-            setSnackbarMessage("Probably not enough funds to pay gas fee")
-          )
         }
 
         if (typeof gasEstimationError === "undefined") {
@@ -1036,7 +1021,8 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
         "wallet_switchEthereumChain",
-        [{ chainId: network.chainID }]
+        [{ chainId: network.chainID }],
+        TALLY_INTERNAL_ORIGIN
       )
       this.store.dispatch(clearCustomGas())
     })
