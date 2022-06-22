@@ -22,11 +22,11 @@ export class InternalEthereumProviderDatabase extends Dexie {
   }
 
   async initialize(): Promise<void> {
-    const existingActiveNetwork = await this.activeNetwork.where({
+    const existingActiveNetwork = await this.activeNetwork.get({
       origin: TALLY_INTERNAL_ORIGIN,
     })
     if (!existingActiveNetwork) {
-      this.setActiveChainIdForOrigin(TALLY_INTERNAL_ORIGIN, ETHEREUM)
+      await this.setActiveChainIdForOrigin(TALLY_INTERNAL_ORIGIN, ETHEREUM)
     }
   }
 
