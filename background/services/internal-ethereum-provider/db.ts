@@ -21,7 +21,7 @@ export class InternalEthereumProviderDatabase extends Dexie {
     this.on("populate", (tx) => {
       return tx.db
         .table("activeNetwork")
-        .add({ origin: TALLY_INTERNAL_ORIGIN, ETHEREUM })
+        .add({ origin: TALLY_INTERNAL_ORIGIN, network: ETHEREUM })
     })
   }
 
