@@ -190,7 +190,6 @@ const transactionSlice = createSlice({
           ]?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
       },
       transactionLikelyFails,
-      customFeesPerGas: defaultCustomGas,
     }),
     clearTransactionState: (
       state,
@@ -210,7 +209,6 @@ const transactionSlice = createSlice({
     ): TransactionConstruction => ({
       ...state,
       feeTypeSelected: payload,
-      customFeesPerGas: defaultCustomGas,
     }),
 
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
