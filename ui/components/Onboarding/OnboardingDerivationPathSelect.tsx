@@ -183,6 +183,7 @@ export default function OnboardingDerivationPathSelect({
         triggerLabel="Add custom path"
         onTrigger={() => setModalStep(1)}
         showValue
+        showOptionValue
         placement="top"
       />
       <style jsx>{`
