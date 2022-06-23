@@ -10,6 +10,7 @@ export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
   allowed: {
     evm: {
+      // @TODO Re-key by origin-chainID-address
       [chainID: string]: {
         [address: string]: {
           [origin: string]: PermissionRequest
@@ -128,15 +129,22 @@ const dappSlice = createSlice({
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
-
-          const { [permission.origin]: _, ...withoutOriginToRemove } =
-            immerState.allowed.evm[permission.chainID][
-              permission.accountAddress
-            ]
-
-          immerState.allowed.evm[permission.chainID][
-            permission.accountAddress
-          ] = withoutOriginToRemove
+          ;[ETHEREUM, POLYGON].forEach((network) => {
+            if (
+              immerState.allowed.evm[network.chainID]?.[
+                permission.accountAddress
+              ]
+            ) {
+              const { [permission.origin]: _, ...withoutOriginToRemove } =
+                immerState.allowed.evm[network.chainID][
+                  permission.accountAddress
+                ]
+              // chainID;
+              immerState.allowed.evm[network.chainID][
+                permission.accountAddress
+              ] = withoutOriginToRemove
+            }
+          })
         }
       )
   },

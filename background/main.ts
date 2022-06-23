@@ -1090,7 +1090,14 @@ export default class Main extends BaseService<never> {
     providerBridgeSliceEmitter.on(
       "denyOrRevokePermission",
       async (permission) => {
-        await this.providerBridgeService.denyOrRevokePermission(permission)
+        await Promise.all(
+          this.chainService.supportedNetworks.map(async (network) => {
+            await this.providerBridgeService.denyOrRevokePermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          })
+        )
       }
     )
   }
