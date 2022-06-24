@@ -502,9 +502,17 @@ export default class Main extends BaseService<never> {
             }
             await this.chainService.addAccountToTrack(addressNetwork)
             this.store.dispatch(loadAccount(addressNetwork))
-            this.store.dispatch(setNewSelectedAccount(addressNetwork))
           })
         )
+      })
+    )
+    this.store.dispatch(
+      setNewSelectedAccount({
+        address: accounts[0].address,
+        network:
+          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+            TALLY_INTERNAL_ORIGIN
+          ),
       })
     )
   }
