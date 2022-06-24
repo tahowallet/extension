@@ -20,9 +20,9 @@ import {
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
 } from "../services/enrichment"
-import { SigningMethod } from "../utils/signing"
 
 import { createBackgroundAsyncThunk } from "./utils"
+import { AccountSigner } from "../services/signing"
 
 export const enum TransactionConstructionStatus {
   Idle = "idle",
@@ -84,9 +84,9 @@ export const initialState: TransactionConstruction = {
   lastGasEstimatesRefreshed: Date.now(),
 }
 
-export interface SignatureRequest {
+export type SignatureRequest = {
   transaction: EIP1559TransactionRequest
-  method: SigningMethod
+  accountSigner: AccountSigner
 }
 
 export type Events = {

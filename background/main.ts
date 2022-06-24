@@ -29,7 +29,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, HexString, KeyringTypes } from "./types"
+import { HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -94,11 +94,7 @@ import {
   signDataRequest,
 } from "./redux-slices/signing"
 
-import {
-  SigningMethod,
-  SignTypedDataRequest,
-  SignDataRequest,
-} from "./utils/signing"
+import { SignTypedDataRequest, SignDataRequest } from "./utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
@@ -110,7 +106,11 @@ import {
 } from "./redux-slices/ledger"
 import { ETHEREUM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
-import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import {
+  SignatureResponse,
+  SignerType,
+  TXSignatureResponse,
+} from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
 import {
   migrateReduxState,
@@ -478,10 +478,10 @@ export default class Main extends BaseService<never> {
 
   async removeAccount(
     address: HexString,
-    signingMethod: SigningMethod
+    signerType: SignerType
   ): Promise<void> {
     // TODO Adjust to handle specific network.
-    await this.signingService.removeAccount(address, signingMethod)
+    await this.signingService.removeAccount(address, signerType)
   }
 
   async importLedgerAccounts(
@@ -507,10 +507,14 @@ export default class Main extends BaseService<never> {
     )
   }
 
-  async deriveLedgerAddress(path: string): Promise<string> {
+  async deriveLedgerAddress(
+    deviceID: string,
+    derivationPath: string
+  ): Promise<string> {
     return this.signingService.deriveAddress({
       type: "ledger",
-      accountID: path,
+      deviceID,
+      path: derivationPath,
     })
   }
 
@@ -617,10 +621,13 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
-      async ({ transaction, method }) => {
+      async ({ transaction, accountSigner }) => {
         try {
           const signedTransactionResult =
-            await this.signingService.signTransaction(transaction, method)
+            await this.signingService.signTransaction(
+              transaction,
+              accountSigner
+            )
           await this.store.dispatch(transactionSigned(signedTransactionResult))
         } catch (exception) {
           logger.error("Error signing transaction", exception)
@@ -632,20 +639,12 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignTypedData",
-      async ({
-        typedData,
-        account,
-        signingMethod,
-      }: {
-        typedData: EIP712TypedData
-        account: AddressOnNetwork
-        signingMethod: SigningMethod
-      }) => {
+      async ({ typedData, account, accountSigner }) => {
         try {
           const signedData = await this.signingService.signTypedData({
             typedData,
             account,
-            signingMethod,
+            accountSigner,
           })
           this.store.dispatch(signedTypedData(signedData))
         } catch (err) {
@@ -656,11 +655,11 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignData",
-      async ({ rawSigningData, account, signingMethod }) => {
+      async ({ rawSigningData, account, accountSigner }) => {
         const signedData = await this.signingService.signData(
           account,
           rawSigningData,
-          signingMethod
+          accountSigner
         )
         this.store.dispatch(signedDataAction(signedData))
       }
@@ -838,7 +837,7 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
-        accountID: keyringID,
+        keyringID,
       })
     })
 

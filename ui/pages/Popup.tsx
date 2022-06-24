@@ -15,7 +15,7 @@ import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
-  selectCurrentAccountSigningMethod,
+  selectCurrentAccountSigner,
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
@@ -113,12 +113,12 @@ export function Main(): ReactElement {
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature
   )
-  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
 
   const needsKeyringUnlock =
     isTransactionPendingSignature &&
-    signingMethod?.type === "keyring" &&
+    currentAccountSigner?.type === "keyring" &&
     keyringStatus !== "unlocked"
 
   useConnectPopupMonitor()
@@ -187,17 +187,24 @@ export function Main(): ReactElement {
                     </div>
                     {/* @ts-expect-error TODO: fix the typing when the feature works */}
                     <Switch location={transformedLocation}>
-                      {pageList.map(({ path, Component, hasTopBar }) => {
-                        return (
-                          <Route path={path} key={path}>
-                            <CorePage hasTopBar={hasTopBar}>
-                              <ErrorBoundary FallbackComponent={ErrorFallback}>
-                                <Component location={transformedLocation} />
-                              </ErrorBoundary>
-                            </CorePage>
-                          </Route>
-                        )
-                      })}
+                      {pageList.map(
+                        ({ path, Component, hasTopBar, hasTabBar }) => {
+                          return (
+                            <Route path={path} key={path}>
+                              <CorePage
+                                hasTopBar={hasTopBar}
+                                hasTabBar={hasTabBar}
+                              >
+                                <ErrorBoundary
+                                  FallbackComponent={ErrorFallback}
+                                >
+                                  <Component location={transformedLocation} />
+                                </ErrorBoundary>
+                              </CorePage>
+                            </Route>
+                          )
+                        }
+                      )}
                     </Switch>
                   </div>
                 </CSSTransition>
