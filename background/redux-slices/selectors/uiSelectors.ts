@@ -30,7 +30,7 @@ export const selectCurrentAccount = createSelector(
   ({ address, network }) => ({
     address,
     network,
-    truncatedAddress: address.toLowerCase().slice(0, 7),
+    truncatedAddress: address?.toLowerCase().slice(0, 7),
   })
 )
 
