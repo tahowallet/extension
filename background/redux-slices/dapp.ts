@@ -139,7 +139,6 @@ const dappSlice = createSlice({
                 immerState.allowed.evm[network.chainID][
                   permission.accountAddress
                 ]
-              // chainID;
               immerState.allowed.evm[network.chainID][
                 permission.accountAddress
               ] = withoutOriginToRemove
