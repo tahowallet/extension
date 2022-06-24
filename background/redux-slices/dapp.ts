@@ -18,13 +18,11 @@ export type DAppPermissionState = {
       }
     }
   }
-  allowedPages: undefined
 }
 
 export const initialState: DAppPermissionState = {
   permissionRequests: {},
   allowed: { evm: {} },
-  allowedPages: undefined,
 }
 
 export type Events = {
@@ -59,7 +57,7 @@ const dappSlice = createSlice({
   name: "dapp-permission",
   initialState,
   reducers: {
-    initializeAllowedPages: (
+    initializePermissions: (
       immerState,
       {
         payload: allowed,
@@ -149,6 +147,6 @@ const dappSlice = createSlice({
   },
 })
 
-export const { requestPermission, initializeAllowedPages } = dappSlice.actions
+export const { requestPermission, initializePermissions } = dappSlice.actions
 
 export default dappSlice.reducer

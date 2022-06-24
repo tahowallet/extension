@@ -81,7 +81,7 @@ import { allAliases } from "./redux-slices/utils"
 import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
-  initializeAllowedPages,
+  initializePermissions,
 } from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
@@ -1039,7 +1039,7 @@ export default class Main extends BaseService<never> {
     this.providerBridgeService.emitter.on(
       "initializeAllowedPages",
       async (allowedPages: PermissionMap) => {
-        this.store.dispatch(initializeAllowedPages(allowedPages))
+        this.store.dispatch(initializePermissions(allowedPages))
       }
     )
 
