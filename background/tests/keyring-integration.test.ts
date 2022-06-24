@@ -210,7 +210,9 @@ describe("KeyringService when initialized", () => {
       },
     ] = service.getKeyrings()
 
-    const newAddress = id ? await service.deriveAddress(id) : ""
+    const newAddress = id
+      ? await service.deriveAddress({ type: "keyring", keyringID: id })
+      : ""
     expect(newAddress).toEqual(
       expect.not.stringMatching(new RegExp(originalAddress, "i"))
     )

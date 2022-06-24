@@ -1,5 +1,5 @@
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
-import { SigningMethod } from "@tallyho/tally-background/utils/signing"
+import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
 import { useBackgroundSelector } from "./redux-hooks"
@@ -39,10 +39,8 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   return keyringStatus === "unlocked"
 }
 
-export function useIsSigningMethodLocked(
-  signingMethod: SigningMethod | null
-): boolean {
-  const needsKeyrings = signingMethod?.type === "keyring"
+export function useIsSignerLocked(signer: AccountSigner | null): boolean {
+  const needsKeyrings = signer?.type === "keyring"
   const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
   return needsKeyrings && !areKeyringsUnlocked
 }
