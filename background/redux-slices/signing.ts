@@ -13,21 +13,14 @@ import { AddressOnNetwork } from "../accounts"
 import { AccountSigner } from "../services/signing"
 import { EIP1559TransactionRequest } from "../networks"
 
-export type SignOperation<T> = {
+export type SignOperationType =
+  // FIXME Consider subtypes of SignOperation instead of SignOperation<T>.
+  SignDataRequest | SignTypedDataRequest | EIP1559TransactionRequest
+
+export type SignOperation<T extends SignOperationType> = {
   request: T
   accountSigner: AccountSigner
 }
-
-export type SigningRequest =
-  | {
-      // FIXME Consider unifying with SignOperation.
-      transactionRequest: EIP1559TransactionRequest
-      broadcastOnSign: boolean
-    }
-  | {
-      // FIXME Consider subtypes of SignOperation instead of SignOperation<T>.
-      signingOperation: SignOperation<SignDataRequest | SignTypedDataRequest>
-    }
 
 type Events = {
   requestSignTypedData: {
