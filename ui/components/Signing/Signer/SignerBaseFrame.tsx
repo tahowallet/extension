@@ -1,30 +1,35 @@
-import SharedButton from "../../Shared/SharedButton";
+import React, { ReactElement, useState } from "react"
+import SharedButton from "../../Shared/SharedButton"
+
+type SignerBaseFrameProps = {
+  signingAction: string
+  onConfirm: () => void
+  onReject: () => void
+  children: ReactElement
+}
 
 export default function SignerBaseFrame({
   children,
   signingAction,
   onConfirm,
-  onReject
-}: SigningFrameProps): ReactElement {
+  onReject,
+}: SignerBaseFrameProps): ReactElement {
+  const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(true)
+
   return (
     <>
       {children}
       <footer>
-        <SharedButton
-          iconSize="large"
-          size="large"
-          type="secondary"
-          onClick={onReject}
-        >
+        <SharedButton size="large" type="secondary" onClick={onReject}>
           Reject
         </SharedButton>
 
         <SharedButton
-          type="primary"
-          iconSize="large"
+          type="primaryGreen"
           size="large"
           onClick={onConfirm}
           showLoadingOnClick
+          isDisabled={isOnDelayToSign}
         >
           {signingAction}
         </SharedButton>
