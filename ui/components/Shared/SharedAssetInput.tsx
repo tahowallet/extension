@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react"
+import { useTranslation } from "react-i18next"
 import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
@@ -19,7 +20,6 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
-import t from "../../utils/i18n"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -112,6 +112,7 @@ function assetAlphabeticSorterWithFilter<
 function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
+  const { t } = useTranslation()
   const { setSelectedAssetAndClose, assets } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
@@ -312,6 +313,7 @@ function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
 export default function SharedAssetInput<T extends AnyAsset>(
   props: SharedAssetInputProps<T>
 ): ReactElement {
+  const { t } = useTranslation()
   const {
     assetsAndAmounts,
     label,
