@@ -86,7 +86,7 @@ export default function SignTransactionTransferInfoProvider({
               .spend_amount {
                 color: #fff;
                 font-size: 28px;
-                text-align: right;
+                text-align: center;
                 text-transform: uppercase;
               }
               .divider {
