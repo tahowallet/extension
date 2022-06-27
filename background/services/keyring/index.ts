@@ -35,6 +35,11 @@ export type Keyring = {
   addresses: string[]
 }
 
+export type KeyringAccountSigner = {
+  type: "keyring"
+  keyringID: string
+}
+
 export interface KeyringMetadata {
   source: "import" | "internal"
 }
@@ -369,11 +374,13 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * Derive and return the next address from an HDKeyring.
+   * Derive and return the next address for a KeyringAccountSigner representing
+   * an HDKeyring.
    *
-   * @param keyringID - a string ID corresponding to an unlocked keyring.
+   * @param keyringAccountSigner - A KeyringAccountSigner representing the
+   *        given keyring.
    */
-  async deriveAddress(keyringID: string): Promise<HexString> {
+  async deriveAddress({ keyringID }: KeyringAccountSigner): Promise<HexString> {
     this.requireUnlocked()
 
     // find the keyring using a linear search

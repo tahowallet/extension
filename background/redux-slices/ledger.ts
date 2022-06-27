@@ -1,11 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { ETH, ETHEREUM } from "../constants"
+import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
 export interface LedgerAccountState {
   path: string
-  address: string | null
+  address: HexString | null
   fetchingAddress: boolean
   balance: string | null
   fetchingBalance: boolean
@@ -222,7 +223,7 @@ export const fetchAddress = createBackgroundAsyncThunk(
   ) => {
     try {
       dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
-      const address = await main.deriveLedgerAddress(path) // FIXME: deviceID is ignored
+      const address = await main.deriveLedgerAddress(deviceID, path) // FIXME: deviceID is ignored
       dispatch(ledgerSlice.actions.resolveAddress({ deviceID, path, address }))
     } catch (err) {
       dispatch(ledgerSlice.actions.resetLedgerState())
