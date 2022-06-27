@@ -494,15 +494,25 @@ export default class Main extends BaseService<never> {
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
-        // FIXME Handle multi-network in Ledger.
-        const addressNetwork = {
-          address,
-          network: ETHEREUM,
-        }
-        // eslint-disable-next-line no-await-in-loop
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(addressNetwork))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+        await Promise.all(
+          this.chainService.supportedNetworks.map(async (network) => {
+            const addressNetwork = {
+              address,
+              network,
+            }
+            await this.chainService.addAccountToTrack(addressNetwork)
+            this.store.dispatch(loadAccount(addressNetwork))
+          })
+        )
+      })
+    )
+    this.store.dispatch(
+      setNewSelectedAccount({
+        address: accounts[0].address,
+        network:
+          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+            TALLY_INTERNAL_ORIGIN
+          ),
       })
     )
   }

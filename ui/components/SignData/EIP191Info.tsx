@@ -36,6 +36,7 @@ const EIP191Info: React.FC<{
         }
         .light {
           color: #ccd3d3;
+          white-space: pre-wrap;
         }
         .label {
           color: var(--green-40);

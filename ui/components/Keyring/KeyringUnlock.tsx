@@ -99,7 +99,7 @@ export default function KeyringUnlock(): ReactElement {
             margin-bottom: 17px;
           }
           section {
-            padding-top: 42px;
+            padding-top: 24px;
             background-color: var(--hunter-green);
           }
           .input_wrap {
