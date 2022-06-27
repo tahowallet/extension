@@ -27,10 +27,6 @@ export type SignTypedDataRequest = {
   typedData: EIP712TypedData
 }
 
-export type SigningMethod =
-  | { type: "keyring" }
-  | { type: "ledger"; deviceID: string; path: string }
-
 export type ExpectedSigningData = EIP191Data | EIP4361Data
 
 export type SignDataRequest = {

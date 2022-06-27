@@ -14,7 +14,7 @@ import {
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useIsSigningMethodLocked,
+  useIsSignerLocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
@@ -42,9 +42,9 @@ export default function SignTransaction(): ReactElement {
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
-  const signingMethod = signerAccountTotal?.signingMethod ?? null
+  const accountSigner = signerAccountTotal?.accountSigner ?? null
 
-  const isLocked = useIsSigningMethodLocked(signingMethod)
+  const isLocked = useIsSignerLocked(accountSigner)
 
   if (isLocked) return <></>
 
@@ -55,12 +55,12 @@ export default function SignTransaction(): ReactElement {
     if (
       isTransactionDataReady &&
       transactionDetails &&
-      signingMethod !== null
+      accountSigner !== null
     ) {
       dispatch(
         signTransaction({
           transaction: transactionDetails,
-          method: signingMethod,
+          accountSigner,
         })
       )
       setIsTransactionSigning(true)
