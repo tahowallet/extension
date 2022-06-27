@@ -1,4 +1,5 @@
-import { fromFixedPoint } from "@tallyho/tally-background/lib/fixed-point"
+import { AnyAsset } from "@tallyho/tally-background/assets"
+import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { truncateDecimalAmount } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import {
@@ -32,17 +33,20 @@ export default function SignTransactionTransferInfoProvider({
     assetAmount.asset.symbol,
     mainCurrencySymbol
   )
+  // @TODO Remove this wonky massaging
+  const assetAmountAsset = assetAmount.asset as AnyAsset & { decimals?: number }
+
   const localizedMainCurrencyAmount =
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
 
-  const readableDecimalAmount = fromFixedPoint(
-    assetAmount.amount,
-    assetAmount.asset.decimals,
-    20
-  )
-    .toFixed(20)
-    .replace(/(\.[0-9]*?)0+$/, "$1")
+  const readableDecimalAmount =
+    typeof assetAmountAsset.decimals !== "undefined"
+      ? fixedPointNumberToString({
+          amount: assetAmount.amount,
+          decimals: assetAmountAsset.decimals,
+        })
+      : assetAmount.localizedDecimalAmount
 
   return (
     <SignTransactionBaseInfoProvider
