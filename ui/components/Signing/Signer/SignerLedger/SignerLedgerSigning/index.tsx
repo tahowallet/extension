@@ -11,20 +11,20 @@ import TransactionDetailItem from "../../../../TransactionDetail/TransactionDeta
 
 type SignerKeyringSigningProps<T extends SignOperationType> = {
   request: T
+  isArbitraryDataSigningRequired: boolean
 }
 
 export default function SignerLedgerSigning<T extends SignOperationType>({
   request,
+  isArbitraryDataSigningRequired,
 }: SignerKeyringSigningProps<T>): ReactElement {
   if ("signingData" in request) {
-    const messageHash = sha256(
-      toUtf8Bytes(request.rawSigningData)
-    ).toUpperCase()
-
     return (
       <TransactionDetailContainer>
         <TransactionDetailItem name="Sign message" value="" />
-        <TransactionDetailItem name="Message hash" value={messageHash} />
+        {/* FIXME Nano S shows "Message" up to ~96 chars */}
+        {/* FIXME Nano X shows "Message" up to ~255 chars */}
+        <TransactionDetailItem name="Message" value={request.rawSigningData} />
       </TransactionDetailContainer>
     )
   }
@@ -56,7 +56,6 @@ export default function SignerLedgerSigning<T extends SignOperationType>({
     amount: request.value,
     decimals: request.network.baseAsset.decimals,
   })
-  const hasData = request.input !== null && request.input !== "0x"
   const maxFeeAmountString = fixedPointNumberToString(
     multiplyFixedPointNumbers(
       {
@@ -68,21 +67,52 @@ export default function SignerLedgerSigning<T extends SignOperationType>({
   )
 
   return (
-    <TransactionDetailContainer>
-      <TransactionDetailItem name="Review transaction" value="" />
-      {hasData ? <TransactionDetailItem name="Data present" value="" /> : <></>}
-      <TransactionDetailItem name="Amount" value={`ETH ${ethAmountString}`} />
-      {/* FIXME What is displayed for contract creation? */}
-      <TransactionDetailItem
-        name="Address"
-        value={
-          request.to !== undefined ? ethers.utils.getAddress(request.to) : ""
+    <>
+      <TransactionDetailContainer>
+        <TransactionDetailItem name="Review transaction" value="" />
+        {isArbitraryDataSigningRequired ? (
+          <TransactionDetailItem name="Blind signing" value="" />
+        ) : (
+          <></>
+        )}
+        <TransactionDetailItem name="Amount" value={`ETH ${ethAmountString}`} />
+        <TransactionDetailItem
+          name="Address"
+          value={
+            request.to !== undefined
+              ? ethers.utils.getAddress(request.to)
+              : "Contract"
+          }
+        />
+        <TransactionDetailItem
+          name="Max fees"
+          value={`ETH ${maxFeeAmountString}`}
+        />
+      </TransactionDetailContainer>
+
+      <footer className="cannot_reject_warning">
+        <span className="block_icon" />
+        Tx can only be Rejected from Ledger
+      </footer>
+      <style jsx>{`
+        .cannot_reject_warning {
+          position: fixed;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          bottom: 0;
+          padding: 16px;
+          color: var(--error);
+          font-weight: 600;
+          font-size: 18px;
         }
-      />
-      <TransactionDetailItem
-        name="Max fees"
-        value={`ETH ${maxFeeAmountString}`}
-      />
-    </TransactionDetailContainer>
+        .block_icon {
+          width: 24px;
+          height: 24px;
+          margin: 8px;
+          background: no-repeat center / cover url("./images/block_icon@2x.png");
+        }
+      `}</style>
+    </>
   )
 }

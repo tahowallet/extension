@@ -6,6 +6,7 @@ import {
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { AssetTransfer } from "@tallyho/tally-background/services/enrichment"
 import React, { ReactElement } from "react"
+import {SigningDataTransactionSummaryBody} from "."
 import { SigningDataTransactionSummaryProps } from ".."
 import { useBackgroundSelector } from "../../../../../hooks"
 import SharedAddress from "../../../../Shared/SharedAddress"
@@ -27,7 +28,7 @@ export default function SigningDataTransactionSummaryTransfer({
   return (
     <>
       <h1 className="serif_header title">Sign transfer</h1>
-      <div className="sign_block">
+      <SigningDataTransactionSummaryBody>
         <div className="container">
           <div className="label">Send to</div>
           <div className="send_to">
@@ -45,19 +46,6 @@ export default function SigningDataTransactionSummaryTransfer({
 
         <style jsx>
           {`
-            .title {
-              color: var(--trophy-gold);
-              font-size: 36px;
-              font-weight: 500;
-              line-height: 42px;
-              text-align: center;
-            }
-            .sign_block {
-              display: flex;
-              width: 100%;
-              flex-direction: column;
-              align-items: center;
-            }
             .label {
               color: var(--green-40);
               font-size: 16px;
@@ -87,7 +75,7 @@ export default function SigningDataTransactionSummaryTransfer({
             }
           `}
         </style>
-      </div>
+      </SigningDataTransactionSummaryBody>
     </>
   )
 }

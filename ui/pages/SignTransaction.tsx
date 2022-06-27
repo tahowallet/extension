@@ -48,11 +48,6 @@ export default function SignTransaction(): ReactElement {
 
   const isLocked = useIsSignerLocked(accountSigner)
 
-  if (accountSigner === null || transactionDetails === undefined) {
-    // FIXME throw?
-    return <></>
-  }
-
   if (USE_UPDATED_SIGNING_UI) {
     return (
       <Signing accountSigner={accountSigner} request={transactionDetails} />

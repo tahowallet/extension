@@ -205,13 +205,6 @@ export default function SigningDataTransactionSummarySpendApproval({
       <div className="spacer" />
       <style jsx>
         {`
-          .title {
-            color: var(--trophy-gold);
-            font-size: 36px;
-            font-weight: 500;
-            line-height: 42px;
-            text-align: center;
-          }
           .site_icon {
             background: url("./images/dapp_favicon_default@2x.png");
             background-size: cover;

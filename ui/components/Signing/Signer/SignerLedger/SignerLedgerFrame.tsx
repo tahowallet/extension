@@ -46,14 +46,27 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
     )
   }
 
+  const mustEnableArbitraryDataSigning =
+    ledgerState.state === "available" &&
+    isArbitraryDataSigningRequired &&
+    !ledgerState.arbitraryDataEnabled
+
+  const ledgerCannotSign =
+    ledgerState.state !== "available" || mustEnableArbitraryDataSigning
+
   return (
     <>
       <SignerLedgerConnectionStatus
         ledgerState={ledgerState}
-        isArbitraryDataSigningRequired={isArbitraryDataSigningRequired}
+        mustEnableArbitraryDataSigning={mustEnableArbitraryDataSigning}
       />
       {isSigning ? (
-        <SignerLedgerSigning request={request} />
+        <>
+        <SignerLedgerSigning
+          request={request}
+          isArbitraryDataSigningRequired={isArbitraryDataSigningRequired}
+        />
+        </>
       ) : (
         <>
           {children}
@@ -62,7 +75,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
               Reject
             </SharedButton>
 
-            {ledgerState.state !== "available" ? (
+            {ledgerCannotSign ? (
               <SharedButton
                 type="primary"
                 size="large"

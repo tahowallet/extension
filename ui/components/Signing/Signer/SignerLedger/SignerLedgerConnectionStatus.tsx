@@ -4,28 +4,19 @@ import { SigningLedgerState } from "../../../SignTransaction/useSigningLedgerSta
 
 type SignerLedgerConnectionStatusProps = {
   ledgerState: SigningLedgerState
-  isArbitraryDataSigningRequired: boolean
+  mustEnableArbitraryDataSigning: boolean
 }
 
 export default function SignerLedgerConnectionStatus({
   ledgerState,
-  isArbitraryDataSigningRequired,
+  mustEnableArbitraryDataSigning,
 }: SignerLedgerConnectionStatusProps): ReactElement {
-  const isLedgerAvailable = ledgerState.state === "available"
-
-  const mustEnableArbitraryDataSigning =
-    isLedgerAvailable &&
-    isArbitraryDataSigningRequired &&
-    !ledgerState.arbitraryDataEnabled
-
-  const canLedgerSign = isLedgerAvailable && !mustEnableArbitraryDataSigning
-
   switch (ledgerState.state) {
     case "available":
-      if (canLedgerSign) {
-        return <img src="" alt="Ledger is ready to sign" />
+      if (mustEnableArbitraryDataSigning) {
+        return <img src="" alt="Ledger is connected but cannot sign" />
       }
-      return <img src="" alt="Ledger is connected but cannot sign" />
+      return <img src="" alt="Ledger is ready to sign" />
     case "no-ledger-connected":
       return <img src="" alt="Ledger is disconnected" />
     case "wrong-ledger-connected":

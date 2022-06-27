@@ -14,7 +14,7 @@ export default function SignerBaseFrame({
   onConfirm,
   onReject,
 }: SignerBaseFrameProps): ReactElement {
-  const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(true)
+  const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(false)
 
   return (
     <>

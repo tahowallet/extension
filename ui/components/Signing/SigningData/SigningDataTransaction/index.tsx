@@ -28,7 +28,7 @@ export default function SigningDataTransaction({
   const annotatedTransactionType = annotation?.type ?? "contract-interaction"
 
   return (
-    <>
+    <section>
       <SigningDataTransactionSummary
         transactionRequest={transactionRequest}
         annotation={annotation}
@@ -42,6 +42,6 @@ export default function SigningDataTransaction({
           transactionRequest={transactionRequest}
         />
       )}
-    </>
+    </section>
   )
 }

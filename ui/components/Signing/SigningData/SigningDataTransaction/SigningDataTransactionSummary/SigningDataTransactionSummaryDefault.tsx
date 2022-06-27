@@ -7,6 +7,7 @@ import {
   heuristicDesiredDecimalsForUnitPrice,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
+import {SigningDataTransactionSummaryBody} from "."
 import { SigningDataTransactionSummaryProps } from ".."
 import { useBackgroundSelector } from "../../../../../hooks"
 import SharedAddress from "../../../../Shared/SharedAddress"
@@ -49,7 +50,7 @@ export default function SigningDataTransactionSummaryDefault({
   return (
     <>
       <h1 className="serif_header title">Sign transaction</h1>
-      <div className="sign_block">
+      <SigningDataTransactionSummaryBody>
         <div className="container">
           <div className="label">Send to</div>
           <SharedAddress
@@ -76,19 +77,6 @@ export default function SigningDataTransactionSummaryDefault({
 
         <style jsx>
           {`
-            .title {
-              color: var(--trophy-gold);
-              font-size: 36px;
-              font-weight: 500;
-              line-height: 42px;
-              text-align: center;
-            }
-            .sign_block {
-              display: flex;
-              width: 100%;
-              flex-direction: column;
-              align-items: center;
-            }
             .label {
               color: var(--green-40);
               font-size: 16px;
@@ -120,7 +108,7 @@ export default function SigningDataTransactionSummaryDefault({
             }
           `}
         </style>
-      </div>
+      </SigningDataTransactionSummaryBody>
     </>
   )
 }

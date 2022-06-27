@@ -1,10 +1,35 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, ReactNode } from "react"
 import { SigningDataTransactionSummaryProps } from ".."
 import SigningDataTransactionSummaryTransfer from "./SigningDataTransactionSummaryTransfer"
 import SigningDataTransactionSummarySpendApproval from "./SigningDataTransactionSummarySpendApproval"
 import SigningDataTransactionSummarySwapAsset from "./SigningDataTransactionSummarySwapAsset"
 import SigningDataTransactionSummaryDefault from "./SigningDataTransactionSummaryDefault"
 import SigningDataTransactionSummaryContractInteraction from "./SigningDataTransactionSummaryContractInteraction"
+
+export function SigningDataTransactionSummaryBody({
+  children,
+}: {
+  children: ReactNode
+}): ReactElement {
+  return (
+    <div>
+      {children}
+      <style jsx>
+        {`
+          div {
+            display: flex;
+            height: fit-content;
+            border-radius: 16px;
+            background-color: var(--hunter-green);
+            margin: 16px 0px;
+            flex-direction: column;
+            align-items: center;
+          }
+        `}
+      </style>
+    </div>
+  )
+}
 
 /**
  * Creates transaction type-specific summary blocks for use in parent
@@ -15,8 +40,6 @@ export default function SigningDataTransactionSummary({
   transactionRequest,
   annotation,
 }: SigningDataTransactionSummaryProps): ReactElement {
-  // FIXME if (!transactionRequest) return <SignTransactionLoader />
-
   switch (annotation?.type) {
     case "asset-swap":
       return (
@@ -63,4 +86,18 @@ export default function SigningDataTransactionSummary({
         />
       )
   }
+  ;<style jsx>
+    {`
+      .signing-data {
+        display: block;
+        height: fit-content;
+        border-radius: 16px;
+        background-color: var(--hunter-green);
+        margin: 16px 0px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    `}
+  </style>
 }
