@@ -1,6 +1,6 @@
 import {
   getAccountTotal,
-  selectCurrentAccountSigningMethod,
+  selectCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -13,7 +13,7 @@ import SignTransactionContainer from "../components/SignTransaction/SignTransact
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useIsSigningMethodLocked,
+  useIsSignerLocked,
 } from "../hooks"
 import SignDataDetailPanel from "./SignDataDetailPanel"
 
@@ -34,17 +34,22 @@ export default function SignData(): ReactElement {
     return undefined
   })
 
-  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
-  const isLocked = useIsSigningMethodLocked(signingMethod)
+  const isLocked = useIsSignerLocked(currentAccountSigner)
   if (isLocked) return <></>
 
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
-      if (signingMethod) {
-        dispatch(signTypedData({ request: typedDataRequest, signingMethod }))
+      if (currentAccountSigner) {
+        dispatch(
+          signTypedData({
+            request: typedDataRequest,
+            accountSigner: currentAccountSigner,
+          })
+        )
         setIsTransactionSigning(true)
       }
     }
