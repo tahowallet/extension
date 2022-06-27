@@ -2,11 +2,13 @@ import { SignOperationType } from "@tallyho/tally-background/redux-slices/signin
 import { SignerType } from "@tallyho/tally-background/services/signing"
 import { SigningFrame } from ".."
 import SignerKeyringFrame from "./SignerKeyring/SignerKeyringFrame"
+import SignerLedgerFrame from "./SignerLedger/SignerLedgerFrame"
 
 /**
  * For each available signer type, the frame that will wrap the signing data
  * data and own the signing flow.
  */
+// eslint-disable-next-line import/prefer-default-export
 export const frameComponentForSigner: {
   [signerType in SignerType]: SigningFrame<SignOperationType>
 } = {

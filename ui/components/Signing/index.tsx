@@ -64,12 +64,12 @@ function resolveSignatureDetails<T extends SignOperationType>({
   accountSigner,
 }: SignOperation<T>): ResolvedSignatureDetails {
   if ("signingData" in request) {
-    return resolveDataSignatureDetails({ request, accountSigner }) // defined in SigningDataMessage/index.ts
+    return resolveDataSignatureDetails({ request, accountSigner })
   }
   if ("typedData" in request) {
-    return resolveTypedDataSignatureDetails({ request, accountSigner }) // defined in SigningDataMessage/index.ts
+    return resolveTypedDataSignatureDetails({ request, accountSigner })
   }
-  return resolveTransactionSignatureDetails({ request, accountSigner }) // defined in SigningDataTransaction/index.ts
+  return resolveTransactionSignatureDetails({ request, accountSigner })
 }
 
 // Signing acts as a dispatcher, so prop spreading is a good tradeoff.

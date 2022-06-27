@@ -44,7 +44,7 @@ export function resolveDataSignatureDetails({
     signer: accountSigner,
     signingAddress: request.account,
     signingAction: "Sign Data",
-    renderedSigningData: null,
+    renderedSigningData: <></>,
     signActionCreator: () => signData({ request, accountSigner }),
     rejectActionCreator: rejectDataSignature,
   }
@@ -60,7 +60,7 @@ export function resolveTypedDataSignatureDetails({
     signer: accountSigner,
     signingAddress: request.account,
     signingAction: "Sign Data",
-    renderedSigningData: null,
+    renderedSigningData: <></>,
     signActionCreator: () => signTypedData({ request, accountSigner }),
     rejectActionCreator: rejectDataSignature,
   }
