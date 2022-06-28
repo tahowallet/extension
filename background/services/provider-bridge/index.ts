@@ -25,10 +25,11 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
+import { PermissionMap } from "./utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
-  initializeAllowedPages: Record<string, PermissionRequest>
+  initializeAllowedPages: PermissionMap
   setClaimReferrer: string
 }
 
@@ -269,7 +270,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     // FIXME proper error handling if this happens - should not tho
-    if (permission.state !== "deny" || !permission.accountAddress) return
+    if (permission.state !== "deny" || !permission.accountAddress) {
+      return
+    }
 
     const { address } = await this.preferenceService.getSelectedAccount()
 
