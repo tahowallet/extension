@@ -10,6 +10,7 @@ import {
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
+import { setSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
@@ -46,7 +47,9 @@ export default function SwapTransactionSettingsChooser({
   const [networkSettings, setNetworkSettings] = useState(
     useBackgroundSelector(selectDefaultNetworkFeeSettings)
   )
-  const [slippageTolerance, setSlippageTolerance] = useState(0.01)
+  const [slippageTolerance, setLocalSlippage] = useState(
+    swapTransactionSettings.slippageTolerance
+  )
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
 
   const openSettings = () => {
@@ -56,10 +59,11 @@ export default function SwapTransactionSettingsChooser({
   }
 
   const onSlippageToleranceChange = (value: string) =>
-    setSlippageTolerance(parseFloat(value))
+    setLocalSlippage(parseFloat(value))
 
   const saveSettings = () => {
     dispatch(setFeeType(networkSettings.feeType))
+    dispatch(setSlippageTolerance(slippageTolerance))
 
     onSwapTransactionSettingsSave?.({
       ...swapTransactionSettings,

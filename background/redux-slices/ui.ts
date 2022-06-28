@@ -24,6 +24,7 @@ export type UIState = {
   settings: { hideDust: boolean; defaultWallet: boolean }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
+  slippageTolerance: number
 }
 
 export type Events = {
@@ -45,6 +46,7 @@ export const initialState: UIState = {
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
   snackbarMessage: "",
+  slippageTolerance: 0.01,
 }
 
 const uiSlice = createSlice({
@@ -107,6 +109,13 @@ const uiSlice = createSlice({
       ...state,
       routeHistoryEntries,
     }),
+    setSlippageTolerance: (
+      state,
+      { payload: slippageTolerance }: { payload: number }
+    ) => ({
+      ...state,
+      slippageTolerance,
+    }),
   },
 })
 
@@ -119,6 +128,7 @@ export const {
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
+  setSlippageTolerance,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -185,4 +195,9 @@ export const selectSnackbarMessage = createSelector(
 export const selectDefaultWallet = createSelector(
   selectSettings,
   (settings) => settings?.defaultWallet
+)
+
+export const selectSlippageTolerance = createSelector(
+  selectUI,
+  (ui) => ui.slippageTolerance
 )
