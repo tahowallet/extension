@@ -1,4 +1,4 @@
-import { SigningMethod } from "@tallyho/tally-background/utils/signing"
+import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useBackgroundSelector } from "../../hooks"
 
 export type SigningLedgerState =
@@ -12,12 +12,12 @@ export type SigningLedgerState =
   | { state: "available"; arbitraryDataEnabled: boolean }
 
 export function useSigningLedgerState(
-  signingMethod: SigningMethod | null
+  accountSigner: AccountSigner | null
 ): SigningLedgerState | null {
   return useBackgroundSelector((state) => {
-    if (signingMethod?.type !== "ledger") return null
+    if (accountSigner?.type !== "ledger") return null
 
-    const { deviceID } = signingMethod
+    const { deviceID } = accountSigner
 
     const connectedDevices = Object.values(state.ledger.devices).filter(
       (device) => device.status !== "disconnected"

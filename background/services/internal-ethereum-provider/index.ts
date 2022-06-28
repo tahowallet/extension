@@ -229,7 +229,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "eth_sign": // --- important wallet methods ---
         return this.signData(
           {
-            hexData: params[1] as string,
+            input: params[1] as string,
             account: params[0] as string,
           },
           origin
@@ -237,7 +237,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "personal_sign":
         return this.signData(
           {
-            hexData: params[0] as string,
+            input: params[0] as string,
             account: params[1] as string,
           },
           origin
@@ -355,15 +355,15 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   private async signData(
     {
-      hexData,
+      input,
       account,
     }: {
-      hexData: string
+      input: string
       account: string
     },
     origin: string
   ) {
-    const asciiData = hexToAscii(hexData)
+    const asciiData = input.startsWith("0x") ? hexToAscii(input) : input
     const { data, type } = parseSigningData(asciiData)
     const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
