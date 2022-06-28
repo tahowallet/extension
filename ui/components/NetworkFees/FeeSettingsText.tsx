@@ -17,6 +17,7 @@ import {
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../../hooks"
+import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
@@ -78,6 +79,10 @@ export default function FeeSettingsText({
     networkSettings,
     baseFeePerGas
   )
+
+  if (!CUSTOM_GAS_SELECT) {
+    return <FeeSettingsTextDeprecated />
+  }
 
   if (!dollarValue) return <div>~{gweiValue}</div>
 
