@@ -170,6 +170,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
             <SharedInput
               value={`${option.maxPriorityGwei}`}
               isSmall
+              type="number"
               onChange={(value: string) => {
                 updateCustomGas(
                   option.baseMaxFeePerGas,
@@ -185,6 +186,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
           <SharedInput
             value={`${option.baseMaxGwei}`}
             isSmall
+            type="number"
             onChange={(value: string) => {
               updateCustomGas(
                 gweiFloatToWei(parseFloat(value)), // @TODO Replace
