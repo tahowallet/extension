@@ -38,6 +38,7 @@ import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -241,7 +242,7 @@ export default function Swap(): ReactElement {
   const [buyAmountLoading, setBuyAmountLoading] = useState(false)
 
   const [swapTransactionSettings, setSwapTransactionSettings] = useState({
-    slippageTolerance: 0.01,
+    slippageTolerance: useBackgroundSelector(selectSlippageTolerance),
     networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
   })
 
