@@ -19,11 +19,6 @@ type AccountAssetTransferLookup = {
   endBlock: bigint
 }
 
-interface Migration {
-  id: number
-  appliedAt: number
-}
-
 // TODO keep track of blocks invalidated by a reorg
 // TODO keep track of transaction replacement / nonce invalidation
 
@@ -69,8 +64,6 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  private migrations!: Dexie.Table<Migration, number>
-
   constructor() {
     super("tally/chain")
     this.version(1).stores({
@@ -87,8 +80,12 @@ export class ChainDatabase extends Dexie {
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
 
+    this.version(2).stores({
+      migrations: null,
+    })
+
     if (SUPPORT_POLYGON) {
-      this.version(2).upgrade((tx) => {
+      this.version(3).upgrade((tx) => {
         tx.table("accountsToTrack")
           .toArray()
           .then((accounts) => {
@@ -302,25 +299,10 @@ export class ChainDatabase extends Dexie {
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
   }
-
-  private async migrate() {
-    const numMigrations = await this.migrations.count()
-    if (numMigrations === 0) {
-      await this.transaction("rw", this.migrations, async () => {
-        this.migrations.add({ id: 0, appliedAt: Date.now() })
-        // TODO decide migrations before the initial release
-      })
-    }
-  }
 }
 
 export async function getOrCreateDB(): Promise<ChainDatabase> {
   const db = new ChainDatabase()
-
-  // Call known-private migrate function, effectively treating it as
-  // file-private.
-  // eslint-disable-next-line @typescript-eslint/dot-notation
-  await db["migrate"]()
 
   return db
 }
