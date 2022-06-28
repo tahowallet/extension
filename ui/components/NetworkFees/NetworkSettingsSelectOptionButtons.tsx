@@ -176,6 +176,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
                   gweiFloatToWei(parseFloat(value))
                 )
               }}
+              maxLength={3}
             />
           </div>
         </div>
@@ -199,6 +200,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
                 setWarningMessage("")
               }
             }}
+            maxLength={12}
             warningMessage={warningMessage}
           />
         </div>
