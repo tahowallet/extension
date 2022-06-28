@@ -154,7 +154,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
       key={option.confidence}
       className={classNames("network_option", {
         active: isActive,
-        option_warning: warningMessage,
+        network_option_warning: warningMessage,
       })}
       onClick={handleSelectGasOption}
       type="button"
