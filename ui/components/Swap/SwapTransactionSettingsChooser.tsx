@@ -10,11 +10,13 @@ import {
 import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
+import { setSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import t from "../../utils/i18n"
+import SharedSelect, { Option } from "../Shared/SharedSelect"
 
 export type SwapTransactionSettings = {
   slippageTolerance: number
@@ -27,6 +29,13 @@ interface SwapTransactionSettingsProps {
   onSwapTransactionSettingsSave?: (setting: SwapTransactionSettings) => void
 }
 
+const slippageToleranceOptions: Option[] = [
+  { value: "0.005", label: "0.5%" },
+  { value: "0.01", label: "1%" },
+  { value: "0.02", label: "2%" },
+  { value: "0.04", label: "4%" },
+]
+
 export default function SwapTransactionSettingsChooser({
   isSettingsLocked,
   swapTransactionSettings,
@@ -38,7 +47,9 @@ export default function SwapTransactionSettingsChooser({
   const [networkSettings, setNetworkSettings] = useState(
     useBackgroundSelector(selectDefaultNetworkFeeSettings)
   )
-
+  const [slippageTolerance, setLocalSlippage] = useState(
+    swapTransactionSettings.slippageTolerance
+  )
   const [isSlideUpMenuOpen, setIsSlideUpMenuOpen] = useState(false)
 
   const openSettings = () => {
@@ -47,12 +58,16 @@ export default function SwapTransactionSettingsChooser({
     }
   }
 
+  const onSlippageToleranceChange = (value: string) =>
+    setLocalSlippage(parseFloat(value))
+
   const saveSettings = () => {
     dispatch(setFeeType(networkSettings.feeType))
+    dispatch(setSlippageTolerance(slippageTolerance))
 
     onSwapTransactionSettingsSave?.({
       ...swapTransactionSettings,
-      slippageTolerance: 0.01,
+      slippageTolerance,
       networkSettings,
     })
 
@@ -77,7 +92,16 @@ export default function SwapTransactionSettingsChooser({
                 <span className="settings_label">
                   {t("transactionSettingsSlippageTolerance")}
                 </span>
-                <span>1%</span>
+                <SharedSelect
+                  width={94}
+                  options={slippageToleranceOptions}
+                  onChange={onSlippageToleranceChange}
+                  defaultIndex={slippageToleranceOptions.findIndex(
+                    ({ value }) =>
+                      parseFloat(value) ===
+                      swapTransactionSettings.slippageTolerance
+                  )}
+                />
               </div>
               <div className="row row_fee">
                 <NetworkSettingsSelect
