@@ -9,10 +9,7 @@ import {
   selectEstimatedFeesPerGas,
   selectFeeType,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import {
-  selectCurrentNetwork,
-  selectMainCurrencyPricePoint,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import React, { ReactElement } from "react"
@@ -44,19 +41,13 @@ const getFeeDollarValue = (
 }
 
 export default function FeeSettingsTextDeprecated(): ReactElement {
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const selectedFeeType = useBackgroundSelector(selectFeeType)
   const networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
   )
-  const baseFeePerGas =
-    useBackgroundSelector((state) => {
-      return state.networks.evm[currentNetwork.chainID].baseFeePerGas
-    }) ??
-    networkSettings.values?.baseFeePerGas ??
-    0n
+  const baseFeePerGas = networkSettings.values?.baseFeePerGas
 
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
