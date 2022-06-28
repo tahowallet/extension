@@ -221,7 +221,6 @@ export default function Send(): ReactElement {
               onClick={() => setNetworkSettingsModalOpen(true)}
             />
           </div>
-          <div className="divider" />
           <div className="send_footer standard_width_padded">
             <SharedButton
               type="primary"
@@ -270,16 +269,13 @@ export default function Send(): ReactElement {
             margin-top: 30px;
           }
           .form_input {
-            margin-bottom: 22px;
+            margin-bottom: 14px;
           }
-
+          .form {
+            margin-top: 20px;
+          }
           .label_right {
             margin-right: 6px;
-          }
-          .divider {
-            width: 384px;
-            border-bottom: 1px solid #000000;
-            margin-left: -16px;
           }
           .label {
             margin-bottom: 6px;
@@ -318,6 +314,9 @@ export default function Send(): ReactElement {
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 0px 16px;
+          }
+          input#send_address::placeholder {
+            color: var(--green-40);
           }
           input#send_address ~ .error {
             color: var(--error);
