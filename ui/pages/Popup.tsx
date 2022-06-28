@@ -15,7 +15,7 @@ import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
-  selectCurrentAccountSigningMethod,
+  selectCurrentAccountSigner,
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
@@ -113,12 +113,12 @@ export function Main(): ReactElement {
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature
   )
-  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
 
   const needsKeyringUnlock =
     isTransactionPendingSignature &&
-    signingMethod?.type === "keyring" &&
+    currentAccountSigner?.type === "keyring" &&
     keyringStatus !== "unlocked"
 
   useConnectPopupMonitor()

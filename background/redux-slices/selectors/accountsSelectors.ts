@@ -25,8 +25,7 @@ import {
   sameEVMAddress,
   truncateAddress,
 } from "../../lib/utils"
-import { selectAddressSigningMethods } from "./signingSelectors"
-import { SigningMethod } from "../../utils/signing"
+import { selectAccountSignersByAddress } from "./signingSelectors"
 import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
@@ -36,6 +35,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
+import { AccountSigner, SignerType } from "../../services/signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -245,8 +245,11 @@ export const selectCurrentAccountAssetBalance = createSelector(
 export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
+  // FIXME This is solely used for categorization.
+  // FIXME Add `categoryFor(accountSigner): string` utility function to
+  // FIXME generalize beyond keyrings.
   keyringId: string | null
-  signingMethod: SigningMethod | null
+  accountSigner: AccountSigner | null
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
@@ -254,25 +257,22 @@ export type AccountTotal = AddressOnNetwork & {
 
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
-const signingMethodTypeToAccountType: Record<
-  SigningMethod["type"],
-  AccountType
-> = {
+const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   ledger: AccountType.Ledger,
 }
 
 const getAccountType = (
   address: string,
-  signingMethod: SigningMethod,
+  signer: AccountSigner,
   addressSources: {
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signingMethod == null) {
+  if (signer == null) {
     return AccountType.ReadOnly
   }
-  if (signingMethodTypeToAccountType[signingMethod.type] === "ledger") {
+  if (signerTypeToAccountType[signer.type] === "ledger") {
     return AccountType.Ledger
   }
   if (addressSources[address] === "import") {
@@ -285,7 +285,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectCurrentNetwork,
-  selectAddressSigningMethods,
+  selectAccountSignersByAddress,
   selectKeyringsByAddresses,
   selectSourcesByAddress,
   selectMainCurrencySymbol,
@@ -293,7 +293,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
     accounts,
     assets,
     currentNetwork,
-    signingAccounts,
+    accountSignersByAddress,
     keyringsByAddresses,
     sourcesByAddress,
     mainCurrencySymbol
@@ -305,12 +305,12 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
-        const signingMethod = signingAccounts[address] ?? null
+        const accountSigner = accountSignersByAddress[address] ?? null
         const keyringId = keyringsByAddresses[address]?.id
 
         const accountType = getAccountType(
           address,
-          signingMethod,
+          accountSigner,
           sourcesByAddress
         )
 
@@ -321,7 +321,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
             shortenedAddress,
             accountType,
             keyringId,
-            signingMethod,
+            accountSigner,
           }
         }
 
@@ -359,7 +359,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
           shortenedAddress,
           accountType,
           keyringId,
-          signingMethod,
+          accountSigner,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(

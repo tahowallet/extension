@@ -29,7 +29,7 @@ import {
   SigningService,
 } from "./services"
 
-import { EIP712TypedData, HexString, KeyringTypes } from "./types"
+import { HexString, KeyringTypes } from "./types"
 import { SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -81,8 +81,8 @@ import { allAliases } from "./redux-slices/utils"
 import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
-  initializeAllowedPages,
-} from "./redux-slices/dapp-permission"
+  initializePermissions,
+} from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
   rejectDataSignature,
@@ -94,11 +94,7 @@ import {
   signDataRequest,
 } from "./redux-slices/signing"
 
-import {
-  SigningMethod,
-  SignTypedDataRequest,
-  SignDataRequest,
-} from "./utils/signing"
+import { SignTypedDataRequest, SignDataRequest } from "./utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
@@ -110,12 +106,17 @@ import {
 } from "./redux-slices/ledger"
 import { ETHEREUM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
-import { SignatureResponse, TXSignatureResponse } from "./services/signing"
+import {
+  SignatureResponse,
+  SignerType,
+  TXSignatureResponse,
+} from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
 import {
   migrateReduxState,
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
+import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -478,10 +479,10 @@ export default class Main extends BaseService<never> {
 
   async removeAccount(
     address: HexString,
-    signingMethod: SigningMethod
+    signerType: SignerType
   ): Promise<void> {
     // TODO Adjust to handle specific network.
-    await this.signingService.removeAccount(address, signingMethod)
+    await this.signingService.removeAccount(address, signerType)
   }
 
   async importLedgerAccounts(
@@ -494,23 +495,37 @@ export default class Main extends BaseService<never> {
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
-        // FIXME Handle multi-network in Ledger.
-        const addressNetwork = {
-          address,
-          network: ETHEREUM,
-        }
-        // eslint-disable-next-line no-await-in-loop
-        await this.chainService.addAccountToTrack(addressNetwork)
-        this.store.dispatch(loadAccount(addressNetwork))
-        this.store.dispatch(setNewSelectedAccount(addressNetwork))
+        await Promise.all(
+          this.chainService.supportedNetworks.map(async (network) => {
+            const addressNetwork = {
+              address,
+              network,
+            }
+            await this.chainService.addAccountToTrack(addressNetwork)
+            this.store.dispatch(loadAccount(addressNetwork))
+          })
+        )
+      })
+    )
+    this.store.dispatch(
+      setNewSelectedAccount({
+        address: accounts[0].address,
+        network:
+          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+            TALLY_INTERNAL_ORIGIN
+          ),
       })
     )
   }
 
-  async deriveLedgerAddress(path: string): Promise<string> {
+  async deriveLedgerAddress(
+    deviceID: string,
+    derivationPath: string
+  ): Promise<string> {
     return this.signingService.deriveAddress({
       type: "ledger",
-      accountID: path,
+      deviceID,
+      path: derivationPath,
     })
   }
 
@@ -617,10 +632,13 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
-      async ({ transaction, method }) => {
+      async ({ transaction, accountSigner }) => {
         try {
           const signedTransactionResult =
-            await this.signingService.signTransaction(transaction, method)
+            await this.signingService.signTransaction(
+              transaction,
+              accountSigner
+            )
           await this.store.dispatch(transactionSigned(signedTransactionResult))
         } catch (exception) {
           logger.error("Error signing transaction", exception)
@@ -632,20 +650,12 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignTypedData",
-      async ({
-        typedData,
-        account,
-        signingMethod,
-      }: {
-        typedData: EIP712TypedData
-        account: AddressOnNetwork
-        signingMethod: SigningMethod
-      }) => {
+      async ({ typedData, account, accountSigner }) => {
         try {
           const signedData = await this.signingService.signTypedData({
             typedData,
             account,
-            signingMethod,
+            accountSigner,
           })
           this.store.dispatch(signedTypedData(signedData))
         } catch (err) {
@@ -656,11 +666,11 @@ export default class Main extends BaseService<never> {
     )
     signingSliceEmitter.on(
       "requestSignData",
-      async ({ rawSigningData, account, signingMethod }) => {
+      async ({ rawSigningData, account, accountSigner }) => {
         const signedData = await this.signingService.signData(
           account,
           rawSigningData,
-          signingMethod
+          accountSigner
         )
         this.store.dispatch(signedDataAction(signedData))
       }
@@ -838,7 +848,7 @@ export default class Main extends BaseService<never> {
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
-        accountID: keyringID,
+        keyringID,
       })
     })
 
@@ -1037,8 +1047,8 @@ export default class Main extends BaseService<never> {
 
     this.providerBridgeService.emitter.on(
       "initializeAllowedPages",
-      async (allowedPages: Record<string, PermissionRequest>) => {
-        this.store.dispatch(initializeAllowedPages(allowedPages))
+      async (allowedPages: PermissionMap) => {
+        this.store.dispatch(initializePermissions(allowedPages))
       }
     )
 
@@ -1089,7 +1099,14 @@ export default class Main extends BaseService<never> {
     providerBridgeSliceEmitter.on(
       "denyOrRevokePermission",
       async (permission) => {
-        await this.providerBridgeService.denyOrRevokePermission(permission)
+        await Promise.all(
+          this.chainService.supportedNetworks.map(async (network) => {
+            await this.providerBridgeService.denyOrRevokePermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          })
+        )
       }
     )
   }
