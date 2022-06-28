@@ -34,6 +34,10 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
         runAtStart: true,
       },
     })
+    console.log(
+      "--- debug telemetry service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   connectReduxStore(store: { getState(): RootState }): void {

@@ -85,6 +85,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       }
     })
 
+    console.log(
+      "--- debug provider service constructor",
+      Date.now() - globalThis.initStart
+    )
+
     // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 

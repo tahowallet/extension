@@ -213,7 +213,7 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const chainService = ChainService.create(preferenceService)
+    const chainService = ChainService.create()
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -243,31 +243,46 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
+    console.log(
+      "??? debug main create serivices",
+      Date.now() - globalThis.initStart
+    )
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
     if (process.env.READ_REDUX_CACHE === "true") {
+      console.time("... debug store read")
       const { state, version } = await browser.storage.local.get([
         "state",
         "version",
       ])
 
+      console.timeEnd("... debug store read")
+
       if (state) {
+        console.time("... debug store decode")
         const restoredState = decodeJSON(state)
+        console.timeEnd("... debug store decode")
         if (typeof restoredState === "object" && restoredState !== null) {
           // If someone managed to sneak JSON that decodes to typeof "object"
           // but isn't a Record<string, unknown>, there is a very large
           // problem...
+          console.time("... debug store migrate")
           savedReduxState = migrateReduxState(
             restoredState as Record<string, unknown>,
             version || undefined
           )
+          console.timeEnd("... debug store migrate")
         } else {
           throw new Error(`Unexpected JSON persisted for state: ${state}`)
         }
       }
     }
 
+    console.log(
+      "??? debug main create redux store read",
+      Date.now() - globalThis.initStart
+    )
     return new this(
       savedReduxState,
       await preferenceService,
@@ -360,8 +375,16 @@ export default class Main extends BaseService<never> {
       },
     })
 
+    console.log(
+      "--- debug start time, after super",
+      Date.now() - globalThis.initStart
+    )
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
+    console.log(
+      "--- debug start time, after initializeStore",
+      Date.now() - globalThis.initStart
+    )
 
     wrapStore(this.store, {
       serializer: encodeJSON,
@@ -388,7 +411,16 @@ export default class Main extends BaseService<never> {
       },
     })
 
+    console.log(
+      "--- debug start time, after wrap store",
+      Date.now() - globalThis.initStart
+    )
+
     this.initializeRedux()
+    console.log(
+      "--- debug total start time with initializeRedux ",
+      Date.now() - globalThis.initStart
+    )
   }
 
   protected async internalStartService(): Promise<void> {

@@ -104,6 +104,10 @@ export default class IndexingService extends BaseService<Events> {
         runAtStart: true,
       },
     })
+    console.log(
+      "--- debug indxing service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   async internalStartService(): Promise<void> {

@@ -124,6 +124,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         })
       }
     })
+    console.log(
+      "--- debug internal service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   // @TODO Persist this in db so we get correct network on app startup.

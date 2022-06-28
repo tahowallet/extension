@@ -65,6 +65,10 @@ export default class PreferenceService extends BaseService<Events> {
 
   private constructor(private db: PreferenceDatabase) {
     super()
+    console.log(
+      "--- debug preference service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   protected async internalStartService(): Promise<void> {

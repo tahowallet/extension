@@ -45,6 +45,10 @@ export default class DoggoService extends BaseService<Events> {
     private indexingService: IndexingService
   ) {
     super()
+    console.log(
+      "--- debug doggo service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   protected async internalStartService(): Promise<void> {

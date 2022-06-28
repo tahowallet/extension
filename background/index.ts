@@ -39,8 +39,8 @@ export async function newProxyStore(): Promise<
  * Starts the API subsystems, including all services.
  */
 export async function startApi(): Promise<Main> {
+  console.log("--- debug startapi", Date.now() - globalThis.initStart)
   const mainService = await Main.create()
-
   mainService.startService()
 
   return mainService.started()

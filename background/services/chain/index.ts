@@ -156,22 +156,17 @@ export default class ChainService extends BaseService<Events> {
     firstSeen: UNIXTime
   }[]
 
-  static create: ServiceCreatorFunction<
-    Events,
-    ChainService,
-    [Promise<PreferenceService>]
-  > = async (preferenceService) => {
-    return new this(await getOrCreateDB(), await preferenceService)
-  }
+  static create: ServiceCreatorFunction<Events, ChainService, []> =
+    async () => {
+      console.log("+++ debug chain create", Date.now() - globalThis.initStart)
+      return new this(await getOrCreateDB())
+    }
 
   supportedNetworks: EVMNetwork[]
 
   assetData: AssetDataHelper
 
-  private constructor(
-    private db: ChainDatabase,
-    private preferenceService: PreferenceService
-  ) {
+  private constructor(private db: ChainDatabase) {
     super({
       queuedTransactions: {
         schedule: {
@@ -202,6 +197,10 @@ export default class ChainService extends BaseService<Events> {
         },
       },
     })
+    console.log(
+      "+++ debug chain constructor start",
+      Date.now() - globalThis.initStart
+    )
 
     this.supportedNetworks = [
       ETHEREUM,
@@ -236,6 +235,10 @@ export default class ChainService extends BaseService<Events> {
     this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
+    console.log(
+      "+++ debug chain service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   async internalStartService(): Promise<void> {

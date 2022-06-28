@@ -93,6 +93,10 @@ export default class SigningService extends BaseService<Events> {
     private chainService: ChainService
   ) {
     super()
+    console.log(
+      "--- debug signing service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   protected async internalStartService(): Promise<void> {

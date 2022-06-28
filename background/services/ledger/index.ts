@@ -155,6 +155,10 @@ export default class LedgerService extends BaseService<Events> {
 
   private constructor(private db: LedgerDatabase) {
     super()
+    console.log(
+      "--- debug ledger service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   private runSerialized<T>(operation: () => Promise<T>) {

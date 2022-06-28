@@ -114,6 +114,10 @@ export default class KeyringService extends BaseService<Events> {
         },
       },
     })
+    console.log(
+      "--- debug keyring service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   async internalStartService(): Promise<void> {

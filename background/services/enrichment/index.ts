@@ -85,6 +85,10 @@ export default class EnrichmentService extends BaseService<Events> {
     private nameService: NameService
   ) {
     super({})
+    console.log(
+      "--- debug enrichment service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   async internalStartService(): Promise<void> {

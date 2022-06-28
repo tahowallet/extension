@@ -292,11 +292,19 @@ export class IndexingDatabase extends Dexie {
 
 export async function getOrCreateDB(): Promise<IndexingDatabase> {
   const db = new IndexingDatabase()
+  console.log(
+    "### debug indexing db new indexingdb",
+    Date.now() - globalThis.initStart
+  )
 
   // Call known-private migrate function, effectively treating it as
   // file-private.
   // eslint-disable-next-line @typescript-eslint/dot-notation
   await db["migrate"]()
+  console.log(
+    "### debug indexing db new migration",
+    Date.now() - globalThis.initStart
+  )
 
   return db
 }

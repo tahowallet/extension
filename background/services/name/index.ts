@@ -159,6 +159,11 @@ export default class NameService extends BaseService<Events> {
         )
       }
     })
+
+    console.log(
+      "--- debug name service constructor",
+      Date.now() - globalThis.initStart
+    )
   }
 
   async lookUpEthereumAddress(

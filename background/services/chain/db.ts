@@ -316,11 +316,15 @@ export class ChainDatabase extends Dexie {
 
 export async function getOrCreateDB(): Promise<ChainDatabase> {
   const db = new ChainDatabase()
-
+  console.log(
+    "+++ debug chain db new chaindb",
+    Date.now() - globalThis.initStart
+  )
   // Call known-private migrate function, effectively treating it as
   // file-private.
   // eslint-disable-next-line @typescript-eslint/dot-notation
   await db["migrate"]()
+  console.log("+++ debug chain db migration", Date.now() - globalThis.initStart)
 
   return db
 }
