@@ -81,8 +81,8 @@ import { allAliases } from "./redux-slices/utils"
 import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
-  initializeAllowedPages,
-} from "./redux-slices/dapp-permission"
+  initializePermissions,
+} from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
   rejectDataSignature,
@@ -116,6 +116,7 @@ import {
   migrateReduxState,
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
+import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1046,8 +1047,8 @@ export default class Main extends BaseService<never> {
 
     this.providerBridgeService.emitter.on(
       "initializeAllowedPages",
-      async (allowedPages: Record<string, PermissionRequest>) => {
-        this.store.dispatch(initializeAllowedPages(allowedPages))
+      async (allowedPages: PermissionMap) => {
+        this.store.dispatch(initializePermissions(allowedPages))
       }
     )
 
@@ -1098,7 +1099,14 @@ export default class Main extends BaseService<never> {
     providerBridgeSliceEmitter.on(
       "denyOrRevokePermission",
       async (permission) => {
-        await this.providerBridgeService.denyOrRevokePermission(permission)
+        await Promise.all(
+          this.chainService.supportedNetworks.map(async (network) => {
+            await this.providerBridgeService.denyOrRevokePermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          })
+        )
       }
     )
   }

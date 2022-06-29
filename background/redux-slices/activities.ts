@@ -39,7 +39,9 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
 })
 
 export type ActivitiesState = {
-  [address: string]: EntityState<ActivityItem>
+  [address: string]: {
+    [chainId: string]: EntityState<ActivityItem>
+  }
 }
 
 export const initialState: ActivitiesState = {}
@@ -80,13 +82,22 @@ const activitiesSlice = createSlice({
           toTruncated: truncateAddress(transaction.to ?? ""),
         }
 
-        if (typeof immerState[address] === "undefined") {
-          immerState[address] = activitiesAdapter.setOne(
-            activitiesAdapter.getInitialState(),
+        immerState[address] ??= {}
+
+        if (
+          typeof immerState[address][activityItem.network.chainID] ===
+          "undefined"
+        ) {
+          immerState[address][activityItem.network.chainID] =
+            activitiesAdapter.setOne(
+              activitiesAdapter.getInitialState(),
+              activityItem
+            )
+        } else {
+          activitiesAdapter.upsertOne(
+            immerState[address][activityItem.network.chainID],
             activityItem
           )
-        } else {
-          activitiesAdapter.upsertOne(immerState[address], activityItem)
         }
       })
     },

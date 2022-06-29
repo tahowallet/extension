@@ -1,12 +1,9 @@
 import React, { ReactElement, useState, useEffect, useCallback } from "react"
 import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
-import {
-  selectAllowedPages,
-  selectCurrentAccount,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
-import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp-permission"
+import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
@@ -32,9 +29,9 @@ export default function TopMenu(): ReactElement {
     {} as PermissionRequest
   )
   const [isConnectedToDApp, setIsConnectedToDApp] = useState(false)
-
-  const allowedPages = useBackgroundSelector(selectAllowedPages)
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+  const allowedPages = useBackgroundSelector((state) =>
+    selectAllowedPages(state)
+  )
 
   const initPermissionAndOrigin = useCallback(async () => {
     const { url } = await browser.tabs
@@ -45,15 +42,13 @@ export default function TopMenu(): ReactElement {
       .then((tabs) =>
         tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
       )
-
     if (!url) return
 
     const { origin } = new URL(url)
 
-    const allowPermission =
-      allowedPages[
-        `${origin}_${currentAccount.address}_${currentAccount.network.chainID}`
-      ]
+    const allowPermission = allowedPages.find(
+      (permission) => permission.origin === origin
+    )
 
     if (allowPermission) {
       setCurrentPermission(allowPermission)
@@ -61,7 +56,7 @@ export default function TopMenu(): ReactElement {
     } else {
       setIsConnectedToDApp(false)
     }
-  }, [allowedPages, setCurrentPermission, currentAccount])
+  }, [allowedPages, setCurrentPermission])
 
   useEffect(() => {
     initPermissionAndOrigin()
@@ -69,14 +64,11 @@ export default function TopMenu(): ReactElement {
 
   const deny = useCallback(async () => {
     if (typeof currentPermission !== "undefined") {
-      // TODO refactor when we have per-network permission deletion designed.
+      // Deletes all permissions corresponding to the currently selected
+      // account and origin
       await Promise.all(
-        Object.entries(allowedPages).map(async ([key, permission]) => {
-          if (
-            key.startsWith(
-              `${currentPermission.origin}_${currentPermission.accountAddress}`
-            )
-          ) {
+        allowedPages.map(async (permission) => {
+          if (permission.origin === currentPermission.origin) {
             return dispatch(
               denyOrRevokePermission({ ...permission, state: "deny" })
             )

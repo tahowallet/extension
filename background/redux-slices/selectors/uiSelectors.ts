@@ -5,13 +5,19 @@ import { ActivityItem } from "../activities"
 // FIXME Make this configurable.
 const hardcodedMainCurrencySymbol = "USD"
 
+export const selectCurrentNetwork = createSelector(
+  (state: RootState) => state.ui.selectedAccount.network,
+  (selectedNetwork) => selectedNetwork
+)
+
 export const selectShowingActivityDetail = createSelector(
   (state: RootState) => state.activities,
+  selectCurrentNetwork,
   (state: RootState) => state.ui.showingActivityDetailID,
-  (activities, showingActivityDetailID) => {
+  (activities, network, showingActivityDetailID) => {
     return showingActivityDetailID === null
       ? null
-      : Object.values(activities)
+      : Object.values(activities[network.chainID])
           .map<ActivityItem | undefined>(
             (accountActivities) =>
               accountActivities.entities[showingActivityDetailID]
@@ -37,11 +43,6 @@ export const selectCurrentAccount = createSelector(
 export const selectCurrentAddressNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount,
   (selectedAccount) => selectedAccount
-)
-
-export const selectCurrentNetwork = createSelector(
-  (state: RootState) => state.ui.selectedAccount.network,
-  (selectedNetwork) => selectedNetwork
 )
 
 export const selectMainCurrencySymbol = createSelector(
