@@ -47,7 +47,7 @@ export default function FeeSettingsTextDeprecated(): ReactElement {
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
   )
-  const baseFeePerGas = networkSettings.values?.baseFeePerGas
+  const baseFeePerGas = estimatedFeesPerGas?.baseFeePerGas
 
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
