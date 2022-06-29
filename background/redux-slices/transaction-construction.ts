@@ -201,7 +201,7 @@ const transactionSlice = createSlice({
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
-      customFeesPerGas: defaultCustomGas,
+      customFeesPerGas: state.customFeesPerGas,
     }),
     setFeeType: (
       state,
