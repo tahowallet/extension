@@ -97,7 +97,7 @@ export default function AccountItemRemovalConfirm({
               dispatch(
                 removeAccount({
                   addressOnNetwork: { address, network },
-                  signerType: accountSigners[selectedAddress]?.type,
+                  signerType: accountSigners[address]?.type,
                 })
               )
               if (sameEVMAddress(selectedAddress, address)) {

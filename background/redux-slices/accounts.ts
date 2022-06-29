@@ -399,6 +399,6 @@ export const removeAccount = createBackgroundAsyncThunk(
 
     await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
 
-    main.removeAccount(normalizedAddress, signerType)
+    await main.removeAccount(normalizedAddress, signerType)
   }
 )
