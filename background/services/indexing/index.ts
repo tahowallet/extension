@@ -11,7 +11,7 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { FIAT_CURRENCIES, USD, BASE_ASSETS } from "../../constants"
+import { BASE_ASSETS, FIAT_CURRENCIES, USD } from "../../constants"
 import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -172,7 +172,7 @@ export default class IndexingService extends BaseService<Events> {
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
     return mergeAssets<FungibleAsset>(
-      BASE_ASSETS,
+      [network.baseAsset],
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
