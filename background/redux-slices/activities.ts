@@ -18,6 +18,15 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
         a.blockHeight === b.blockHeight) &&
       a.network.name === b.network.name
     ) {
+      // Sort completed transactions above dropped ones.
+      if (a.nonce === b.nonce) {
+        if ("status" in a && a.blockHeight === null && a.status === 0) {
+          return -1
+        }
+        if ("status" in b && b.blockHeight === null && b.status === 0) {
+          return 1
+        }
+      }
       // Sort by nonce if a block height is missing or equal between two
       // transactions, as long as the two activities are on the same network;
       // otherwise, sort as before.
