@@ -55,11 +55,6 @@ export type CachedTokenList = TokenListCitation & {
   list: TokenList
 }
 
-export interface Migration {
-  id: number
-  appliedAt: number
-}
-
 /*
  * A rough attempt at canonical IDs for assets. Doing this well is tough without
  * either centrally managed IDs, or going full semantic / ontology.
@@ -131,8 +126,6 @@ export class IndexingDatabase extends Dexie {
    */
   private assetsToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
 
-  private migrations!: Dexie.Table<Migration, number>
-
   constructor() {
     super("tally/indexing")
     this.version(1).stores({
@@ -145,6 +138,10 @@ export class IndexingDatabase extends Dexie {
         "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainId,homeNetwork.name",
       assetsToTrack:
         "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainId,homeNetwork.name",
+    })
+
+    this.version(2).stores({
+      migrations: null,
     })
   }
 
@@ -278,25 +275,10 @@ export class IndexingDatabase extends Dexie {
       tokenList: v as TokenList,
     }))
   }
-
-  private async migrate() {
-    const numMigrations = await this.migrations.count()
-    if (numMigrations === 0) {
-      await this.transaction("rw", this.migrations, async () => {
-        this.migrations.add({ id: 0, appliedAt: Date.now() })
-        // TODO decide migrations before the initial release
-      })
-    }
-  }
 }
 
 export async function getOrCreateDB(): Promise<IndexingDatabase> {
   const db = new IndexingDatabase()
-
-  // Call known-private migrate function, effectively treating it as
-  // file-private.
-  // eslint-disable-next-line @typescript-eslint/dot-notation
-  await db["migrate"]()
 
   return db
 }
