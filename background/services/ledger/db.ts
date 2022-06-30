@@ -23,6 +23,13 @@ export class LedgerDatabase extends Dexie {
     await this.ledger.add(account)
   }
 
+  async removeAccount(address: HexString): Promise<void> {
+    await this.ledger
+      .where("address")
+      .equals(normalizeEVMAddress(address))
+      .delete()
+  }
+
   async getAccountByAddress(address: HexString): Promise<LedgerAccount | null> {
     return (
       (await this.ledger
