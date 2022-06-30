@@ -137,7 +137,8 @@ export class ChainDatabase extends Dexie {
     return (
       await this.blocks
         .where("[network.name+timestamp]")
-        .above([network.name, Date.now() - 60 * 60 * 24])
+        .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
+        .and((block) => block.network.name === network.name)
         .reverse()
         .sortBy("timestamp")
     )[0]
@@ -244,8 +245,8 @@ export class ChainDatabase extends Dexie {
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
-      .where("addressNetwork.address")
-      .equals(addressNetwork.address)
+      .where("[addressNetwork.address+addressNetwork.network.name]")
+      .equals([addressNetwork.address, addressNetwork.network.name])
       .toArray()
     return lookups.reduce(
       (oldestBlock: bigint | null, lookup) =>
@@ -261,8 +262,9 @@ export class ChainDatabase extends Dexie {
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
-      .where("addressNetwork.address")
-      .equals(addressNetwork.address)
+      .where("[addressNetwork.address+addressNetwork.network.name]")
+      .equals([addressNetwork.address, addressNetwork.network.name])
+
       .toArray()
     return lookups.reduce(
       (newestBlock: bigint | null, lookup) =>

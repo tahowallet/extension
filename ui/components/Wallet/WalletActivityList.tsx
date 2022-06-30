@@ -72,10 +72,7 @@ export default function WalletActivityList({
   return (
     <>
       {!instantlyHideActivityDetails && (
-        <SharedSlideUpMenu
-          isOpen={showingActivityDetail !== null}
-          close={handleClose}
-        >
+        <SharedSlideUpMenu isOpen={!!showingActivityDetail} close={handleClose}>
           {showingActivityDetail ? (
             <WalletActivityDetails activityItem={showingActivityDetail} />
           ) : (
