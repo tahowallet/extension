@@ -75,6 +75,11 @@ export default function SignTransactionSignInfoProvider({
                 {dollarValue ? `$${dollarValue}` : "-"}
               </div>
             </div>
+            <div className="spend_amount_label">Contract Create Date</div>
+            <div className="spend_amount">
+              {annotation?.type === "contract-interaction" &&
+                annotation.toAddressFirstTransactionTime}
+            </div>
           </div>
 
           <style jsx>

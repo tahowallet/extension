@@ -4,12 +4,14 @@ import {
 } from "@ethersproject/providers"
 import {
   getAssetTransfers as getAlchemyAssetTransfers,
+  getFirstAssetTransfer,
   getTokenBalances as getAlchemyTokenBalances,
   getTokenMetadata as getAlchemyTokenMetadata,
 } from "../../lib/alchemy"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import {
   AssetTransfer,
+  RawAssetTransfer,
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
@@ -132,6 +134,39 @@ export default class AssetDataHelper {
     }
 
     return getERC20Metadata(provider, tokenSmartContract)
+  }
+
+  async getFirstAssetTransfer(
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<RawAssetTransfer | undefined> {
+    const provider = this.providerTracker.providerForNetwork(
+      addressOnNetwork.network
+    )
+
+    if (typeof provider === "undefined") {
+      return undefined
+    }
+    try {
+      if (
+        provider.currentProvider instanceof AlchemyWebSocketProvider ||
+        provider.currentProvider instanceof AlchemyProvider
+      ) {
+        return await getFirstAssetTransfer(
+          provider.currentProvider,
+          addressOnNetwork
+        )
+      }
+    } catch (error) {
+      logger.warn(
+        "Problem getting first asset transfer via Alchemy helper; network may " +
+          "not support it.",
+        error
+      )
+
+      // Swallow the error - No need to retry for now
+    }
+
+    return undefined
   }
 
   /**

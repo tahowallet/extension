@@ -20,7 +20,7 @@ import {
   LegacyEVMTransactionRequest,
   sameNetwork,
 } from "../../networks"
-import { AssetTransfer } from "../../assets"
+import { AssetTransfer, RawAssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
@@ -603,6 +603,12 @@ export default class ChainService extends BaseService<Events> {
     await this.db.addBlock(block)
     this.emitter.emit("block", block)
     return block
+  }
+
+  getFirstAssetTransfer = async (
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<RawAssetTransfer | undefined> => {
+    return this.assetData.getFirstAssetTransfer(addressOnNetwork)
   }
 
   /**

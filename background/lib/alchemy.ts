@@ -8,6 +8,7 @@ import logger from "./logger"
 import { HexString } from "../types"
 import {
   AssetTransfer,
+  RawAssetTransfer,
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../assets"
@@ -18,6 +19,45 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
+
+export async function getFirstAssetTransfer(
+  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  addressOnNetwork: AddressOnNetwork
+): Promise<RawAssetTransfer | undefined> {
+  let category = ["external", "internal", "token"]
+
+  if (addressOnNetwork.network.name !== "Ethereum") {
+    // Unfortunately even though "token" is supposed the default category for this API call - if the `category` property is omitted
+    // the api returns an error about the category "iternal" not being supported
+    // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
+    category = ["token"]
+  }
+  // eslint-disable-next-line no-param-reassign
+  const resolved = await Promise.all([
+    provider.send("alchemy_getAssetTransfers", [
+      {
+        fromAddress: addressOnNetwork.address,
+        category,
+        maxCount: "0x1",
+        withMetadata: true,
+      },
+    ]),
+    provider.send("alchemy_getAssetTransfers", [
+      {
+        toAddress: addressOnNetwork.address,
+        category,
+        maxCount: "0x1",
+        withMetadata: true,
+      },
+    ]),
+  ])
+
+  console.log("resolved", resolved)
+  const filtered = resolved.filter((tx) => tx.transfers.length > 0)
+  console.log("returning", filtered[0]?.transfers[0])
+
+  return filtered[0]?.transfers[0]
+}
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -41,6 +81,8 @@ export async function getAssetTransfers(
   fromBlock: number,
   toBlock?: number
 ): Promise<AssetTransfer[]> {
+  await getFirstAssetTransfer(provider, addressOnNetwork)
+
   const { address: account, network } = addressOnNetwork
 
   const params = {

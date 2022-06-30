@@ -174,6 +174,21 @@ export type AssetTransfer = {
   txHash: string
 }
 
+export type RawAssetTransfer = {
+  asset: string
+  blockNum: string
+  category: string
+  erc721TokenId: unknown
+  erc1155Metadata: unknown
+  from: string
+  hash: string
+  metadata?: { blockTimestamp: string }
+  rawContract: { value: string; address: string; decimal: string }
+  to: string
+  tokenId: unknown
+  value: number
+}
+
 /**
  * Type guard to check if an AnyAsset is actually a FungibleAsset.
  */

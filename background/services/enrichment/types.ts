@@ -48,6 +48,7 @@ export type ContractDeployment = BaseTransactionAnnotation & {
 
 export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
+  toAddressFirstTransactionTime?: string
   contractName?: string
 }
 

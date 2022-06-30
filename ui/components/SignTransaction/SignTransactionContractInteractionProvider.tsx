@@ -1,4 +1,6 @@
 import React, { ReactElement } from "react"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime"
 import SharedAddress from "../Shared/SharedAddress"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
@@ -6,6 +8,8 @@ import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
+
+dayjs.extend(relativeTime)
 
 export default function SignTransactionContractInteractionProvider({
   transactionDetails,
@@ -34,6 +38,13 @@ export default function SignTransactionContractInteractionProvider({
                       : undefined
                   }
                 />
+                <div className="label">Deployed On</div>
+                <div>
+                  {annotation?.type === "contract-interaction" &&
+                    dayjs(annotation.toAddressFirstTransactionTime).from(
+                      Date.now()
+                    )}
+                </div>
               </>
             )}
           </div>

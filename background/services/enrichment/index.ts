@@ -185,12 +185,27 @@ export default class EnrichmentService extends BaseService<Events> {
           ),
         }
       } else {
+        let toAddressFirstTransactionTime = ""
+        if (transaction.network) {
+          const toAddressFirstTransaction =
+            await this.chainService.getFirstAssetTransfer({
+              address: transaction.to,
+              network: transaction.network,
+            })
+          console.log(1, toAddressFirstTransaction)
+
+          if (toAddressFirstTransaction && toAddressFirstTransaction.metadata) {
+            toAddressFirstTransactionTime =
+              toAddressFirstTransaction.metadata?.blockTimestamp
+          }
+        }
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
           blockTimestamp: block?.timestamp,
           type: "contract-interaction",
           contractName: toName,
+          toAddressFirstTransactionTime,
         }
       }
     } else {
@@ -270,6 +285,25 @@ export default class EnrichmentService extends BaseService<Events> {
           network,
         })) ?? { name: undefined }
 
+        let toAddressFirstTransactionTime = ""
+        if (transaction.network) {
+          const toAddressFirstTransaction =
+            await this.chainService.getFirstAssetTransfer({
+              address: transaction.to,
+              network: transaction.network,
+            })
+          console.log(
+            2,
+            toAddressFirstTransaction,
+            transaction.to,
+            transaction.network?.name
+          )
+          if (toAddressFirstTransaction && toAddressFirstTransaction.metadata) {
+            toAddressFirstTransactionTime =
+              toAddressFirstTransaction.metadata?.blockTimestamp
+          }
+        }
+
         // Fall back on a standard contract interaction.
         txAnnotation = {
           timestamp: resolvedTime,
@@ -280,6 +314,7 @@ export default class EnrichmentService extends BaseService<Events> {
           // address has an associated logo it's worth passing on.
           transactionLogoURL,
           contractName: toName,
+          toAddressFirstTransactionTime,
         }
       }
     }
