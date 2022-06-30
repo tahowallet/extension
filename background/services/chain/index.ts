@@ -661,6 +661,7 @@ export default class ChainService extends BaseService<Events> {
     )
 
     if (!seen) {
+      // @TODO Interleave initial transaction retrieval by network
       this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
     }
   }
