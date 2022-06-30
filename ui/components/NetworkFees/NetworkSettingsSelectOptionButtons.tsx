@@ -1,14 +1,11 @@
 import React, { ReactElement, useState } from "react"
+import { gweiToWei } from "@tallyho/tally-background/lib/utils"
 import { GasOption } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import capitalize from "../../utils/capitalize"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
-
-function gweiFloatToWei(float: number): bigint {
-  return (BigInt(float * 100) / 100n) * BigInt(1000000000)
-}
 
 const buttonStyle = `
   .subtext_large {
@@ -173,7 +170,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
               onChange={(value: string) => {
                 updateCustomGas(
                   option.baseMaxFeePerGas,
-                  gweiFloatToWei(parseFloat(value))
+                  gweiToWei(parseFloat(value))
                 )
               }}
             />
@@ -187,13 +184,10 @@ export function NetworkSettingsSelectOptionButtonCustom({
             isSmall
             onChange={(value: string) => {
               updateCustomGas(
-                gweiFloatToWei(parseFloat(value)), // @TODO Replace
+                gweiToWei(parseFloat(value)), // @TODO Replace
                 option.maxPriorityFeePerGas
               )
-              if (
-                baseGasFee &&
-                gweiFloatToWei(parseFloat(value)) < baseGasFee
-              ) {
+              if (baseGasFee && gweiToWei(parseFloat(value)) < baseGasFee) {
                 setWarningMessage("Low")
               } else {
                 setWarningMessage("")

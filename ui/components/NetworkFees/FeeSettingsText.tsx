@@ -21,9 +21,9 @@ import { useBackgroundSelector } from "../../hooks"
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
   networkSettings: NetworkFeeSettings,
-  baseFeePerGas?: bigint
+  estimatedSpendPerGas?: bigint
 ): string | undefined => {
-  if (baseFeePerGas) {
+  if (estimatedSpendPerGas) {
     const gasLimit =
       networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
@@ -34,7 +34,9 @@ const getFeeDollarValue = (
       enrichAssetAmountWithMainCurrencyValues(
         {
           asset,
-          amount: baseFeePerGas * gasLimit,
+          amount:
+            estimatedSpendPerGas +
+            BigInt(networkSettings.values.maxPriorityFeePerGas) * gasLimit,
         },
         currencyPrice,
         2
@@ -57,17 +59,21 @@ export default function FeeSettingsText({
   const baseFeePerGas =
     useBackgroundSelector((state) => {
       return state.networks.evm[currentNetwork.chainID].baseFeePerGas
-    }) ?? networkSettings.values?.baseFeePerGas
+    }) ??
+    networkSettings.values?.baseFeePerGas ??
+    0n
 
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
   )
   const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
+  const estimatedSpendPerGas =
+    baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
   const estimatedGweiAmount =
     typeof estimatedFeesPerGas !== "undefined" &&
     typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(weiToGwei(baseFeePerGas ?? 0n), 0)
+      ? truncateDecimalAmount(weiToGwei(estimatedSpendPerGas ?? 0n), 0)
       : ""
 
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
@@ -76,7 +82,7 @@ export default function FeeSettingsText({
   const dollarValue = getFeeDollarValue(
     mainCurrencyPricePoint,
     networkSettings,
-    baseFeePerGas
+    estimatedSpendPerGas
   )
 
   if (!dollarValue) return <div>~{gweiValue}</div>
