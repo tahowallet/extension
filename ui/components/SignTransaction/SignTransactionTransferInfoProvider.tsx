@@ -1,3 +1,5 @@
+import { isFungibleAssetAmount } from "@tallyho/tally-background/assets"
+import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { truncateDecimalAmount } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import {
@@ -31,9 +33,17 @@ export default function SignTransactionTransferInfoProvider({
     assetAmount.asset.symbol,
     mainCurrencySymbol
   )
+
   const localizedMainCurrencyAmount =
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
+
+  const readableDecimalAmount = isFungibleAssetAmount(assetAmount)
+    ? fixedPointNumberToString({
+        amount: assetAmount.amount,
+        decimals: assetAmount.asset.decimals,
+      })
+    : assetAmount.localizedDecimalAmount
 
   return (
     <SignTransactionBaseInfoProvider
@@ -51,7 +61,7 @@ export default function SignTransactionTransferInfoProvider({
           <div className="container">
             <span className="label">Spend Amount</span>
             <span className="spend_amount">
-              {assetAmount.localizedDecimalAmount} {assetAmount.asset.symbol}
+              {readableDecimalAmount} {assetAmount.asset.symbol}
             </span>
             <span className="label">${`${localizedMainCurrencyAmount}`}</span>
           </div>
@@ -73,7 +83,7 @@ export default function SignTransactionTransferInfoProvider({
               .spend_amount {
                 color: #fff;
                 font-size: 28px;
-                text-align: right;
+                text-align: center;
                 text-transform: uppercase;
               }
               .divider {
