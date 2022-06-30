@@ -7,8 +7,10 @@ import {
   PricePoint,
   FungibleAsset,
   UnitPricePoint,
+  AnyAsset,
 } from "../../assets"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
+import { AnyNetwork } from "../../networks"
 
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
@@ -31,6 +33,28 @@ export type AssetMainCurrencyAmount = {
 export type AssetDecimalAmount = {
   decimalAmount: number
   localizedDecimalAmount: string
+}
+
+/**
+ * Given an asset and a network, determines whether the given asset is the base
+ * asset for the given network. Used to special-case transactions that should
+ * work differently for base assets vs, for example, smart contract assets.
+ *
+ * @param asset The asset that could be a base asset for a network.
+ * @param network The network whose base asset `asset` should be checked against.
+ *
+ * @return True if the passed asset is the base asset for the passed network.
+ */
+export function isNetworkBaseAsset(
+  asset: AnyAsset,
+  network: AnyNetwork
+): boolean {
+  return (
+    !("homeNetwork" in asset) &&
+    "family" in network &&
+    network.family === "EVM" &&
+    asset.symbol === network.baseAsset.symbol
+  )
 }
 
 /**

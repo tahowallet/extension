@@ -15,14 +15,27 @@ import {
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
 } from "../../assets"
-import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
-import { truncateAddress } from "../../lib/utils"
-import { selectAddressSigningMethods } from "./signingSelectors"
-import { SigningMethod } from "../../utils/signing"
+import {
+  selectCurrentAccount,
+  selectCurrentNetwork,
+  selectMainCurrencySymbol,
+} from "./uiSelectors"
+import {
+  normalizeEVMAddress,
+  sameEVMAddress,
+  truncateAddress,
+} from "../../lib/utils"
+import { selectAccountSignersByAddress } from "./signingSelectors"
 import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./keyringsSelectors"
+import { AddressOnNetwork } from "../../accounts"
+import { EVMNetwork, sameNetwork } from "../../networks"
+import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
+import { DOGGO } from "../../constants/assets"
+import { HIDE_TOKEN_FEATURES } from "../../features"
+import { AccountSigner, SignerType } from "../../services/signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -34,6 +47,7 @@ const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   mainCurrencySymbol: string,
+  currentNetwork: EVMNetwork,
   hideDust: boolean
 ): {
   combinedAssetAmounts: CompleteAssetAmount[]
@@ -76,16 +90,56 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
+      const baseAsset = BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
+      const isForciblyDisplayed =
+        (!HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol) ||
+        (currentNetwork.baseAsset.name === baseAsset?.name &&
+          currentNetwork.baseAsset.symbol === baseAsset?.symbol)
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      // TODO Update below to be network responsive
-      const isPresent =
-        assetAmount.decimalAmount > 0 || assetAmount.asset.symbol === "ETH"
+      const isPresent = assetAmount.decimalAmount > 0
 
       // Hide dust and missing amounts.
-      return hideDust ? isNotDust && isPresent : isPresent
+      return (
+        isForciblyDisplayed || (hideDust ? isNotDust && isPresent : isPresent)
+      )
+    })
+    .sort((asset1, asset2) => {
+      // Always sort DOGGO above everything.
+      if (asset1.asset.symbol === DOGGO.symbol) {
+        return -1
+      }
+      if (asset2.asset.symbol === DOGGO.symbol) {
+        return 1
+      }
+
+      const leftIsBaseAsset = asset1.asset.symbol in BASE_ASSETS_BY_SYMBOL
+      const rightIsBaseAsset = asset2.asset.symbol in BASE_ASSETS_BY_SYMBOL
+
+      // Always sort base assets above non-base assets.
+      if (leftIsBaseAsset !== rightIsBaseAsset) {
+        return leftIsBaseAsset ? -1 : 1
+      }
+
+      // If the assets are both base assets or neither is a base asset, compare
+      // by main currency amount.
+      if (
+        asset1.mainCurrencyAmount !== undefined &&
+        asset2.mainCurrencyAmount !== undefined
+      ) {
+        return asset2.mainCurrencyAmount - asset1.mainCurrencyAmount
+      }
+
+      if (asset1.mainCurrencyAmount === asset2.mainCurrencyAmount) {
+        // If both assets are missing a main currency amount, compare symbols
+        // lexicographically.
+        return asset1.asset.symbol.localeCompare(asset2.asset.symbol)
+      }
+
+      // If only one asset has a main currency amount, it wins.
+      return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
 
   return { combinedAssetAmounts, totalMainCurrencyAmount }
@@ -93,21 +147,26 @@ const computeCombinedAssetAmountsData = (
 
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
-  return state.account.accountsData[state.ui.selectedAccount.address]
+  const { address, network } = state.ui.selectedAccount
+  return state.account.accountsData.evm[network.chainID]?.[
+    normalizeEVMAddress(address)
+  ]
 }
 export const getAssetsState = (state: RootState): AssetsState => state.assets
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
+  selectCurrentNetwork,
   selectHideDust,
   selectMainCurrencySymbol,
-  (account, assets, hideDust, mainCurrencySymbol) => {
+  (account, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
+        currentNetwork,
         hideDust
       )
 
@@ -139,9 +198,10 @@ export const selectMainCurrencyPricePoint = createSelector(
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
+  selectCurrentNetwork,
   selectHideDust,
   selectMainCurrencySymbol,
-  (currentAccount, assets, hideDust, mainCurrencySymbol) => {
+  (currentAccount, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -155,6 +215,7 @@ export const selectCurrentAccountBalances = createSelector(
         assetAmounts,
         assets,
         mainCurrencySymbol,
+        currentNetwork,
         hideDust
       )
 
@@ -171,12 +232,24 @@ export const selectCurrentAccountBalances = createSelector(
   }
 )
 
-export type AccountTotal = {
-  address: string
+export const selectCurrentAccountAssetBalance = createSelector(
+  selectCurrentAccountBalances,
+  (_: RootState, assetSymbol: string) => assetSymbol,
+  (assetsBalances, assetSymbol) => {
+    return assetsBalances?.assetAmounts.find(
+      (asset) => asset.asset.symbol === assetSymbol
+    )
+  }
+)
+
+export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
+  // FIXME This is solely used for categorization.
+  // FIXME Add `categoryFor(accountSigner): string` utility function to
+  // FIXME generalize beyond keyrings.
   keyringId: string | null
-  signingMethod: SigningMethod | null
+  accountSigner: AccountSigner | null
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
@@ -184,25 +257,22 @@ export type AccountTotal = {
 
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
-const signingMethodTypeToAccountType: Record<
-  SigningMethod["type"],
-  AccountType
-> = {
+const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   ledger: AccountType.Ledger,
 }
 
 const getAccountType = (
   address: string,
-  signingMethod: SigningMethod,
+  signer: AccountSigner,
   addressSources: {
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signingMethod == null) {
+  if (signer == null) {
     return AccountType.ReadOnly
   }
-  if (signingMethodTypeToAccountType[signingMethod.type] === "ledger") {
+  if (signerTypeToAccountType[signer.type] === "ledger") {
     return AccountType.Ledger
   }
   if (addressSources[address] === "import") {
@@ -211,43 +281,47 @@ const getAccountType = (
   return AccountType.Internal
 }
 
-export const selectAccountTotalsByCategory = createSelector(
+export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
-  selectAddressSigningMethods,
+  selectCurrentNetwork,
+  selectAccountSignersByAddress,
   selectKeyringsByAddresses,
   selectSourcesByAddress,
   selectMainCurrencySymbol,
   (
     accounts,
     assets,
-    signingAccounts,
+    currentNetwork,
+    accountSignersByAddress,
     keyringsByAddresses,
     sourcesByAddress,
     mainCurrencySymbol
   ): CategorizedAccountTotals => {
-    // TODO: here
-
-    return Object.entries(accounts.accountsData)
+    return Object.entries(
+      accounts.accountsData.evm[currentNetwork.chainID] ?? {}
+    )
+      .filter(([, accountData]) => typeof accountData !== "undefined")
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
-        const signingMethod = signingAccounts[address] ?? null
+        const accountSigner = accountSignersByAddress[address] ?? null
         const keyringId = keyringsByAddresses[address]?.id
 
         const accountType = getAccountType(
           address,
-          signingMethod,
+          accountSigner,
           sourcesByAddress
         )
 
         if (accountData === "loading") {
           return {
             address,
+            network: currentNetwork,
             shortenedAddress,
             accountType,
             keyringId,
-            signingMethod,
+            accountSigner,
           }
         }
 
@@ -281,10 +355,11 @@ export const selectAccountTotalsByCategory = createSelector(
 
         return {
           address,
+          network: currentNetwork,
           shortenedAddress,
           accountType,
           keyringId,
-          signingMethod,
+          accountSigner,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(
@@ -294,36 +369,52 @@ export const selectAccountTotalsByCategory = createSelector(
           ),
         }
       })
-      .reduce<CategorizedAccountTotals>((acc, accountTotal) => {
-        acc[accountTotal.accountType] ??= []
-        // Non-nullness guaranteed by the above ??=.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        acc[accountTotal.accountType]!.push(accountTotal)
-        return acc
-      }, {})
+      .reduce<CategorizedAccountTotals>(
+        (seenTotalsByType, accountTotal) => ({
+          ...seenTotalsByType,
+          [accountTotal.accountType]: [
+            ...(seenTotalsByType[accountTotal.accountType] ?? []),
+            accountTotal,
+          ],
+        }),
+        {}
+      )
   }
 )
 
 function findAccountTotal(
   categorizedAccountTotals: CategorizedAccountTotals,
-  accountAddress: string
+  accountAddressOnNetwork: AddressOnNetwork
 ): AccountTotal | undefined {
   return Object.values(categorizedAccountTotals)
     .flat()
     .find(
-      ({ address }) => address.toLowerCase() === accountAddress.toLowerCase()
+      ({ address, network }) =>
+        sameEVMAddress(address, accountAddressOnNetwork.address) &&
+        sameNetwork(network, accountAddressOnNetwork.network)
     )
 }
 
 export const getAccountTotal = (
   state: RootState,
-  accountAddress: string
+  accountAddressOnNetwork: AddressOnNetwork
 ): AccountTotal | undefined =>
-  findAccountTotal(selectAccountTotalsByCategory(state), accountAddress)
+  findAccountTotal(
+    selectCurrentNetworkAccountTotalsByCategory(state),
+    accountAddressOnNetwork
+  )
 
 export const selectCurrentAccountTotal = createSelector(
-  selectAccountTotalsByCategory,
+  selectCurrentNetworkAccountTotalsByCategory,
   selectCurrentAccount,
   (categorizedAccountTotals, currentAccount): AccountTotal | undefined =>
-    findAccountTotal(categorizedAccountTotals, currentAccount.address)
+    findAccountTotal(categorizedAccountTotals, currentAccount)
+)
+
+export const getAddressCount = createSelector(
+  (state: RootState) => state.account.accountsData,
+  (accountsData) =>
+    Object.values(accountsData.evm).flatMap((chainAddresses) =>
+      Object.keys(chainAddresses)
+    ).length
 )

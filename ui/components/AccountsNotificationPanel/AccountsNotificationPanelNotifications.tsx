@@ -10,8 +10,7 @@ export default function AccountsNotificationPanelNotifications(): ReactElement {
         <SharedButton
           type="tertiary"
           size="small"
-          icon="mark_read"
-          iconSize="secondaryMedium"
+          iconSmall="mark-read"
           isDisabled
         >
           Mark all as read
@@ -29,8 +28,7 @@ export default function AccountsNotificationPanelNotifications(): ReactElement {
         <SharedButton
           type="tertiary"
           size="small"
-          icon="garbage"
-          iconSize="secondaryMedium"
+          iconSmall="garbage"
           isDisabled
         >
           Delete all

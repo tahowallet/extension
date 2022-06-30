@@ -10,7 +10,7 @@ import KeyringService, {
 } from "../services/keyring"
 import { KeyringTypes } from "../types"
 import { EIP1559TransactionRequest } from "../networks"
-import { ETHEREUM } from "../constants"
+import { ETH, ETHEREUM } from "../constants"
 import logger from "../lib/logger"
 
 const originalCrypto = global.crypto
@@ -51,6 +51,7 @@ const validTransactionRequests: {
     maxPriorityFeePerGas: 0n,
     gasLimit: 0n,
     chainID: "0",
+    network: { name: "none", chainID: "0", baseAsset: ETH, family: "EVM" },
   },
 }
 
@@ -79,7 +80,7 @@ function expectBase64String(
 
 const mockAlarms = (mock: MockzillaDeep<Browser>) => {
   mock.alarms.create.mock(() => ({}))
-  mock.alarms.onAlarm.addListener.mock((_, __) => ({}))
+  mock.alarms.onAlarm.addListener.mock(() => ({}))
 }
 
 describe("KeyringService when uninitialized", () => {
@@ -209,7 +210,9 @@ describe("KeyringService when initialized", () => {
       },
     ] = service.getKeyrings()
 
-    const newAddress = id ? await service.deriveAddress(id) : ""
+    const newAddress = id
+      ? await service.deriveAddress({ type: "keyring", keyringID: id })
+      : ""
     expect(newAddress).toEqual(
       expect.not.stringMatching(new RegExp(originalAddress, "i"))
     )

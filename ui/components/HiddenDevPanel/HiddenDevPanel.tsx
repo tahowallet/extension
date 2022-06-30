@@ -12,8 +12,7 @@ export default function HiddenDevPanel(): ReactElement {
         <SharedButton
           type="primary"
           size="medium"
-          icon="arrow_right"
-          iconSize="large"
+          iconSmall="arrow-right"
           onClick={() => {
             history.push("/onboarding/info-intro")
           }}
@@ -27,8 +26,7 @@ export default function HiddenDevPanel(): ReactElement {
             window.localStorage.setItem("hasSavedSeed", "true")
             window.location.reload()
           }}
-          icon="arrow_right"
-          iconSize="large"
+          iconSmall="arrow-right"
         >
           Verify Recovery Seed
         </SharedButton>
@@ -39,8 +37,7 @@ export default function HiddenDevPanel(): ReactElement {
             window.localStorage.removeItem("hasSavedSeed")
             window.location.reload()
           }}
-          icon="arrow_right"
-          iconSize="large"
+          iconSmall="arrow-right"
         >
           Unverify Recovery Seed
         </SharedButton>

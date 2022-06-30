@@ -112,7 +112,6 @@ export function animationStyles(
       }
       .page-transition-exit .anti_animation {
         transform: translateX(0px);
-        background-color: red;
       }
       .page-transition-exit-active .anti_animation {
         opacity: 1;

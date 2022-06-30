@@ -177,13 +177,13 @@ export default function OnboardingDerivationPathSelect({
       </SharedModal>
       <SharedSelect
         label="Derivation path"
-        placeholder="Add custom path"
         options={derivationPaths}
         onChange={onChange}
         defaultIndex={defaultIndex}
         triggerLabel="Add custom path"
         onTrigger={() => setModalStep(1)}
         showValue
+        showOptionValue
         placement="top"
       />
       <style jsx>{`

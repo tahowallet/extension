@@ -3,17 +3,18 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
-  selectAccountTotalsByCategory,
+  selectCurrentNetworkAccountTotalsByCategory,
   selectCurrentAccount,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
-import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import { HIDE_IMPORT_LEDGER } from "@tallyho/tally-background/features/features"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "@tallyho/tally-background/lib/utils"
+import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
+import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -72,8 +73,7 @@ function WalletTypeHeader({
             <SharedButton
               type="tertiaryGray"
               size="small"
-              icon="plus"
-              iconSize="medium"
+              iconSmall="add"
               onClick={() => {
                 if (areKeyringsUnlocked) {
                   onClickAddAddress()
@@ -147,8 +147,11 @@ export default function AccountsNotificationPanelAccounts({
   onCurrentAddressChange,
 }: Props): ReactElement {
   const dispatch = useBackgroundDispatch()
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  const accountTotals = useBackgroundSelector(selectAccountTotalsByCategory)
+  const accountTotals = useBackgroundSelector(
+    selectCurrentNetworkAccountTotalsByCategory
+  )
 
   const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
 
@@ -156,11 +159,12 @@ export default function AccountsNotificationPanelAccounts({
     useBackgroundSelector(selectCurrentAccount).address
 
   const updateCurrentAccount = (address: string) => {
+    dispatch(clearSignature())
     setPendingSelectedAddress(address)
     dispatch(
       setNewSelectedAccount({
         address,
-        network: ETHEREUM,
+        network: selectedNetwork,
       })
     )
   }
@@ -179,11 +183,8 @@ export default function AccountsNotificationPanelAccounts({
     AccountType.Internal,
     AccountType.Imported,
     AccountType.ReadOnly,
+    AccountType.Ledger,
   ]
-
-  if (!HIDE_IMPORT_LEDGER) {
-    accountTypes.push(AccountType.Ledger)
-  }
 
   return (
     <div className="switcher_wrap">
@@ -260,9 +261,16 @@ export default function AccountsNotificationPanelAccounts({
                             e.currentTarget.style.backgroundColor = ""
                           }}
                         >
-                          <button
-                            type="button"
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                updateCurrentAccount(normalizedAddress)
+                              }
+                            }}
                             onClick={() => {
+                              dispatch(resetClaimFlow())
                               updateCurrentAccount(normalizedAddress)
                             }}
                           >
@@ -273,10 +281,9 @@ export default function AccountsNotificationPanelAccounts({
                             >
                               <AccountItemOptionsMenu
                                 accountTotal={accountTotal}
-                                address={accountTotal.address}
                               />
                             </SharedAccountItemSummary>
-                          </button>
+                          </div>
                         </li>
                       )
                     })}
@@ -290,8 +297,7 @@ export default function AccountsNotificationPanelAccounts({
         <SharedButton
           type="tertiary"
           size="medium"
-          icon="plus"
-          iconSize="medium"
+          iconSmall="add"
           iconPosition="left"
           linkTo="/onboarding/add-wallet"
         >

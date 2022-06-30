@@ -15,12 +15,13 @@ type Props = {
   options: Option[] | string[]
   onChange: (value: string) => void
   defaultIndex?: number
-  placeholder?: string
   label?: string
   placement?: "top" | "bottom"
   triggerLabel?: string
   onTrigger?: () => void
   showValue?: boolean
+  showOptionValue?: boolean
+  width?: number
 }
 
 export default function SharedSelect(props: Props): ReactElement {
@@ -29,11 +30,12 @@ export default function SharedSelect(props: Props): ReactElement {
     onChange,
     defaultIndex = 0,
     label,
-    placeholder,
     placement = "bottom",
     triggerLabel,
     onTrigger,
     showValue,
+    showOptionValue,
+    width = 320,
   } = props
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -130,7 +132,7 @@ export default function SharedSelect(props: Props): ReactElement {
               >
                 <div className="option_content">
                   <span>{option.label}</span>
-                  <span>{option.value}</span>
+                  {showOptionValue && <span>{option.value}</span>}
                 </div>
               </li>
             )
@@ -150,7 +152,7 @@ export default function SharedSelect(props: Props): ReactElement {
             box-sizing: border-box;
             display: inline-block;
             position: relative;
-            width: 320px;
+            width: ${width}px;
             background-color: transparent;
           }
 
@@ -216,7 +218,7 @@ export default function SharedSelect(props: Props): ReactElement {
             position: absolute;
             left: 2px;
             box-sizing: border-box;
-            width: 316px;
+            width: ${width - 4}px;
             text-align: right;
             background-color: var(--green-95);
             border-radius: 5px;
@@ -230,6 +232,7 @@ export default function SharedSelect(props: Props): ReactElement {
             opacity: 0;
             line-height: 1.5;
             transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
+            z-index: 1;
           }
 
           .select.bottom .options {
@@ -241,7 +244,7 @@ export default function SharedSelect(props: Props): ReactElement {
           }
 
           .options.show {
-            max-height: 224px;
+            max-height: 140px;
             bottom: 42px;
             opacity: 1;
           }

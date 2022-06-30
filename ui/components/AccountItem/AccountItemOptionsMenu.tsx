@@ -1,30 +1,51 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement, useRef, useState } from "react"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import AccountItemEditName from "./AccountItemEditName"
+import AccountitemOptionLabel from "./AccountItemOptionLabel"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
-import RemoveAddressLabel from "./AccountItemRemoveAddressLabel"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
-  address: HexString
 }
 
 export default function AccountItemOptionsMenu({
   accountTotal,
-  address,
 }: AccountItemOptionsMenuProps): ReactElement {
+  const { address, network } = accountTotal
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
+  const [showEditName, setShowEditName] = useState(false)
   const optionsMenuRef = useRef(null)
   useOnClickOutside(optionsMenuRef, () => {
     setShowOptionsMenu(false)
   })
 
   return (
-    <>
+    <div className="options_menu_warp">
+      <SharedSlideUpMenu
+        size="custom"
+        customSize="304px"
+        isOpen={showEditName}
+        close={(e) => {
+          e?.stopPropagation()
+          setShowEditName(false)
+        }}
+      >
+        <div
+          role="presentation"
+          onClick={(e) => e.stopPropagation()}
+          style={{ cursor: "default" }}
+        >
+          <AccountItemEditName
+            addressOnNetwork={{ address, network }}
+            account={accountTotal}
+            close={() => setShowEditName(false)}
+          />
+        </div>
+      </SharedSlideUpMenu>
       <SharedSlideUpMenu
         size="custom"
         customSize="336px"
@@ -40,7 +61,6 @@ export default function AccountItemOptionsMenu({
           style={{ cursor: "default" }}
         >
           <AccountItemRemovalConfirm
-            address={address}
             account={accountTotal}
             close={() => setShowAddressRemoveConfirm(false)}
           />
@@ -79,10 +99,14 @@ export default function AccountItemOptionsMenu({
               onClick={(e) => {
                 e.stopPropagation()
                 setShowOptionsMenu(false)
-                setShowAddressRemoveConfirm(true)
+                setShowEditName(true)
               }}
             >
-              <RemoveAddressLabel hoverable />
+              <AccountitemOptionLabel
+                icon="icons/s/edit.svg"
+                label="Edit name"
+                hoverable
+              />
             </button>
             <button
               type="button"
@@ -96,10 +120,32 @@ export default function AccountItemOptionsMenu({
               <div className="icon_close" />
             </button>
           </li>
+          <li className="option">
+            <button
+              className="remove_address_button"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowOptionsMenu(false)
+                setShowAddressRemoveConfirm(true)
+              }}
+            >
+              <AccountitemOptionLabel
+                icon="garbage@2x.png"
+                label="Remove address"
+                hoverable
+                color="var(--error)"
+                hoverColor="var(--error-80)"
+              />
+            </button>
+          </li>
         </ul>
       )}
       <style jsx>
         {`
+          .options_menu_warp {
+            position: relative;
+          }
           .icon_settings {
             mask-image: url("./images/more_dots@2x.png");
             mask-repeat: no-repeat;
@@ -118,13 +164,14 @@ export default function AccountItemOptionsMenu({
           }
           .options {
             position: absolute;
-            right: 8;
+            right: 6px;
+            top: -6px;
             cursor: default;
             border-radius: 4px;
             background-color: var(--green-120);
             display: flex;
             align-items: center;
-            flex-direction: row;
+            flex-direction: column;
             justify-content: space-between;
             width: 212px;
             border-radius: 4px;
@@ -134,7 +181,7 @@ export default function AccountItemOptionsMenu({
             line-height: 24px;
             padding: 14px;
             flex-direction: row;
-            width: 100%;
+            width: 90%;
             align-items: center;
             height: 100%;
             cursor: default;
@@ -154,6 +201,6 @@ export default function AccountItemOptionsMenu({
           }
         `}
       </style>
-    </>
+    </div>
   )
 }

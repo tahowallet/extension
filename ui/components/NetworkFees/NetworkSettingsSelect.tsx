@@ -1,38 +1,38 @@
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
+import {
+  ESTIMATED_FEE_MULTIPLIERS,
+  ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
+} from "@tallyho/tally-background/constants/network-fees"
+import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
   NetworkFeeTypeChosen,
-  selectLastGasEstimatesRefreshTime,
+  setCustomGas,
+  GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
+
 import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import logger from "@tallyho/tally-background/lib/logger"
-import SharedInput from "../Shared/SharedInput"
-import { useBackgroundSelector } from "../../hooks"
-import capitalize from "../../utils/capitalize"
+import { SharedTypedInput } from "../Shared/SharedInput"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
+
+import {
+  NetworkSettingsSelectOptionButton,
+  NetworkSettingsSelectOptionButtonCustom,
+} from "./NetworkSettingsSelectOptionButtons"
+import SharedButton from "../Shared/SharedButton"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
   networkSettings: NetworkFeeSettings
   onNetworkSettingsChange: (newSettings: NetworkFeeSettings) => void
-}
-
-type GasOption = {
-  confidence: string
-  type: NetworkFeeTypeChosen
-  estimatedGwei: string
-  maxGwei: string
-  dollarValue: string
-  price: bigint
-  estimatedFeePerGas: bigint
-  maxFeePerGas: bigint
-  maxPriorityFeePerGas: bigint
+  onSave: () => void
 }
 
 // Map a BlockEstimate from the backend to a GasOption for the UI.
@@ -40,7 +40,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, price, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -48,6 +48,7 @@ const gasOptionFromEstimate = (
     70: NetworkFeeTypeChosen.Regular,
     95: NetworkFeeTypeChosen.Express,
     99: NetworkFeeTypeChosen.Instant,
+    0: NetworkFeeTypeChosen.Custom,
   }
 
   const feeAssetAmount =
@@ -62,49 +63,26 @@ const gasOptionFromEstimate = (
         )
       : undefined
   const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
-
   return {
     confidence: `${confidence}`,
+    estimatedSpeed:
+      ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL[
+        confidence
+      ],
     type: feeOptionData[confidence],
     estimatedGwei: weiToGwei(
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
     ).split(".")[0],
+    maxPriorityGwei: weiToGwei(maxPriorityFeePerGas),
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
     dollarValue: dollarValue ? `$${dollarValue}` : "-",
     estimatedFeePerGas:
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
-    price,
+    baseMaxFeePerGas: BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas),
+    baseMaxGwei: weiToGwei(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)),
     maxFeePerGas,
     maxPriorityFeePerGas,
   }
-}
-
-function EstimateRefreshCountdownDivider() {
-  const [timeRemaining, setTimeRemaining] = useState(0)
-  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-
-  const getSecondsTillGasUpdate = useCallback(() => {
-    const now = Date.now()
-    setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
-  }, [gasTime])
-
-  useEffect(() => {
-    getSecondsTillGasUpdate()
-    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
-    return () => {
-      clearTimeout(interval)
-    }
-  })
-
-  return (
-    <div className="divider">
-      <div className="divider-background" />
-      <div
-        className="divider-cover"
-        style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
-      />
-    </div>
-  )
 }
 
 export default function NetworkSettingsSelect({
@@ -112,8 +90,15 @@ export default function NetworkSettingsSelect({
   estimatedFeesPerGas,
   networkSettings,
   onNetworkSettingsChange,
+  onSave,
 }: NetworkSettingsSelectProps): ReactElement {
+  const dispatch = useBackgroundDispatch()
+
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
+  const customGas = useBackgroundSelector((state) => {
+    return state.transactionConstruction.customFeesPerGas
+  })
+
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
@@ -160,35 +145,39 @@ export default function NetworkSettingsSelect({
 
   const updateGasOptions = useCallback(() => {
     if (typeof estimatedFeesPerGas !== "undefined") {
-      const { regular, express, instant } = estimatedFeesPerGas ?? {}
-      let gasLimit = networkSettings.suggestedGasLimit
+      const { regular, express, instant, custom } = estimatedFeesPerGas ?? {}
+      const gasLimit =
+        networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
-      if (networkSettings.gasLimit !== "") {
-        try {
-          gasLimit = BigInt(networkSettings.gasLimit)
-        } catch (error) {
-          logger.debug(
-            "Failed to parse network settings gas limit",
-            networkSettings.gasLimit
+      if (typeof instant !== "undefined") {
+        const baseFees = [regular, express, instant, custom]
+
+        const updatedGasOptions: GasOption[] = []
+
+        baseFees.forEach((option) => {
+          if (option) {
+            updatedGasOptions.push(
+              gasOptionFromEstimate(
+                mainCurrencyPricePoint,
+                estimatedFeesPerGas.baseFeePerGas ?? 0n,
+                gasLimit,
+                option
+              )
+            )
+          }
+        })
+
+        if (customGas) {
+          updatedGasOptions.push(
+            gasOptionFromEstimate(
+              mainCurrencyPricePoint,
+              estimatedFeesPerGas.baseFeePerGas ?? 0n,
+              gasLimit,
+              customGas
+            )
           )
         }
-      }
 
-      if (
-        typeof instant !== "undefined" &&
-        typeof express !== "undefined" &&
-        typeof regular !== "undefined"
-      ) {
-        const basePrices = [regular, express, instant]
-
-        const updatedGasOptions = basePrices.map((option) =>
-          gasOptionFromEstimate(
-            mainCurrencyPricePoint,
-            estimatedFeesPerGas.baseFeePerGas,
-            gasLimit,
-            option
-          )
-        )
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
           (el) => el.type === currentlySelectedType
         )
@@ -201,9 +190,10 @@ export default function NetworkSettingsSelect({
     }
   }, [
     estimatedFeesPerGas,
-    networkSettings.suggestedGasLimit,
     networkSettings.gasLimit,
+    networkSettings.suggestedGasLimit,
     mainCurrencyPricePoint,
+    customGas,
     currentlySelectedType,
   ])
 
@@ -211,103 +201,121 @@ export default function NetworkSettingsSelect({
     updateGasOptions()
   }, [updateGasOptions])
 
-  const setGasLimit = (newGasLimit: string) => {
-    // FIXME Make gasLimit a bigint and parse/validate here, as close to the user
-    // FIXME entry as possible.
-    onNetworkSettingsChange({
-      ...networkSettings,
-      gasLimit: newGasLimit,
-    })
+  const setGasLimit = (gasLimit: bigint | undefined) => {
+    onNetworkSettingsChange({ ...networkSettings, gasLimit })
+  }
+
+  function updateCustomGas(
+    customMaxBaseFee: bigint,
+    customMaxPriorityFeePerGas: bigint
+  ) {
+    dispatch(
+      setCustomGas({
+        maxPriorityFeePerGas: customMaxPriorityFeePerGas,
+        maxFeePerGas:
+          BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
+      })
+    )
+  }
+
+  if (!CUSTOM_GAS_SELECT) {
+    return (
+      <NetworkSettingsSelectDeprecated
+        estimatedFeesPerGas={estimatedFeesPerGas}
+        networkSettings={networkSettings}
+        onNetworkSettingsChange={onNetworkSettingsChange}
+        onSave={onSave}
+      />
+    )
   }
 
   return (
     <div className="fees standard_width">
-      <div className="title">Network Fees</div>
-
-      <EstimateRefreshCountdownDivider />
-
+      <span className="settings_label network_fee_label">
+        Network fees (Gwei)
+      </span>
       {gasOptions.map((option, i) => {
         return (
-          <button
-            key={option.confidence}
-            className={`option ${i === activeFeeIndex ? "active" : ""}`}
-            onClick={() => handleSelectGasOption(i)}
-            type="button"
-          >
-            <div className="option_left">
-              <div className="name">{capitalize(option.type)}</div>
-              <div className="subtext">Probability: {option.confidence}%</div>
-            </div>
-            <div className="option_right">
-              <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
-              <div className="subtext">{option.dollarValue}</div>
-            </div>
-          </button>
+          <>
+            {option.type === "custom" ? (
+              <NetworkSettingsSelectOptionButtonCustom
+                option={option}
+                isActive={i === activeFeeIndex}
+                handleSelectGasOption={() => handleSelectGasOption(i)}
+                updateCustomGas={(
+                  customMaxBaseFee: bigint,
+                  customMaxPriorityFeePerGas: bigint
+                ) =>
+                  updateCustomGas(customMaxBaseFee, customMaxPriorityFeePerGas)
+                }
+              />
+            ) : (
+              <NetworkSettingsSelectOptionButton
+                option={option}
+                isActive={i === activeFeeIndex}
+                handleSelectGasOption={() => handleSelectGasOption(i)}
+              />
+            )}
+          </>
         )
       })}
-      <div className="info">
-        <div className="limit">
-          <SharedInput
-            id="gasLimit"
-            value={networkSettings.gasLimit}
-            placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
-            onChange={setGasLimit}
-            label="Gas limit"
-            type="number"
-            focusedLabelBackgroundColor="var(--green-95)"
-          />
-        </div>
-        <div className="max_fee">
-          <span className="max_label">Max Fee</span>
-          <div className="price">
-            {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+      <footer>
+        <div className="info">
+          <div className="limit">
+            <SharedTypedInput
+              id="gasLimit"
+              value={networkSettings.gasLimit?.toString() ?? ""}
+              placeholder={networkSettings.suggestedGasLimit?.toString() ?? ""}
+              onChange={setGasLimit}
+              parseAndValidate={(value) => {
+                if (value.trim() === "") {
+                  return { parsed: undefined }
+                }
+                try {
+                  const parsed = BigInt(value)
+                  // @TODO Consider nontypical gas minimums when adding networks
+                  if (parsed < 21000n) {
+                    return {
+                      error: "Gas Limit must be higher than 21000",
+                    }
+                  }
+
+                  return { parsed }
+                } catch (e) {
+                  return { error: "Gas Limit must be a number" }
+                }
+              }}
+              label="Gas limit"
+              type="number"
+              focusedLabelBackgroundColor="var(--green-95)"
+              step={1000}
+            />
+          </div>
+          <div className="max_fee">
+            <span className="max_label">Total Max</span>
+            <div className="price">
+              {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+            </div>
           </div>
         </div>
-      </div>
+        <div className="confirm">
+          <SharedButton size="medium" type="primary" onClick={onSave}>
+            Save settings
+          </SharedButton>
+        </div>
+      </footer>
       <style jsx>
         {`
-          .option {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #002522;
-            box-sizing: border-box;
-            padding: 12px;
-            margin: 8px 0;
-            cursor: pointer;
-            border-radius: 4px;
-          }
-          .option.active {
-            border: 1px solid var(--success);
-            box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
-              0px 6px 8px rgba(0, 20, 19, 0.24),
-              0px 2px 4px rgba(0, 20, 19, 0.34);
-          }
-          .option.active .name {
-            color: var(--success);
-          }
-          .option_left,
-          .option_right {
-            display: flex;
-            flex-flow: column;
-            gap: 4px;
-          }
-          .option_left {
-            text-align: left;
-          }
-          .option_right {
-            text-align: right;
-          }
-          .name,
-          .price {
-            color: var(--green--5);
-            font-size: 18px;
+          .settings_label {
+            color: var(--green-5);
             font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
           }
-          .subtext {
-            color: var(--green-60);
-            font-size: 14px;
+          .network_fee_label {
+            width: 100%;
+            display: block;
+            margin-bottom: 10px;
           }
           .max_fee {
             display: flex;
@@ -319,20 +327,25 @@ export default function NetworkSettingsSelect({
             font-size: 14px;
             color: var(--green-40);
           }
-          .currentlySelected {
-            color: var(--success);
-            opacity: 0.8;
-            font-size: 10px;
-          }
           .info {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 42px;
+            margin-bottom: 6px;
+          }
+          footer {
+            position: fixed;
+            bottom: 16px;
+            width: inherit;
           }
           .limit {
             margin: 16px 0;
             width: 40%;
             position: relative;
+          }
+          .confirm {
+            float: right;
           }
         `}
       </style>

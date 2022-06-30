@@ -1,0 +1,19 @@
+name: Auto-Assign Issue to Project
+
+on:
+  issues:
+    types: [opened]
+
+env:
+  MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+
+jobs:
+  assign_one_project:
+    runs-on: ubuntu-latest
+    name: Auto-Assign Issue to Project
+    steps:
+      - name: Assign NEW issues to the priority list
+        uses: srggrs/assign-one-project-github-action@1.2.1
+        if: github.event.action == 'opened'
+        with:
+          project: "https://github.com/orgs/tallycash/projects/5"

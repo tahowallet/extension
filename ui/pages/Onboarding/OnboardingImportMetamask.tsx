@@ -6,7 +6,7 @@ import classNames from "classnames"
 import {
   HIDE_IMPORT_DERIVATION_PATH,
   HIDE_IMPORT_PASSPHRASE,
-} from "@tallyho/tally-background/features/features"
+} from "@tallyho/tally-background/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedInput from "../../components/Shared/SharedInput"
@@ -48,9 +48,8 @@ function TextArea({
           padding: 12px 16px;
           box-sizing: border-box;
         }
-        .error,
-        .error:focus {
-          border-color: var(--error);
+        .error {
+          border-color: var(--trophy-gold);
         }
         .error_message {
           color: var(--error);
@@ -75,6 +74,12 @@ function TextArea({
           transition: font-size 0.2s ease, transform 0.2s ease,
             font-weight 0.2s ease, padding 0.2s ease;
         }
+        textarea:focus {
+          border-color: var(--trophy-gold);
+        }
+        textarea:focus ~ label {
+          color: var(--trophy-gold);
+        }
         textarea:focus ~ label,
         textarea:not(:placeholder-shown) ~ label {
           transform: translateY(-103px) translateX(-5px);
@@ -82,7 +87,8 @@ function TextArea({
           font-weight: 500;
           padding: 0px 6px;
         }
-        .error ~ label {
+        .error ~ label,
+        textarea.error:focus ~ label {
           color: var(--error);
         }
       `}</style>
@@ -148,7 +154,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     <section className="center_horizontal standard_width">
       <div className="content">
         <div className="back_button_wrap">
-          <SharedBackButton />
+          <SharedBackButton path="/" />
         </div>
         <form
           onSubmit={(event) => {
@@ -157,7 +163,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           }}
         >
           <div className="portion top">
-            <div className="metamask_onboarding_image" />
+            <div className="illustration_import" />
             <h1 className="serif_header">Import account</h1>
             <div className="info">
               Copy paste or write down a 12 or 24 word secret recovery phrase.
@@ -247,12 +253,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
           margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
         }
-        .metamask_onboarding_image {
+        .illustration_import {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
-          width: ${HIDE_IMPORT_DERIVATION_PATH ? "205.3px" : "155px"};
-          height: ${HIDE_IMPORT_DERIVATION_PATH ? "193px" : "145.71"};
-          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "27px" : "23.5px"};
+          width: 106.5px;
+          height: 103.5px;
+          margin-top: 60px;
           margin-bottom: 15px;
         }
         .serif_header {

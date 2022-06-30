@@ -1,3 +1,4 @@
+import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
 
 /**
@@ -8,10 +9,11 @@ export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
-type NetworkBaseAsset = {
+export type NetworkBaseAsset = {
   symbol: string
   name: string
   decimals: number
+  coinType: Slip44CoinType
 }
 
 /**
@@ -128,7 +130,7 @@ export type LegacyEVMTransaction = EVMTransaction & {
  */
 export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
-  "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value"
+  "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value" | "network"
 > & {
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
@@ -164,6 +166,7 @@ export type EIP1559TransactionRequest = Pick<
   | "value"
   | "maxFeePerGas"
   | "maxPriorityFeePerGas"
+  | "network"
 > & {
   gasLimit: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
@@ -276,7 +279,7 @@ export type BlockEstimate = {
    * For legacy (pre-EIP1559) transactions, the gas price that results in the
    * above likelihood of inclusion.
    */
-  price: bigint
+  price?: bigint
   /**
    * For EIP1559 transactions, the max priority fee per gas that results in the
    * above likelihood of inclusion.
@@ -302,4 +305,15 @@ export function sameNetwork(
     network1.chainID === network2.chainID &&
     network1.name === network2.name
   )
+}
+
+/**
+ * Returns a 0x-prefixed hexadecimal representation of a number or string chainID
+ * while also handling cases where an already hexlified chainID is passed in.
+ */
+export function toHexChainID(chainID: string | number): string {
+  if (typeof chainID === "string" && chainID.startsWith("0x")) {
+    return chainID
+  }
+  return `0x${BigInt(chainID).toString(16)}`
 }

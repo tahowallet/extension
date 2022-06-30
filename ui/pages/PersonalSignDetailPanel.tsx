@@ -28,7 +28,7 @@ export default function PersonalSignDetailPanel(): JSX.Element {
               default:
                 return (
                   <EIP191Info
-                    account={signingDataRequest.account}
+                    account={signingDataRequest.account.address}
                     internal={false}
                     signingData={signingDataRequest.signingData}
                   />

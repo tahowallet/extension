@@ -1,116 +1,52 @@
-import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory } from "react-router-dom"
+import React, { ReactElement, useState } from "react"
 import {
-  broadcastSignedTransaction,
   rejectTransactionSignature,
-  selectIsTransactionLoaded,
-  selectIsTransactionSigned,
-  selectTransactionData,
   signTransaction,
-  TransactionConstructionStatus,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectIsTransactionLoaded,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  getAccountTotal,
+  selectCurrentNetwork,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useIsBackgroundSettled,
-  useIsSigningMethodLocked,
+  useIsSignerLocked,
 } from "../hooks"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
 import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
+import SignTransactionPanelCombined from "../components/SignTransaction/SignTransactionPanelCombined"
 
-export default function SignTransaction({
-  location,
-}: {
-  location: {
-    key?: string
-    pathname: string
-    state?: { redirectTo: { path: string; state: unknown } }
-  }
-}): ReactElement {
-  const history = useHistory()
+export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const isBackgroundSettled = useIsBackgroundSettled()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
-  const signedTransaction = useBackgroundSelector(
-    ({ transactionConstruction }) => transactionConstruction.signedTransaction
-  )
-
-  const isTransactionSigned = useBackgroundSelector(selectIsTransactionSigned)
-
-  const shouldBroadcastOnSign = useBackgroundSelector(
-    ({ transactionConstruction }) =>
-      transactionConstruction.broadcastOnSign ?? false
-  )
-
-  const isTransactionMissingOrRejected =
-    useBackgroundSelector(
-      ({ transactionConstruction }) =>
-        transactionConstruction.status === TransactionConstructionStatus.Idle
-    ) && isBackgroundSettled
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof transactionDetails !== "undefined") {
-      return getAccountTotal(state, transactionDetails.from)
+      return getAccountTotal(state, {
+        address: transactionDetails.from,
+        network: currentNetwork,
+      })
     }
     return undefined
   })
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
-  const signingMethod = signerAccountTotal?.signingMethod ?? null
+  const accountSigner = signerAccountTotal?.accountSigner ?? null
 
-  const isLocked = useIsSigningMethodLocked(signingMethod)
-
-  useEffect(() => {
-    if (isLocked) return
-    if (isTransactionSigned && isTransactionSigning) {
-      if (shouldBroadcastOnSign && typeof signedTransaction !== "undefined") {
-        dispatch(broadcastSignedTransaction(signedTransaction))
-      }
-
-      // Request broadcast if not dApp...
-      if (typeof location.state !== "undefined") {
-        history.push(
-          location.state.redirectTo.path,
-          location.state.redirectTo.state
-        )
-      } else {
-        history.goBack()
-      }
-    }
-  }, [
-    dispatch,
-    history,
-    isTransactionSigned,
-    isTransactionSigning,
-    isLocked,
-    location.state,
-    shouldBroadcastOnSign,
-    signedTransaction,
-  ])
-
-  useEffect(() => {
-    if (isTransactionMissingOrRejected) {
-      history.goBack()
-    }
-  }, [history, isTransactionMissingOrRejected])
+  const isLocked = useIsSignerLocked(accountSigner)
 
   if (isLocked) return <></>
-
-  if (
-    typeof transactionDetails === "undefined" ||
-    typeof signerAccountTotal === "undefined"
-  ) {
-    // TODO Some sort of unexpected state error if we end up here... Or do we
-    // go back in history? That won't work for dApp popovers though.
-    return <></>
-  }
 
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
@@ -119,12 +55,12 @@ export default function SignTransaction({
     if (
       isTransactionDataReady &&
       transactionDetails &&
-      signingMethod !== null
+      accountSigner !== null
     ) {
       dispatch(
         signTransaction({
           transaction: transactionDetails,
-          method: signingMethod,
+          accountSigner,
         })
       )
       setIsTransactionSigning(true)
@@ -142,9 +78,17 @@ export default function SignTransaction({
           handleReject={handleReject}
           detailPanel={infoBlock}
           reviewPanel={textualInfoBlock}
-          extraPanel={<SignTransactionPanelSwitcher />}
+          extraPanel={
+            title === "Contract interaction" ? (
+              <SignTransactionPanelCombined />
+            ) : (
+              <SignTransactionPanelSwitcher />
+            )
+          }
           isTransactionSigning={isTransactionSigning}
-          isArbitraryDataSigningRequired={!!transactionDetails.input}
+          isArbitraryDataSigningRequired={
+            !!(transactionDetails?.input ?? false)
+          }
         />
       )}
     </SignTransactionInfoProvider>

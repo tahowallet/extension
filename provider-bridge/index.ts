@@ -7,19 +7,17 @@ import {
 
 const windowOriginAtLoadTime = window.location.origin
 
+const INJECTED_WINDOW_PROVIDER_SOURCE = "@@@WINDOW_PROVIDER@@@"
+
 export function connectProviderBridge(): void {
   const port = browser.runtime.connect({ name: EXTERNAL_PORT_NAME })
-  // TODO: internal provider state
-
-  // TODO: grab initial provider state on load
-
   window.addEventListener("message", (event) => {
     if (
       event.origin === windowOriginAtLoadTime && // we want to recieve msgs only from the in-page script
       event.source === window && // we want to recieve msgs only from the in-page script
       event.data.target === PROVIDER_BRIDGE_TARGET
     ) {
-      // to demonstrate how it works it was necessary. Will remove later
+      // TODO: replace with better logging before v1. Now it's invaluable in debugging.
       // eslint-disable-next-line no-console
       console.log(
         `%c content: inpage > background: ${JSON.stringify(event.data)}`,
@@ -31,7 +29,7 @@ export function connectProviderBridge(): void {
   })
 
   port.onMessage.addListener((data) => {
-    // to demonstrate how it works it was necessary. Will remove later
+    // TODO: replace with better logging before v1. Now it's invaluable in debugging.
     // eslint-disable-next-line no-console
     console.log(
       `%c content: background > inpage: ${JSON.stringify(data)}`,
@@ -50,24 +48,15 @@ export function connectProviderBridge(): void {
   port.postMessage({ request: { method: "tally_getConfig" } })
 }
 
-export async function injectTallyWindowProvider(): Promise<void> {
+export function injectTallyWindowProvider(): void {
   try {
-    const windowProviderSourceResponse = await fetch(
-      browser.runtime.getURL("window-provider.js")
-    )
-    const windowProviderSource = await windowProviderSourceResponse.text()
-
     const container = document.head || document.documentElement
     const scriptTag = document.createElement("script")
     // this makes the script loading blocking which is good for us
     // bc we want to load before anybody has a chance to temper w/ the window obj
     scriptTag.setAttribute("async", "false")
-    // TODO: put env flag here so only dev env has sourcemap
-    scriptTag.textContent = windowProviderSource.replace(
-      "window-provider.js.map",
-      browser.runtime.getURL("window-provider.js.map")
-    )
-    // TODO: fill in the provider state for window-provider
+    scriptTag.textContent = INJECTED_WINDOW_PROVIDER_SOURCE
+
     container.insertBefore(scriptTag, container.children[0])
   } catch (e) {
     throw new Error(

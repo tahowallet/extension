@@ -1,15 +1,17 @@
 import React, { ReactElement, useState } from "react"
 import {
   NetworkFeeSettings,
+  updateTransactionData,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
   selectEstimatedFeesPerGas,
   selectTransactionData,
-  updateTransactionOptions,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
-import logger from "@tallyho/tally-background/lib/logger"
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedBanner from "../Shared/SharedBanner"
 
 export default function SignTransactionDetailPanel(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -23,22 +25,10 @@ export default function SignTransactionDetailPanel(): ReactElement {
   if (transactionDetails === undefined) return <></>
 
   const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
-    let updatedGasLimit = transactionDetails.gasLimit
-    try {
-      updatedGasLimit = BigInt(networkSetting.gasLimit)
-    } catch (error) {
-      logger.error(
-        "Tried to set non-integer gas limit",
-        networkSetting.gasLimit,
-        "; keeping original",
-        updatedGasLimit
-      )
-    }
-
     dispatch(
-      updateTransactionOptions({
+      updateTransactionData({
         ...transactionDetails,
-        gasLimit: updatedGasLimit,
+        gasLimit: networkSetting.gasLimit ?? transactionDetails.gasLimit,
       })
     )
 
@@ -58,6 +48,18 @@ export default function SignTransactionDetailPanel(): ReactElement {
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
+      {transactionDetails.annotation?.warnings?.includes(
+        "insufficient-funds"
+      ) && (
+        <span className="detail_item">
+          <SharedBanner icon="notif-attention" iconColor="var(--attention)">
+            <span className="detail_warning">
+              Not enough {transactionDetails.network.baseAsset.symbol} for
+              network fees
+            </span>
+          </SharedBanner>
+        </span>
+      )}
       <span className="detail_item">
         Estimated network fee
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
@@ -72,6 +74,7 @@ export default function SignTransactionDetailPanel(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 10px;
           }
           .detail_items_wrap {
             display: flex;
@@ -81,6 +84,12 @@ export default function SignTransactionDetailPanel(): ReactElement {
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
+          }
+          .detail_warning {
+            font-size: 16px;
+            line-height: 24px;
+            font-weight: 500;
+            color: var(--attention);
           }
         `}
       </style>

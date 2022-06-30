@@ -1,28 +1,61 @@
+import {
+  ARBITRUM_ONE,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "@tallyho/tally-background/constants"
+import {
+  SUPPORT_ARBITRUM,
+  SUPPORT_OPTIMISM,
+  SUPPORT_POLYGON,
+} from "@tallyho/tally-background/features"
+import { sameNetwork } from "@tallyho/tally-background/networks"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
+import t from "../../utils/i18n"
 
-const networks = [
+const listItemInfo = [
   {
-    name: "Ethereum",
-    info: "Mainnet",
+    network: ETHEREUM,
+    info: t("protocolMainnet"),
     width: 18,
     height: 29,
   },
-  {
-    name: "Arbitrum",
-    info: "L2 scaling solution",
-    width: 23.2,
-    height: 26,
-  },
-  {
-    name: "Optimism",
-    info: "L2 scaling solution",
-    width: 24,
-    height: 24,
-  },
+  ...(SUPPORT_POLYGON
+    ? [
+        {
+          network: POLYGON,
+          info: t("protocolL2"),
+          width: 24,
+          height: 24,
+        },
+      ]
+    : []),
+  ...(SUPPORT_ARBITRUM
+    ? [
+        {
+          network: ARBITRUM_ONE,
+          info: t("protocolL2"),
+          width: 23.2,
+          height: 26,
+        },
+      ]
+    : []),
+  ...(SUPPORT_OPTIMISM
+    ? [
+        {
+          network: OPTIMISM,
+          info: t("protocolL2"),
+          width: 24,
+          height: 24,
+        },
+      ]
+    : []),
   // {
   //   name: "Binance Smart Chain",
-  //   info: "Ethereum-compatible blockchain",
+  //   info: t("protocolCompatibleChain"),
   //   width: 24,
   //   height: 24,
   // },
@@ -34,29 +67,29 @@ const networks = [
   // },
 ]
 
-export default function TopMenuProtocolList(): ReactElement {
+interface TopMenuProtocolListProps {
+  onProtocolChange: () => void
+}
+
+export default function TopMenuProtocolList({
+  onProtocolChange,
+}: TopMenuProtocolListProps): ReactElement {
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {networks.map((network, index) => (
+        {listItemInfo.map((info) => (
           <TopMenuProtocolListItem
-            isSelected={index === 0}
-            key={network.name}
-            name={network.name}
-            info={network.info}
-            width={network.width}
-            height={network.height}
+            isSelected={sameNetwork(currentNetwork, info.network)}
+            key={info.network.name}
+            network={info.network}
+            height={info.height}
+            width={info.width}
+            info={info.info}
+            onSelect={onProtocolChange}
           />
         ))}
-        {/* <li className="divider">
-          <div className="divider_label">Testnet</div>
-          <div className="divider_line" />
-        </li>
-        {Array(3)
-          .fill("")
-          .map((_, index) => (
-            <TopMenuProtocolListItem key={index.toString()} />
-          ))} */}
       </ul>
       <style jsx>
         {`

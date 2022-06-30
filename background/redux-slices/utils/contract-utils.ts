@@ -1,7 +1,7 @@
-import { Web3Provider } from "@ethersproject/providers"
 import TallyWindowProvider from "@tallyho/window-provider"
 import { Contract, ethers, ContractInterface } from "ethers"
 import Emittery from "emittery"
+import TallyWeb3Provider from "../../tally-provider"
 
 type InternalProviderPortEvents = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +19,7 @@ export const internalProviderPort = {
     this.listeners.push(listener)
   },
   removeEventListener(toRemove: (message: any) => unknown): void {
-    this.listeners.filter((listener) => listener !== toRemove)
+    this.listeners = this.listeners.filter((listener) => listener !== toRemove)
   },
   origin: window.location.origin,
   postMessage(message: any): void {
@@ -33,8 +33,8 @@ export const internalProviderPort = {
 
 export const internalProvider = new TallyWindowProvider(internalProviderPort)
 
-export function getProvider(this: unknown): Web3Provider {
-  return new Web3Provider(internalProvider)
+export function getProvider(this: unknown): TallyWeb3Provider {
+  return new TallyWeb3Provider(internalProvider)
 }
 
 export const getContract = async (
@@ -51,4 +51,10 @@ export const getSignerAddress = async (): Promise<string> => {
   const signer = provider.getSigner()
   const signerAddress = await signer.getAddress()
   return signerAddress
+}
+
+export const getCurrentTimestamp = async (): Promise<number> => {
+  const provider = getProvider()
+  const { timestamp } = await provider.getBlock(provider.getBlockNumber())
+  return timestamp
 }

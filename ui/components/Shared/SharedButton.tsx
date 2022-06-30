@@ -16,18 +16,90 @@ interface Props {
     | "tertiaryGray"
     | "deemphasizedWhite"
     | "warning"
+    | "unstyled"
+    | "twitter"
   size: "small" | "medium" | "large"
-  icon?: string
-  iconSize?: "small" | "medium" | "large" | "secondaryMedium"
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick: boolean
+  isLoading: boolean
   isFormSubmit: boolean
 }
 
-export default function SharedButton(props: Props): ReactElement {
+interface PropsWithMediumIcon extends Props {
+  iconMedium?:
+    | "connected"
+    | "continue"
+    | "copy"
+    | "dark"
+    | "dashboard"
+    | "developer"
+    | "disconnect"
+    | "earn"
+    | "export"
+    | "eye-off"
+    | "eye-on"
+    | "feedback"
+    | "gift"
+    | "import"
+    | "info"
+    | "light"
+    | "list"
+    | "lock"
+    | "menu"
+    | "new-tab"
+    | "notif-accouncement"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "search"
+    | "swap"
+    | "switch"
+    | "wallet"
+    | "discord"
+    | "github"
+  iconSmall?: never
+}
+
+interface PropsWithSmallIcon extends Props {
+  iconSmall?:
+    | "add"
+    | "arrow-right"
+    | "back"
+    | "close"
+    | "continue"
+    | "copy"
+    | "discord"
+    | "download"
+    | "dropdown"
+    | "edit"
+    | "garbage"
+    | "lock"
+    | "mark-read"
+    | "new-tab"
+    | "notif-announ"
+    | "notif-attention"
+    | "notif-correct"
+    | "notif-wrong"
+    | "notification"
+    | "receive"
+    | "send"
+    | "settings"
+    | "swap"
+  iconMedium?: never
+}
+
+export default function SharedButton(
+  props:
+    | (Props & {
+        iconMedium?: never
+        iconSmall?: never
+      })
+    | PropsWithMediumIcon
+    | PropsWithSmallIcon
+): ReactElement {
   const {
     id,
     children,
@@ -35,11 +107,12 @@ export default function SharedButton(props: Props): ReactElement {
     size,
     onClick,
     isDisabled,
-    icon,
-    iconSize,
+    iconSmall,
+    iconMedium,
     iconPosition,
     linkTo,
     showLoadingOnClick,
+    isLoading,
     isFormSubmit,
   } = props
 
@@ -67,13 +140,14 @@ export default function SharedButton(props: Props): ReactElement {
     }
   }
 
-  const isShowingLoadingSpinner = isClicked && showLoadingOnClick
+  const isShowingLoadingSpinner = isLoading || (isClicked && showLoadingOnClick)
 
   return (
     <button
       id={id}
       type={isFormSubmit ? "submit" : "button"}
       className={classNames(
+        type !== "unstyled" && "button",
         { large: size === "large" },
         { small: size === "small" },
         { secondary: type === "secondary" },
@@ -83,7 +157,8 @@ export default function SharedButton(props: Props): ReactElement {
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { deemphasized_white: type === "deemphasizedWhite" },
-        { warning: type === "warning" }
+        { warning: type === "warning" },
+        { twitter: type === "twitter" }
       )}
       onClick={handleClick}
     >
@@ -99,12 +174,11 @@ export default function SharedButton(props: Props): ReactElement {
         })}
       >
         {children}
-        {icon ? (
+        {iconMedium || iconSmall || type === "twitter" ? (
           <span
             className={classNames(
               { icon_button: true },
-              { icon_large: iconSize === "large" },
-              { icon_secondary_medium: iconSize === "secondaryMedium" }
+              { icon_medium: iconMedium }
             )}
           />
         ) : null}
@@ -112,14 +186,14 @@ export default function SharedButton(props: Props): ReactElement {
 
       <style jsx>
         {`
-          button {
+          .button {
             height: 40px;
             border-radius: 4px;
             background-color: var(--trophy-gold);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            color: #ffffff;
+            color: var(--hunter-green);
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.48px;
@@ -127,18 +201,18 @@ export default function SharedButton(props: Props): ReactElement {
             text-align: center;
             padding: 0 17px;
           }
-          button:hover {
+          .button:hover {
             background-color: var(--gold-80);
             color: var(--green-95);
           }
-          button:hover .icon_button {
+          .button:hover .icon_button {
             background-color: var(--green-95);
           }
-          button:active {
+          .button:active {
             background-color: var(--trophy-gold);
             color: var(--green-120);
           }
-          button:active .icon_button {
+          .button:active .icon_button {
             background-color: var(--green-120);
           }
           .button_content {
@@ -146,12 +220,12 @@ export default function SharedButton(props: Props): ReactElement {
             align-items: center;
           }
           .icon_button {
-            mask-image: url("./images/${icon}@2x.png");
+            mask-image: url("./images/icons/s/${iconSmall}.svg");
             mask-size: cover;
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             margin-left: 9px;
-            background-color: #ffffff;
+            background-color: var(--hunter-green);
             display: inline-block;
             margin-top: -1px;
           }
@@ -165,7 +239,9 @@ export default function SharedButton(props: Props): ReactElement {
             height: 16px;
             margin-left: 4px;
           }
-          .icon_large {
+          .icon_medium {
+            mask-image: url("./images/icons/m/${iconMedium}.svg");
+            mask-size: cover;
             width: 24px;
             height: 24px;
             margin-left: 10px;
@@ -184,6 +260,10 @@ export default function SharedButton(props: Props): ReactElement {
           }
           .secondary:active {
             border-color: var(--trophy-gold);
+          }
+          .primaryGreen {
+            color: var(--hunter-green);
+            background-color: var(--trophy-gold);
           }
           .disabled {
             background-color: var(--green-60);
@@ -231,6 +311,19 @@ export default function SharedButton(props: Props): ReactElement {
           .tertiary:active .icon_button {
             background-color: var(--gold-80);
           }
+          .twitter {
+            background-color: #3a90e9;
+            color: #fff;
+          }
+          .twitter:hover {
+            color: #fff;
+            background-color: #5cacff;
+          }
+          .twitter .icon_button,
+          .twitter:hover .icon_button {
+            mask-image: url("./images/twitter.svg");
+            background-color: #fff;
+          }
           .white {
             color: #ffffff;
             font-weight: 500;
@@ -275,10 +368,7 @@ export default function SharedButton(props: Props): ReactElement {
             height: 32px;
             font-size: 16px;
           }
-          .primaryGreen {
-            color: var(--hunter-green);
-            background-color: var(--trophy-gold);
-          }
+
           .warning {
             background-color: var(--attention);
           }
@@ -299,6 +389,9 @@ export default function SharedButton(props: Props): ReactElement {
             opacity: 0;
             position: absolute;
           }
+          .unstyled {
+            unset: all;
+          }
         `}
       </style>
     </button>
@@ -306,11 +399,10 @@ export default function SharedButton(props: Props): ReactElement {
 }
 
 SharedButton.defaultProps = {
-  icon: null,
   isDisabled: false,
-  iconSize: "medium",
   iconPosition: "right",
   linkTo: null,
   showLoadingOnClick: false,
+  isLoading: false,
   isFormSubmit: false,
 }

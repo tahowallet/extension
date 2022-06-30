@@ -1,8 +1,11 @@
 import React, { useCallback, ReactElement } from "react"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { POLYGON } from "@tallyho/tally-background/constants"
 import SharedButton from "../Shared/SharedButton"
+import SharedAddress from "../Shared/SharedAddress"
+import { useBackgroundSelector } from "../../hooks"
 
 interface DetailRowItemProps {
   label: string
@@ -53,15 +56,16 @@ function DetailRowItem(props: DetailRowItemProps): ReactElement {
 interface DestinationCardProps {
   label: string
   address: string
+  name?: string | undefined
 }
 
 function DestinationCard(props: DestinationCardProps): ReactElement {
-  const { label, address } = props
+  const { label, address, name } = props
 
   return (
     <div className="card_wrap">
       <div className="sub_info from">{label}:</div>
-      {truncateAddress(address)}
+      <SharedAddress address={address} name={name} alwaysShowAddress />
       <div className="sub_info name" />
       <style jsx>
         {`
@@ -108,13 +112,25 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem } = props
 
+  const network = useBackgroundSelector(selectCurrentNetwork)
+
   const openExplorer = useCallback(() => {
     window
-      .open(`https://etherscan.io/tx/${activityItem.hash}`, "_blank")
+      .open(
+        `https://${
+          network.chainID === POLYGON.chainID
+            ? "polygonscan.com"
+            : "etherscan.io"
+        }/tx/${activityItem.hash}`,
+        "_blank"
+      )
       ?.focus()
-  }, [activityItem?.hash])
+  }, [activityItem?.hash, network.chainID])
 
   if (!activityItem) return <></>
+
+  const { address: recipientAddress, name: recipientName } =
+    getRecipient(activityItem)
 
   return (
     <div className="wrap standard_width center_horizontal">
@@ -123,11 +139,10 @@ export default function WalletActivityDetails(
           <SharedButton
             type="tertiary"
             size="medium"
-            icon="external"
-            iconSize="large"
+            iconMedium="new-tab"
             onClick={openExplorer}
           >
-            Etherscan
+            {network.name === "Polygon" ? "Polygonscan" : "Etherscan"}
           </SharedButton>
         </div>
       </div>
@@ -136,7 +151,8 @@ export default function WalletActivityDetails(
         <div className="icon_transfer" />
         <DestinationCard
           label="To"
-          address={getRecipient(activityItem) || "(Contract creation)"}
+          address={recipientAddress || "(Contract creation)"}
+          name={recipientName}
         />
       </div>
       <ul>
@@ -155,8 +171,10 @@ export default function WalletActivityDetails(
         <DetailRowItem
           label="Timestamp"
           value={
-            typeof activityItem.timestamp !== "undefined"
-              ? new Date(activityItem.timestamp * 1000).toLocaleString()
+            typeof activityItem.annotation?.blockTimestamp !== "undefined"
+              ? new Date(
+                  activityItem.annotation?.blockTimestamp * 1000
+                ).toLocaleString()
               : "(Unknown)"
           }
           valueDetail=""

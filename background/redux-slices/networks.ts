@@ -1,10 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit"
-
-import { AnyEVMBlock } from "../networks"
+import { EIP1559Block, AnyEVMBlock } from "../networks"
 
 type NetworkState = {
-  blocks: { [blockHeight: number]: AnyEVMBlock }
   blockHeight: number | null
+  baseFeePerGas: bigint | null
 }
 
 export type NetworksState = {
@@ -17,7 +16,7 @@ export const initialState: NetworksState = {
   evm: {
     "1": {
       blockHeight: null,
-      blocks: {},
+      baseFeePerGas: null,
     },
   },
 }
@@ -26,19 +25,25 @@ const networksSlice = createSlice({
   name: "networks",
   initialState,
   reducers: {
-    blockSeen: (immerState, { payload: block }: { payload: AnyEVMBlock }) => {
+    blockSeen: (
+      immerState,
+      { payload: blockPayload }: { payload: AnyEVMBlock }
+    ) => {
+      const block = blockPayload as EIP1559Block
+
       if (!(block.network.chainID in immerState.evm)) {
         immerState.evm[block.network.chainID] = {
-          blocks: {},
           blockHeight: block.blockHeight,
+          baseFeePerGas: block?.baseFeePerGas ?? null,
         }
       } else if (
         block.blockHeight >
         (immerState.evm[block.network.chainID].blockHeight || 0)
       ) {
         immerState.evm[block.network.chainID].blockHeight = block.blockHeight
+        immerState.evm[block.network.chainID].baseFeePerGas =
+          block?.baseFeePerGas ?? null
       }
-      immerState.evm[block.network.chainID].blocks[block.blockHeight] = block
     },
   },
 })

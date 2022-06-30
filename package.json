@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.12.2",
+  "version": "0.13.11",
   "description": "Tally Ho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -20,7 +20,7 @@
     "generate:validators": "ts-node background/generate-validators.ts",
     "build": "webpack --mode=production",
     "dev": "webpack --mode=development --watch",
-    "devtools": "remotedev --hostname=localhost --port=8000",
+    "devtools": "redux-devtools --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
     "lint:config": "prettier -c '**/*.@(json|yaml|toml)'",
@@ -53,6 +53,7 @@
     "buffer": "^6.0.3",
     "react": "^17.0.2",
     "webext-options-sync": "^2.0.1",
+    "webext-redux": "^2.1.7",
     "webextension-polyfill": "^0.7.0"
   },
   "devDependencies": {

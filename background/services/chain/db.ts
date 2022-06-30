@@ -4,6 +4,8 @@ import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
+import { POLYGON } from "../../constants"
+import { SUPPORT_POLYGON } from "../../features"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -15,11 +17,6 @@ type AccountAssetTransferLookup = {
   retrievedAt: UNIXTime
   startBlock: bigint
   endBlock: bigint
-}
-
-interface Migration {
-  id: number
-  appliedAt: number
 }
 
 // TODO keep track of blocks invalidated by a reorg
@@ -67,8 +64,6 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  private migrations!: Dexie.Table<Migration, number>
-
   constructor() {
     super("tally/chain")
     this.version(1).stores({
@@ -84,6 +79,28 @@ export class ChainDatabase extends Dexie {
       blocks:
         "&[hash+network.name],[network.name+timestamp],hash,network.name,timestamp,parentHash,blockHeight,[blockHeight+network.name]",
     })
+
+    this.version(2).stores({
+      migrations: null,
+    })
+
+    if (SUPPORT_POLYGON) {
+      this.version(3).upgrade((tx) => {
+        tx.table("accountsToTrack")
+          .toArray()
+          .then((accounts) => {
+            const addresses = new Set<string>()
+
+            accounts.forEach(({ address }) => addresses.add(address))
+            ;[...addresses].forEach((address) => {
+              tx.table("accountsToTrack").put({
+                network: POLYGON,
+                address,
+              })
+            })
+          })
+      })
+    }
 
     this.chainTransactions.hook(
       "updating",
@@ -208,6 +225,11 @@ export class ChainDatabase extends Dexie {
     await this.accountsToTrack.put(addressNetwork)
   }
 
+  async removeAccountToTrack(address: string): Promise<void> {
+    // @TODO Network Specific deletion when we support it.
+    await this.accountsToTrack.where("address").equals(address).delete()
+  }
+
   async setAccountsToTrack(
     addressesAndNetworks: Set<AddressOnNetwork>
   ): Promise<void> {
@@ -277,25 +299,10 @@ export class ChainDatabase extends Dexie {
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
   }
-
-  private async migrate() {
-    const numMigrations = await this.migrations.count()
-    if (numMigrations === 0) {
-      await this.transaction("rw", this.migrations, async () => {
-        this.migrations.add({ id: 0, appliedAt: Date.now() })
-        // TODO decide migrations before the initial release
-      })
-    }
-  }
 }
 
 export async function getOrCreateDB(): Promise<ChainDatabase> {
   const db = new ChainDatabase()
-
-  // Call known-private migrate function, effectively treating it as
-  // file-private.
-  // eslint-disable-next-line @typescript-eslint/dot-notation
-  await db["migrate"]()
 
   return db
 }

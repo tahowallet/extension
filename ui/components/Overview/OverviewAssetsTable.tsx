@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import t from "../../utils/i18n"
 
 interface Props {
   assets: CompleteAssetAmount[]
@@ -12,17 +13,34 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
   const { assets, initializationLoadingTimeExpired } = props
   if (!assets) return <></>
 
+  function assetSortCompare(a: CompleteAssetAmount, b: CompleteAssetAmount) {
+    if (a.mainCurrencyAmount !== b.mainCurrencyAmount) {
+      // Any mismatched undefined is ranked below its defined counterpart.
+      if (a.mainCurrencyAmount === undefined) {
+        return 1
+      }
+      if (b.mainCurrencyAmount === undefined) {
+        return -1
+      }
+
+      return b.mainCurrencyAmount - a.mainCurrencyAmount
+    }
+
+    // Fall back on symbol comparison.
+    return a.asset.symbol.localeCompare(b.asset.symbol)
+  }
+
   return (
     <table className="standard_width">
       <thead>
         <tr>
-          <th>Asset</th>
-          <th>Price</th>
-          <th>Balance</th>
+          <th>{t("overviewTableHeaderAsset")}</th>
+          <th>{t("overviewTableHeaderPrice")}</th>
+          <th>{t("overviewTableHeaderBalance")}</th>
         </tr>
       </thead>
       <tbody>
-        {assets.map((asset) => (
+        {assets.sort(assetSortCompare).map((asset) => (
           <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
             <td>
               <div className="asset_descriptor">

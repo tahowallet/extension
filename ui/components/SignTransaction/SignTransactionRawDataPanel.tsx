@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundSelector } from "../../hooks"
 
@@ -22,9 +22,8 @@ export default function SignTransactionRawDataPanel(): ReactElement {
     <div className="raw_data_wrap standard_width_padded">
       <SharedButton
         type="tertiary"
-        icon="copy"
+        iconMedium="copy"
         size="medium"
-        iconSize="secondaryMedium"
         iconPosition="left"
         onClick={copyData}
       >

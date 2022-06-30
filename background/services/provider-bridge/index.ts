@@ -24,10 +24,13 @@ import {
 } from "./authorization"
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
+import { WEBSITE_ORIGIN } from "../../constants/website"
+import { PermissionMap } from "./utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
-  initializeAllowedPages: Record<string, PermissionRequest>
+  initializeAllowedPages: PermissionMap
+  setClaimReferrer: string
 }
 
 /**
@@ -120,7 +123,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    const originPermission = await this.checkPermission(origin)
+    const {
+      network: { chainID },
+    } = await this.preferenceService.getSelectedAccount()
+
+    const originPermission = await this.checkPermission(origin, chainID)
     if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
@@ -128,23 +135,35 @@ export default class ProviderBridgeService extends BaseService<Events> {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
       }
+    } else if (event.request.method === "tally_setClaimReferrer") {
+      const referrer = event.request.params[0]
+      if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
+        logger.warn(`invalid 'setClaimReferrer' request`)
+        return
+      }
+
+      this.emitter.emit("setClaimReferrer", String(referrer))
+
+      response.result = null
     } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
       response.result = await this.routeContentScriptRPCRequest(
         originPermission,
         event.request.method,
-        event.request.params
+        event.request.params,
+        origin
       )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
-      const { address: accountAddress } =
+      const { address: accountAddress, network } =
         await this.preferenceService.getSelectedAccount()
       const permissionRequest: PermissionRequest = {
-        key: `${origin}_${accountAddress}`,
+        key: `${origin}_${accountAddress}_${network.chainID}`,
         origin,
+        chainID: network.chainID,
         faviconUrl,
         title,
         state: "request",
@@ -157,14 +176,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       await blockUntilUserAction
 
-      const persistedPermission = await this.checkPermission(origin)
+      const persistedPermission = await this.checkPermission(
+        origin,
+        network.chainID
+      )
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
         response.result = await this.routeContentScriptRPCRequest(
           persistedPermission,
           "eth_accounts",
-          event.request.params
+          event.request.params,
+          origin
         )
       } else {
         // if user does NOT agree, then reject
@@ -195,13 +218,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async notifyContentScriptsAboutAddressChange(
-    newAddress?: string
-  ): Promise<void> {
+  notifyContentScriptsAboutAddressChange(newAddress?: string): void {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
-      if (await this.checkPermission(origin)) {
+      const {
+        network: { chainID },
+      } = await this.preferenceService.getSelectedAccount()
+      if (await this.checkPermission(origin, chainID)) {
         port.postMessage({
           id: "tallyHo",
           result: {
@@ -246,39 +270,46 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     // FIXME proper error handling if this happens - should not tho
-    if (permission.state !== "deny" || !permission.accountAddress) return
+    if (permission.state !== "deny" || !permission.accountAddress) {
+      return
+    }
 
     const { address } = await this.preferenceService.getSelectedAccount()
 
     // TODO make this multi-network friendly
-    await this.db.deletePermission(permission.origin, address)
+    await this.db.deletePermission(
+      permission.origin,
+      address,
+      permission.chainID
+    )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
       this.#pendingPermissionsRequests[permission.origin]("Time to move on")
       delete this.#pendingPermissionsRequests[permission.origin]
     }
 
-    await this.notifyContentScriptsAboutAddressChange()
+    this.notifyContentScriptsAboutAddressChange()
   }
 
   async checkPermission(
     origin: string,
-    address?: string
+    chainID: string
   ): Promise<PermissionRequest | undefined> {
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
-    const currentAddress = address ?? selectedAddress
+    const currentAddress = selectedAddress
     // TODO make this multi-network friendly
-    return this.db.checkPermission(origin, currentAddress)
+    return this.db.checkPermission(origin, currentAddress, chainID)
   }
 
   async routeSafeRequest(
     method: string,
     params: unknown[],
+    origin: string,
     popupPromise: Promise<browser.Windows.Window>
   ): Promise<unknown> {
     const response = await this.internalEthereumProviderService
-      .routeSafeRPCRequest(method, params)
+      .routeSafeRPCRequest(method, params, origin)
       .finally(async () => {
         // Close the popup once we're done submitting.
         const popup = await popupPromise
@@ -292,7 +323,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeContentScriptRPCRequest(
     enablingPermission: PermissionRequest,
     method: string,
-    params: RPCRequest["params"]
+    params: RPCRequest["params"],
+    origin: string
   ): Promise<unknown> {
     try {
       switch (method) {
@@ -311,15 +343,25 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.signData)
           )
         case "eth_sign":
+          checkPermissionSign(params[0] as HexString, enablingPermission)
+
+          return await this.routeSafeRequest(
+            method,
+            params,
+            origin,
+            showExtensionPopup(AllowedQueryParamPage.personalSignData)
+          )
         case "personal_sign":
           checkPermissionSign(params[1] as HexString, enablingPermission)
 
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "eth_signTransaction":
@@ -332,13 +374,15 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.signTransaction)
           )
 
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
-            params
+            params,
+            origin
           )
         }
       }

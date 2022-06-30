@@ -14,7 +14,7 @@ import {
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
 } from "../../networks"
-import { USE_MAINNET_FORK } from "../../features/features"
+import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
 
 /**

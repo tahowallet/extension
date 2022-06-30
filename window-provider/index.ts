@@ -16,6 +16,10 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
+// TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
+//       so let's do this only on the websites that need this feature
+const impersonateMetamaskWhitelist = ["opensea.io", "bridge.umbria.network"]
+
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
@@ -27,7 +31,18 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isTally = true
 
+  isMetaMask = false
+
   bridgeListeners = new Map()
+
+  providerInfo = {
+    label: "Tally Ho!",
+    injectedNamespace: "tally",
+    iconURL: "TODO",
+    identityFlag: "isTally",
+    checkIdentity: (provider: WalletProvider) =>
+      !!provider && !!provider.isTally,
+  } as const
 
   constructor(public transport: ProviderTransport) {
     super()
@@ -57,22 +72,39 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        if (result.defaultWallet) {
-          // let's set Tally as a default wallet
-          // and bkp any object that maybe using window.ethereum
-          if (window.ethereum) {
-            window.oldEthereum = window.ethereum
+        if (
+          impersonateMetamaskWhitelist.some((host) =>
+            window.location.host.includes(host)
+          )
+        ) {
+          this.isMetaMask = result.defaultWallet
+        }
+
+        if (!result.defaultWallet) {
+          // if tally is NOT set to be default wallet
+          // AND we have other providers that tried to inject into window.ethereum
+          if (window.walletRouter?.providers.length) {
+            // then let's reset window.ethereum to the original value
+            window.walletRouter.switchToPreviousProvider()
           }
 
-          window.ethereum = window.tally
-        } else if (window.oldEthereum) {
-          // let's remove tally as a default wallet
-          // and put back whatever it was there before us
-          window.ethereum = window.oldEthereum
-        } else if (window.ethereum?.isTally) {
-          // we were told not to be a default wallet anymore
-          // so in case if we have `window.ethereum` just remove ourselves
-          window.ethereum = undefined
+          // NOTE: we do not remove the TallyWindowProvider from window.ethereum
+          // if there is nothing else that want's to use it.
+        } else if (window.walletRouter?.currentProvider !== window.tally) {
+          if (
+            !window.walletRouter?.hasProvider(this.providerInfo.checkIdentity)
+          ) {
+            if (!window.tally) {
+              throw new Error(
+                "Expected window.tally to be set but it is not. Tally Ho provider configured incorrectly."
+              )
+            }
+            window.walletRouter?.addProvider(window.tally)
+          }
+
+          window.walletRouter?.setCurrentProvider(
+            this.providerInfo.checkIdentity
+          )
         }
       } else if (isTallyAccountPayload(result)) {
         this.handleAddressChange.bind(this)(result.address)
@@ -83,7 +115,7 @@ export default class TallyWindowProvider extends EventEmitter {
   }
 
   // deprecated EIP-1193 method
-  async enable() {
+  async enable(): Promise<unknown> {
     return this.request({ method: "eth_requestAccounts" })
   }
 
@@ -115,6 +147,23 @@ export default class TallyWindowProvider extends EventEmitter {
     }
 
     return Promise.reject(new Error("Unsupported function parameters"))
+  }
+
+  // deprecated EIP-1193 method
+  // added as some dapps are still using it
+  sendAsync(
+    request: RequestArgument & { id?: number; jsonrpc?: string },
+    callback: (error: unknown, response: unknown) => void
+  ): Promise<unknown> | void {
+    return this.request(request).then(
+      (response) =>
+        callback(null, {
+          result: response,
+          id: request.id,
+          jsonrpc: request.jsonrpc,
+        }),
+      (error) => callback(error, null)
+    )
   }
 
   // Provider-wide counter for requests.
@@ -213,7 +262,7 @@ export default class TallyWindowProvider extends EventEmitter {
     })
   }
 
-  handleAddressChange(address: Array<string>) {
+  handleAddressChange(address: Array<string>): void {
     if (this.selectedAddress !== address[0]) {
       // eslint-disable-next-line prefer-destructuring
       this.selectedAddress = address[0]

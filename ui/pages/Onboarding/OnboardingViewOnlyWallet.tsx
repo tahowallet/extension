@@ -1,54 +1,51 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { isAddress } from "@ethersproject/address"
-import {
-  addAddressNetwork,
-  addAccountByName,
-} from "@tallyho/tally-background/redux-slices/accounts"
-import { ETHEREUM } from "@tallyho/tally-background/constants/networks"
+import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
-import { useBackgroundDispatch } from "../../hooks"
-import SharedInput from "../../components/Shared/SharedInput"
+import { HexString } from "@tallyho/tally-background/types"
+import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
+import SharedAddressInput from "../../components/Shared/SharedAddressInput"
 
 export default function OnboardingViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const [address, setAddress] = useState("")
   const [redirect, setRedirect] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const [addressOnNetwork, setAddressOnNetwork] = useState<
+    AddressOnNetwork | undefined
+  >(undefined)
+
+  const { network } = useBackgroundSelector(selectCurrentAccount)
+
+  const handleNewAddress = useCallback(
+    (value: { address: HexString; name?: string } | undefined) => {
+      if (value === undefined) {
+        setAddressOnNetwork(undefined)
+      } else {
+        setAddressOnNetwork({
+          address: value.address,
+          network,
+        })
+      }
+    },
+    [network]
+  )
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
-    const trimmedAddress = address.trim()
-    if (trimmedAddress.endsWith(".eth")) {
-      const nameNetwork = {
-        name: trimmedAddress,
-        network: ETHEREUM,
-      }
-      await dispatch(addAccountByName(nameNetwork))
-      setRedirect(true)
-    } else if (isAddress(trimmedAddress)) {
-      const addressNetwork = {
-        address: trimmedAddress,
-        network: ETHEREUM,
-      }
-      await dispatch(addAddressNetwork(addressNetwork))
-      dispatch(setNewSelectedAccount(addressNetwork))
-      setRedirect(true)
-    } else {
-      setErrorMessage("Please enter a valid address")
+    if (addressOnNetwork === undefined) {
+      return
     }
-  }, [dispatch, address])
+
+    await dispatch(addAddressNetwork(addressOnNetwork))
+    dispatch(setNewSelectedAccount(addressOnNetwork))
+    setRedirect(true)
+  }, [dispatch, addressOnNetwork])
 
   // Redirect to the home tab once an account is set
   if (redirect) {
     return <Redirect to="/" />
-  }
-
-  const handleInputChange = (value: string): void => {
-    setAddress(value)
-    // Clear error message on input change
-    setErrorMessage("")
   }
 
   return (
@@ -60,7 +57,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       <div className="content">
         <h1 className="serif_header">Explore Tally Ho!</h1>
         <div className="subtitle">
-          Add an Ethereum address or ENS name to view an existing wallet in
+          Add an Ethereum address, ENS or UNS name to view an existing wallet in
           Tally Ho.
         </div>
         <form
@@ -70,17 +67,14 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
           }}
         >
           <div className="input_wrap">
-            <SharedInput
-              label="ETH address or ENS name"
-              onChange={handleInputChange}
-              errorMessage={errorMessage}
-            />
+            <SharedAddressInput onAddressChange={handleNewAddress} />
           </div>
           <SharedButton
             type="primary"
             size="large"
             onClick={handleSubmitViewOnlyAddress}
-            showLoadingOnClick={!!errorMessage}
+            isDisabled={addressOnNetwork === undefined}
+            showLoadingOnClick
             isFormSubmit
           >
             Explore Tally Ho!

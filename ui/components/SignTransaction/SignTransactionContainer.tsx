@@ -1,6 +1,13 @@
+import React, {
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useState,
+  useRef,
+} from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, ReactNode, useState } from "react"
 import SharedButton from "../Shared/SharedButton"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionLedgerActivateBlindSigning from "./SignTransactionLedgerActivateBlindSigning"
 import SignTransactionLedgerBusy from "./SignTransactionLedgerBusy"
@@ -22,7 +29,7 @@ export default function SignTransactionContainer({
   isTransactionSigning,
   isArbitraryDataSigningRequired,
 }: {
-  signerAccountTotal: AccountTotal
+  signerAccountTotal?: AccountTotal
   title: ReactNode
   detailPanel: ReactNode
   reviewPanel: ReactNode
@@ -33,12 +40,14 @@ export default function SignTransactionContainer({
   isTransactionSigning: boolean
   isArbitraryDataSigningRequired: boolean
 }): ReactElement {
-  const { signingMethod } = signerAccountTotal
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
+  const accountSigner = signerAccountTotal?.accountSigner
+  const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
+  const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
-  const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
+  const signingLedgerState = useSigningLedgerState(accountSigner ?? null)
 
-  const isLedgerSigning = signingMethod?.type === "ledger"
+  const isLedgerSigning = accountSigner?.type === "ledger"
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   const isLedgerAvailable = signingLedgerState?.state === "available"
@@ -50,11 +59,60 @@ export default function SignTransactionContainer({
 
   const canLedgerSign = isLedgerAvailable && !mustEnableArbitraryDataSigning
 
+  /*
+    Prevent shenanigans by disabling the sign button for a bit
+    when rendering new sign content or when changing window focus.
+  */
+  const delaySignButtonTimeout = useRef<number | undefined>()
+
+  function clearDelaySignButtonTimeout() {
+    if (typeof delaySignButtonTimeout.current !== "undefined") {
+      clearTimeout(delaySignButtonTimeout.current)
+      delaySignButtonTimeout.current = undefined
+    }
+  }
+
+  useEffect(() => {
+    const increaseFocusChangeNonce = () => {
+      setFocusChangeNonce((x) => x + 1)
+    }
+    window.addEventListener("focus", increaseFocusChangeNonce)
+    window.addEventListener("blur", increaseFocusChangeNonce)
+
+    return () => {
+      window.removeEventListener("focus", increaseFocusChangeNonce)
+      window.removeEventListener("blur", increaseFocusChangeNonce)
+    }
+  }, [])
+
+  // Runs on updates
+  useEffect(() => {
+    clearDelaySignButtonTimeout()
+
+    if (document.hasFocus()) {
+      delaySignButtonTimeout.current = window.setTimeout(() => {
+        setIsOnDelayToSign(false)
+        // Random delay between 0.5 and 2 seconds
+      }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
+    } else {
+      setIsOnDelayToSign(true)
+    }
+  }, [reviewPanel, focusChangeNonce])
+
   return (
     <section>
-      <SignTransactionNetworkAccountInfoTopBar
-        accountTotal={signerAccountTotal}
-      />
+      <SharedSkeletonLoader
+        isLoaded={!!signerAccountTotal}
+        height={32}
+        width={120}
+        customStyles="margin: 15px 0 15px 220px;"
+      >
+        {!!signerAccountTotal && (
+          <SignTransactionNetworkAccountInfoTopBar
+            accountTotal={signerAccountTotal}
+          />
+        )}
+      </SharedSkeletonLoader>
       <h1 className="serif_header title">
         {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
       </h1>
@@ -70,21 +128,14 @@ export default function SignTransactionContainer({
         <>
           {extraPanel}
           <div className="footer_actions">
-            <SharedButton
-              iconSize="large"
-              size="large"
-              type="secondary"
-              onClick={handleReject}
-            >
+            <SharedButton size="large" type="secondary" onClick={handleReject}>
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
-            {signerAccountTotal.signingMethod &&
-              (signerAccountTotal.signingMethod.type === "ledger" &&
-              !canLedgerSign ? (
+            {accountSigner &&
+              (isLedgerSigning && !canLedgerSign ? (
                 <SharedButton
                   type="primaryGreen"
-                  iconSize="large"
                   size="large"
                   onClick={() => {
                     setSlideUpOpen(true)
@@ -95,15 +146,15 @@ export default function SignTransactionContainer({
               ) : (
                 <SharedButton
                   type="primaryGreen"
-                  iconSize="large"
                   size="large"
                   onClick={handleConfirm}
                   showLoadingOnClick
+                  isDisabled={isOnDelayToSign}
                 >
                   {confirmButtonLabel}
                 </SharedButton>
               ))}
-            {!signerAccountTotal.signingMethod && (
+            {accountSigner === null && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>

@@ -1,18 +1,14 @@
-import React, { ReactElement, useState } from "react"
-import { isAddress } from "@ethersproject/address"
+import React, { ReactElement, useCallback, useState } from "react"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  broadcastOnSign,
   NetworkFeeSettings,
-  selectEstimatedFeesPerGas,
   setFeeType,
-  updateTransactionOptions,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { utils } from "ethers"
+import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   FungibleAsset,
   isFungibleAssetAmount,
@@ -22,29 +18,48 @@ import {
   convertFixedPointNumber,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import {
+  selectAssetPricePoint,
+  transferAsset,
+} from "@tallyho/tally-background/redux-slices/assets"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { useHistory, useLocation } from "react-router-dom"
+import classNames from "classnames"
 import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
+import {
+  useAddressOrNameValidation,
+  useBackgroundDispatch,
+  useBackgroundSelector,
+} from "../hooks"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
+import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import t from "../utils/i18n"
 
 export default function Send(): ReactElement {
-  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(ETH)
-  const [destinationAddress, setDestinationAddress] = useState("")
+  const location = useLocation<FungibleAsset>()
+  const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
+    location.state ?? ETH
+  )
+  const [destinationAddress, setDestinationAddress] = useState<
+    string | undefined
+  >(undefined)
   const [amount, setAmount] = useState("")
-  const [gasLimit, setGasLimit] = useState("")
+  const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)
+  const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
+    useState(false)
   const [hasError, setHasError] = useState(false)
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
 
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const history = useHistory()
 
   const dispatch = useBackgroundDispatch()
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
@@ -86,17 +101,38 @@ export default function Send(): ReactElement {
 
   const assetAmount = assetAmountFromForm()
 
-  const sendTransactionRequest = async () => {
-    dispatch(broadcastOnSign(true))
-    const transaction = {
-      from: currentAccount.address,
-      to: destinationAddress,
-      // eslint-disable-next-line no-underscore-dangle
-      value: BigInt(utils.parseEther(amount?.toString())._hex),
-      gasLimit: BigInt(gasLimit),
+  const sendTransactionRequest = useCallback(async () => {
+    if (assetAmount === undefined || destinationAddress === undefined) {
+      return
     }
-    return dispatch(updateTransactionOptions(transaction))
-  }
+
+    try {
+      setIsSendingTransactionRequest(true)
+
+      await dispatch(
+        transferAsset({
+          fromAddressNetwork: currentAccount,
+          toAddressNetwork: {
+            address: destinationAddress,
+            network: currentAccount.network,
+          },
+          assetAmount,
+          gasLimit,
+        })
+      )
+    } finally {
+      setIsSendingTransactionRequest(false)
+    }
+
+    history.push("/singleAsset", assetAmount.asset)
+  }, [
+    assetAmount,
+    currentAccount,
+    destinationAddress,
+    dispatch,
+    gasLimit,
+    history,
+  ])
 
   const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
     setGasLimit(networkSetting.gasLimit)
@@ -104,20 +140,28 @@ export default function Send(): ReactElement {
     setNetworkSettingsModalOpen(false)
   }
 
+  const {
+    errorMessage: addressErrorMessage,
+    isValidating: addressIsValidating,
+    handleInputChange: handleAddressChange,
+  } = useAddressOrNameValidation((value) =>
+    setDestinationAddress(value?.address)
+  )
+
   return (
     <>
       <div className="standard_width">
         <div className="back_button_wrap">
-          <SharedBackButton />
+          <SharedBackButton path="/" />
         </div>
         <h1 className="header">
           <span className="icon_activity_send_medium" />
-          <div className="title">Send Asset</div>
+          <div className="title">{t("walletSendAsset")}</div>
         </h1>
         <div className="form">
           <div className="form_input">
             <SharedAssetInput
-              label="Asset / Amount"
+              label={t("walletAssetAmount")}
               onAssetSelect={setSelectedAsset}
               assetsAndAmounts={fungibleAssetAmounts}
               onAmountChange={(value, errorMessage) => {
@@ -130,21 +174,35 @@ export default function Send(): ReactElement {
               }}
               selectedAsset={selectedAsset}
               amount={amount}
-              disableDropdown
             />
             <div className="value">
               ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
             </div>
           </div>
           <div className="form_input send_to_field">
-            <label htmlFor="send_address">Send To:</label>
+            <label htmlFor="send_address">{t("walletSendTo")}</label>
             <input
               id="send_address"
               type="text"
               placeholder="0x..."
               spellCheck={false}
-              onChange={(event) => setDestinationAddress(event.target.value)}
+              onChange={(event) => handleAddressChange(event.target.value)}
+              className={classNames({
+                error: addressErrorMessage !== undefined,
+              })}
             />
+            {addressIsValidating ? (
+              <p className="validating">
+                <SharedLoadingSpinner />
+              </p>
+            ) : (
+              <></>
+            )}
+            {addressErrorMessage !== undefined ? (
+              <p className="error">{addressErrorMessage}</p>
+            ) : (
+              <></>
+            )}
           </div>
           <SharedSlideUpMenu
             size="custom"
@@ -158,33 +216,25 @@ export default function Send(): ReactElement {
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
-            <p>Estimated network fee</p>
+            <p>{t("walletEstimatedFee")}</p>
             <FeeSettingsButton
               onClick={() => setNetworkSettingsModalOpen(true)}
             />
           </div>
-          <div className="divider" />
           <div className="send_footer standard_width_padded">
             <SharedButton
               type="primary"
               size="large"
               isDisabled={
                 Number(amount) === 0 ||
-                !isAddress(destinationAddress) ||
+                destinationAddress === undefined ||
                 hasError
               }
-              linkTo={{
-                pathname: "/sign-transaction",
-                state: {
-                  redirectTo: {
-                    path: "/singleAsset",
-                    state: { symbol: selectedAsset.symbol },
-                  },
-                },
-              }}
               onClick={sendTransactionRequest}
+              isFormSubmit
+              isLoading={isSendingTransactionRequest}
             >
-              Send
+              {t("walletSendButton")}
             </SharedButton>
           </div>
         </div>
@@ -219,16 +269,13 @@ export default function Send(): ReactElement {
             margin-top: 30px;
           }
           .form_input {
-            margin-bottom: 22px;
+            margin-bottom: 14px;
           }
-
+          .form {
+            margin-top: 20px;
+          }
           .label_right {
             margin-right: 6px;
-          }
-          .divider {
-            width: 384px;
-            border-bottom: 1px solid #000000;
-            margin-left: -16px;
           }
           .label {
             margin-bottom: 6px;
@@ -267,6 +314,26 @@ export default function Send(): ReactElement {
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 0px 16px;
+          }
+          input#send_address::placeholder {
+            color: var(--green-40);
+          }
+          input#send_address ~ .error {
+            color: var(--error);
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 20px;
+            align-self: flex-end;
+            text-align: end;
+            margin-top: -25px;
+            margin-right: 15px;
+            margin-bottom: 5px;
+          }
+          input#send_address ~ .validating {
+            margin-top: -50px;
+            margin-bottom: 22px;
+            margin-right: 15px;
+            align-self: flex-end;
           }
           .send_footer {
             display: flex;

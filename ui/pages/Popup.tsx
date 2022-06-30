@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useRef, useEffect } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
@@ -12,9 +12,13 @@ import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
-import { PERSIST_UI_LOCATION } from "@tallyho/tally-background/features/features"
 import { runtime } from "webextension-polyfill"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
+import {
+  selectCurrentAccountSigner,
+  selectKeyringStatus,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -39,7 +43,11 @@ const pagePreferences = Object.fromEntries(
   ])
 )
 
-function transformLocation(inputLocation: Location): Location {
+function transformLocation(
+  inputLocation: Location,
+  isTransactionPendingSignature: boolean,
+  needsKeyringUnlock: boolean
+): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
   const params = new URLSearchParams(window.location.search)
@@ -51,6 +59,10 @@ function transformLocation(inputLocation: Location): Location {
     !inputLocation.pathname.includes("/keyring/")
   ) {
     pathname = maybePage
+  }
+
+  if (isTransactionPendingSignature) {
+    pathname = needsKeyringUnlock ? "/keyring/unlock" : "/sign-transaction"
   }
 
   return {
@@ -76,40 +88,38 @@ export function Main(): ReactElement {
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
   const [showTabBar, setShowTabBar] = useState(true)
-  const renderCount = useRef(0)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries
   )
 
+  // See comment above call of saveHistoryEntries
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
-    const isNotOnKeyringRelatedPage =
-      routeHistoryEntities[routeHistoryEntities.length - 1].pathname !==
-        "/sign-transaction" &&
-      !routeHistoryEntities[routeHistoryEntities.length - 1].pathname.includes(
-        "/keyring/"
-      )
+    const entries = routeHistoryEntities
+      .reduce((agg: Partial<Location>[], entity) => {
+        const { ...entityCopy } = entity as Partial<Location>
+        delete entityCopy.hash
+        delete entityCopy.key
+        agg.push(entityCopy)
+        return agg
+      }, [])
+      .reverse()
 
-    // Initial extension load takes two renders because of setting
-    // animation control states. `initialEntries` needs to be a reversed
-    // version of route history entities. Without avoiding the initial load,
-    // entries will keep reversing.
-    if (renderCount.current > 1 && isNotOnKeyringRelatedPage) {
-      const entries = routeHistoryEntities
-        .reduce((agg: Partial<Location>[], entity) => {
-          const { ...entityCopy } = entity as Partial<Location>
-          delete entityCopy.hash
-          delete entityCopy.key
-          agg.push(entityCopy)
-          return agg
-        }, [])
-        .reverse()
-
-      if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
-        dispatch(setRouteHistoryEntries(entries))
-      }
+    if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
+      dispatch(setRouteHistoryEntries(entries))
     }
   }
+
+  const isTransactionPendingSignature = useBackgroundSelector(
+    selectIsTransactionPendingSignature
+  )
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+
+  const needsKeyringUnlock =
+    isTransactionPendingSignature &&
+    currentAccountSigner?.type === "keyring" &&
+    keyringStatus !== "unlocked"
 
   useConnectPopupMonitor()
 
@@ -118,23 +128,32 @@ export function Main(): ReactElement {
       <div className="top_menu_wrap_decoy">
         <TopMenu />
       </div>
-      <div className="community_edition_label">Community Edition</div>
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {
-            const transformedLocation = transformLocation(routeProps.location)
+            const transformedLocation = transformLocation(
+              routeProps.location,
+              isTransactionPendingSignature,
+              needsKeyringUnlock
+            )
 
             const normalizedPathname =
               transformedLocation.pathname !== "/wallet"
                 ? transformedLocation.pathname
                 : "/"
 
+            // `initialEntries` needs to be a reversed version of route history
+            // entities. Without avoiding the initial load, entries will keep reversing.
+            // Given that restoring our route history is a "POP" `history.action`,
+            // by specifying "PUSH" we know that the most recent navigation change is by
+            // the user or explicitly added. That said, we can still certainly "POP" via
+            // history.goBack(). This case is not yet accounted for.
             if (
-              PERSIST_UI_LOCATION &&
-              pagePreferences[normalizedPathname].persistOnClose
+              pagePreferences[normalizedPathname].persistOnClose &&
+              routeProps.history.action === "PUSH"
             ) {
               // @ts-expect-error TODO: fix the typing
-              saveHistoryEntries(routeProps?.history?.entries)
+              saveHistoryEntries(routeProps.history.entries)
             }
 
             setAnimationConditions(
@@ -144,7 +163,6 @@ export function Main(): ReactElement {
               setIsDirectionRight
             )
             setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
-            renderCount.current += 1
 
             return (
               <TransitionGroup>
@@ -170,12 +188,12 @@ export function Main(): ReactElement {
                     {/* @ts-expect-error TODO: fix the typing when the feature works */}
                     <Switch location={transformedLocation}>
                       {pageList.map(
-                        ({ path, Component, hasTabBar, hasTopBar }) => {
+                        ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (
                             <Route path={path} key={path}>
                               <CorePage
-                                hasTabBar={hasTabBar}
                                 hasTopBar={hasTopBar}
+                                hasTabBar={hasTabBar}
                               >
                                 <ErrorBoundary
                                   FallbackComponent={ErrorFallback}
@@ -224,21 +242,6 @@ export function Main(): ReactElement {
             }
             .hide {
               opacity: 0;
-            }
-            .community_edition_label {
-              width: 140px;
-              height: 20px;
-              left: 24px;
-              position: fixed;
-              background-color: var(--gold-60);
-              color: var(--hunter-green);
-              font-weight: 500;
-              text-align: center;
-              border-bottom-left-radius: 4px;
-              border-bottom-right-radius: 4px;
-              font-size: 14px;
-              z-index: 1000;
-              top: 0px;
             }
           `}
         </style>

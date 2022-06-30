@@ -150,8 +150,7 @@ function LedgerAccountList({
                       <SharedButton
                         type="tertiaryGray"
                         size="medium"
-                        icon="external"
-                        iconSize="secondaryMedium"
+                        iconMedium="new-tab"
                         onClick={() => {
                           window
                             .open(

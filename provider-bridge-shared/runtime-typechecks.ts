@@ -7,7 +7,7 @@ import {
   TallyAccountPayload,
 } from "./types"
 
-export function getType(arg: unknown) {
+export function getType(arg: unknown): string {
   return Object.prototype.toString.call(arg).slice("[object ".length, -1)
 }
 

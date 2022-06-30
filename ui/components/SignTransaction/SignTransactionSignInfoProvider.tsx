@@ -1,6 +1,5 @@
 import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
 import { USD } from "@tallyho/tally-background/constants"
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import { selectCurrentAddressNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -10,6 +9,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
+import SharedAddress from "../Shared/SharedAddress"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
@@ -54,23 +54,15 @@ export default function SignTransactionSignInfoProvider({
       infoBlock={
         <div className="sign_block">
           <div className="container">
-            {typeof transactionDetails.to === "undefined" ? (
-              <>
-                <div className="label">Send to</div>
-                <div className="send_to">Contract creation</div>
-              </>
-            ) : (
-              <>
-                <div className="label">Send to</div>
-                {annotation?.type === "contract-interaction" &&
-                annotation.contractName ? (
-                  <div className="send_to_name">{annotation.contractName}</div>
-                ) : null}
-                <div className="send_to">
-                  {truncateAddress(transactionDetails.to)}
-                </div>
-              </>
-            )}
+            <div className="label">Send to</div>
+            <SharedAddress
+              address={transactionDetails.to ?? ""}
+              name={
+                annotation !== undefined && "contractName" in annotation
+                  ? annotation.contractName
+                  : undefined
+              }
+            />
           </div>
           <div className="divider" />
           <div className="container">
@@ -116,9 +108,6 @@ export default function SignTransactionSignInfoProvider({
                 margin: 20px 0;
                 flex-direction: column;
                 align-items: center;
-              }
-              .send_to {
-                font-size: 16px;
               }
               .main_currency_value {
                 color: var(--green-40);

@@ -2,22 +2,40 @@ import React, { ReactElement } from "react"
 import classNames from "classnames"
 
 export default function SharedSkeletonLoader(props: {
-  width: number
-  height: number
+  width?: number
+  height?: number
+  borderRadius?: number
+  children?: React.ReactNode
+  isLoaded?: boolean
+  customStyles?: string
 }): ReactElement {
-  const { width, height } = props
+  const { width, height, borderRadius, isLoaded, customStyles, children } =
+    props
+
+  if (isLoaded) return <>{children}</>
 
   return (
     <div className={classNames("skeleton")}>
       <style jsx>
         {`
           .skeleton {
-            width: ${width};
-            height: ${height};
-            background: var(--green-60);
-            margin: 0 auto;
-            border-radius: 8px;
+            width: ${width ? `${width}px` : "100%"};
+            height: ${height}px;
+            background-color: var(--hunter-green);
+            border-radius: ${borderRadius}px;
+            animation: pulse 1.1s infinite;
+            ${customStyles}
           }
+          @keyframes pulse {
+            0% {
+              background-color: var(--hunter-green);
+            }
+            50% {
+              background-color: var(--green-95);
+            }
+            100% {
+              background-color: var(--hunter-green);
+            }
         `}
       </style>
     </div>
@@ -25,6 +43,8 @@ export default function SharedSkeletonLoader(props: {
 }
 
 SharedSkeletonLoader.defaultProps = {
-  width: 100,
   height: 24,
+  borderRadius: 8,
+  isLoaded: false,
+  customStyles: "",
 }

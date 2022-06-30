@@ -1,6 +1,10 @@
 import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
-import { AnyEVMTransaction, EIP1559TransactionRequest } from "../../networks"
+import {
+  AnyEVMTransaction,
+  EIP1559TransactionRequest,
+  EVMNetwork,
+} from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
@@ -22,7 +26,21 @@ export type BaseTransactionAnnotation = {
    * consumers can more easily upsert annotations.
    */
   timestamp: UNIXTime
+  /**
+   * The timestamp of the transaction's associated block if available.
+   */
+  blockTimestamp: UNIXTime | undefined
+  /*
+   *
+   */
+  warnings?: Warning[]
 }
+
+export type Warning =
+  | "send-to-token"
+  | "send-to-contract"
+  | "approve-eoa"
+  | "insufficient-funds"
 
 export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
@@ -44,6 +62,7 @@ export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipientAddress: HexString
+  recipientName: HexString | undefined
   senderAddress: HexString
 }
 
@@ -74,6 +93,7 @@ export type EnrichedEVMTransaction = AnyEVMTransaction & {
 export type EnrichedEVMTransactionSignatureRequest =
   (Partial<EIP1559TransactionRequest> & { from: string }) & {
     annotation?: TransactionAnnotation
+    network: EVMNetwork
   }
 
 export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {

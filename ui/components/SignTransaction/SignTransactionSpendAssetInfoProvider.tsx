@@ -7,11 +7,8 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import {
-  isMaxUint256,
-  truncateAddress,
-} from "@tallyho/tally-background/lib/utils"
-import { updateTransactionOptions } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { isMaxUint256 } from "@tallyho/tally-background/lib/utils"
+import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
@@ -30,6 +27,7 @@ import TransactionDetailItem from "../TransactionDetail/TransactionDetailItem"
 import SignTransactionBaseInfoProvider, {
   SignTransactionInfoProviderProps,
 } from "./SignTransactionInfoBaseProvider"
+import SharedAddress from "../Shared/SharedAddress"
 
 export default function SignTransactionSpendAssetInfoProvider({
   transactionDetails,
@@ -51,7 +49,7 @@ export default function SignTransactionSpendAssetInfoProvider({
 
   const approvalLimitDisplayValue = `${
     approvalLimitString ?? "Infinite"
-  } ${asset?.symbol.toUpperCase()}`
+  } ${asset.symbol.toUpperCase()}`
 
   const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
     null
@@ -101,7 +99,7 @@ export default function SignTransactionSpendAssetInfoProvider({
       [spenderAddress, hexlify(bigintAmount)]
     )
     dispatch(
-      updateTransactionOptions({
+      updateTransactionData({
         ...transactionDetails,
         input: updatedInput,
       })
@@ -117,18 +115,32 @@ export default function SignTransactionSpendAssetInfoProvider({
           <div className="spend_destination_icons">
             <div className="site_icon" />
             <div className="asset_icon_wrap">
-              <SharedAssetIcon size="large" symbol={asset.symbol} />
+              <SharedAssetIcon
+                size="large"
+                symbol={asset.symbol}
+                logoURL={asset.metadata?.logoURL}
+              />
             </div>
           </div>
-          <span className="site">Smart Contract Interaction</span>
+          <span className="site">
+            Approve{" "}
+            <SharedAddress
+              address={spenderAddress}
+              name={annotation.spenderName}
+            />
+          </span>
           <span className="spending_label">
-            {asset.symbol ? (
-              `Spend ${
-                asset.symbol ?? truncateAddress(transactionDetails.to ?? "")
-              } tokens`
-            ) : (
-              <SharedSkeletonLoader />
-            )}
+            <SharedSkeletonLoader
+              isLoaded={!!asset.symbol}
+              customStyles="margin: 10px 0 0;"
+              height={32}
+            >
+              Spend{" "}
+              {asset.symbol ?? (
+                <SharedAddress address={transactionDetails.to ?? ""} />
+              )}{" "}
+              tokens
+            </SharedSkeletonLoader>
           </span>
           <form onSubmit={(event) => event.preventDefault()}>
             <div className="spend_limit_header">
@@ -290,11 +302,9 @@ export default function SignTransactionSpendAssetInfoProvider({
           <TransactionDetailItem
             name="Spend limit"
             value={
-              asset?.symbol ? (
+              <SharedSkeletonLoader isLoaded={!!asset.symbol}>
                 approvalLimitDisplayValue
-              ) : (
-                <SharedSkeletonLoader />
-              )
+              </SharedSkeletonLoader>
             }
           />
           <TransactionDetailItem

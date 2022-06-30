@@ -1,1 +1,214 @@
-{}
+{
+  "popupEdition": {
+    "message": "Community Edition",
+    "description": "label shown in every page"
+  },
+  "overviewTotalBalance": {
+    "message": "Total balance",
+    "description": "in Overview page"
+  },
+  "overviewAddresses": {
+    "message": "Addresses",
+    "description": "in Overview page"
+  },
+  "overviewAssets": {
+    "message": "Assets",
+    "description": "in Overview page"
+  },
+  "overviewTableHeaderAsset": {
+    "message": "Asset",
+    "description": "in Overview > AssetsTable"
+  },
+  "overviewTableHeaderPrice": {
+    "message": "Price",
+    "description": "in Overview > AssetsTable"
+  },
+  "overviewTableHeaderBalance": {
+    "message": "Balance",
+    "description": "in Overview > AssetsTable"
+  },
+  "protocolMainnet": {
+    "message": "Mainnet",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "protocolL2": {
+    "message": "L2 scaling solution",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "protocolCompatibleChain": {
+    "message": "Ethereum-compatible blockchain",
+    "description": "in TopMenu > TopMenuProtocolList"
+  },
+  "protocolConnected": {
+    "message": "Connected",
+    "description": "in TopMenu > TopMenuProtocolListItem"
+  },
+  "readOnlyNotice": {
+    "message": "Read-only mode",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "totalAccountBalance": {
+    "message": "Total account balance",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletSend": {
+    "message": "Send",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletReceive": {
+    "message": "Receive",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletSecureSeed": {
+    "message": "First, secure your recovery seed",
+    "description": "in Wallet > WalletAccountBalanceControl"
+  },
+  "walletSendAsset": {
+    "message": "Send Asset",
+    "description": "in pages > Send"
+  },
+  "walletAssetAmount": {
+    "message": "Asset / Amount",
+    "description": "in pages > Send"
+  },
+  "walletSendTo": {
+    "message": "Send To:",
+    "description": "in pages > Send"
+  },
+  "walletEstimatedFee": {
+    "message": "Estimated network fee",
+    "description": "in pages > Send"
+  },
+  "walletSendButton": {
+    "message": "Send",
+    "description": "in pages > Send"
+  },
+  "walletReceiveAddress": {
+    "message": "Receive address",
+    "description": "in pages > Receive"
+  },
+  "walletReceiveAddressDesc": {
+    "message": "Only send Ethereum Mainnet compatible assets to this address.",
+    "description": "in pages > Receive"
+  },
+  "swapTitle": {
+    "message": "Swap Assets",
+    "description": "in pages > Swap"
+  },
+  "swapFrom": {
+    "message": "Swap from:",
+    "description": "in pages > Swap"
+  },
+  "swapTo": {
+    "message": "Swap to:",
+    "description": "in pages > Swap"
+  },
+  "swapErrorNoSellAsset": {
+    "message": "Attempting to approve transfer without a sell asset.",
+    "description": "in pages > Swap"
+  },
+  "swapErrorNoApprovalTarget": {
+    "message": "Attempting to approve transfer without an approval target.",
+    "description": "in pages > Swap"
+  },
+  "swapErrorNonContractAsset": {
+    "message": "Attempting to approve transfer of a non-contract asset.",
+    "description": "in pages > Swap"
+  },
+  "swapGetFinalQuote": {
+    "message": "Get final quote",
+    "description": "in pages > Swap"
+  },
+  "assetInputSearch": {
+    "message": "Search by name or address",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "assetInputSelectToken": {
+    "message": "Select token",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "assetInputErrorInvalidAmount": {
+    "message": "Invalid amount",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "assetInputErrorInsufficientBalance": {
+    "message": "Insufficient balance",
+    "description": "in Shared > SharedAssetInput"
+  },
+  "transactionSettingsTitle": {
+    "message": "Transaction settings",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsSlippageTolerance": {
+    "message": "Slippage tolerance",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsSettings": {
+    "message": "Transaction settings",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsEstimatedFee": {
+    "message": "Estimated network fee",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "transactionSettingsDAOFee": {
+    "message": "DAO fee",
+    "description": "in Swap > SwapTransactionSettingsChooser"
+  },
+  "menuMainMenu": {
+    "message": "Main menu",
+    "description": "in pages > Menu"
+  },
+  "menuHideSmallAssetBalance": {
+    "message": "Hide asset balance under $1",
+    "description": "in pages > Menu"
+  },
+  "menuSetAsDefault": {
+    "message": "Use Tally Ho as default wallet",
+    "description": "in pages > Menu"
+  },
+  "menuBugReport": {
+    "message": "Bug report",
+    "description": "in pages > Menu"
+  },
+  "menuJoinTitle": {
+    "message": "Join our community",
+    "description": "in pages > Menu"
+  },
+  "menuJoinDesc": {
+    "message": "Join our Discord to give us feedback!",
+    "description": "in pages > Menu"
+  },
+  "menuJoinBtn": {
+    "message": "Join and give feedback",
+    "description": "in pages > Menu"
+  },
+  "menuExportTitle": {
+    "message": "Bug report",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionDiscordTitle": {
+    "message": "1. Join #bug-reports on Discord",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionDiscordDesc": {
+    "message": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionDiscordBtn": {
+    "message": "Join Discord",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionLogTitle": {
+    "message": "2. Export logs",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionLogDesc": {
+    "message": "To better understand your bug, we need you to export your logs.",
+    "description": "in pages > Menu > Report bug"
+  },
+  "menuExportOptionLogBtn": {
+    "message": "Export logs",
+    "description": "in pages > Menu > Report bug"
+  }
+}

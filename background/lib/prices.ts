@@ -127,12 +127,20 @@ export async function getEthereumTokenPrices(
     const price: number = Number.parseFloat(
       priceDetails[fiatSymbol.toLowerCase()]
     )
-    prices[address] = {
-      unitPrice: {
-        asset: fiatCurrency,
-        amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
-      },
-      time: priceDetails.last_updated_at,
+    if (!Number.isNaN(price)) {
+      prices[address] = {
+        unitPrice: {
+          asset: fiatCurrency,
+          amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
+        },
+        time: priceDetails.last_updated_at,
+      }
+    } else {
+      logger.warn(
+        "Price for Ethereum token from CoinGecko cannot be parsed.",
+        address,
+        priceDetails
+      )
     }
   })
   return prices

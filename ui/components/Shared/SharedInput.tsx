@@ -1,38 +1,47 @@
-import React, { ReactElement, useEffect, useRef } from "react"
+import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
-import { useRunOnFirstRender } from "../../hooks"
+import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 
-interface Props {
+interface Props<T> {
   id?: string
-  label: string
+  label?: string
   focusedLabelBackgroundColor: string
-  defaultValue?: string
   placeholder?: string
   type: "password" | "text" | "number"
-  value?: string | number | undefined
-  onChange?: (value: string) => void
+  value?: string | undefined
+  onChange?: (value: T | undefined) => void
   onFocus?: () => void
   errorMessage?: string
+  warningMessage?: string
   autoFocus?: boolean
   autoSelect?: boolean
+  parseAndValidate: (
+    value: string
+  ) => { parsed: T | undefined } | { error: string }
+  step?: number
+  isEmpty?: boolean
+  isSmall?: boolean
 }
 
-export default function SharedInput(props: Props): ReactElement {
+export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const {
     id,
     label,
-    defaultValue,
     placeholder,
     focusedLabelBackgroundColor,
     type,
     onChange,
     onFocus,
-    value,
+    value: currentValue,
     errorMessage,
+    warningMessage,
+    step = undefined,
     autoFocus = false,
     autoSelect = false,
+    parseAndValidate,
+    isEmpty = false,
+    isSmall = false,
   } = props
-
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -43,9 +52,18 @@ export default function SharedInput(props: Props): ReactElement {
     if (autoSelect) inputRef.current?.select()
   }, [autoSelect])
 
+  const {
+    rawValue: inputValue,
+    errorMessage: parserError,
+    handleInputChange,
+  } = useParsedValidation<T | undefined>(
+    onChange ?? (() => {}),
+    parseAndValidate
+  )
+
   useRunOnFirstRender(() => {
-    if (defaultValue) {
-      onChange?.(defaultValue)
+    if (currentValue && currentValue.trim() !== inputValue) {
+      handleInputChange(currentValue)
     }
   })
 
@@ -59,17 +77,29 @@ export default function SharedInput(props: Props): ReactElement {
             ? " "
             : placeholder
         }
-        value={value}
+        value={isEmpty ? "" : inputValue}
         spellCheck={false}
-        onChange={(event) => onChange?.(event.target.value)}
+        onInput={(event: ChangeEvent<HTMLInputElement>) =>
+          handleInputChange(event.target.value)
+        }
         onFocus={onFocus}
         className={classNames({
-          error: errorMessage,
+          error: !isEmpty && (errorMessage ?? parserError !== undefined),
+          small: isSmall,
         })}
+        step={step}
         ref={inputRef}
       />
       <label htmlFor={id}>{label}</label>
-      {errorMessage && <div className="error_message">{errorMessage}</div>}
+      {!isEmpty && errorMessage && (
+        <div className="validation_message">{errorMessage}</div>
+      )}
+      {!isEmpty && warningMessage && (
+        <div className="validation_message warning">{warningMessage}</div>
+      )}
+      {!isEmpty && parserError && (
+        <div className="validation_message">{parserError}</div>
+      )}
       <style jsx>
         {`
           input {
@@ -89,17 +119,20 @@ export default function SharedInput(props: Props): ReactElement {
           input[type="number"] {
             -moz-appearance: textfield;
           }
-          .error,
-          .error:focus {
+          .error {
             border-color: var(--error);
           }
-          .error_message {
+          .validation_message {
             color: var(--error);
             position: absolute;
             font-weight: 500;
             font-size: 14px;
             line-height: 20px;
             margin-top: 3px;
+            margin-left: 5px;
+          }
+          .warning {
+            color: var(--trophy-gold);
           }
           label {
             position: absolute;
@@ -115,6 +148,19 @@ export default function SharedInput(props: Props): ReactElement {
             transition: font-size 0.2s ease, transform 0.2s ease,
               font-weight 0.2s ease, padding 0.2s ease;
           }
+          input:disabled {
+            color: var(--green-40);
+            background-color: var(--green-80);
+          }
+          input:disabled ~ label {
+            color: var(--green-60);
+          }
+          input:focus {
+            border-color: var(--trophy-gold);
+          }
+          input:focus ~ label {
+            color: var(--trophy-gold);
+          }
           input:focus ~ label,
           input:not(:placeholder-shown) ~ label,
           input:not([placeholder=" "]) ~ label {
@@ -123,8 +169,17 @@ export default function SharedInput(props: Props): ReactElement {
             font-weight: 500;
             padding: 0px 6px;
           }
-          .error ~ label {
+          .error ~ label,
+          input.error:focus ~ label {
             color: var(--error);
+          }
+          .small {
+            width: 48px;
+            height: 32px;
+            padding: 6px;
+            box-sizing: border-box;
+            border-width: 1px;
+            text-align: right;
           }
         `}
       </style>
@@ -132,7 +187,25 @@ export default function SharedInput(props: Props): ReactElement {
   )
 }
 
-SharedInput.defaultProps = {
+SharedTypedInput.defaultProps = {
   type: "text",
   focusedLabelBackgroundColor: "var(--hunter-green)",
+}
+
+export default function SharedInput(
+  props: Omit<Props<string>, "onChange"> & { onChange?: (_: string) => void }
+): ReactElement {
+  const onChangeWrapper = (newValue: string | undefined) => {
+    props.onChange?.(newValue ?? "")
+  }
+
+  return SharedTypedInput({
+    ...props,
+    onChange: onChangeWrapper,
+  })
+}
+
+SharedInput.defaultProps = {
+  ...SharedTypedInput.defaultProps,
+  parseAndValidate: (v: string) => ({ parsed: v }),
 }

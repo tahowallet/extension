@@ -1,13 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
-import { Network } from "../networks"
+import { EVMNetwork, Network } from "../networks"
 import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
+import { normalizeEVMAddress } from "../lib/utils"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -49,8 +50,13 @@ export type AccountState = {
   account?: AddressOnNetwork
   accountLoading?: string
   hasAccountError?: boolean
-  // TODO Adapt to use AccountNetwork, probably via a Map and custom serialization/deserialization.
-  accountsData: { [address: string]: AccountData | "loading" }
+  accountsData: {
+    evm: {
+      [chainID: string]: {
+        [address: string]: AccountData | "loading"
+      }
+    }
+  }
   combinedData: CombinedAccountData
 }
 
@@ -76,7 +82,7 @@ export type CompleteSmartContractFungibleAssetAmount =
   CompleteAssetAmount<SmartContractFungibleAsset>
 
 export const initialState = {
-  accountsData: {},
+  accountsData: { evm: {} },
   combinedData: {
     totalMainCurrencyValue: "",
     assets: [],
@@ -85,9 +91,21 @@ export const initialState = {
 
 function newAccountData(
   address: HexString,
-  network: Network,
-  existingAccountsCount: number
+  network: EVMNetwork,
+  accountsState: AccountState
 ): AccountData {
+  const existingAccountsCount = Object.keys(
+    accountsState.accountsData.evm[network.chainID]
+  ).filter((key) => key !== address).length
+
+  const sameAccountOnDifferentChain = Object.values(
+    accountsState.accountsData.evm
+  )
+    .flatMap((chain) => Object.values(chain))
+    .find(
+      (accountData): accountData is AccountData =>
+        accountData !== "loading" && accountData.address === address
+    )
   const defaultNameIndex =
     // Skip potentially-used names at the beginning of the array if relevant,
     // see below.
@@ -101,7 +119,9 @@ function newAccountData(
             (existingAccountsCount % availableDefaultNames.length)
         )
     )
-  const defaultAccountName = availableDefaultNames[defaultNameIndex]
+  const defaultAccountName =
+    sameAccountOnDifferentChain?.defaultName ??
+    availableDefaultNames[defaultNameIndex]
 
   // Move used default names to the start so they can be skipped above.
   availableDefaultNames.splice(defaultNameIndex, 1)
@@ -120,15 +140,16 @@ function newAccountData(
 }
 
 function getOrCreateAccountData(
-  data: AccountData | "loading" | undefined,
+  accountState: AccountState,
   account: HexString,
-  network: Network,
-  existingAccountsCount: number
+  network: EVMNetwork
 ): AccountData {
-  if (data === "loading" || !data) {
-    return newAccountData(account, network, existingAccountsCount)
+  const accountData = accountState.accountsData.evm[network.chainID][account]
+
+  if (accountData === "loading" || !accountData) {
+    return newAccountData(account, network, accountState)
   }
-  return data
+  return accountData
 }
 
 // TODO Much of the combinedData bits should probably be done in a Reselect
@@ -137,72 +158,102 @@ const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    loadAccount: (state, { payload: accountToLoad }: { payload: string }) => {
-      return state.accountsData[accountToLoad]
-        ? state // If the account data already exists, the account is already loaded.
-        : {
-            ...state,
-            accountsData: { ...state.accountsData, [accountToLoad]: "loading" },
-          }
+    loadAccount: (
+      immerState,
+      { payload: { address, network } }: { payload: AddressOnNetwork }
+    ) => {
+      const normalizedAddress = normalizeEVMAddress(address)
+      if (
+        immerState.accountsData.evm[network.chainID]?.[normalizedAddress] !==
+        undefined
+      ) {
+        // If the account data already exists, the account is already loaded.
+        return
+      }
+
+      immerState.accountsData.evm[network.chainID] ??= {}
+
+      immerState.accountsData.evm[network.chainID] = {
+        ...immerState.accountsData.evm[network.chainID],
+        [normalizedAddress]: "loading",
+      }
     },
     deleteAccount: (
-      state,
-      { payload: accountToRemove }: { payload: string }
+      immerState,
+      { payload: { address } }: { payload: AddressOnNetwork }
     ) => {
-      if (!state.accountsData[accountToRemove]) {
-        return state
+      const normalizedAddress = normalizeEVMAddress(address)
+
+      const { evm } = immerState.accountsData
+
+      if (
+        // One of the chains
+        !Object.keys(evm ?? {}).some((chainID) =>
+          // has an address equal to the one we're trying to remove
+          Object.keys(evm[chainID]).some(
+            (addressOnChain) => addressOnChain === normalizedAddress
+          )
+        )
+      ) {
+        // If none of the chains we're tracking has a matching address - this is a noop.
+        return
       }
-      // Immutably remove the account passed in
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { [accountToRemove]: _, ...withoutAccountToRemove } =
-        state.accountsData
-      return {
-        ...state,
-        accountsData: withoutAccountToRemove,
-      }
+
+      // Delete the account from all chains.
+      Object.keys(evm).forEach((chainId) => {
+        const { [normalizedAddress]: _, ...withoutEntryToRemove } = evm[chainId]
+
+        immerState.accountsData.evm[chainId] = withoutEntryToRemove
+      })
     },
     updateAccountBalance: (
       immerState,
-      { payload: updatedAccountBalance }: { payload: AccountBalance }
+      { payload: accountsWithBalances }: { payload: AccountBalance[] }
     ) => {
-      const {
-        address: updatedAccount,
-        assetAmount: {
-          asset: { symbol: updatedAssetSymbol },
-        },
-      } = updatedAccountBalance
-      const existingAccountData = immerState.accountsData[updatedAccount]
-      if (existingAccountData) {
+      accountsWithBalances.forEach((updatedAccountBalance) => {
+        const {
+          address,
+          network,
+          assetAmount: {
+            asset: { symbol: updatedAssetSymbol },
+          },
+        } = updatedAccountBalance
+
+        const normalizedAddress = normalizeEVMAddress(address)
+        const existingAccountData =
+          immerState.accountsData.evm[network.chainID]?.[normalizedAddress]
+
+        // Don't upsert, only update existing account entries.
+        if (existingAccountData === undefined) {
+          return
+        }
+
         if (existingAccountData !== "loading") {
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
         } else {
-          immerState.accountsData[updatedAccount] = {
-            ...newAccountData(
-              updatedAccount,
-              updatedAccountBalance.network,
-              Object.keys(immerState.accountsData).filter(
-                (key) => key !== updatedAccount
-              ).length
-            ),
+          immerState.accountsData.evm[network.chainID][normalizedAddress] = {
+            // TODO Figure out the best way to handle default name assignment
+            // TODO across networks.
+            ...newAccountData(address, network, immerState),
             balances: {
               [updatedAssetSymbol]: updatedAccountBalance,
             },
           }
         }
-      }
+      })
 
       // A key assumption here is that the balances of two accounts in
       // accountsData are mutually exclusive; that is, that there are no two
       // accounts in accountsData all or part of whose balances are shared with
       // each other.
-      const combinedAccountBalances = Object.values(immerState.accountsData)
+      const combinedAccountBalances = Object.values(immerState.accountsData.evm)
+        .flatMap((accountDataByChain) => Object.values(accountDataByChain))
         .flatMap((ad) =>
           ad === "loading"
             ? []
             : Object.values(ad.balances).map((ab) => ab.assetAmount)
         )
-        .filter((b) => b)
 
       immerState.combinedData.assets = Object.values(
         combinedAccountBalances.reduce<{
@@ -218,44 +269,68 @@ const accountSlice = createSlice({
         }, {})
       )
     },
-    updateENSName: (
+    updateAccountName: (
       immerState,
       {
-        payload: addressNetworkName,
+        payload: { address, network, name },
       }: { payload: AddressOnNetwork & { name: DomainName } }
     ) => {
-      // TODO Refactor when accounts are also keyed per network.
-      const address = addressNetworkName.address.toLowerCase()
+      const normalizedAddress = normalizeEVMAddress(address)
+
+      // No entry means this name doesn't correspond to an account we are
+      // tracking.
+      if (
+        immerState.accountsData.evm[network.chainID]?.[normalizedAddress] ===
+        undefined
+      ) {
+        return
+      }
+
+      immerState.accountsData.evm[network.chainID] ??= {}
+
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData[address],
-        address,
-        addressNetworkName.network,
-        Object.keys(immerState.accountsData).filter((key) => key !== address)
-          .length
+        // TODO Figure out the best way to handle default name assignment
+        // TODO across networks.
+        immerState,
+        normalizedAddress,
+        network
       )
-      immerState.accountsData[address] = {
+
+      immerState.accountsData.evm[network.chainID][normalizedAddress] = {
         ...baseAccountData,
-        ens: { ...baseAccountData.ens, name: addressNetworkName.name },
+        ens: { ...baseAccountData.ens, name },
       }
     },
     updateENSAvatar: (
       immerState,
       {
-        payload: addressNetworkAvatar,
+        payload: { address, network, avatar },
       }: { payload: AddressOnNetwork & { avatar: URI } }
     ) => {
-      // TODO Refactor when accounts are also keyed per network.
-      const address = addressNetworkAvatar.address.toLowerCase()
+      const normalizedAddress = normalizeEVMAddress(address)
+
+      // No entry means this avatar doesn't correspond to an account we are
+      // tracking.
+      if (
+        immerState.accountsData.evm[network.chainID]?.[normalizedAddress] ===
+        undefined
+      ) {
+        return
+      }
+
+      immerState.accountsData.evm[network.chainID] ??= {}
+
+      // TODO Figure out the best way to handle default name assignment
+      // TODO across networks.
       const baseAccountData = getOrCreateAccountData(
-        immerState.accountsData[address],
-        address,
-        addressNetworkAvatar.network,
-        Object.keys(immerState.accountsData).filter((key) => key !== address)
-          .length
+        immerState,
+        normalizedAddress,
+        network
       )
-      immerState.accountsData[address] = {
+
+      immerState.accountsData.evm[network.chainID][normalizedAddress] = {
         ...baseAccountData,
-        ens: { ...baseAccountData.ens, avatarURL: addressNetworkAvatar.avatar },
+        ens: { ...baseAccountData.ens, avatarURL: avatar },
       }
     },
   },
@@ -264,11 +339,22 @@ const accountSlice = createSlice({
 export const {
   loadAccount,
   updateAccountBalance,
-  updateENSName,
+  updateAccountName,
   updateENSAvatar,
 } = accountSlice.actions
 
 export default accountSlice.reducer
+
+/**
+ * Async thunk whose dispatch promise will return a resolved name or undefined
+ * if the name cannot be resolved.
+ */
+export const resolveNameOnNetwork = createBackgroundAsyncThunk(
+  "account/resolveNameOnNetwork",
+  async (nameOnNetwork: NameOnNetwork, { extra: { main } }) => {
+    return main.resolveNameOnNetwork(nameOnNetwork)
+  }
+)
 
 /**
  * Async thunk whose dispatch promise will return when the account has been
@@ -282,30 +368,29 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
   "account/addAccount",
   async (addressNetwork: AddressOnNetwork, { dispatch, extra: { main } }) => {
     const normalizedAddressNetwork = {
-      address: addressNetwork.address.toLowerCase(),
+      address: normalizeEVMAddress(addressNetwork.address),
       network: addressNetwork.network,
     }
 
-    dispatch(loadAccount(normalizedAddressNetwork.address))
+    dispatch(loadAccount(normalizedAddressNetwork))
     await main.addAccount(normalizedAddressNetwork)
   }
 )
 
-/**
- * Async thunk whose dispatch promise will return when the ENS domain account
- * has been added.
- */
-export const addAccountByName = createBackgroundAsyncThunk(
-  "account/addAccountByName",
-  async (nameNetwork: NameOnNetwork, { extra: { main } }) => {
-    await main.addAccountByName(nameNetwork)
+export const addOrEditAddressName = createBackgroundAsyncThunk(
+  "account/addOrEditAddressName",
+  async (payload: AddressOnNetwork & { name: string }, { extra: { main } }) => {
+    await main.addOrEditAddressName(payload)
   }
 )
 
 export const removeAccount = createBackgroundAsyncThunk(
   "account/removeAccount",
-  async (address: HexString, { dispatch, extra: { main } }) => {
-    dispatch(accountSlice.actions.deleteAccount(address))
-    main.removeAccount(address, { type: "keyring" })
+  async (addressOnNetwork: AddressOnNetwork, { dispatch, extra: { main } }) => {
+    const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
+
+    await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
+
+    main.removeAccount(normalizedAddress, "keyring")
   }
 )

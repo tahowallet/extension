@@ -33,7 +33,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
 
           <div className="info">
             <div className="address_name">
-              {typeof name === "undefined" ? shortenedAddress : name}
+              {typeof name === "undefined" ? shortenedAddress : name}{" "}
             </div>
             <div className="address">
               {typeof name !== "undefined" ? shortenedAddress : ""}
@@ -103,6 +103,10 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
         .address_name {
           color: #fff;
           font-size: 18px;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
           font-weight: 600;
         }
         .address {

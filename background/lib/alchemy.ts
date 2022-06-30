@@ -11,7 +11,6 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../assets"
-import { ETH } from "../constants"
 import { AnyEVMTransaction, EVMNetwork, SmartContract } from "../networks"
 import {
   isValidAlchemyAssetTransferResponse,
@@ -27,7 +26,7 @@ import { AddressOnNetwork } from "../accounts"
  * Note that pagination isn't supported in this wrapper, so any responses after
  * 1k transfers will be dropped.
  *
- * More information https://docs.alchemy.com/alchemy/documentation/apis/enhanced-apis/transfers-api#alchemy_getassettransfers
+ * More information https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api
  * @param provider an Alchemy ethers provider
  * @param addressOnNetwork the address whose transfer history we're fetching
  *        and the network it should happen on; note that if the network does
@@ -50,18 +49,30 @@ export async function getAssetTransfers(
     // excludeZeroValue: false,
   }
 
+  // Default Ethereum Mainnet categories per the documentation:
+  // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-ethereum-mainnet
+  let category = ["external", "internal", "token"]
+
+  if (addressOnNetwork.network.name !== "Ethereum") {
+    // Unfortunately even though "token" is supposed the default category for this API call - if the `category` property is omitted
+    // the api returns an error about the category "iternal" not being supported
+    // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
+    category = ["token"]
+  }
   // TODO handle partial failure
   const rpcResponses = await Promise.all([
     provider.send("alchemy_getAssetTransfers", [
       {
         ...params,
         fromAddress: account,
+        category,
       },
     ]),
     provider.send("alchemy_getAssetTransfers", [
       {
         ...params,
         toAddress: account,
+        category,
       },
     ]),
   ])
@@ -104,7 +115,7 @@ export async function getAssetTransfers(
             symbol: transfer.asset,
             homeNetwork: network,
           }
-        : ETH
+        : addressOnNetwork.network.baseAsset
       return {
         network, // TODO make this friendly across other networks
         assetAmount: {
@@ -137,10 +148,13 @@ export async function getTokenBalances(
   { address, network }: AddressOnNetwork,
   tokens?: HexString[]
 ): Promise<SmartContractAmount[]> {
+  const uniqueTokens = [...new Set(tokens ?? [])]
+
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
     address,
-    tokens || "DEFAULT_TOKENS",
+    uniqueTokens.length > 0 ? uniqueTokens : "DEFAULT_TOKENS",
   ])
+
   if (!isValidAlchemyTokenBalanceResponse(json)) {
     logger.warn(
       "Alchemy token balance response didn't validate, did the API change?",

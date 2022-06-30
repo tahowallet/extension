@@ -1,6 +1,6 @@
 import {
   getAccountTotal,
-  selectCurrentAccountSigningMethod,
+  selectCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -13,7 +13,7 @@ import SignTransactionContainer from "../components/SignTransaction/SignTransact
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useIsSigningMethodLocked,
+  useIsSignerLocked,
 } from "../hooks"
 import SignDataDetailPanel from "./SignDataDetailPanel"
 
@@ -34,32 +34,40 @@ export default function SignData(): ReactElement {
     return undefined
   })
 
-  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
-  const isLocked = useIsSigningMethodLocked(signingMethod)
+  const isLocked = useIsSignerLocked(currentAccountSigner)
   if (isLocked) return <></>
-
-  if (
-    typeof typedDataRequest === "undefined" ||
-    typeof signerAccountTotal === "undefined"
-  ) {
-    return <></>
-  }
 
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
-      if (signingMethod) {
-        dispatch(signTypedData({ request: typedDataRequest, signingMethod }))
+      if (currentAccountSigner) {
+        dispatch(
+          signTypedData({
+            request: typedDataRequest,
+            accountSigner: currentAccountSigner,
+          })
+        )
         setIsTransactionSigning(true)
       }
     }
+
+    // We need to send user to the previous page after signing data is completed
+    history.goBack()
   }
 
   const handleReject = async () => {
     await dispatch(rejectDataSignature())
     history.goBack()
+  }
+
+  const getTitle = () => {
+    if (typedDataRequest?.typedData.primaryType === "PermitAndTransferFrom") {
+      return "Authorize Deposit"
+    }
+    return `Sign ${typedDataRequest?.typedData.primaryType ?? "Message"}`
   }
 
   return (
@@ -68,7 +76,7 @@ export default function SignData(): ReactElement {
       confirmButtonLabel="Confirm"
       handleConfirm={handleConfirm}
       handleReject={handleReject}
-      title={`Sign ${typedDataRequest.typedData.primaryType ?? "Message"}`}
+      title={getTitle()}
       detailPanel={<SignDataDetailPanel />}
       reviewPanel={<SignDataDetailPanel />}
       isTransactionSigning={isTransactionSigning}

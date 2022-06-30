@@ -1,4 +1,7 @@
-import { FiatCurrency, FungibleAsset } from "../assets"
+import { FiatCurrency, FungibleAsset, CoinGeckoAsset } from "../assets"
+import { NetworkBaseAsset } from "../networks"
+import { coinTypesByAssetSymbol } from "./coin-types"
+import { SUPPORT_POLYGON } from "../features"
 
 export const USD: FiatCurrency = {
   name: "United States Dollar",
@@ -20,10 +23,11 @@ export const CNY: FiatCurrency = {
 
 export const FIAT_CURRENCIES = [USD, EUR, CNY]
 
-export const ETH: FungibleAsset = {
+export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   name: "Ether",
   symbol: "ETH",
   decimals: 18,
+  coinType: coinTypesByAssetSymbol.ETH,
   metadata: {
     coinGeckoID: "ethereum",
     tokenLists: [],
@@ -31,10 +35,23 @@ export const ETH: FungibleAsset = {
   },
 }
 
-export const BTC: FungibleAsset = {
+export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+  name: "Matic",
+  symbol: "MATIC",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.MATIC,
+  metadata: {
+    coinGeckoID: "matic-network",
+    tokenLists: [],
+    websiteURL: "https://polygon.technology/",
+  },
+}
+
+export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   name: "Bitcoin",
   symbol: "BTC",
   decimals: 8,
+  coinType: coinTypesByAssetSymbol.BTC,
   metadata: {
     coinGeckoID: "bitcoin",
     tokenLists: [],
@@ -42,10 +59,10 @@ export const BTC: FungibleAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC]
+export const BASE_ASSETS = [ETH, BTC, ...(SUPPORT_POLYGON ? [MATIC] : [])]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
-  [assetSymbol: string]: FungibleAsset
+  [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset
 }>((acc, asset) => {
   const newAcc = {
     ...acc,

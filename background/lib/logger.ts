@@ -58,6 +58,43 @@ const styles: LogStyles = {
   },
 }
 
+function purgeSensitiveFailSafe(log: string): string {
+  // 1. Hexadecimal segments
+  // 2. Private key length segments
+  // 3. Lowercase groups of 12 words, which therefore covers 24
+
+  return `${log} `.replaceAll(
+    /(0x(\S+))|(\b[a-zA-Z0-9]{64}\b)|((?:[a-z]+\s){12})/g,
+    "[REDACTED]"
+  )
+}
+
+function saveLog(
+  logLabel: string,
+  input: unknown[],
+  stackTrace: string[] | undefined
+) {
+  const formattedInput = input
+  for (let i = 0; i < input.length; i += 1) {
+    const log = input[i]
+    if (typeof log === "object") {
+      try {
+        formattedInput[i] = JSON.stringify(log)
+      } catch (e) {
+        // if we can't stringify thats OK, we'll still see [object Object] in the logs.
+      }
+    }
+  }
+  localStorage.setItem(
+    "logs",
+    `${(localStorage.getItem("logs") ?? "").slice(
+      -50000
+    )}${purgeSensitiveFailSafe(
+      `${logLabel}\n${formattedInput}\n${stackTrace}`
+    )}\n\n`
+  )
+}
+
 const BLINK_PREFIX = "    at "
 const WEBKIT_GECKO_DELIMITER = "@"
 const WEBKIT_MARKER = "@"
@@ -81,7 +118,6 @@ function logLabelFromStackEntry(
     return stackEntry
       .split(WEBKIT_GECKO_DELIMITER)[0]
       .split(GECKO_MARKER)
-      .reverse()
       .filter((item) => item.replace(/(?:promise)?</, "").trim() !== "")
       .slice(-2)
       .join(".")
@@ -134,6 +170,8 @@ function genericLogger(level: LogLevel, input: unknown[]) {
   }
 
   console.groupEnd()
+
+  saveLog(logLabel, input, stackTrace)
 }
 
 const logger = {

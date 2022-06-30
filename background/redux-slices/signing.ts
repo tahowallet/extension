@@ -4,30 +4,31 @@ import {
   ExpectedSigningData,
   SignDataMessageType,
   SignDataRequest,
-  SigningMethod,
   SignTypedDataRequest,
 } from "../utils/signing"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EnrichedSignTypedDataRequest } from "../services/enrichment"
-import { EIP712TypedData, HexString } from "../types"
+import { EIP712TypedData } from "../types"
+import { AddressOnNetwork } from "../accounts"
+import { AccountSigner } from "../services/signing"
 
-type SignOperation<T> = {
+export type SignOperation<T> = {
   request: T
-  signingMethod: SigningMethod
+  accountSigner: AccountSigner
 }
 
 type Events = {
   requestSignTypedData: {
     typedData: EIP712TypedData
-    account: HexString
-    signingMethod: SigningMethod
+    account: AddressOnNetwork
+    accountSigner: AccountSigner
   }
   requestSignData: {
     signingData: ExpectedSigningData
     messageType: SignDataMessageType
     rawSigningData: string
-    account: HexString
-    signingMethod: SigningMethod
+    account: AddressOnNetwork
+    accountSigner: AccountSigner
   }
   signatureRejected: never
 }
@@ -55,13 +56,13 @@ export const signTypedData = createBackgroundAsyncThunk(
   async (data: SignOperation<SignTypedDataRequest>) => {
     const {
       request: { account, typedData },
-      signingMethod,
+      accountSigner,
     } = data
 
     await signingSliceEmitter.emit("requestSignTypedData", {
       typedData,
       account,
-      signingMethod,
+      accountSigner,
     })
   }
 )
@@ -71,14 +72,14 @@ export const signData = createBackgroundAsyncThunk(
   async (data: SignOperation<SignDataRequest>) => {
     const {
       request: { account, signingData, rawSigningData, messageType },
-      signingMethod,
+      accountSigner,
     } = data
     await signingSliceEmitter.emit("requestSignData", {
       rawSigningData,
       signingData,
       account,
       messageType,
-      signingMethod,
+      accountSigner,
     })
   }
 )

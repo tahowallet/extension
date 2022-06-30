@@ -22,7 +22,7 @@ export default function LedgerImportDone({
       <div className="button_container">
         <SharedButton
           size="medium"
-          icon="close"
+          iconSmall="close"
           iconPosition="right"
           type="tertiary"
           onClick={onClose}

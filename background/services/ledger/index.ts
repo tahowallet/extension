@@ -14,7 +14,7 @@ import {
 } from "ethers/lib/utils"
 import {
   EIP1559TransactionRequest,
-  EVMNetwork,
+  sameNetwork,
   SignedEVMTransaction,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
@@ -23,9 +23,9 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
-import { ETH } from "../../constants"
+import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { HIDE_IMPORT_LEDGER } from "../../features/features"
+import { AddressOnNetwork } from "../../accounts"
 
 enum LedgerType {
   UNKNOWN,
@@ -35,13 +35,18 @@ enum LedgerType {
 
 const LedgerTypeAsString = Object.values(LedgerType)
 
+export type LedgerAccountSigner = {
+  type: "ledger"
+  deviceID: string
+  path: string
+}
+
 export const LedgerProductDatabase = {
   LEDGER_NANO_S: { productId: 0x1015 },
   LEDGER_NANO_X: { productId: 0x4015 },
 }
 
-export const isLedgerSupported =
-  !HIDE_IMPORT_LEDGER && typeof navigator.usb === "object"
+export const isLedgerSupported = typeof navigator.usb === "object"
 
 const TestedProductId = (productId: number): boolean => {
   return Object.values(LedgerProductDatabase).some(
@@ -81,7 +86,7 @@ type Events = ServiceLifecycleEvents & {
   usbDeviceCount: number
 }
 
-export const idDerviationPath = "44'/60'/0'/0/0"
+export const idDerivationPath = "44'/60'/0'/0/0"
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
@@ -114,7 +119,7 @@ async function generateLedgerId(
     return [undefined, extensionDeviceType]
   }
 
-  const address = await deriveAddressOnLedger(idDerviationPath, eth)
+  const address = await deriveAddressOnLedger(idDerivationPath, eth)
 
   return [address, extensionDeviceType]
 }
@@ -205,7 +210,7 @@ export default class LedgerService extends BaseService<Events> {
         this.emitter.emit("ledgerAdded", {
           id: this.#currentLedgerId,
           type,
-          accountIDs: [idDerviationPath],
+          accountIDs: [idDerivationPath],
           metadata: {
             ethereumVersion: appData.version,
             isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
@@ -227,22 +232,23 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  #handleUSBDisconnect = async (event: USBConnectionEvent): Promise<void> => {
-    this.emitter.emit(
-      "usbDeviceCount",
-      (await navigator.usb.getDevices()).length
-    )
-    if (!this.#currentLedgerId) {
-      return
+  #handleUSBDisconnect =
+    async (/* event: USBConnectionEvent */): Promise<void> => {
+      this.emitter.emit(
+        "usbDeviceCount",
+        (await navigator.usb.getDevices()).length
+      )
+      if (!this.#currentLedgerId) {
+        return
+      }
+
+      this.emitter.emit("disconnected", {
+        id: this.#currentLedgerId,
+        type: LedgerType.LEDGER_NANO_S,
+      })
+
+      this.#currentLedgerId = null
     }
-
-    this.emitter.emit("disconnected", {
-      id: this.#currentLedgerId,
-      type: LedgerType.LEDGER_NANO_S,
-    })
-
-    this.#currentLedgerId = null
-  }
 
   protected async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
@@ -276,7 +282,10 @@ export default class LedgerService extends BaseService<Events> {
     return this.#currentLedgerId
   }
 
-  async deriveAddress(accountID: string): Promise<HexString> {
+  async deriveAddress({
+    // FIXME Use deviceID.
+    path: derivationPath,
+  }: LedgerAccountSigner): Promise<HexString> {
     return this.runSerialized(async () => {
       try {
         if (!this.transport) {
@@ -290,21 +299,21 @@ export default class LedgerService extends BaseService<Events> {
         const eth = new Eth(this.transport)
 
         const accountAddress = normalizeEVMAddress(
-          await deriveAddressOnLedger(accountID, eth)
+          await deriveAddressOnLedger(derivationPath, eth)
         )
 
         this.emitter.emit("address", {
           ledgerID: this.#currentLedgerId,
-          derivationPath: accountID,
+          derivationPath,
           address: accountAddress,
         })
 
         return accountAddress
       } catch (err) {
         logger.error(
-          `Error encountered! ledgerID: ${
+          `Error encountered deriving address at path ${derivationPath}! ledgerID: ${
             this.#currentLedgerId
-          } accountID: ${accountID} error: ${err}`
+          } error: ${err}`
         )
         throw err
       }
@@ -320,10 +329,8 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    network: EVMNetwork,
     transactionRequest: EIP1559TransactionRequest & { nonce: number },
-    deviceID: string,
-    path: string
+    { deviceID, path: derivationPath }: LedgerAccountSigner
   ): Promise<SignedEVMTransaction> {
     return this.runSerialized(async () => {
       try {
@@ -348,10 +355,14 @@ export default class LedgerService extends BaseService<Events> {
           transactionRequest.from
         )
 
-        this.checkCanSign(accountData, path, deviceID)
+        this.checkCanSign(accountData, derivationPath, deviceID)
 
         const eth = new Eth(this.transport)
-        const signature = await eth.signTransaction(path, serializedTx, null)
+        const signature = await eth.signTransaction(
+          derivationPath,
+          serializedTx,
+          null
+        )
 
         const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
           r: `0x${signature.r}`,
@@ -396,8 +407,8 @@ export default class LedgerService extends BaseService<Events> {
 
           blockHash: null,
           blockHeight: null,
-          asset: ETH,
-          network,
+          asset: transactionRequest.network.baseAsset,
+          network: transactionRequest.network,
         }
 
         return signedTx
@@ -416,8 +427,7 @@ export default class LedgerService extends BaseService<Events> {
   async signTypedData(
     typedData: EIP712TypedData,
     account: HexString,
-    deviceID: string,
-    path: string
+    { deviceID, path: derivationPath }: LedgerAccountSigner
   ): Promise<string> {
     return this.runSerialized(async () => {
       if (!this.transport) {
@@ -437,10 +447,10 @@ export default class LedgerService extends BaseService<Events> {
 
       const accountData = await this.db.getAccountByAddress(account)
 
-      this.checkCanSign(accountData, path, deviceID)
+      this.checkCanSign(accountData, derivationPath, deviceID)
 
       const signature = await eth.signEIP712HashedMessage(
-        path,
+        derivationPath,
         hashedDomain,
         hashedMessage
       )
@@ -480,7 +490,14 @@ export default class LedgerService extends BaseService<Events> {
     }
   }
 
-  async signMessage(address: string, message: string): Promise<string> {
+  async signMessage(
+    { address, network }: AddressOnNetwork,
+    message: string
+  ): Promise<string> {
+    if (!sameNetwork(network, ETHEREUM)) {
+      throw new Error("Unsupported network for Ledger signing")
+    }
+
     if (!this.transport) {
       throw new Error("Uninitialized transport!")
     }

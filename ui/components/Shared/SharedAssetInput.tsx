@@ -19,11 +19,11 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
+import t from "../../utils/i18n"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
 const SYMBOL_PRIORITY_LIST = [
-  "UST",
   "KEEP",
   "ENS",
   "CRV",
@@ -153,7 +153,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             type="text"
             ref={searchInput}
             className="search_input"
-            placeholder="Search by name or address"
+            placeholder={t("assetInputSearch")}
             spellCheck={false}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
@@ -197,6 +197,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             border-radius: 4px;
             border: 1px solid var(--green-60);
             padding-left: 16px;
+            padding-right: 56px;
             box-sizing: border-box;
             color: var(--green-40);
           }
@@ -296,8 +297,15 @@ function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
   asset: T,
   assetsToSearch: AnyAssetWithOptionalAmount<T>[]
 ) {
-  return assetsToSearch.find(({ asset: listAsset }) =>
-    isSameAsset(asset, listAsset)
+  return (
+    assetsToSearch.find(({ asset: listAsset }) =>
+      isSameAsset(asset, listAsset)
+    ) ?? {
+      // If not found, default balance to zero
+      asset: { ...asset, decimals: 1 },
+      localizedDecimalAmount: "0",
+      amount: BigInt(0),
+    }
   )
 }
 
@@ -318,6 +326,9 @@ export default function SharedAssetInput<T extends AnyAsset>(
   } = props
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
+
+  // TODO: use https://reactjs.org/docs/hooks-reference.html#useid once we update to version 18
+  const [inputId] = useState(Math.floor(Math.random() * 100))
 
   const toggleIsAssetMenuOpen = useCallback(() => {
     if (!isAssetOptionsLocked) {
@@ -351,15 +362,18 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
     if (typeof parsedGivenAmount === "undefined") {
-      return "Invalid amount"
+      return t("assetInputErrorInvalidAmount")
     }
 
     const decimalMatched = convertFixedPointNumber(
       parsedGivenAmount,
       selectedAssetAndAmount.asset.decimals
     )
-    if (decimalMatched.amount > selectedAssetAndAmount.amount) {
-      return "Insufficient balance"
+    if (
+      decimalMatched.amount > selectedAssetAndAmount.amount ||
+      selectedAssetAndAmount.amount <= 0
+    ) {
+      return t("assetInputErrorInsufficientBalance")
     }
 
     return undefined
@@ -391,8 +405,8 @@ export default function SharedAssetInput<T extends AnyAsset>(
         className="label"
         htmlFor={
           typeof selectedAsset === "undefined"
-            ? "asset_selector"
-            : "asset_amount_input"
+            ? `asset_selector${inputId}`
+            : `asset_amount_input${inputId}`
         }
       >
         {label}
@@ -439,20 +453,20 @@ export default function SharedAssetInput<T extends AnyAsset>(
             />
           ) : (
             <SharedButton
-              id="asset_selector"
+              id={`asset_selector${inputId}`}
               type="secondary"
               size="medium"
               isDisabled={isDisabled || disableDropdown}
               onClick={toggleIsAssetMenuOpen}
-              icon="chevron"
+              iconSmall="dropdown"
             >
-              Select token
+              {t("assetInputSelectToken")}
             </SharedButton>
           )}
         </div>
 
         <input
-          id="asset_amount_input"
+          id={`asset_amount_input${inputId}`}
           className="input_amount"
           type="number"
           step="any"
@@ -498,8 +512,18 @@ export default function SharedAssetInput<T extends AnyAsset>(
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
             padding: 0px 16px;
             box-sizing: border-box;
+            position: relative;
+          }
+          // Using :global() to target child component
+          label:hover ~ .asset_wrap > div > :global(button:hover) {
+            background: unset;
+            color: var(--trophy-gold);
+          }
+          label:hover ~ .asset_wrap > div > :global(button:hover .icon_button) {
+            background-color: var(--trophy-gold);
           }
           .asset_input {
             width: 100%;
@@ -525,6 +549,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             font-weight: 500;
             line-height: 32px;
             text-align: right;
+            text-overflow: ellipsis;
           }
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {

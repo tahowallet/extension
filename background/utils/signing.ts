@@ -1,12 +1,13 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
 import { SiweMessage } from "siwe"
+import { AddressOnNetwork } from "../accounts"
 
 import { EIP191Data, EIP712TypedData, HexString } from "../types"
 
 export type EIP712DomainType = {
   name?: string
   version?: string
-  chainId?: number
+  chainId?: number | string
   verifyingContract?: HexString
 }
 
@@ -22,18 +23,14 @@ export interface EIP4361Data {
 }
 
 export type SignTypedDataRequest = {
-  account: string
+  account: AddressOnNetwork
   typedData: EIP712TypedData
 }
-
-export type SigningMethod =
-  | { type: "keyring" }
-  | { type: "ledger"; deviceID: string; path: string }
 
 export type ExpectedSigningData = EIP191Data | EIP4361Data
 
 export type SignDataRequest = {
-  account: string
+  account: AddressOnNetwork
   rawSigningData: string
   signingData: ExpectedSigningData
   messageType: SignDataMessageType
@@ -57,6 +54,7 @@ export type EIP2612TypedData = {
   types: Record<string, TypedDataField[]>
   message: EIP2612Message
   primaryType: "Permit"
+  // FIXME Add network info.
 }
 
 const checkEIP4361: (message: string) => EIP4361Data | undefined = (

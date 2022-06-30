@@ -1,31 +1,43 @@
 import React, { ReactElement, useState } from "react"
 
-type VeriticalPosition = "top" | "bottom"
+type VerticalPosition = "top" | "bottom"
 
 interface Props {
-  verticalPosition?: VeriticalPosition
+  verticalPosition?: VerticalPosition
   width: number
+  height?: number
   children: React.ReactNode
-  IconComponent?: () => ReactElement
+  // TODO: find a better way to tell the IconComponent that the tooltip it open
+  IconComponent?: ({
+    isShowingTooltip,
+  }: {
+    isShowingTooltip: boolean
+  }) => ReactElement
 }
 
 function getHorizontalPosition(width: number) {
   return `right: -${width / 2 + 4}px;`
 }
 
-function getVerticalPosition(vertical: VeriticalPosition) {
+function getVerticalPosition(vertical: VerticalPosition, height: number) {
   switch (vertical) {
     case "bottom":
-      return "top: 16px; margin-top: 5px;"
+      return `top: ${height}px; margin-top: 5px;`
     case "top":
-      return "bottom: 16px; margin-bottom: 5px;"
+      return `bottom: ${height}px; margin-bottom: 5px;`
     default:
       return ""
   }
 }
 
 export default function SharedTooltip(props: Props): ReactElement {
-  const { children, verticalPosition = "bottom", width, IconComponent } = props
+  const {
+    children,
+    verticalPosition = "bottom",
+    width,
+    height = 20,
+    IconComponent,
+  } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(false)
 
   return (
@@ -38,15 +50,20 @@ export default function SharedTooltip(props: Props): ReactElement {
         setIsShowingTooltip(false)
       }}
     >
-      {IconComponent ? <IconComponent /> : <div className="info_icon" />}
+      {IconComponent ? (
+        <IconComponent isShowingTooltip={isShowingTooltip} />
+      ) : (
+        <div className="info_icon" />
+      )}
       {isShowingTooltip ? <div className="tooltip">{children}</div> : null}
       <style jsx>
         {`
           .tooltip_wrap {
             width: fit-content;
-            display: inline-block;
+            display: block;
             position: relative;
-            margin-left: 8px;
+            padding: 5px 0;
+            margin: -5px 0 -5px 8px;
             z-index: 20;
           }
           .info_icon {
@@ -68,7 +85,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             line-height: 20px;
             border-radius: 3px;
             padding: 12px;
-            ${getVerticalPosition(verticalPosition)}
+            ${getVerticalPosition(verticalPosition, height)}
             ${getHorizontalPosition(width)}
           }
         `}

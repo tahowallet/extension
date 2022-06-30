@@ -9,10 +9,6 @@ type Props = {
 export default function SignTransactionNetworkAccountInfoTopBar({
   accountTotal,
 }: Props): ReactElement {
-  if (typeof accountTotal === "undefined") {
-    return <></>
-  }
-
   const { shortenedAddress, name, avatarURL } = accountTotal
 
   return (
