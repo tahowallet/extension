@@ -176,7 +176,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
                   gweiFloatToWei(parseFloat(value))
                 )
               }}
-              maxLength={3}
+              maxLength={4}
             />
           </div>
         </div>
