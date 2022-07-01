@@ -21,17 +21,6 @@ well-organized GitHub issues for features and bugs, as well as organize folks
 to tackle any issues they’re interested in. For the time being, the core team
 will be charged with reviewing, critiquing, and ultimately merging new work.
 
-### Short term: Limited Review
-
-In Q4 2021/Q1 2022, Tally Ho is in a heads down sprint to a series of initial
-releases. This means PRs with feature contributions _may_ get closed because
-the team does not have time to review them properly. We still deeply appreciate
-these contributions, and are not planning on forgetting them! When PRs are
-closed for this reason, they will be added to [this tracking
-issue](https://github.com/tallycash/tally-extension/issues/420), which
-the team will revisit with community input in Q1 2022. If you’re wondering
-whether a feature is likely to get reviewed, we strongly recommend discussing
-in Discord before going all in.
 
 ## Getting started
 
