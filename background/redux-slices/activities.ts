@@ -20,11 +20,11 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
     ) {
       // Sort completed transactions above dropped ones.
       if (a.nonce === b.nonce) {
-        if ("status" in a && a.blockHeight === null && a.status === 0) {
-          return -1
-        }
-        if ("status" in b && b.blockHeight === null && b.status === 0) {
+        if (a.blockHash === null) {
           return 1
+        }
+        if (b.blockHash === null) {
+          return -1
         }
       }
       // Sort by nonce if a block height is missing or equal between two
