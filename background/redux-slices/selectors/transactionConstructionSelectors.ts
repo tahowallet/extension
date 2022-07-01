@@ -15,7 +15,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
     const selectedFeesPerGas =
       transactionConstruction.estimatedFeesPerGas?.[currentNetwork.chainID]?.[
         transactionConstruction.feeTypeSelected
-      ]
+      ] ?? transactionConstruction.customFeesPerGas
     return {
       feeType: transactionConstruction.feeTypeSelected,
       gasLimit: undefined,

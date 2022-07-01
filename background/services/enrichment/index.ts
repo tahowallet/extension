@@ -123,11 +123,25 @@ export default class EnrichmentService extends BaseService<Events> {
     const resolvedTime = Date.now()
     let block: AnyEVMBlock | undefined
 
-    if (transaction?.blockHash) {
-      block = await this.chainService.getBlockData(
+    let hasInsufficientFunds = false
+
+    const { gasLimit, maxFeePerGas, maxPriorityFeePerGas, blockHash } =
+      transaction
+
+    if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
+      const gasFee = gasLimit * (maxFeePerGas + maxPriorityFeePerGas)
+      const {
+        assetAmount: { amount: baseAssetBalance },
+      } = await this.chainService.getLatestBaseAccountBalance({
+        address: transaction.from,
         network,
-        transaction.blockHash
-      )
+      })
+      hasInsufficientFunds =
+        gasFee + (transaction.value ?? 0n) > baseAssetBalance
+    }
+
+    if (blockHash) {
+      block = await this.chainService.getBlockData(network, blockHash)
     }
 
     if (typeof transaction.to === "undefined") {
@@ -283,6 +297,11 @@ export default class EnrichmentService extends BaseService<Events> {
       if (subannotations.length > 0) {
         txAnnotation.subannotations = subannotations
       }
+    }
+
+    if (hasInsufficientFunds) {
+      txAnnotation.warnings ??= []
+      txAnnotation.warnings.push("insufficient-funds")
     }
 
     return txAnnotation

@@ -17,7 +17,6 @@ import {
   SignedEVMTransaction,
   toHexChainID,
 } from "../../networks"
-import { ETHEREUM } from "../../constants/networks"
 import {
   eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
@@ -32,6 +31,13 @@ import {
 } from "../../utils/signing"
 import { hexToAscii } from "../../lib/utils"
 import { SUPPORT_POLYGON } from "../../features"
+import {
+  ActiveNetwork,
+  getOrCreateDB,
+  InternalEthereumProviderDatabase,
+} from "./db"
+import { TALLY_INTERNAL_ORIGIN } from "./constants"
+import { ETHEREUM } from "../../constants"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -79,10 +85,15 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     InternalEthereumProviderService,
     [Promise<ChainService>, Promise<PreferenceService>]
   > = async (chainService, preferenceService) => {
-    return new this(await chainService, await preferenceService)
+    return new this(
+      await getOrCreateDB(),
+      await chainService,
+      await preferenceService
+    )
   }
 
   private constructor(
+    private db: InternalEthereumProviderDatabase,
     private chainService: ChainService,
     private preferenceService: PreferenceService
   ) {
@@ -95,7 +106,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           id: event.id,
           result: await this.routeSafeRPCRequest(
             event.request.method,
-            event.request.params
+            event.request.params,
+            TALLY_INTERNAL_ORIGIN
           ),
         }
         logger.log("internal response:", response)
@@ -119,7 +131,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   async routeSafeRPCRequest(
     method: string,
-    params: RPCRequest["params"]
+    params: RPCRequest["params"],
+    origin: string
   ): Promise<unknown> {
     switch (method) {
       // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
@@ -130,7 +143,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTypedData({
           account: {
             address: params[0] as string,
-            network: this.activeNetwork,
+            network: await this.getActiveOrDefaultNetwork(origin),
           },
           typedData: JSON.parse(params[1] as string),
         })
@@ -139,7 +152,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         // allowed to have an RPC call made to it. Ideally this would be based
         // on a user's idea of a dApp connection rather than a network-specific
         // modality, requiring it to be constantly "switched"
-        return toHexChainID(this.activeNetwork.chainID)
+        return toHexChainID(
+          (await this.getActiveOrDefaultNetwork(origin)).chainID
+        )
       case "eth_blockNumber":
       case "eth_call":
       case "eth_estimateGas":
@@ -179,7 +194,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "net_version":
       case "web3_clientVersion":
       case "web3_sha3":
-        return this.chainService.send(method, params, this.activeNetwork)
+        return this.chainService.send(
+          method,
+          params,
+          await this.getActiveOrDefaultNetwork(origin)
+        )
       case "eth_accounts": {
         // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
         const { address } = await this.preferenceService.getSelectedAccount()
@@ -187,14 +206,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       }
       case "eth_sendTransaction":
         return this.signTransaction(
-          params[0] as JsonRpcTransactionRequest
+          params[0] as JsonRpcTransactionRequest,
+          origin
         ).then(async (signed) => {
           await this.chainService.broadcastSignedTransaction(signed)
           return signed.hash
         })
       case "eth_signTransaction":
         return this.signTransaction(
-          params[0] as JsonRpcTransactionRequest
+          params[0] as JsonRpcTransactionRequest,
+          origin
         ).then((signedTransaction) =>
           serializeEthersTransaction(
             ethersTransactionFromSignedTransaction(signedTransaction),
@@ -206,25 +227,27 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           )
         )
       case "eth_sign": // --- important wallet methods ---
-        return this.signData({
-          hexData: params[1] as string,
-          account: params[0] as string,
-        })
+        return this.signData(
+          {
+            input: params[1] as string,
+            account: params[0] as string,
+          },
+          origin
+        )
       case "personal_sign":
-        return this.signData({
-          hexData: params[0] as string,
-          account: params[1] as string,
-        })
+        return this.signData(
+          {
+            input: params[0] as string,
+            account: params[1] as string,
+          },
+          origin
+        )
       case "wallet_switchEthereumChain": {
         if (SUPPORT_POLYGON) {
           const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-          const newNetwork = this.chainService.supportedNetworks.find(
-            (network) =>
-              network.chainID === newChainId ||
-              toHexChainID(network.chainID) === newChainId
-          )
-          if (newNetwork) {
-            this.activeNetwork = newNetwork
+          const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
+          if (supportedNetwork) {
+            await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
             return null
           }
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
@@ -258,7 +281,30 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     }
   }
 
-  private async signTransaction(transactionRequest: JsonRpcTransactionRequest) {
+  private async getInternalActiveChain(): Promise<ActiveNetwork> {
+    return this.db.getActiveNetworkForOrigin(
+      TALLY_INTERNAL_ORIGIN
+    ) as Promise<ActiveNetwork>
+  }
+
+  async getActiveOrDefaultNetwork(origin: string): Promise<EVMNetwork> {
+    if (SUPPORT_POLYGON) {
+      const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
+      if (!activeNetwork) {
+        // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
+        // use the default network.
+        const defaultNetwork = (await this.getInternalActiveChain()).network
+        return defaultNetwork
+      }
+      return activeNetwork.network
+    }
+    return this.activeNetwork
+  }
+
+  private async signTransaction(
+    transactionRequest: JsonRpcTransactionRequest,
+    origin: string
+  ) {
     const { from, ...convertedRequest } =
       eip1559TransactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
@@ -274,17 +320,27 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       throw new Error("Transactions must have a from address for signing.")
     }
 
+    const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
+
     return new Promise<SignedEVMTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,
           from,
-          network: this.activeNetwork,
+          network: activeNetwork,
         },
         resolver: resolve,
         rejecter: reject,
       })
     })
+  }
+
+  getSupportedNetworkByChainId(chainID: string): EVMNetwork | undefined {
+    const network = this.chainService.supportedNetworks.find(
+      (supportedNetwork) =>
+        toHexChainID(supportedNetwork.chainID) === toHexChainID(chainID)
+    )
+    return network
   }
 
   private async signTypedData(params: SignTypedDataRequest) {
@@ -297,22 +353,26 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async signData({
-    hexData,
-    account,
-  }: {
-    hexData: string
-    account: string
-  }) {
-    const asciiData = hexToAscii(hexData)
+  private async signData(
+    {
+      input,
+      account,
+    }: {
+      input: string
+      account: string
+    },
+    origin: string
+  ) {
+    const asciiData = input.startsWith("0x") ? hexToAscii(input) : input
     const { data, type } = parseSigningData(asciiData)
+    const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signDataRequest", {
         payload: {
           account: {
             address: account,
-            network: this.activeNetwork,
+            network: activeNetwork,
           },
           signingData: data,
           messageType: type,

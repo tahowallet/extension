@@ -18,3 +18,23 @@ export function isFulfilledPromise<T>(
 export function isDefined<T>(input: T | undefined): input is T {
   return input !== undefined
 }
+
+/**
+ * A type guard (ish) that will only successfully compile if the passed
+ * parameter is `never`. Used for `switch` statement exhaustiveness checks.
+ *
+ * @example
+ *    private async doSomethingWithASigner(signer: AccountSigner): Promise<string> {
+ *      switch (signer.type) {
+ *        case "ledger":
+ *          return "Got a ledger!"
+ *        case "keyring":
+ *          return "Got a keyring!"
+ *        default:
+ *          return assertUnreachable(signer)
+ *      }
+ *    }
+ */
+export function assertUnreachable(x: never): never {
+  throw new Error(`Didn't expect to get here with value: ${x}`)
+}

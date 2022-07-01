@@ -17,7 +17,7 @@ import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { DOGGO, HOUR } from "../constants"
-import { USE_MAINNET_FORK } from "../features"
+import { HIDE_TOKEN_FEATURES, USE_MAINNET_FORK } from "../features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
 import { ReferrerStats } from "../services/doggo/db"
 import { fromFixedPointNumber } from "../lib/fixed-point"
@@ -202,6 +202,9 @@ export default claimingSlice.reducer
 export const checkAlreadyClaimed = createBackgroundAsyncThunk(
   "claim/checkAlreadyClaimed",
   async ({ claimState }: { claimState: ClaimingState }, { dispatch }) => {
+    if (HIDE_TOKEN_FEATURES) {
+      return false
+    }
     const { eligibility } = claimState
     const distributorContract = await getDistributorContract()
     if (!eligibility) {

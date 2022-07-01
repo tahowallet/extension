@@ -14,14 +14,14 @@ import Overview from "../pages/Overview"
 import SingleAsset from "../pages/SingleAsset"
 import Earn from "../pages/Earn"
 import EarnDeposit from "../pages/EarnDeposit"
-import Menu from "../pages/Menu"
+import Menu from "../pages/Settings"
 import Send from "../pages/Send"
 import Swap from "../pages/Swap"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
-import MenuExportLogs from "../pages/Menu/MenuExportLogs"
+import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 
 interface PageList {
   path: string
@@ -127,14 +127,14 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/menu/export-logs",
-    Component: MenuExportLogs,
+    path: "/settings/export-logs",
+    Component: SettingsExportLogs,
     hasTabBar: true,
     hasTopBar: false,
     persistOnClose: true,
   },
   {
-    path: "/menu",
+    path: "/settings",
     Component: Menu,
     hasTabBar: true,
     hasTopBar: false,

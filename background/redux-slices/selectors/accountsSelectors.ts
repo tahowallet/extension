@@ -25,17 +25,17 @@ import {
   sameEVMAddress,
   truncateAddress,
 } from "../../lib/utils"
-import { selectAddressSigningMethods } from "./signingSelectors"
-import { SigningMethod } from "../../utils/signing"
+import { selectAccountSignersByAddress } from "./signingSelectors"
 import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./keyringsSelectors"
 import { AddressOnNetwork } from "../../accounts"
-import { sameNetwork } from "../../networks"
+import { EVMNetwork, sameNetwork } from "../../networks"
 import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
+import { AccountSigner, SignerType } from "../../services/signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -47,6 +47,7 @@ const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   mainCurrencySymbol: string,
+  currentNetwork: EVMNetwork,
   hideDust: boolean
 ): {
   combinedAssetAmounts: CompleteAssetAmount[]
@@ -89,11 +90,11 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
+      const baseAsset = BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
       const isForciblyDisplayed =
         (!HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol) ||
-        // TODO Update filter to let through only the base asset of the current
-        // TODO network.
-        BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol] !== undefined
+        (currentNetwork.baseAsset.name === baseAsset?.name &&
+          currentNetwork.baseAsset.symbol === baseAsset?.symbol)
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
           ? true
@@ -156,14 +157,16 @@ export const getAssetsState = (state: RootState): AssetsState => state.assets
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
+  selectCurrentNetwork,
   selectHideDust,
   selectMainCurrencySymbol,
-  (account, assets, hideDust, mainCurrencySymbol) => {
+  (account, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
+        currentNetwork,
         hideDust
       )
 
@@ -195,9 +198,10 @@ export const selectMainCurrencyPricePoint = createSelector(
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
+  selectCurrentNetwork,
   selectHideDust,
   selectMainCurrencySymbol,
-  (currentAccount, assets, hideDust, mainCurrencySymbol) => {
+  (currentAccount, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -211,6 +215,7 @@ export const selectCurrentAccountBalances = createSelector(
         assetAmounts,
         assets,
         mainCurrencySymbol,
+        currentNetwork,
         hideDust
       )
 
@@ -240,8 +245,11 @@ export const selectCurrentAccountAssetBalance = createSelector(
 export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
+  // FIXME This is solely used for categorization.
+  // FIXME Add `categoryFor(accountSigner): string` utility function to
+  // FIXME generalize beyond keyrings.
   keyringId: string | null
-  signingMethod: SigningMethod | null
+  accountSigner: AccountSigner | null
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
@@ -249,25 +257,22 @@ export type AccountTotal = AddressOnNetwork & {
 
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
-const signingMethodTypeToAccountType: Record<
-  SigningMethod["type"],
-  AccountType
-> = {
+const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   ledger: AccountType.Ledger,
 }
 
 const getAccountType = (
   address: string,
-  signingMethod: SigningMethod,
+  signer: AccountSigner,
   addressSources: {
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signingMethod == null) {
+  if (signer == null) {
     return AccountType.ReadOnly
   }
-  if (signingMethodTypeToAccountType[signingMethod.type] === "ledger") {
+  if (signerTypeToAccountType[signer.type] === "ledger") {
     return AccountType.Ledger
   }
   if (addressSources[address] === "import") {
@@ -280,7 +285,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
   selectCurrentNetwork,
-  selectAddressSigningMethods,
+  selectAccountSignersByAddress,
   selectKeyringsByAddresses,
   selectSourcesByAddress,
   selectMainCurrencySymbol,
@@ -288,7 +293,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
     accounts,
     assets,
     currentNetwork,
-    signingAccounts,
+    accountSignersByAddress,
     keyringsByAddresses,
     sourcesByAddress,
     mainCurrencySymbol
@@ -300,12 +305,12 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
-        const signingMethod = signingAccounts[address] ?? null
+        const accountSigner = accountSignersByAddress[address] ?? null
         const keyringId = keyringsByAddresses[address]?.id
 
         const accountType = getAccountType(
           address,
-          signingMethod,
+          accountSigner,
           sourcesByAddress
         )
 
@@ -316,7 +321,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
             shortenedAddress,
             accountType,
             keyringId,
-            signingMethod,
+            accountSigner,
           }
         }
 
@@ -354,7 +359,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
           shortenedAddress,
           accountType,
           keyringId,
-          signingMethod,
+          accountSigner,
           name: accountData.ens.name ?? accountData.defaultName,
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(

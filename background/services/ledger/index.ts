@@ -35,6 +35,12 @@ enum LedgerType {
 
 const LedgerTypeAsString = Object.values(LedgerType)
 
+export type LedgerAccountSigner = {
+  type: "ledger"
+  deviceID: string
+  path: string
+}
+
 export const LedgerProductDatabase = {
   LEDGER_NANO_S: { productId: 0x1015 },
   LEDGER_NANO_X: { productId: 0x4015 },
@@ -276,7 +282,10 @@ export default class LedgerService extends BaseService<Events> {
     return this.#currentLedgerId
   }
 
-  async deriveAddress(accountID: string): Promise<HexString> {
+  async deriveAddress({
+    // FIXME Use deviceID.
+    path: derivationPath,
+  }: LedgerAccountSigner): Promise<HexString> {
     return this.runSerialized(async () => {
       try {
         if (!this.transport) {
@@ -290,21 +299,21 @@ export default class LedgerService extends BaseService<Events> {
         const eth = new Eth(this.transport)
 
         const accountAddress = normalizeEVMAddress(
-          await deriveAddressOnLedger(accountID, eth)
+          await deriveAddressOnLedger(derivationPath, eth)
         )
 
         this.emitter.emit("address", {
           ledgerID: this.#currentLedgerId,
-          derivationPath: accountID,
+          derivationPath,
           address: accountAddress,
         })
 
         return accountAddress
       } catch (err) {
         logger.error(
-          `Error encountered! ledgerID: ${
+          `Error encountered deriving address at path ${derivationPath}! ledgerID: ${
             this.#currentLedgerId
-          } accountID: ${accountID} error: ${err}`
+          } error: ${err}`
         )
         throw err
       }
@@ -319,10 +328,13 @@ export default class LedgerService extends BaseService<Events> {
     await this.db.addAccount({ ledgerId: this.#currentLedgerId, path, address })
   }
 
+  async removeAddress(address: HexString): Promise<void> {
+    await this.db.removeAccount(address)
+  }
+
   async signTransaction(
     transactionRequest: EIP1559TransactionRequest & { nonce: number },
-    deviceID: string,
-    path: string
+    { deviceID, path: derivationPath }: LedgerAccountSigner
   ): Promise<SignedEVMTransaction> {
     return this.runSerialized(async () => {
       try {
@@ -347,10 +359,14 @@ export default class LedgerService extends BaseService<Events> {
           transactionRequest.from
         )
 
-        this.checkCanSign(accountData, path, deviceID)
+        this.checkCanSign(accountData, derivationPath, deviceID)
 
         const eth = new Eth(this.transport)
-        const signature = await eth.signTransaction(path, serializedTx, null)
+        const signature = await eth.signTransaction(
+          derivationPath,
+          serializedTx,
+          null
+        )
 
         const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
           r: `0x${signature.r}`,
@@ -415,8 +431,7 @@ export default class LedgerService extends BaseService<Events> {
   async signTypedData(
     typedData: EIP712TypedData,
     account: HexString,
-    deviceID: string,
-    path: string
+    { deviceID, path: derivationPath }: LedgerAccountSigner
   ): Promise<string> {
     return this.runSerialized(async () => {
       if (!this.transport) {
@@ -436,10 +451,10 @@ export default class LedgerService extends BaseService<Events> {
 
       const accountData = await this.db.getAccountByAddress(account)
 
-      this.checkCanSign(accountData, path, deviceID)
+      this.checkCanSign(accountData, derivationPath, deviceID)
 
       const signature = await eth.signEIP712HashedMessage(
-        path,
+        derivationPath,
         hashedDomain,
         hashedMessage
       )

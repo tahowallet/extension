@@ -1,7 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import {
   getAccountTotal,
-  selectCurrentAccountSigningMethod,
+  selectCurrentAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -13,7 +13,7 @@ import { useHistory } from "react-router-dom"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useIsSigningMethodLocked,
+  useIsSignerLocked,
 } from "../hooks"
 import PersonalSignDetailPanel from "./PersonalSignDetailPanel"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
@@ -37,11 +37,11 @@ export default function PersonalSignData(): ReactElement {
     return undefined
   })
 
-  const signingMethod = useBackgroundSelector(selectCurrentAccountSigningMethod)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
-  const isLocked = useIsSigningMethodLocked(signingMethod)
+  const isLocked = useIsSignerLocked(currentAccountSigner)
   if (isLocked) return <></>
 
   if (
@@ -52,10 +52,15 @@ export default function PersonalSignData(): ReactElement {
   }
 
   const handleConfirm = () => {
-    if (signingMethod === null) return
+    if (currentAccountSigner === null) return
     if (signingDataRequest === undefined) return
 
-    dispatch(signData({ request: signingDataRequest, signingMethod }))
+    dispatch(
+      signData({
+        request: signingDataRequest,
+        accountSigner: currentAccountSigner,
+      })
+    )
     setIsTransactionSigning(true)
   }
 

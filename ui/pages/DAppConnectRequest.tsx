@@ -6,7 +6,7 @@ import {
 import {
   denyOrRevokePermission,
   grantPermission,
-} from "@tallyho/tally-background/redux-slices/dapp-permission"
+} from "@tallyho/tally-background/redux-slices/dapp"
 
 import SharedButton from "../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"

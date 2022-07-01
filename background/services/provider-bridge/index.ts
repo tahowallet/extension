@@ -25,10 +25,11 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
+import { PermissionMap } from "./utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
-  initializeAllowedPages: Record<string, PermissionRequest>
+  initializeAllowedPages: PermissionMap
   setClaimReferrer: string
 }
 
@@ -150,7 +151,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = await this.routeContentScriptRPCRequest(
         originPermission,
         event.request.method,
-        event.request.params
+        event.request.params,
+        origin
       )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
@@ -184,7 +186,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
         response.result = await this.routeContentScriptRPCRequest(
           persistedPermission,
           "eth_accounts",
-          event.request.params
+          event.request.params,
+          origin
         )
       } else {
         // if user does NOT agree, then reject
@@ -267,7 +270,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
     // FIXME proper error handling if this happens - should not tho
-    if (permission.state !== "deny" || !permission.accountAddress) return
+    if (permission.state !== "deny" || !permission.accountAddress) {
+      return
+    }
 
     const { address } = await this.preferenceService.getSelectedAccount()
 
@@ -300,10 +305,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeSafeRequest(
     method: string,
     params: unknown[],
+    origin: string,
     popupPromise: Promise<browser.Windows.Window>
   ): Promise<unknown> {
     const response = await this.internalEthereumProviderService
-      .routeSafeRPCRequest(method, params)
+      .routeSafeRPCRequest(method, params, origin)
       .finally(async () => {
         // Close the popup once we're done submitting.
         const popup = await popupPromise
@@ -317,7 +323,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeContentScriptRPCRequest(
     enablingPermission: PermissionRequest,
     method: string,
-    params: RPCRequest["params"]
+    params: RPCRequest["params"],
+    origin: string
   ): Promise<unknown> {
     try {
       switch (method) {
@@ -336,6 +343,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.signData)
           )
         case "eth_sign":
@@ -344,6 +352,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "personal_sign":
@@ -352,6 +361,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.personalSignData)
           )
         case "eth_signTransaction":
@@ -364,13 +374,15 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.routeSafeRequest(
             method,
             params,
+            origin,
             showExtensionPopup(AllowedQueryParamPage.signTransaction)
           )
 
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
-            params
+            params,
+            origin
           )
         }
       }

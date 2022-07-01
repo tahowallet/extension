@@ -278,29 +278,30 @@ export default class ChainService extends BaseService<Events> {
           }),
         ])
         .concat(
-          // TODO make multi-network
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          this.db
-            .getNetworkPendingTransactions(ETHEREUM)
-            .then((pendingTransactions) => {
-              pendingTransactions.forEach(({ hash, firstSeen }) => {
-                logger.debug(
-                  `Queuing pending transaction ${hash} for status lookup.`
-                )
-                this.queueTransactionHashToRetrieve(
-                  ETHEREUM,
-                  hash,
-                  firstSeen
-                ).catch((e) => {
-                  logger.error(e)
+          this.supportedNetworks.map((network) =>
+            this.db
+              .getNetworkPendingTransactions(network)
+              .then((pendingTransactions) => {
+                pendingTransactions.forEach(({ hash, firstSeen }) => {
+                  logger.debug(
+                    `Queuing pending transaction ${hash} for status lookup.`
+                  )
+                  this.queueTransactionHashToRetrieve(
+                    network,
+                    hash,
+                    firstSeen
+                  ).catch((e) => {
+                    logger.error(e)
+                  })
                 })
               })
-            })
-            .catch((e) => {
-              logger.error(e)
-            })
+              .catch((e) => {
+                logger.error(e)
+              })
+          )
         )
     )
   }
@@ -660,6 +661,7 @@ export default class ChainService extends BaseService<Events> {
     )
 
     if (!seen) {
+      // @TODO Interleave initial transaction retrieval by network
       this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
     }
   }

@@ -41,13 +41,13 @@ export default function SignTransactionContainer({
   isArbitraryDataSigningRequired: boolean
 }): ReactElement {
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
-  const signingMethod = signerAccountTotal?.signingMethod
+  const accountSigner = signerAccountTotal?.accountSigner
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
   const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
-  const signingLedgerState = useSigningLedgerState(signingMethod ?? null)
+  const signingLedgerState = useSigningLedgerState(accountSigner ?? null)
 
-  const isLedgerSigning = signingMethod?.type === "ledger"
+  const isLedgerSigning = accountSigner?.type === "ledger"
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
 
   const isLedgerAvailable = signingLedgerState?.state === "available"
@@ -132,7 +132,7 @@ export default function SignTransactionContainer({
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
-            {signingMethod &&
+            {accountSigner &&
               (isLedgerSigning && !canLedgerSign ? (
                 <SharedButton
                   type="primaryGreen"
@@ -154,7 +154,7 @@ export default function SignTransactionContainer({
                   {confirmButtonLabel}
                 </SharedButton>
               ))}
-            {signingMethod === null && (
+            {accountSigner === null && (
               <span className="no-signing">Read-only accounts cannot sign</span>
             )}
           </div>
