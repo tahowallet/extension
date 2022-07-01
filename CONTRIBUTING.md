@@ -22,7 +22,7 @@ to tackle any issues they’re interested in. For the time being, the core team
 will be charged with reviewing, critiquing, and ultimately merging new work.
 
 
-## Getting started
+## Getting Started
 
 1. Fork tallycash/tally-extension
 2. Clone your fork
