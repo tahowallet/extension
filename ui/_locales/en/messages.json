@@ -155,60 +155,60 @@
     "message": "DAO fee",
     "description": "in Swap > SwapTransactionSettingsChooser"
   },
-  "menuMainMenu": {
-    "message": "Main menu",
-    "description": "in pages > Menu"
+  "settingsMainMenu": {
+    "message": "Settings",
+    "description": "in pages > Settings"
   },
-  "menuHideSmallAssetBalance": {
+  "settingsHideSmallAssetBalance": {
     "message": "Hide asset balance under $1",
-    "description": "in pages > Menu"
+    "description": "in pages > Settings"
   },
-  "menuSetAsDefault": {
+  "settingsSetAsDefault": {
     "message": "Use Tally Ho as default wallet",
-    "description": "in pages > Menu"
+    "description": "in pages > Settings"
   },
-  "menuBugReport": {
+  "settingsBugReport": {
     "message": "Bug report",
-    "description": "in pages > Menu"
+    "description": "in pages > Settings"
   },
-  "menuJoinTitle": {
+  "settingsJoinTitle": {
     "message": "Join our community",
-    "description": "in pages > Menu"
+    "description": "in pages > Settings"
   },
-  "menuJoinDesc": {
+  "settingsJoinDesc": {
     "message": "Join our Discord to give us feedback!",
-    "description": "in pages > Menu"
+    "description": "in pages > Settings"
   },
-  "menuJoinBtn": {
+  "settingsJoinBtn": {
     "message": "Join and give feedback",
-    "description": "in pages > Menu"
+    "description": "in pages > Settings"
   },
-  "menuExportTitle": {
+  "settingsExportTitle": {
     "message": "Bug report",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   },
-  "menuExportOptionDiscordTitle": {
+  "settingsExportOptionDiscordTitle": {
     "message": "1. Join #bug-reports on Discord",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   },
-  "menuExportOptionDiscordDesc": {
+  "settingsExportOptionDiscordDesc": {
     "message": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   },
-  "menuExportOptionDiscordBtn": {
+  "settingsExportOptionDiscordBtn": {
     "message": "Join Discord",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   },
-  "menuExportOptionLogTitle": {
+  "settingsExportOptionLogTitle": {
     "message": "2. Export logs",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   },
-  "menuExportOptionLogDesc": {
+  "settingsExportOptionLogDesc": {
     "message": "To better understand your bug, we need you to export your logs.",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   },
-  "menuExportOptionLogBtn": {
+  "settingsExportOptionLogBtn": {
     "message": "Export logs",
-    "description": "in pages > Menu > Report bug"
+    "description": "in pages > Settings > Report bug"
   }
 }
