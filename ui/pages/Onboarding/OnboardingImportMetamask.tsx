@@ -121,18 +121,21 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
-    const trimmedRecoveryPhrase = recoveryPhrase.trim()
-    const splitTrimmedRecoveryPhrase = trimmedRecoveryPhrase.split(" ")
+    const plainRecoveryPhrase = recoveryPhrase
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim()
+    const splitTrimmedRecoveryPhrase = plainRecoveryPhrase.split(" ")
     if (
       splitTrimmedRecoveryPhrase.length !== 12 &&
       splitTrimmedRecoveryPhrase.length !== 24
     ) {
       setErrorMessage("Must be a 12 or 24 word recovery phrase")
-    } else if (isValidMnemonic(trimmedRecoveryPhrase)) {
+    } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(
         importKeyring({
-          mnemonic: trimmedRecoveryPhrase,
+          mnemonic: plainRecoveryPhrase,
           path,
           source: "import",
         })
