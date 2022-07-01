@@ -314,6 +314,13 @@ export default function NetworkSettingsSelectDeprecated({
             font-size: 18px;
             font-weight: 600;
           }
+          .price {
+            width: 176px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: right;
+          }
           .subtext {
             color: var(--green-60);
             font-size: 14px;
