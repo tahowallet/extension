@@ -1,9 +1,9 @@
 import React, { ReactElement } from "react"
-import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import t from "../../utils/i18n"
 
 interface Props {
   info: string
@@ -15,7 +15,6 @@ interface Props {
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
-  const { t } = useTranslation()
   const { width, height, info, isSelected, network, onSelect } = props
 
   const dispatch = useDispatch()

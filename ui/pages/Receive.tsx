@@ -1,14 +1,13 @@
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
-import { useTranslation } from "react-i18next"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
+import t from "../utils/i18n"
 
 export default function Receive(): ReactElement {
-  const { t } = useTranslation()
   const dispatch = useDispatch()
 
   const currentAccount: { address: string } =

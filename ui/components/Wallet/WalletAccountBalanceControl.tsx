@@ -1,5 +1,4 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
@@ -9,9 +8,9 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
+import t from "../../utils/i18n"
 
 function ReadOnlyNotice(): ReactElement {
-  const { t } = useTranslation()
   return (
     <div className="notice_wrap">
       <div className="icon_eye" />
@@ -118,7 +117,6 @@ interface Props {
 export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
-  const { t } = useTranslation()
   const { balance, initializationLoadingTimeExpired } = props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
 

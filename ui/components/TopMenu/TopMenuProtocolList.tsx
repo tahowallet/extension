@@ -14,12 +14,12 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
-import i18n from "../../_locales/i18n"
+import t from "../../utils/i18n"
 
 const listItemInfo = [
   {
     network: ETHEREUM,
-    info: i18n.t("protocolMainnet"),
+    info: t("protocolMainnet"),
     width: 18,
     height: 29,
   },
@@ -27,7 +27,7 @@ const listItemInfo = [
     ? [
         {
           network: POLYGON,
-          info: i18n.t("protocolL2"),
+          info: t("protocolL2"),
           width: 24,
           height: 24,
         },
@@ -37,7 +37,7 @@ const listItemInfo = [
     ? [
         {
           network: ARBITRUM_ONE,
-          info: i18n.t("protocolL2"),
+          info: t("protocolL2"),
           width: 23.2,
           height: 26,
         },
@@ -47,7 +47,7 @@ const listItemInfo = [
     ? [
         {
           network: OPTIMISM,
-          info: i18n.t("protocolL2"),
+          info: t("protocolL2"),
           width: 24,
           height: 24,
         },
@@ -55,7 +55,7 @@ const listItemInfo = [
     : []),
   // {
   //   name: "Binance Smart Chain",
-  //   info: i18n.t("protocolCompatibleChain"),
+  //   info: t("protocolCompatibleChain"),
   //   width: 24,
   //   height: 24,
   // },

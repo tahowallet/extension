@@ -5,7 +5,6 @@ import React, {
   useState,
   useRef,
 } from "react"
-import { useTranslation } from "react-i18next"
 import {
   fetchSwapPrice,
   clearSwapQuote,
@@ -55,6 +54,7 @@ import {
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
+import t from "../utils/i18n"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -83,7 +83,6 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
 }
 
 export default function Swap(): ReactElement {
-  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const location = useLocation<
     { symbol: string; contractAddress?: string } | undefined

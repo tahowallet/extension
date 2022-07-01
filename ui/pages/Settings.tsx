@@ -1,6 +1,5 @@
 import React, { ReactElement } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useTranslation } from "react-i18next"
 import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
@@ -10,6 +9,7 @@ import {
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
+import t from "../utils/i18n"
 
 function SettingRow(props: {
   title: string
@@ -42,7 +42,6 @@ function SettingRow(props: {
 }
 
 export default function Settings(): ReactElement {
-  const { t } = useTranslation()
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)

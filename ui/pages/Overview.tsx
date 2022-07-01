@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { useTranslation } from "react-i18next"
 import {
   getAddressCount,
   selectAccountAndTimestampedActivities,
@@ -7,9 +6,9 @@ import {
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import t from "../utils/i18n"
 
 export default function Overview(): ReactElement {
-  const { t } = useTranslation()
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
