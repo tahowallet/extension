@@ -1,10 +1,11 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import dayjs from "dayjs"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
-import t from "../../utils/i18n"
 
 export default function SettingsExportLogs(): ReactElement {
+  const { t } = useTranslation()
   const base64LogContent = Buffer.from(
     `${window.navigator.userAgent}\n\n\n${localStorage.getItem("logs")}` || ""
   ).toString("base64")

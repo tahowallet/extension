@@ -1,3 +1,5 @@
+import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   NetworkFeeSettings,
   setFeeType,
@@ -6,8 +8,6 @@ import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-
-import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { setSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
@@ -15,7 +15,6 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
-import t from "../../utils/i18n"
 import SharedSelect, { Option } from "../Shared/SharedSelect"
 
 export type SwapTransactionSettings = {
@@ -41,6 +40,7 @@ export default function SwapTransactionSettingsChooser({
   swapTransactionSettings,
   onSwapTransactionSettingsSave,
 }: SwapTransactionSettingsProps): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
