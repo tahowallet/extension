@@ -21,6 +21,7 @@ well-organized GitHub issues for features and bugs, as well as organize folks
 to tackle any issues they’re interested in. For the time being, the core team
 will be charged with reviewing, critiquing, and ultimately merging new work.
 
+⭐️ Check our ["good first issues" tag](https://github.com/tallycash/extension/issues?q=is%3Aopen+is%3Aissue+label%3A%22🐣+good+first+issue%22) for existing bugs that are more approachable.
 
 ## Use Feature Flags
 
