@@ -20,10 +20,10 @@ const activitiesAdapter = createEntityAdapter<ActivityItem>({
     ) {
       // Sort dropped transactions after their corresponding successful ones.
       if (a.nonce === b.nonce) {
-        if (a.blockHash === null) {
+        if (a.blockHeight === null) {
           return 1
         }
-        if (b.blockHash === null) {
+        if (b.blockHeight === null) {
           return -1
         }
       }
