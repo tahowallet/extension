@@ -323,6 +323,13 @@ export default function NetworkSettingsSelect({
             margin-right: 10px;
             align-items: flex-end;
           }
+          .price {
+            width: 176px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: right;
+          }
           .max_label {
             font-size: 14px;
             color: var(--green-40);
