@@ -5,6 +5,7 @@ import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 interface Props<T> {
   id?: string
   label?: string
+  maxLength?: number
   focusedLabelBackgroundColor: string
   placeholder?: string
   type: "password" | "text" | "number"
@@ -28,6 +29,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     id,
     label,
     placeholder,
+    maxLength,
     focusedLabelBackgroundColor,
     type,
     onChange,
@@ -89,6 +91,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         })}
         step={step}
         ref={inputRef}
+        maxLength={maxLength}
       />
       <label htmlFor={id}>{label}</label>
       {!isEmpty && errorMessage && (
