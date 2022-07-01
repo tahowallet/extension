@@ -184,6 +184,11 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             border-width: 1px;
             text-align: right;
           }
+          .small::-webkit-outer-spin-button,
+          .small::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
         `}
       </style>
     </>

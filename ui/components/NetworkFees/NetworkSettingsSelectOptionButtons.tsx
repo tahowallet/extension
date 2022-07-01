@@ -151,7 +151,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
       key={option.confidence}
       className={classNames("network_option", {
         active: isActive,
-        option_warning: warningMessage,
+        network_option_warning: warningMessage,
       })}
       onClick={handleSelectGasOption}
       type="button"
@@ -167,6 +167,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
             <SharedInput
               value={`${option.maxPriorityGwei}`}
               isSmall
+              type="number"
               onChange={(value: string) => {
                 updateCustomGas(
                   option.baseMaxFeePerGas,
@@ -183,6 +184,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
           <SharedInput
             value={`${option.baseMaxGwei}`}
             isSmall
+            type="number"
             onChange={(value: string) => {
               updateCustomGas(
                 gweiToWei(parseFloat(value)), // @TODO Replace
