@@ -22,6 +22,10 @@ to tackle any issues they’re interested in. For the time being, the core team
 will be charged with reviewing, critiquing, and ultimately merging new work.
 
 
+## Use Feature Flags
+
+When developing a new feature, please put it behind a feature flag. Because this enables you to open PRs in smaller chunks rather than having the feature completely finished, this will help your contributions get merged faster. It'll also help everyone better QA the feature and time its release! Feature flags are set in [`.env.defaults`](https://github.com/tallycash/extension/blob/main/.env.defaults) in tandem with [`features.ts`](https://github.com/tallycash/extension/blob/main/background/features.ts)
+
 ## Getting Started
 
 1. Fork tallycash/tally-extension
