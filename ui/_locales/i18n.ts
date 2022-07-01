@@ -14,7 +14,7 @@ i18n
     resources,
     lng: process.env.DEFAULT_LANG || "en",
     fallbackLng: "en",
-    debug: true,
+    debug: false,
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
