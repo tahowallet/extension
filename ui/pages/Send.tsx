@@ -14,7 +14,6 @@ import {
   FungibleAsset,
   isFungibleAssetAmount,
 } from "@tallyho/tally-background/assets"
-import { ETH } from "@tallyho/tally-background/constants"
 import {
   convertFixedPointNumber,
   parseToFixedPointNumber,
