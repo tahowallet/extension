@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
@@ -43,9 +43,18 @@ import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 export default function Send(): ReactElement {
   const { t } = useTranslation()
   const location = useLocation<FungibleAsset>()
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
-    location.state ?? ETH
+    location.state ?? currentAccount.network.baseAsset
   )
+
+  useEffect(() => {
+    setSelectedAsset(currentAccount.network.baseAsset)
+    // This disable is here because we don't necessarily have euqality-by-reference
+    // due to how we persist the ui redux slice with webext-redux.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAccount.network.baseAsset.symbol])
+
   const [destinationAddress, setDestinationAddress] = useState<
     string | undefined
   >(undefined)
@@ -61,7 +70,6 @@ export default function Send(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
