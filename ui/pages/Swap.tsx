@@ -27,7 +27,6 @@ import {
 import {
   AnyAsset,
   FungibleAsset,
-  isFungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -40,6 +39,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
+import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -180,9 +180,7 @@ export default function Swap(): ReactElement {
         }
         if (
           // Explicitly add a network's base asset.
-          isFungibleAsset(asset) &&
-          // Just checking on symbol is a pretty weak check - can we do better?
-          asset.symbol === currentNetwork.baseAsset.symbol
+          isNetworkBaseAsset(asset, currentNetwork)
         ) {
           return true
         }
