@@ -16,6 +16,7 @@ import { ETHEREUM, POLYGON } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
+// https://api.coingecko.com/api/v3/asset_platforms
 const CHAIN_IDS_TO_COINGECKO_NETWORK_ID = {
   [ETHEREUM.chainID]: "ethereum",
   [POLYGON.chainID]: "polygon-pos",
