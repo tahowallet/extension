@@ -11,8 +11,15 @@ import {
 
 import { toFixedPoint } from "./fixed-point"
 import { isValidCoinGeckoPriceResponse } from "./validate"
+import { EVMNetwork } from "../networks"
+import { ETHEREUM, POLYGON } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
+
+const CHAIN_IDS_TO_COINGECKO_NETWORK_ID = {
+  [ETHEREUM.chainID]: "ethereum",
+  [POLYGON.chainID]: "polygon-pos",
+}
 
 export async function getPrice(
   coingeckoCoinId = "ethereum",
@@ -97,9 +104,10 @@ export async function getPrices(
  * Tokens are specified by an array of contract addresses. Prices are returned
  * as the "unit price" of each single token in the fiat currency.
  */
-export async function getEthereumTokenPrices(
+export async function getTokenPrices(
   tokenAddresses: string[],
-  fiatCurrency: FiatCurrency
+  fiatCurrency: FiatCurrency,
+  network: EVMNetwork
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
@@ -107,7 +115,8 @@ export async function getEthereumTokenPrices(
 
   // TODO cover failed schema validation and http & network errors
   const addys = tokenAddresses.join(",")
-  const url = `${COINGECKO_API_ROOT}/simple/token_price/ethereum?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
+  const coingeckoNetworkId = CHAIN_IDS_TO_COINGECKO_NETWORK_ID[network.chainID]
+  const url = `${COINGECKO_API_ROOT}/simple/token_price/${coingeckoNetworkId}?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   const json = await fetchJson(url)
 
