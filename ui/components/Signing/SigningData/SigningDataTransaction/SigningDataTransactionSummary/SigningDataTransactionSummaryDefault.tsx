@@ -7,8 +7,8 @@ import {
   heuristicDesiredDecimalsForUnitPrice,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
-import {SigningDataTransactionSummaryBody} from "."
-import { SigningDataTransactionSummaryProps } from ".."
+import SigningDataTransactionSummaryBody from "./SigningDataTransactionSummaryBody"
+import { SigningDataTransactionSummaryProps } from "./SigningDataTransactionSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
 import SharedAddress from "../../../../Shared/SharedAddress"
 

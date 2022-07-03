@@ -1,6 +1,6 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { SignerType } from "@tallyho/tally-background/services/signing"
-import { SigningFrame } from ".."
+import { SigningFrame } from "../SigningFrame"
 import SignerKeyringFrame from "./SignerKeyring/SignerKeyringFrame"
 import SignerLedgerFrame from "./SignerLedger/SignerLedgerFrame"
 import SignerReadOnlyFrame from "./SignerReadOnly/SignerReadOnlyFrame"

@@ -1,6 +1,6 @@
 import { AssetSwap } from "@tallyho/tally-background/services/enrichment"
 import React, { ReactElement } from "react"
-import { SigningDataTransactionSummaryProps } from ".."
+import { SigningDataTransactionSummaryProps } from "./SigningDataTransactionSummaryProps"
 import SharedAssetIcon from "../../../../Shared/SharedAssetIcon"
 
 export default function SigningDataTransactionSummarySwapAsset({

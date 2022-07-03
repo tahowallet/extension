@@ -1,6 +1,6 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement } from "react"
-import { SigningFrameProps } from "../.."
+import { SigningFrameProps } from "../../SigningFrame"
 import { useBackgroundDispatch } from "../../../../hooks"
 import SharedButton from "../../../Shared/SharedButton"
 

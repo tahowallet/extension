@@ -44,4 +44,3 @@ export default function SignerKeyringSigning({
   // quick; we may want a brief spinner.
   return <></>
 }
-

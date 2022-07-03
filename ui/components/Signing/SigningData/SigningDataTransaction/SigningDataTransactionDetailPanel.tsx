@@ -4,16 +4,18 @@ import {
   updateTransactionData,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { EnrichedEIP1559TransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import FeeSettingsButton from "../../../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import SharedBanner from "../../../Shared/SharedBanner"
-import { SigningDataTransactionProps } from "."
 
 export default function SigningDataTransactionDetailPanel({
   transactionRequest,
-}: SigningDataTransactionProps): ReactElement {
+}: {
+  transactionRequest: EnrichedEIP1559TransactionRequest
+}): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)

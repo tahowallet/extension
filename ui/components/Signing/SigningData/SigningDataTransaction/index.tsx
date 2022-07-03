@@ -1,24 +1,11 @@
 import React, { ReactElement } from "react"
-import {
-  EnrichedEIP1559TransactionRequest,
-  TransactionAnnotation,
-} from "@tallyho/tally-background/services/enrichment"
-import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
+import { EnrichedEIP1559TransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import SigningDataTransactionPanelSwitcher from "./SigningDataTransactionPanelSwitcher"
 import SigningDataTransactionPanelCombined from "./SigningDataTransactionPanelCombined"
 import SigningDataTransactionSummary from "./SigningDataTransactionSummary"
 
 export type SigningDataTransactionProps = {
   transactionRequest: EnrichedEIP1559TransactionRequest
-}
-
-export type SigningDataTransactionSummaryProps<
-  T extends TransactionAnnotation | undefined =
-    | TransactionAnnotation
-    | undefined
-> = {
-  transactionRequest: EIP1559TransactionRequest
-  annotation: T
 }
 
 export default function SigningDataTransaction({

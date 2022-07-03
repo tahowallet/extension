@@ -1,4 +1,4 @@
-import {USE_UPDATED_SIGNING_UI} from "@tallyho/tally-background/features"
+import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
@@ -10,7 +10,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useState } from "react"
 import { useHistory } from "react-router-dom"
-import {Signing} from "../components/Signing"
+import Signing from "../components/Signing"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import {
   useBackgroundDispatch,

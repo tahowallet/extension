@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
-import { SigningDataTransactionSummaryBody } from "."
-import { SigningDataTransactionSummaryProps } from ".."
+import SigningDataTransactionSummaryBody from "./SigningDataTransactionSummaryBody"
+import { SigningDataTransactionSummaryProps } from "./SigningDataTransactionSummaryProps"
 import SharedAddress from "../../../../Shared/SharedAddress"
 
 export default function SigningDataTransactionSummaryContractInteraction({

@@ -1,9 +1,10 @@
-import React from "react"
+import React, { ReactElement } from "react"
 import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 import {
   rejectDataSignature,
   signData,
   SignOperation,
+  SignOperationType,
   signTypedData,
 } from "@tallyho/tally-background/redux-slices/signing"
 import {
@@ -14,8 +15,25 @@ import {
   SignDataRequest,
   SignTypedDataRequest,
 } from "@tallyho/tally-background/utils/signing"
-import { ResolvedSignatureDetails } from ".."
+import { AccountSigner } from "@tallyho/tally-background/services/signing"
+import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { AnyAction } from "redux"
 import SigningDataTransaction from "./SigningDataTransaction"
+
+/**
+ * Details regarding a signature request, resolved for a signer ahead of time
+ * based on the type of signature, the account whose signature is being
+ * requested, and the network on which that signature is taking place; see
+ * `resolveSignatureDetails`.
+ */
+export type ResolvedSignatureDetails = {
+  signer: AccountSigner
+  signingAddress: AddressOnNetwork
+  renderedSigningData: ReactElement
+  signingAction: string
+  signActionCreator: () => AnyAction
+  rejectActionCreator: () => AnyAction
+}
 
 export function resolveTransactionSignatureDetails({
   request,
@@ -64,4 +82,19 @@ export function resolveTypedDataSignatureDetails({
     signActionCreator: () => signTypedData({ request, accountSigner }),
     rejectActionCreator: rejectDataSignature,
   }
+}
+
+// Takes a signing request and resolves the signer that should be used to sign
+// it and the details of signing data for user presentation.
+export function resolveSignatureDetails<T extends SignOperationType>({
+  request,
+  accountSigner,
+}: SignOperation<T>): ResolvedSignatureDetails {
+  if ("signingData" in request) {
+    return resolveDataSignatureDetails({ request, accountSigner })
+  }
+  if ("typedData" in request) {
+    return resolveTypedDataSignatureDetails({ request, accountSigner })
+  }
+  return resolveTransactionSignatureDetails({ request, accountSigner })
 }

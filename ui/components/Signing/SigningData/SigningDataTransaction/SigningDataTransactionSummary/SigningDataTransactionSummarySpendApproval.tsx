@@ -21,7 +21,7 @@ import SharedInput from "../../../../Shared/SharedInput"
 import SharedSkeletonLoader from "../../../../Shared/SharedSkeletonLoader"
 import SharedTooltip from "../../../../Shared/SharedTooltip"
 import SharedAddress from "../../../../Shared/SharedAddress"
-import { SigningDataTransactionSummaryProps } from ".."
+import { SigningDataTransactionSummaryProps } from "./SigningDataTransactionSummaryProps"
 
 export default function SigningDataTransactionSummarySpendApproval({
   transactionRequest,

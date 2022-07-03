@@ -1,7 +1,7 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
-import { SigningFrameProps } from "../.."
 import { useBackgroundDispatch } from "../../../../hooks"
+import { SigningFrameProps } from "../../SigningFrame"
 import SignerBaseFrame from "../SignerBaseFrame"
 import SignerKeyringSigning from "./SignerKeyringSigning"
 

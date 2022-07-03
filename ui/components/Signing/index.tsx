@@ -1,77 +1,19 @@
 import React, { ReactElement } from "react"
 import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { AccountSigner, ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import {
+  AccountSigner,
+  ReadOnlyAccountSigner,
+} from "@tallyho/tally-background/services/signing"
 import {
   SignOperation,
   SignOperationType,
 } from "@tallyho/tally-background/redux-slices/signing"
-import { AnyAction } from "redux"
 import { useBackgroundSelector } from "../../hooks"
 import SignTransactionNetworkAccountInfoTopBar from "../SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 import { frameComponentForSigner } from "./Signer"
-import {
-  resolveDataSignatureDetails,
-  resolveTransactionSignatureDetails,
-  resolveTypedDataSignatureDetails,
-} from "./SigningData"
+import { resolveSignatureDetails } from "./SigningData"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SignTransactionLoader from "../SignTransaction/SignTransactionLoader"
-
-/**
- * Details regarding a signature request, resolved for a signer ahead of time
- * based on the type of signature, the account whose signature is being
- * requested, and the network on which that signature is taking place; see
- * `resolveSignatureDetails`.
- */
-export type ResolvedSignatureDetails = {
-  signer: AccountSigner
-  signingAddress: AddressOnNetwork
-  renderedSigningData: ReactElement
-  signingAction: string
-  signActionCreator: () => AnyAction
-  rejectActionCreator: () => AnyAction
-}
-
-/**
- * The props passed to a signing frame.
- */
-export type SigningFrameProps<T extends SignOperationType> =
-  ResolvedSignatureDetails & {
-    request: T
-    signer: AccountSigner
-    /**
-     * A string that represents what signing this data will achieve. Some
-     * signers may ignore this string, others may use it for their confirmation
-     * button.
-     */
-    signingAction: string
-    children: ReactElement
-  }
-
-/**
- * The React component type of a signing frame; all *Frame components in
- * subdirectories should conform to this signature, enforced by the
- * frameComponentForSigner lookup.
- */
-export type SigningFrame<T extends SignOperationType> = (
-  props: SigningFrameProps<T>
-) => ReactElement
-
-// Takes a signing request and resolves the signer that should be used to sign
-// it and the details of signing data for user presentation.
-function resolveSignatureDetails<T extends SignOperationType>({
-  request,
-  accountSigner,
-}: SignOperation<T>): ResolvedSignatureDetails {
-  if ("signingData" in request) {
-    return resolveDataSignatureDetails({ request, accountSigner })
-  }
-  if ("typedData" in request) {
-    return resolveTypedDataSignatureDetails({ request, accountSigner })
-  }
-  return resolveTransactionSignatureDetails({ request, accountSigner })
-}
 
 // Signing acts as a dispatcher, so prop spreading is a good tradeoff.
 // The explicit prop and component types ease the linter rule's concern around
@@ -90,7 +32,7 @@ type SigningProps<T extends SignOperationType> = {
  * being signed to the user, as well as the correct UI for the signer executing
  * the actual signature, and delegates control of the UI to the signer.
  */
-export function Signing<T extends SignOperationType>(
+export default function Signing<T extends SignOperationType>(
   props: SigningProps<T>
 ): ReactElement {
   const { request } = props

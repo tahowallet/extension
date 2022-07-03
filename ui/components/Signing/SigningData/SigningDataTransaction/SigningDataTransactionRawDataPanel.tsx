@@ -1,12 +1,14 @@
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { EnrichedEIP1559TransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import SharedButton from "../../../Shared/SharedButton"
-import { SigningDataTransactionProps } from "."
 
 export default function SignTransactionRawDataPanel({
   transactionRequest,
-}: SigningDataTransactionProps): ReactElement {
+}: {
+  transactionRequest: EnrichedEIP1559TransactionRequest
+}): ReactElement {
   const dispatch = useDispatch()
 
   const { input } = transactionRequest

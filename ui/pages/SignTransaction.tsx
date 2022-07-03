@@ -11,6 +11,7 @@ import {
   getAccountTotal,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -20,8 +21,7 @@ import SignTransactionContainer from "../components/SignTransaction/SignTransact
 import SignTransactionInfoProvider from "../components/SignTransaction/SignTransactionInfoProvider"
 import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
 import SignTransactionPanelCombined from "../components/SignTransaction/SignTransactionPanelCombined"
-import {USE_UPDATED_SIGNING_UI} from "@tallyho/tally-background/features"
-import {Signing} from "../components/Signing"
+import Signing from "../components/Signing"
 
 export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()

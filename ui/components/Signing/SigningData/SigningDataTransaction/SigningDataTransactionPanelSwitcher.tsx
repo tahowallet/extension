@@ -1,12 +1,14 @@
+import { EnrichedEIP1559TransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import React, { ReactElement } from "react"
-import { SigningDataTransactionProps } from "."
 import { useSwitchablePanels } from "../../../../hooks"
 import SigningDataTransactionDetailPanel from "./SigningDataTransactionDetailPanel"
 import SigningDataTransactionRawDataPanel from "./SigningDataTransactionRawDataPanel"
 
 export default function SigningDataTransactionPanelSwitcher({
   transactionRequest,
-}: SigningDataTransactionProps): ReactElement {
+}: {
+  transactionRequest: EnrichedEIP1559TransactionRequest
+}): ReactElement {
   const switchablePanels = useSwitchablePanels([
     {
       name: "Details",
