@@ -59,7 +59,7 @@ export default function SignTransaction(): ReactElement {
     ) {
       dispatch(
         signTransaction({
-          transaction: transactionDetails,
+          request: transactionDetails,
           accountSigner,
         })
       )
