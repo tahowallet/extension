@@ -1,11 +1,15 @@
 {
   "popupEdition": "Community Edition",
-  "overviewTotalBalance": "Total balance",
-  "overviewAddresses": "Addresses",
-  "overviewAssets": "Assets",
-  "overviewTableHeaderAsset": "Asset",
-  "overviewTableHeaderPrice": "Price",
-  "overviewTableHeaderBalance": "Balance",
+  "overview": {
+    "totalBalance": "Total balance",
+    "addresses": "Addresses",
+    "assets": "Assets",
+    "tableHeader": {
+      "asset": "Asset",
+      "price": "Price",
+      "balance": "Balance"
+    }
+  },
   "protocolMainnet": "Mainnet",
   "protocolL2": "L2 scaling solution",
   "protocolCompatibleChain": "Ethereum-compatible blockchain",
