@@ -774,6 +774,7 @@ export default class Main extends BaseService<never> {
           deviceID: id,
           status: "available",
           isArbitraryDataSigningEnabled: metadata.isArbitraryDataSigningEnabled,
+          displayDetails: metadata.displayDetails,
         })
       )
     })
@@ -784,6 +785,7 @@ export default class Main extends BaseService<never> {
           deviceID: id,
           status: "disconnected",
           isArbitraryDataSigningEnabled: false /* dummy */,
+          displayDetails: undefined,
         })
       )
     })

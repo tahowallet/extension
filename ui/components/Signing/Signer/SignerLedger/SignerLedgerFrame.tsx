@@ -60,12 +60,13 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
         ledgerState={ledgerState}
         mustEnableArbitraryDataSigning={mustEnableArbitraryDataSigning}
       />
-      {isSigning ? (
+      {isSigning && ledgerState.state === "available" ? (
         <>
-        <SignerLedgerSigning
-          request={request}
-          isArbitraryDataSigningRequired={isArbitraryDataSigningRequired}
-        />
+          <SignerLedgerSigning
+            request={request}
+            isArbitraryDataSigningRequired={isArbitraryDataSigningRequired}
+            displayDetails={ledgerState.displayDetails}
+          />
         </>
       ) : (
         <>

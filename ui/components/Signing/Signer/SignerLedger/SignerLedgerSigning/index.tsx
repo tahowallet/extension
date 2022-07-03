@@ -3,8 +3,9 @@ import {
   multiplyFixedPointNumbers,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
+import { DisplayDetails } from "@tallyho/tally-background/services/ledger"
 import { ethers } from "ethers"
-import { sha256, toUtf8Bytes, _TypedDataEncoder } from "ethers/lib/utils"
+import { _TypedDataEncoder } from "ethers/lib/utils"
 import React, { ReactElement } from "react"
 import TransactionDetailContainer from "../../../../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItem from "../../../../TransactionDetail/TransactionDetailItem"
@@ -12,19 +13,25 @@ import TransactionDetailItem from "../../../../TransactionDetail/TransactionDeta
 type SignerKeyringSigningProps<T extends SignOperationType> = {
   request: T
   isArbitraryDataSigningRequired: boolean
+  displayDetails: DisplayDetails
 }
 
 export default function SignerLedgerSigning<T extends SignOperationType>({
   request,
   isArbitraryDataSigningRequired,
+  displayDetails,
 }: SignerKeyringSigningProps<T>): ReactElement {
   if ("signingData" in request) {
     return (
       <TransactionDetailContainer>
         <TransactionDetailItem name="Sign message" value="" />
-        {/* FIXME Nano S shows "Message" up to ~96 chars */}
-        {/* FIXME Nano X shows "Message" up to ~255 chars */}
-        <TransactionDetailItem name="Message" value={request.rawSigningData} />
+        <TransactionDetailItem
+          name="Message"
+          value={`${request.rawSigningData.substring(
+            0,
+            displayDetails.messageSigningDisplayLength
+          )}…`}
+        />
       </TransactionDetailContainer>
     )
   }

@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { ETH, ETHEREUM } from "../constants"
+import { DisplayDetails } from "../services/ledger"
 import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
@@ -21,6 +22,7 @@ export interface LedgerDeviceState {
   accounts: Record<string, LedgerAccountState>
   status: LedgerConnectionStatus // FIXME: this should not be persisted
   isArbitraryDataSigningEnabled?: boolean
+  displayDetails: DisplayDetails
 }
 
 export type LedgerState = {
@@ -82,6 +84,7 @@ const ledgerSlice = createSlice({
         accounts: {},
         status: "available",
         isArbitraryDataSigningEnabled: false,
+        displayDetails: { messageSigningDisplayLength: 0 },
       }
     },
     setCurrentDevice: (
@@ -94,12 +97,18 @@ const ledgerSlice = createSlice({
     setDeviceConnectionStatus: (
       immerState,
       {
-        payload: { deviceID, status, isArbitraryDataSigningEnabled },
+        payload: {
+          deviceID,
+          status,
+          isArbitraryDataSigningEnabled,
+          displayDetails,
+        },
       }: {
         payload: {
           deviceID: string
           status: LedgerConnectionStatus
           isArbitraryDataSigningEnabled: boolean
+          displayDetails: DisplayDetails | undefined
         }
       }
     ) => {
@@ -114,6 +123,7 @@ const ledgerSlice = createSlice({
       device.status = status
 
       device.isArbitraryDataSigningEnabled = isArbitraryDataSigningEnabled
+      device.displayDetails = displayDetails ?? device.displayDetails
     },
     addLedgerAccount: (
       immerState,
