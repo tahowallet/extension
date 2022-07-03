@@ -23,7 +23,7 @@ import SignTransactionLoader from "../SignTransaction/SignTransactionLoader"
 
 type SigningProps<T extends SignOperationType> = {
   request: T | undefined
-  accountSigner: AccountSigner | null
+  accountSigner: AccountSigner | undefined
 }
 
 /**
@@ -40,14 +40,17 @@ export default function Signing<T extends SignOperationType>(
   // FIXME flag.
   // eslint-disable-next-line react/destructuring-assignment
   const accountSigner = props.accountSigner ?? ReadOnlyAccountSigner
-  const isLoaded = request !== undefined && accountSigner !== null
+  const isLoaded = request !== undefined && accountSigner !== undefined
 
   // FIXME Accept undefined/null for request and render loader?
   const signatureDetails = isLoaded
-    ? resolveSignatureDetails(props as SignOperation<T>)
+    ? resolveSignatureDetails({
+        ...(props as SignOperation<T>),
+        accountSigner,
+      })
     : undefined
   const { signer, renderedSigningData } = signatureDetails ?? {
-    signer: undefined,
+    signer: accountSigner,
     renderedSigningData: undefined,
   }
   const signerAccountTotal = useBackgroundSelector((state) => {
