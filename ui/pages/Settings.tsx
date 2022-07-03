@@ -56,7 +56,7 @@ export default function Settings(): ReactElement {
   const settings = {
     general: [
       {
-        title: t("settingsHideSmallAssetBalance", ["$2"]),
+        title: t("settingsHideSmallAssetBalance", { amount: 2, sign: "$" }),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
