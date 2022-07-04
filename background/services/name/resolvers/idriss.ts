@@ -24,7 +24,8 @@ export default function idrissResolver(): NameResolver<"idriss"> {
       const address = result["Public ETH"] ?? Object.values(result)[0]
       if (address) {
         const normalizedAddress = normalizeEVMAddress(address)
-        return { address: normalizedAddress, network }
+        const alternative = Object.entries(result).map(x=>({name:x[0], address:normalizeEVMAddress(x[1])}));
+        return { address: normalizedAddress, network, alternative }
       }
       return undefined
     },

@@ -48,7 +48,10 @@ export default function Send(): ReactElement {
   )
   const [destinationAddress, setDestinationAddress] = useState<
     string | undefined
-  >(undefined)
+    >(undefined)
+  const [alternativeAddresses, setAlternativeAddresses] = useState<
+  { name: string; address: string }[]
+    >([])
   const [amount, setAmount] = useState("")
   const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
@@ -145,8 +148,10 @@ export default function Send(): ReactElement {
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
-  } = useAddressOrNameValidation((value) =>
-    setDestinationAddress(value?.address)
+  } = useAddressOrNameValidation((value) => {
+      setDestinationAddress(value?.address)
+      setAlternativeAddresses(value?.alternative || [])
+    }
   )
 
   return (
@@ -205,6 +210,22 @@ export default function Send(): ReactElement {
               <></>
             )}
           </div>
+          {alternativeAddresses.length>=2 ?alternativeAddresses.map(x => {
+                let className = `addressSelection ${
+                  x.address == destinationAddress ? "isActive" : ""
+                }`
+                return (
+                  <button
+                    className={className}
+                    onClick={(event) => setDestinationAddress(x.address)}
+                  >
+                    <strong>IDriss: {x.name}</strong>{" "}
+                    <span>
+                      {x.address.substr(0, 6)}...{x.address.substr(-4)}
+                    </span>
+                  </button>
+                )
+          }):''}
           <SharedSlideUpMenu
             size="custom"
             isOpen={networkSettingsModalOpen}
@@ -346,6 +367,31 @@ export default function Send(): ReactElement {
             display: flex;
             justify-content: space-between;
             align-items: center;
+          }
+          .addressSelection {
+            height: 72px;
+            width: 100%;
+            border-radius: 16px;
+            background-color: var(--green-95);
+            display: flex;
+            flex-direction: column;
+            padding: 11px 19px 8px 8px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .addressSelection:hover,
+          .addressSelection.isActive {
+            background-color: var(--green-80);
+          }
+          .addressSelection span {
+            line-height: 27px;
+            margin: -27px 4px 0 0;
+            color: var(--green-40);
+            text-align: right;
+            position: relative;
+            font-size: 14px;
           }
         `}
       </style>
