@@ -145,6 +145,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
       this.emitter.emit("setClaimReferrer", String(referrer))
 
       response.result = null
+    } else if (event.request.method === "eth_chainId") {
+      // we need to send back the chainId independent of dApp permission if we want to be compliant with MM and web3-react
+      const { network } = await this.preferenceService.getSelectedAccount()
+      response.result = network.chainID
     } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
