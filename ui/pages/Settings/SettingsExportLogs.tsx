@@ -1,10 +1,11 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import dayjs from "dayjs"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
-import t from "../../utils/i18n"
 
-export default function MenuExportLogs(): ReactElement {
+export default function SettingsExportLogs(): ReactElement {
+  const { t } = useTranslation()
   const base64LogContent = Buffer.from(
     `${window.navigator.userAgent}\n\n\n${localStorage.getItem("logs")}` || ""
   ).toString("base64")
@@ -16,10 +17,10 @@ export default function MenuExportLogs(): ReactElement {
 
   return (
     <div className="standard_width_padded">
-      <SharedPageHeader>{t("menuExportTitle")}</SharedPageHeader>
+      <SharedPageHeader>{t("settingsExportTitle")}</SharedPageHeader>
       <section>
-        <h2>{t("menuExportOptionDiscordTitle")}</h2>
-        <p>{t("menuExportOptionDiscordDesc")}</p>
+        <h2>{t("settingsExportOptionDiscordTitle")}</h2>
+        <p>{t("settingsExportOptionDiscordDesc")}</p>
         <SharedButton
           type="secondary"
           size="medium"
@@ -29,12 +30,12 @@ export default function MenuExportLogs(): ReactElement {
             window.open(`https://chat.tally.cash/`, "_blank")?.focus()
           }}
         >
-          {t("menuExportOptionDiscordBtn")}
+          {t("settingsExportOptionDiscordBtn")}
         </SharedButton>
       </section>
       <section>
-        <h2>{t("menuExportOptionLogTitle")}</h2>
-        <p>{t("menuExportOptionLogDesc")}</p>
+        <h2>{t("settingsExportOptionLogTitle")}</h2>
+        <p>{t("settingsExportOptionLogDesc")}</p>
         <a
           href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
           download={logFileName}
@@ -45,7 +46,7 @@ export default function MenuExportLogs(): ReactElement {
             iconSmall="download"
             iconPosition="left"
           >
-            {t("menuExportOptionLogBtn")}
+            {t("settingsExportOptionLogBtn")}
           </SharedButton>
         </a>
       </section>

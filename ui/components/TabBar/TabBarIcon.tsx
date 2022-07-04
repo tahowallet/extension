@@ -39,7 +39,7 @@ export default function TabBarIcon(props: Props): ReactElement {
             will-change: transform;
           }
           .icon {
-            mask-image: url("./images/${name}_tab@2x.png");
+            mask-image: url("./images/${name}.svg");
             mask-size: cover;
             width: 24px;
             height: 24px;

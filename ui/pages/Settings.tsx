@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import { useDispatch, useSelector } from "react-redux"
+import { useTranslation } from "react-i18next"
 import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
@@ -9,7 +10,6 @@ import {
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
-import t from "../utils/i18n"
 
 function SettingRow(props: {
   title: string
@@ -41,7 +41,8 @@ function SettingRow(props: {
   )
 }
 
-export default function Menu(): ReactElement {
+export default function Settings(): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)
@@ -55,7 +56,7 @@ export default function Menu(): ReactElement {
   const settings = {
     general: [
       {
-        title: t("menuHideSmallAssetBalance", ["$2"]),
+        title: t("settingsHideSmallAssetBalance", { amount: 2, sign: "$" }),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -64,7 +65,7 @@ export default function Menu(): ReactElement {
         ),
       },
       {
-        title: t("menuSetAsDefault"),
+        title: t("settingsSetAsDefault"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
@@ -78,10 +79,10 @@ export default function Menu(): ReactElement {
           <SharedButton
             type="unstyled"
             size="medium"
-            linkTo="/menu/export-logs"
+            linkTo="/settings/export-logs"
           >
             <div className="bug_report_row">
-              <div className="action_name">{t("menuBugReport")}</div>
+              <div className="action_name">{t("settingsBugReport")}</div>
               <SharedIcon
                 icon="icons/s/continue.svg"
                 width={16}
@@ -116,7 +117,7 @@ export default function Menu(): ReactElement {
   return (
     <>
       <section className="standard_width_padded">
-        <h1>{t("menuMainMenu")}</h1>
+        <h1>{t("settingsMainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
@@ -127,8 +128,8 @@ export default function Menu(): ReactElement {
           ))}
         </ul>
         <div className="community_cta_wrap">
-          <h2>{t("menuJoinTitle")}</h2>
-          <p>{t("menuJoinDesc")}</p>
+          <h2>{t("settingsJoinTitle")}</h2>
+          <p>{t("settingsJoinDesc")}</p>
           <SharedButton
             type="primary"
             size="large"
@@ -138,7 +139,7 @@ export default function Menu(): ReactElement {
               window.open(`https://chat.tally.cash/`, "_blank")?.focus()
             }}
           >
-            {t("menuJoinBtn")}
+            {t("settingsJoinBtn")}
           </SharedButton>
         </div>
         <div className="version">

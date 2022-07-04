@@ -2,6 +2,7 @@ import { newProxyStore } from "@tallyho/tally-background"
 import React, { ComponentType } from "react"
 import ReactDOM from "react-dom"
 import { Store } from "webext-redux"
+import "./_locales/i18n"
 import Popup from "./pages/Popup"
 import Tab from "./pages/Tab"
 
