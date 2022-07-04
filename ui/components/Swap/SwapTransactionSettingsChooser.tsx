@@ -77,7 +77,9 @@ export default function SwapTransactionSettingsChooser({
   return (
     <>
       {isSettingsLocked ? (
-        <div className="top_label label">{t("transactionSettingsTitle")}</div>
+        <div className="top_label label">
+          {t("swap.transactionSettings.title")}
+        </div>
       ) : (
         <>
           <SharedSlideUpMenu
@@ -90,7 +92,7 @@ export default function SwapTransactionSettingsChooser({
             <div className="settings_wrap">
               <div className="row row_slippage">
                 <span className="settings_label">
-                  {t("transactionSettingsSlippageTolerance")}
+                  {t("swap.transactionSettings.slippageTolerance")}
                 </span>
                 <SharedSelect
                   width={94}
@@ -116,7 +118,7 @@ export default function SwapTransactionSettingsChooser({
 
           <div className="top_label label">
             <label htmlFor="open-settings">
-              {t("transactionSettingsSettings")}
+              {t("swap.transactionSettings.settings")}
             </label>
             <button type="button" id="open-settings" onClick={openSettings}>
               <span className="icon_cog" />
@@ -132,13 +134,13 @@ export default function SwapTransactionSettingsChooser({
           </div>
         </span>
         <span className="label">
-          {t("transactionSettingsEstimatedFee")}
+          {t("swap.transactionSettings.estimatedFee")}
           <FeeSettingsText
             customNetworkSetting={swapTransactionSettings.networkSettings}
           />
         </span>
         <span className="label">
-          {t("transactionSettingsDAOFee")}
+          {t("swap.transactionSettings.daoFee")}
           <div className="info">{SWAP_FEE * 100}%</div>
         </span>
       </div>

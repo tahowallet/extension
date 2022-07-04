@@ -17,10 +17,10 @@ export default function SettingsExportLogs(): ReactElement {
 
   return (
     <div className="standard_width_padded">
-      <SharedPageHeader>{t("settingsExportTitle")}</SharedPageHeader>
+      <SharedPageHeader>{t("settings.exportTitle")}</SharedPageHeader>
       <section>
-        <h2>{t("settingsExportOptionDiscordTitle")}</h2>
-        <p>{t("settingsExportOptionDiscordDesc")}</p>
+        <h2>{t("settings.exportOptionDiscordTitle")}</h2>
+        <p>{t("settings.exportOptionDiscordDesc")}</p>
         <SharedButton
           type="secondary"
           size="medium"
@@ -30,12 +30,12 @@ export default function SettingsExportLogs(): ReactElement {
             window.open(`https://chat.tally.cash/`, "_blank")?.focus()
           }}
         >
-          {t("settingsExportOptionDiscordBtn")}
+          {t("settings.exportOptionDiscordBtn")}
         </SharedButton>
       </section>
       <section>
-        <h2>{t("settingsExportOptionLogTitle")}</h2>
-        <p>{t("settingsExportOptionLogDesc")}</p>
+        <h2>{t("settings.exportOptionLogTitle")}</h2>
+        <p>{t("settings.exportOptionLogDesc")}</p>
         <a
           href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
           download={logFileName}
@@ -46,7 +46,7 @@ export default function SettingsExportLogs(): ReactElement {
             iconSmall="download"
             iconPosition="left"
           >
-            {t("settingsExportOptionLogBtn")}
+            {t("exportOptionLogBtn")}
           </SharedButton>
         </a>
       </section>
