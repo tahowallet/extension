@@ -364,7 +364,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
     if (typeof parsedGivenAmount === "undefined") {
-      return t("errorInvalidAmount")
+      return t("assetInput.errorInvalidAmount")
     }
 
     const decimalMatched = convertFixedPointNumber(
@@ -375,7 +375,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       decimalMatched.amount > selectedAssetAndAmount.amount ||
       selectedAssetAndAmount.amount <= 0
     ) {
-      return t("errorInsufficientBalance")
+      return t("assetInput.errorInsufficientBalance")
     }
 
     return undefined

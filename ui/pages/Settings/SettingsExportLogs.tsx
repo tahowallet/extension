@@ -46,7 +46,7 @@ export default function SettingsExportLogs(): ReactElement {
             iconSmall="download"
             iconPosition="left"
           >
-            {t("exportOptionLogBtn")}
+            {t("settings.exportOptionLogBtn")}
           </SharedButton>
         </a>
       </section>
