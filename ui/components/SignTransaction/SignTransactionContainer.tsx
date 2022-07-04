@@ -29,7 +29,7 @@ export default function SignTransactionContainer({
   handleReject,
   isTransactionSigning,
   isArbitraryDataSigningRequired,
-  warnings,
+  warnings = [],
 }: {
   signerAccountTotal?: AccountTotal
   title: ReactNode
@@ -41,7 +41,7 @@ export default function SignTransactionContainer({
   handleReject: () => void
   isTransactionSigning: boolean
   isArbitraryDataSigningRequired: boolean
-  warnings: Warning[]
+  warnings?: Warning[]
 }): ReactElement {
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const accountSigner = signerAccountTotal?.accountSigner

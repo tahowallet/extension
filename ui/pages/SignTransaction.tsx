@@ -85,7 +85,7 @@ export default function SignTransaction(): ReactElement {
               <SignTransactionPanelSwitcher />
             )
           }
-          warnings={transactionDetails?.annotation?.warnings ?? []}
+          warnings={transactionDetails?.annotation?.warnings}
           isTransactionSigning={isTransactionSigning}
           isArbitraryDataSigningRequired={
             !!(transactionDetails?.input ?? false)
