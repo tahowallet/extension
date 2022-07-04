@@ -1,4 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -38,9 +39,9 @@ import {
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
-import t from "../utils/i18n"
 
 export default function Send(): ReactElement {
+  const { t } = useTranslation()
   const location = useLocation<FungibleAsset>()
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
     location.state ?? ETH
