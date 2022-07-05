@@ -34,9 +34,11 @@
     "title": "Swap Assets",
     "from": "Swap from:",
     "to": "Swap to:",
-    "errorNoSellAsset": "Attempting to approve transfer without a sell asset.",
-    "errorNoApprovalTarget": "Attempting to approve transfer without an approval target.",
-    "errorNonContractAsset": "Attempting to approve transfer of a non-contract asset.",
+    "error": {
+      "noSellAsset": "Attempting to approve transfer without a sell asset.",
+      "noApprovalTarget": "Attempting to approve transfer without an approval target.",
+      "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
+    },
     "getFinalQuote": "Get final quote",
     "transactionSettings": {
       "title": "Transaction settings",
@@ -49,8 +51,10 @@
   "assetInput": {
     "search": "Search by name or address",
     "selectToken": "Select token",
-    "errorInvalidAmount": "Invalid amount",
-    "errorInsufficientBalance": "Insufficient balance"
+    "error": {
+      "invalidAmount": "Invalid amount",
+      "insufficientBalance": "Insufficient balance"
+    }
   },
   "settings": {
     "mainMenu": "Settings",
@@ -60,12 +64,14 @@
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
-    "exportTitle": "Bug report",
-    "exportOptionDiscordTitle": "1. Join #bug-reports on Discord",
-    "exportOptionDiscordDesc": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
-    "exportOptionDiscordBtn": "Join Discord",
-    "exportOptionLogTitle": "2. Export logs",
-    "exportOptionLogDesc": "To better understand your bug, we need you to export your logs.",
-    "exportOptionLogBtn": "Export logs"
+    "exportLogs": {
+      "title": "Bug report",
+      "discordTitle": "1. Join #bug-reports on Discord",
+      "discordDesc": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
+      "discordBtn": "Join Discord",
+      "logTitle": "2. Export logs",
+      "logDesc": "To better understand your bug, we need you to export your logs.",
+      "logBtn": "Export logs"
+    }
   }
 }

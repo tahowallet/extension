@@ -6,4 +6,6 @@ const resources = {
   },
 }
 
-export { resources, EN }
+export { resources }
+
+export default resources

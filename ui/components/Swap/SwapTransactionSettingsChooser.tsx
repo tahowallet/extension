@@ -128,7 +128,7 @@ export default function SwapTransactionSettingsChooser({
       )}
       <div className="labels_wrap standard_width">
         <span className="label">
-          {t("transactionSettingsSlippageTolerance")}
+          {t("swap.transactionSettings.slippageTolerance")}
           <div className="info">
             {swapTransactionSettings.slippageTolerance * 100}%
           </div>

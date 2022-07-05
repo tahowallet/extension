@@ -275,15 +275,15 @@ export default function Swap(): ReactElement {
 
   const approveAsset = async () => {
     if (typeof sellAsset === "undefined") {
-      logger.error(t("swap.errorNoSellAsset"))
+      logger.error(t("swap.error.noSellAsset"))
       return
     }
     if (typeof approvalTarget === "undefined") {
-      logger.error(t("swap.errorNoApprovalTarget"))
+      logger.error(t("swap.error.noApprovalTarget"))
       return
     }
     if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(t("swap.errorNonContractAsset"), sellAsset)
+      logger.error(t("swap.error.nonContractAsset"), sellAsset)
       return
     }
 
