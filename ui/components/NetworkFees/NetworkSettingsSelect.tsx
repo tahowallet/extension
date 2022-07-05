@@ -18,6 +18,7 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
@@ -27,6 +28,7 @@ import {
   NetworkSettingsSelectOptionButtonCustom,
 } from "./NetworkSettingsSelectOptionButtons"
 import SharedButton from "../Shared/SharedButton"
+import SharedBanner from "../Shared/SharedBanner"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -103,6 +105,8 @@ export default function NetworkSettingsSelect({
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
     networkSettings.feeType
   )
+
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectMainCurrencyPricePoint
@@ -260,6 +264,16 @@ export default function NetworkSettingsSelect({
         )
       })}
       <footer>
+        {transactionDetails?.annotation?.warnings?.includes(
+          "insufficient-funds"
+        ) && (
+          <SharedBanner icon="notif-attention" iconColor="var(--attention)">
+            <span className="warning_text">
+              Not enough {transactionDetails.network.baseAsset.symbol} for
+              network fees
+            </span>
+          </SharedBanner>
+        )}
         <div className="info">
           <div className="limit">
             <SharedTypedInput
@@ -338,8 +352,6 @@ export default function NetworkSettingsSelect({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 42px;
-            margin-bottom: 6px;
           }
           footer {
             position: fixed;
@@ -353,6 +365,12 @@ export default function NetworkSettingsSelect({
           }
           .confirm {
             float: right;
+          }
+          .warning_text {
+            font-size: 16px;
+            line-height: 24px;
+            font-weight: 500;
+            color: var(--attention);
           }
         `}
       </style>

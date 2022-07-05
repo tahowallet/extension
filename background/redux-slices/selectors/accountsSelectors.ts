@@ -414,7 +414,9 @@ export const selectCurrentAccountTotal = createSelector(
 export const getAddressCount = createSelector(
   (state: RootState) => state.account.accountsData,
   (accountsData) =>
-    Object.values(accountsData.evm).flatMap((chainAddresses) =>
-      Object.keys(chainAddresses)
-    ).length
+    new Set(
+      Object.values(accountsData.evm).flatMap((chainAddresses) =>
+        Object.keys(chainAddresses)
+      )
+    ).size
 )

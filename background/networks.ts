@@ -1,5 +1,6 @@
 import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
+import type { CoinGeckoAsset } from "./assets"
 
 /**
  * Each supported network family is generally incompatible with others from a
@@ -22,7 +23,7 @@ export type NetworkBaseAsset = {
 export type Network = {
   // Considered a primary key; two Networks should never share a name.
   name: string
-  baseAsset: NetworkBaseAsset
+  baseAsset: NetworkBaseAsset & CoinGeckoAsset
   family: NetworkFamily
   chainID?: string
 }
