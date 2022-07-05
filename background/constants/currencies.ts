@@ -41,7 +41,7 @@ export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   decimals: 18,
   coinType: coinTypesByAssetSymbol.MATIC,
   metadata: {
-    coinGeckoID: "matic-network",
+    coinGeckoID: "polygon-pos",
     tokenLists: [],
     websiteURL: "https://polygon.technology/",
   },
