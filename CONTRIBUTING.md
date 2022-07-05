@@ -21,19 +21,13 @@ well-organized GitHub issues for features and bugs, as well as organize folks
 to tackle any issues they’re interested in. For the time being, the core team
 will be charged with reviewing, critiquing, and ultimately merging new work.
 
-### Short term: Limited Review
+⭐️ Check out our ["good first issues" tag](https://github.com/tallycash/extension/issues?q=is%3Aopen+is%3Aissue+label%3A%22🐣+good+first+issue%22) for existing bugs that are more approachable.
 
-In Q4 2021/Q1 2022, Tally Ho is in a heads down sprint to a series of initial
-releases. This means PRs with feature contributions _may_ get closed because
-the team does not have time to review them properly. We still deeply appreciate
-these contributions, and are not planning on forgetting them! When PRs are
-closed for this reason, they will be added to [this tracking
-issue](https://github.com/tallycash/tally-extension/issues/420), which
-the team will revisit with community input in Q1 2022. If you’re wondering
-whether a feature is likely to get reviewed, we strongly recommend discussing
-in Discord before going all in.
+## Use Feature Flags
 
-## Getting started
+When developing a new feature, please put it behind a feature flag. Because this enables you to open PRs in smaller chunks rather than having the feature completely finished, this will help your contributions get merged faster. It'll also help everyone better QA the feature and time its release! Feature flags are set in [`.env.defaults`](https://github.com/tallycash/extension/blob/main/.env.defaults) in tandem with [`features.ts`](https://github.com/tallycash/extension/blob/main/background/features.ts)
+
+## Getting Started
 
 1. Fork tallycash/tally-extension
 2. Clone your fork
