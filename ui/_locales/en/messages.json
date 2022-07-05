@@ -1,55 +1,77 @@
 {
   "popupEdition": "Community Edition",
-  "overviewTotalBalance": "Total balance",
-  "overviewAddresses": "Addresses",
-  "overviewAssets": "Assets",
-  "overviewTableHeaderAsset": "Asset",
-  "overviewTableHeaderPrice": "Price",
-  "overviewTableHeaderBalance": "Balance",
-  "protocolMainnet": "Mainnet",
-  "protocolL2": "L2 scaling solution",
-  "protocolCompatibleChain": "Ethereum-compatible blockchain",
-  "protocolConnected": "Connected",
+  "overview": {
+    "totalBalance": "Total balance",
+    "addresses": "Addresses",
+    "assets": "Assets",
+    "tableHeader": {
+      "asset": "Asset",
+      "price": "Price",
+      "balance": "Balance"
+    }
+  },
+  "protocol": {
+    "mainnet": "Mainnet",
+    "l2": "L2 scaling solution",
+    "compatibleChain": "Ethereum-compatible blockchain",
+    "connected": "Connected"
+  },
   "readOnlyNotice": "Read-only mode",
-  "totalAccountBalance": "Total account balance",
-  "walletSend": "Send",
-  "walletReceive": "Receive",
-  "walletSecureSeed": "First, secure your recovery seed",
-  "walletSendAsset": "Send Asset",
-  "walletAssetAmount": "Asset / Amount",
-  "walletSendTo": "Send To:",
-  "walletEstimatedFee": "Estimated network fee",
-  "walletSendButton": "Send",
-  "walletReceiveAddress": "Receive address",
-  "walletReceiveAddressDesc": "Only send Ethereum Mainnet compatible assets to this address.",
-  "swapTitle": "Swap Assets",
-  "swapFrom": "Swap from:",
-  "swapTo": "Swap to:",
-  "swapErrorNoSellAsset": "Attempting to approve transfer without a sell asset.",
-  "swapErrorNoApprovalTarget": "Attempting to approve transfer without an approval target.",
-  "swapErrorNonContractAsset": "Attempting to approve transfer of a non-contract asset.",
-  "swapGetFinalQuote": "Get final quote",
-  "assetInputSearch": "Search by name or address",
-  "assetInputSelectToken": "Select token",
-  "assetInputErrorInvalidAmount": "Invalid amount",
-  "assetInputErrorInsufficientBalance": "Insufficient balance",
-  "transactionSettingsTitle": "Transaction settings",
-  "transactionSettingsSlippageTolerance": "Slippage tolerance",
-  "transactionSettingsSettings": "Transaction settings",
-  "transactionSettingsEstimatedFee": "Estimated network fee",
-  "transactionSettingsDAOFee": "DAO fee",
-  "settingsMainMenu": "Settings",
-  "settingsHideSmallAssetBalance": "Hide asset balance under {{sign}}{{amount}}",
-  "settingsSetAsDefault": "Use Tally Ho as default wallet",
-  "settingsBugReport": "Bug report",
-  "settingsJoinTitle": "Join our community",
-  "settingsJoinDesc": "Join our Discord to give us feedback!",
-  "settingsJoinBtn": "Join and give feedback",
-  "settingsExportTitle": "Bug report",
-  "settingsExportOptionDiscordTitle": "1. Join #bug-reports on Discord",
-  "settingsExportOptionDiscordDesc": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
-  "settingsExportOptionDiscordBtn": "Join Discord",
-  "settingsExportOptionLogTitle": "2. Export logs",
-  "settingsExportOptionLogDesc": "To better understand your bug, we need you to export your logs.",
-  "settingsExportOptionLogBtn": "Export logs"
+  "wallet": {
+    "totalAccountBalance": "Total account balance",
+    "send": "Send",
+    "receive": "Receive",
+    "secureSeed": "First, secure your recovery seed",
+    "sendAsset": "Send Asset",
+    "assetAmount": "Asset / Amount",
+    "sendTo": "Send To:",
+    "estimatedFee": "Estimated network fee",
+    "sendButton": "Send",
+    "receiveAddress": "Receive address",
+    "receiveAddressDesc": "Only send Ethereum Mainnet compatible assets to this address."
+  },
+  "swap": {
+    "title": "Swap Assets",
+    "from": "Swap from:",
+    "to": "Swap to:",
+    "error": {
+      "noSellAsset": "Attempting to approve transfer without a sell asset.",
+      "noApprovalTarget": "Attempting to approve transfer without an approval target.",
+      "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
+    },
+    "getFinalQuote": "Get final quote",
+    "transactionSettings": {
+      "title": "Transaction settings",
+      "slippageTolerance": "Slippage tolerance",
+      "settings": "Transaction settings",
+      "estimatedFee": "Estimated network fee",
+      "daoFee": "DAO fee"
+    }
+  },
+  "assetInput": {
+    "search": "Search by name or address",
+    "selectToken": "Select token",
+    "error": {
+      "invalidAmount": "Invalid amount",
+      "insufficientBalance": "Insufficient balance"
+    }
+  },
+  "settings": {
+    "mainMenu": "Settings",
+    "hideSmallAssetBalance": "Hide asset balance under {{sign}}{{amount}}",
+    "setAsDefault": "Use Tally Ho as default wallet",
+    "bugReport": "Bug report",
+    "joinTitle": "Join our community",
+    "joinDesc": "Join our Discord to give us feedback!",
+    "joinBtn": "Join and give feedback",
+    "exportLogs": {
+      "title": "Bug report",
+      "discordTitle": "1. Join #bug-reports on Discord",
+      "discordDesc": "Visit us on our Discord channel, and report your bug there. Make sure to include the logs.",
+      "discordBtn": "Join Discord",
+      "logTitle": "2. Export logs",
+      "logDesc": "To better understand your bug, we need you to export your logs.",
+      "logBtn": "Export logs"
+    }
+  }
 }
