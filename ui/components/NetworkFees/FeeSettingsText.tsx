@@ -33,9 +33,7 @@ const getFeeDollarValue = (
       enrichAssetAmountWithMainCurrencyValues(
         {
           asset,
-          amount:
-            estimatedSpendPerGas +
-            BigInt(networkSettings.values.maxPriorityFeePerGas) * gasLimit,
+          amount: estimatedSpendPerGas * gasLimit,
         },
         currencyPrice,
         2
