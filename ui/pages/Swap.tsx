@@ -273,15 +273,15 @@ export default function Swap(): ReactElement {
 
   const approveAsset = async () => {
     if (typeof sellAsset === "undefined") {
-      logger.error(t("swapErrorNoSellAsset"))
+      logger.error(t("swap.error.noSellAsset"))
       return
     }
     if (typeof approvalTarget === "undefined") {
-      logger.error(t("swapErrorNoApprovalTarget"))
+      logger.error(t("swap.error.noApprovalTarget"))
       return
     }
     if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(t("swapErrorNonContractAsset"), sellAsset)
+      logger.error(t("swap.error.nonContractAsset"), sellAsset)
       return
     }
 
@@ -495,7 +495,7 @@ export default function Swap(): ReactElement {
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <div className="header">
-            <SharedActivityHeader label={t("swapTitle")} activity="swap" />
+            <SharedActivityHeader label={t("swap.title")} activity="swap" />
             {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
@@ -540,7 +540,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("sell", newAmount)
                   }
                 }}
-                label={t("swapFrom")}
+                label={t("swap.from")}
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
@@ -561,7 +561,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("buy", newAmount)
                   }
                 }}
-                label={t("swapTo")}
+                label={t("swap.to")}
               />
             </div>
             <div className="settings_wrap">
@@ -613,7 +613,7 @@ export default function Swap(): ReactElement {
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
                   >
-                    {t("swapGetFinalQuote")}
+                    {t("swap.getFinalQuote")}
                   </SharedButton>
                 )
               }

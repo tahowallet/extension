@@ -35,9 +35,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
     <table className="standard_width">
       <thead>
         <tr>
-          <th>{t("overviewTableHeaderAsset")}</th>
-          <th>{t("overviewTableHeaderPrice")}</th>
-          <th>{t("overviewTableHeaderBalance")}</th>
+          <th>{t("overview.tableHeader.asset")}</th>
+          <th>{t("overview.tableHeader.price")}</th>
+          <th>{t("overview.tableHeader.balance")}</th>
         </tr>
       </thead>
       <tbody>
