@@ -154,7 +154,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             type="text"
             ref={searchInput}
             className="search_input"
-            placeholder={t("assetInputSearch")}
+            placeholder={t("assetInput.search")}
             spellCheck={false}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
@@ -364,7 +364,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
     if (typeof parsedGivenAmount === "undefined") {
-      return t("assetInputErrorInvalidAmount")
+      return t("assetInput.error.invalidAmount")
     }
 
     const decimalMatched = convertFixedPointNumber(
@@ -375,7 +375,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       decimalMatched.amount > selectedAssetAndAmount.amount ||
       selectedAssetAndAmount.amount <= 0
     ) {
-      return t("assetInputErrorInsufficientBalance")
+      return t("assetInput.error.insufficientBalance")
     }
 
     return undefined
@@ -462,7 +462,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               onClick={toggleIsAssetMenuOpen}
               iconSmall="dropdown"
             >
-              {t("assetInputSelectToken")}
+              {t("assetInput.selectToken")}
             </SharedButton>
           )}
         </div>

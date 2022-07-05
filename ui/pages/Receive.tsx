@@ -19,9 +19,9 @@ export default function Receive(): ReactElement {
     <section>
       <h1>
         <span className="icon_activity_send_medium" />
-        {t("walletReceiveAddress")}
+        {t("wallet.receiveAddress")}
       </h1>
-      <div className="sub_title">{t("walletReceiveAddressDesc")}</div>
+      <div className="sub_title">{t("wallet.receiveAddressDesc")}</div>
       <div className="qr_code">
         <QRCode value={currentAccount.address} size={128} />
       </div>

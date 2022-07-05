@@ -19,7 +19,7 @@ import i18n from "../../_locales/i18n"
 const listItemInfo = [
   {
     network: ETHEREUM,
-    info: i18n.t("protocolMainnet"),
+    info: i18n.t("protocol.mainnet"),
     width: 18,
     height: 29,
   },
@@ -27,7 +27,7 @@ const listItemInfo = [
     ? [
         {
           network: POLYGON,
-          info: i18n.t("protocolL2"),
+          info: i18n.t("protocol.l2"),
           width: 24,
           height: 24,
         },
@@ -37,7 +37,7 @@ const listItemInfo = [
     ? [
         {
           network: ARBITRUM_ONE,
-          info: i18n.t("protocolL2"),
+          info: i18n.t("protocol.l2"),
           width: 23.2,
           height: 26,
         },
@@ -47,7 +47,7 @@ const listItemInfo = [
     ? [
         {
           network: OPTIMISM,
-          info: i18n.t("protocolL2"),
+          info: i18n.t("protocol.l2"),
           width: 24,
           height: 24,
         },
@@ -55,7 +55,7 @@ const listItemInfo = [
     : []),
   // {
   //   name: "Binance Smart Chain",
-  //   info: i18n.t("protocolCompatibleChain"),
+  //   info: i18n.t("protocol.compatibleChain"),
   //   width: 24,
   //   height: 24,
   // },
