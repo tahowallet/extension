@@ -147,7 +147,7 @@ export default function WalletAccountBalanceControl(
           customStyles="margin: 12px 0"
           isLoaded={!shouldIndicateLoading}
         >
-          <div className="balance_label">{t("totalAccountBalance")}</div>
+          <div className="balance_label">{t("wallet.totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance">
               <span className="dollar_sign">$</span>
@@ -173,7 +173,7 @@ export default function WalletAccountBalanceControl(
                     linkTo="/send"
                     iconPosition="left"
                   >
-                    {t("walletSend")}
+                    {t("wallet.send")}
                   </SharedButton>
                   <SharedButton
                     onClick={handleClick}
@@ -182,7 +182,7 @@ export default function WalletAccountBalanceControl(
                     type="tertiary"
                     iconPosition="left"
                   >
-                    {t("walletReceive")}
+                    {t("wallet.receive")}
                   </SharedButton>
                 </div>
               ) : (
@@ -193,7 +193,7 @@ export default function WalletAccountBalanceControl(
                     type="warning"
                     linkTo="/onboarding/2"
                   >
-                    {t("walletSecureSeed")}
+                    {t("wallet.secureSeed")}
                   </SharedButton>
                 </div>
               )}

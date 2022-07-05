@@ -56,7 +56,7 @@ export default function Settings(): ReactElement {
   const settings = {
     general: [
       {
-        title: t("settingsHideSmallAssetBalance", ["$2"]),
+        title: t("settings.hideSmallAssetBalance", { amount: 2, sign: "$" }),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -65,7 +65,7 @@ export default function Settings(): ReactElement {
         ),
       },
       {
-        title: t("settingsSetAsDefault"),
+        title: t("settings.setAsDefault"),
         component: () => (
           <SharedToggleButton
             onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
@@ -82,7 +82,7 @@ export default function Settings(): ReactElement {
             linkTo="/settings/export-logs"
           >
             <div className="bug_report_row">
-              <div className="action_name">{t("settingsBugReport")}</div>
+              <div className="action_name">{t("settings.bugReport")}</div>
               <SharedIcon
                 icon="icons/s/continue.svg"
                 width={16}
@@ -117,7 +117,7 @@ export default function Settings(): ReactElement {
   return (
     <>
       <section className="standard_width_padded">
-        <h1>{t("settingsMainMenu")}</h1>
+        <h1>{t("settings.mainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
@@ -128,8 +128,8 @@ export default function Settings(): ReactElement {
           ))}
         </ul>
         <div className="community_cta_wrap">
-          <h2>{t("settingsJoinTitle")}</h2>
-          <p>{t("settingsJoinDesc")}</p>
+          <h2>{t("settings.joinTitle")}</h2>
+          <p>{t("settings.joinDesc")}</p>
           <SharedButton
             type="primary"
             size="large"
@@ -139,7 +139,7 @@ export default function Settings(): ReactElement {
               window.open(`https://chat.tally.cash/`, "_blank")?.focus()
             }}
           >
-            {t("settingsJoinBtn")}
+            {t("settings.joinBtn")}
           </SharedButton>
         </div>
         <div className="version">
