@@ -21,7 +21,6 @@ import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
-  networkSettings: NetworkFeeSettings,
   gasLimit?: bigint,
   estimatedSpendPerGas?: bigint
 ): string | undefined => {
@@ -78,7 +77,6 @@ export default function FeeSettingsText({
   const gweiValue = `${estimatedGweiAmount} Gwei`
   const dollarValue = getFeeDollarValue(
     mainCurrencyPricePoint,
-    networkSettings,
     gasLimit,
     estimatedSpendPerGas
   )
