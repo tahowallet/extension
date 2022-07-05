@@ -1,4 +1,10 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
@@ -41,14 +47,21 @@ import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
+  const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
     location.state ?? currentAccount.network.baseAsset
   )
 
+  // Switch the asset being sent when switching between networks, but still use
+  // location.state on initial page render - if it exists
   useEffect(() => {
-    setSelectedAsset(currentAccount.network.baseAsset)
+    if (!isMounted.current) {
+      isMounted.current = true
+    } else {
+      setSelectedAsset(currentAccount.network.baseAsset)
+    }
     // This disable is here because we don't necessarily have euqality-by-reference
     // due to how we persist the ui redux slice with webext-redux.
     // eslint-disable-next-line react-hooks/exhaustive-deps
