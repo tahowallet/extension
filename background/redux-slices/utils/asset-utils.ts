@@ -36,7 +36,7 @@ export type AssetDecimalAmount = {
 }
 
 function isBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
-  return !("homeNetwork" in asset)
+  return "coinType" in asset
 }
 
 /**
