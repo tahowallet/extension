@@ -1,31 +1,42 @@
 import classNames from "classnames"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
+import zxcvbn from "zxcvbn"
 import SharedTooltip from "./SharedTooltip"
 
 type PasswordBarProps = {
-  strength?: PasswordStrength
+  password: string
 }
 
-export type PasswordStrength = "Weak" | "Average" | "Strong"
+function getDescription(evaluation: number) {
+  if (evaluation < 3) return "Weak"
+  if (evaluation === 3) return "Average"
+  return "Strong"
+}
 
 export default function SharedPasswordBar(
   props: PasswordBarProps
 ): ReactElement {
-  const { strength } = props
+  const { password } = props
+
+  const [evaluation, setEvaluation] = useState(0)
+
+  useEffect(() => setEvaluation(zxcvbn(password).score), [password])
 
   return (
     <div
       className={classNames("bar_wrap", {
-        bar_weak: strength === "Weak",
-        bar_average: strength === "Average",
-        bar_strong: strength === "Strong",
+        bar_weak: password.length && evaluation < 3,
+        bar_average: evaluation === 3,
+        bar_strong: evaluation > 3,
       })}
     >
       <div className="bar_background bar_shape">
         <div className="bar_fill bar_shape" />
       </div>
-      <div className="bar_description">{strength ?? "Strength"}</div>
-      <SharedTooltip width={180}>
+      <div className="bar_description">
+        {password.length ? getDescription(evaluation) : "Strength"}
+      </div>
+      <SharedTooltip width={150}>
         For a strong password use a mix of: Lowecase, Uppercase, symbols and
         numbers.
       </SharedTooltip>
@@ -55,7 +66,7 @@ export default function SharedPasswordBar(
         }
         .bar_fill {
           width: 0%;
-          background-color: #fff;
+          background-color: var(--green-60);
           transition: width 300ms, background-color 300ms;
         }
 
