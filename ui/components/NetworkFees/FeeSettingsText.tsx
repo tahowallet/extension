@@ -21,13 +21,10 @@ import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
-  networkSettings: NetworkFeeSettings,
+  gasLimit?: bigint,
   estimatedSpendPerGas?: bigint
 ): string | undefined => {
   if (estimatedSpendPerGas) {
-    const gasLimit =
-      networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
-
     if (!gasLimit || !currencyPrice) return undefined
 
     const [asset] = currencyPrice.pair
@@ -35,9 +32,7 @@ const getFeeDollarValue = (
       enrichAssetAmountWithMainCurrencyValues(
         {
           asset,
-          amount:
-            estimatedSpendPerGas +
-            BigInt(networkSettings.values.maxPriorityFeePerGas) * gasLimit,
+          amount: estimatedSpendPerGas * gasLimit,
         },
         currencyPrice,
         2
@@ -82,7 +77,7 @@ export default function FeeSettingsText({
   const gweiValue = `${estimatedGweiAmount} Gwei`
   const dollarValue = getFeeDollarValue(
     mainCurrencyPricePoint,
-    networkSettings,
+    gasLimit,
     estimatedSpendPerGas
   )
 

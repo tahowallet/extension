@@ -24,6 +24,9 @@ export default function SignTransactionDetailPanel(): ReactElement {
 
   if (transactionDetails === undefined) return <></>
 
+  const hasInsufficientFundsWarning =
+    transactionDetails.annotation?.warnings?.includes("insufficient-funds")
+
   const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
     dispatch(
       updateTransactionData({
@@ -41,16 +44,16 @@ export default function SignTransactionDetailPanel(): ReactElement {
         size="custom"
         isOpen={networkSettingsModalOpen}
         close={() => setNetworkSettingsModalOpen(false)}
-        customSize={`${3 * 56 + 320}px`}
+        customSize={`${
+          3 * 56 + 320 + (hasInsufficientFundsWarning ? 15 : 0)
+        }px`}
       >
         <NetworkSettingsChooser
           estimatedFeesPerGas={estimatedFeesPerGas}
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
-      {transactionDetails.annotation?.warnings?.includes(
-        "insufficient-funds"
-      ) && (
+      {hasInsufficientFundsWarning && (
         <span className="detail_item">
           <SharedBanner icon="notif-attention" iconColor="var(--attention)">
             <span className="detail_warning">
