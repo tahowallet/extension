@@ -28,13 +28,6 @@ export default function SignTransactionDetailPanel(): ReactElement {
     transactionDetails.annotation?.warnings?.includes("insufficient-funds")
 
   const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
-    dispatch(
-      updateTransactionData({
-        ...transactionDetails,
-        gasLimit: networkSetting.gasLimit ?? transactionDetails.gasLimit,
-      })
-    )
-
     setNetworkSettingsModalOpen(false)
   }
 
