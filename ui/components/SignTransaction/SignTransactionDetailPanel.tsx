@@ -1,20 +1,15 @@
 import React, { ReactElement, useState } from "react"
 import {
-  NetworkFeeSettings,
-  updateTransactionData,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
-import {
   selectEstimatedFeesPerGas,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
 
 export default function SignTransactionDetailPanel(): ReactElement {
-  const dispatch = useBackgroundDispatch()
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
 
@@ -27,7 +22,7 @@ export default function SignTransactionDetailPanel(): ReactElement {
   const hasInsufficientFundsWarning =
     transactionDetails.annotation?.warnings?.includes("insufficient-funds")
 
-  const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
+  const networkSettingsSaved = () => {
     setNetworkSettingsModalOpen(false)
   }
 
