@@ -13,7 +13,7 @@ function getDescription(evaluation: number) {
   return "Strong"
 }
 
-export default function SharedPasswordBar(
+export default function SharedPasswordStrengthBar(
   props: PasswordBarProps
 ): ReactElement {
   const { password } = props
@@ -37,8 +37,8 @@ export default function SharedPasswordBar(
         {password.length ? getDescription(evaluation) : "Strength"}
       </div>
       <SharedTooltip width={150}>
-        For a strong password use a mix of: Lowecase, Uppercase, symbols and
-        numbers.
+        For a strong password, consider a mix of lower and uppercase characters,
+        symbols, and numbers. Passwords should be over 8 characters.
       </SharedTooltip>
       <style jsx>{`
         .bar_wrap {

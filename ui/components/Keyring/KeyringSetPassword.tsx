@@ -16,7 +16,7 @@ import titleStyle from "../Onboarding/titleStyle"
 import SharedBackButton from "../Shared/SharedBackButton"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedToggleButton from "../Shared/SharedToggleButton"
-import SharedPasswordBar from "../Shared/SharedPasswordBar"
+import SharedPasswordStrengthBar from "../Shared/SharedPasswordStrengthBar"
 
 export default function KeyringSetPassword(): ReactElement {
   const [password, setPassword] = useState("")
@@ -98,7 +98,9 @@ export default function KeyringSetPassword(): ReactElement {
           />
         </div>
         <div className="strength_bar_wrap">
-          {!passwordErrorMessage && <SharedPasswordBar password={password} />}
+          {!passwordErrorMessage && (
+            <SharedPasswordStrengthBar password={password} />
+          )}
         </div>
         <div className="input_wrap repeat_password_wrap">
           <SharedInput
