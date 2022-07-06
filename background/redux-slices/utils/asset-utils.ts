@@ -10,7 +10,7 @@ import {
   AnyAsset,
 } from "../../assets"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { AnyNetwork } from "../../networks"
+import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
@@ -35,6 +35,10 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
+function isBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
+  return "coinType" in asset
+}
+
 /**
  * Given an asset and a network, determines whether the given asset is the base
  * asset for the given network. Used to special-case transactions that should
@@ -48,12 +52,12 @@ export type AssetDecimalAmount = {
 export function isNetworkBaseAsset(
   asset: AnyAsset,
   network: AnyNetwork
-): boolean {
+): asset is NetworkBaseAsset {
   return (
-    !("homeNetwork" in asset) &&
-    "family" in network &&
-    network.family === "EVM" &&
-    asset.symbol === network.baseAsset.symbol
+    isBaseAsset(asset) &&
+    asset.symbol === network.baseAsset.symbol &&
+    asset.coinType === network.baseAsset.coinType &&
+    asset.name === network.baseAsset.name
   )
 }
 
