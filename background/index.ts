@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill"
 
 import { Store as ProxyStore } from "webext-redux"
+import patchDeepDiff from "webext-redux/lib/strategies/deepDiff/patch"
 import { AnyAction } from "@reduxjs/toolkit"
 
 import Main from "./main"
@@ -29,6 +30,7 @@ export async function newProxyStore(): Promise<
   const proxyStore = new ProxyStore({
     serializer: encodeJSON,
     deserializer: decodeJSON,
+    patchStrategy: patchDeepDiff,
   })
   await proxyStore.ready()
 

@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { Warning } from "@tallyho/tally-background/services/enrichment"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -28,6 +29,7 @@ export default function SignTransactionContainer({
   handleReject,
   isTransactionSigning,
   isArbitraryDataSigningRequired,
+  warnings = [],
 }: {
   signerAccountTotal?: AccountTotal
   title: ReactNode
@@ -39,6 +41,7 @@ export default function SignTransactionContainer({
   handleReject: () => void
   isTransactionSigning: boolean
   isArbitraryDataSigningRequired: boolean
+  warnings?: Warning[]
 }): ReactElement {
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const accountSigner = signerAccountTotal?.accountSigner
@@ -149,7 +152,9 @@ export default function SignTransactionContainer({
                   size="large"
                   onClick={handleConfirm}
                   showLoadingOnClick
-                  isDisabled={isOnDelayToSign}
+                  isDisabled={
+                    isOnDelayToSign || warnings.includes("insufficient-funds")
+                  }
                 >
                   {confirmButtonLabel}
                 </SharedButton>
