@@ -1,16 +1,11 @@
 import classNames from "classnames"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import zxcvbn from "zxcvbn"
+import { useTranslation } from "react-i18next"
 import SharedTooltip from "./SharedTooltip"
 
 type PasswordBarProps = {
   password: string
-}
-
-function getDescription(evaluation: number) {
-  if (evaluation < 3) return "Weak"
-  if (evaluation === 3) return "Average"
-  return "Strong"
 }
 
 export default function SharedPasswordStrengthBar(
@@ -18,9 +13,17 @@ export default function SharedPasswordStrengthBar(
 ): ReactElement {
   const { password } = props
 
+  const { t } = useTranslation()
   const [evaluation, setEvaluation] = useState(0)
 
   useEffect(() => setEvaluation(zxcvbn(password).score), [password])
+
+  const getDescription = useCallback(() => {
+    if (!password) return t("passwordStrength.strength")
+    if (evaluation < 3) return t("passwordStrength.weak")
+    if (evaluation === 3) return t("passwordStrength.average")
+    return t("passwordStrength.strong")
+  }, [evaluation, password, t])
 
   return (
     <div
@@ -33,12 +36,9 @@ export default function SharedPasswordStrengthBar(
       <div className="bar_background bar_shape">
         <div className="bar_fill bar_shape" />
       </div>
-      <div className="bar_description">
-        {password.length ? getDescription(evaluation) : "Strength"}
-      </div>
+      <div className="bar_description">{getDescription()}</div>
       <SharedTooltip width={150}>
-        For a strong password, consider a mix of lower and uppercase characters,
-        symbols, and numbers. Passwords should be over 8 characters.
+        {t("passwordStrength.hintDesc")}
       </SharedTooltip>
       <style jsx>{`
         .bar_wrap {
