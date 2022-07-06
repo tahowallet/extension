@@ -8,6 +8,7 @@ import {
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
+  isNetworkBaseAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -31,7 +32,7 @@ import {
   selectSourcesByAddress,
 } from "./keyringsSelectors"
 import { AddressOnNetwork } from "../../accounts"
-import { EVMNetwork, sameNetwork } from "../../networks"
+import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
@@ -42,6 +43,21 @@ import { AccountSigner, SignerType } from "../../services/signing"
 const desiredDecimals = 2
 // TODO Make this a setting.
 const userValueDustThreshold = 2
+
+const shouldForciblyDisplayAsset = (
+  assetAmount: CompleteAssetAmount<AnyAsset>,
+  network: EVMNetwork,
+  baseAsset?: NetworkBaseAsset
+) => {
+  if (!baseAsset) {
+    return false
+  }
+
+  const isDoggo =
+    !HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol
+
+  return isDoggo || isNetworkBaseAsset(baseAsset, network)
+}
 
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
@@ -91,10 +107,13 @@ const computeCombinedAssetAmountsData = (
     })
     .filter((assetAmount) => {
       const baseAsset = BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
-      const isForciblyDisplayed =
-        (!HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol) ||
-        (currentNetwork.baseAsset.name === baseAsset?.name &&
-          currentNetwork.baseAsset.symbol === baseAsset?.symbol)
+
+      const isForciblyDisplayed = shouldForciblyDisplayAsset(
+        assetAmount,
+        currentNetwork,
+        baseAsset
+      )
+
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
           ? true

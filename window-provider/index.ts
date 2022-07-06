@@ -27,7 +27,7 @@ export default class TallyWindowProvider extends EventEmitter {
 
   selectedAddress: string | undefined
 
-  isConnected = false
+  connected = false
 
   isTally = true
 
@@ -117,6 +117,10 @@ export default class TallyWindowProvider extends EventEmitter {
   // deprecated EIP-1193 method
   async enable(): Promise<unknown> {
     return this.request({ method: "eth_requestAccounts" })
+  }
+
+  isConnected(): boolean {
+    return this.connected
   }
 
   // deprecated EIP1193 send for web3-react injected provider Send type:
@@ -223,8 +227,8 @@ export default class TallyWindowProvider extends EventEmitter {
         }
 
         // let's emmit connected on the first successful response from background
-        if (!this.isConnected) {
-          this.isConnected = true
+        if (!this.connected) {
+          this.connected = true
           this.emit("connect", { chainId: this.chainId })
         }
 
