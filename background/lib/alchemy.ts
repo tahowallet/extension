@@ -51,13 +51,13 @@ export async function getAssetTransfers(
 
   // Default Ethereum Mainnet categories per the documentation:
   // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-ethereum-mainnet
-  let category = ["external", "internal", "token"]
+  let category = ["external", "internal", "erc20"]
 
   if (addressOnNetwork.network.name !== "Ethereum") {
     // Unfortunately even though "token" is supposed the default category for this API call - if the `category` property is omitted
     // the api returns an error about the category "iternal" not being supported
     // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
-    category = ["token"]
+    category = ["erc20"]
   }
   // TODO handle partial failure
   const rpcResponses = await Promise.all([
