@@ -1,9 +1,10 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectEstimatedFeesPerGas,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { useBackgroundSelector } from "../../hooks"
+import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -12,10 +13,27 @@ import SharedBanner from "../Shared/SharedBanner"
 export default function SignTransactionDetailPanel(): ReactElement {
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
+  const [updateNum, setUpdateNum] = useState(0)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+
+  const dispatch = useBackgroundDispatch()
+
+  useEffect(() => {
+    if (transactionDetails) {
+      dispatch(updateTransactionData(transactionDetails))
+    }
+    // Should trigger only on gas updates. If `transactionDetails` is a dependency, this will run constantly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    updateNum,
+    dispatch,
+    transactionDetails?.maxFeePerGas,
+    transactionDetails?.gasLimit,
+    transactionDetails?.maxFeePerGas,
+  ])
 
   if (transactionDetails === undefined) return <></>
 
@@ -23,6 +41,8 @@ export default function SignTransactionDetailPanel(): ReactElement {
     transactionDetails.annotation?.warnings?.includes("insufficient-funds")
 
   const networkSettingsSaved = () => {
+    setUpdateNum(updateNum + 1)
+
     setNetworkSettingsModalOpen(false)
   }
 
