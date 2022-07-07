@@ -232,7 +232,10 @@ export default class TallyWindowProvider extends EventEmitter {
           this.emit("connect", { chainId: this.chainId })
         }
 
-        if (sentMethod === "wallet_switchEthereumChain") {
+        if (
+          sentMethod === "wallet_switchEthereumChain" ||
+          sentMethod === "wallet_addEthereumChain"
+        ) {
           // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
           if (result === null) {
             this.emit(
