@@ -58,7 +58,7 @@ const gasOptionFromEstimate = (
       ? enrichAssetAmountWithMainCurrencyValues(
           {
             asset: ETH,
-            amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
+            amount: maxFeePerGas * gasLimit,
           },
           mainCurrencyPricePoint,
           2
