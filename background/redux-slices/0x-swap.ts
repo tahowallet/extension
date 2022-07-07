@@ -140,6 +140,17 @@ const gatedHeaders: { [header: string]: string } =
       }
     : {}
 
+const get0xAssetName = (
+  asset: SmartContractFungibleAsset | FungibleAsset,
+  network: EVMNetwork
+) => {
+  // 0x Does not support trading MATIC by contract address on polygon
+  if (network.name === "Polygon" && asset.symbol === "MATIC") {
+    return "MATIC"
+  }
+  return "contractAddress" in asset ? asset.contractAddress : asset.symbol
+}
+
 // Helper to build a URL to the 0x API for a given swap quote request. Usable
 // for both /price and /quote endpoints, returns a URL instance that can be
 // stringified or otherwise massaged.
@@ -163,14 +174,9 @@ function build0xUrlFromSwapRequest(
   )
 
   // When available, use smart contract addresses.
-  const sellToken =
-    "contractAddress" in assets.sellAsset
-      ? assets.sellAsset.contractAddress
-      : assets.sellAsset.symbol
-  const buyToken =
-    "contractAddress" in assets.buyAsset
-      ? assets.buyAsset.contractAddress
-      : assets.buyAsset.symbol
+
+  const sellToken = get0xAssetName(assets.sellAsset, selectedNetwork)
+  const buyToken = get0xAssetName(assets.buyAsset, selectedNetwork)
 
   // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for

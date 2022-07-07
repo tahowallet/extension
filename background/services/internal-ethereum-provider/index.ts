@@ -242,6 +242,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           },
           origin
         )
+      // TODO - actually allow adding a new ethereum chain - for now wallet_addEthereumChain
+      // will just switch to a chain if we already support it - but not add a new one
+      case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
         if (SUPPORT_POLYGON) {
           const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
@@ -274,7 +277,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "metamask_watchAsset":
       case "net_peerCount":
       case "wallet_accountsChanged":
-      case "wallet_addEthereumChain":
       case "wallet_registerOnboarding":
       default:
         throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
