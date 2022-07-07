@@ -123,9 +123,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    const {
-      network: { chainID },
-    } = await this.preferenceService.getSelectedAccount()
+    const { chainID } =
+      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        origin
+      )
 
     const originPermission = await this.checkPermission(origin, chainID)
     if (isTallyConfigPayload(event.request)) {
@@ -232,9 +233,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
-      const {
-        network: { chainID },
-      } = await this.preferenceService.getSelectedAccount()
+      const { chainID } =
+        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+          origin
+        )
       if (await this.checkPermission(origin, chainID)) {
         port.postMessage({
           id: "tallyHo",
