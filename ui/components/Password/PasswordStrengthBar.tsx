@@ -2,13 +2,13 @@ import classNames from "classnames"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import zxcvbn from "zxcvbn"
 import { useTranslation } from "react-i18next"
-import SharedTooltip from "./SharedTooltip"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 type PasswordBarProps = {
   password: string
 }
 
-export default function SharedPasswordStrengthBar(
+export default function PasswordStrengthBar(
   props: PasswordBarProps
 ): ReactElement {
   const { password } = props
