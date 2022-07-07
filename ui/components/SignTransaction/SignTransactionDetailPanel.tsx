@@ -21,6 +21,9 @@ export default function SignTransactionDetailPanel(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
+  // Using useEffect here to avoid a race condition where updateTransactionData is
+  // dispatched with old transactionDetails. transactionDetails is dependent on a
+  // dispatching setFeeType, for example, inside NetworkSettingsChooser.
   useEffect(() => {
     if (transactionDetails) {
       dispatch(updateTransactionData(transactionDetails))
