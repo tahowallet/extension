@@ -232,6 +232,16 @@ export default class TallyWindowProvider extends EventEmitter {
           this.emit("connect", { chainId: this.chainId })
         }
 
+        if (sentMethod === "wallet_switchEthereumChain") {
+          // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+          if (result === null) {
+            this.emit(
+              "chainChanged",
+              (sendData.request.params[0] as { chainId: string }).chainId
+            )
+          }
+        }
+
         if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
           if (
             typeof result === "string" &&
@@ -269,5 +279,9 @@ export default class TallyWindowProvider extends EventEmitter {
       this.selectedAddress = address[0]
       this.emit("accountsChanged", address)
     }
+  }
+
+  handleNetworkChange(networkId: string): void {
+    this.emit("chainChanged", networkId)
   }
 }
