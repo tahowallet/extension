@@ -280,8 +280,4 @@ export default class TallyWindowProvider extends EventEmitter {
       this.emit("accountsChanged", address)
     }
   }
-
-  handleNetworkChange(networkId: string): void {
-    this.emit("chainChanged", networkId)
-  }
 }
