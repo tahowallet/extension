@@ -108,7 +108,7 @@ export async function getAssetTransfers(
         return null
       }
 
-      const asset = !transfer.rawContract.address
+      const asset = transfer.rawContract.address
         ? {
             contractAddress: transfer.rawContract.address,
             decimals: Number(BigInt(transfer.rawContract.decimal)),
