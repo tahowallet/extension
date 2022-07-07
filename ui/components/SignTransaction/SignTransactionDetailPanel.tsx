@@ -1,12 +1,9 @@
-import React, { ReactElement, useState } from "react"
-import {
-  NetworkFeeSettings,
-  updateTransactionData,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectEstimatedFeesPerGas,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -14,26 +11,40 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
 
 export default function SignTransactionDetailPanel(): ReactElement {
-  const dispatch = useBackgroundDispatch()
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
+  const [updateNum, setUpdateNum] = useState(0)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+
+  const dispatch = useBackgroundDispatch()
+
+  // Using useEffect here to avoid a race condition where updateTransactionData is
+  // dispatched with old transactionDetails. transactionDetails is dependent on a
+  // dispatching setFeeType, for example, inside NetworkSettingsChooser.
+  useEffect(() => {
+    if (transactionDetails) {
+      dispatch(updateTransactionData(transactionDetails))
+    }
+    // Should trigger only on gas updates. If `transactionDetails` is a dependency, this will run constantly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    updateNum,
+    dispatch,
+    transactionDetails?.maxFeePerGas,
+    transactionDetails?.gasLimit,
+    transactionDetails?.maxFeePerGas,
+  ])
 
   if (transactionDetails === undefined) return <></>
 
   const hasInsufficientFundsWarning =
     transactionDetails.annotation?.warnings?.includes("insufficient-funds")
 
-  const networkSettingsSaved = async (networkSetting: NetworkFeeSettings) => {
-    dispatch(
-      updateTransactionData({
-        ...transactionDetails,
-        gasLimit: networkSetting.gasLimit ?? transactionDetails.gasLimit,
-      })
-    )
+  const networkSettingsSaved = () => {
+    setUpdateNum(updateNum + 1)
 
     setNetworkSettingsModalOpen(false)
   }
