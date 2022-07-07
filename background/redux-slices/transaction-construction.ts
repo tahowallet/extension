@@ -199,12 +199,28 @@ const transactionSlice = createSlice({
       customFeesPerGas: state.customFeesPerGas,
     }),
     setFeeType: (
-      state,
+      immerState,
       { payload }: { payload: NetworkFeeTypeChosen }
-    ): TransactionConstruction => ({
-      ...state,
-      feeTypeSelected: payload,
-    }),
+    ) => {
+      immerState.feeTypeSelected = payload
+
+      if (immerState.transactionRequest) {
+        const selectedFeesPerGas =
+          immerState.estimatedFeesPerGas?.[
+            immerState.transactionRequest.network.chainID
+          ]?.[immerState.feeTypeSelected] ?? immerState.customFeesPerGas
+
+        immerState.transactionRequest = {
+          ...immerState.transactionRequest,
+          maxFeePerGas:
+            selectedFeesPerGas?.maxFeePerGas ??
+            immerState.transactionRequest.maxFeePerGas,
+          maxPriorityFeePerGas:
+            selectedFeesPerGas?.maxPriorityFeePerGas ??
+            immerState.transactionRequest.maxPriorityFeePerGas,
+        }
+      }
+    },
 
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
       ...state,
