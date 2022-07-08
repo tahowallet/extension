@@ -240,6 +240,9 @@ export default class TallyWindowProvider extends EventEmitter {
         ) {
           // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
           if (result === null) {
+            this.chainId = (
+              sendData.request.params[0] as { chainId: string }
+            ).chainId
             this.emit(
               "chainChanged",
               (sendData.request.params[0] as { chainId: string }).chainId
