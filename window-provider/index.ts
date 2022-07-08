@@ -144,10 +144,7 @@ export default class TallyWindowProvider extends EventEmitter {
     }
 
     if (isObject(methodOrRequest) && typeof paramsOrCallback === "function") {
-      return this.request(methodOrRequest).then(
-        (response) => paramsOrCallback(null, response),
-        (error) => paramsOrCallback(error, null)
-      )
+      return this.sendAsync(methodOrRequest, paramsOrCallback)
     }
 
     return Promise.reject(new Error("Unsupported function parameters"))
