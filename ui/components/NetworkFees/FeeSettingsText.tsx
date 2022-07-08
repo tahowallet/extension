@@ -9,11 +9,9 @@ import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
+  selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import {
-  selectCurrentNetwork,
-  selectMainCurrencyPricePoint,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   PricePoint,
@@ -75,7 +73,7 @@ export default function FeeSettingsText({
     0n
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint
   )
   const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
   const estimatedSpendPerGas =
