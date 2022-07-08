@@ -46,7 +46,6 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
-import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -565,14 +564,7 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              {HIDE_SWAP_REWARDS ? (
-                <SwapTransactionSettingsChooser
-                  swapTransactionSettings={swapTransactionSettings}
-                  onSwapTransactionSettingsSave={setSwapTransactionSettings}
-                />
-              ) : (
-                <SwapRewardsCard />
-              )}
+              {!HIDE_SWAP_REWARDS ? <SwapRewardsCard /> : null}
             </div>
             <div className="footer standard_width_padded">
               {
@@ -634,9 +626,6 @@ export default function Swap(): ReactElement {
           .network_fee_group {
             display: flex;
             margin-bottom: 29px;
-          }
-          .network_fee_button {
-            margin-right: 16px;
           }
           .label_right {
             margin-right: 6px;

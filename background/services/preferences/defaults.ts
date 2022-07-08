@@ -8,7 +8,7 @@ const defaultPreferences: Preferences = {
     urls: [
       storageGatewayURL(
         new URL(
-          "ipfs://bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la"
+          "ipfs://bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
         )
       ).href, // the Tally community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
