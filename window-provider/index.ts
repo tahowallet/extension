@@ -33,6 +33,8 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isMetaMask = false
 
+  isWeb3 = true
+
   bridgeListeners = new Map()
 
   providerInfo = {
