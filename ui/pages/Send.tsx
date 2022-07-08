@@ -63,7 +63,6 @@ export default function Send(): ReactElement {
     string | undefined
   >(undefined)
   const [amount, setAmount] = useState("")
-  const [gasLimit] = useState<bigint | undefined>(undefined)
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
     useState(false)
   const [hasError, setHasError] = useState(false)
@@ -127,7 +126,6 @@ export default function Send(): ReactElement {
             network: currentAccount.network,
           },
           assetAmount,
-          gasLimit,
         })
       )
     } finally {
@@ -135,14 +133,7 @@ export default function Send(): ReactElement {
     }
 
     history.push("/singleAsset", assetAmount.asset)
-  }, [
-    assetAmount,
-    currentAccount,
-    destinationAddress,
-    dispatch,
-    gasLimit,
-    history,
-  ])
+  }, [assetAmount, currentAccount, destinationAddress, dispatch, history])
 
   const {
     errorMessage: addressErrorMessage,
