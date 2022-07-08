@@ -14,6 +14,7 @@ import {
   selectInProgressApprovalContract,
   SwapQuoteRequest,
   fetchSwapQuote,
+  SWAP_FEE,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import {
   HIDE_SWAP_REWARDS,
@@ -46,7 +47,6 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
-import SwapTransactionSettingsChooser from "../components/Swap/SwapTransactionSettingsChooser"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -565,14 +565,13 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              {HIDE_SWAP_REWARDS ? (
-                <SwapTransactionSettingsChooser
-                  swapTransactionSettings={swapTransactionSettings}
-                  onSwapTransactionSettingsSave={setSwapTransactionSettings}
-                />
-              ) : (
-                <SwapRewardsCard />
-              )}
+              <div className="labels_wrap">
+                <span className="label">
+                  {t("swap.transactionSettings.daoFee")}
+                  <div className="info">{SWAP_FEE * 100}%</div>
+                </span>
+              </div>
+              {!HIDE_SWAP_REWARDS ? <SwapRewardsCard /> : null}
             </div>
             <div className="footer standard_width_padded">
               {
@@ -635,11 +634,14 @@ export default function Swap(): ReactElement {
             display: flex;
             margin-bottom: 29px;
           }
-          .network_fee_button {
-            margin-right: 16px;
-          }
           .label_right {
             margin-right: 6px;
+          }
+          .labels_wrap {
+            border-radius: 4px;
+            background-color: var(--green-95);
+            padding: 16px;
+            box-sizing: border-box;
           }
           .divider {
             width: 384px;
