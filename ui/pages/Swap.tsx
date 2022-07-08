@@ -14,7 +14,6 @@ import {
   selectInProgressApprovalContract,
   SwapQuoteRequest,
   fetchSwapQuote,
-  SWAP_FEE,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import {
   HIDE_SWAP_REWARDS,
@@ -565,12 +564,6 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              <div className="labels_wrap">
-                <span className="label">
-                  {t("swap.transactionSettings.daoFee")}
-                  <div className="info">{SWAP_FEE * 100}%</div>
-                </span>
-              </div>
               {!HIDE_SWAP_REWARDS ? <SwapRewardsCard /> : null}
             </div>
             <div className="footer standard_width_padded">
@@ -636,12 +629,6 @@ export default function Swap(): ReactElement {
           }
           .label_right {
             margin-right: 6px;
-          }
-          .labels_wrap {
-            border-radius: 4px;
-            background-color: var(--green-95);
-            padding: 16px;
-            box-sizing: border-box;
           }
           .divider {
             width: 384px;
