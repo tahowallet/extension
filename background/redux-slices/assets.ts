@@ -181,7 +181,7 @@ export const transferAsset = createBackgroundAsyncThunk(
     fromAddressNetwork: AddressOnNetwork
     toAddressNetwork: AddressOnNetwork
     assetAmount: AnyAssetAmount
-    gasLimit: bigint | undefined
+    gasLimit?: bigint
   }) => {
     if (!sameNetwork(fromNetwork, toNetwork)) {
       throw new Error("Only same-network transfers are supported for now.")

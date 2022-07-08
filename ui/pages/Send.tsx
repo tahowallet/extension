@@ -12,11 +12,6 @@ import {
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  NetworkFeeSettings,
-  setFeeType,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import {
   FungibleAsset,
   isFungibleAssetAmount,
 } from "@tallyho/tally-background/assets"
@@ -32,7 +27,6 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
-import NetworkSettingsChooser from "../components/NetworkFees/NetworkSettingsChooser"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -41,8 +35,6 @@ import {
   useBackgroundDispatch,
   useBackgroundSelector,
 } from "../hooks"
-import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
-import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 
 export default function Send(): ReactElement {
@@ -71,17 +63,13 @@ export default function Send(): ReactElement {
     string | undefined
   >(undefined)
   const [amount, setAmount] = useState("")
-  const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined)
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
     useState(false)
   const [hasError, setHasError] = useState(false)
-  const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
-    useState(false)
 
   const history = useHistory()
 
   const dispatch = useBackgroundDispatch()
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
@@ -138,7 +126,6 @@ export default function Send(): ReactElement {
             network: currentAccount.network,
           },
           assetAmount,
-          gasLimit,
         })
       )
     } finally {
@@ -146,20 +133,7 @@ export default function Send(): ReactElement {
     }
 
     history.push("/singleAsset", assetAmount.asset)
-  }, [
-    assetAmount,
-    currentAccount,
-    destinationAddress,
-    dispatch,
-    gasLimit,
-    history,
-  ])
-
-  const networkSettingsSaved = (networkSetting: NetworkFeeSettings) => {
-    setGasLimit(networkSetting.gasLimit)
-    dispatch(setFeeType(networkSetting.feeType))
-    setNetworkSettingsModalOpen(false)
-  }
+  }, [assetAmount, currentAccount, destinationAddress, dispatch, history])
 
   const {
     errorMessage: addressErrorMessage,
@@ -224,23 +198,6 @@ export default function Send(): ReactElement {
             ) : (
               <></>
             )}
-          </div>
-          <SharedSlideUpMenu
-            size="custom"
-            isOpen={networkSettingsModalOpen}
-            close={() => setNetworkSettingsModalOpen(false)}
-            customSize="488px"
-          >
-            <NetworkSettingsChooser
-              estimatedFeesPerGas={estimatedFeesPerGas}
-              onNetworkSettingsSave={networkSettingsSaved}
-            />
-          </SharedSlideUpMenu>
-          <div className="network_fee">
-            <p>{t("wallet.estimatedFee")}</p>
-            <FeeSettingsButton
-              onClick={() => setNetworkSettingsModalOpen(true)}
-            />
           </div>
           <div className="send_footer standard_width_padded">
             <SharedButton
@@ -361,11 +318,6 @@ export default function Send(): ReactElement {
             justify-content: flex-end;
             margin-top: 21px;
             padding-bottom: 20px;
-          }
-          .network_fee {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
           }
         `}
       </style>
