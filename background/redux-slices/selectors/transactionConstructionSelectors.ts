@@ -1,10 +1,14 @@
 import { createSelector } from "@reduxjs/toolkit"
+import { PricePoint } from "../../assets"
 import { selectCurrentNetwork } from "."
 import { NetworksState } from "../networks"
 import {
   TransactionConstruction,
   NetworkFeeSettings,
 } from "../transaction-construction"
+import { getAssetsState } from "./accountsSelectors"
+import { selectMainCurrencySymbol } from "./uiSelectors"
+import { selectAssetPricePoint } from "../assets"
 
 export const selectDefaultNetworkFeeSettings = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
@@ -41,6 +45,31 @@ export const selectFeeType = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.feeTypeSelected,
   (feeTypeChosen) => feeTypeChosen
+)
+
+export const selectBaseAsset = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.transactionRequest?.network.baseAsset,
+  (baseAsset) => baseAsset
+)
+
+export const selectTransactionMainCurrencyPricePoint = createSelector(
+  selectBaseAsset, // Base asset for transaction
+  getAssetsState,
+  (state) => selectMainCurrencySymbol(state),
+  selectCurrentNetwork,
+  (
+    baseAsset,
+    assets,
+    mainCurrencySymbol,
+    currentNetwork
+  ): PricePoint | undefined => {
+    return selectAssetPricePoint(
+      assets,
+      baseAsset?.symbol ?? currentNetwork.baseAsset.symbol, // Fallback to current network's base asset
+      mainCurrencySymbol
+    )
+  }
 )
 
 export const selectLastGasEstimatesRefreshTime = createSelector(
