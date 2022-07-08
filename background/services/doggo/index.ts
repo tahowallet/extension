@@ -14,6 +14,7 @@ import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
 import { DoggoDatabase, getOrCreateDB, ReferrerStats } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { HIDE_TOKEN_FEATURES } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
@@ -59,30 +60,32 @@ export default class DoggoService extends BaseService<Events> {
       )
     }
 
-    // Make sure the hunting ground assets are being tracked.
-    huntingGrounds.forEach(({ network, asset }) => {
-      this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
-    })
-    this.indexingService.addAssetToTrack(DOGGO)
+    if (!HIDE_TOKEN_FEATURES) {
+      // Make sure the hunting ground assets are being tracked.
+      huntingGrounds.forEach(({ network, asset }) => {
+        this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
+      })
+      this.indexingService.addAssetToTrack(DOGGO)
 
-    this.indexingService.addAssetToTrack({
-      contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      decimals: 18,
-      homeNetwork: ETHEREUM,
-      name: "Wrapped Ether",
-      symbol: "WETH",
-    })
+      this.indexingService.addAssetToTrack({
+        contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        decimals: 18,
+        homeNetwork: ETHEREUM,
+        name: "Wrapped Ether",
+        symbol: "WETH",
+      })
 
-    // Track referrals for all added accounts and any new ones that are added
-    // after load.
-    this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-      this.trackReferrals(addressOnNetwork)
-    })
-    ;(await this.chainService.getAccountsToTrack()).forEach(
-      (addressOnNetwork) => {
+      // Track referrals for all added accounts and any new ones that are added
+      // after load.
+      this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
         this.trackReferrals(addressOnNetwork)
-      }
-    )
+      })
+      ;(await this.chainService.getAccountsToTrack()).forEach(
+        (addressOnNetwork) => {
+          this.trackReferrals(addressOnNetwork)
+        }
+      )
+    }
   }
 
   protected async internalStopService(): Promise<void> {
