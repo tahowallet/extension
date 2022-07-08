@@ -83,10 +83,6 @@ const baseConfig: Configuration = {
     new CopyPlugin({
       patterns: [
         {
-          from: "node_modules/@tallyho/tally-ui/_locales/",
-          to: "_locales/",
-        },
-        {
           from: "node_modules/@tallyho/tally-ui/public/",
         },
       ],

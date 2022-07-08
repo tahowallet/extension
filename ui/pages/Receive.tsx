@@ -1,13 +1,14 @@
 import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
+import { useTranslation } from "react-i18next"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
-import t from "../utils/i18n"
 
 export default function Receive(): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
 
   const currentAccount: { address: string } =
@@ -18,9 +19,9 @@ export default function Receive(): ReactElement {
     <section>
       <h1>
         <span className="icon_activity_send_medium" />
-        {t("walletReceiveAddress")}
+        {t("wallet.receiveAddress")}
       </h1>
-      <div className="sub_title">{t("walletReceiveAddressDesc")}</div>
+      <div className="sub_title">{t("wallet.receiveAddressDesc")}</div>
       <div className="qr_code">
         <QRCode value={currentAccount.address} size={128} />
       </div>

@@ -22,7 +22,7 @@ import {
 } from "../services/enrichment"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { AccountSigner } from "../services/signing"
+import { SignOperation } from "./signing"
 
 export const enum TransactionConstructionStatus {
   Idle = "idle",
@@ -84,14 +84,9 @@ export const initialState: TransactionConstruction = {
   lastGasEstimatesRefreshed: Date.now(),
 }
 
-export type SignatureRequest = {
-  transaction: EIP1559TransactionRequest
-  accountSigner: AccountSigner
-}
-
 export type Events = {
   updateTransaction: EnrichedEVMTransactionSignatureRequest
-  requestSignature: SignatureRequest
+  requestSignature: SignOperation<EIP1559TransactionRequest>
   signatureRejected: never
   broadcastSignedTransaction: SignedEVMTransaction
 }
@@ -151,9 +146,9 @@ export const updateTransactionData = createBackgroundAsyncThunk(
 
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
-  async (request: SignatureRequest) => {
+  async (request: SignOperation<EIP1559TransactionRequest>) => {
     if (USE_MAINNET_FORK) {
-      request.transaction.chainID = FORK.chainID
+      request.request.chainID = FORK.chainID
     }
 
     await emitter.emit("requestSignature", request)
@@ -190,7 +185,6 @@ const transactionSlice = createSlice({
           ]?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
       },
       transactionLikelyFails,
-      customFeesPerGas: defaultCustomGas,
     }),
     clearTransactionState: (
       state,
@@ -202,16 +196,31 @@ const transactionSlice = createSlice({
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
       signedTransaction: undefined,
-      customFeesPerGas: defaultCustomGas,
+      customFeesPerGas: state.customFeesPerGas,
     }),
     setFeeType: (
-      state,
+      immerState,
       { payload }: { payload: NetworkFeeTypeChosen }
-    ): TransactionConstruction => ({
-      ...state,
-      feeTypeSelected: payload,
-      customFeesPerGas: defaultCustomGas,
-    }),
+    ) => {
+      immerState.feeTypeSelected = payload
+
+      if (immerState.transactionRequest) {
+        const selectedFeesPerGas =
+          immerState.estimatedFeesPerGas?.[
+            immerState.transactionRequest.network.chainID
+          ]?.[immerState.feeTypeSelected] ?? immerState.customFeesPerGas
+
+        immerState.transactionRequest = {
+          ...immerState.transactionRequest,
+          maxFeePerGas:
+            selectedFeesPerGas?.maxFeePerGas ??
+            immerState.transactionRequest.maxFeePerGas,
+          maxPriorityFeePerGas:
+            selectedFeesPerGas?.maxPriorityFeePerGas ??
+            immerState.transactionRequest.maxPriorityFeePerGas,
+        }
+      }
+    },
 
     signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
       ...state,

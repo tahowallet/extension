@@ -12,7 +12,7 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import { BASE_ASSETS, FIAT_CURRENCIES, USD } from "../../constants"
-import { getPrices, getEthereumTokenPrices } from "../../lib/prices"
+import { getPrices, getTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
   mergeAssets,
@@ -37,6 +37,29 @@ interface Events extends ServiceLifecycleEvents {
   accountsWithBalances: AccountBalance[]
   price: PricePoint
   assets: AnyAsset[]
+}
+
+const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
+  const activeAssetsByAddress = assets.reduce((agg, t) => {
+    const newAgg = {
+      ...agg,
+    }
+    newAgg[t.contractAddress.toLowerCase()] = t
+    return newAgg
+  }, {} as { [address: string]: SmartContractFungibleAsset })
+
+  return activeAssetsByAddress
+}
+
+const getActiveAssetsByAddressForNetwork = (
+  network: EVMNetwork,
+  activeAssetsToTrack: SmartContractFungibleAsset[]
+) => {
+  const networkActiveAssets = activeAssetsToTrack.filter(
+    (asset) => asset.homeNetwork.chainID === network.chainID
+  )
+
+  return getAssetsByAddress(networkActiveAssets)
 }
 
 /**
@@ -562,55 +585,72 @@ export default class IndexingService extends BaseService<Events> {
 
     try {
       // TODO only uses USD
-      const activeAssetsByAddress = activeAssetsToTrack.reduce((agg, t) => {
-        const newAgg = {
-          ...agg,
-        }
-        newAgg[t.contractAddress.toLowerCase()] = t
-        return newAgg
-      }, {} as { [address: string]: SmartContractFungibleAsset })
+
+      const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
+
+      const activeAssetsByNetwork = this.chainService.supportedNetworks.map(
+        (network) => ({
+          activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
+            network,
+            activeAssetsToTrack
+          ),
+          network,
+        })
+      )
+
       const measuredAt = Date.now()
-      const activeAssetPrices = await getEthereumTokenPrices(
-        Object.keys(activeAssetsByAddress),
-        USD
+
+      // @TODO consider allSettled here
+      const activeAssetPricesByNetwork = await Promise.all(
+        activeAssetsByNetwork.map(({ activeAssetsByAddress, network }) =>
+          getTokenPrices(Object.keys(activeAssetsByAddress), USD, network)
+        )
       )
-      Object.entries(activeAssetPrices).forEach(
-        ([contractAddress, unitPricePoint]) => {
-          const asset = activeAssetsByAddress[contractAddress.toLowerCase()]
-          if (asset) {
-            // TODO look up fiat currency
-            const pricePoint = {
-              pair: [asset, USD],
-              amounts: [
-                1n * 10n ** BigInt(asset.decimals),
-                BigInt(
-                  Math.trunc(
-                    (Number(unitPricePoint.unitPrice.amount) /
-                      10 **
-                        (unitPricePoint.unitPrice.asset as FungibleAsset)
-                          .decimals) *
-                      10 ** USD.decimals
+
+      activeAssetPricesByNetwork.forEach((activeAssetPrices) => {
+        Object.entries(activeAssetPrices).forEach(
+          ([contractAddress, unitPricePoint]) => {
+            const asset =
+              allActiveAssetsByAddress[contractAddress.toLowerCase()]
+            if (asset) {
+              // TODO look up fiat currency
+              const pricePoint = {
+                pair: [asset, USD],
+                amounts: [
+                  1n * 10n ** BigInt(asset.decimals),
+                  BigInt(
+                    Math.trunc(
+                      (Number(unitPricePoint.unitPrice.amount) /
+                        10 **
+                          (unitPricePoint.unitPrice.asset as FungibleAsset)
+                            .decimals) *
+                        10 ** USD.decimals
+                    )
+                  ),
+                ], // TODO not a big fan of this lost precision
+                time: unitPricePoint.time,
+              } as PricePoint
+              this.emitter.emit("price", pricePoint)
+              // TODO move the "coingecko" data source elsewhere
+              this.db
+                .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
+                .catch(() =>
+                  logger.error(
+                    "Error saving price point",
+                    pricePoint,
+                    measuredAt
                   )
-                ),
-              ], // TODO not a big fan of this lost precision
-              time: unitPricePoint.time,
-            } as PricePoint
-            this.emitter.emit("price", pricePoint)
-            // TODO move the "coingecko" data source elsewhere
-            this.db
-              .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
-              .catch(() =>
-                logger.error("Error saving price point", pricePoint, measuredAt)
+                )
+            } else {
+              logger.warn(
+                "Discarding price from unknown asset",
+                contractAddress,
+                unitPricePoint
               )
-          } else {
-            logger.warn(
-              "Discarding price from unknown asset",
-              contractAddress,
-              unitPricePoint
-            )
+            }
           }
-        }
-      )
+        )
+      })
     } catch (err) {
       logger.error("Error getting token prices", activeAssetsToTrack, err)
     }

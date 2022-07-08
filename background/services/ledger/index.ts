@@ -328,6 +328,10 @@ export default class LedgerService extends BaseService<Events> {
     await this.db.addAccount({ ledgerId: this.#currentLedgerId, path, address })
   }
 
+  async removeAddress(address: HexString): Promise<void> {
+    await this.db.removeAccount(address)
+  }
+
   async signTransaction(
     transactionRequest: EIP1559TransactionRequest & { nonce: number },
     { deviceID, path: derivationPath }: LedgerAccountSigner

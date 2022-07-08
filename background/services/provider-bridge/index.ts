@@ -123,9 +123,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     const response: PortResponseEvent = { id: event.id, result: [] }
 
-    const {
-      network: { chainID },
-    } = await this.preferenceService.getSelectedAccount()
+    const { chainID } =
+      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        origin
+      )
 
     const originPermission = await this.checkPermission(origin, chainID)
     if (isTallyConfigPayload(event.request)) {
@@ -145,6 +146,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
       this.emitter.emit("setClaimReferrer", String(referrer))
 
       response.result = null
+    } else if (event.request.method === "eth_chainId") {
+      // we need to send back the chainId independent of dApp permission if we want to be compliant with MM and web3-react
+      // We are calling the `internalEthereumProviderService.routeSafeRPCRequest` directly here, because the point
+      // of this exception is to provide the proper chainId for the dApp, independent from the permissions.
+      response.result =
+        await this.internalEthereumProviderService.routeSafeRPCRequest(
+          event.request.method,
+          event.request.params,
+          origin
+        )
     } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
       // TODO: here comes format validation
@@ -222,9 +233,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
-      const {
-        network: { chainID },
-      } = await this.preferenceService.getSelectedAccount()
+      const { chainID } =
+        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+          origin
+        )
       if (await this.checkPermission(origin, chainID)) {
         port.postMessage({
           id: "tallyHo",

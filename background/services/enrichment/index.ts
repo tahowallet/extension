@@ -129,7 +129,7 @@ export default class EnrichmentService extends BaseService<Events> {
       transaction
 
     if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
-      const gasFee = gasLimit * (maxFeePerGas + maxPriorityFeePerGas)
+      const gasFee = gasLimit * maxFeePerGas
       const {
         assetAmount: { amount: baseAssetBalance },
       } = await this.chainService.getLatestBaseAccountBalance({

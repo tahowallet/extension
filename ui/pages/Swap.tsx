@@ -5,6 +5,7 @@ import React, {
   useState,
   useRef,
 } from "react"
+import { useTranslation } from "react-i18next"
 import {
   fetchSwapPrice,
   clearSwapQuote,
@@ -26,7 +27,6 @@ import {
 import {
   AnyAsset,
   FungibleAsset,
-  isFungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
@@ -39,6 +39,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
+import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -54,7 +55,6 @@ import {
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
-import t from "../utils/i18n"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -83,6 +83,7 @@ function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
 }
 
 export default function Swap(): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const location = useLocation<
     { symbol: string; contractAddress?: string } | undefined
@@ -179,9 +180,7 @@ export default function Swap(): ReactElement {
         }
         if (
           // Explicitly add a network's base asset.
-          isFungibleAsset(asset) &&
-          // Just checking on symbol is a pretty weak check - can we do better?
-          asset.symbol === currentNetwork.baseAsset.symbol
+          isNetworkBaseAsset(asset, currentNetwork)
         ) {
           return true
         }
@@ -274,15 +273,15 @@ export default function Swap(): ReactElement {
 
   const approveAsset = async () => {
     if (typeof sellAsset === "undefined") {
-      logger.error(t("swapErrorNoSellAsset"))
+      logger.error(t("swap.error.noSellAsset"))
       return
     }
     if (typeof approvalTarget === "undefined") {
-      logger.error(t("swapErrorNoApprovalTarget"))
+      logger.error(t("swap.error.noApprovalTarget"))
       return
     }
     if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(t("swapErrorNonContractAsset"), sellAsset)
+      logger.error(t("swap.error.nonContractAsset"), sellAsset)
       return
     }
 
@@ -496,7 +495,7 @@ export default function Swap(): ReactElement {
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <div className="header">
-            <SharedActivityHeader label={t("swapTitle")} activity="swap" />
+            <SharedActivityHeader label={t("swap.title")} activity="swap" />
             {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
@@ -541,7 +540,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("sell", newAmount)
                   }
                 }}
-                label={t("swapFrom")}
+                label={t("swap.from")}
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
@@ -562,7 +561,7 @@ export default function Swap(): ReactElement {
                     updateSwapData("buy", newAmount)
                   }
                 }}
-                label={t("swapTo")}
+                label={t("swap.to")}
               />
             </div>
             <div className="settings_wrap">
@@ -614,7 +613,7 @@ export default function Swap(): ReactElement {
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
                   >
-                    {t("swapGetFinalQuote")}
+                    {t("swap.getFinalQuote")}
                   </SharedButton>
                 )
               }

@@ -1,4 +1,11 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
+import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
@@ -13,7 +20,6 @@ import {
   FungibleAsset,
   isFungibleAssetAmount,
 } from "@tallyho/tally-background/assets"
-import { ETH } from "@tallyho/tally-background/constants"
 import {
   convertFixedPointNumber,
   parseToFixedPointNumber,
@@ -38,13 +44,29 @@ import {
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import FeeSettingsButton from "../components/NetworkFees/FeeSettingsButton"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
-import t from "../utils/i18n"
 
 export default function Send(): ReactElement {
+  const { t } = useTranslation()
+  const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
-    location.state ?? ETH
+    location.state ?? currentAccount.network.baseAsset
   )
+
+  // Switch the asset being sent when switching between networks, but still use
+  // location.state on initial page render - if it exists
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+    } else {
+      setSelectedAsset(currentAccount.network.baseAsset)
+    }
+    // This disable is here because we don't necessarily have euqality-by-reference
+    // due to how we persist the ui redux slice with webext-redux.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAccount.network.baseAsset.symbol])
+
   const [destinationAddress, setDestinationAddress] = useState<
     string | undefined
   >(undefined)
@@ -60,7 +82,6 @@ export default function Send(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
 
@@ -156,12 +177,12 @@ export default function Send(): ReactElement {
         </div>
         <h1 className="header">
           <span className="icon_activity_send_medium" />
-          <div className="title">{t("walletSendAsset")}</div>
+          <div className="title">{t("wallet.sendAsset")}</div>
         </h1>
         <div className="form">
           <div className="form_input">
             <SharedAssetInput
-              label={t("walletAssetAmount")}
+              label={t("wallet.assetAmount")}
               onAssetSelect={setSelectedAsset}
               assetsAndAmounts={fungibleAssetAmounts}
               onAmountChange={(value, errorMessage) => {
@@ -180,7 +201,7 @@ export default function Send(): ReactElement {
             </div>
           </div>
           <div className="form_input send_to_field">
-            <label htmlFor="send_address">{t("walletSendTo")}</label>
+            <label htmlFor="send_address">{t("wallet.sendTo")}</label>
             <input
               id="send_address"
               type="text"
@@ -216,7 +237,7 @@ export default function Send(): ReactElement {
             />
           </SharedSlideUpMenu>
           <div className="network_fee">
-            <p>{t("walletEstimatedFee")}</p>
+            <p>{t("wallet.estimatedFee")}</p>
             <FeeSettingsButton
               onClick={() => setNetworkSettingsModalOpen(true)}
             />
@@ -234,7 +255,7 @@ export default function Send(): ReactElement {
               isFormSubmit
               isLoading={isSendingTransactionRequest}
             >
-              {t("walletSendButton")}
+              {t("wallet.sendButton")}
             </SharedButton>
           </div>
         </div>

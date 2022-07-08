@@ -1,3 +1,5 @@
+import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   NetworkFeeSettings,
   setFeeType,
@@ -6,8 +8,6 @@ import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-
-import React, { ReactElement, useState } from "react"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { setSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
@@ -15,7 +15,6 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
-import t from "../../utils/i18n"
 import SharedSelect, { Option } from "../Shared/SharedSelect"
 
 export type SwapTransactionSettings = {
@@ -41,6 +40,7 @@ export default function SwapTransactionSettingsChooser({
   swapTransactionSettings,
   onSwapTransactionSettingsSave,
 }: SwapTransactionSettingsProps): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
@@ -77,7 +77,9 @@ export default function SwapTransactionSettingsChooser({
   return (
     <>
       {isSettingsLocked ? (
-        <div className="top_label label">{t("transactionSettingsTitle")}</div>
+        <div className="top_label label">
+          {t("swap.transactionSettings.title")}
+        </div>
       ) : (
         <>
           <SharedSlideUpMenu
@@ -90,7 +92,7 @@ export default function SwapTransactionSettingsChooser({
             <div className="settings_wrap">
               <div className="row row_slippage">
                 <span className="settings_label">
-                  {t("transactionSettingsSlippageTolerance")}
+                  {t("swap.transactionSettings.slippageTolerance")}
                 </span>
                 <SharedSelect
                   width={94}
@@ -116,7 +118,7 @@ export default function SwapTransactionSettingsChooser({
 
           <div className="top_label label">
             <label htmlFor="open-settings">
-              {t("transactionSettingsSettings")}
+              {t("swap.transactionSettings.settings")}
             </label>
             <button type="button" id="open-settings" onClick={openSettings}>
               <span className="icon_cog" />
@@ -126,19 +128,19 @@ export default function SwapTransactionSettingsChooser({
       )}
       <div className="labels_wrap standard_width">
         <span className="label">
-          {t("transactionSettingsSlippageTolerance")}
+          {t("swap.transactionSettings.slippageTolerance")}
           <div className="info">
             {swapTransactionSettings.slippageTolerance * 100}%
           </div>
         </span>
         <span className="label">
-          {t("transactionSettingsEstimatedFee")}
+          {t("swap.transactionSettings.estimatedFee")}
           <FeeSettingsText
             customNetworkSetting={swapTransactionSettings.networkSettings}
           />
         </span>
         <span className="label">
-          {t("transactionSettingsDAOFee")}
+          {t("swap.transactionSettings.daoFee")}
           <div className="info">{SWAP_FEE * 100}%</div>
         </span>
       </div>
