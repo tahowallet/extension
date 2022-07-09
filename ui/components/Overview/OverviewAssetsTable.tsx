@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
-import t from "../../utils/i18n"
 
 interface Props {
   assets: CompleteAssetAmount[]
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function OverviewAssetsTable(props: Props): ReactElement {
+  const { t } = useTranslation()
   const { assets, initializationLoadingTimeExpired } = props
   if (!assets) return <></>
 
@@ -34,9 +35,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
     <table className="standard_width">
       <thead>
         <tr>
-          <th>{t("overviewTableHeaderAsset")}</th>
-          <th>{t("overviewTableHeaderPrice")}</th>
-          <th>{t("overviewTableHeaderBalance")}</th>
+          <th>{t("overview.tableHeader.asset")}</th>
+          <th>{t("overview.tableHeader.price")}</th>
+          <th>{t("overview.tableHeader.balance")}</th>
         </tr>
       </thead>
       <tbody>

@@ -189,7 +189,15 @@ export default class ChainService extends BaseService<Events> {
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
         },
-        runAtStart: true,
+        runAtStart: false,
+      },
+      recentAssetTransfers: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.handleRecentAssetTransferAlarm()
+        },
       },
       blockPrices: {
         runAtStart: false,
@@ -661,6 +669,7 @@ export default class ChainService extends BaseService<Events> {
     )
 
     if (!seen) {
+      // @TODO Interleave initial transaction retrieval by network
       this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
     }
   }
@@ -894,6 +903,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     const firstSeen = Date.now()
+
     /// send all found tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) =>
       this.queueTransactionHashToRetrieve(
@@ -901,6 +911,14 @@ export default class ChainService extends BaseService<Events> {
         a.txHash,
         firstSeen
       )
+    )
+  }
+
+  private async handleRecentAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an))
     )
   }
 

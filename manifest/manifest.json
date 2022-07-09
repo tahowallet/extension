@@ -1,11 +1,10 @@
 {
   "name": "Tally Ho",
-  "version": "0.13.11",
+  "version": "0.13.13",
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
   "manifest_version": 2,
-  "default_locale": "en",
   "content_security_policy": "object-src 'self'; script-src 'self';",
   "web_accessible_resources": ["*.js", "*.json"],
   "content_scripts": [

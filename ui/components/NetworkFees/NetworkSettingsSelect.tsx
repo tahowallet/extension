@@ -13,11 +13,14 @@ import {
   GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  selectTransactionData,
+  selectTransactionMainCurrencyPricePoint,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
@@ -27,6 +30,7 @@ import {
   NetworkSettingsSelectOptionButtonCustom,
 } from "./NetworkSettingsSelectOptionButtons"
 import SharedButton from "../Shared/SharedButton"
+import SharedBanner from "../Shared/SharedBanner"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -56,7 +60,7 @@ const gasOptionFromEstimate = (
       ? enrichAssetAmountWithMainCurrencyValues(
           {
             asset: ETH,
-            amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
+            amount: maxFeePerGas * gasLimit,
           },
           mainCurrencyPricePoint,
           2
@@ -104,8 +108,10 @@ export default function NetworkSettingsSelect({
     networkSettings.feeType
   )
 
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
+
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint
   )
 
   // Select activeFeeIndex to regular option once gasOptions load
@@ -260,6 +266,16 @@ export default function NetworkSettingsSelect({
         )
       })}
       <footer>
+        {transactionDetails?.annotation?.warnings?.includes(
+          "insufficient-funds"
+        ) && (
+          <SharedBanner icon="notif-attention" iconColor="var(--attention)">
+            <span className="warning_text">
+              Not enough {transactionDetails.network.baseAsset.symbol} for
+              network fees
+            </span>
+          </SharedBanner>
+        )}
         <div className="info">
           <div className="limit">
             <SharedTypedInput
@@ -323,6 +339,13 @@ export default function NetworkSettingsSelect({
             margin-right: 10px;
             align-items: flex-end;
           }
+          .price {
+            width: 176px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: right;
+          }
           .max_label {
             font-size: 14px;
             color: var(--green-40);
@@ -331,8 +354,6 @@ export default function NetworkSettingsSelect({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 42px;
-            margin-bottom: 6px;
           }
           footer {
             position: fixed;
@@ -346,6 +367,12 @@ export default function NetworkSettingsSelect({
           }
           .confirm {
             float: right;
+          }
+          .warning_text {
+            font-size: 16px;
+            line-height: 24px;
+            font-weight: 500;
+            color: var(--attention);
           }
         `}
       </style>

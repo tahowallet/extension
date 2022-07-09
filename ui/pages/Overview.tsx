@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import {
   getAddressCount,
   selectAccountAndTimestampedActivities,
@@ -6,9 +7,9 @@ import {
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
-import t from "../utils/i18n"
 
 export default function Overview(): ReactElement {
+  const { t } = useTranslation()
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
@@ -27,7 +28,7 @@ export default function Overview(): ReactElement {
       <header className="standard_width">
         <div className="header_primary_content">
           <span className="total_balance_label">
-            {t("overviewTotalBalance")}
+            {t("overview.totalBalance")}
           </span>
           <div className="primary_balance">
             {initializationLoadingTimeExpired ||
@@ -45,11 +46,11 @@ export default function Overview(): ReactElement {
         </div>
         <div className="sub_info_row">
           <div className="info_group_item">
-            <span className="info_left">{t("overviewAddresses")}</span>
+            <span className="info_left">{t("overview.addresses")}</span>
             {numberOfAddresses}
           </div>
           <div className="info_group_item">
-            <span className="info_left">{t("overviewAssets")}</span>
+            <span className="info_left">{t("overview.assets")}</span>
             {combinedData.assets.length}
           </div>
         </div>

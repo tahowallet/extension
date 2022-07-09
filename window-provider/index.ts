@@ -27,11 +27,13 @@ export default class TallyWindowProvider extends EventEmitter {
 
   selectedAddress: string | undefined
 
-  isConnected = false
+  connected = false
 
   isTally = true
 
   isMetaMask = false
+
+  isWeb3 = true
 
   bridgeListeners = new Map()
 
@@ -119,6 +121,10 @@ export default class TallyWindowProvider extends EventEmitter {
     return this.request({ method: "eth_requestAccounts" })
   }
 
+  isConnected(): boolean {
+    return this.connected
+  }
+
   // deprecated EIP1193 send for web3-react injected provider Send type:
   // https://github.com/NoahZinsmeister/web3-react/blob/d0b038c748a42ec85641a307e6c588546d86afc2/packages/injected-connector/src/types.ts#L4
   send(method: string, params: Array<unknown>): Promise<unknown>
@@ -140,10 +146,7 @@ export default class TallyWindowProvider extends EventEmitter {
     }
 
     if (isObject(methodOrRequest) && typeof paramsOrCallback === "function") {
-      return this.request(methodOrRequest).then(
-        (response) => paramsOrCallback(null, response),
-        (error) => paramsOrCallback(error, null)
-      )
+      return this.sendAsync(methodOrRequest, paramsOrCallback)
     }
 
     return Promise.reject(new Error("Unsupported function parameters"))
@@ -226,9 +229,25 @@ export default class TallyWindowProvider extends EventEmitter {
         }
 
         // let's emmit connected on the first successful response from background
-        if (!this.isConnected) {
-          this.isConnected = true
+        if (!this.connected) {
+          this.connected = true
           this.emit("connect", { chainId: this.chainId })
+        }
+
+        if (
+          sentMethod === "wallet_switchEthereumChain" ||
+          sentMethod === "wallet_addEthereumChain"
+        ) {
+          // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+          if (result === null) {
+            this.chainId = (
+              sendData.request.params[0] as { chainId: string }
+            ).chainId
+            this.emit(
+              "chainChanged",
+              (sendData.request.params[0] as { chainId: string }).chainId
+            )
+          }
         }
 
         if (sentMethod === "eth_chainId" || sentMethod === "net_version") {

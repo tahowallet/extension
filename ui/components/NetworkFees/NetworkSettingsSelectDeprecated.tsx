@@ -1,12 +1,14 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectLastGasEstimatesRefreshTime } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectLastGasEstimatesRefreshTime,
+  selectTransactionMainCurrencyPricePoint,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
   NetworkFeeTypeChosen,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
@@ -120,7 +122,7 @@ export default function NetworkSettingsSelectDeprecated({
   )
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint
   )
 
   // Select activeFeeIndex to regular option once gasOptions load
@@ -313,6 +315,13 @@ export default function NetworkSettingsSelectDeprecated({
             color: var(--green--5);
             font-size: 18px;
             font-weight: 600;
+          }
+          .price {
+            width: 176px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: right;
           }
           .subtext {
             color: var(--green-60);

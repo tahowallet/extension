@@ -30,18 +30,20 @@ export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   coinType: coinTypesByAssetSymbol.ETH,
   metadata: {
     coinGeckoID: "ethereum",
+    coinGeckoPlatformID: "ethereum",
     tokenLists: [],
     websiteURL: "https://ethereum.org",
   },
 }
 
 export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
-  name: "Matic",
+  name: "Matic Token",
   symbol: "MATIC",
   decimals: 18,
   coinType: coinTypesByAssetSymbol.MATIC,
   metadata: {
     coinGeckoID: "matic-network",
+    coinGeckoPlatformID: "polygon-pos",
     tokenLists: [],
     websiteURL: "https://polygon.technology/",
   },
@@ -54,6 +56,7 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   coinType: coinTypesByAssetSymbol.BTC,
   metadata: {
     coinGeckoID: "bitcoin",
+    coinGeckoPlatformID: "bitcoin",
     tokenLists: [],
     websiteURL: "https://bitcoin.org",
   },

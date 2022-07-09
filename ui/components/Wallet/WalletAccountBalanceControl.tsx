@@ -1,4 +1,5 @@
 import React, { ReactElement, useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
@@ -8,9 +9,9 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
-import t from "../../utils/i18n"
 
 function ReadOnlyNotice(): ReactElement {
+  const { t } = useTranslation()
   return (
     <div className="notice_wrap">
       <div className="icon_eye" />
@@ -117,6 +118,7 @@ interface Props {
 export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
+  const { t } = useTranslation()
   const { balance, initializationLoadingTimeExpired } = props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
 
@@ -145,7 +147,7 @@ export default function WalletAccountBalanceControl(
           customStyles="margin: 12px 0"
           isLoaded={!shouldIndicateLoading}
         >
-          <div className="balance_label">{t("totalAccountBalance")}</div>
+          <div className="balance_label">{t("wallet.totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance">
               <span className="dollar_sign">$</span>
@@ -171,7 +173,7 @@ export default function WalletAccountBalanceControl(
                     linkTo="/send"
                     iconPosition="left"
                   >
-                    {t("walletSend")}
+                    {t("wallet.send")}
                   </SharedButton>
                   <SharedButton
                     onClick={handleClick}
@@ -180,7 +182,7 @@ export default function WalletAccountBalanceControl(
                     type="tertiary"
                     iconPosition="left"
                   >
-                    {t("walletReceive")}
+                    {t("wallet.receive")}
                   </SharedButton>
                 </div>
               ) : (
@@ -191,7 +193,7 @@ export default function WalletAccountBalanceControl(
                     type="warning"
                     linkTo="/onboarding/2"
                   >
-                    {t("walletSecureSeed")}
+                    {t("wallet.secureSeed")}
                   </SharedButton>
                 </div>
               )}

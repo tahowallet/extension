@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react"
+import { useTranslation } from "react-i18next"
 import { AnyAsset, Asset } from "@tallyho/tally-background/assets"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
@@ -19,18 +20,17 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
-import t from "../../utils/i18n"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
 const SYMBOL_PRIORITY_LIST = [
+  "MATIC",
   "KEEP",
   "ENS",
   "CRV",
   "FTM",
   "GRT",
   "BAL",
-  "MATIC",
   "NU",
   "AMP",
   "BNT",
@@ -112,6 +112,7 @@ function assetAlphabeticSorterWithFilter<
 function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
+  const { t } = useTranslation()
   const { setSelectedAssetAndClose, assets } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
@@ -153,7 +154,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             type="text"
             ref={searchInput}
             className="search_input"
-            placeholder={t("assetInputSearch")}
+            placeholder={t("assetInput.search")}
             spellCheck={false}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
@@ -312,6 +313,7 @@ function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
 export default function SharedAssetInput<T extends AnyAsset>(
   props: SharedAssetInputProps<T>
 ): ReactElement {
+  const { t } = useTranslation()
   const {
     assetsAndAmounts,
     label,
@@ -362,7 +364,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
     if (typeof parsedGivenAmount === "undefined") {
-      return t("assetInputErrorInvalidAmount")
+      return t("assetInput.error.invalidAmount")
     }
 
     const decimalMatched = convertFixedPointNumber(
@@ -373,7 +375,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       decimalMatched.amount > selectedAssetAndAmount.amount ||
       selectedAssetAndAmount.amount <= 0
     ) {
-      return t("assetInputErrorInsufficientBalance")
+      return t("assetInput.error.insufficientBalance")
     }
 
     return undefined
@@ -460,7 +462,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               onClick={toggleIsAssetMenuOpen}
               iconSmall="dropdown"
             >
-              {t("assetInputSelectToken")}
+              {t("assetInput.selectToken")}
             </SharedButton>
           )}
         </div>

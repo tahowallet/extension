@@ -1,4 +1,3 @@
-export const HIDE_EARN_PAGE = process.env.HIDE_EARN_PAGE === "true"
 export const HIDE_IMPORT_DERIVATION_PATH =
   process.env.HIDE_IMPORT_DERIVATION_PATH === "true"
 export const HIDE_IMPORT_PASSPHRASE =
