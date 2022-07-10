@@ -20,11 +20,11 @@ export default function NetworkSettingsChooser({
   const [networkSettings, setNetworkSettings] = useState(
     useBackgroundSelector(selectDefaultNetworkFeeSettings)
   )
+
   const dispatch = useBackgroundDispatch()
 
-  const saveNetworkSettings = () => {
-    dispatch(setFeeType(networkSettings.feeType))
-
+  const saveNetworkSettings = async () => {
+    await dispatch(setFeeType(networkSettings.feeType))
     onNetworkSettingsSave(networkSettings)
   }
 

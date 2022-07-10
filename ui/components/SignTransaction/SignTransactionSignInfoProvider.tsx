@@ -1,7 +1,6 @@
 import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
 import { USD } from "@tallyho/tally-background/constants"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
-import { selectCurrentAddressNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
@@ -22,13 +21,16 @@ export default function SignTransactionSignInfoProvider({
   annotation,
   inner,
 }: SignTransactionInfoProviderProps): ReactElement {
-  const { network } = useBackgroundSelector(selectCurrentAddressNetwork)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.assets, network.baseAsset.symbol, USD.symbol)
+    selectAssetPricePoint(
+      state.assets,
+      transactionDetails.network.baseAsset.symbol,
+      USD.symbol
+    )
   )
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {
-      asset: network.baseAsset,
+      asset: transactionDetails.network.baseAsset,
       amount: transactionDetails.value,
     },
     heuristicDesiredDecimalsForUnitPrice(
@@ -69,7 +71,7 @@ export default function SignTransactionSignInfoProvider({
             <div className="spend_amount_label">Spend Amount</div>
             <div className="spend_amount">
               <div className="eth_value">
-                {ethValue} {network.baseAsset.symbol}
+                {ethValue} {transactionDetails.network.baseAsset.symbol}
               </div>
               <div className="main_currency_value">
                 {dollarValue ? `$${dollarValue}` : "-"}

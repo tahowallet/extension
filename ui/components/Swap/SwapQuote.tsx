@@ -106,7 +106,7 @@ export default function SwapQuote({
       </div>
       <div className="confirm_button center_horizontal">
         <SharedButton type="primary" size="large" onClick={handleConfirmClick}>
-          Confirm Swap
+          Continue Swap
         </SharedButton>
       </div>
       <style jsx>

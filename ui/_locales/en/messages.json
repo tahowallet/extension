@@ -25,8 +25,7 @@
     "sendAsset": "Send Asset",
     "assetAmount": "Asset / Amount",
     "sendTo": "Send To:",
-    "estimatedFee": "Estimated network fee",
-    "sendButton": "Send",
+    "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "receiveAddressDesc": "Only send Ethereum Mainnet compatible assets to this address."
   },
@@ -73,5 +72,12 @@
       "logDesc": "To better understand your bug, we need you to export your logs.",
       "logBtn": "Export logs"
     }
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "average": "Average",
+    "strong": "Strong",
+    "strength": "Strength",
+    "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
   }
 }

@@ -13,12 +13,14 @@ import {
   GasOption,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectTransactionData,
+  selectTransactionMainCurrencyPricePoint,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
@@ -58,7 +60,7 @@ const gasOptionFromEstimate = (
       ? enrichAssetAmountWithMainCurrencyValues(
           {
             asset: ETH,
-            amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
+            amount: maxFeePerGas * gasLimit,
           },
           mainCurrencyPricePoint,
           2
@@ -109,7 +111,7 @@ export default function NetworkSettingsSelect({
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint
   )
 
   // Select activeFeeIndex to regular option once gasOptions load
