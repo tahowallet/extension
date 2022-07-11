@@ -8,8 +8,6 @@ import to8 from "./to-8"
 import to9 from "./to-9"
 import to10 from "./to-10"
 import to11 from "./to-11"
-import to12 from "./to-12"
-import to13 from "./to-13"
 
 /**
  * The version of persisted Redux state the extension is expecting. Any previous
@@ -36,8 +34,6 @@ const allMigrations: { [targetVersion: string]: Migration } = {
   9: to9,
   10: to10,
   11: to11,
-  12: to12,
-  13: to13,
 }
 
 /**
