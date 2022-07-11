@@ -85,6 +85,11 @@ if (!window.walletRouter) {
   })
 }
 
+// Some popular dapps depend on the entire window.ethereum equality between component renders
+// to detect provider changes.  We need to cache the walletRouter proxy we return here or
+// these dapps may incorrectly detect changes in the provider where there are none.
+let cachedWindowEthereumProxy: WindowEthereum
+
 Object.defineProperty(window, "ethereum", {
   get() {
     if (!window.walletRouter) {
@@ -92,8 +97,11 @@ Object.defineProperty(window, "ethereum", {
         "window.walletRouter is expected to be set to change the injected provider on window.ethereum."
       )
     }
+    if (cachedWindowEthereumProxy) {
+      return cachedWindowEthereumProxy
+    }
 
-    return new Proxy(window.walletRouter.currentProvider, {
+    cachedWindowEthereumProxy = new Proxy(window.walletRouter.currentProvider, {
       get(target, prop, receiver) {
         if (
           window.walletRouter &&
@@ -110,6 +118,7 @@ Object.defineProperty(window, "ethereum", {
         return Reflect.get(target, prop, receiver)
       },
     })
+    return cachedWindowEthereumProxy
   },
   set(newProvider) {
     window.walletRouter?.addProvider(newProvider)
