@@ -169,6 +169,20 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
+    } else if (
+      event.request.method === "wallet_addEthereumChain" &&
+      // Hard Code For Now
+      // @TODO Figure out best way forward for working with dapps that require
+      // chain changes before prompting to connect while staying secure in the
+      // context of tally not prompting users to change chains.
+      origin === "https://quickswap.exchange"
+    ) {
+      response.result =
+        await this.internalEthereumProviderService.routeSafeRPCRequest(
+          event.request.method,
+          event.request.params,
+          origin
+        )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
