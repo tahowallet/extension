@@ -26,6 +26,7 @@ import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
+import { POLYGON } from "../../constants"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -175,7 +176,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // @TODO Figure out best way forward for working with dapps that require
       // chain changes before prompting to connect while staying secure in the
       // context of tally not prompting users to change chains.
-      origin === "https://quickswap.exchange"
+      origin.includes("quickswap.exchange")
     ) {
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -187,8 +188,17 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
-      const { address: accountAddress, network } =
-        await this.preferenceService.getSelectedAccount()
+      const selectedAccount = await this.preferenceService.getSelectedAccount()
+
+      const { address: accountAddress } = selectedAccount
+      let { network } = selectedAccount
+
+      // @TODO Quickswaps expects to be able to switch network to polygon before
+      // requesting accounts so it always assumes its connecting to Polygon
+      if (origin.includes("quickswap.exchange")) {
+        network = POLYGON
+      }
+
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${network.chainID}`,
         origin,

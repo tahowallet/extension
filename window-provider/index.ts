@@ -23,7 +23,11 @@ const impersonateMetamaskWhitelist = ["opensea.io", "bridge.umbria.network"]
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
-  chainId = "0x1"
+  // Note - Some dapps need this before interaction (quickswap checks chain ID by looking at window.ethereum.chainId)
+  // Hard-code for now but this is definitely technical debt territory
+  chainId = window.location.origin.includes("quickswap.exchange")
+    ? "0x89"
+    : "0x1"
 
   selectedAddress: string | undefined
 
@@ -248,9 +252,10 @@ export default class TallyWindowProvider extends EventEmitter {
               (sendData.request.params[0] as { chainId: string }).chainId
             )
           }
-        }
-
-        if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
+        } else if (
+          sentMethod === "eth_chainId" ||
+          sentMethod === "net_version"
+        ) {
           if (
             typeof result === "string" &&
             Number(this.chainId) !== Number(result)
@@ -259,9 +264,7 @@ export default class TallyWindowProvider extends EventEmitter {
             this.emit("chainChanged", this.chainId)
             this.emit("networkChanged", Number(this.chainId).toString())
           }
-        }
-
-        if (
+        } else if (
           (sentMethod === "eth_accounts" ||
             sentMethod === "eth_requestAccounts") &&
           Array.isArray(result) &&
