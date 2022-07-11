@@ -25,8 +25,7 @@
     "sendAsset": "Send Asset",
     "assetAmount": "Asset / Amount",
     "sendTo": "Send To:",
-    "estimatedFee": "Estimated network fee",
-    "sendButton": "Send",
+    "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "receiveAddressDesc": "Only send Ethereum Mainnet compatible assets to this address."
   },

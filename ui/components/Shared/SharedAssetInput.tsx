@@ -24,13 +24,13 @@ import SharedAssetIcon from "./SharedAssetIcon"
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
 const SYMBOL_PRIORITY_LIST = [
+  "MATIC",
   "KEEP",
   "ENS",
   "CRV",
   "FTM",
   "GRT",
   "BAL",
-  "MATIC",
   "NU",
   "AMP",
   "BNT",
