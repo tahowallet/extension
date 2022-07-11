@@ -121,7 +121,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const faviconUrl = completeTab?.favIconUrl ?? ""
     const title = completeTab?.title ?? ""
 
-    const response: PortResponseEvent = { id: event.id, result: [] }
+    const response: PortResponseEvent = {
+      id: event.id,
+      jsonrpc: "2.0",
+      result: [],
+    }
 
     const { chainID } =
       await this.internalEthereumProviderService.getActiveOrDefaultNetwork(

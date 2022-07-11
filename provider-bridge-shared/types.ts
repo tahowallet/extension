@@ -26,6 +26,7 @@ export type WindowRequestEvent = {
 
 export type PortResponseEvent = {
   id: string
+  jsonrpc: "2.0"
   result: unknown
 }
 
