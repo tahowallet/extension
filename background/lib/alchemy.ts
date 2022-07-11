@@ -49,14 +49,15 @@ export async function getAssetTransfers(
     // excludeZeroValue: false,
   }
 
-  // Categories that are most important to us, supported both on Ethereum Mainnet and polygon
+  // Default Ethereum Mainnet categories per the documentation:
   // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-ethereum-mainnet
-  const category = ["external", "erc20"]
+  let category = ["external", "internal", "token"]
 
-  if (addressOnNetwork.network.name === "Ethereum") {
-    // "internal" is supported only on Ethereum Mainnet and Goerli atm
+  if (addressOnNetwork.network.name !== "Ethereum") {
+    // Unfortunately even though "token" is supposed the default category for this API call - if the `category` property is omitted
+    // the api returns an error about the category "iternal" not being supported
     // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
-    category.push("internal")
+    category = ["token"]
   }
   // TODO handle partial failure
   const rpcResponses = await Promise.all([
@@ -107,7 +108,7 @@ export async function getAssetTransfers(
         return null
       }
 
-      const asset = transfer.rawContract.address
+      const asset = !transfer.rawContract.address
         ? {
             contractAddress: transfer.rawContract.address,
             decimals: Number(BigInt(transfer.rawContract.decimal)),
