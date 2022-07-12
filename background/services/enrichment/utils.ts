@@ -6,6 +6,7 @@ import NameService from "../name"
 import { EIP712TypedData } from "../../types"
 import { EIP2612TypedData } from "../../utils/signing"
 import { ERC20TransferLog } from "../../lib/erc20"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData
@@ -80,4 +81,19 @@ export function getDistinctRecipentAddressesFromERC20Logs(
   logs: ERC20TransferLog[]
 ): string[] {
   return [...new Set([...logs.map(({ recipientAddress }) => recipientAddress)])]
+}
+
+export const getERC20LogsForAddresses = (
+  logs: ERC20TransferLog[],
+  addresses: string[]
+): ERC20TransferLog[] => {
+  const relevantAddresses = Object.fromEntries(
+    addresses.map((address) => [address, true])
+  )
+
+  return logs.filter(
+    (log) =>
+      relevantAddresses[normalizeEVMAddress(log.recipientAddress)] ||
+      relevantAddresses[normalizeEVMAddress(log.senderAddress)]
+  )
 }
