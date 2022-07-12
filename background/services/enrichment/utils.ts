@@ -93,7 +93,7 @@ export const getERC20LogsForAddresses = (
 
   return logs.filter(
     (log) =>
-      relevantAddresses[log.recipientAddress] ||
-      relevantAddresses[log.senderAddress]
+      relevantAddresses[normalizeEVMAddress(log.recipientAddress)] ||
+      relevantAddresses[normalizeEVMAddress(log.senderAddress)]
   )
 }
