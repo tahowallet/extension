@@ -170,14 +170,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
-    } else if (
-      event.request.method === "wallet_addEthereumChain" &&
-      // Hard Code For Now
-      // @TODO Figure out best way forward for working with dapps that require
-      // chain changes before prompting to connect while staying secure in the
-      // context of tally not prompting users to change chains.
-      origin.includes("quickswap.exchange")
-    ) {
+    } else if (event.request.method === "wallet_addEthereumChain") {
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
