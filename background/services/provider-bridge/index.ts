@@ -26,7 +26,7 @@ import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
-import { POLYGON } from "../../constants"
+import { toHexChainID } from "../../networks"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -140,6 +140,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
+        chainId: toHexChainID(chainID),
       }
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
@@ -184,13 +185,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       const selectedAccount = await this.preferenceService.getSelectedAccount()
 
       const { address: accountAddress } = selectedAccount
-      let { network } = selectedAccount
-
-      // @TODO Quickswaps expects to be able to switch network to polygon before
-      // requesting accounts so it always assumes its connecting to Polygon
-      if (origin.includes("quickswap.exchange")) {
-        network = POLYGON
-      }
+      const { network } = selectedAccount
 
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${network.chainID}`,
