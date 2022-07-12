@@ -33,6 +33,8 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isMetaMask = false
 
+  isWeb3 = true
+
   bridgeListeners = new Map()
 
   providerInfo = {
@@ -144,10 +146,7 @@ export default class TallyWindowProvider extends EventEmitter {
     }
 
     if (isObject(methodOrRequest) && typeof paramsOrCallback === "function") {
-      return this.request(methodOrRequest).then(
-        (response) => paramsOrCallback(null, response),
-        (error) => paramsOrCallback(error, null)
-      )
+      return this.sendAsync(methodOrRequest, paramsOrCallback)
     }
 
     return Promise.reject(new Error("Unsupported function parameters"))
@@ -233,6 +232,22 @@ export default class TallyWindowProvider extends EventEmitter {
         if (!this.connected) {
           this.connected = true
           this.emit("connect", { chainId: this.chainId })
+        }
+
+        if (
+          sentMethod === "wallet_switchEthereumChain" ||
+          sentMethod === "wallet_addEthereumChain"
+        ) {
+          // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+          if (result === null) {
+            this.chainId = (
+              sendData.request.params[0] as { chainId: string }
+            ).chainId
+            this.emit(
+              "chainChanged",
+              (sendData.request.params[0] as { chainId: string }).chainId
+            )
+          }
         }
 
         if (sentMethod === "eth_chainId" || sentMethod === "net_version") {

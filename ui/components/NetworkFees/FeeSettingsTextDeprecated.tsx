@@ -8,8 +8,8 @@ import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectFeeType,
+  selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import React, { ReactElement } from "react"
@@ -45,7 +45,7 @@ export default function FeeSettingsTextDeprecated(): ReactElement {
   const selectedFeeType = useBackgroundSelector(selectFeeType)
   const networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint
   )
   const baseFeePerGas = estimatedFeesPerGas?.baseFeePerGas
 

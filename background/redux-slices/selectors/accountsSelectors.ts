@@ -212,9 +212,13 @@ export const selectAccountAndTimestampedActivities = createSelector(
 export const selectMainCurrencyPricePoint = createSelector(
   getAssetsState,
   (state) => selectMainCurrencySymbol(state),
-  (assets, mainCurrencySymbol) => {
-    // TODO Support multi-network base assets.
-    return selectAssetPricePoint(assets, "ETH", mainCurrencySymbol)
+  selectCurrentNetwork,
+  (assets, mainCurrencySymbol, currentNetwork) => {
+    return selectAssetPricePoint(
+      assets,
+      currentNetwork.baseAsset.symbol,
+      mainCurrencySymbol
+    )
   }
 )
 
