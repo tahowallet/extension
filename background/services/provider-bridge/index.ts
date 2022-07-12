@@ -185,12 +185,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
       const selectedAccount = await this.preferenceService.getSelectedAccount()
 
       const { address: accountAddress } = selectedAccount
-      const { network } = selectedAccount
+
+      const dAppChainID =
+        (await this.internalEthereumProviderService.routeSafeRPCRequest(
+          "eth_chainId",
+          [],
+          origin
+        )) as string
 
       const permissionRequest: PermissionRequest = {
-        key: `${origin}_${accountAddress}_${network.chainID}`,
+        key: `${origin}_${accountAddress}_${dAppChainID}`,
         origin,
-        chainID: network.chainID,
+        chainID: dAppChainID,
         faviconUrl,
         title,
         state: "request",
@@ -205,7 +211,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       const persistedPermission = await this.checkPermission(
         origin,
-        network.chainID
+        dAppChainID
       )
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data

@@ -278,7 +278,7 @@ export default class TallyWindowProvider extends EventEmitter {
     })
   }
 
-  handleChainIdChange(chainId: string) {
+  handleChainIdChange(chainId: string): void {
     this.chainId = chainId
     this.emit("chainChanged", chainId)
     this.emit("networkChanged", Number(chainId).toString())
