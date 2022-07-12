@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { isDefined } from "../../lib/utils/type-guards"
-import { AccountSigner } from "../../services/signing"
+import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import { HexString } from "../../types"
 import { selectKeyringsByAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
@@ -50,6 +50,6 @@ export const selectAccountSignersByAddress = createSelector(
 export const selectCurrentAccountSigner = createSelector(
   selectAccountSignersByAddress,
   selectCurrentAccount,
-  (signingAccounts, selectedAccount): AccountSigner | null =>
-    signingAccounts[selectedAccount.address] ?? null
+  (signingAccounts, selectedAccount) =>
+    signingAccounts[selectedAccount.address] ?? ReadOnlyAccountSigner
 )

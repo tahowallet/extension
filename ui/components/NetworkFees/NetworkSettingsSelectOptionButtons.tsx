@@ -76,7 +76,7 @@ const buttonStyle = `
     padding-right: 5px;
   }
   .miner_wrap {
-    width: 95px;
+    max-width: 116px;
     display: flex;
     align-items: center;
   }
@@ -120,6 +120,9 @@ export function NetworkSettingsSelectOptionButton({
       <style jsx>
         {`
           ${buttonStyle}
+          .miner {
+            margin-right: 14px;
+          }
         `}
       </style>
     </button>
