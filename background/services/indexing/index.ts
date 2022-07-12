@@ -277,7 +277,10 @@ export default class IndexingService extends BaseService<Events> {
         // (e.g. via a previously baseline-trusted interaction or via a token
         // list) OR the sender is a tracked address.
         const baselineTrustedAsset =
-          (await this.db.isTrackingAsset(asset)) ||
+          (await this.getKnownSmartContractAsset(
+            enrichedEVMTransaction.network,
+            asset.contractAddress
+          )) ||
           (
             await this.chainService.filterTrackedAddressesOnNetworks([
               {
