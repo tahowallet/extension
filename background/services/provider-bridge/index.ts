@@ -186,12 +186,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       const { address: accountAddress } = selectedAccount
 
-      const dAppChainID =
+      // @TODO 7/12/21 Figure out underlying cause here
+      const dAppChainID = Number(
         (await this.internalEthereumProviderService.routeSafeRPCRequest(
           "eth_chainId",
           [],
           origin
         )) as string
+      ).toString()
 
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${dAppChainID}`,
