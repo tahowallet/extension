@@ -90,6 +90,11 @@ if (!window.walletRouter) {
 // these dapps may incorrectly detect changes in the provider where there are none.
 let cachedWindowEthereumProxy: WindowEthereum
 
+// We need to save the current provider at the time we cache the proxy object,
+// so we can recognize when the default wallet behavior is changed. When the
+// default wallet is changed we are switching the underlying provider.
+let cachedCurrentProvider: WalletProvider
+
 Object.defineProperty(window, "ethereum", {
   get() {
     if (!window.walletRouter) {
@@ -97,7 +102,10 @@ Object.defineProperty(window, "ethereum", {
         "window.walletRouter is expected to be set to change the injected provider on window.ethereum."
       )
     }
-    if (cachedWindowEthereumProxy) {
+    if (
+      cachedWindowEthereumProxy &&
+      cachedCurrentProvider === window.walletRouter.currentProvider
+    ) {
       return cachedWindowEthereumProxy
     }
 
@@ -118,6 +126,8 @@ Object.defineProperty(window, "ethereum", {
         return Reflect.get(target, prop, receiver)
       },
     })
+    cachedCurrentProvider = window.walletRouter.currentProvider
+
     return cachedWindowEthereumProxy
   },
   set(newProvider) {
