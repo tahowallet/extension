@@ -13,7 +13,10 @@ import {
   selectEligibilityLoading,
 } from "@tallyho/tally-background/redux-slices/claim"
 
-import { AccountSigner } from "@tallyho/tally-background/services/signing"
+import {
+  AccountSigner,
+  ReadOnlyAccountSigner,
+} from "@tallyho/tally-background/services/signing"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
@@ -27,7 +30,7 @@ function EligibleCTAContent({
   hasError,
   handleCloseBanner,
 }: {
-  currentAccountSigner: AccountSigner | null
+  currentAccountSigner: AccountSigner
   claimAmount: string
   isCurrentlyClaiming: boolean
   hasError: boolean
@@ -65,7 +68,11 @@ function EligibleCTAContent({
           </span>{" "}
           DOGGO
         </div>
-        {currentAccountSigner ? <></> : <div>Upgrade above to claim</div>}
+        {currentAccountSigner === ReadOnlyAccountSigner ? (
+          <div>Upgrade above to claim</div>
+        ) : (
+          <></>
+        )}
       </div>
       {hasAlreadyClaimed ? (
         <SharedIcon
@@ -84,12 +91,12 @@ function EligibleCTAContent({
         <Link
           to="/eligible"
           className={classNames({
-            no_click: !currentAccountSigner || isCurrentlyClaiming,
+            no_click: isCurrentlyClaiming,
           })}
         >
           <div
             className={classNames("link_content", {
-              disabled: !currentAccountSigner || isCurrentlyClaiming,
+              disabled: isCurrentlyClaiming,
             })}
           >
             <img
