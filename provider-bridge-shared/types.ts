@@ -65,6 +65,7 @@ export type TallyInternalCommunication = {
 export type TallyConfigPayload = {
   method: "tally_getConfig"
   defaultWallet: boolean
+  chainId?: string
   [prop: string]: unknown
 }
 

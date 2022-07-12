@@ -23,11 +23,7 @@ const impersonateMetamaskWhitelist = ["opensea.io", "bridge.umbria.network"]
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
-  // Note - Some dapps need this before interaction (quickswap checks chain ID by looking at window.ethereum.chainId)
-  // Hard-code for now but this is definitely technical debt territory
-  chainId = window.location.origin.includes("quickswap.exchange")
-    ? "0x89"
-    : "0x1"
+  chainId = "0x1"
 
   selectedAddress: string | undefined
 
@@ -78,6 +74,10 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
+        if (result.chainId && result.chainId !== this.chainId) {
+          this.handleChainIdChange.bind(this)(result.chainId)
+        }
+
         if (
           impersonateMetamaskWhitelist.some((host) =>
             window.location.host.includes(host)
@@ -244,11 +244,7 @@ export default class TallyWindowProvider extends EventEmitter {
         ) {
           // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
           if (result === null) {
-            this.chainId = (
-              sendData.request.params[0] as { chainId: string }
-            ).chainId
-            this.emit(
-              "chainChanged",
+            this.handleChainIdChange.bind(this)(
               (sendData.request.params[0] as { chainId: string }).chainId
             )
           }
@@ -260,9 +256,7 @@ export default class TallyWindowProvider extends EventEmitter {
             typeof result === "string" &&
             Number(this.chainId) !== Number(result)
           ) {
-            this.chainId = `0x${Number(result).toString(16)}`
-            this.emit("chainChanged", this.chainId)
-            this.emit("networkChanged", Number(this.chainId).toString())
+            this.handleChainIdChange.bind(this)(result)
           }
         } else if (
           (sentMethod === "eth_accounts" ||
@@ -282,6 +276,12 @@ export default class TallyWindowProvider extends EventEmitter {
 
       this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
     })
+  }
+
+  handleChainIdChange(chainId: string): void {
+    this.chainId = chainId
+    this.emit("chainChanged", chainId)
+    this.emit("networkChanged", Number(chainId).toString())
   }
 
   handleAddressChange(address: Array<string>): void {
