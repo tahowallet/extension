@@ -39,7 +39,14 @@ export default function CommonAssetListItem({
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
               </span>
-              {assetAmount.asset.symbol}
+              <span>{assetAmount.asset.symbol}</span>
+              <Link
+                to={{
+                  pathname: "/send",
+                  state: assetAmount.asset,
+                }}
+                className="untrusted_asset_icon"
+              />
             </div>
             {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
               <></>
