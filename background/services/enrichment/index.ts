@@ -31,6 +31,7 @@ import { SignTypedDataRequest } from "../../utils/signing"
 import {
   enrichEIP2612SignTypedDataRequest,
   getDistinctRecipentAddressesFromERC20Logs,
+  getERC20LogsForAddresses,
   isEIP2612TypedData,
 } from "./utils"
 import { ETHEREUM } from "../../constants"
@@ -316,16 +317,24 @@ export default class EnrichmentService extends BaseService<Events> {
   ): Promise<TransactionAnnotation[]> {
     const assets = await this.indexingService.getCachedAssets(network)
 
+    const accountAddresses = (await this.chainService.getAccountsToTrack()).map(
+      (account) => account.address
+    )
+
     const tokenTransferLogs = [
       ...parseLogsForERC20Transfers(logs),
       ...parseLogsForWrappedDepositsAndWithdrawals(logs),
     ]
 
+    const relevantTransferLogs = getERC20LogsForAddresses(
+      tokenTransferLogs,
+      accountAddresses
+    )
     // Look up transfer log names, then flatten to an address -> name map.
     const namesByAddress = Object.fromEntries(
       (
         await Promise.allSettled(
-          getDistinctRecipentAddressesFromERC20Logs(tokenTransferLogs).map(
+          getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
             async (address) =>
               [
                 normalizeEVMAddress(address),
