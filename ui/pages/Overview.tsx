@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import {
   getAddressCount,
+  getNetworkCount,
   selectAccountAndTimestampedActivities,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "../hooks"
@@ -14,14 +15,18 @@ export default function Overview(): ReactElement {
     selectAccountAndTimestampedActivities
   )
 
-  const { initializationLoadingTimeExpired, numberOfAddresses } =
-    useBackgroundSelector((state) => {
-      return {
-        numberOfAddresses: getAddressCount(state),
-        initializationLoadingTimeExpired:
-          state.ui?.initializationLoadingTimeExpired,
-      }
-    })
+  const {
+    initializationLoadingTimeExpired,
+    numberOfAddresses,
+    numberOfNetworks,
+  } = useBackgroundSelector((state) => {
+    return {
+      numberOfNetworks: getNetworkCount(state),
+      numberOfAddresses: getAddressCount(state),
+      initializationLoadingTimeExpired:
+        state.ui?.initializationLoadingTimeExpired,
+    }
+  })
 
   return (
     <>
@@ -45,6 +50,10 @@ export default function Overview(): ReactElement {
           </div>
         </div>
         <div className="sub_info_row">
+          <div className="info_group_item">
+            <span className="info_left">{t("overview.networks")}</span>
+            {numberOfNetworks}
+          </div>
           <div className="info_group_item">
             <span className="info_left">{t("overview.addresses")}</span>
             {numberOfAddresses}

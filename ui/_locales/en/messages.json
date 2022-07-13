@@ -4,6 +4,7 @@
     "totalBalance": "Total balance",
     "addresses": "Addresses",
     "assets": "Assets",
+    "networks": "Networks",
     "tableHeader": {
       "asset": "Asset",
       "price": "Price",

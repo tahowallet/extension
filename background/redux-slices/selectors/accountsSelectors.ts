@@ -449,3 +449,8 @@ export const getAddressCount = createSelector(
       )
     ).size
 )
+
+export const getNetworkCount = createSelector(
+  (state: RootState) => state.account.accountsData,
+  (accountsData) => Object.keys(accountsData.evm).length
+)
