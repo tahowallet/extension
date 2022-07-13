@@ -297,7 +297,7 @@ const getAccountType = (
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signer == null) {
+  if (signer === ReadOnlyAccountSigner) {
     return AccountType.ReadOnly
   }
   if (signerTypeToAccountType[signer.type] === "ledger") {
