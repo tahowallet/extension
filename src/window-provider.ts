@@ -25,10 +25,12 @@ if (!window.walletRouter) {
   Object.defineProperty(window, "walletRouter", {
     value: {
       currentProvider: window.tally,
-      previousProvider: window.ethereum,
+      lastInjectedProvider: window.ethereum,
+      tallyProvider: window.tally,
       providers: [
         // deduplicate the providers array: https://medium.com/@jakubsynowiec/unique-array-values-in-javascript-7c932682766c
         ...new Set([
+          window.tally,
           // eslint-disable-next-line no-nested-ternary
           ...(window.ethereum
             ? // let's use the providers that has already been registered
@@ -40,11 +42,14 @@ if (!window.walletRouter) {
           window.tally,
         ]),
       ],
-      switchToPreviousProvider() {
-        if (this.previousProvider) {
-          const tempPreviousProvider = this.previousProvider
-          this.previousProvider = this.currentProvider
-          this.currentProvider = tempPreviousProvider
+      shouldSetTallyForCurrentProvider(shouldSetTally: boolean) {
+        if (shouldSetTally && this.currentProvider !== this.tallyProvider) {
+          this.currentProvider = this.tallyProvider
+        } else if (
+          !shouldSetTally &&
+          this.currentProvider === this.tallyProvider
+        ) {
+          this.currentProvider = this.lastInjectedProvider
         }
       },
       getProviderInfo(provider: WalletProvider) {
@@ -56,28 +61,12 @@ if (!window.walletRouter) {
           }
         )
       },
-      hasProvider(checkIdentity: (provider: WalletProvider) => boolean) {
-        return this.providers.some(checkIdentity)
-      },
-      getProvider(checkIdentity: (provider: WalletProvider) => boolean) {
-        const providerIndex = this.providers.findIndex(checkIdentity)
-        return this.providers[providerIndex]
-      },
-      setCurrentProvider(checkIdentity: (provider: WalletProvider) => boolean) {
-        if (!this.hasProvider(checkIdentity)) {
-          throw new Error(
-            "The given identity did not match to any of the recognized providers!"
-          )
-        }
-        this.previousProvider = this.currentProvider
-        this.currentProvider = this.getProvider(checkIdentity)
-      },
       addProvider(newProvider: WalletProvider) {
         if (!this.providers.includes(newProvider)) {
           this.providers.push(newProvider)
         }
 
-        this.previousProvider = newProvider
+        this.lastInjectedProvider = newProvider
       },
     },
     writable: false,
