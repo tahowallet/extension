@@ -116,6 +116,15 @@ Object.defineProperty(window, "ethereum", {
           !(prop in window.walletRouter.currentProvider) &&
           prop in window.walletRouter
         ) {
+          // Uniswap MM connector checks the providers array for the MM provider and forces to use that
+          // https://github.com/Uniswap/web3-react/blob/main/packages/metamask/src/index.ts#L57
+          // as a workaround we need to remove this list for uniswap so the actual provider change can work after reload.
+          if (
+            window.location.href.includes("app.uniswap.org") &&
+            prop === "providers"
+          ) {
+            return null
+          }
           // let's publish the api of `window.walletRoute` also on `window.ethereum` for better discoverability
 
           // @ts-expect-error ts accepts symbols as index only from 4.4
