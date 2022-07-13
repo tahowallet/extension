@@ -297,7 +297,7 @@ const getAccountType = (
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signer == null) {
+  if (signer === ReadOnlyAccountSigner) {
     return AccountType.ReadOnly
   }
   if (signerTypeToAccountType[signer.type] === "ledger") {
@@ -448,4 +448,9 @@ export const getAddressCount = createSelector(
         Object.keys(chainAddresses)
       )
     ).size
+)
+
+export const getNetworkCount = createSelector(
+  (state: RootState) => state.account.accountsData,
+  (accountsData) => Object.keys(accountsData.evm).length
 )

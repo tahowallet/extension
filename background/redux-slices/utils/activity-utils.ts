@@ -1,6 +1,34 @@
 import { convertToEth, weiToGwei } from "../../lib/utils"
+import { ConfirmedEVMTransaction } from "../../networks"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import { HexString } from "../../types"
+
+type FieldAdapter = {
+  readableName: string
+  transformer: (tx: EnrichedEVMTransaction) => string
+  detailTransformer: (tx: EnrichedEVMTransaction) => string
+}
+
+type UIFields = keyof (EnrichedEVMTransaction &
+  Pick<ConfirmedEVMTransaction, "gasUsed">)
+
+type UIAdaptationMap = {
+  [P in UIFields]?: FieldAdapter
+}
+
+export type ActivityItem = EnrichedEVMTransaction & {
+  localizedDecimalValue: string
+  blockHeight: number | null
+  fromTruncated: string
+  toTruncated: string
+  infoRows: {
+    [name: string]: {
+      label: string
+      value: string
+      valueDetail: string
+    }
+  }
+}
 
 export function getRecipient(activityItem: ActivityItem): {
   address: HexString | undefined
@@ -21,58 +49,41 @@ export function getRecipient(activityItem: ActivityItem): {
   }
 }
 
-function ethTransformer(
-  value: string | number | bigint | null | undefined
+function amountTransformer(
+  value: bigint | null | undefined,
+  symbol: string
 ): string {
   if (value === null || typeof value === "undefined") {
     return "(Unknown)"
   }
-  return `${convertToEth(value)} ETH`
+  return `${convertToEth(value) || "0"} ${symbol}`
 }
 
-function gweiTransformer(
-  value: string | number | bigint | null | undefined
-): string {
+function gweiTransformer(value: bigint | null | undefined): string {
   if (value === null || typeof value === "undefined") {
     return "(Unknown)"
   }
-  return `${weiToGwei(value)} Gwei`
+  return `${weiToGwei(value) || "0"} Gwei`
 }
 
-type FieldAdapter<T> = {
-  readableName: string
-  transformer: (value: T) => string
-  detailTransformer: (value: T) => string
+function blockHeightTransformer(blockHeight: number | null): string {
+  return blockHeight === null ? "(pending)" : blockHeight.toString()
 }
 
-export type UIAdaptationMap<T> = {
-  [P in keyof T]?: FieldAdapter<T[P]>
-}
-
-export type ActivityItem = EnrichedEVMTransaction & {
-  localizedDecimalValue: string
-  blockHeight: number | null
-  fromTruncated: string
-  toTruncated: string
-  infoRows: {
-    [name: string]: {
-      label: string
-      value: string
-      valueDetail: string
-    }
-  }
+function toStringTransformer(value: bigint | number): string {
+  return value?.toString() ?? ""
 }
 
 /**
- * Given a map of adaptations from fields in type T, return all keys that need
+ * Given a map of adaptations from fields in EnrichedEVMTransaction, return all keys that need
  * adaptation with three fields, a label, a value, and a valueDetail, derived
  * based on the adaptation map.
  */
-export function adaptForUI<T>(
-  fieldAdapters: UIAdaptationMap<T>,
-  item: T
+export function adaptForUI(
+  fieldAdapters: UIAdaptationMap,
+  tx: EnrichedEVMTransaction
 ): {
-  [key in keyof UIAdaptationMap<T>]: {
+  [key in keyof UIAdaptationMap]: {
     label: string
     value: string
     valueDetail: string
@@ -81,10 +92,8 @@ export function adaptForUI<T>(
   // The as below is dicey but reasonable in our usage.
   return Object.keys(fieldAdapters).reduce(
     (adaptedFields, key) => {
-      const knownKey = key as keyof UIAdaptationMap<T> // statically guaranteed
-      const adapter = fieldAdapters[knownKey] as
-        | FieldAdapter<unknown>
-        | undefined
+      const knownKey = key as keyof UIAdaptationMap // statically guaranteed
+      const adapter = fieldAdapters[knownKey] as FieldAdapter | undefined
 
       if (typeof adapter === "undefined") {
         return adaptedFields
@@ -96,13 +105,13 @@ export function adaptForUI<T>(
         ...adaptedFields,
         [key]: {
           label: readableName,
-          value: transformer(item[knownKey]),
-          valueDetail: detailTransformer(item[knownKey]),
+          value: transformer(tx),
+          valueDetail: detailTransformer(tx),
         },
       }
     },
     {} as {
-      [key in keyof UIAdaptationMap<T>]: {
+      [key in keyof UIAdaptationMap]: {
         label: string
         value: string
         valueDetail: string
@@ -111,38 +120,39 @@ export function adaptForUI<T>(
   )
 }
 
-export const keysMap: UIAdaptationMap<ActivityItem> = {
+export const keysMap: UIAdaptationMap = {
   blockHeight: {
     readableName: "Block Height",
-    transformer: (height: number | null) =>
-      height === null ? "(pending)" : height.toString(),
-    detailTransformer: () => {
-      return ""
-    },
+    transformer: (tx) => blockHeightTransformer(tx.blockHeight),
+    detailTransformer: () => "",
   },
   value: {
     readableName: "Amount",
-    transformer: ethTransformer,
-    detailTransformer: ethTransformer,
+    transformer: (tx) =>
+      amountTransformer(tx.value, tx.network.baseAsset.symbol),
+    detailTransformer: (tx) =>
+      amountTransformer(tx.value, tx.network.baseAsset.symbol),
   },
   maxFeePerGas: {
     readableName: "Max Fee/Gas",
-    transformer: gweiTransformer,
-    detailTransformer: gweiTransformer,
+    transformer: (tx) => gweiTransformer(tx.maxFeePerGas),
+    detailTransformer: (tx) => gweiTransformer(tx.maxFeePerGas),
   },
   gasPrice: {
     readableName: "Gas Price",
-    transformer: gweiTransformer,
-    detailTransformer: gweiTransformer,
+    transformer: (tx) => gweiTransformer(tx.gasPrice),
+    detailTransformer: (tx) => gweiTransformer(tx.gasPrice),
   },
   gasUsed: {
     readableName: "Gas",
-    transformer: (val) => val?.toString(),
-    detailTransformer: (val) => val?.toString(),
+    transformer: (tx) =>
+      "gasUsed" in tx ? toStringTransformer(tx.gasUsed) : "",
+    detailTransformer: (tx) =>
+      "gasUsed" in tx ? toStringTransformer(tx.gasUsed) : "",
   },
   nonce: {
     readableName: "Nonce",
-    transformer: (val) => val?.toString(),
-    detailTransformer: (val) => val?.toString(),
+    transformer: (tx) => toStringTransformer(tx.nonce),
+    detailTransformer: (tx) => toStringTransformer(tx.nonce),
   },
 }

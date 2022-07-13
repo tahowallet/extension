@@ -7,6 +7,7 @@ import {
   selectTypedData,
   signTypedData,
 } from "@tallyho/tally-background/redux-slices/signing"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import React, { ReactElement, useState } from "react"
 import { useHistory } from "react-router-dom"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
@@ -43,7 +44,10 @@ export default function SignData(): ReactElement {
 
   const handleConfirm = () => {
     if (typedDataRequest !== undefined) {
-      if (currentAccountSigner) {
+      if (
+        currentAccountSigner &&
+        currentAccountSigner !== ReadOnlyAccountSigner
+      ) {
         dispatch(
           signTypedData({
             request: typedDataRequest,
