@@ -10,6 +10,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/signing"
 import { SignDataMessageType } from "@tallyho/tally-background/utils/signing"
 import { useHistory } from "react-router-dom"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -52,7 +53,7 @@ export default function PersonalSignData(): ReactElement {
   }
 
   const handleConfirm = () => {
-    if (currentAccountSigner === null) return
+    if (currentAccountSigner === ReadOnlyAccountSigner) return
     if (signingDataRequest === undefined) return
 
     dispatch(
