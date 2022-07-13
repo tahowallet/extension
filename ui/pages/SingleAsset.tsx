@@ -10,6 +10,7 @@ import {
   AnyAsset,
   isSmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -123,7 +124,7 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {currentAccountSigner ? (
+            {currentAccountSigner !== ReadOnlyAccountSigner ? (
               <>
                 <SharedButton
                   type="primary"

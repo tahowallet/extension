@@ -35,7 +35,7 @@ export default function Overview(): ReactElement {
             combinedData?.totalMainCurrencyValue ? (
               <>
                 <span className="primary_money_sign">$</span>
-                {combinedData?.totalMainCurrencyValue}
+                {combinedData?.totalMainCurrencyValue ?? "0"}
               </>
             ) : (
               <div className="loading_wrap">

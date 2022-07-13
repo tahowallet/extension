@@ -191,6 +191,15 @@ export class IndexingDatabase extends Dexie {
     return this.assetsToTrack.toArray()
   }
 
+  async isTrackingAsset(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return (
+      (await this.getTrackedAssetByAddressAndNetwork(
+        asset.homeNetwork,
+        asset.contractAddress
+      )) !== undefined
+    )
+  }
+
   async getCustomAssetsByNetwork(
     network: Network
   ): Promise<SmartContractFungibleAsset[]> {
@@ -205,6 +214,16 @@ export class IndexingDatabase extends Dexie {
     contractAddress: string
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.customAssets
+      .where("[contractAddress+homeNetwork.name]")
+      .equals([network.name, contractAddress])
+      .first()
+  }
+
+  async getTrackedAssetByAddressAndNetwork(
+    network: Network,
+    contractAddress: string
+  ): Promise<SmartContractFungibleAsset | undefined> {
+    return this.assetsToTrack
       .where("[contractAddress+homeNetwork.name]")
       .equals([network.name, contractAddress])
       .first()

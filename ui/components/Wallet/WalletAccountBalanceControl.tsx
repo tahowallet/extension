@@ -4,6 +4,7 @@ import classNames from "classnames"
 import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -162,7 +163,9 @@ export default function WalletAccountBalanceControl(
           width={180}
           customStyles="margin-bottom: 10px;"
         >
-          {currentAccountSigner ? (
+          {currentAccountSigner === ReadOnlyAccountSigner ? (
+            <ReadOnlyNotice />
+          ) : (
             <>
               {hasSavedSeed ? (
                 <div className="send_receive_button_wrap">
@@ -198,8 +201,6 @@ export default function WalletAccountBalanceControl(
                 </div>
               )}
             </>
-          ) : (
-            <ReadOnlyNotice />
           )}
         </SharedSkeletonLoader>
       </div>

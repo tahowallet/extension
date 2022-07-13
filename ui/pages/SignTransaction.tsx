@@ -11,6 +11,7 @@ import {
   getAccountTotal,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -55,7 +56,8 @@ export default function SignTransaction(): ReactElement {
     if (
       isTransactionDataReady &&
       transactionDetails &&
-      accountSigner !== null
+      accountSigner &&
+      accountSigner !== ReadOnlyAccountSigner
     ) {
       dispatch(
         signTransaction({
