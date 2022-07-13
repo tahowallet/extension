@@ -273,18 +273,44 @@ export default class IndexingService extends BaseService<Events> {
             annotationAddressesOnNetwork
           )
 
-        const assetLookups = trackedAddresesOnNetworks.map(
-          (addressOnNetwork) => ({
-            asset,
-            addressOnNetwork,
-          })
-        )
+        // An asset has baseline trust if we are already tracking the asset
+        // (e.g. via a previously baseline-trusted interaction or via a token
+        // list) OR the sender is a tracked address.
+        const baselineTrustedAsset =
+          typeof (await this.getKnownSmartContractAsset(
+            enrichedEVMTransaction.network,
+            asset.contractAddress
+          )) !== "undefined" ||
+          (await this.db.isTrackingAsset(asset)) ||
+          (
+            await this.chainService.filterTrackedAddressesOnNetworks([
+              {
+                address: normalizeEVMAddress(enrichedEVMTransaction.from),
+                network: enrichedEVMTransaction.network,
+              },
+            ])
+          ).length > 0
 
-        this.acceleratedTokenRefresh.assetLookups.push(...assetLookups)
-        this.acceleratedTokenRefresh.timeout ??= window.setTimeout(
-          this.handleAcceleratedTokenRefresh.bind(this),
-          ACCELERATED_TOKEN_REFRESH_TIMEOUT
-        )
+        // TODO Add the concept of an untrusted asset that is displayed in the
+        // TODO UI as such, with the ability to mark the asset as trusted.
+        // Possible approach: make assetLookups include a `baselineTrusted`
+        // field, then include an entry in assets/db that is `trusted`,
+        // defaulted to `baselineTrusted`, and displayed and updatable via
+        // the UI.
+        if (baselineTrustedAsset) {
+          const assetLookups = trackedAddresesOnNetworks.map(
+            (addressOnNetwork) => ({
+              asset,
+              addressOnNetwork,
+            })
+          )
+
+          this.acceleratedTokenRefresh.assetLookups.push(...assetLookups)
+          this.acceleratedTokenRefresh.timeout ??= window.setTimeout(
+            this.handleAcceleratedTokenRefresh.bind(this),
+            ACCELERATED_TOKEN_REFRESH_TIMEOUT
+          )
+        }
       }
     })
   }
@@ -323,24 +349,6 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   private async connectChainServiceEvents(): Promise<void> {
-    // listen for assetTransfers, and if we find them, track those tokens
-    // TODO update for NFTs
-    this.chainService.emitter.on(
-      "assetTransfers",
-      async ({ addressNetwork, assetTransfers }) => {
-        assetTransfers.forEach((transfer) => {
-          const fungibleAsset = transfer.assetAmount
-            .asset as SmartContractFungibleAsset
-          if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
-            this.addTokenToTrackByContract(
-              addressNetwork,
-              fungibleAsset.contractAddress
-            )
-          }
-        })
-      }
-    )
-
     this.chainService.emitter.on(
       "newAccountToTrack",
       async (addressOnNetwork) => {
