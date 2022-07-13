@@ -1,3 +1,4 @@
+import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import PreferenceService from "../../preferences"
 import { NameResolver } from "../name-resolver"
 
@@ -17,12 +18,20 @@ export default function addressBookResolverFor(
       return true
     },
 
-    lookUpAddressForName:
-      preferenceService.lookUpAddressForName.bind(preferenceService),
+    async lookUpAddressForName(nameOnNetwork: NameOnNetwork) {
+      return preferenceService.lookUpAddressForName.call(
+        preferenceService,
+        nameOnNetwork
+      )
+    },
     async lookUpAvatar() {
       throw new Error("Avatar resolution not supported in address book.")
     },
-    lookUpNameForAddress:
-      preferenceService.lookUpNameForAddress.bind(preferenceService),
+    async lookUpNameForAddress(addressOnNetwork: AddressOnNetwork) {
+      return preferenceService.lookUpNameForAddress.call(
+        preferenceService,
+        addressOnNetwork
+      )
+    },
   }
 }
