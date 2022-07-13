@@ -75,7 +75,8 @@ export default class TallyWindowProvider extends EventEmitter {
 
       if (isTallyConfigPayload(result)) {
         window.walletRouter?.shouldSetTallyForCurrentProvider(
-          result.defaultWallet
+          result.defaultWallet,
+          result.shouldReload
         )
         if (result.chainId && result.chainId !== this.chainId) {
           this.handleChainIdChange.bind(this)(result.chainId)

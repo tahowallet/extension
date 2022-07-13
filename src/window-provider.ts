@@ -42,7 +42,10 @@ if (!window.walletRouter) {
           window.tally,
         ]),
       ],
-      shouldSetTallyForCurrentProvider(shouldSetTally: boolean) {
+      shouldSetTallyForCurrentProvider(
+        shouldSetTally: boolean,
+        shouldReload = false
+      ) {
         if (shouldSetTally && this.currentProvider !== this.tallyProvider) {
           this.currentProvider = this.tallyProvider
         } else if (
@@ -50,6 +53,12 @@ if (!window.walletRouter) {
           this.currentProvider === this.tallyProvider
         ) {
           this.currentProvider = this.lastInjectedProvider
+        }
+
+        if (shouldReload && window.location.href.includes("app.uniswap.org")) {
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
         }
       },
       getProviderInfo(provider: WalletProvider) {
