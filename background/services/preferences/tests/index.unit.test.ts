@@ -1,9 +1,8 @@
 import "fake-indexeddb/auto"
 import PreferenceService from ".."
-import { ETHEREUM, POLYGON } from "../../../constants"
-import DEFAULT_PREFERENCES from "../defaults"
+import { ETHEREUM } from "../../../constants"
 
-describe("Preference Service", () => {
+describe("Preference Service Unit", () => {
   let preferenceService: PreferenceService
 
   beforeEach(async () => {
@@ -24,7 +23,7 @@ describe("Preference Service", () => {
       expect(spy).toHaveBeenCalledWith("addressBookEntryModified", nameToAdd)
     })
 
-    it("should correctly persist entries and allow them to be queryable by name", async () => {
+    it("should correctly save entries and allow them to be queryable by name", async () => {
       preferenceService.addOrEditNameInAddressBook({
         network: ETHEREUM,
         name: "foo",
@@ -41,7 +40,7 @@ describe("Preference Service", () => {
       )
     })
 
-    it("should correctly persist entries and allow them to be queryable by address", async () => {
+    it("should correctly save entries and allow them to be queryable by address", async () => {
       preferenceService.addOrEditNameInAddressBook({
         network: ETHEREUM,
         name: "foo",
@@ -54,29 +53,6 @@ describe("Preference Service", () => {
       })
 
       expect(foundAddressOnNetwork?.name).toEqual("foo")
-    })
-  })
-  describe("setSelectedAccount", () => {
-    it("should correctly set selectedAccount in indexedDB", async () => {
-      // Should match default account prior to interaction
-      expect(await preferenceService.getSelectedAccount()).toEqual(
-        DEFAULT_PREFERENCES.selectedAccount
-      )
-      const newAccount = {
-        address: "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-        network: POLYGON,
-      }
-      await preferenceService.setSelectedAccount(newAccount)
-      expect(await preferenceService.getSelectedAccount()).toEqual(newAccount)
-    })
-  })
-
-  describe("setDefaultWalletValue", () => {
-    it("should correctly toggle defaultWallet in indexedDB", async () => {
-      // Should default to true
-      expect(await preferenceService.getDefaultWallet()).toEqual(true)
-      await preferenceService.setDefaultWalletValue(false)
-      expect(await preferenceService.getDefaultWallet()).toEqual(false)
     })
   })
 })
