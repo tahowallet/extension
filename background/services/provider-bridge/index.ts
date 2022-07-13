@@ -84,10 +84,21 @@ export default class ProviderBridgeService extends BaseService<Events> {
           )
         })
         this.openPorts.push(port)
-      }
-    })
 
-    // TODO: on internal provider handlers connect, disconnect, account change, network change
+        // we need to send this info ASAP so it arrives before the webpage is initializing
+        // so we can set our provider into the correct state, BEFORE the page has a chance to
+        // to cache it, store it etc.
+        port.postMessage({
+          id: "tallyHo",
+          jsonrpc: "2.0",
+          result: {
+            method: "tally_getConfig",
+            defaultWallet: await this.preferenceService.getDefaultWallet(),
+          },
+        })
+      }
+      // TODO: on internal provider handlers connect, disconnect, account change, network change
+    })
   }
 
   protected async internalStartService(): Promise<void> {
@@ -248,6 +259,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         result: {
           method: "tally_getConfig",
           defaultWallet: newDefaultWalletValue,
+          shouldReload: true,
         },
       })
     })
