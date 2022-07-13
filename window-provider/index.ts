@@ -78,16 +78,15 @@ export default class TallyWindowProvider extends EventEmitter {
           result.defaultWallet,
           result.shouldReload
         )
-        if (result.chainId && result.chainId !== this.chainId) {
-          this.handleChainIdChange.bind(this)(result.chainId)
-        }
-
         if (
           impersonateMetamaskWhitelist.some((host) =>
             window.location.host.includes(host)
           )
         ) {
           this.isMetaMask = result.defaultWallet
+        }
+        if (result.chainId && result.chainId !== this.chainId) {
+          this.handleChainIdChange.bind(this)(result.chainId)
         }
       } else if (isTallyAccountPayload(result)) {
         this.handleAddressChange.bind(this)(result.address)
