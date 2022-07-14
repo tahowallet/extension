@@ -74,10 +74,10 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        if (result.chainId && result.chainId !== this.chainId) {
-          this.handleChainIdChange.bind(this)(result.chainId)
-        }
-
+        window.walletRouter?.shouldSetTallyForCurrentProvider(
+          result.defaultWallet,
+          result.shouldReload
+        )
         if (
           impersonateMetamaskWhitelist.some((host) =>
             window.location.host.includes(host)
@@ -85,32 +85,8 @@ export default class TallyWindowProvider extends EventEmitter {
         ) {
           this.isMetaMask = result.defaultWallet
         }
-
-        if (!result.defaultWallet) {
-          // if tally is NOT set to be default wallet
-          // AND we have other providers that tried to inject into window.ethereum
-          if (window.walletRouter?.providers.length) {
-            // then let's reset window.ethereum to the original value
-            window.walletRouter.switchToPreviousProvider()
-          }
-
-          // NOTE: we do not remove the TallyWindowProvider from window.ethereum
-          // if there is nothing else that want's to use it.
-        } else if (window.walletRouter?.currentProvider !== window.tally) {
-          if (
-            !window.walletRouter?.hasProvider(this.providerInfo.checkIdentity)
-          ) {
-            if (!window.tally) {
-              throw new Error(
-                "Expected window.tally to be set but it is not. Tally Ho provider configured incorrectly."
-              )
-            }
-            window.walletRouter?.addProvider(window.tally)
-          }
-
-          window.walletRouter?.setCurrentProvider(
-            this.providerInfo.checkIdentity
-          )
+        if (result.chainId && result.chainId !== this.chainId) {
+          this.handleChainIdChange.bind(this)(result.chainId)
         }
       } else if (isTallyAccountPayload(result)) {
         this.handleAddressChange.bind(this)(result.address)

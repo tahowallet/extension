@@ -49,16 +49,13 @@ interface Window {
   walletRouter?: {
     currentProvider: WalletProvider
     providers: WalletProvider[]
-    switchToPreviousProvider: () => void
+    shouldSetTallyForCurrentProvider: (
+      shouldSetTally: boolean,
+      shouldReload?: boolean
+    ) => void
     getProviderInfo: (
       provider: WalletProvider
     ) => WalletProvider["providerInfo"]
-    hasProvider: (
-      checkIdentity: (provider: WalletProvider) => boolean
-    ) => boolean
-    setCurrentProvider: (
-      checkIdentity: (provider: WalletProvider) => boolean
-    ) => void
     addProvider: (newProvider: WalletProvider) => void
   }
   tally?: TallyProvider
