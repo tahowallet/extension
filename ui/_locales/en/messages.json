@@ -4,6 +4,7 @@
     "totalBalance": "Total balance",
     "addresses": "Addresses",
     "assets": "Assets",
+    "networks": "Networks",
     "tableHeader": {
       "asset": "Asset",
       "price": "Price",
@@ -57,8 +58,8 @@
   },
   "settings": {
     "mainMenu": "Settings",
-    "hideSmallAssetBalance": "Hide asset balance under {{sign}}{{amount}}",
-    "setAsDefault": "Use Tally Ho as default wallet",
+    "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
+    "setAsDefault": "Use Tally Ho as your default wallet",
     "bugReport": "Bug report",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",

@@ -36,7 +36,11 @@ import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
-import { AccountSigner, SignerType } from "../../services/signing"
+import {
+  AccountSigner,
+  ReadOnlyAccountSigner,
+  SignerType,
+} from "../../services/signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -272,7 +276,7 @@ export type AccountTotal = AddressOnNetwork & {
   // FIXME Add `categoryFor(accountSigner): string` utility function to
   // FIXME generalize beyond keyrings.
   keyringId: string | null
-  accountSigner: AccountSigner | null
+  accountSigner: AccountSigner
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
@@ -283,6 +287,7 @@ export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   ledger: AccountType.Ledger,
+  "read-only": AccountType.ReadOnly,
 }
 
 const getAccountType = (
@@ -292,7 +297,7 @@ const getAccountType = (
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signer == null) {
+  if (signer === ReadOnlyAccountSigner) {
     return AccountType.ReadOnly
   }
   if (signerTypeToAccountType[signer.type] === "ledger") {
@@ -328,7 +333,8 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
 
-        const accountSigner = accountSignersByAddress[address] ?? null
+        const accountSigner =
+          accountSignersByAddress[address] ?? ReadOnlyAccountSigner
         const keyringId = keyringsByAddresses[address]?.id
 
         const accountType = getAccountType(
@@ -442,4 +448,9 @@ export const getAddressCount = createSelector(
         Object.keys(chainAddresses)
       )
     ).size
+)
+
+export const getNetworkCount = createSelector(
+  (state: RootState) => state.account.accountsData,
+  (accountsData) => Object.keys(accountsData.evm).length
 )

@@ -54,7 +54,10 @@ export default function SignTypedDataInfo({
         return (
           <div key={key} className="message">
             <div className="key">{capitalize(key)}</div>
-            <div className="value">{`${fieldsToDisplay[key]}`}</div>
+            <div
+              className="value"
+              title={`${fieldsToDisplay[key]}`}
+            >{`${fieldsToDisplay[key]}`}</div>
           </div>
         )
       })}
@@ -84,12 +87,10 @@ export default function SignTypedDataInfo({
             padding-left: 16px;
           }
           .value {
-            color: #ccd3d3;
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-end;
-            align-items: center;
             color: var(--green-20);
+            margin-left: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           .key {
             color: var(--green-40);

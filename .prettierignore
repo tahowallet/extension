@@ -1,1 +1,3 @@
 dist
+# Ignore weblate json translation formatting
+ui/_locales/**/*.json
