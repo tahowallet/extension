@@ -105,6 +105,36 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    // Add the new default token list
+    this.version(6)
+      .stores({
+        preferences: "++id",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences: Preferences) => {
+            // Get rid of old tally URL
+            const newURLs = storedPreferences.tokenLists.urls.filter(
+              (url) =>
+                !url.includes(
+                  "bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la"
+                )
+            )
+
+            newURLs.push(
+              "https://ipfs.io/ipfs/bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
+            )
+
+            // eslint-disable-next-line no-param-reassign
+            storedPreferences.tokenLists = {
+              ...storedPreferences.tokenLists,
+              urls: newURLs,
+            }
+          })
+      })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works

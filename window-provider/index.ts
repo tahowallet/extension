@@ -33,6 +33,8 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isMetaMask = false
 
+  isWeb3 = true
+
   bridgeListeners = new Map()
 
   providerInfo = {
@@ -72,6 +74,10 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
+        if (result.chainId && result.chainId !== this.chainId) {
+          this.handleChainIdChange.bind(this)(result.chainId)
+        }
+
         if (
           impersonateMetamaskWhitelist.some((host) =>
             window.location.host.includes(host)
@@ -232,18 +238,27 @@ export default class TallyWindowProvider extends EventEmitter {
           this.emit("connect", { chainId: this.chainId })
         }
 
-        if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
+        if (
+          sentMethod === "wallet_switchEthereumChain" ||
+          sentMethod === "wallet_addEthereumChain"
+        ) {
+          // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+          if (result === null) {
+            this.handleChainIdChange.bind(this)(
+              (sendData.request.params[0] as { chainId: string }).chainId
+            )
+          }
+        } else if (
+          sentMethod === "eth_chainId" ||
+          sentMethod === "net_version"
+        ) {
           if (
             typeof result === "string" &&
             Number(this.chainId) !== Number(result)
           ) {
-            this.chainId = `0x${Number(result).toString(16)}`
-            this.emit("chainChanged", this.chainId)
-            this.emit("networkChanged", Number(this.chainId).toString())
+            this.handleChainIdChange.bind(this)(result)
           }
-        }
-
-        if (
+        } else if (
           (sentMethod === "eth_accounts" ||
             sentMethod === "eth_requestAccounts") &&
           Array.isArray(result) &&
@@ -261,6 +276,12 @@ export default class TallyWindowProvider extends EventEmitter {
 
       this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
     })
+  }
+
+  handleChainIdChange(chainId: string): void {
+    this.chainId = chainId
+    this.emit("chainChanged", chainId)
+    this.emit("networkChanged", Number(chainId).toString())
   }
 
   handleAddressChange(address: Array<string>): void {

@@ -26,6 +26,7 @@ import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
+import { toHexChainID } from "../../networks"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -121,7 +122,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const faviconUrl = completeTab?.favIconUrl ?? ""
     const title = completeTab?.title ?? ""
 
-    const response: PortResponseEvent = { id: event.id, result: [] }
+    const response: PortResponseEvent = {
+      id: event.id,
+      jsonrpc: "2.0",
+      result: [],
+    }
 
     const { chainID } =
       await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
@@ -135,6 +140,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
+        chainId: toHexChainID(chainID),
       }
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
@@ -165,16 +171,34 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
+    } else if (event.request.method === "wallet_addEthereumChain") {
+      response.result =
+        await this.internalEthereumProviderService.routeSafeRPCRequest(
+          event.request.method,
+          event.request.params,
+          origin
+        )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
-      const { address: accountAddress, network } =
-        await this.preferenceService.getSelectedAccount()
+      const selectedAccount = await this.preferenceService.getSelectedAccount()
+
+      const { address: accountAddress } = selectedAccount
+
+      // @TODO 7/12/21 Figure out underlying cause here
+      const dAppChainID = Number(
+        (await this.internalEthereumProviderService.routeSafeRPCRequest(
+          "eth_chainId",
+          [],
+          origin
+        )) as string
+      ).toString()
+
       const permissionRequest: PermissionRequest = {
-        key: `${origin}_${accountAddress}_${network.chainID}`,
+        key: `${origin}_${accountAddress}_${dAppChainID}`,
         origin,
-        chainID: network.chainID,
+        chainID: dAppChainID,
         faviconUrl,
         title,
         state: "request",
@@ -189,7 +213,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       const persistedPermission = await this.checkPermission(
         origin,
-        network.chainID
+        dAppChainID
       )
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data

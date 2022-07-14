@@ -7,6 +7,7 @@ import React, {
 } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { Warning } from "@tallyho/tally-background/services/enrichment"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -135,32 +136,33 @@ export default function SignTransactionContainer({
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
-            {accountSigner &&
-              (isLedgerSigning && !canLedgerSign ? (
-                <SharedButton
-                  type="primaryGreen"
-                  size="large"
-                  onClick={() => {
-                    setSlideUpOpen(true)
-                  }}
-                >
-                  Check Ledger
-                </SharedButton>
-              ) : (
-                <SharedButton
-                  type="primaryGreen"
-                  size="large"
-                  onClick={handleConfirm}
-                  showLoadingOnClick
-                  isDisabled={
-                    isOnDelayToSign || warnings.includes("insufficient-funds")
-                  }
-                >
-                  {confirmButtonLabel}
-                </SharedButton>
-              ))}
-            {accountSigner === null && (
+            {accountSigner === ReadOnlyAccountSigner && (
               <span className="no-signing">Read-only accounts cannot sign</span>
+            )}
+            {isLedgerSigning && !canLedgerSign && (
+              <SharedButton
+                type="primaryGreen"
+                size="large"
+                onClick={() => {
+                  setSlideUpOpen(true)
+                }}
+              >
+                Check Ledger
+              </SharedButton>
+            )}
+            {((isLedgerSigning && canLedgerSign) ||
+              accountSigner?.type === "keyring") && (
+              <SharedButton
+                type="primaryGreen"
+                size="large"
+                onClick={handleConfirm}
+                showLoadingOnClick
+                isDisabled={
+                  isOnDelayToSign || warnings.includes("insufficient-funds")
+                }
+              >
+                {confirmButtonLabel}
+              </SharedButton>
             )}
           </div>
         </>
