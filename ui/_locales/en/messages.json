@@ -27,8 +27,7 @@
     "assetAmount": "Asset / Amount",
     "sendTo": "Send To:",
     "sendButton": "Continue",
-    "receiveAddress": "Receive address",
-    "receiveAddressDesc": "Only send Ethereum Mainnet compatible assets to this address."
+    "receiveAddress": "Receive address"
   },
   "swap": {
     "title": "Swap Assets",
