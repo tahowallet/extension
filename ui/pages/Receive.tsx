@@ -21,7 +21,6 @@ export default function Receive(): ReactElement {
         <span className="icon_activity_send_medium" />
         {t("wallet.receiveAddress")}
       </h1>
-      <div className="sub_title">{t("wallet.receiveAddressDesc")}</div>
       <div className="qr_code">
         <QRCode value={currentAccount.address} size={128} />
       </div>
@@ -64,17 +63,6 @@ export default function Receive(): ReactElement {
             text-align: center;
             display: flex;
             align-items: center;
-          }
-          .sub_title {
-            margin-top: 18px;
-            width: 281px;
-            height: 33px;
-            color: var(--green-20);
-            font-size: 14px;
-            font-weight: 400;
-            letter-spacing: 0.42px;
-            line-height: 16px;
-            text-align: center;
           }
           .qr_code {
             width: 176px;
