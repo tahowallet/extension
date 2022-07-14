@@ -7,7 +7,9 @@ import {
 } from "@tallyho/tally-background/redux-slices/ledger"
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
-import { useBackgroundDispatch } from "../../hooks"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
@@ -19,10 +21,12 @@ function usePageData({
   device,
   pageIndex,
   parentPath,
+  network,
 }: {
   device: LedgerDeviceState
   parentPath: string
   pageIndex: number
+  network: EVMNetwork
 }) {
   const dispatch = useBackgroundDispatch()
 
@@ -82,8 +86,15 @@ function usePageData({
     if (!account) return
     const { address, fetchingBalance } = account
     if (!address || fetchingBalance) return
-    dispatch(fetchBalance({ deviceID: device.id, path, address }))
-  }, [device.id, dispatch, items])
+    dispatch(
+      fetchBalance({
+        deviceID: device.id,
+        path,
+        address,
+        network,
+      })
+    )
+  }, [device.id, dispatch, items, network])
 
   const selectedAccounts = items.flatMap((item) => {
     if (!selectedStates[item.path]) return []
@@ -106,8 +117,14 @@ function LedgerAccountList({
   onConnect: () => void
 }): ReactElement {
   const [pageIndex, setPageIndex] = useState(0)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  const pageData = usePageData({ device, parentPath, pageIndex })
+  const pageData = usePageData({
+    device,
+    parentPath,
+    pageIndex,
+    network: selectedNetwork,
+  })
   const dispatch = useBackgroundDispatch()
 
   return (
@@ -144,7 +161,9 @@ function LedgerAccountList({
                     </div>
                     {ethBalance === null && <div className="balance_loading" />}
                     {ethBalance !== null && (
-                      <div className="balance">{ethBalance} ETH</div>
+                      <div className="balance">
+                        {ethBalance} {selectedNetwork.baseAsset.symbol}
+                      </div>
                     )}
                     <div className="etherscan_link_container">
                       <SharedButton

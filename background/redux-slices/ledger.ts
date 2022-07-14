@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { ETH, ETHEREUM } from "../constants"
+import { EVMNetwork } from "../networks"
 import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
@@ -238,17 +238,18 @@ export const fetchBalance = createBackgroundAsyncThunk(
       deviceID,
       path,
       address,
-    }: { deviceID: string; path: string; address: string },
+      network,
+    }: { deviceID: string; path: string; address: string; network: EVMNetwork },
     { dispatch, extra: { main } }
   ) => {
     dispatch(ledgerSlice.actions.setFetchingBalance({ deviceID, path }))
     const amount = await main.getAccountEthBalanceUncached({
       address,
-      network: ETHEREUM,
+      network,
     })
     const decimalDigits = 3
     const balance = enrichAssetAmountWithDecimalValues(
-      { amount, asset: ETH },
+      { amount, asset: network.baseAsset },
       decimalDigits
     ).localizedDecimalAmount
     dispatch(ledgerSlice.actions.resolveBalance({ deviceID, path, balance }))

@@ -66,6 +66,7 @@ export type TallyConfigPayload = {
   method: "tally_getConfig"
   defaultWallet: boolean
   chainId?: string
+  shouldReload?: boolean
   [prop: string]: unknown
 }
 
