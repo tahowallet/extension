@@ -233,6 +233,8 @@ const accountSlice = createSlice({
 
         immerState.accountsData.evm[chainId] = withoutEntryToRemove
       })
+
+      updateCombinedData(immerState)
     },
     updateAccountBalance: (
       immerState,
