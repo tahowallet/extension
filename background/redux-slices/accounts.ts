@@ -140,6 +140,33 @@ function newAccountData(
   }
 }
 
+function updateCombinedData(immerState: AccountState) {
+  // A key assumption here is that the balances of two accounts in
+  // accountsData are mutually exclusive; that is, that there are no two
+  // accounts in accountsData all or part of whose balances are shared with
+  // each other.
+  const combinedAccountBalances = Object.values(immerState.accountsData.evm)
+    .flatMap((accountDataByChain) => Object.values(accountDataByChain))
+    .flatMap((ad) =>
+      ad === "loading"
+        ? []
+        : Object.values(ad.balances).map((ab) => ab.assetAmount)
+    )
+
+  immerState.combinedData.assets = Object.values(
+    combinedAccountBalances.reduce<{
+      [symbol: string]: AnyAssetAmount
+    }>((acc, combinedAssetAmount) => {
+      const assetSymbol = combinedAssetAmount.asset.symbol
+      acc[assetSymbol] = {
+        ...combinedAssetAmount,
+        amount: (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
+      }
+      return acc
+    }, {})
+  )
+}
+
 function getOrCreateAccountData(
   accountState: AccountState,
   account: HexString,
@@ -244,31 +271,7 @@ const accountSlice = createSlice({
         }
       })
 
-      // A key assumption here is that the balances of two accounts in
-      // accountsData are mutually exclusive; that is, that there are no two
-      // accounts in accountsData all or part of whose balances are shared with
-      // each other.
-      const combinedAccountBalances = Object.values(immerState.accountsData.evm)
-        .flatMap((accountDataByChain) => Object.values(accountDataByChain))
-        .flatMap((ad) =>
-          ad === "loading"
-            ? []
-            : Object.values(ad.balances).map((ab) => ab.assetAmount)
-        )
-
-      immerState.combinedData.assets = Object.values(
-        combinedAccountBalances.reduce<{
-          [symbol: string]: AnyAssetAmount
-        }>((acc, combinedAssetAmount) => {
-          const assetSymbol = combinedAssetAmount.asset.symbol
-          acc[assetSymbol] = {
-            ...combinedAssetAmount,
-            amount:
-              (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
-          }
-          return acc
-        }, {})
-      )
+      updateCombinedData(immerState)
     },
     updateAccountName: (
       immerState,
