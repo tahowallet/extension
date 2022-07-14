@@ -7,6 +7,11 @@
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",
   "license": "GPL-3.0",
+  "jest": {
+    "setupFiles": [
+      "jest-webextension-mock"
+    ]
+  },
   "keywords": [
     "ethereum",
     "bitcoin",

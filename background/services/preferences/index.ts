@@ -102,19 +102,19 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("addressBookEntryModified", newEntry)
   }
 
-  async lookUpAddressForName({
+  lookUpAddressForName({
     name,
     network,
-  }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
+  }: NameOnNetwork): AddressOnNetwork | undefined {
     return this.addressBook.find(
       ({ name: entryName, network: entryNetwork }) =>
         sameNetwork(network, entryNetwork) && name === entryName
     )
   }
 
-  async lookUpNameForAddress(
+  lookUpNameForAddress(
     addressOnNetwork: AddressOnNetwork
-  ): Promise<NameOnNetwork | undefined> {
+  ): NameOnNetwork | undefined {
     return this.addressBook.find((addressBookEntry) =>
       sameAddressBookEntry(addressBookEntry, addressOnNetwork)
     )
