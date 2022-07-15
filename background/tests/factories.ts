@@ -10,8 +10,16 @@ export const createPreferenceService = async (): Promise<PreferenceService> => {
   return PreferenceService.create()
 }
 
-export const createChainService = async (): Promise<ChainService> => {
-  return ChainService.create(createPreferenceService())
+type CreateChainServiceOverrides = {
+  preferenceService?: Promise<PreferenceService>
+}
+
+export const createChainService = async (
+  overrides: CreateChainServiceOverrides = {}
+): Promise<ChainService> => {
+  return ChainService.create(
+    overrides.preferenceService ?? createPreferenceService()
+  )
 }
 
 export const createLedgerService = async (): Promise<LedgerService> => {
