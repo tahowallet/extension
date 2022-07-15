@@ -20,3 +20,13 @@ Object.defineProperty(window, "navigator", {
     },
   },
 })
+
+Object.defineProperty(browser, "alarms", {
+  writable: true,
+  value: {
+    create: () => {},
+    onAlarm: {
+      addListener: () => {},
+    },
+  },
+})
