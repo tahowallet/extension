@@ -10,3 +10,13 @@ Object.defineProperty(window, "TextDecoder", {
   writable: true,
   value: util.TextDecoder,
 })
+
+Object.defineProperty(window, "navigator", {
+  writable: true,
+  value: {
+    usb: {
+      getDevices: () => [],
+      addEventListener: () => {},
+    },
+  },
+})
