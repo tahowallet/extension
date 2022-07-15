@@ -149,7 +149,7 @@ export function Main(): ReactElement {
             // the user or explicitly added. That said, we can still certainly "POP" via
             // history.goBack(). This case is not yet accounted for.
             if (
-              pagePreferences[normalizedPathname].persistOnClose &&
+              pagePreferences[normalizedPathname]?.persistOnClose === true &&
               routeProps.history.action === "PUSH"
             ) {
               // @ts-expect-error TODO: fix the typing
