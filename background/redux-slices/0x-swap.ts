@@ -21,16 +21,17 @@ import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
 
-type ZeroExValidationError = {
-  field: string
-  code: number
-  reason: string
-}
-
+// @TODO Use ajv validators in conjunction with these types
 type ZeroExErrorResponse = {
   code: number
   reason: string
   validationErrors: ZeroExValidationError[]
+}
+
+type ZeroExValidationError = {
+  field: string
+  code: number
+  reason: string
 }
 
 interface SwapAssets {
@@ -264,7 +265,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
   }
 )
 
-const handleZeroExApiError = (
+const parseAndNotifyOnZeroExApiError = (
   error: unknown,
   dispatch: ThunkDispatch<unknown, unknown, AnyAction>
 ) => {
@@ -351,7 +352,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       return { quote, needsApproval }
     } catch (error) {
       logger.warn("Swap price API call threw an error!", apiData, error)
-      handleZeroExApiError(error, dispatch)
+      parseAndNotifyOnZeroExApiError(error, dispatch)
       return undefined
     }
   }
