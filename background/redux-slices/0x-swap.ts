@@ -1,4 +1,9 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit"
+import {
+  AnyAction,
+  createSelector,
+  createSlice,
+  ThunkDispatch,
+} from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
@@ -14,6 +19,19 @@ import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
 import { EVMNetwork } from "../networks"
+import { setSnackbarMessage } from "./ui"
+
+type ZeroExValidationError = {
+  field: string
+  code: number
+  reason: string
+}
+
+type ZeroExErrorResponse = {
+  code: number
+  reason: string
+  validationErrors: ZeroExValidationError[]
+}
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -246,6 +264,28 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
   }
 )
 
+const handleZeroExApiError = (
+  error: unknown,
+  dispatch: ThunkDispatch<unknown, unknown, AnyAction>
+) => {
+  try {
+    if (typeof error === "object" && error !== null && "body" in error) {
+      const parsedBody = JSON.parse(
+        (error as { body: string }).body
+      ) as ZeroExErrorResponse
+      if (
+        parsedBody.validationErrors.find(
+          (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY"
+        )
+      ) {
+        dispatch(setSnackbarMessage("Price Impact Too High"))
+      }
+    }
+  } catch (e) {
+    logger.warn("0x Api Response Parsing Failed")
+  }
+}
+
 /**
  * This async thunk fetches an indicative RFQ-T price for a swap. The quote
  * request specifies the swap assets as well as one end of the swap, and the
@@ -310,6 +350,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       return { quote, needsApproval }
     } catch (error) {
       logger.warn("Swap price API call threw an error!", apiData, error)
+      handleZeroExApiError(error, dispatch)
       return undefined
     }
   }
