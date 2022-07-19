@@ -1,5 +1,6 @@
 import { TokenList } from "@uniswap/token-lists"
 
+import { memoize } from "lodash"
 import {
   FungibleAsset,
   SmartContractFungibleAsset,
@@ -144,6 +145,10 @@ export function mergeAssets<T extends FungibleAsset>(
       (b.metadata?.tokenLists?.length || 0)
   )
 }
+
+export const memoizedMergeAssets = memoize(mergeAssets, (...assetLists) => {
+  return assetLists.reduce((acc, curr) => acc + curr.length, 0)
+})
 
 /*
  * Return all tokens in the provided lists, de-duplicated and structured in our
