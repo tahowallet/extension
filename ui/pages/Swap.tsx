@@ -600,7 +600,8 @@ export default function Swap(): ReactElement {
                       buyAmountLoading ||
                       !sellAsset ||
                       !sellAmount ||
-                      !buyAsset
+                      !buyAsset ||
+                      !buyAmount
                     }
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
