@@ -27,9 +27,9 @@ export type AssetsState = SingleAssetState[]
 
 export type OffChainAsset = {
   amount: number,
-  currency_symbol: string,
+  currencySymbol: string,
   label: string,
-  account_id: string
+  accountId: string
 }
 
 export const initialState = [] as AssetsState

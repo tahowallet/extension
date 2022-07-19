@@ -25,11 +25,11 @@ export default function WalletAssetList(props: Props): ReactElement {
     console.log("loadOffChainAccounts");
 
     setOffChainAssets([]);
-    const assets = (await OffChainService.assets({user_id: "foobar"})).accounts;
+    const assets = (await OffChainService.assets({userId: "foobar"})).assets;
     console.log({assets});
     const newOffChainAssets = assets.map(asset => {
       const offChainAsset = Object.assign({}, assetAmounts[0]); // TODO: fix pass by reference bug, find a way to deep copy
-      offChainAsset.asset.symbol = asset.currency_symbol;
+      offChainAsset.asset.symbol = asset.currencySymbol;
       offChainAsset.decimalAmount = asset.amount;
       offChainAsset.localizedDecimalAmount = new Intl.NumberFormat().format(asset.amount)
       offChainAsset.asset.metadata!.logoURL = "https://media.glassdoor.com/sqll/908271/wealthsimple-squareLogo-1625583235383.png";
