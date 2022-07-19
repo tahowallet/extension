@@ -266,46 +266,52 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
       takerAddress: tradeAddress,
     })
+    let apiData
 
-    const apiData = await fetchJson({
-      url: requestUrl.toString(),
-      headers: gatedHeaders,
-    })
+    try {
+      apiData = await fetchJson({
+        url: requestUrl.toString(),
+        headers: gatedHeaders,
+      })
 
-    if (!isValidSwapPriceResponse(apiData)) {
-      logger.warn(
-        "Swap price API call didn't validate, did the 0x API change?",
-        apiData,
-        isValidSwapQuoteResponse.errors
-      )
-
-      return undefined
-    }
-
-    const quote = apiData
-
-    let needsApproval = false
-    // If we aren't selling ETH, check whether we need an approval to swap
-    // TODO Handle other non-ETH base assets
-    if (quote.allowanceTarget !== ethers.constants.AddressZero) {
-      const assetContract = new ethers.Contract(
-        quote.sellTokenAddress,
-        ERC20_ABI,
-        signer
-      )
-
-      const existingAllowance: BigNumber =
-        await assetContract.callStatic.allowance(
-          await signer.getAddress(),
-          quote.allowanceTarget
+      if (!isValidSwapPriceResponse(apiData)) {
+        logger.warn(
+          "Swap price API call didn't validate, did the 0x API change?",
+          apiData,
+          isValidSwapQuoteResponse.errors
         )
 
-      needsApproval = existingAllowance.lt(quote.sellAmount)
+        return undefined
+      }
+
+      const quote = apiData
+
+      let needsApproval = false
+      // If we aren't selling ETH, check whether we need an approval to swap
+      // TODO Handle other non-ETH base assets
+      if (quote.allowanceTarget !== ethers.constants.AddressZero) {
+        const assetContract = new ethers.Contract(
+          quote.sellTokenAddress,
+          ERC20_ABI,
+          signer
+        )
+
+        const existingAllowance: BigNumber =
+          await assetContract.callStatic.allowance(
+            await signer.getAddress(),
+            quote.allowanceTarget
+          )
+
+        needsApproval = existingAllowance.lt(quote.sellAmount)
+      }
+
+      dispatch(setLatestQuoteRequest(quoteRequest))
+
+      return { quote, needsApproval }
+    } catch (error) {
+      logger.warn("Swap price API call threw an error!", apiData, error)
+      return undefined
     }
-
-    dispatch(setLatestQuoteRequest(quoteRequest))
-
-    return { quote, needsApproval }
   }
 )
 
