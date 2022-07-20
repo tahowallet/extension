@@ -50,3 +50,11 @@ export type NameOnNetwork = {
   name: string
   network: EVMNetwork
 }
+
+/**
+ * A domain name, with a particular network.
+ */
+export type OffChainAccountCredentials = {
+  username: string
+  password: string
+}

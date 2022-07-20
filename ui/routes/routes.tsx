@@ -22,6 +22,7 @@ import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
+import OnboardingOffChainAccount from "../pages/Onboarding/OnboardingOffChainAccount"
 
 interface PageList {
   path: string
@@ -66,6 +67,13 @@ const pageList: PageList[] = [
   {
     path: "/onboarding/view-only-wallet",
     Component: OnboardingViewOnlyWallet,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: false,
+  },
+  {
+    path: "/onboarding/off-chain-account",
+    Component: OnboardingOffChainAccount,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
