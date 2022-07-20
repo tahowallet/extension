@@ -80,9 +80,9 @@ export type FiatCurrency = FungibleAsset
  * This asset may be a fiat or cryptocurrency.
  */
 export type OffChainAsset = {
-  amount: number,
-  currencySymbol: string,
-  label: string,
+  amount: number
+  currencySymbol: string
+  label: string
   accountId: string
 }
 

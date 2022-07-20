@@ -1,6 +1,9 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { OffChainAccountCredentials, OffChainProvider } from "@tallyho/tally-background/accounts"
+import {
+  OffChainAccountCredentials,
+  OffChainProvider,
+} from "@tallyho/tally-background/accounts"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedInput from "../../components/Shared/SharedInput"
@@ -8,30 +11,33 @@ import OffChainProviderSelect from "../../components/OffChain/OffChainProviderSe
 import { OffChainService } from "../../services/OffChainService"
 
 export default function OnboardingOffChainAccount(): ReactElement {
-
   const [redirect, setRedirect] = useState(false)
-  const [offChainAccountCredentials, setOffChainAccountCredentials] = useState<
-  OffChainAccountCredentials>({username: '', password: ''})
+  const [offChainAccountCredentials, setOffChainAccountCredentials] =
+    useState<OffChainAccountCredentials>({ username: "", password: "" })
   const [offChainProvider, setOffChainProvider] = useState<OffChainProvider>()
 
-  const disableSubmit = !offChainProvider || !offChainAccountCredentials.username || !offChainAccountCredentials.password 
+  const disableSubmit =
+    !offChainProvider ||
+    !offChainAccountCredentials.username ||
+    !offChainAccountCredentials.password
 
   const handleSubmitOffChainCredentials = async () => {
-
     if (disableSubmit) {
       return
     }
 
-    const account = (await OffChainService.login({provider: offChainProvider, credentials: offChainAccountCredentials}));
+    const account = await OffChainService.login({
+      provider: offChainProvider,
+      credentials: offChainAccountCredentials,
+    })
     // TODO use redux thunk to authenticate and save credentials
     // await dispatch(addAddressNetwork(addressOnNetwork))
     // dispatch(setNewSelectedAccount(addressOnNetwork))
-    localStorage.setItem('offChainProvider', offChainProvider?.name!);
-    localStorage.setItem('token', account.token);
-    localStorage.setItem('userId', account.userId);
+    localStorage.setItem("offChainProvider", offChainProvider?.name!)
+    localStorage.setItem("token", account.token)
+    localStorage.setItem("userId", account.userId)
     setRedirect(true)
-
-};
+  }
 
   // Redirect to the home tab once an account is set
   if (redirect) {
@@ -56,46 +62,44 @@ export default function OnboardingOffChainAccount(): ReactElement {
           }}
         >
           <div className="input_wrap">
-          <OffChainProviderSelect onProviderChange={provider => setOffChainProvider(provider)} />
+            <OffChainProviderSelect
+              onProviderChange={(provider) => setOffChainProvider(provider)}
+            />
           </div>
           <div className="input_wrap">
-          <SharedInput
-            value={offChainAccountCredentials.username}
-            label={"username"}
-            onChange={(username) => {
-              setOffChainAccountCredentials(currentCredentials => (
-                {
+            <SharedInput
+              value={offChainAccountCredentials.username}
+              label="username"
+              onChange={(username) => {
+                setOffChainAccountCredentials((currentCredentials) => ({
                   ...currentCredentials,
                   username,
-                }
-              ))
-            }}
-            // onFocus={onFocus}
-            // errorMessage={errorMessage}
-            id={"username"}
-            placeholder={"username"}
-            // isEmpty={isEmpty}
-          />
+                }))
+              }}
+              // onFocus={onFocus}
+              // errorMessage={errorMessage}
+              id="username"
+              placeholder="username"
+              // isEmpty={isEmpty}
+            />
           </div>
           <div className="input_wrap">
-          <SharedInput
-            value={offChainAccountCredentials.password}
-            label={"password"}
-            type={"password"}
-            onChange={(password) => {
-              setOffChainAccountCredentials(currentCredentials => (
-                {
+            <SharedInput
+              value={offChainAccountCredentials.password}
+              label="password"
+              type="password"
+              onChange={(password) => {
+                setOffChainAccountCredentials((currentCredentials) => ({
                   ...currentCredentials,
                   password,
-                }
-              ))
-            }}
-            // onFocus={onFocus}
-            // errorMessage={errorMessage}
-            id={"username"}
-            placeholder={"username"}
-            // isEmpty={isEmpty}
-          />
+                }))
+              }}
+              // onFocus={onFocus}
+              // errorMessage={errorMessage}
+              id="username"
+              placeholder="username"
+              // isEmpty={isEmpty}
+            />
           </div>
           <SharedButton
             type="primary"

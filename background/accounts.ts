@@ -72,6 +72,6 @@ export type OffChainProvider = {
  * An account on an off-chain provider.
  */
 export type OffChainAccount = {
-  userId: string,
+  userId: string
   token: string
 }
