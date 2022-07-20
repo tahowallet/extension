@@ -1,4 +1,4 @@
-import { AnyAssetAmount } from "./assets"
+import { AnyAssetAmount, OffChainAsset } from "./assets"
 import { EVMNetwork } from "./networks"
 import { HexString } from "./types"
 
@@ -67,4 +67,11 @@ export type OffChainProvider = {
   apiUrl: string
   logoUrl: string
   name: string
+}
+/**
+ * An account on an off-chain provider.
+ */
+export type OffChainAccount = {
+  userId: string,
+  token: string
 }

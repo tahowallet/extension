@@ -16,7 +16,6 @@ export default function WalletAssetList(props: Props): ReactElement {
   const { assetAmounts, initializationLoadingTimeExpired } = props;
   const [offChainAssets, setOffChainAssets] = useState<CompleteAssetAmount[]>([])
 
-
   const providerName = localStorage.getItem('offChainProvider') || Wealthsimple.name;
 
   const offChainProvider = offChainProviders.find(provider => (
@@ -31,7 +30,6 @@ export default function WalletAssetList(props: Props): ReactElement {
 
     setOffChainAssets([]);
     const assets = (await OffChainService.assets({userId: "foobar"})).assets;
-    console.log({assets});
     const newOffChainAssets = assets.map(asset => {
       const offChainAsset = Object.assign({}, assetAmounts[0]); // TODO: fix pass by reference bug, find a way to deep copy
       offChainAsset.asset.symbol = asset.currencySymbol;
@@ -40,13 +38,11 @@ export default function WalletAssetList(props: Props): ReactElement {
       offChainAsset.asset.metadata!.logoURL = offChainProvider.logoUrl;
       return offChainAsset;
     });
-    console.log({newOffChainAssets});
     setOffChainAssets(newOffChainAssets);
   };
 
   if (!assetAmounts) return <></>
 
-  console.log({offChainAssets, assetAmounts});
   return (
     <ul>
       {[...offChainAssets, ...assetAmounts].map((assetAmount) => (

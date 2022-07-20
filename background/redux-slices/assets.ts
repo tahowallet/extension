@@ -25,13 +25,6 @@ type SingleAssetState = AnyAsset & {
 
 export type AssetsState = SingleAssetState[]
 
-export type OffChainAsset = {
-  amount: number,
-  currencySymbol: string,
-  label: string,
-  accountId: string
-}
-
 export const initialState = [] as AssetsState
 
 function prunePrices(prices: PricePoint[]): PricePoint[] {

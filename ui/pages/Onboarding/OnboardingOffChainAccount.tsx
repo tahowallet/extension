@@ -5,6 +5,7 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedInput from "../../components/Shared/SharedInput"
 import OffChainProviderSelect from "../../components/OffChain/OffChainProviderSelect"
+import { OffChainService } from "../../services/OffChainService"
 
 export default function OnboardingOffChainAccount(): ReactElement {
 
@@ -13,17 +14,21 @@ export default function OnboardingOffChainAccount(): ReactElement {
   OffChainAccountCredentials>({username: '', password: ''})
   const [offChainProvider, setOffChainProvider] = useState<OffChainProvider>()
 
+  const disableSubmit = !offChainProvider || !offChainAccountCredentials.username || !offChainAccountCredentials.password 
+
   const handleSubmitOffChainCredentials = async () => {
 
-    if (!offChainAccountCredentials.username || !offChainAccountCredentials.password) {
+    if (disableSubmit) {
       return
     }
 
-
+    const account = (await OffChainService.login({provider: offChainProvider, credentials: offChainAccountCredentials}));
     // TODO use redux thunk to authenticate and save credentials
     // await dispatch(addAddressNetwork(addressOnNetwork))
     // dispatch(setNewSelectedAccount(addressOnNetwork))
     localStorage.setItem('offChainProvider', offChainProvider?.name!);
+    localStorage.setItem('token', account.token);
+    localStorage.setItem('userId', account.userId);
     setRedirect(true)
 
 };
@@ -96,7 +101,7 @@ export default function OnboardingOffChainAccount(): ReactElement {
             type="primary"
             size="large"
             onClick={handleSubmitOffChainCredentials}
-            isDisabled={!offChainAccountCredentials.username || !offChainAccountCredentials.password }
+            isDisabled={disableSubmit}
             showLoadingOnClick
             isFormSubmit
           >
