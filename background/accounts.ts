@@ -52,9 +52,19 @@ export type NameOnNetwork = {
 }
 
 /**
- * A domain name, with a particular network.
+ * Credentials needed to authenticate with an off-chain provider.
  */
 export type OffChainAccountCredentials = {
   username: string
   password: string
+}
+
+/**
+ * An off-chain provider represents a service that stores fiat and crypto assets
+ * off chain. Examples include centralized exchanges and banks.
+ */
+export type OffChainProvider = {
+  apiUrl: string
+  logoUrl: string
+  name: string
 }

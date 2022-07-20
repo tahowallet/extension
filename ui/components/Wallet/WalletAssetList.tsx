@@ -4,6 +4,8 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import WalletAssetListItem from "./WalletAssetListItem"
 import { OffChainService } from "../../services/OffChainService";
+import { offChainProviders, Wealthsimple } from "@tallyho/tally-background/constants/off-chain";
+import { OffChainProvider } from "@tallyho/tally-background/accounts";
 
 interface Props {
   assetAmounts: CompleteAssetAmount[]
@@ -14,15 +16,18 @@ export default function WalletAssetList(props: Props): ReactElement {
   const { assetAmounts, initializationLoadingTimeExpired } = props;
   const [offChainAssets, setOffChainAssets] = useState<CompleteAssetAmount[]>([])
 
-  const CADAccount = assetAmounts[0];
+
+  const providerName = localStorage.getItem('offChainProvider') || Wealthsimple.name;
+
+  const offChainProvider = offChainProviders.find(provider => (
+    provider.name === providerName
+  ))!;
 
   useEffect(() => {
-    console.log("useEffect");
     loadOffChainAccounts()
   }, []);
 
   async function loadOffChainAccounts() {
-    console.log("loadOffChainAccounts");
 
     setOffChainAssets([]);
     const assets = (await OffChainService.assets({userId: "foobar"})).assets;
@@ -32,7 +37,7 @@ export default function WalletAssetList(props: Props): ReactElement {
       offChainAsset.asset.symbol = asset.currencySymbol;
       offChainAsset.decimalAmount = asset.amount;
       offChainAsset.localizedDecimalAmount = new Intl.NumberFormat().format(asset.amount)
-      offChainAsset.asset.metadata!.logoURL = "https://media.glassdoor.com/sqll/908271/wealthsimple-squareLogo-1625583235383.png";
+      offChainAsset.asset.metadata!.logoURL = offChainProvider.logoUrl;
       return offChainAsset;
     });
     console.log({newOffChainAssets});

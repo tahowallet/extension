@@ -1,15 +1,17 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { OffChainAccountCredentials } from "@tallyho/tally-background/accounts"
+import { OffChainAccountCredentials, OffChainProvider } from "@tallyho/tally-background/accounts"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedInput from "../../components/Shared/SharedInput"
+import OffChainProviderSelect from "../../components/OffChain/OffChainProviderSelect"
 
 export default function OnboardingOffChainAccount(): ReactElement {
 
   const [redirect, setRedirect] = useState(false)
   const [offChainAccountCredentials, setOffChainAccountCredentials] = useState<
-  OffChainAccountCredentials>({username: '', password: ''});
+  OffChainAccountCredentials>({username: '', password: ''})
+  const [offChainProvider, setOffChainProvider] = useState<OffChainProvider>()
 
   const handleSubmitOffChainCredentials = async () => {
 
@@ -17,9 +19,11 @@ export default function OnboardingOffChainAccount(): ReactElement {
       return
     }
 
+
     // TODO use redux thunk to authenticate and save credentials
     // await dispatch(addAddressNetwork(addressOnNetwork))
     // dispatch(setNewSelectedAccount(addressOnNetwork))
+    localStorage.setItem('offChainProvider', offChainProvider?.name!);
     setRedirect(true)
 
 };
@@ -46,6 +50,9 @@ export default function OnboardingOffChainAccount(): ReactElement {
             handleSubmitOffChainCredentials()
           }}
         >
+          <div className="input_wrap">
+          <OffChainProviderSelect onProviderChange={provider => setOffChainProvider(provider)} />
+          </div>
           <div className="input_wrap">
           <SharedInput
             value={offChainAccountCredentials.username}
