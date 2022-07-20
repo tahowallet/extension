@@ -1,11 +1,15 @@
 // @ts-check
 //
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import type { AssetMetadata } from "@tallyho/tally-background/assets"
+import {
+  offChainProviders,
+  Wealthsimple,
+} from "@tallyho/tally-background/constants/off-chain"
+import { OffChainAsset } from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
-import { OffChainService } from "../../services/OffChainService";
-import { offChainProviders, Wealthsimple } from "@tallyho/tally-background/constants/off-chain";
-import { OffChainProvider } from "@tallyho/tally-background/accounts";
+import { OffChainService } from "../../services/OffChainService"
 
 interface Props {
   assetAmounts: CompleteAssetAmount[]
@@ -13,45 +17,63 @@ interface Props {
 }
 
 export default function WalletAssetList(props: Props): ReactElement {
-  const { assetAmounts, initializationLoadingTimeExpired } = props;
-  const [offChainAssets, setOffChainAssets] = useState<CompleteAssetAmount[]>([])
+  const { assetAmounts, initializationLoadingTimeExpired } = props
+  const [rawOffChainAssets, setRawOffChainAssets] = useState<OffChainAsset[]>(
+    []
+  )
 
-  const providerName = localStorage.getItem('offChainProvider') || Wealthsimple.name;
+  const providerName =
+    localStorage.getItem("offChainProvider") || Wealthsimple.name
 
-  const offChainProvider = offChainProviders.find(provider => (
-    provider.name === providerName
-  ))!;
+  const offChainProvider =
+    offChainProviders.find((provider) => provider.name === providerName) ||
+    Wealthsimple
+
+  const copy = assetAmounts[0]
+
+  const offChainAssets: CompleteAssetAmount[] = useMemo(
+    () =>
+      rawOffChainAssets.map((asset) => ({
+        ...copy,
+        decimalAmount: asset.amount,
+        localizedDecimalAmount: new Intl.NumberFormat().format(asset.amount),
+        asset: {
+          ...copy.asset,
+          name: asset.label,
+          symbol: asset.currencySymbol,
+          metadata: {
+            ...(copy.asset.metadata as AssetMetadata),
+            logoURL: offChainProvider.logoUrl,
+          },
+        },
+      })),
+    [copy, offChainProvider.logoUrl, rawOffChainAssets]
+  )
 
   useEffect(() => {
-    loadOffChainAccounts()
-  }, []);
-
-  async function loadOffChainAccounts() {
-
-    setOffChainAssets([]);
-    const assets = (await OffChainService.assets({userId: "foobar"})).assets;
-    const newOffChainAssets = assets.map(asset => {
-      const offChainAsset = Object.assign({}, assetAmounts[0]); // TODO: fix pass by reference bug, find a way to deep copy
-      offChainAsset.asset.symbol = asset.currencySymbol;
-      offChainAsset.decimalAmount = asset.amount;
-      offChainAsset.localizedDecimalAmount = new Intl.NumberFormat().format(asset.amount)
-      offChainAsset.asset.metadata!.logoURL = offChainProvider.logoUrl;
-      return offChainAsset;
-    });
-    setOffChainAssets(newOffChainAssets);
-  };
+    const loadOffChainAssets = async () => {
+      const response = await OffChainService.assets({
+        userId: "foobar",
+      })
+      setRawOffChainAssets(response.assets)
+    }
+    loadOffChainAssets()
+    console.log("re-rendering")
+  }, [])
 
   if (!assetAmounts) return <></>
 
   return (
     <ul>
-      {[...offChainAssets, ...assetAmounts].map((assetAmount) => (
-        <WalletAssetListItem
-          assetAmount={assetAmount}
-          key={assetAmount.asset.symbol}
-          initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-        />
-      ))}
+      {[...offChainAssets, ...assetAmounts].map((assetAmount) => {
+        return (
+          <WalletAssetListItem
+            assetAmount={assetAmount}
+            key={assetAmount.asset.name}
+            initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+          />
+        )
+      })}
       {!initializationLoadingTimeExpired && (
         <li className="loading">Digging deeper...</li>
       )}
