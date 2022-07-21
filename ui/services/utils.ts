@@ -4,12 +4,12 @@ import {
   offChainProviders,
   Wealthsimple,
 } from "@tallyho/tally-background/constants/off-chain"
-import { OffChainAsset } from "@tallyho/tally-background/assets"
+import { Asset, OffChainAsset } from "@tallyho/tally-background/assets"
 
 export default function transformOffChainAsset(
   asset: OffChainAsset,
   providerName: string
-): CompleteAssetAmount {
+): CompleteAssetAmount<Asset & { decimals: number }> {
   const { amount } = asset
   const offChainProvider =
     offChainProviders.find((provider) => provider.name === providerName) ||

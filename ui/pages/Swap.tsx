@@ -29,7 +29,10 @@ import {
   FungibleAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
+  OffChainAsset,
+  Asset,
 } from "@tallyho/tally-background/assets"
+import { Wealthsimple } from "@tallyho/tally-background/constants/off-chain"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
@@ -54,6 +57,8 @@ import {
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
+import { OffChainService } from "../services/OffChainService"
+import transformOffChainAsset from "../services/utils"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -87,6 +92,9 @@ export default function Swap(): ReactElement {
   const location = useLocation<
     { symbol: string; contractAddress?: string } | undefined
   >()
+  const [rawOffChainAssets, setRawOffChainAssets] = useState<OffChainAsset[]>(
+    []
+  )
 
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
@@ -94,18 +102,28 @@ export default function Swap(): ReactElement {
 
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
+  const providerName =
+    localStorage.getItem("offChainProvider") || Wealthsimple.name
+  const offChainAssets = rawOffChainAssets.map((asset) =>
+    transformOffChainAsset(asset, providerName)
+  )
+
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
   const ownedSellAssetAmounts =
-    accountBalances?.assetAmounts.filter(
-      (
-        assetAmount
-      ): assetAmount is CompleteAssetAmount<
-        SmartContractFungibleAsset | FungibleAsset
-      > =>
-        isSmartContractFungibleAsset(assetAmount.asset) ||
-        assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
-    ) ?? []
+    accountBalances?.assetAmounts
+      .filter(
+        (
+          assetAmount
+        ): assetAmount is CompleteAssetAmount<
+          | SmartContractFungibleAsset
+          | FungibleAsset
+          | (Asset & { decimals: number })
+        > =>
+          isSmartContractFungibleAsset(assetAmount.asset) ||
+          assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
+      )
+      .concat(offChainAssets) ?? []
 
   const {
     symbol: locationAssetSymbol,
@@ -257,6 +275,16 @@ export default function Swap(): ReactElement {
       setConfirmationMenu(true)
     }
   }, [finalQuote])
+
+  useEffect(() => {
+    const loadOffChainAssets = async () => {
+      const response = await OffChainService.assets({
+        userId: "foobar",
+      })
+      setRawOffChainAssets(response.assets)
+    }
+    loadOffChainAssets()
+  }, [])
 
   const getFinalQuote = async () => {
     // The final quote requires a previous non-final quote having been
