@@ -2,14 +2,11 @@
 //
 import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import type { AssetMetadata } from "@tallyho/tally-background/assets"
-import {
-  offChainProviders,
-  Wealthsimple,
-} from "@tallyho/tally-background/constants/off-chain"
+import { Wealthsimple } from "@tallyho/tally-background/constants/off-chain"
 import { OffChainAsset } from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
 import { OffChainService } from "../../services/OffChainService"
+import transformOffChainAsset from "../../services/utils"
 
 interface Props {
   assetAmounts: CompleteAssetAmount[]
@@ -25,32 +22,12 @@ export default function WalletAssetList(props: Props): ReactElement {
   const providerName =
     localStorage.getItem("offChainProvider") || Wealthsimple.name
 
-  const offChainProvider =
-    offChainProviders.find((provider) => provider.name === providerName) ||
-    Wealthsimple
-
-  const copy = assetAmounts[0]
-
   const offChainAssets: CompleteAssetAmount[] = useMemo(
     () =>
-      rawOffChainAssets.map((asset) => ({
-        ...copy,
-        decimalAmount: asset.amount,
-        localizedDecimalAmount: new Intl.NumberFormat().format(asset.amount),
-        localizedMainCurrencyAmount: new Intl.NumberFormat().format(
-          asset.amount
-        ),
-        asset: {
-          ...copy.asset,
-          name: asset.label,
-          symbol: asset.currencySymbol,
-          metadata: {
-            ...(copy.asset.metadata as AssetMetadata),
-            logoURL: offChainProvider.logoUrl,
-          },
-        },
-      })),
-    [copy, offChainProvider.logoUrl, rawOffChainAssets]
+      rawOffChainAssets.map((asset) =>
+        transformOffChainAsset(asset, providerName)
+      ),
+    [rawOffChainAssets, providerName]
   )
 
   useEffect(() => {
@@ -61,7 +38,6 @@ export default function WalletAssetList(props: Props): ReactElement {
       setRawOffChainAssets(response.assets)
     }
     loadOffChainAssets()
-    console.log("re-rendering")
   }, [])
 
   if (!assetAmounts) return <></>
