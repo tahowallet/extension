@@ -37,6 +37,9 @@ export default function WalletAssetList(props: Props): ReactElement {
         ...copy,
         decimalAmount: asset.amount,
         localizedDecimalAmount: new Intl.NumberFormat().format(asset.amount),
+        localizedMainCurrencyAmount: new Intl.NumberFormat().format(
+          asset.amount
+        ),
         asset: {
           ...copy.asset,
           name: asset.label,
