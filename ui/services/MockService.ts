@@ -1,16 +1,27 @@
 import { resolveConfig } from "prettier";
 import { DEFAULT_ASSETS } from "./spec/assets";
+import { LOGGED_IN_CREDENTIALS, REQUEST_2FA } from "./spec/auth";
 import { DEFAULT_TRANSFER_CONFIRMATION_MATIC } from "./spec/transfer";
 
 const { fetch: originalFetch } = window;
 
 export const initializeAPIMocks  = () => {
 
-    console.log("initializeAPIMocks", initializeAPIMocks);
-
     window.fetch = async (...args) => {
         let [resource, config ] = args;
         console.log({args, resource, config}, "resource.toString()", resource.toString());
+
+        if (resource.toString().includes('/v1/login')) {
+            const body = JSON.parse(config?.body!.toString()!);
+            console.log({body});
+            console.log("body.username?.includes('2fa')", body.username?.includes('2fa'));
+            if (body.username?.includes('2fa')) {
+                return updateResponseJSON(config!, LOGGED_IN_CREDENTIALS);
+            } else {
+                return updateResponseJSON(config!, REQUEST_2FA);
+            }
+            
+         };
 
         if (resource.toString().includes('/v1/assets')) {
             return updateResponseJSON(config!, {assets: DEFAULT_ASSETS});
