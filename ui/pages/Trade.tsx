@@ -1,5 +1,8 @@
 import { OffChainAsset } from "@tallyho/tally-background/assets"
-import { Wealthsimple } from "@tallyho/tally-background/constants/off-chain"
+import {
+  offChainProviders,
+  Wealthsimple,
+} from "@tallyho/tally-background/constants/off-chain"
 // import { selectCurrentAccountBalances } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { useCallback, useEffect, useState } from "react"
 import transformOffChainAsset from "../services/utils"
@@ -27,6 +30,10 @@ export const Trade = () => {
   const providerName =
     localStorage.getItem("offChainProvider") || Wealthsimple.name
 
+  const offChainProvider =
+    offChainProviders.find((provider) => provider.name === providerName) ||
+    Wealthsimple
+
   const offChainAssetAmounts = rawOffChainAssets.map((asset) =>
     transformOffChainAsset(asset, providerName)
   )
@@ -44,12 +51,13 @@ export const Trade = () => {
   useEffect(() => {
     const loadOffChainAssets = async () => {
       const response = await OffChainService.assets({
+        provider: offChainProvider,
         userId: "foobar",
       })
       setRawOffChainAssets(response.assets)
     }
     loadOffChainAssets()
-  }, [])
+  }, [offChainProvider])
 
   const flipSwap = useCallback(() => {
     setSellAsset(buyAsset)
@@ -74,17 +82,17 @@ export const Trade = () => {
   )
 
   const confirmTrade = useCallback(async () => {
-    // try {
-    //   const response = await OffChainService.trade({})
-    // } catch (e) {
-    //   console.log("e", e)
-    // }
+    const response = await OffChainService.transfer({
+      provider: offChainProvider,
+    })
+
+    console.log("Trade: ", { response })
     // BUG: response or error is not properly being logged
     // Mock the hash before the fix
     setTxHash(
       "0xd82da596bb57caf12be84359d0a3a53b0fbae91a519400c92f598edc1a2c60a2"
     )
-  }, [])
+  }, [offChainProvider])
 
   return (
     <>

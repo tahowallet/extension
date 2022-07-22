@@ -116,6 +116,8 @@ export class OffChainService {
       }
     })
 
+    return apiResponsePromise
+
     // BUG: the above request is not returning a response properly, console is not logging out anything either
     // Thus mocking the response for now
     // const response = new Promise(() => ({
