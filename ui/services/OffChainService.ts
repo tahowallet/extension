@@ -80,25 +80,8 @@ export class OffChainService {
     tokenAddress?: string
     sourceAmount?: number
     destinationAddress?: string
-  }): Promise<any> {
+  }): Promise<{ transactionHash: string }> {
     const token = localStorage.getItem("token")
-
-    // const apiResponsePromise = fetch("http://localhost:8000/api/v1/transfer", {
-    //   method: "POST",
-    //   headers: {
-    //     Accept: "application/json",
-    //     "Content-Type": "application/json",
-    //     Referrer: document.location.origin,
-    //     Authorization: `JWT ${token}`,
-    //   },
-    // }).then((response) => {
-    //   try {
-    //     return response.json()
-    //   } catch (e) {
-    //     return e
-    //   }
-    // })
-    // return apiResponsePromise
 
     const apiResponsePromise = fetch(`${provider.apiUrl}/api/v1/transfer`, {
       method: "GET",
@@ -117,14 +100,5 @@ export class OffChainService {
     })
 
     return apiResponsePromise
-
-    // BUG: the above request is not returning a response properly, console is not logging out anything either
-    // Thus mocking the response for now
-    // const response = new Promise(() => ({
-    //   transactionHash:
-    //     "0xd82da596bb57caf12be84359d0a3a53b0fbae91a519400c92f598edc1a2c60a2",
-    // }))
-
-    // return response
   }
 }

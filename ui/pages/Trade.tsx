@@ -86,12 +86,7 @@ export const Trade = () => {
       provider: offChainProvider,
     })
 
-    console.log("Trade: ", { response })
-    // BUG: response or error is not properly being logged
-    // Mock the hash before the fix
-    setTxHash(
-      "0xd82da596bb57caf12be84359d0a3a53b0fbae91a519400c92f598edc1a2c60a2"
-    )
+    setTxHash(response.transactionHash)
   }, [offChainProvider])
 
   return (

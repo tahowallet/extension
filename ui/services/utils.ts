@@ -16,7 +16,8 @@ export default function transformOffChainAsset(
     Wealthsimple
 
   return {
-    amount: BigInt(amount),
+    // @ts-expect-error bigint type
+    amount,
     decimalAmount: amount,
     localizedDecimalAmount: new Intl.NumberFormat().format(amount),
     localizedMainCurrencyAmount: new Intl.NumberFormat().format(amount),
