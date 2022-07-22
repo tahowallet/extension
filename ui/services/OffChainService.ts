@@ -28,7 +28,7 @@ export class OffChainService {
     static assets({ provider, userId = ""}: { provider: OffChainProvider, userId: string}): Promise<{provider: OffChainProvider, assets: OffChainAsset[]}> {
         const token = localStorage.getItem('token');
         // const apiResponsePromise = fetch(`https://mocki.io/v1/6f412ee4-2875-4764-bbdc-eefada21ec2a`, {
-        const apiResponsePromise = fetch(`${provider.apiUrl}/api/v1/balances?user_id=${userId}`, {
+        const apiResponsePromise = fetch(`${provider.apiUrl}/api/v1/assets?user_id=${userId}`, {
             method: 'GET',
             headers: {
             'Accept': 'application/json',

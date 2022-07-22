@@ -56,6 +56,8 @@ export default function WalletAssetList(props: Props): ReactElement {
         provider: offChainProvider,
         userId: "foobar",
       })
+
+      console.log({response});
       setRawOffChainAssets(response.assets)
     }
     loadOffChainAssets()
