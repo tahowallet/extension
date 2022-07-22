@@ -74,9 +74,9 @@ export const Trade = () => {
   const updateBuyAsset = useCallback(
     (asset) => {
       setBuyAsset(asset)
-      // temporary measure - mock buy amount
+      // temporary measure - mock CAD to MATIC
       if (sellAsset && sellAmount) {
-        setBuyAmount((Number(sellAmount) * 1.5).toString())
+        setBuyAmount((Number(sellAmount) / 1.15).toString())
       }
     },
     [sellAsset, sellAmount]
@@ -85,10 +85,21 @@ export const Trade = () => {
   const confirmTrade = useCallback(async () => {
     const response = await OffChainService.transfer({
       provider: offChainProvider,
-    })
+      transferRequest: {
+        accountId: "123456",
+        sourceCurrencySymbol: "CAD",
+        destinationCurrencySymbol: "MATIC",
+        // todo remove having both sourceAmount and destinationAmount redundant having both, just for demo purposes
+        sourceAmount: sellAmount,
+        destinationAmount: buyAmount,
+        destinationAddress: "0x75bdb9da62acf5db996d36fb2322382aceffd9dd"
+      }
+    });
+
+    console.log({response});
 
     setTxHashUrl(`https://polygonscan.com/tx/${response.transactionHash}`)
-  }, [offChainProvider])
+  }, [offChainProvider, buyAmount])
 
   return (
     <>

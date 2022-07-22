@@ -86,6 +86,15 @@ export type OffChainAsset = {
   accountId: string
 }
 
+export type OffChainTransferRequest = {
+  accountId: string
+  sourceCurrencySymbol: string
+  destinationCurrencySymbol: string
+  sourceAmount?: string,
+  destinationAmount?: string,
+  destinationAddress: string
+}
+
 /**
  * Any asset that exists on a particular network; see {@link NetworkSpecific)
  * for information on network-specific objects.

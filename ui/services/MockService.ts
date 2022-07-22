@@ -1,3 +1,4 @@
+import { OffChainTransferRequest } from "@tallyho/tally-background/assets";
 import { resolveConfig } from "prettier";
 import { DEFAULT_ASSETS } from "./spec/assets";
 import { LOGGED_IN_CREDENTIALS, REQUEST_2FA } from "./spec/auth";
@@ -28,7 +29,9 @@ export const initializeAPIMocks  = () => {
          };
 
          if (resource.toString().includes('/v1/transfer')) {
-            return updateResponseJSON(config!, DEFAULT_TRANSFER_CONFIRMATION_MATIC);
+            const body = JSON.parse(config?.body!.toString()!) as OffChainTransferRequest;
+            console.log({body});
+            resource = "http://localhost:8000/api/v1/transfer/"
           };
     
         return originalFetch(resource, config);

@@ -4,7 +4,7 @@ import {
   OffChainChallenge,
   OffChainProvider,
 } from "@tallyho/tally-background/accounts"
-import { OffChainAsset } from "@tallyho/tally-background/assets"
+import { OffChainAsset, OffChainTransferRequest } from "@tallyho/tally-background/assets"
 
 // eslint-disable-next-line import/prefer-default-export
 export class OffChainService {
@@ -67,31 +67,23 @@ export class OffChainService {
   }
 
   static transfer({
-    accountId = "123456",
-    chainId = 1,
-    tokenAddress = "abcde",
-    sourceAmount = 1,
-    destinationAddress = "myAddress",
     provider,
+    transferRequest
   }: {
-    provider: OffChainProvider
-    accountId?: string
-    sourceCurrencySymbol?: string
-    chainId?: number
-    tokenAddress?: string
-    sourceAmount?: number
-    destinationAddress?: string
+    provider: OffChainProvider,
+    transferRequest: OffChainTransferRequest
   }): Promise<{ transactionHash: string }> {
     const token = localStorage.getItem("token")
 
     const apiResponsePromise = fetch(`${provider.apiUrl}/api/v1/transfer`, {
-      method: "GET",
+      method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
         Referrer: document.location.origin,
         Authorization: `JWT ${token}`,
       },
+      body: JSON.stringify({ ...transferRequest }),
     }).then((response) => {
       try {
         return response.json()
