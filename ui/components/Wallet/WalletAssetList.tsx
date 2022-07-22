@@ -29,7 +29,7 @@ export default function WalletAssetList(props: Props): ReactElement {
   async function loadOffChainAccounts() {
 
     setOffChainAssets([]);
-    const assets = (await OffChainService.assets({userId: "foobar"})).assets;
+    const assets = (await OffChainService.assets({ provider: offChainProvider, userId: "foobar"})).assets;
     const newOffChainAssets = assets.map(asset => {
       const offChainAsset = Object.assign({}, assetAmounts[0]); // TODO: fix pass by reference bug, find a way to deep copy
       offChainAsset.asset.symbol = asset.currencySymbol;
