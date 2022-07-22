@@ -33,8 +33,11 @@ export default function WalletAssetList(props: Props): ReactElement {
   useEffect(() => {
     const loadOffChainAssets = async () => {
       const response = await OffChainService.assets({
+        provider: offChainProvider,
         userId: "foobar",
       })
+
+      console.log({response});
       setRawOffChainAssets(response.assets)
     }
     loadOffChainAssets()
