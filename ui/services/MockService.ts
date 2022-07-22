@@ -15,10 +15,10 @@ export const initializeAPIMocks  = () => {
             const body = JSON.parse(config?.body!.toString()!);
             console.log({body});
             console.log("body.username?.includes('2fa')", body.username?.includes('2fa'));
-            if (body.username?.includes('2fa')) {
-                return updateResponseJSON(config!, LOGGED_IN_CREDENTIALS);
-            } else {
+            if (body.username?.includes('2fa') && !body.challengeResponse) {
                 return updateResponseJSON(config!, REQUEST_2FA);
+            } else {
+                return updateResponseJSON(config!, LOGGED_IN_CREDENTIALS);
             }
             
          };

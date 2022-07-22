@@ -1,7 +1,9 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
+  OffChainAccount,
   OffChainAccountCredentials,
+  OffChainChallenge,
   OffChainProvider,
 } from "@tallyho/tally-background/accounts"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -13,8 +15,10 @@ import { OffChainService } from "../../services/OffChainService"
 export default function OnboardingOffChainAccount(): ReactElement {
   const [redirect, setRedirect] = useState(false)
   const [offChainAccountCredentials, setOffChainAccountCredentials] =
-    useState<OffChainAccountCredentials>({ username: "", password: "" })
+    useState<OffChainAccountCredentials>({ username: "", password: "", challengeResponse: "" })
   const [offChainProvider, setOffChainProvider] = useState<OffChainProvider>()
+  const [multiFactorAuthMode, setMultiFactorAuthMode] = useState(false);
+  const [challengeMessage, setChallengeMessage] = useState("");
 
   const disableSubmit =
     !offChainProvider ||
@@ -29,13 +33,19 @@ export default function OnboardingOffChainAccount(): ReactElement {
     const account = await OffChainService.login({
       provider: offChainProvider,
       credentials: offChainAccountCredentials,
-    })
+    });
+
+    if ((account as OffChainChallenge).challengeMessage) {
+      (setMultiFactorAuthMode(true))
+      setChallengeMessage((account as OffChainChallenge).challengeMessage)
+      return
+    }
     // TODO use redux thunk to authenticate and save credentials
     // await dispatch(addAddressNetwork(addressOnNetwork))
     // dispatch(setNewSelectedAccount(addressOnNetwork))
     localStorage.setItem("offChainProvider", offChainProvider?.name!)
-    localStorage.setItem("token", account.token)
-    localStorage.setItem("userId", account.userId)
+    localStorage.setItem("token", (account as OffChainAccount).token)
+    localStorage.setItem("userId", (account as OffChainAccount).userId)
     setRedirect(true)
   }
 
@@ -66,6 +76,27 @@ export default function OnboardingOffChainAccount(): ReactElement {
               onProviderChange={(provider) => setOffChainProvider(provider)}
             />
           </div>
+          {multiFactorAuthMode ? 
+            <div className="input_wrap">
+            <SharedInput
+              value={offChainAccountCredentials.challengeResponse}
+              label={challengeMessage}
+              onChange={(challengeResponse) => {
+                setOffChainAccountCredentials((currentCredentials) => ({
+                  ...currentCredentials,
+                  challengeResponse,
+                }))
+              }}
+              // onFocus={onFocus}
+              // errorMessage={errorMessage}
+              id="username"
+              placeholder="username"
+              // isEmpty={isEmpty}
+            />
+            </div>
+          :
+          <>
+
           <div className="input_wrap">
             <SharedInput
               value={offChainAccountCredentials.username}
@@ -101,6 +132,8 @@ export default function OnboardingOffChainAccount(): ReactElement {
               // isEmpty={isEmpty}
             />
           </div>
+          </>
+          }
           <SharedButton
             type="primary"
             size="large"

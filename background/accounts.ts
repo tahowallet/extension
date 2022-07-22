@@ -57,6 +57,7 @@ export type NameOnNetwork = {
 export type OffChainAccountCredentials = {
   username: string
   password: string
+  challengeResponse?: string
 }
 
 /**
@@ -74,4 +75,12 @@ export type OffChainProvider = {
 export type OffChainAccount = {
   userId: string
   token: string
+}
+
+/**
+ * An account on an off-chain provider.
+ */
+export type OffChainChallenge = {
+  requestId: string
+  challengeMessage: string
 }

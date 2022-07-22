@@ -1,11 +1,11 @@
-import { OffChainAccount, OffChainAccountCredentials, OffChainProvider } from "@tallyho/tally-background/accounts";
+import { OffChainAccount, OffChainAccountCredentials, OffChainChallenge, OffChainProvider } from "@tallyho/tally-background/accounts";
 import { OffChainAsset } from "@tallyho/tally-background/assets";
 
 export class OffChainService {
 
-    static login({provider, credentials }: {provider: OffChainProvider,credentials: OffChainAccountCredentials}): Promise<OffChainAccount> {
+    static login({provider, credentials }: {provider: OffChainProvider,credentials: OffChainAccountCredentials}): Promise<OffChainAccount | OffChainChallenge> {
         // const apiResponsePromise = fetch(`https://mocki.io/v1/d14997dd-ea1d-496a-b3ca-f6576201a9f3`, {
-        const apiResponsePromise = fetch(`${provider}/api/v1/login`, {
+        const apiResponsePromise = fetch(`${provider.apiUrl}/api/v1/login`, {
             method: 'POST',
             headers: {
             'Accept': 'application/json',
