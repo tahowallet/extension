@@ -17,6 +17,7 @@ import EarnDeposit from "../pages/EarnDeposit"
 import Menu from "../pages/Settings"
 import Send from "../pages/Send"
 import Swap from "../pages/Swap"
+import { Trade } from "../pages/Trade"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
@@ -158,6 +159,13 @@ const pageList: PageList[] = [
   {
     path: "/swap",
     Component: Swap,
+    hasTabBar: true,
+    hasTopBar: true,
+    persistOnClose: true,
+  },
+  {
+    path: "/trade",
+    Component: Trade,
     hasTabBar: true,
     hasTopBar: true,
     persistOnClose: true,

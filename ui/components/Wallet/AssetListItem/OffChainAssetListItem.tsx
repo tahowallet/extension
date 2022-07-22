@@ -33,7 +33,7 @@ export default function OffChainAssetListItem({
         <div className="asset_right">
           <Link
             to={{
-              pathname: "/swap",
+              pathname: "/trade",
               state: {
                 symbol: assetAmount.asset.symbol,
                 contractAddress,
