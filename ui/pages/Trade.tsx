@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { OffChainAsset } from "@tallyho/tally-background/assets"
 import {
   offChainProviders,
@@ -22,7 +23,7 @@ export const Trade = () => {
   const [buyAsset, setBuyAsset] = useState()
   const [sellAmount, setSellAmount] = useState("")
   const [buyAmount, setBuyAmount] = useState("")
-  const [txHash, setTxHash] = useState("")
+  const [txHashUrl, setTxHashUrl] = useState("")
 
   // const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
   // const assetAmounts = accountBalances?.assetAmounts
@@ -86,7 +87,7 @@ export const Trade = () => {
       provider: offChainProvider,
     })
 
-    setTxHash(response.transactionHash)
+    setTxHashUrl(`https://polygonscan.com/tx/${response.transactionHash}`)
   }, [offChainProvider])
 
   return (
@@ -142,7 +143,17 @@ export const Trade = () => {
               </SharedButton>
             </div>
           </div>
-          <div className="label">{txHash}</div>
+
+          {txHashUrl && (
+            <a
+              className="txhash_link"
+              href={txHashUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View transaction on Polygonscan
+            </a>
+          )}
         </div>
       </CorePage>
       <style jsx>
@@ -209,6 +220,9 @@ export const Trade = () => {
           }
           .settings_wrap {
             margin-top: 16px;
+          }
+          .txhash_link {
+            color: var(--trophy-gold);
           }
         `}
       </style>
