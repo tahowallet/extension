@@ -19,9 +19,7 @@ export const Trade = () => {
   const [buyAsset, setBuyAsset] = useState()
   const [sellAmount, setSellAmount] = useState("")
   const [buyAmount, setBuyAmount] = useState("")
-  const [txHash, setTxHash] = useState(
-    "0xd82da596bb57caf12be84359d0a3a53b0fbae91a519400c92f598edc1a2c60a2"
-  )
+  const [txHash, setTxHash] = useState("")
 
   // const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
   // const assetAmounts = accountBalances?.assetAmounts
