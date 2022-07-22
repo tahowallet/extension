@@ -28,9 +28,8 @@ export const initializeAPIMocks  = () => {
 
 }
 
-export const updateResponseJSON = async (config: RequestInit, newData: any) => {
-    
-    const resource = 'https://reqres.in/api/users';
+export const updateResponseJSON = async (config: RequestInit, newData: any, resource = 'https://reqres.in/api/users') => {
+
     let originalResponse = await originalFetch(resource, config);
     return originalResponse
     .clone()
