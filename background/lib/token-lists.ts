@@ -168,5 +168,5 @@ export function networkAssetsFromLists(
     tokenListToFungibleAssetsForNetwork(network, tokenListAndReference)
   )
 
-  return mergeAssets(...fungibleAssets)
+  return memoizedMergeAssets(...fungibleAssets)
 }
