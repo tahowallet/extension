@@ -15,7 +15,7 @@ import { BASE_ASSETS, FIAT_CURRENCIES, USD } from "../../constants"
 import { getPrices, getTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
-  mergeAssets,
+  memoizedMergeAssets,
   networkAssetsFromLists,
 } from "../../lib/token-lists"
 import PreferenceService from "../preferences"
@@ -194,7 +194,7 @@ export default class IndexingService extends BaseService<Events> {
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    return mergeAssets<FungibleAsset>(
+    return memoizedMergeAssets<FungibleAsset>(
       [network.baseAsset],
       customAssets,
       networkAssetsFromLists(network, tokenLists)
