@@ -7,10 +7,15 @@ import CommonAssetListItem from "./AssetListItem/CommonAssetListItem"
 interface Props {
   assetAmount: CompleteAssetAmount
   initializationLoadingTimeExpired: boolean
+  onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
 }
 
 export default function WalletAssetListItem(props: Props): ReactElement {
-  const { assetAmount, initializationLoadingTimeExpired } = props
+  const {
+    assetAmount,
+    initializationLoadingTimeExpired,
+    onUntrustedAssetWarningClick,
+  } = props
 
   const isDoggoAsset = assetAmount.asset.symbol === "DOGGO"
 
@@ -22,6 +27,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
         <CommonAssetListItem
           assetAmount={assetAmount}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+          onUntrustedAssetWarningClick={onUntrustedAssetWarningClick}
         />
       )}
       <style jsx global>
@@ -67,6 +73,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             margin-left: 6px;
             margin-bottom: -6px;
             background-color: var(--trophy-gold);
+            font-size: 0;
           }
         `}
       </style>

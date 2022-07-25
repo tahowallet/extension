@@ -1,6 +1,7 @@
 // @ts-check
 
 import React, { ReactElement } from "react"
+import { AnyAsset } from "@tallyho/tally-background/assets"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
@@ -35,20 +36,20 @@ function TitledSlideUpMenu(props: TitledSlideUpProps): ReactElement {
 }
 
 type AssetWarningSlideUpProps = {
-  assetName: string
-  contractAddress: string
+  asset: AnyAsset | null
+  close: () => void
 }
 
 export default function AssetWarningSlideUp(
   props: AssetWarningSlideUpProps
 ): ReactElement {
-  const { assetName, contractAddress } = props
+  const { asset, close } = props
   return (
     <TitledSlideUpMenu
-      isOpen
-      close={() => {}}
+      isOpen={asset !== null}
       size="small"
       title="Asset imported from transaction history"
+      close={close}
     >
       <style jsx global>{`
         .banner_wrap {
@@ -94,13 +95,17 @@ export default function AssetWarningSlideUp(
         <li>
           Name
           <div className="right">
-            <strong>{assetName}</strong>
+            <strong>{`${asset?.name} (${asset?.symbol})`}</strong>
           </div>
         </li>
         <li>
           Contract address
           <div className="right">
-            <SharedAddress address={contractAddress} />
+            <SharedAddress
+              address={
+                asset && "contractAddress" in asset ? asset.contractAddress : ""
+              }
+            />
           </div>
         </li>
       </ul>

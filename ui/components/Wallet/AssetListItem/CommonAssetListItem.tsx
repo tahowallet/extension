@@ -6,13 +6,20 @@ import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
 
-export default function CommonAssetListItem({
-  assetAmount,
-  initializationLoadingTimeExpired,
-}: {
+type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount
   initializationLoadingTimeExpired: boolean
-}): ReactElement {
+  onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
+}
+
+export default function CommonAssetListItem(
+  props: CommonAssetListItemProps
+): ReactElement {
+  const {
+    assetAmount,
+    initializationLoadingTimeExpired,
+    onUntrustedAssetWarningClick,
+  } = props
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
 
@@ -40,13 +47,18 @@ export default function CommonAssetListItem({
                 {assetAmount.localizedDecimalAmount}
               </span>
               <span>{assetAmount.asset.symbol}</span>
-              <Link
-                to={{
-                  pathname: "/send",
-                  state: assetAmount.asset,
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  if (onUntrustedAssetWarningClick) {
+                    onUntrustedAssetWarningClick(assetAmount.asset)
+                  }
                 }}
                 className="untrusted_asset_icon"
-              />
+              >
+                Asset isn&apos;t trusted
+              </button>
             </div>
             {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
               <></>

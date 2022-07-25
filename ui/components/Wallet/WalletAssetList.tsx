@@ -1,6 +1,6 @@
 // @ts-check
 
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import WalletAssetListItem from "./WalletAssetListItem"
 import AssetWarningSlideUp from "./AssetWarningSlideUp"
@@ -14,12 +14,18 @@ export default function WalletAssetList(
   props: WalletAssetListProps
 ): ReactElement {
   const { assetAmounts, initializationLoadingTimeExpired } = props
+
+  const [warnedAsset, setWarnedAsset] = useState<
+    CompleteAssetAmount["asset"] | null
+  >(null)
+
   if (!assetAmounts) return <></>
+
   return (
     <>
       <AssetWarningSlideUp
-        assetName="KEEP"
-        contractAddress="0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
+        asset={warnedAsset}
+        close={() => setWarnedAsset(null)}
       />
       <ul>
         {assetAmounts.map((assetAmount) => (
@@ -27,6 +33,7 @@ export default function WalletAssetList(
             assetAmount={assetAmount}
             key={assetAmount.asset.symbol}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+            onUntrustedAssetWarningClick={(asset) => setWarnedAsset(asset)}
           />
         ))}
         {!initializationLoadingTimeExpired && (
