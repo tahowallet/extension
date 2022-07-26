@@ -14,6 +14,7 @@ import SharedButton from "../../components/Shared/SharedButton"
 import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 import OnboardingDerivationPathSelectAlt from "../../components/Onboarding/OnboardingDerivationPathSelect"
+import { scanWebsite } from "../../utils/constants"
 
 const addressesPerPage = 6
 
@@ -54,7 +55,7 @@ function usePageData({
       path,
       account,
       address,
-      ethBalance: account?.balance ?? null,
+      balance: account?.balance[network.chainID] ?? null,
       isSelected: (selectedStates[path] ?? false) && address !== null,
       setSelected: (selected: boolean) => {
         setSelectedStates((states) => ({ ...states, [path]: selected }))
@@ -80,12 +81,12 @@ function usePageData({
   }, [device.id, dispatch, items])
 
   useEffect(() => {
-    const nextUnresolvedBalance = items.find((item) => item.ethBalance === null)
+    const nextUnresolvedBalance = items.find((item) => item.balance === null)
     if (!nextUnresolvedBalance) return
     const { path, account } = nextUnresolvedBalance
     if (!account) return
-    const { address, fetchingBalance } = account
-    if (!address || fetchingBalance) return
+    const { address } = account
+    if (!address) return
     dispatch(
       fetchBalance({
         deviceID: device.id,
@@ -132,7 +133,7 @@ function LedgerAccountList({
       <div className="addresses">
         <div className="item-list">
           {pageData.items.map(
-            ({ path, address, ethBalance, isSelected, setSelected }) => (
+            ({ path, address, balance, isSelected, setSelected }) => (
               <div className="item" key={path}>
                 <label className="checkbox_label">
                   {/* TODO: Share this implementation of checkbox. */}
@@ -159,10 +160,10 @@ function LedgerAccountList({
                       {address.slice(0, 4)}...
                       {address.slice(address.length - 4)}
                     </div>
-                    {ethBalance === null && <div className="balance_loading" />}
-                    {ethBalance !== null && (
+                    {balance === null && <div className="balance_loading" />}
+                    {balance !== null && (
                       <div className="balance">
-                        {ethBalance} {selectedNetwork.baseAsset.symbol}
+                        {balance} {selectedNetwork.baseAsset.symbol}
                       </div>
                     )}
                     <div className="etherscan_link_container">
@@ -173,7 +174,9 @@ function LedgerAccountList({
                         onClick={() => {
                           window
                             .open(
-                              `https://etherscan.io/address/${address}`,
+                              `${
+                                scanWebsite[selectedNetwork.chainID].url
+                              }/address/${address}`,
                               "_blank"
                             )
                             ?.focus()
