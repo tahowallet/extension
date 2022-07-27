@@ -1,16 +1,23 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   getAddressCount,
   getNetworkCount,
   selectAccountAndTimestampedActivities,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { SUPPORT_NFTS } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import NFTsOverview from "../components/NFTs/NFTsOverview"
 
 export default function Overview(): ReactElement {
   const { t } = useTranslation()
+
+  const [panelNumber, setPanelNumber] = useState(0)
+  const panelNames = ["Assets", "NFTs"]
+
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
   )
@@ -64,10 +71,22 @@ export default function Overview(): ReactElement {
           </div>
         </div>
       </header>
-      <OverviewAssetsTable
-        assets={combinedData.assets}
-        initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-      />
+      {SUPPORT_NFTS && (
+        <div className="panel_switcher">
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={panelNames}
+          />
+        </div>
+      )}
+      {panelNumber === 0 && (
+        <OverviewAssetsTable
+          assets={combinedData.assets}
+          initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+        />
+      )}
+      {panelNumber === 1 && SUPPORT_NFTS && <NFTsOverview />}
       <style jsx>
         {`
           .header_primary_content {
@@ -89,8 +108,7 @@ export default function Overview(): ReactElement {
             border-bottom-left-radius: 4px;
             box-sizing: border-box;
             padding-bottom: 15px;
-            margin-top: 16px;
-            margin-bottom: -6px;
+            margin: 16px 0;
           }
           .primary_balance {
             color: #fff;
@@ -143,6 +161,10 @@ export default function Overview(): ReactElement {
             font-weight: 600;
             line-height: 24px;
             text-align: center;
+          }
+          .panel_switcher {
+            width: 100%;
+            margin: 8px 0;
           }
         `}
       </style>

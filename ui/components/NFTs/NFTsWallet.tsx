@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { ReactElement, useEffect } from "react"
 import { fetchThenUpdateNFTsByNetwork } from "@tallyho/tally-background/redux-slices/nfts"
 import {
   selectCurrentAccount,
@@ -8,7 +8,7 @@ import selectNFTs from "@tallyho/tally-background/redux-slices/selectors/nftsSel
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NFTsList from "./NFTsList"
 
-export default function NFTsWallet() {
+export default function NFTsWallet(): ReactElement {
   const NFTs = useBackgroundSelector(selectNFTs)
   const { address } = useBackgroundSelector(selectCurrentAccount) ?? {}
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
