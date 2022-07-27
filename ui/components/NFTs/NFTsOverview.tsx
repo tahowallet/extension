@@ -7,6 +7,7 @@ import {
 import selectNFTs from "@tallyho/tally-background/redux-slices/selectors/nftsSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NFTsList from "./NFTsList"
+import NFTsEmpty from "./NFTsEmpty"
 
 export default function NFTsOverview(): ReactElement {
   const NFTs = useBackgroundSelector(selectNFTs)
@@ -30,7 +31,7 @@ export default function NFTsOverview(): ReactElement {
 
   return (
     <div className="nft_overview">
-      {NFTItems && <NFTsList NFTs={NFTItems} />}
+      {NFTItems.length ? <NFTsList NFTs={NFTItems} /> : <NFTsEmpty />}
       <style jsx>
         {`
           .nft_overview {
