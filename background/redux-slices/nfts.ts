@@ -4,6 +4,10 @@ import { EVMNetwork } from "../networks"
 
 export type NFTItem = {
   media: { gateway?: string }[]
+  id: {
+    tokenId: string
+  }
+  contract: { address: string }
   title: string
 }
 

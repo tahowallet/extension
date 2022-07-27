@@ -6,8 +6,16 @@ export default function NFTsList({ NFTs }: { NFTs: NFTItem[] }): ReactElement {
   return (
     <>
       <div className="wrap">
-        {NFTs.map((NFT) => {
-          return <NFTsListItem NFT={NFT} />
+        {NFTs.flatMap((NFT) => {
+          const src = NFT.media[0].gateway
+          return src ? (
+            <NFTsListItem
+              NFT={NFT}
+              key={`${NFT.contract.address}_${NFT.id.tokenId}`}
+            />
+          ) : (
+            []
+          )
         })}
       </div>
       <style jsx>{`
