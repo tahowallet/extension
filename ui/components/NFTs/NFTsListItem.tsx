@@ -1,6 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedIcon from "../Shared/SharedIcon"
 
 function NFTImage({
   width,
@@ -28,7 +29,9 @@ function NFTImage({
         img {
           width: ${width ?? "auto"};
           height: ${height ?? "auto"};
+          object-fit: cover;
           max-height: 100%;
+          max-width: 100%;
           border-radius: 8px;
           background-color: var(--green-120);
         }
@@ -57,7 +60,18 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
         isOpen={isPreviewOpen}
         close={() => setIsPreviewOpen(false)}
       >
-        <div>{title}</div>
+        <div className="preview_header">
+          <div className="preview_text">{title}</div>
+          <SharedIcon
+            icon="icons/s/new-tab.svg"
+            width={16}
+            color="var(--green-40)"
+            hoverColor="#fff"
+            onClick={() => {
+              window.open(`...`, "_blank")?.focus()
+            }}
+          />
+        </div>
         <div className="preview">
           <NFTImage alt={title} src={src} />
         </div>
@@ -96,10 +110,28 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
           font-size: 14px;
           line-height: 16px;
         }
+        .preview_header {
+          margin: 0 24px;
+          display: flex;
+          align-items: center;
+        }
+        .preview_text {
+          font-size: 18px;
+          line-height: 24px;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-right: 8px;
+          max-width: calc(100% - 48px);
+        }
         .preview {
-          margin: 16px;
-          height: 470px;
-          width: calc(100% - 32px);
+          display: flex;
+          align-items: center;
+          justify-items: center;
+          margin: 16px 24px;
+          height: 460px;
+          width: calc(100% - 48px);
         }
       `}</style>
     </button>
