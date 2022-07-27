@@ -318,3 +318,30 @@ export function toHexChainID(chainID: string | number): string {
   }
   return `0x${BigInt(chainID).toString(16)}`
 }
+
+
+/**
+ *
+ * Safe ChainID
+ * @readonly
+ * @const MAX_SAFE_CHAIN_ID 
+ * @summary This is the upper bound limit on what will be 
+ *    accepted for `chainID` by MetaMask. JS can only 
+ *    safely represent values in the:
+ *     -(2**53 - 1) <= 2**53 - 1 range
+ *    MAX_SAFE_CHAIN_ID is calculated by:
+ *    floor( ( 2**53 - 39 ) / 2 ) = 4503599627370476
+ *
+ * For a complete breakdown,
+ * @see {@link https://gist.github.com/rekmarks/a47bd5f2525936c4b8eee31a16345553}
+ * Metamask reference,
+ * @see {@link https://github.com/MetaMask/metamask-extension/blob/aea5c5824f1c0df8b9f18ae9426be9feec649edd/shared/constants/network.js#L40}
+ */
+
+ export const MAX_SAFE_CHAIN_ID = 4503599627370476;
+
+ export function validateChainID(chainID: number): void {
+   if (!Number.isInteger(chainID) || chainID <= 0 || chainID > MAX_SAFE_CHAIN_ID) {
+     throw new Error(`Invalid chainID ${chainID}`)
+   }
+ }
