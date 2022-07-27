@@ -18,6 +18,7 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
+import SharedBanner from "../components/Shared/SharedBanner"
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
@@ -90,7 +91,20 @@ export default function Wallet(): ReactElement {
             )}
             {SUPPORT_NFTS ? (
               <>
-                {panelNumber === 1 && <NFTsWallet />}
+                {panelNumber === 1 && (
+                  <>
+                    <SharedBanner
+                      icon="notif-announcement"
+                      iconColor="var(--link)"
+                      canBeClosed
+                      id="nft_soon"
+                      customStyles="margin: 0 0 16px;"
+                    >
+                      Coming soon: NFT price + sending
+                    </SharedBanner>
+                    <NFTsWallet />
+                  </>
+                )}
                 {panelNumber === 2 && (
                   <WalletActivityList
                     activities={currentAccountActivities ?? []}
