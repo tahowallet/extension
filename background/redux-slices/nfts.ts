@@ -49,3 +49,25 @@ async function fetchNFTs(address: string, currentNetwork: EVMNetwork) {
   ).json()
   return result.ownedNfts
 }
+
+export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
+  "nfts/fetchThenUpdateNFTsByNetwork",
+  async (
+    payload: {
+      address: string
+      currentNetwork: EVMNetwork
+    },
+    { dispatch }
+  ) => {
+    const { address, currentNetwork } = payload
+    const ownedNFTs = await fetchNFTs(address, currentNetwork)
+
+    await dispatch(
+      NFTsSlice.actions.updateNFTs({
+        address,
+        NFTs: ownedNFTs,
+        network: currentNetwork,
+      })
+    )
+  }
+)
