@@ -33,7 +33,7 @@ import {
 } from "./keyringsSelectors"
 import { AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import { BASE_ASSETS_BY_SYMBOL } from "../../constants"
+import { BASE_ASSETS_BY_SYMBOL, NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
 import {
@@ -440,17 +440,29 @@ export const selectCurrentAccountTotal = createSelector(
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
 
-export const getAddressCount = createSelector(
+export const getAllAddresses = createSelector(
   (state: RootState) => state.account.accountsData,
-  (accountsData) =>
-    new Set(
+  (accountsData) => [
+    ...new Set(
       Object.values(accountsData.evm).flatMap((chainAddresses) =>
         Object.keys(chainAddresses)
       )
-    ).size
+    ),
+  ]
+)
+
+export const getAddressCount = createSelector(
+  getAllAddresses,
+  (allAddresses) => allAddresses.length
+)
+
+export const getAllNetworks = createSelector(
+  (state: RootState) => state.account.accountsData,
+  (accountsData) =>
+    Object.keys(accountsData.evm).map((chainID) => NETWORK_BY_CHAIN_ID[chainID])
 )
 
 export const getNetworkCount = createSelector(
-  (state: RootState) => state.account.accountsData,
-  (accountsData) => Object.keys(accountsData.evm).length
+  getAllNetworks,
+  (allNetworks) => allNetworks.length
 )
