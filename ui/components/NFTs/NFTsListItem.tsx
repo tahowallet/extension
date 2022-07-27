@@ -34,6 +34,7 @@ function NFTImage({
           max-width: 100%;
           border-radius: 8px;
           background-color: var(--green-120);
+          flex-grow: 1;
         }
       `}</style>
     </>
