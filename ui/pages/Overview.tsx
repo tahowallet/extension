@@ -11,6 +11,7 @@ import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsOverview from "../components/NFTs/NFTsOverview"
+import SharedBanner from "../components/Shared/SharedBanner"
 
 export default function Overview(): ReactElement {
   const { t } = useTranslation()
@@ -86,7 +87,20 @@ export default function Overview(): ReactElement {
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
         />
       )}
-      {panelNumber === 1 && SUPPORT_NFTS && <NFTsOverview />}
+      {panelNumber === 1 && SUPPORT_NFTS && (
+        <>
+          <SharedBanner
+            icon="notif-announcement"
+            iconColor="var(--link)"
+            canBeClosed
+            id="nft_soon"
+            customStyles="margin: 8px 0;"
+          >
+            Coming soon: NFT price + sending
+          </SharedBanner>
+          <NFTsOverview />
+        </>
+      )}
       <style jsx>
         {`
           .header_primary_content {
