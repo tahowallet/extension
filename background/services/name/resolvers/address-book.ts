@@ -19,19 +19,13 @@ export default function addressBookResolverFor(
     },
 
     async lookUpAddressForName(nameOnNetwork: NameOnNetwork) {
-      return preferenceService.lookUpAddressForName.call(
-        preferenceService,
-        nameOnNetwork
-      )
+      return preferenceService.lookUpAddressForName(nameOnNetwork)
     },
     async lookUpAvatar() {
       throw new Error("Avatar resolution not supported in address book.")
     },
     async lookUpNameForAddress(addressOnNetwork: AddressOnNetwork) {
-      return preferenceService.lookUpNameForAddress.call(
-        preferenceService,
-        addressOnNetwork
-      )
+      return preferenceService.lookUpNameForAddress(addressOnNetwork)
     },
   }
 }
