@@ -5,11 +5,13 @@ export default function NFTsImage({
   height,
   alt,
   src,
+  fit = "cover",
 }: {
   width?: string
   height?: string
   alt: string
   src: string
+  fit?: string
 }): ReactElement {
   return (
     <>
@@ -19,18 +21,17 @@ export default function NFTsImage({
         onError={({ currentTarget }) => {
           // if NFT is incognito let's display placeholder
           currentTarget.onerror = null // eslint-disable-line no-param-reassign
-          currentTarget.src = "./images/empty_bowl@2x.png" // eslint-disable-line no-param-reassign
+          currentTarget.src = "./images/no_preview.svg" // eslint-disable-line no-param-reassign
         }}
       />
       <style jsx>{`
         img {
           width: ${width ?? "auto"};
           height: ${height ?? "auto"};
-          object-fit: cover;
+          object-fit: ${fit};
           max-height: 100%;
           max-width: 100%;
           border-radius: 8px;
-          background-color: var(--green-120);
           flex-grow: 1;
         }
       `}</style>

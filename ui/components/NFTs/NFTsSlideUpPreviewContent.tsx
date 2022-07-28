@@ -1,7 +1,25 @@
 import React, { ReactElement } from "react"
+import { ETHEREUM, POLYGON } from "@tallyho/tally-background/constants"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
 import { scanWebsite } from "../../utils/constants"
+
+function getPreviewLink({
+  chainID,
+  contractAddress,
+  tokenID,
+}: {
+  chainID: number
+  contractAddress: string
+  tokenID: number
+}) {
+  const previewURL = {
+    [POLYGON.chainID]: `/token/${contractAddress}?a=${tokenID}`,
+    [ETHEREUM.chainID]: `/nft/${contractAddress}/${tokenID}`,
+  }
+
+  return `${scanWebsite[chainID].url}${previewURL[chainID]}`
+}
 
 export default function NFTsSlideUpPreviewContent({
   title,
@@ -24,11 +42,11 @@ export default function NFTsSlideUpPreviewContent({
           icon="icons/s/new-tab.svg"
           width={16}
           color="var(--green-40)"
-          hoverColor="#fff"
+          hoverColor="var(--trophy-gold)"
           onClick={() => {
             window
               .open(
-                `${scanWebsite[chainID].url}/token/${contractAddress}?a=${tokenID}`,
+                getPreviewLink({ chainID, contractAddress, tokenID }),
                 "_blank"
               )
               ?.focus()
@@ -36,7 +54,7 @@ export default function NFTsSlideUpPreviewContent({
         />
       </header>
       <div className="preview">
-        <NFTsImage alt={title} src={src} />
+        <NFTsImage alt={title} src={src} fit="contain" />
       </div>
       <style jsx>{`
         header {
@@ -60,7 +78,7 @@ export default function NFTsSlideUpPreviewContent({
           align-items: center;
           justify-items: center;
           margin: 16px 24px;
-          height: 460px;
+          height: calc(100% - 48px - 16px);
           width: calc(100% - 48px);
         }
       `}</style>
