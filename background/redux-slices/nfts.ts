@@ -9,6 +9,7 @@ export type NFTItem = {
   }
   contract: { address: string }
   title: string
+  chainID?: number
 }
 
 export type NFTsState = {
