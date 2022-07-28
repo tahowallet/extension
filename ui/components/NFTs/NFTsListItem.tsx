@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from "react"
 import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsImage from "./NFTsImage"
+import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
 export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
   const {
@@ -23,21 +24,13 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
         isOpen={isPreviewOpen}
         close={() => setIsPreviewOpen(false)}
       >
-        <div className="preview_header">
-          <div className="preview_text">{title}</div>
-          <SharedIcon
-            icon="icons/s/new-tab.svg"
-            width={16}
-            color="var(--green-40)"
-            hoverColor="#fff"
-            onClick={() => {
-              window.open(`...`, "_blank")?.focus()
-            }}
-          />
-        </div>
-        <div className="preview">
-          <NFTImage alt={title} src={src} />
-        </div>
+        <NFTsSlideUpPreviewContent
+          title={title}
+          src={src}
+          chainID={chainID ?? 0}
+          contractAddress={address}
+          tokenID={parsedTokenID}
+        />
       </SharedSlideUpMenu>
       <NFTImage width="168" height="168" alt={title} src={src} />
 
@@ -72,29 +65,6 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
-        }
-        .preview_header {
-          margin: 0 24px;
-          display: flex;
-          align-items: center;
-        }
-        .preview_text {
-          font-size: 18px;
-          line-height: 24px;
-          font-weight: 600;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          margin-right: 8px;
-          max-width: calc(100% - 48px);
-        }
-        .preview {
-          display: flex;
-          align-items: center;
-          justify-items: center;
-          margin: 16px 24px;
-          height: 460px;
-          width: calc(100% - 48px);
         }
       `}</style>
     </button>
