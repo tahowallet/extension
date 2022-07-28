@@ -3,10 +3,8 @@ import React, { ReactElement } from "react"
 export default function NFTsEmpty(): ReactElement {
   return (
     <div className="standard_width container">
-      <div className="text">
-        Looks rare, but there are no NFT to see here, why not get some?
-      </div>
       <img className="bowl_image" src="./images/empty_bowl@2x.png" alt="" />
+      <p>Looks rare, but there are no NFT to see here, why not get some?</p>
       <style jsx>
         {`
           .container {
@@ -20,7 +18,7 @@ export default function NFTsEmpty(): ReactElement {
             width: 90px;
             margin-bottom: 10px;
           }
-          .text {
+          p {
             width: 250px;
             text-align: center;
             line-height: 24px;
