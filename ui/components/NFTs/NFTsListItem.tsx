@@ -9,17 +9,16 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
     title,
     media,
     id: { tokenId },
+    chainID,
+    contract: { address },
   } = NFT
   const src = media[0].gateway ?? ""
 
+  const parsedTokenID = parseInt(tokenId, 16)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   return (
-    <button
-      className="nft"
-      type="button"
-      onClick={() => setIsPreviewOpen(true)}
-    >
+    <>
       <SharedSlideUpMenu
         isOpen={isPreviewOpen}
         close={() => setIsPreviewOpen(false)}
@@ -32,13 +31,19 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
           tokenID={parsedTokenID}
         />
       </SharedSlideUpMenu>
-      <NFTImage width="168" height="168" alt={title} src={src} />
 
-      <span className="title">
-        <span>{title}</span>
-        {/* TODO: add token id properly */}
-        <span>#{parseInt(tokenId, 16)}</span>
-      </span>
+      <button
+        className="nft"
+        type="button"
+        onClick={() => setIsPreviewOpen(true)}
+      >
+        <NFTsImage width="168" height="168" alt={title} src={src} />
+        <span className="title">
+          <span>{title}</span>
+          {/* TODO: add token id properly */}
+          <span>#{parsedTokenID}</span>
+        </span>
+      </button>
       <style jsx>{`
         .nft {
           display: flex;
@@ -67,6 +72,6 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
           line-height: 16px;
         }
       `}</style>
-    </button>
+    </>
   )
 }
