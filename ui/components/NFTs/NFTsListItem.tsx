@@ -1,41 +1,31 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsImage from "./NFTsImage"
-import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
-export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
+function NFTsListItem({
+  NFT,
+  style,
+  openPreview,
+}: {
+  NFT: NFTItem
+  openPreview: (nft: NFTItem) => void
+  style?: React.CSSProperties
+}): ReactElement {
   const {
     title,
     media,
     id: { tokenId },
-    chainID,
-    contract: { address },
   } = NFT
   const src = media[0].gateway ?? ""
 
   const parsedTokenID = parseInt(tokenId, 16)
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={isPreviewOpen}
-        close={() => setIsPreviewOpen(false)}
-      >
-        <NFTsSlideUpPreviewContent
-          title={title}
-          src={src}
-          chainID={chainID ?? 0}
-          contractAddress={address}
-          tokenID={parsedTokenID}
-        />
-      </SharedSlideUpMenu>
-
       <button
         className="nft"
         type="button"
-        onClick={() => setIsPreviewOpen(true)}
+        onClick={() => openPreview(NFT)}
+        style={style}
       >
         <NFTsImage width="168" height="168" alt={title} src={src} />
         <span className="title">
@@ -48,7 +38,6 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
         .nft {
           display: flex;
           flex-direction: column;
-          margin-bottom: 24px;
           position: relative;
           cursor: pointer;
         }
@@ -75,3 +64,5 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
     </>
   )
 }
+
+export default React.memo(NFTsListItem)

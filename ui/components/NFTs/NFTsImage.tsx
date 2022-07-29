@@ -29,8 +29,8 @@ export default function NFTsImage({
           width: ${width ?? "auto"};
           height: ${height ?? "auto"};
           object-fit: ${fit};
-          max-height: 100%;
-          max-width: 100%;
+          max-height: ${height ?? "100%"};
+          max-width: ${width ?? "100%"};
           border-radius: 8px;
           flex-grow: 1;
         }

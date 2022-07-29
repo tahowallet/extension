@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import { ETHEREUM, POLYGON } from "@tallyho/tally-background/constants"
+import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
 import { scanWebsite } from "../../utils/constants"
@@ -7,33 +8,35 @@ import { scanWebsite } from "../../utils/constants"
 function getPreviewLink({
   chainID,
   contractAddress,
-  tokenID,
+  tokenId,
 }: {
   chainID: number
   contractAddress: string
-  tokenID: number
+  tokenId: string
 }) {
+  const parsedTokenID = parseInt(tokenId, 16) // TODO: fix parsing token
   const previewURL = {
-    [POLYGON.chainID]: `/token/${contractAddress}?a=${tokenID}`,
-    [ETHEREUM.chainID]: `/nft/${contractAddress}/${tokenID}`,
+    [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
+    [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
   }
 
   return `${scanWebsite[chainID].url}${previewURL[chainID]}`
 }
 
 export default function NFTsSlideUpPreviewContent({
-  title,
-  src,
-  chainID,
-  contractAddress,
-  tokenID,
+  NFT,
 }: {
-  title: string
-  src: string
-  chainID: number
-  contractAddress: string
-  tokenID: number
+  NFT: NFTItem
 }): ReactElement {
+  const {
+    title,
+    media,
+    id: { tokenId },
+    chainID,
+    contract: { address: contractAddress },
+  } = NFT
+  const src = media[0].gateway ?? ""
+
   return (
     <>
       <header>
@@ -46,7 +49,7 @@ export default function NFTsSlideUpPreviewContent({
           onClick={() => {
             window
               .open(
-                getPreviewLink({ chainID, contractAddress, tokenID }),
+                getPreviewLink({ chainID, contractAddress, tokenId }),
                 "_blank"
               )
               ?.focus()
