@@ -23,6 +23,13 @@ export default function CommonAssetListItem(
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
 
+  // NB: non-base assets that don't have any token lists are considered
+  // untrusted. Reifying base assets clearly will improve this check down the
+  // road. Eventually, assets can be flagged as trusted by adding them to an
+  // "internal" token list that users can export and share.
+  const numTokenLists = assetAmount?.asset?.metadata?.tokenLists?.length ?? 0
+  const baseAsset = !("homeNetwork" in assetAmount?.asset)
+
   const contractAddress =
     "contractAddress" in assetAmount.asset
       ? assetAmount.asset.contractAddress
@@ -47,18 +54,20 @@ export default function CommonAssetListItem(
                 {assetAmount.localizedDecimalAmount}
               </span>
               <span>{assetAmount.asset.symbol}</span>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault()
-                  if (onUntrustedAssetWarningClick) {
-                    onUntrustedAssetWarningClick(assetAmount.asset)
-                  }
-                }}
-                className="untrusted_asset_icon"
-              >
-                Asset isn&apos;t trusted
-              </button>
+              {numTokenLists === 0 && !baseAsset && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    if (onUntrustedAssetWarningClick) {
+                      onUntrustedAssetWarningClick(assetAmount.asset)
+                    }
+                  }}
+                  className="untrusted_asset_icon"
+                >
+                  Asset isn&apos;t trusted
+                </button>
+              )}
             </div>
             {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
               <></>
