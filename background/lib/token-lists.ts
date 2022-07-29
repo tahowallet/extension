@@ -1,5 +1,6 @@
 import { TokenList } from "@uniswap/token-lists"
 
+import { memoize } from "lodash"
 import {
   FungibleAsset,
   SmartContractFungibleAsset,
@@ -145,6 +146,15 @@ export function mergeAssets<T extends FungibleAsset>(
   )
 }
 
+// The result of the `mergeAssets` is a pure function in the sense that the output depends
+// only on the function argument, which makes it a good candidate for memoization.
+// As for cache key generation we are using the total number of assets that were provided.
+// This is not 100% accurate, but given that we are dealing with token lists it seems to be
+// a safe bet. The chances are slim that 1 asset is added and 1 is removed in 1 minute.
+export const memoizedMergeAssets = memoize(mergeAssets, (...assetLists) => {
+  return assetLists.reduce((acc, curr) => acc + curr.length, 0)
+})
+
 /*
  * Return all tokens in the provided lists, de-duplicated and structured in our
  * types for easy manipulation, and sorted by the number of lists each appears
@@ -158,5 +168,5 @@ export function networkAssetsFromLists(
     tokenListToFungibleAssetsForNetwork(network, tokenListAndReference)
   )
 
-  return mergeAssets(...fungibleAssets)
+  return memoizedMergeAssets(...fungibleAssets)
 }

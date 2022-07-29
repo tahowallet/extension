@@ -1,0 +1,83 @@
+{
+  "assetInput": {
+    "error": {
+      "insufficientBalance": "Saldo insuficiente",
+      "invalidAmount": "Quantidade inválida"
+    },
+    "search": "Pesquisar por nome ou endereço",
+    "selectToken": "Selecionar token"
+  },
+  "overview": {
+    "addresses": "Endereços",
+    "assets": "Ativos",
+    "networks": "Redes",
+    "tableHeader": {
+      "asset": "Ativo",
+      "balance": "Saldo",
+      "price": "Preço"
+    },
+    "totalBalance": "Saldo total"
+  },
+  "passwordStrength": {
+    "average": "Média",
+    "hintDesc": "Para uma senha forte, considere uma combinação de caracteres minúsculos e maiúsculos, símbolos e números. As senhas devem ter mais de 8 caracteres.",
+    "strength": "Força",
+    "strong": "Forte",
+    "weak": "Fraca"
+  },
+  "popupEdition": "Community Edition",
+  "protocol": {
+    "compatibleChain": "Blockchain compatível com Ethereum",
+    "connected": "Conectado",
+    "l2": "Solução de escala L2",
+    "mainnet": "Rede principal"
+  },
+  "readOnlyNotice": "Modo somente leitura",
+  "settings": {
+    "bugReport": "Relatório de erro",
+    "exportLogs": {
+      "discordBtn": "Junte-se ao Discord",
+      "discordDesc": "Visite-nos em nosso canal Discord, e reporte seu erro lá. Certifique-se de incluir os logs.",
+      "discordTitle": "1. Junte-se ao #bug-reports no Discord",
+      "logBtn": "Exportar registros",
+      "logDesc": "Para entender melhor seu erro, precisamos que você exporte seus logs.",
+      "logTitle": "2. Exportar logs",
+      "title": "Relatório de erro"
+    },
+    "hideSmallAssetBalance": "Ocultar saldos de ativos em {{sign}}{{amount}}",
+    "joinBtn": "Participe e dê feedback",
+    "joinDesc": "Junte-se ao nosso Discord para nos dar feedback!",
+    "joinTitle": "Junte-se a nossa comunidade",
+    "mainMenu": "Definições",
+    "setAsDefault": "Usar Tally Ho como sua carteira padrão"
+  },
+  "swap": {
+    "error": {
+      "noApprovalTarget": "Tentativa de aprovação de transferência sem um alvo de aprovação.",
+      "noSellAsset": "Tentativa de aprovar a transferência sem um ativo de venda.",
+      "nonContractAsset": "Tentativa de aprovar a transferência de um ativo sem contrato."
+    },
+    "from": "Trocar a partir de:",
+    "getFinalQuote": "Obter cotação final",
+    "title": "Trocar Ativos",
+    "to": "Trocar para:",
+    "transactionSettings": {
+      "daoFee": "Taxa da DAO",
+      "estimatedFee": "Taxa estimada de rede",
+      "settings": "Definições de transação",
+      "slippageTolerance": "Tolerância de slippage",
+      "title": "Definições de transação"
+    }
+  },
+  "wallet": {
+    "assetAmount": "Ativo / Quantidade",
+    "receive": "Receber",
+    "receiveAddress": "Endereço de recebimento",
+    "secureSeed": "Primeiro, assegure sua frase de recuperação",
+    "send": "Enviar",
+    "sendAsset": "Enviar Ativo",
+    "sendButton": "Continuar",
+    "sendTo": "Enviar Para:",
+    "totalAccountBalance": "Saldo total da conta"
+  }
+}

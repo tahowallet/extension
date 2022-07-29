@@ -55,6 +55,7 @@
     "sinon": "^14.0.0",
     "siwe": "^1.1.0",
     "util": "^0.12.4",
+    "lodash": "^4.17.21",
     "webextension-polyfill": "^0.8.0"
   },
   "devDependencies": {

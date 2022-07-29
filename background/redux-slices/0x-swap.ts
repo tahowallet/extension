@@ -1,4 +1,9 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit"
+import {
+  AnyAction,
+  createSelector,
+  createSlice,
+  ThunkDispatch,
+} from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
@@ -14,6 +19,20 @@ import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
 import { EVMNetwork } from "../networks"
+import { setSnackbarMessage } from "./ui"
+
+// @TODO Use ajv validators in conjunction with these types
+type ZeroExErrorResponse = {
+  code: number
+  reason: string
+  validationErrors: ZeroExValidationError[]
+}
+
+type ZeroExValidationError = {
+  field: string
+  code: number
+  reason: string
+}
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -246,6 +265,29 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
   }
 )
 
+const parseAndNotifyOnZeroExApiError = (
+  error: unknown,
+  dispatch: ThunkDispatch<unknown, unknown, AnyAction>
+) => {
+  try {
+    if (typeof error === "object" && error !== null && "body" in error) {
+      const parsedBody = JSON.parse(
+        (error as { body: string }).body
+      ) as ZeroExErrorResponse
+      if (
+        // @TODO Extend this to handle more errors
+        parsedBody.validationErrors.find(
+          (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY"
+        )
+      ) {
+        dispatch(setSnackbarMessage("Price Impact Too High"))
+      }
+    }
+  } catch (e) {
+    logger.warn("0x Api Response Parsing Failed")
+  }
+}
+
 /**
  * This async thunk fetches an indicative RFQ-T price for a swap. The quote
  * request specifies the swap assets as well as one end of the swap, and the
@@ -266,46 +308,53 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
       takerAddress: tradeAddress,
     })
+    let apiData
 
-    const apiData = await fetchJson({
-      url: requestUrl.toString(),
-      headers: gatedHeaders,
-    })
+    try {
+      apiData = await fetchJson({
+        url: requestUrl.toString(),
+        headers: gatedHeaders,
+      })
 
-    if (!isValidSwapPriceResponse(apiData)) {
-      logger.warn(
-        "Swap price API call didn't validate, did the 0x API change?",
-        apiData,
-        isValidSwapQuoteResponse.errors
-      )
-
-      return undefined
-    }
-
-    const quote = apiData
-
-    let needsApproval = false
-    // If we aren't selling ETH, check whether we need an approval to swap
-    // TODO Handle other non-ETH base assets
-    if (quote.allowanceTarget !== ethers.constants.AddressZero) {
-      const assetContract = new ethers.Contract(
-        quote.sellTokenAddress,
-        ERC20_ABI,
-        signer
-      )
-
-      const existingAllowance: BigNumber =
-        await assetContract.callStatic.allowance(
-          await signer.getAddress(),
-          quote.allowanceTarget
+      if (!isValidSwapPriceResponse(apiData)) {
+        logger.warn(
+          "Swap price API call didn't validate, did the 0x API change?",
+          apiData,
+          isValidSwapQuoteResponse.errors
         )
 
-      needsApproval = existingAllowance.lt(quote.sellAmount)
+        return undefined
+      }
+
+      const quote = apiData
+
+      let needsApproval = false
+      // If we aren't selling ETH, check whether we need an approval to swap
+      // TODO Handle other non-ETH base assets
+      if (quote.allowanceTarget !== ethers.constants.AddressZero) {
+        const assetContract = new ethers.Contract(
+          quote.sellTokenAddress,
+          ERC20_ABI,
+          signer
+        )
+
+        const existingAllowance: BigNumber =
+          await assetContract.callStatic.allowance(
+            await signer.getAddress(),
+            quote.allowanceTarget
+          )
+
+        needsApproval = existingAllowance.lt(quote.sellAmount)
+      }
+
+      dispatch(setLatestQuoteRequest(quoteRequest))
+
+      return { quote, needsApproval }
+    } catch (error) {
+      logger.warn("Swap price API call threw an error!", apiData, error)
+      parseAndNotifyOnZeroExApiError(error, dispatch)
+      return undefined
     }
-
-    dispatch(setLatestQuoteRequest(quoteRequest))
-
-    return { quote, needsApproval }
   }
 )
 
