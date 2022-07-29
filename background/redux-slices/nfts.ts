@@ -41,7 +41,7 @@ export const { updateNFTs } = NFTsSlice.actions
 
 export default NFTsSlice.reducer
 
-async function fetchNFTs(address: string, currentNetwork: EVMNetwork) {
+async function fetchNFTsByNetwork(address: string, currentNetwork: EVMNetwork) {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
   const result = await (
     await fetch(
@@ -65,7 +65,7 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
     { dispatch }
   ) => {
     const { address, currentNetwork } = payload
-    const ownedNFTs = await fetchNFTs(address, currentNetwork)
+    const ownedNFTs = await fetchNFTsByNetwork(address, currentNetwork)
 
     await dispatch(
       NFTsSlice.actions.updateNFTs({
