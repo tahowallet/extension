@@ -7,7 +7,7 @@ import {
 } from "../../../tests/factories"
 import SigningService from "../index"
 
-describe.skip("Signing Service Unit", () => {
+describe("Signing Service Unit", () => {
   let signingService: SigningService
   const sandbox = sinon.createSandbox()
 
@@ -32,6 +32,7 @@ describe.skip("Signing Service Unit", () => {
       signingService = await createSigningService({
         ledgerService: Promise.resolve(ledgerService),
       })
+      await signingService.startService()
 
       await signingService.deriveAddress({
         type: "ledger",
@@ -51,6 +52,7 @@ describe.skip("Signing Service Unit", () => {
       signingService = await createSigningService({
         keyringService: Promise.resolve(keyringService),
       })
+      await signingService.startService()
 
       await signingService.deriveAddress({
         type: "keyring",
