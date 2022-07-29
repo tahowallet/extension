@@ -15,6 +15,12 @@ export default function NFTsOverview(): ReactElement {
   const allAddresses = useBackgroundSelector(getAllAddresses)
   const dispatch = useBackgroundDispatch()
 
+  const NFTItems = useMemo(() => {
+    return Object.values(NFTs.evm).flatMap((NFTsByChain) =>
+      Object.values(NFTsByChain).flatMap((item) => item)
+    )
+  }, [NFTs])
+
   useEffect(() => {
     allAddresses.forEach((address) =>
       allNetworks.forEach((network) =>
@@ -26,12 +32,6 @@ export default function NFTsOverview(): ReactElement {
     // every 30s or so we are updating balances which is causing rerendering loop
     // here with 'allAddresses' and 'allNetworks' in the deps table
   }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const NFTItems = useMemo(() => {
-    return Object.values(NFTs.evm).flatMap((NFTsByChain) =>
-      Object.values(NFTsByChain).flatMap((item) => item)
-    )
-  }, [NFTs])
 
   return (
     <div className="nft_overview">

@@ -27,7 +27,7 @@ function NFTsListItem({
         onClick={() => openPreview(NFT)}
         style={style}
       >
-        <NFTsImage width="168" height="168" alt={title} src={src} />
+        <NFTsImage width={168} height={168} alt={title} src={src} />
         <span className="title">
           <span>{title}</span>
           {/* TODO: add token id properly */}
