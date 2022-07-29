@@ -7,10 +7,13 @@ function NFTsListItem({
   style,
   openPreview,
 }: {
-  NFT: NFTItem
+  NFT?: NFTItem
   openPreview: (nft: NFTItem) => void
   style?: React.CSSProperties
 }): ReactElement {
+  // getting undefined sometimes, react-window renders second column even if ther is no item?
+  if (!NFT) return <></>
+
   const {
     title,
     media,

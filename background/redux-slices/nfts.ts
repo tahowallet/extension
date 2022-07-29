@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
+import { AddressOnNetwork } from "../accounts"
+import { normalizeEVMAddress } from "../lib/utils"
 
 export type NFTItem = {
   media: { gateway?: string }[]
@@ -29,15 +31,25 @@ const NFTsSlice = createSlice({
   initialState,
   reducers: {
     updateNFTs: (immerState, { payload: { address, NFTs, network } }) => {
-      const normalizedAddress = address
+      const normalizedAddress = normalizeEVMAddress(address)
       immerState.evm[network.chainID] ??= {}
       immerState.evm[network.chainID][normalizedAddress] ??= []
       immerState.evm[network.chainID][normalizedAddress] = NFTs
     },
+    deleteNFts: (
+      immerState,
+      { payload: { address } }: { payload: AddressOnNetwork }
+    ) => {
+      const normalizedAddress = normalizeEVMAddress(address)
+
+      Object.keys(immerState.evm).forEach((chainID) => {
+        delete immerState.evm[chainID][normalizedAddress]
+      })
+    },
   },
 })
 
-export const { updateNFTs } = NFTsSlice.actions
+export const { updateNFTs, deleteNFts } = NFTsSlice.actions
 
 export default NFTsSlice.reducer
 

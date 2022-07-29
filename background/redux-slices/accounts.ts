@@ -10,6 +10,7 @@ import {
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { SignerType } from "../services/signing"
+import { deleteNFts } from "./nfts"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -403,6 +404,7 @@ export const removeAccount = createBackgroundAsyncThunk(
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
 
     await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
+    await dispatch(deleteNFts(addressOnNetwork))
 
     await main.removeAccount(normalizedAddress, signerType)
   }
