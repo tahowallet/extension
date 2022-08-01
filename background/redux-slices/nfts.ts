@@ -43,15 +43,13 @@ export default NFTsSlice.reducer
 
 async function fetchNFTsByNetwork(address: string, currentNetwork: EVMNetwork) {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
-  const result = await (
-    await fetch(
-      `https://${
-        currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-      }.alchemyapi.io/nft/v2/${
-        process.env.ALCHEMY_KEY
-      }/getNFTs/?owner=${address}`
-    )
-  ).json()
+  const requestUrl = new URL(
+    `https://${
+      currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
+    }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
+  )
+  requestUrl.searchParams.set("owner", address)
+  const result = await (await fetch(requestUrl.toString())).json()
   return result.ownedNfts
 }
 
