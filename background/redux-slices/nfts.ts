@@ -49,6 +49,7 @@ async function fetchNFTsByNetwork(address: string, currentNetwork: EVMNetwork) {
     }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
   )
   requestUrl.searchParams.set("owner", address)
+  requestUrl.searchParams.set("filters[]", "SPAM")
   const result = await (await fetch(requestUrl.toString())).json()
   return result.ownedNfts
 }
