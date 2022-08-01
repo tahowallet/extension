@@ -5,7 +5,13 @@ import NFTsListItem from "./NFTsListItem"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
-function NFTsList({ NFTs }: { NFTs: NFTItem[] }): ReactElement {
+function NFTsList({
+  NFTs,
+  height = 538, // TODO: improve scroll, this number is full page NFT list height
+}: {
+  NFTs: NFTItem[]
+  height?: number
+}): ReactElement {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [currentNFTPreview, setCurrentNFTPreview] = useState<NFTItem | null>(
     null
@@ -24,15 +30,16 @@ function NFTsList({ NFTs }: { NFTs: NFTItem[] }): ReactElement {
     <>
       <List
         columnCount={2}
-        rowCount={NFTs.length / 2}
+        rowCount={Math.ceil(NFTs.length / 2)}
         rowHeight={() => 216}
         columnWidth={(index) => (index ? 168 : 184)}
-        height={554}
+        height={height}
         width={352}
+        itemData={NFTs}
       >
-        {({ columnIndex, rowIndex, style }) => (
+        {({ columnIndex, rowIndex, data, style }) => (
           <NFTsListItem
-            NFT={NFTs[rowIndex * 2 + columnIndex]}
+            NFT={data[rowIndex * 2 + columnIndex]}
             style={style}
             openPreview={openPreview}
           />

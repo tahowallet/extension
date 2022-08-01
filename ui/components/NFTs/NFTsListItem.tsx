@@ -36,6 +36,7 @@ function NFTsListItem({
           flex-direction: column;
           position: relative;
           cursor: pointer;
+          padding-top: 16px;
         }
         .nft:hover:after {
           content: "";
