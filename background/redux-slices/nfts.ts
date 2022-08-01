@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"
+import logger from "../lib/logger"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
+import { setSnackbarMessage } from "./ui"
 
 export type NFTItem = {
   media: { gateway?: string }[]
@@ -63,15 +65,20 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
     },
     { dispatch }
   ) => {
-    const { address, currentNetwork } = payload
-    const ownedNFTs = await fetchNFTsByNetwork(address, currentNetwork)
+    try {
+      const { address, currentNetwork } = payload
+      const ownedNFTs = await fetchNFTsByNetwork(address, currentNetwork)
 
-    await dispatch(
-      NFTsSlice.actions.updateNFTs({
-        address,
-        NFTs: ownedNFTs,
-        network: currentNetwork,
-      })
-    )
+      await dispatch(
+        NFTsSlice.actions.updateNFTs({
+          address,
+          NFTs: ownedNFTs,
+          network: currentNetwork,
+        })
+      )
+    } catch (error) {
+      logger.error("NFTs fetch failed:", error)
+      dispatch(setSnackbarMessage(`Couldn't load NFTs`))
+    }
   }
 )
