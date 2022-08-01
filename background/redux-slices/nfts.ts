@@ -30,11 +30,20 @@ const NFTsSlice = createSlice({
   name: "nfts",
   initialState,
   reducers: {
-    updateNFTs: (immerState, { payload: { address, NFTs, network } }) => {
-      const normalizedAddress = normalizeEVMAddress(address)
-      immerState.evm[network.chainID] ??= {}
-      immerState.evm[network.chainID][normalizedAddress] ??= []
-      immerState.evm[network.chainID][normalizedAddress] = NFTs
+    updateNFTs: (
+      immerState,
+      {
+        payload,
+      }: {
+        payload: { address: string; network: EVMNetwork; NFTs: NFTItem[] }[]
+      }
+    ) => {
+      payload.forEach(({ address, network, NFTs }) => {
+        const normalizedAddress = normalizeEVMAddress(address)
+        immerState.evm[network.chainID] ??= {}
+        immerState.evm[network.chainID][normalizedAddress] ??= []
+        immerState.evm[network.chainID][normalizedAddress] = NFTs
+      })
     },
     deleteNFts: (
       immerState,
@@ -53,12 +62,15 @@ export const { updateNFTs, deleteNFts } = NFTsSlice.actions
 
 export default NFTsSlice.reducer
 
-async function fetchNFTs(address: string, currentNetwork: EVMNetwork) {
+async function fetchNFTs(
+  address: string,
+  network: EVMNetwork
+): Promise<NFTItem[]> {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
   const result = await (
     await fetch(
       `https://${
-        currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
+        network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
       }.alchemyapi.io/nft/v2/${
         process.env.ALCHEMY_KEY
       }/getNFTs/?owner=${address}`
@@ -71,20 +83,30 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
   "nfts/fetchThenUpdateNFTsByNetwork",
   async (
     payload: {
-      address: string
-      currentNetwork: EVMNetwork
+      addresses: string[]
+      networks: EVMNetwork[]
     },
     { dispatch }
   ) => {
-    const { address, currentNetwork } = payload
-    const ownedNFTs = await fetchNFTs(address, currentNetwork)
+    const { addresses, networks } = payload
+    const fetchedNFTs = (
+      await Promise.all(
+        addresses.map(async (address) =>
+          Promise.all(
+            networks.map(async (network) => {
+              const NFTs = await fetchNFTs(address, network)
 
-    await dispatch(
-      NFTsSlice.actions.updateNFTs({
-        address,
-        NFTs: ownedNFTs,
-        network: currentNetwork,
-      })
-    )
+              return {
+                address,
+                network,
+                NFTs,
+              }
+            })
+          )
+        )
+      )
+    ).flat()
+
+    await dispatch(NFTsSlice.actions.updateNFTs(fetchedNFTs))
   }
 )

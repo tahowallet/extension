@@ -16,7 +16,12 @@ export default function NFTsWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    dispatch(fetchThenUpdateNFTsByNetwork({ address, currentNetwork }))
+    dispatch(
+      fetchThenUpdateNFTsByNetwork({
+        addresses: [address],
+        networks: [currentNetwork],
+      })
+    )
   }, [address, currentNetwork, dispatch])
 
   const currentOwnedNFTsList = useMemo(() => {
@@ -30,7 +35,7 @@ export default function NFTsWallet(): ReactElement {
   return (
     <>
       {currentOwnedNFTsList?.length ? (
-        <NFTsList NFTs={currentOwnedNFTsList} height={286} />
+        <NFTsList NFTs={currentOwnedNFTsList} height={296} />
       ) : (
         <NFTsEmpty />
       )}

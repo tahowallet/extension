@@ -22,13 +22,13 @@ export default function NFTsOverview(): ReactElement {
   }, [NFTs])
 
   useEffect(() => {
-    allAddresses.forEach((address) =>
-      allNetworks.forEach((network) =>
-        dispatch(
-          fetchThenUpdateNFTsByNetwork({ address, currentNetwork: network })
-        )
-      )
+    dispatch(
+      fetchThenUpdateNFTsByNetwork({
+        addresses: allAddresses,
+        networks: allNetworks,
+      })
     )
+
     // every 30s or so we are updating balances which is causing rerendering loop
     // here with 'allAddresses' and 'allNetworks' in the deps table
   }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
