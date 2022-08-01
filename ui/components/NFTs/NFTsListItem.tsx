@@ -14,14 +14,9 @@ function NFTsListItem({
   // getting undefined sometimes, react-window renders second column even if ther is no item?
   if (!NFT) return <></>
 
-  const {
-    title,
-    media,
-    id: { tokenId },
-  } = NFT
+  const { title, media } = NFT
   const src = media[0].gateway ?? ""
 
-  const parsedTokenID = parseInt(tokenId, 16)
   return (
     <>
       <button
@@ -33,8 +28,6 @@ function NFTsListItem({
         <NFTsImage width={168} height={168} alt={title} src={src} />
         <span className="title">
           <span>{title}</span>
-          {/* TODO: add token id properly */}
-          <span>#{parsedTokenID}</span>
         </span>
       </button>
       <style jsx>{`
