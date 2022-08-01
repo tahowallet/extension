@@ -1,8 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
+import logger from "../lib/logger"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
 import { AddressOnNetwork } from "../accounts"
 import { normalizeEVMAddress } from "../lib/utils"
+import { setSnackbarMessage } from "./ui"
 
 export type NFTItem = {
   media: { gateway?: string }[]
@@ -64,18 +66,18 @@ export default NFTsSlice.reducer
 
 async function fetchNFTs(
   address: string,
-  network: EVMNetwork
+  currentNetwork: EVMNetwork
 ): Promise<NFTItem[]> {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
-  const result = await (
-    await fetch(
-      `https://${
-        network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-      }.alchemyapi.io/nft/v2/${
-        process.env.ALCHEMY_KEY
-      }/getNFTs/?owner=${address}`
-    )
-  ).json()
+  const requestUrl = new URL(
+    `https://${
+      currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
+    }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
+  )
+  requestUrl.searchParams.set("owner", address)
+  requestUrl.searchParams.set("filters[]", "SPAM")
+  const result = await (await fetch(requestUrl.toString())).json()
+
   return result.ownedNfts
 }
 
@@ -88,25 +90,30 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
     },
     { dispatch }
   ) => {
-    const { addresses, networks } = payload
-    const fetchedNFTs = (
-      await Promise.all(
-        addresses.map(async (address) =>
-          Promise.all(
-            networks.map(async (network) => {
-              const NFTs = await fetchNFTs(address, network)
+    try {
+      const { addresses, networks } = payload
+      const fetchedNFTs = (
+        await Promise.all(
+          addresses.map(async (address) =>
+            Promise.all(
+              networks.map(async (network) => {
+                const NFTs = await fetchNFTs(address, network)
 
-              return {
-                address,
-                network,
-                NFTs,
-              }
-            })
+                return {
+                  address,
+                  network,
+                  NFTs,
+                }
+              })
+            )
           )
         )
-      )
-    ).flat()
+      ).flat()
 
-    await dispatch(NFTsSlice.actions.updateNFTs(fetchedNFTs))
+      await dispatch(NFTsSlice.actions.updateNFTs(fetchedNFTs))
+    } catch (error) {
+      logger.error("NFTs fetch failed:", error)
+      dispatch(setSnackbarMessage(`Couldn't load NFTs`))
+    }
   }
 )
