@@ -1,11 +1,10 @@
 import React, { ReactElement } from "react"
 
-export default function EmptyBowl(): ReactElement {
+export default function NFTsEmpty(): ReactElement {
   return (
     <div className="standard_width container">
       <img className="bowl_image" src="./images/empty_bowl@2x.png" alt="" />
-      <div className="title">Just an empty bowl</div>
-      <div className="text">You don&apos;t have an active deposit.</div>
+      <p>Looks rare, but there are no NFT to see here, why not get some?</p>
       <style jsx>
         {`
           .container {
@@ -17,13 +16,13 @@ export default function EmptyBowl(): ReactElement {
           }
           .bowl_image {
             width: 90px;
-          }
-          .title {
-            color: var(--trophy-gold);
-            font-size: 28px;
             margin-bottom: 10px;
           }
-          .text {
+          p {
+            width: 250px;
+            text-align: center;
+            line-height: 24px;
+            font-weight: 500;
             color: var(--green-40);
             font-size: 16px;
           }
