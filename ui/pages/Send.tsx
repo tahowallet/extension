@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
+  selectCurrentAccountSigner,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -27,6 +28,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -36,12 +38,15 @@ import {
   useBackgroundSelector,
 } from "../hooks"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
     location.state ?? currentAccount.network.baseAsset
   )
@@ -152,6 +157,7 @@ export default function Send(): ReactElement {
         <h1 className="header">
           <span className="icon_activity_send_medium" />
           <div className="title">{t("wallet.sendAsset")}</div>
+          <ReadOnlyNotice isLite />
         </h1>
         <div className="form">
           <div className="form_input">
@@ -204,6 +210,7 @@ export default function Send(): ReactElement {
               type="primary"
               size="large"
               isDisabled={
+                currentAccountSigner === ReadOnlyAccountSigner ||
                 Number(amount) === 0 ||
                 destinationAddress === undefined ||
                 hasError
@@ -227,7 +234,7 @@ export default function Send(): ReactElement {
             margin-right: 8px;
           }
           .title {
-            width: 113px;
+            flex-grow: 1;
             height: 32px;
             color: #ffffff;
             font-size: 22px;

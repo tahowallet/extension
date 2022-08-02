@@ -17,6 +17,7 @@
     "compatibleChain": "Ethereum-compatible blockchain",
     "connected": "Connected"
   },
+  "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
   "wallet": {
     "totalAccountBalance": "Total account balance",
