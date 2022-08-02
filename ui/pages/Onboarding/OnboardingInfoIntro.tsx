@@ -32,17 +32,6 @@ const steps = HIDE_TOKEN_FEATURES
       },
       {
         image: {
-          width: 244.22,
-          height: 247.24,
-          fileName: "illustration_onboarding_community_edition",
-          extraStyles: `margin-top: 21px;`,
-        },
-        title: "Test Responsibly",
-        body: `Tally Ho is a work in progress! This Community Edition includes limited features and may still have bugs.`,
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
           width: 267,
           height: 236.6,
           fileName: "illustration_onboarding_default",
