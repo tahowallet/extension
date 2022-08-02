@@ -1,4 +1,7 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
+
+const placeholderSrc = "./images/no_preview.svg"
 
 export default function NFTsImage({
   width,
@@ -7,30 +10,45 @@ export default function NFTsImage({
   src,
   fit = "cover",
 }: {
-  width?: string
-  height?: string
+  width?: number
+  height?: number
   alt: string
   src: string
   fit?: string
 }): ReactElement {
+  const [imageSrc, setImageSrc] = useState<string>(placeholderSrc)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const img = new Image()
+    img.src = src
+    img.onload = () => {
+      setImageSrc(src)
+      setIsLoading(false)
+    }
+    img.onerror = () => {
+      setImageSrc(placeholderSrc)
+      setIsLoading(false)
+    }
+  }, [src])
+
   return (
     <>
-      <img
-        alt={alt}
-        src={src}
-        onError={({ currentTarget }) => {
-          // if NFT is incognito let's display placeholder
-          currentTarget.onerror = null // eslint-disable-line no-param-reassign
-          currentTarget.src = "./images/no_preview.svg" // eslint-disable-line no-param-reassign
-        }}
-      />
+      <SharedSkeletonLoader
+        isLoaded={!isLoading}
+        width={width}
+        height={height}
+        borderRadius={8}
+      >
+        <img alt={alt} src={imageSrc} />
+      </SharedSkeletonLoader>
       <style jsx>{`
         img {
           width: ${width ?? "auto"};
           height: ${height ?? "auto"};
           object-fit: ${fit};
-          max-height: 100%;
-          max-width: 100%;
+          max-height: ${height ?? "100%"};
+          max-width: ${width ?? "100%"};
           border-radius: 8px;
           flex-grow: 1;
         }

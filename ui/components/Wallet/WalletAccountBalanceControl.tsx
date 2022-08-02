@@ -131,6 +131,7 @@ export default function WalletAccountBalanceControl(
 
         <SharedSkeletonLoader
           isLoaded={!shouldIndicateLoading}
+          height={24}
           width={180}
           customStyles="margin-bottom: 10px;"
         >

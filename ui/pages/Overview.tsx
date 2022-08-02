@@ -178,7 +178,6 @@ export default function Overview(): ReactElement {
           }
           .panel_switcher {
             width: 100%;
-            margin: 8px 0;
           }
         `}
       </style>

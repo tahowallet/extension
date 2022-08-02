@@ -96,7 +96,7 @@ export default function Earn(): ReactElement {
             <div className="your_deposit_heading_info">
               <div className="left">
                 <div className="label">Total deposits</div>
-                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale} height={24}>
                   <div className="amount">
                     ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
                   </div>
@@ -104,7 +104,7 @@ export default function Earn(): ReactElement {
               </div>
               <div className="right">
                 <div className="label">Total available rewards</div>
-                <SharedSkeletonLoader isLoaded={!isValutDataStale}>
+                <SharedSkeletonLoader isLoaded={!isValutDataStale} height={24}>
                   <div className="amount">{userPendingRewards} DOGGO</div>
                 </SharedSkeletonLoader>
               </div>

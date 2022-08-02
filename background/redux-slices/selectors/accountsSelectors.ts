@@ -441,10 +441,10 @@ export const selectCurrentAccountTotal = createSelector(
 )
 
 export const getAllAddresses = createSelector(
-  (state: RootState) => state.account.accountsData,
-  (accountsData) => [
+  (state: RootState) => state.account,
+  (account) => [
     ...new Set(
-      Object.values(accountsData.evm).flatMap((chainAddresses) =>
+      Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
         Object.keys(chainAddresses)
       )
     ),
@@ -457,9 +457,11 @@ export const getAddressCount = createSelector(
 )
 
 export const getAllNetworks = createSelector(
-  (state: RootState) => state.account.accountsData,
-  (accountsData) =>
-    Object.keys(accountsData.evm).map((chainID) => NETWORK_BY_CHAIN_ID[chainID])
+  (state: RootState) => state.account,
+  (account) =>
+    Object.keys(account.accountsData.evm).map(
+      (chainID) => NETWORK_BY_CHAIN_ID[chainID]
+    )
 )
 
 export const getNetworkCount = createSelector(
