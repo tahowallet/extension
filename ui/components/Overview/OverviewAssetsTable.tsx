@@ -87,6 +87,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         tr {
           height: 55px;
         }
+        thead tr {
+          height 32px;
+        }
         td,
         th {
           border-bottom: 1px solid var(--green-120);

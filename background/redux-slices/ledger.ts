@@ -8,7 +8,8 @@ export interface LedgerAccountState {
   path: string
   address: HexString | null
   fetchingAddress: boolean
-  balance: string | null
+  /** Balance by chainID */
+  balance: Record<string, string>
   fetchingBalance: boolean
 }
 
@@ -128,7 +129,7 @@ const ledgerSlice = createSlice({
         path,
         address: null,
         fetchingAddress: false,
-        balance: null,
+        balance: {},
         fetchingBalance: false,
       }
     },
@@ -175,14 +176,21 @@ const ledgerSlice = createSlice({
     resolveBalance: (
       immerState,
       {
-        payload: { deviceID, path, balance },
-      }: { payload: { deviceID: string; path: string; balance: string } }
+        payload: { deviceID, path, balance, network },
+      }: {
+        payload: {
+          deviceID: string
+          path: string
+          balance: string
+          network: EVMNetwork
+        }
+      }
     ) => {
       const device = immerState.devices[deviceID]
       if (!device) return
       const account = device.accounts[path]
       if (!account) return
-      if (account.balance === null) account.balance = balance
+      account.balance[network.chainID] ??= balance
     },
     setUsbDeviceCount: (
       immerState,
@@ -252,7 +260,9 @@ export const fetchBalance = createBackgroundAsyncThunk(
       { amount, asset: network.baseAsset },
       decimalDigits
     ).localizedDecimalAmount
-    dispatch(ledgerSlice.actions.resolveBalance({ deviceID, path, balance }))
+    dispatch(
+      ledgerSlice.actions.resolveBalance({ deviceID, path, balance, network })
+    )
   }
 )
 
