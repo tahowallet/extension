@@ -10,7 +10,6 @@ import {
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { SignerType } from "../services/signing"
-import { deleteNFts } from "./nfts"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -209,7 +208,7 @@ const accountSlice = createSlice({
     },
     deleteAccount: (
       immerState,
-      { payload: { address } }: { payload: AddressOnNetwork }
+      { payload: address }: { payload: HexString }
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
@@ -344,6 +343,7 @@ const accountSlice = createSlice({
 })
 
 export const {
+  deleteAccount,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -398,13 +398,10 @@ export const removeAccount = createBackgroundAsyncThunk(
       addressOnNetwork: AddressOnNetwork
       signerType?: SignerType
     },
-    { dispatch, extra: { main } }
+    { extra: { main } }
   ) => {
     const { addressOnNetwork, signerType } = payload
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
-
-    await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
-    await dispatch(deleteNFts(addressOnNetwork))
 
     await main.removeAccount(normalizedAddress, signerType)
   }

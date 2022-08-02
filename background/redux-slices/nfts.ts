@@ -2,9 +2,9 @@ import { createSlice } from "@reduxjs/toolkit"
 import logger from "../lib/logger"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
-import { AddressOnNetwork } from "../accounts"
 import { normalizeEVMAddress } from "../lib/utils"
 import { setSnackbarMessage } from "./ui"
+import { HexString } from "../types"
 
 export type NFTItem = {
   media: { gateway?: string }[]
@@ -47,10 +47,7 @@ const NFTsSlice = createSlice({
         immerState.evm[network.chainID][normalizedAddress] = NFTs
       })
     },
-    deleteNFts: (
-      immerState,
-      { payload: { address } }: { payload: AddressOnNetwork }
-    ) => {
+    deleteNFts: (immerState, { payload: address }: { payload: HexString }) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
       Object.keys(immerState.evm).forEach((chainID) => {
@@ -66,16 +63,17 @@ export default NFTsSlice.reducer
 
 async function fetchNFTs(
   address: string,
-  currentNetwork: EVMNetwork
+  network: EVMNetwork
 ): Promise<NFTItem[]> {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
   const requestUrl = new URL(
     `https://${
-      currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
+      network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
     }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
   )
   requestUrl.searchParams.set("owner", address)
   requestUrl.searchParams.set("filters[]", "SPAM")
+
   const result = await (await fetch(requestUrl.toString())).json()
 
   return result.ownedNfts
