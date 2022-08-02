@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"
+import logger from "../lib/logger"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
+import { setSnackbarMessage } from "./ui"
 
 export type NFTItem = {
   media: { gateway?: string }[]
@@ -41,17 +43,16 @@ export const { updateNFTs } = NFTsSlice.actions
 
 export default NFTsSlice.reducer
 
-async function fetchNFTs(address: string, currentNetwork: EVMNetwork) {
+async function fetchNFTsByNetwork(address: string, currentNetwork: EVMNetwork) {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
-  const result = await (
-    await fetch(
-      `https://${
-        currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-      }.alchemyapi.io/nft/v2/${
-        process.env.ALCHEMY_KEY
-      }/getNFTs/?owner=${address}`
-    )
-  ).json()
+  const requestUrl = new URL(
+    `https://${
+      currentNetwork.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
+    }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
+  )
+  requestUrl.searchParams.set("owner", address)
+  requestUrl.searchParams.set("filters[]", "SPAM")
+  const result = await (await fetch(requestUrl.toString())).json()
   return result.ownedNfts
 }
 
@@ -64,15 +65,20 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
     },
     { dispatch }
   ) => {
-    const { address, currentNetwork } = payload
-    const ownedNFTs = await fetchNFTs(address, currentNetwork)
+    try {
+      const { address, currentNetwork } = payload
+      const ownedNFTs = await fetchNFTsByNetwork(address, currentNetwork)
 
-    await dispatch(
-      NFTsSlice.actions.updateNFTs({
-        address,
-        NFTs: ownedNFTs,
-        network: currentNetwork,
-      })
-    )
+      await dispatch(
+        NFTsSlice.actions.updateNFTs({
+          address,
+          NFTs: ownedNFTs,
+          network: currentNetwork,
+        })
+      )
+    } catch (error) {
+      logger.error("NFTs fetch failed:", error)
+      dispatch(setSnackbarMessage(`Couldn't load NFTs`))
+    }
   }
 )
