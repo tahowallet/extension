@@ -14,7 +14,7 @@ function getPreviewLink({
   contractAddress: string
   tokenId: string
 }) {
-  const parsedTokenID = parseInt(tokenId, 16) // TODO: fix parsing token
+  const parsedTokenID = BigInt(tokenId).toString()
   const previewURL = {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,

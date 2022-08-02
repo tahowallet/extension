@@ -103,7 +103,7 @@ export default function Wallet(): ReactElement {
                       iconColor="var(--link)"
                       canBeClosed
                       id="nft_soon"
-                      customStyles="margin: 0 0 16px;"
+                      customStyles="margin: 8px 0;"
                     >
                       Coming soon: NFT price + sending
                     </SharedBanner>
