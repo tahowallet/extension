@@ -11,37 +11,7 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
-
-function ReadOnlyNotice(): ReactElement {
-  const { t } = useTranslation()
-  return (
-    <div className="notice_wrap">
-      <div className="icon_eye" />
-      {t("readOnlyNotice")}
-      <style jsx>{`
-        .notice_wrap {
-          width: 177px;
-          height: 40px;
-          background: rgba(238, 178, 24, 0.1);
-          border-radius: 2px;
-          margin: 6px 0 10px;
-          font-weight: 500;
-          font-size: 16px;
-          display: flex;
-          align-items: center;
-          border-left: solid 2px var(--attention);
-        }
-        .icon_eye {
-          background: url("./images/eye@2x.png");
-          background-size: cover;
-          width: 24px;
-          height: 24px;
-          margin: 0px 7px 0px 10px;
-        }
-      `}</style>
-    </div>
-  )
-}
+import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
 
 function BalanceReloader(): ReactElement {
   const dispatch = useDispatch()
@@ -165,9 +135,8 @@ export default function WalletAccountBalanceControl(
           width={180}
           customStyles="margin-bottom: 10px;"
         >
-          {currentAccountSigner === ReadOnlyAccountSigner ? (
-            <ReadOnlyNotice />
-          ) : (
+          <ReadOnlyNotice />
+          {currentAccountSigner !== ReadOnlyAccountSigner && (
             <>
               {hasSavedSeed ? (
                 <div className="send_receive_button_wrap">
