@@ -5,6 +5,7 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import selectNFTs from "@tallyho/tally-background/redux-slices/selectors/nftsSelectors"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NFTsList from "./NFTsList"
 import NFTsEmpty from "./NFTsEmpty"
@@ -28,7 +29,7 @@ export default function NFTsWallet(): ReactElement {
     return (
       NFTs &&
       NFTs.evm[currentNetwork.chainID] &&
-      NFTs.evm[currentNetwork.chainID][address]
+      NFTs.evm[currentNetwork.chainID][normalizeEVMAddress(address)]
     )
   }, [NFTs, currentNetwork.chainID, address])
 
