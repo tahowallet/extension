@@ -4,7 +4,10 @@ export default function NFTsEmpty(): ReactElement {
   return (
     <div className="standard_width container">
       <img className="bowl_image" src="./images/empty_bowl@2x.png" alt="" />
-      <p>Looks rare, but there are no NFT to see here, why not get some?</p>
+      <p>
+        Looks like you don&apos;t have any NFTs yet? Get some and view them
+        here!
+      </p>
       <style jsx>
         {`
           .container {
