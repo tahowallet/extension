@@ -32,6 +32,7 @@
     "l2": "L2 擴展方案",
     "mainnet": "以太坊主網"
   },
+  "readOnly": "唯讀",
   "readOnlyNotice": "唯讀模式",
   "settings": {
     "bugReport": "問題回報",

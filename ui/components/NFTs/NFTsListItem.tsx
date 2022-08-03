@@ -11,7 +11,7 @@ function NFTsListItem({
   openPreview: (nft: NFTItem) => void
   style?: React.CSSProperties
 }): ReactElement {
-  // getting undefined sometimes, react-window renders second column even if ther is no item?
+  // getting undefined sometimes, react-window renders second column even if there is no item?
   if (!NFT) return <></>
 
   const { title, media } = NFT
@@ -27,7 +27,7 @@ function NFTsListItem({
       >
         <NFTsImage width={168} height={168} alt={title} src={src} />
         <span className="title">
-          <span>{title}</span>
+          <span>{title || "No title"}</span>
         </span>
       </button>
       <style jsx>{`
