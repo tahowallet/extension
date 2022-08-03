@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from "react"
+import React, { ReactElement, useEffect, useMemo } from "react"
 import { fetchThenUpdateNFTsByNetwork } from "@tallyho/tally-background/redux-slices/nfts"
 import {
   getAllAddresses,
@@ -15,27 +15,35 @@ export default function NFTsOverview(): ReactElement {
   const allAddresses = useBackgroundSelector(getAllAddresses)
   const dispatch = useBackgroundDispatch()
 
-  useEffect(() => {
-    allAddresses.forEach((address) =>
-      allNetworks.forEach((network) =>
-        dispatch(
-          fetchThenUpdateNFTsByNetwork({ address, currentNetwork: network })
-        )
-      )
+  const NFTItems = useMemo(() => {
+    return Object.values(NFTs.evm).flatMap((NFTsByChain) =>
+      Object.values(NFTsByChain).flatMap((item) => item)
     )
-  }, [allAddresses, allNetworks, dispatch])
+  }, [NFTs])
 
-  const NFTItems = Object.values(NFTs.evm).flatMap((NFTsByChain) =>
-    Object.values(NFTsByChain).flatMap((item) => item)
-  )
+  useEffect(() => {
+    dispatch(
+      fetchThenUpdateNFTsByNetwork({
+        addresses: allAddresses,
+        networks: allNetworks,
+      })
+    )
+
+    // every 30s or so we are updating balances which is causing rerendering loop
+    // here with 'allAddresses' and 'allNetworks' in the deps table
+  }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="nft_overview">
-      {NFTItems.length ? <NFTsList NFTs={NFTItems} /> : <NFTsEmpty />}
+      {NFTItems.length ? (
+        <NFTsList NFTs={NFTItems} height={343} />
+      ) : (
+        <NFTsEmpty />
+      )}
       <style jsx>
         {`
           .nft_overview {
-            margin: 8px 16px;
+            margin: 0 16px;
           }
         `}
       </style>

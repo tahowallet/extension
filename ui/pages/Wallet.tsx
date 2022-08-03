@@ -11,6 +11,7 @@ import {
   HIDE_TOKEN_FEATURES,
   SUPPORT_NFTS,
 } from "@tallyho/tally-background/features"
+import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -80,7 +81,11 @@ export default function Wallet(): ReactElement {
             panelNumber={panelNumber}
             panelNames={panelNames}
           />
-          <div className="panel standard_width">
+          <div
+            className={classNames("panel standard_width", {
+              no_padding: SUPPORT_NFTS && panelNumber === 1,
+            })}
+          >
             {panelNumber === 0 && (
               <WalletAssetList
                 assetAmounts={assetAmounts}
@@ -98,7 +103,7 @@ export default function Wallet(): ReactElement {
                       iconColor="var(--link)"
                       canBeClosed
                       id="nft_soon"
-                      customStyles="margin: 0 0 16px;"
+                      customStyles="margin: 8px 0;"
                     >
                       Coming soon: NFT price + sending
                     </SharedBanner>
@@ -146,6 +151,9 @@ export default function Wallet(): ReactElement {
           }
           .panel::-webkit-scrollbar {
             display: none;
+          }
+          .no_padding {
+            padding-top: 0;
           }
         `}
       </style>

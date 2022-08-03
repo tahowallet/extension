@@ -1,56 +1,42 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsImage from "./NFTsImage"
-import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
-export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
-  const {
-    title,
-    media,
-    id: { tokenId },
-    chainID,
-    contract: { address },
-  } = NFT
+function NFTsListItem({
+  NFT,
+  style,
+  openPreview,
+}: {
+  NFT?: NFTItem
+  openPreview: (nft: NFTItem) => void
+  style?: React.CSSProperties
+}): ReactElement {
+  // getting undefined sometimes, react-window renders second column even if ther is no item?
+  if (!NFT) return <></>
+
+  const { title, media } = NFT
   const src = media[0].gateway ?? ""
-
-  const parsedTokenID = parseInt(tokenId, 16)
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   return (
     <>
-      <SharedSlideUpMenu
-        isOpen={isPreviewOpen}
-        close={() => setIsPreviewOpen(false)}
-      >
-        <NFTsSlideUpPreviewContent
-          title={title}
-          src={src}
-          chainID={chainID ?? 0}
-          contractAddress={address}
-          tokenID={parsedTokenID}
-        />
-      </SharedSlideUpMenu>
-
       <button
         className="nft"
         type="button"
-        onClick={() => setIsPreviewOpen(true)}
+        onClick={() => openPreview(NFT)}
+        style={style}
       >
-        <NFTsImage width="168" height="168" alt={title} src={src} />
+        <NFTsImage width={168} height={168} alt={title} src={src} />
         <span className="title">
           <span>{title}</span>
-          {/* TODO: add token id properly */}
-          <span>#{parsedTokenID}</span>
         </span>
       </button>
       <style jsx>{`
         .nft {
           display: flex;
           flex-direction: column;
-          margin-bottom: 24px;
           position: relative;
           cursor: pointer;
+          padding-top: 16px;
         }
         .nft:hover:after {
           content: "";
@@ -75,3 +61,5 @@ export default function NFTsListItem({ NFT }: { NFT: NFTItem }): ReactElement {
     </>
   )
 }
+
+export default React.memo(NFTsListItem)

@@ -37,6 +37,7 @@ import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
+  deleteAccount,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -119,6 +120,7 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
+import { deleteNFts } from "./redux-slices/nfts"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -483,6 +485,8 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signerType?: SignerType
   ): Promise<void> {
+    this.store.dispatch(deleteAccount(address))
+    this.store.dispatch(deleteNFts(address))
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signerType)
   }

@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from "react"
+import React, { ReactElement, useEffect, useMemo } from "react"
 import { fetchThenUpdateNFTsByNetwork } from "@tallyho/tally-background/redux-slices/nfts"
 import {
   selectCurrentAccount,
@@ -16,18 +16,26 @@ export default function NFTsWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    dispatch(fetchThenUpdateNFTsByNetwork({ address, currentNetwork }))
+    dispatch(
+      fetchThenUpdateNFTsByNetwork({
+        addresses: [address],
+        networks: [currentNetwork],
+      })
+    )
   }, [address, currentNetwork, dispatch])
 
-  const currentOwnedNFTsList =
-    NFTs &&
-    NFTs.evm[currentNetwork.chainID] &&
-    NFTs.evm[currentNetwork.chainID][address]
+  const currentOwnedNFTsList = useMemo(() => {
+    return (
+      NFTs &&
+      NFTs.evm[currentNetwork.chainID] &&
+      NFTs.evm[currentNetwork.chainID][address]
+    )
+  }, [NFTs, currentNetwork.chainID, address])
 
   return (
     <>
       {currentOwnedNFTsList?.length ? (
-        <NFTsList NFTs={currentOwnedNFTsList} />
+        <NFTsList NFTs={currentOwnedNFTsList} height={296} />
       ) : (
         <NFTsEmpty />
       )}
