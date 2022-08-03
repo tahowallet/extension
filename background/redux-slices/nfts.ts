@@ -7,6 +7,7 @@ import { setSnackbarMessage } from "./ui"
 import { HexString } from "../types"
 
 export type NFTItem = {
+  error?: string
   media: { gateway?: string }[]
   id: {
     tokenId: string
@@ -75,8 +76,11 @@ async function fetchNFTs(
   requestUrl.searchParams.set("filters[]", "SPAM")
 
   const result = await (await fetch(requestUrl.toString())).json()
+  const filteredNFTs = result.ownedNfts.filter(
+    (nft: NFTItem) => typeof nft.error === "undefined"
+  )
 
-  return result.ownedNfts
+  return filteredNFTs
 }
 
 export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
