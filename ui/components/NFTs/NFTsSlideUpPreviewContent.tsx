@@ -40,7 +40,7 @@ export default function NFTsSlideUpPreviewContent({
   return (
     <>
       <header>
-        <h1>{title}</h1>
+        <h1>{title || "No title"}</h1>
         <SharedIcon
           icon="icons/s/new-tab.svg"
           width={16}
