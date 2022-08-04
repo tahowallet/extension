@@ -37,7 +37,7 @@ export const transactionPropertiesForUI = [
   "annotation.toAssetAmount.asset.symbol",
 ]
 
-export function filterTransActionPropsForUI<T>(transactionData: {
+export function filterTransactionPropsForUI<T>(transactionData: {
   transaction: T
   forAccounts: string[]
 }): { transaction: T; forAccounts: string[] } {

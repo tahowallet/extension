@@ -121,7 +121,7 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { filterTransActionPropsForUI } from "./utils/view-model-transformer"
+import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
 import { EnrichedEVMTransaction } from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -702,7 +702,7 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
       this.store.dispatch(
         activityEncountered(
-          filterTransActionPropsForUI<AnyEVMTransaction>(transactionInfo)
+          filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
         )
       )
     })
@@ -775,7 +775,7 @@ export default class Main extends BaseService<never> {
         )
         this.store.dispatch(
           activityEncountered(
-            filterTransActionPropsForUI<EnrichedEVMTransaction>(transactionData)
+            filterTransactionPropsForUI<EnrichedEVMTransaction>(transactionData)
           )
         )
       }
