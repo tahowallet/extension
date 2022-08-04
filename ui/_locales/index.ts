@@ -13,7 +13,7 @@ const SUPPORT_LANGUAGES: { [id: string]: ILang } = {
     title: "English",
   },
   zh_tw: {
-    title: "中文(正體)",
+    title: "中文(繁體)",
   },
   pt_br: {
     title: "Português",
