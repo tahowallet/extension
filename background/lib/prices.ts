@@ -48,47 +48,52 @@ export async function getPrices(
 
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
 
-  const json = await fetchJson(url)
-  // TODO fix loss of precision from json
-  // TODO: TESTME
+  try {
+    const json = await fetchJson(url)
+    // TODO fix loss of precision from json
+    // TODO: TESTME
 
-  if (!isValidCoinGeckoPriceResponse(json)) {
-    logger.warn(
-      "CoinGecko price response didn't validate, did the API change?",
-      json,
-      isValidCoinGeckoPriceResponse.errors
-    )
+    if (!isValidCoinGeckoPriceResponse(json)) {
+      logger.warn(
+        "CoinGecko price response didn't validate, did the API change?",
+        json,
+        isValidCoinGeckoPriceResponse.errors
+      )
 
+      return []
+    }
+
+    const resolutionTime = Date.now()
+    return assets.flatMap((asset) => {
+      const simpleCoinPrices = json[asset.metadata.coinGeckoID]
+
+      return vsCurrencies
+        .map<PricePoint | undefined>((currency) => {
+          const symbol = currency.symbol.toLowerCase()
+          const coinPrice = simpleCoinPrices?.[symbol]
+
+          if (coinPrice) {
+            // Scale amounts to the asset's decimals; if the asset is not fungible,
+            // assume 0 decimals, i.e. that this is a unit price.
+            const assetPrecision = "decimals" in asset ? asset.decimals : 0
+
+            return {
+              pair: [currency, asset],
+              amounts: [
+                toFixedPoint(coinPrice, currency.decimals),
+                10n ** BigInt(assetPrecision),
+              ],
+              time: resolutionTime,
+            }
+          }
+          return undefined
+        })
+        .filter((p): p is PricePoint => p !== undefined)
+    })
+  } catch (e) {
+    logger.warn("Coingecko price API throw an error: ", e)
     return []
   }
-
-  const resolutionTime = Date.now()
-  return assets.flatMap((asset) => {
-    const simpleCoinPrices = json[asset.metadata.coinGeckoID]
-
-    return vsCurrencies
-      .map<PricePoint | undefined>((currency) => {
-        const symbol = currency.symbol.toLowerCase()
-        const coinPrice = simpleCoinPrices?.[symbol]
-
-        if (coinPrice) {
-          // Scale amounts to the asset's decimals; if the asset is not fungible,
-          // assume 0 decimals, i.e. that this is a unit price.
-          const assetPrecision = "decimals" in asset ? asset.decimals : 0
-
-          return {
-            pair: [currency, asset],
-            amounts: [
-              toFixedPoint(coinPrice, currency.decimals),
-              10n ** BigInt(assetPrecision),
-            ],
-            time: resolutionTime,
-          }
-        }
-        return undefined
-      })
-      .filter((p): p is PricePoint => p !== undefined)
-  })
 }
 
 /*

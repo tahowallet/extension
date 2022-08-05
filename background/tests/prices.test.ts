@@ -178,14 +178,10 @@ describe("lib/prices.ts", () => {
       const fetchJsonResponse = {
         ethereum: {
           usd: 3836.53,
-          eur: 3297.36,
-          cny: 24487,
           last_updated_at: 1634672101,
         },
         bitcoin: {
           usd: 63909,
-          eur: 54928,
-          cny: 407908,
           last_updated_at: 1634672139,
         },
       }
@@ -200,31 +196,11 @@ describe("lib/prices.ts", () => {
           time: dateNow,
         },
         {
-          amounts: [549280000000000n, 100000000n],
-          pair: [{ decimals: 10, name: "euro", symbol: "EUR" }, BTC],
-          time: dateNow,
-        },
-        {
-          amounts: [4079080000000000n, 100000000n],
-          pair: [{ decimals: 10, name: "renminbi", symbol: "CNY" }, BTC],
-          time: dateNow,
-        },
-        {
           amounts: [38365300000000n, 1000000000000000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
             ETH,
           ],
-          time: dateNow,
-        },
-        {
-          amounts: [32973600000000n, 1000000000000000000n],
-          pair: [{ decimals: 10, name: "euro", symbol: "EUR" }, ETH],
-          time: dateNow,
-        },
-        {
-          amounts: [244870000000000n, 1000000000000000000n],
-          pair: [{ decimals: 10, name: "renminbi", symbol: "CNY" }, ETH],
           time: dateNow,
         },
       ]

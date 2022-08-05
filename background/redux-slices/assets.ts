@@ -17,7 +17,6 @@ import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 
 type SingleAssetState = AnyAsset & {
-  prices: PricePoint[]
   recentPrices: {
     [assetSymbol: string]: PricePoint
   }
@@ -26,58 +25,6 @@ type SingleAssetState = AnyAsset & {
 export type AssetsState = SingleAssetState[]
 
 export const initialState = [] as AssetsState
-
-function prunePrices(prices: PricePoint[]): PricePoint[] {
-  const pricesToday = prices.filter(
-    (pp) => pp.time > (Date.now() - 24 * 60 * 60 * 1000) / 1000 // 24 hours ago in UNIXTime
-  )
-  const pricesToSort = pricesToday.map<[number, PricePoint]>((pp) => [
-    pp.time,
-    pp,
-  ])
-  pricesToSort.sort()
-  return pricesToSort.map(([, pp]) => pp)
-}
-
-/*
- * Reduce a list of asset prices to an object mapping symbols to price.
- *
- * The reducer returns the latest price for each symbol, priced against the
- * base asset. We make a best effort to de-duplicate assets, kicking the can on
- * whether we need to try to canonicalize asset IDs... a deep and dark hole, in
- * my experience.
- *
- * A list of prices for ETH might reduce to {
- *   USD: {...},
- *   CNY: {...},
- *   EUR: {...},
- * }
- *
- * @param baseAsset - the asset against which prices are desired
- * @param prices - a list of price points. One of the assets in each points pair
- *                 should be the base asset.
- */
-function recentPricesFromArray(
-  baseAsset: AnyAsset,
-  prices: PricePoint[]
-): SingleAssetState["recentPrices"] {
-  const pricesToSort = prices.map((pp) => [pp.time, pp] as const)
-  pricesToSort.sort()
-  return pricesToSort
-    .map((r) => r[1])
-    .reduce((agg: SingleAssetState["recentPrices"], pp: PricePoint) => {
-      const baseAssetIndex = findClosestAssetIndex(baseAsset, pp.pair)
-      if (baseAssetIndex !== null) {
-        const priceAsset = pp.pair[baseAssetIndex === 0 ? 1 : 0]
-        const newAgg = {
-          ...agg,
-        }
-        newAgg[priceAsset.symbol] = pp
-        return newAgg
-      }
-      return agg
-    }, {})
-}
 
 const assetsSlice = createSlice({
   name: "assets",
@@ -100,9 +47,7 @@ const assetsSlice = createSlice({
       // merge in new assets
       newAssets.forEach((asset) => {
         if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = [
-            { ...asset, prices: [], recentPrices: {} },
-          ]
+          mappedAssets[asset.symbol] = [{ ...asset, recentPrices: {} }]
         } else {
           const duplicates = mappedAssets[asset.symbol].filter(
             (a) =>
@@ -119,7 +64,6 @@ const assetsSlice = createSlice({
           if (duplicates.length === 0) {
             mappedAssets[asset.symbol].push({
               ...asset,
-              prices: [],
               recentPrices: {},
             })
           }
@@ -132,20 +76,18 @@ const assetsSlice = createSlice({
       immerState,
       { payload: pricePoint }: { payload: PricePoint }
     ) => {
-      pricePoint.pair.forEach((pricedAsset) => {
-        // find the asset metadata
+      const fiatCurrency = pricePoint.pair.find(
+        (asset) => !isSmartContractFungibleAsset(asset)
+      )
+      const pricedAsset = pricePoint.pair.find((asset) =>
+        isSmartContractFungibleAsset(asset)
+      )
+      if (fiatCurrency && pricedAsset) {
         const index = findClosestAssetIndex(pricedAsset, immerState)
         if (typeof index !== "undefined") {
-          // append to longer-running prices
-          const prices = prunePrices([...immerState[index].prices, pricePoint])
-          immerState[index].prices = prices
-          // update recent prices for easy checks by symbol
-          immerState[index].recentPrices = recentPricesFromArray(
-            pricedAsset,
-            prices
-          )
+          immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
         }
-      })
+      }
     },
   },
 })
