@@ -15,6 +15,7 @@ import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
+import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 
 type SingleAssetState = AnyAsset & {
   recentPrices: {
@@ -76,11 +77,11 @@ const assetsSlice = createSlice({
       immerState,
       { payload: pricePoint }: { payload: PricePoint }
     ) => {
-      const fiatCurrency = pricePoint.pair.find(
-        (asset) => !isSmartContractFungibleAsset(asset)
+      const fiatCurrency = pricePoint.pair.find((asset) =>
+        FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
       )
-      const pricedAsset = pricePoint.pair.find((asset) =>
-        isSmartContractFungibleAsset(asset)
+      const [pricedAsset] = pricePoint.pair.filter(
+        (asset) => asset !== fiatCurrency
       )
       if (fiatCurrency && pricedAsset) {
         const index = findClosestAssetIndex(pricedAsset, immerState)

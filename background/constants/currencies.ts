@@ -10,6 +10,9 @@ export const USD: FiatCurrency = {
 }
 
 export const FIAT_CURRENCIES = [USD]
+export const FIAT_CURRENCIES_SYMBOL = FIAT_CURRENCIES.map(
+  (currency) => currency.symbol
+)
 
 export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   name: "Ether",
