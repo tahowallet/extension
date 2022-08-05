@@ -3,7 +3,9 @@ import { pick } from "lodash"
 export const transactionPropertiesForUI = [
   "hash",
   "from",
+  "fromTruncated",
   "to",
+  "toTruncated",
   "infoRows",
   "asset.symbol",
   "asset.decimals",
