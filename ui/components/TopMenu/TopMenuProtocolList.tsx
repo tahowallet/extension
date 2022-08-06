@@ -14,7 +14,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
-import i18n from "../../_locales/i18n"
+import { i18n } from "../../_locales/i18n"
 
 const listItemInfo = [
   {
