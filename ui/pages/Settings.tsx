@@ -12,7 +12,7 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
-import { setLanguage } from "../_locales/i18n"
+import { getLanguage, setLanguage } from "../_locales/i18n"
 
 function SettingRow(props: {
   title: string
@@ -78,7 +78,7 @@ export default function Settings(): ReactElement {
   }
 
   const langOptions = getAvalableLanguages()
-  const langIdx = getLanguageIndex()
+  const langIdx = getLanguageIndex(getLanguage())
   const languages = {
     title: t("settings.language"),
     component: () => (

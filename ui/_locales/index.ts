@@ -20,8 +20,6 @@ const SUPPORT_LANGUAGES: { [id: string]: ILang } = {
   },
 }
 
-const getLanguage = (): string => DEFAULT_LANGUAGE
-
 interface ILangOptions {
   value: string
   label: string
@@ -33,8 +31,8 @@ const getAvalableLanguages = (): ILangOptions[] =>
     label: SUPPORT_LANGUAGES[lang].title,
   }))
 
-const getLanguageIndex = (): number =>
-  Object.keys(SUPPORT_LANGUAGES).indexOf(getLanguage())
+const getLanguageIndex = (lang: string): number =>
+  Object.keys(SUPPORT_LANGUAGES).indexOf(lang)
 
 const resources = {
   en: {
@@ -51,7 +49,6 @@ const resources = {
 export {
   DEFAULT_LANGUAGE,
   SUPPORT_LANGUAGES,
-  getLanguage,
   getLanguageIndex,
   getAvalableLanguages,
   resources,
