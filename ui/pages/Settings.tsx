@@ -10,7 +10,9 @@ import {
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
-import { getLanguage } from "../_locales"
+import SharedSelect from "../components/Shared/SharedSelect"
+import { getLanguageIndex, getAvalableLanguages } from "../_locales"
+import { setLanguage } from "../_locales/i18n"
 
 function SettingRow(props: {
   title: string
@@ -75,20 +77,17 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const langOptions = getAvalableLanguages()
+  const langIdx = getLanguageIndex()
   const languages = {
     title: t("settings.language"),
     component: () => (
-      <div className="action_name">
-        {getLanguage()}
-        <style jsx>{`
-          .action_name {
-            color: var(--green-20);
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 24px;
-          }
-        `}</style>
-      </div>
+      <SharedSelect
+        width={194}
+        options={langOptions}
+        onChange={setLanguage}
+        defaultIndex={langIdx}
+      />
     ),
   }
 
@@ -131,7 +130,7 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const generalList = process.env.DEFAULT_LANGUAGE
+  const generalList = process.env.SUPPORT_MULTIPLE_LANGUAGES
     ? [hideSmallAssetBalance, setAsDefault, languages, bugReport]
     : [hideSmallAssetBalance, setAsDefault, bugReport]
   const settings = {

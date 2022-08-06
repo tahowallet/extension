@@ -2,7 +2,7 @@ import EN from "./en/messages.json"
 import zhHant from "./zh_Hant/messages.json"
 import ptBR from "./pt_BR/messages.json"
 
-const DEFAULT_LANGUAGE: string = process.env.DEFAULT_LANGUAGE || "en"
+const DEFAULT_LANGUAGE = "en"
 
 interface ILang {
   title: string
@@ -20,7 +20,21 @@ const SUPPORT_LANGUAGES: { [id: string]: ILang } = {
   },
 }
 
-const getLanguage = (): string => SUPPORT_LANGUAGES[DEFAULT_LANGUAGE]?.title
+const getLanguage = (): string => DEFAULT_LANGUAGE
+
+interface ILangOptions {
+  value: string
+  label: string
+}
+
+const getAvalableLanguages = (): ILangOptions[] =>
+  Object.keys(SUPPORT_LANGUAGES).map((lang) => ({
+    value: lang,
+    label: SUPPORT_LANGUAGES[lang].title,
+  }))
+
+const getLanguageIndex = (): number =>
+  Object.keys(SUPPORT_LANGUAGES).indexOf(getLanguage())
 
 const resources = {
   en: {
@@ -34,6 +48,13 @@ const resources = {
   },
 }
 
-export { DEFAULT_LANGUAGE, getLanguage, resources }
+export {
+  DEFAULT_LANGUAGE,
+  SUPPORT_LANGUAGES,
+  getLanguage,
+  getLanguageIndex,
+  getAvalableLanguages,
+  resources,
+}
 
 export default resources

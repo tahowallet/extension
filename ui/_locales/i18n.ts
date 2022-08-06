@@ -1,12 +1,12 @@
 import i18n from "i18next"
 import { initReactI18next } from "react-i18next"
-import { DEFAULT_LANGUAGE, resources } from "./index"
+import { DEFAULT_LANGUAGE, getLanguage, resources } from "./index"
 
 i18n
   .use(initReactI18next) // passes i18n down to react-i18next
   .init({
     resources,
-    lng: DEFAULT_LANGUAGE,
+    lng: getLanguage(),
     fallbackLng: DEFAULT_LANGUAGE,
     debug: false,
     interpolation: {
@@ -16,5 +16,9 @@ i18n
       bindI18n: "languageChanged",
     },
   })
+
+const setLanguage = (lang: string) => i18n.changeLanguage(lang)
+
+export { i18n, setLanguage }
 
 export default i18n
