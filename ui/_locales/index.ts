@@ -2,8 +2,6 @@ import EN from "./en/messages.json"
 import zhHant from "./zh_Hant/messages.json"
 import ptBR from "./pt_BR/messages.json"
 
-const DEFAULT_LANGUAGE = "en"
-
 interface ILang {
   title: string
 }
@@ -46,12 +44,6 @@ const resources = {
   },
 }
 
-export {
-  DEFAULT_LANGUAGE,
-  SUPPORT_LANGUAGES,
-  getLanguageIndex,
-  getAvalableLanguages,
-  resources,
-}
+export { SUPPORT_LANGUAGES, getLanguageIndex, getAvalableLanguages, resources }
 
 export default resources
