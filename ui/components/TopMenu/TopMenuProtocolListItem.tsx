@@ -7,8 +7,6 @@ import { EVMNetwork } from "@tallyho/tally-background/networks"
 
 interface Props {
   info: string
-  width: number
-  height: number
   network: EVMNetwork
   isSelected: boolean
   onSelect: () => void
@@ -16,7 +14,7 @@ interface Props {
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
   const { t } = useTranslation()
-  const { width, height, info, isSelected, network, onSelect } = props
+  const { info, isSelected, network, onSelect } = props
 
   const dispatch = useDispatch()
 
@@ -64,8 +62,8 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
               .replaceAll(" ", "")
               .toLowerCase()}@2x.png");
             background-size: cover;
-            width: ${width}px;
-            height: ${height}px;
+            width: 24px;
+            height: 24px;
           }
           .icon_wrap {
             width: 40px;
