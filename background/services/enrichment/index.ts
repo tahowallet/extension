@@ -109,6 +109,10 @@ export default class EnrichmentService extends BaseService<Events> {
     )
   }
 
+  /**
+   * Resolve an annotation for a partial transaction request, or a pending
+   * or mined transaction.
+   */
   async resolveTransactionAnnotation(
     network: EVMNetwork,
     transaction:
@@ -118,17 +122,20 @@ export default class EnrichmentService extends BaseService<Events> {
           blockHash?: string
         }),
     desiredDecimals: number
-  ): Promise<TransactionAnnotation | undefined> {
-    let txAnnotation: TransactionAnnotation | undefined
+  ): Promise<TransactionAnnotation> {
+    // By default, annotate all requests as contract interactions
+    let txAnnotation: TransactionAnnotation = {
+      blockTimestamp: undefined,
+      timestamp: Date.now(),
+      type: "contract-interaction",
+    }
 
-    const resolvedTime = Date.now()
     let block: AnyEVMBlock | undefined
-
-    let hasInsufficientFunds = false
 
     const { gasLimit, maxFeePerGas, maxPriorityFeePerGas, blockHash } =
       transaction
 
+    // If this is a transaction request...
     if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
       const gasFee = gasLimit * maxFeePerGas
       const {
@@ -137,19 +144,27 @@ export default class EnrichmentService extends BaseService<Events> {
         address: transaction.from,
         network,
       })
-      hasInsufficientFunds =
-        gasFee + (transaction.value ?? 0n) > baseAssetBalance
+      // ... and if the wallet doesn't have enough base asset to cover gas,
+      // push a warning
+      if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
+        txAnnotation.warnings ??= []
+        txAnnotation.warnings.push("insufficient-funds")
+      }
     }
 
+    // If the transaction has been mined, get the block and set the timestamp
     if (blockHash) {
       block = await this.chainService.getBlockData(network, blockHash)
+      txAnnotation = {
+        ...txAnnotation,
+        blockTimestamp: block?.timestamp,
+      }
     }
 
+    // If the tx is missing a recipient, its a contract deployment.
     if (typeof transaction.to === "undefined") {
-      // A missing recipient means a contract deployment.
       txAnnotation = {
-        timestamp: resolvedTime,
-        blockTimestamp: block?.timestamp,
+        ...txAnnotation,
         type: "contract-deployment",
       }
     } else if (
@@ -157,6 +172,9 @@ export default class EnrichmentService extends BaseService<Events> {
       transaction.input === "0x" ||
       typeof transaction.input === "undefined"
     ) {
+      // If the tx has no data, it's either a simple ETH send, or it's relying
+      // on a contract that's `payable` to execute code
+
       const { name: toName } = (await this.nameService.lookUpName({
         address: transaction.to,
         network,
@@ -171,8 +189,7 @@ export default class EnrichmentService extends BaseService<Events> {
       // over the 21k required to send ETH is a more complex contract interaction
       if (typeof transaction.value !== "undefined") {
         txAnnotation = {
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
+          ...txAnnotation,
           type: "asset-transfer",
           senderAddress: transaction.from,
           recipientName: toName,
@@ -188,9 +205,7 @@ export default class EnrichmentService extends BaseService<Events> {
       } else {
         // Fall back on a standard contract interaction.
         txAnnotation = {
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
-          type: "contract-interaction",
+          ...txAnnotation,
           contractName: toName,
         }
       }
@@ -221,8 +236,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
         // We have an ERC-20 transfer
         txAnnotation = {
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
+          ...txAnnotation,
           type: "asset-transfer",
           transactionLogoURL,
           senderAddress: erc20Tx.args.from ?? transaction.from,
@@ -251,8 +265,7 @@ export default class EnrichmentService extends BaseService<Events> {
         })) ?? { name: undefined }
 
         txAnnotation = {
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
+          ...txAnnotation,
           type: "asset-approval",
           transactionLogoURL,
           spenderAddress: erc20Tx.args.spender,
@@ -273,8 +286,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
         // Fall back on a standard contract interaction.
         txAnnotation = {
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
+          ...txAnnotation,
           type: "contract-interaction",
           // Include the logo URL if we resolve it even if the interaction is
           // non-specific; the UI can choose to use it or not, but if we know the
@@ -291,18 +303,13 @@ export default class EnrichmentService extends BaseService<Events> {
         transaction.logs,
         network,
         desiredDecimals,
-        resolvedTime,
+        txAnnotation.timestamp,
         block
       )
 
       if (subannotations.length > 0) {
         txAnnotation.subannotations = subannotations
       }
-    }
-
-    if (hasInsufficientFunds) {
-      txAnnotation.warnings ??= []
-      txAnnotation.warnings.push("insufficient-funds")
     }
 
     return txAnnotation
@@ -459,7 +466,7 @@ export default class EnrichmentService extends BaseService<Events> {
     transaction: AnyEVMTransaction,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransaction> {
-    const enrichedTx = {
+    return {
       ...transaction,
       annotation: await this.resolveTransactionAnnotation(
         transaction.network,
@@ -467,7 +474,5 @@ export default class EnrichmentService extends BaseService<Events> {
         desiredDecimals
       ),
     }
-
-    return enrichedTx
   }
 }
