@@ -60,7 +60,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             margin-left: 8px;
           }
           .icon {
-            background: url("./images/${network.name
+            background: url("./images/networks/${network.name
               .replaceAll(" ", "")
               .toLowerCase()}@2x.png");
             background-size: cover;
