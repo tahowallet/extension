@@ -72,10 +72,8 @@
   },
   "wallet": {
     "assetAmount": "資產 / 數目",
-    "estimatedFee": "預估的網路費用",
     "receive": "接收",
     "receiveAddress": "接收地址",
-    "receiveAddressDesc": "只傳送以太坊主網相容資產到此地址。",
     "secureSeed": "請先將您的回復種子存放到安全的地方",
     "send": "傳送",
     "sendAsset": "傳送資產",
