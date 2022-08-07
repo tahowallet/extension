@@ -85,6 +85,13 @@ export default function AssetWarningSlideUp(
           display: flex;
           align-items: flex-end;
         }
+        ul.asset_details > li.asset_name > div {
+          max-width: 80%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          -o-text-overflow: ellipsis;
+        }
       `}</style>
       <SharedBanner icon="notif-attention" iconColor="var(--attention)">
         <span className="warning_text">Asset has not been verified yet!</span>
@@ -92,7 +99,7 @@ export default function AssetWarningSlideUp(
         <span>Only transact with assets you trust.</span>
       </SharedBanner>
       <ul className="asset_details">
-        <li>
+        <li className="asset_name">
           Name
           <div className="right">
             <strong>{`${asset?.name} (${asset?.symbol})`}</strong>
