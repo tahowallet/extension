@@ -58,7 +58,10 @@ export default function TopMenuProtocolSwitcher({
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 3px;
+            margin-right: 5px;
+          }
+          button:hover .icon_wrap {
+            background-color: var(--green-80) !important;
           }
         `}
       </style>
