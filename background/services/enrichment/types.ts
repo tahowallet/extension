@@ -1,5 +1,6 @@
 import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -129,4 +130,34 @@ export type SignTypedDataAnnotation =
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
   annotation: SignTypedDataAnnotation
+}
+
+export type AddressOnNetworkAnnotation = {
+  /**
+   * When this address/network annotation was resolved. Including this means
+   * consumers can more easily upsert annotations.
+   */
+  timestamp: UNIXTime
+  /**
+   * The latest nonce associated with the address / network.
+   */
+  nonce: bigint
+  /**
+   * Whether code was found at this address at the time of annotation
+   * resolution.
+   */
+  code: boolean
+  /**
+   * A somewhat recent account balance. Accuracy here is less important, as
+   * it will mostly be used to warn on sending to 0-balanace addresses.
+   */
+  balance: AccountBalance
+  /**
+   * A reverse-resolved name for this address, if one has been found.
+   */
+  nameOnNetwork?: NameOnNetwork
+}
+
+export type EnrichedAddressOnNetwork = AddressOnNetwork & {
+  annotation: AddressOnNetworkAnnotation
 }
