@@ -53,6 +53,12 @@ export const selectBaseAsset = createSelector(
   (baseAsset) => baseAsset
 )
 
+export const selectETHAddressLookupCache = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.ETHAddressLookupCache,
+  (cache) => cache
+)
+
 export const selectTransactionMainCurrencyPricePoint = createSelector(
   selectBaseAsset, // Base asset for transaction
   getAssetsState,
