@@ -77,6 +77,7 @@ import {
   rejectTransactionSignature,
   transactionSigned,
   clearCustomGas,
+  setETHAddressType,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -628,6 +629,16 @@ export default class Main extends BaseService<never> {
             })
           )
         }
+      }
+    )
+
+    transactionConstructionSliceEmitter.on(
+      "lookupETHAddressType",
+      async (address: string) => {
+        const isContractAddress =
+          await this.enrichmentService.checkIsEthereumContractAddress(address)
+
+        this.store.dispatch(setETHAddressType([address, isContractAddress]))
       }
     )
 
