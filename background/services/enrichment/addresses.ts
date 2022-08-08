@@ -3,12 +3,12 @@ import { AddressOnNetwork } from "../../accounts"
 import ChainService from "../chain"
 import NameService from "../name"
 
-import { AddressOnNetworkAnnotation } from "./types"
+import { AddressOnNetworkAnnotation, EnrichedAddressOnNetwork } from "./types"
 
 // TODO look up whether contracts are verified on EtherScan
 // TODO ABIs
 
-export default async function resolveAddressAnnotation(
+export async function resolveAddressAnnotation(
   chainService: ChainService,
   nameService: NameService,
   addressOnNetwork: AddressOnNetwork
@@ -28,5 +28,20 @@ export default async function resolveAddressAnnotation(
     nonce: BigInt(nonce),
     code: codeHex !== "0x",
     timestamp: Date.now(),
+  }
+}
+
+export async function enrichAddressOnNetwork(
+  chainService: ChainService,
+  nameService: NameService,
+  addressOnNetwork: AddressOnNetwork
+): Promise<EnrichedAddressOnNetwork> {
+  return {
+    ...addressOnNetwork,
+    annotation: await resolveAddressAnnotation(
+      chainService,
+      nameService,
+      addressOnNetwork
+    ),
   }
 }

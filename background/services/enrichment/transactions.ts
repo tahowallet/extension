@@ -21,6 +21,7 @@ import {
   getDistinctRecipentAddressesFromERC20Logs,
   getERC20LogsForAddresses,
 } from "./utils"
+import { enrichAddressOnNetwork } from "./addresses"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
@@ -51,21 +52,24 @@ async function annotationsFromLogs(
     accountAddresses
   )
   // Look up transfer log names, then flatten to an address -> name map.
-  const namesByAddress = Object.fromEntries(
+  const annotationsByAddress = Object.fromEntries(
     (
       await Promise.allSettled(
         getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
           async (address) =>
             [
               normalizeEVMAddress(address),
-              (await nameService.lookUpName({ address, network }))?.name,
+              await enrichAddressOnNetwork(chainService, nameService, {
+                address,
+                network,
+              }),
             ] as const
         )
       )
     )
       .filter(isFulfilledPromise)
       .map(({ value }) => value)
-      .filter(([, name]) => isDefined(name))
+      .filter(([, annotation]) => isDefined(annotation))
   )
 
   const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
@@ -81,10 +85,10 @@ async function annotationsFromLogs(
         return []
       }
 
-      // Try to find a resolved name for the recipient; we should probably
-      // do this for the sender as well, but one thing at a time.
-      const recipientName =
-        namesByAddress[normalizeEVMAddress(recipientAddress)]
+      // Try to find a resolved annotation for the recipient and sender
+      const recipient =
+        annotationsByAddress[normalizeEVMAddress(recipientAddress)]
+      const sender = annotationsByAddress[normalizeEVMAddress(senderAddress)]
 
       return [
         {
@@ -96,9 +100,8 @@ async function annotationsFromLogs(
             },
             desiredDecimals
           ),
-          senderAddress,
-          recipientAddress,
-          recipientName,
+          sender,
+          recipient,
           timestamp: resolvedTime,
           blockTimestamp: block?.timestamp,
         },
@@ -131,6 +134,10 @@ export default async function resolveTransactionAnnotation(
     blockTimestamp: undefined,
     timestamp: Date.now(),
     type: "contract-interaction",
+    contractInfo: await enrichAddressOnNetwork(chainService, nameService, {
+      address: transaction.from,
+      network,
+    }),
   }
 
   let block: AnyEVMBlock | undefined
@@ -178,10 +185,16 @@ export default async function resolveTransactionAnnotation(
     // If the tx has no data, it's either a simple ETH send, or it's relying
     // on a contract that's `payable` to execute code
 
-    const { name: toName } = (await nameService.lookUpName({
-      address: transaction.to,
-      network,
-    })) ?? { name: undefined }
+    const [recipient, sender] = await Promise.all([
+      enrichAddressOnNetwork(chainService, nameService, {
+        address: transaction.to,
+        network,
+      }),
+      enrichAddressOnNetwork(chainService, nameService, {
+        address: transaction.from,
+        network,
+      }),
+    ])
 
     // This is _almost certainly_ not a contract interaction, move on. Note that
     // a simple ETH send to a contract address can still effectively be a
@@ -194,9 +207,8 @@ export default async function resolveTransactionAnnotation(
       txAnnotation = {
         ...txAnnotation,
         type: "asset-transfer",
-        senderAddress: transaction.from,
-        recipientName: toName,
-        recipientAddress: transaction.to,
+        sender,
+        recipient,
         assetAmount: enrichAssetAmountWithDecimalValues(
           {
             asset: network.baseAsset,
@@ -204,12 +216,6 @@ export default async function resolveTransactionAnnotation(
           },
           desiredDecimals
         ),
-      }
-    } else {
-      // Fall back on a standard contract interaction.
-      txAnnotation = {
-        ...txAnnotation,
-        contractName: toName,
       }
     }
   } else {
@@ -232,19 +238,24 @@ export default async function resolveTransactionAnnotation(
       erc20Tx &&
       (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
     ) {
-      const { name: toName } = (await nameService.lookUpName({
-        address: erc20Tx.args.to,
-        network,
-      })) ?? { name: undefined }
+      const [sender, recipient] = await Promise.all([
+        enrichAddressOnNetwork(chainService, nameService, {
+          address: erc20Tx.args.from ?? transaction.from,
+          network,
+        }),
+        enrichAddressOnNetwork(chainService, nameService, {
+          address: erc20Tx.args.to,
+          network,
+        }),
+      ])
 
       // We have an ERC-20 transfer
       txAnnotation = {
         ...txAnnotation,
         type: "asset-transfer",
         transactionLogoURL,
-        senderAddress: erc20Tx.args.from ?? transaction.from,
-        recipientAddress: erc20Tx.args.to,
-        recipientName: toName,
+        sender,
+        recipient,
         assetAmount: enrichAssetAmountWithDecimalValues(
           {
             asset: matchingFungibleAsset,
@@ -258,17 +269,16 @@ export default async function resolveTransactionAnnotation(
         txAnnotation.warnings = ["send-to-token"]
       }
     } else if (matchingFungibleAsset && erc20Tx && erc20Tx.name === "approve") {
-      const { name: spenderName } = (await nameService.lookUpName({
+      const spender = await enrichAddressOnNetwork(chainService, nameService, {
         address: erc20Tx.args.spender,
         network,
-      })) ?? { name: undefined }
+      })
 
       txAnnotation = {
         ...txAnnotation,
         type: "asset-approval",
         transactionLogoURL,
-        spenderAddress: erc20Tx.args.spender,
-        spenderName,
+        spender,
         assetAmount: enrichAssetAmountWithDecimalValues(
           {
             asset: matchingFungibleAsset,
@@ -278,20 +288,13 @@ export default async function resolveTransactionAnnotation(
         ),
       }
     } else {
-      const { name: toName } = (await nameService.lookUpName({
-        address: transaction.to,
-        network,
-      })) ?? { name: undefined }
-
       // Fall back on a standard contract interaction.
       txAnnotation = {
         ...txAnnotation,
-        type: "contract-interaction",
         // Include the logo URL if we resolve it even if the interaction is
         // non-specific; the UI can choose to use it or not, but if we know the
         // address has an associated logo it's worth passing on.
         transactionLogoURL,
-        contractName: toName,
       }
     }
   }
