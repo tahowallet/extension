@@ -1,0 +1,29 @@
+{
+  "overview": {
+    "addresses": "Адреса",
+    "assets": "Активы",
+    "tableHeader": {
+      "asset": "Актив",
+      "balance": "Баланс"
+    }
+  },
+  "passwordStrength": {
+    "average": "Средний"
+  },
+  "popupEdition": "Community Edition",
+  "settings": {
+    "bugReport": "Сообщить об ошибке",
+    "exportLogs": {
+      "title": "Сообщить об ошибке"
+    },
+    "hideSmallAssetBalance": ""
+  },
+  "swap": {
+    "transactionSettings": {
+      "estimatedFee": "Примерная комиссия сети"
+    }
+  },
+  "wallet": {
+    "assetAmount": "Актив / Количество"
+  }
+}
