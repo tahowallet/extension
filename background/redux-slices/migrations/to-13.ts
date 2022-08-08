@@ -25,7 +25,7 @@ export default (state: Record<string, unknown>): ActivitiesEntityState => {
       // Note: we are using entities in this slice, which stores all the keys of for the entities under the
       // ids array by design. So it's safe to use this array to iterate through the entities object, because
       // that's how the entities code itself works.
-      typedState.activities[address][networkID].ids.forEach(
+      typedState.activities[address][networkID].ids?.forEach(
         (transactionHash) => {
           const originalTx =
             typedState.activities[address][networkID].entities[transactionHash]
