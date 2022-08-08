@@ -2,11 +2,11 @@ import EN from "./en/messages.json"
 import zhHant from "./zh_Hant/messages.json"
 import ptBR from "./pt_BR/messages.json"
 
-interface ILang {
+type Lang = {
   title: string
 }
 
-const SUPPORT_LANGUAGES: { [id: string]: ILang } = {
+const SUPPORT_LANGUAGES: { [id: string]: Lang } = {
   en: {
     title: "English",
   },
@@ -18,12 +18,12 @@ const SUPPORT_LANGUAGES: { [id: string]: ILang } = {
   },
 }
 
-interface ILangOptions {
+type LangOptions = {
   value: string
   label: string
 }
 
-const getAvalableLanguages = (): ILangOptions[] =>
+const getAvalableLanguages = (): LangOptions[] =>
   Object.keys(SUPPORT_LANGUAGES).map((lang) => ({
     value: lang,
     label: SUPPORT_LANGUAGES[lang].title,
