@@ -19,6 +19,7 @@ import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
 import { ETHEREUM } from "../../constants"
 
 import resolveTransactionAnnotation from "./transactions"
+import { enrichAddressOnNetwork } from "./addresses"
 
 export * from "./types"
 
@@ -29,6 +30,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   enrichedEVMTransactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
   enrichedSignTypedDataRequest: EnrichedSignTypedDataRequest
+  enrichedETHAddressTypeLookup: boolean
 }
 
 /**
@@ -89,6 +91,16 @@ export default class EnrichmentService extends BaseService<Events> {
         })
       }
     )
+  }
+
+  async checkIsEthereumContractAddress(address: string): Promise<boolean> {
+    const addressDetails = await enrichAddressOnNetwork(
+      this.chainService,
+      this.nameService,
+      { address, network: ETHEREUM }
+    )
+
+    return addressDetails.annotation.hasCode
   }
 
   async enrichTransactionSignature(
