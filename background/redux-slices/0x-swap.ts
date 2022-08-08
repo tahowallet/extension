@@ -133,7 +133,8 @@ const get0xApiBase = (network: EVMNetwork) => {
   // Use gated features if there is an API key available in the build.
   const prefix =
     typeof process.env.ZEROX_API_KEY !== "undefined" &&
-    process.env.ZEROX_API_KEY.trim() !== ""
+    process.env.ZEROX_API_KEY.trim() !== "" &&
+    network.chainID === ETHEREUM.chainID
       ? "gated."
       : ""
 
