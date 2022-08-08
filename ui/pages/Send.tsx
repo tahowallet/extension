@@ -29,6 +29,11 @@ import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-backgrou
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { selectETHAddressLookupCache } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  checkIsEthereumContractAddress,
+  clearETHAddressLookupCache,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -39,6 +44,7 @@ import {
 } from "../hooks"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
@@ -148,6 +154,35 @@ export default function Send(): ReactElement {
     setDestinationAddress(value?.address)
   )
 
+  const contractLookupCache = useBackgroundSelector(selectETHAddressLookupCache)
+
+  const isLoadingAddressDetails =
+    currentAccount.network.family === "EVM" &&
+    !!destinationAddress &&
+    typeof contractLookupCache[destinationAddress] === "undefined"
+
+  useEffect(() => {
+    if (
+      destinationAddress &&
+      currentAccount.network.family === "EVM" &&
+      !contractLookupCache[destinationAddress]
+    ) {
+      dispatch(checkIsEthereumContractAddress(destinationAddress))
+    }
+  }, [
+    dispatch,
+    contractLookupCache,
+    currentAccount.network.family,
+    destinationAddress,
+    hasError,
+  ])
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearETHAddressLookupCache())
+    }
+  }, [dispatch])
+
   return (
     <>
       <div className="standard_width">
@@ -205,6 +240,21 @@ export default function Send(): ReactElement {
               <></>
             )}
           </div>
+          {destinationAddress && contractLookupCache[destinationAddress] && (
+            <div className="token_warning">
+              <div style={{ margin: "0 7.5px" }}>
+                <SharedIcon
+                  icon="icons/m/lock.svg"
+                  width={32}
+                  color="var(--hunter-green)"
+                />
+              </div>
+              <p>
+                This is a token address, sending assets will result in loss of
+                funds.
+              </p>
+            </div>
+          )}
           <div className="send_footer standard_width_padded">
             <SharedButton
               type="primary"
@@ -213,11 +263,13 @@ export default function Send(): ReactElement {
                 currentAccountSigner === ReadOnlyAccountSigner ||
                 Number(amount) === 0 ||
                 destinationAddress === undefined ||
-                hasError
+                hasError ||
+                (!!destinationAddress &&
+                  contractLookupCache[destinationAddress])
               }
               onClick={sendTransactionRequest}
               isFormSubmit
-              isLoading={isSendingTransactionRequest}
+              isLoading={isSendingTransactionRequest || isLoadingAddressDetails}
             >
               {t("wallet.sendButton")}
             </SharedButton>
@@ -226,6 +278,18 @@ export default function Send(): ReactElement {
       </div>
       <style jsx>
         {`
+          .token_warning {
+            background: var(--attention);
+            color: var(--hunter-green);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            padding: 10px 5px;
+          }
+          .token_warning p{
+            margin 0;
+          }
           .icon_activity_send_medium {
             background: url("./images/activity_send_medium@2x.png");
             background-size: 24px 24px;
