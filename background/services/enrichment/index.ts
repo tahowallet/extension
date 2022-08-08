@@ -1,3 +1,4 @@
+import { isAddress } from "ethers/lib/utils"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { SmartContractFungibleAsset } from "../../assets"
@@ -94,6 +95,8 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   async checkIsEthereumContractAddress(address: string): Promise<boolean> {
+    if (!isAddress(address)) return false
+
     const addressDetails = await enrichAddressOnNetwork(
       this.chainService,
       this.nameService,
