@@ -204,6 +204,13 @@ export default async function resolveTransactionAnnotation(
     // TODO We can do more here by checking how much gas was spent. Anything
     // over the 21k required to send ETH is a more complex contract interaction
     if (typeof transaction.value !== "undefined") {
+      // Warn if we're sending ETH to a contract. This is normal if you're
+      // funding a multisig or exchange, but it's good to double check
+      if (recipient.annotation.code) {
+        txAnnotation.warnings ??= []
+        txAnnotation.warnings.push("send-to-contract")
+      }
+
       txAnnotation = {
         ...txAnnotation,
         type: "asset-transfer",
@@ -266,14 +273,26 @@ export default async function resolveTransactionAnnotation(
       }
       // Warn if we're sending the token to its own contract
       if (sameEVMAddress(erc20Tx.args.to, transaction.to)) {
-        txAnnotation.warnings = ["send-to-token"]
+        txAnnotation.warnings ??= []
+        txAnnotation.warnings.push("send-to-token")
+      }
+      // Warn if we're sending the token to a contract. This is normal if
+      // you're funding a multisig or exchange, but it's good to double check
+      if (recipient.annotation.code) {
+        txAnnotation.warnings ??= []
+        txAnnotation.warnings.push("send-to-contract")
       }
     } else if (matchingFungibleAsset && erc20Tx && erc20Tx.name === "approve") {
       const spender = await enrichAddressOnNetwork(chainService, nameService, {
         address: erc20Tx.args.spender,
         network,
       })
-
+      // Warn if we're approving spending to a likely EOA. Note this will also
+      // sweep up CREATE2 contracts that haven't yet been deployed
+      if (!spender.annotation.code) {
+        txAnnotation.warnings ??= []
+        txAnnotation.warnings.push("approve-eoa")
+      }
       txAnnotation = {
         ...txAnnotation,
         type: "asset-approval",
