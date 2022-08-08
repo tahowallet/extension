@@ -249,10 +249,7 @@ export default function Send(): ReactElement {
                   color="var(--hunter-green)"
                 />
               </div>
-              <p>
-                This is a token address, sending assets will result in loss of
-                funds.
-              </p>
+              <p>{t("wallet.sendToContractWarning")}</p>
             </div>
           )}
           <div className="send_footer standard_width_padded">

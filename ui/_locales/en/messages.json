@@ -29,7 +29,8 @@
     "assetAmount": "Asset / Amount",
     "sendTo": "Send To:",
     "sendButton": "Continue",
-    "receiveAddress": "Receive address"
+    "receiveAddress": "Receive address",
+    "sendToContractWarning": "This is a token address, sending assets will result in loss of funds."
   },
   "swap": {
     "title": "Swap Assets",
