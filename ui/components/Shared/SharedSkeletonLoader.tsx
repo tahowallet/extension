@@ -20,7 +20,7 @@ export default function SharedSkeletonLoader(props: {
         {`
           .skeleton {
             width: ${width ? `${width}px` : "100%"};
-            height: ${height}px;
+            height: ${height ? `${height}px` : "100%"};;
             background-color: var(--hunter-green);
             border-radius: ${borderRadius}px;
             animation: pulse 1.1s infinite;
@@ -43,7 +43,6 @@ export default function SharedSkeletonLoader(props: {
 }
 
 SharedSkeletonLoader.defaultProps = {
-  height: 24,
   borderRadius: 8,
   isLoaded: false,
   customStyles: "",

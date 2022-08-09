@@ -17,6 +17,7 @@
     "compatibleChain": "Ethereum-compatible blockchain",
     "connected": "Connected"
   },
+  "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
   "wallet": {
     "totalAccountBalance": "Total account balance",
@@ -59,6 +60,7 @@
     "mainMenu": "Settings",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Tally Ho as your default wallet",
+    "language": "Language",
     "bugReport": "Bug report",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",

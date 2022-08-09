@@ -31,12 +31,13 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { SignedEVMTransaction } from "./networks"
+import { AnyEVMTransaction, SignedEVMTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
+  deleteAccount,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -119,6 +120,9 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
+import { deleteNFts } from "./redux-slices/nfts"
+import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
+import { EnrichedEVMTransaction } from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -483,6 +487,8 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signerType?: SignerType
   ): Promise<void> {
+    this.store.dispatch(deleteAccount(address))
+    this.store.dispatch(deleteNFts(address))
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signerType)
   }
@@ -694,7 +700,11 @@ export default class Main extends BaseService<never> {
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
-      this.store.dispatch(activityEncountered(transactionInfo))
+      this.store.dispatch(
+        activityEncountered(
+          filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
+        )
+      )
     })
   }
 
@@ -763,7 +773,11 @@ export default class Main extends BaseService<never> {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
-        this.store.dispatch(activityEncountered(transactionData))
+        this.store.dispatch(
+          activityEncountered(
+            filterTransactionPropsForUI<EnrichedEVMTransaction>(transactionData)
+          )
+        )
       }
     )
   }

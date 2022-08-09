@@ -69,6 +69,7 @@ export default function SignDataDetailPanel(): ReactElement {
           <SharedSkeletonLoader
             isLoaded={!!typedDataRequest}
             customStyles="margin: 10px 0;"
+            height={24}
             width={280}
           >
             {!!typedDataRequest && (
@@ -79,6 +80,7 @@ export default function SignDataDetailPanel(): ReactElement {
           <SharedSkeletonLoader
             isLoaded={!!typedDataRequest}
             customStyles="margin: 10px 0;"
+            height={24}
             width={280}
           >
             {!!typedDataRequest && (

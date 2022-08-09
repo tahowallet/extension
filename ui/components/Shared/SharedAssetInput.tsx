@@ -13,6 +13,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -20,6 +21,7 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
+import { useBackgroundSelector } from "../../hooks"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -326,6 +328,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAssetSelect,
     onAmountChange,
   } = props
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
@@ -351,6 +354,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     [onAssetSelect]
   )
+
+  const isMaxButtonVisible =
+    showMaxButton &&
+    selectedAssetAndAmount?.asset.symbol !== currentNetwork.baseAsset.symbol
 
   const getErrorMessage = (givenAmount: string): string | undefined => {
     if (
@@ -420,7 +427,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           <span className="available">
             Balance: {selectedAssetAndAmount.localizedDecimalAmount}
           </span>
-          {showMaxButton ? (
+          {isMaxButtonVisible ? (
             <button type="button" className="max" onClick={setMaxBalance}>
               Max
             </button>

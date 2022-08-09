@@ -208,7 +208,7 @@ const accountSlice = createSlice({
     },
     deleteAccount: (
       immerState,
-      { payload: { address } }: { payload: AddressOnNetwork }
+      { payload: address }: { payload: HexString }
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
@@ -343,6 +343,7 @@ const accountSlice = createSlice({
 })
 
 export const {
+  deleteAccount,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -397,12 +398,10 @@ export const removeAccount = createBackgroundAsyncThunk(
       addressOnNetwork: AddressOnNetwork
       signerType?: SignerType
     },
-    { dispatch, extra: { main } }
+    { extra: { main } }
   ) => {
     const { addressOnNetwork, signerType } = payload
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
-
-    await dispatch(accountSlice.actions.deleteAccount(addressOnNetwork))
 
     await main.removeAccount(normalizedAddress, signerType)
   }

@@ -23,6 +23,7 @@ import SignTransactionInfoProvider from "../components/SignTransaction/SignTrans
 import SignTransactionPanelSwitcher from "../components/SignTransaction/SignTransactionPanelSwitcher"
 import SignTransactionPanelCombined from "../components/SignTransaction/SignTransactionPanelCombined"
 import Signing from "../components/Signing"
+import SignTransactionLoader from "../components/SignTransaction/SignTransactionLoader"
 
 export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -50,8 +51,7 @@ export default function SignTransaction(): ReactElement {
   const isLocked = useIsSignerLocked(accountSigner)
 
   if (accountSigner === null || transactionDetails === undefined) {
-    // FIXME throw?
-    return <></>
+    return <SignTransactionLoader />
   }
 
   if (USE_UPDATED_SIGNING_UI) {
