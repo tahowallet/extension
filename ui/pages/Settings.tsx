@@ -7,9 +7,13 @@ import {
   selectHideDust,
   toggleHideDust,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { SUPPORT_MULTIPLE_LANGUAGES } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
+import SharedSelect from "../components/Shared/SharedSelect"
+import { getLanguageIndex, getAvalableLanguages } from "../_locales"
+import { getLanguage, setLanguage } from "../_locales/i18n"
 
 function SettingRow(props: {
   title: string
@@ -53,65 +57,85 @@ export default function Settings(): ReactElement {
   const toggleDefaultWallet = (defaultWalletValue: boolean) => {
     dispatch(setNewDefaultWalletValue(defaultWalletValue))
   }
+
+  const hideSmallAssetBalance = {
+    title: t("settings.hideSmallAssetBalance", { amount: 2, sign: "$" }),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
+        value={hideDust}
+      />
+    ),
+  }
+
+  const setAsDefault = {
+    title: t("settings.setAsDefault"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
+        value={defaultWallet}
+      />
+    ),
+  }
+
+  const langOptions = getAvalableLanguages()
+  const langIdx = getLanguageIndex(getLanguage())
+  const languages = {
+    title: t("settings.language"),
+    component: () => (
+      <SharedSelect
+        width={194}
+        options={langOptions}
+        onChange={setLanguage}
+        defaultIndex={langIdx}
+      />
+    ),
+  }
+
+  const bugReport = {
+    title: "",
+    component: () => (
+      <SharedButton
+        type="unstyled"
+        size="medium"
+        linkTo="/settings/export-logs"
+      >
+        <div className="bug_report_row">
+          <div className="action_name">{t("settings.bugReport")}</div>
+          <SharedIcon
+            icon="icons/s/continue.svg"
+            width={16}
+            color="var(--green-20)"
+            ariaLabel="Open bug report"
+          />
+          <style jsx>{`
+            .action_name {
+              color: var(--green-20);
+              font-size: 18px;
+              font-weight: 600;
+              line-height: 24px;
+            }
+            .bug_report_row {
+              width: 336px;
+              align-items: center;
+              justify-content: space-between;
+              align-content: center;
+              display: flex;
+            }
+            .bug_report_row:hover > .action_name {
+              color: var(--green-5);
+            }
+          `}</style>
+        </div>
+      </SharedButton>
+    ),
+  }
+
+  const generalList = SUPPORT_MULTIPLE_LANGUAGES
+    ? [hideSmallAssetBalance, setAsDefault, languages, bugReport]
+    : [hideSmallAssetBalance, setAsDefault, bugReport]
   const settings = {
-    general: [
-      {
-        title: t("settings.hideSmallAssetBalance", { amount: 2, sign: "$" }),
-        component: () => (
-          <SharedToggleButton
-            onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
-            value={hideDust}
-          />
-        ),
-      },
-      {
-        title: t("settings.setAsDefault"),
-        component: () => (
-          <SharedToggleButton
-            onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
-            value={defaultWallet}
-          />
-        ),
-      },
-      {
-        title: "",
-        component: () => (
-          <SharedButton
-            type="unstyled"
-            size="medium"
-            linkTo="/settings/export-logs"
-          >
-            <div className="bug_report_row">
-              <div className="action_name">{t("settings.bugReport")}</div>
-              <SharedIcon
-                icon="icons/s/continue.svg"
-                width={16}
-                color="var(--green-20)"
-                ariaLabel="Open bug report"
-              />
-              <style jsx>{`
-                .action_name {
-                  color: var(--green-20);
-                  font-size: 18px;
-                  font-weight: 600;
-                  line-height: 24px;
-                }
-                .bug_report_row {
-                  width: 336px;
-                  align-items: center;
-                  justify-content: space-between;
-                  align-content: center;
-                  display: flex;
-                }
-                .bug_report_row:hover > .action_name {
-                  color: var(--green-5);
-                }
-              `}</style>
-            </div>
-          </SharedButton>
-        ),
-      },
-    ],
+    general: generalList,
   }
 
   return (

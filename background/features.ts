@@ -14,3 +14,5 @@ export const USE_UPDATED_SIGNING_UI =
   process.env.USE_UPDATED_SIGNING_UI === "true"
 export const USE_BALANCE_RELOADER = process.env.USE_BALANCE_RELOADER === "true"
 export const SUPPORT_NFTS = process.env.SUPPORT_NFTS === "true"
+export const SUPPORT_MULTIPLE_LANGUAGES =
+  process.env.SUPPORT_MULTIPLE_LANGUAGES === "true"

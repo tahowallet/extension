@@ -236,7 +236,7 @@ export default function SharedSelect(props: Props): ReactElement {
           }
 
           .select.bottom .options {
-            top: 62px;
+            top: 42px;
           }
 
           .select.top .options {
