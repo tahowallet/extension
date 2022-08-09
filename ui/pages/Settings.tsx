@@ -7,6 +7,7 @@ import {
   selectHideDust,
   toggleHideDust,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { SUPPORT_MULTIPLE_LANGUAGES } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -130,7 +131,7 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const generalList = process.env.SUPPORT_MULTIPLE_LANGUAGES
+  const generalList = SUPPORT_MULTIPLE_LANGUAGES
     ? [hideSmallAssetBalance, setAsDefault, languages, bugReport]
     : [hideSmallAssetBalance, setAsDefault, bugReport]
   const settings = {
