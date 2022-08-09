@@ -13,6 +13,9 @@ export default function TopMenuProtocolSwitcher({
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   return (
     <button type="button" onClick={() => MULTI_NETWORK && onClick?.()}>
+      <div className="icon_wrap">
+        <span className="icon" />
+      </div>
       {currentNetwork.name}
       {MULTI_NETWORK && <span className="icon_chevron_down" />}
       <style jsx>
@@ -37,6 +40,28 @@ export default function TopMenuProtocolSwitcher({
           }
           button:hover .icon_chevron_down {
             background-color: #fff;
+          }
+          .icon {
+            background: url("./images/networks/${currentNetwork.name
+              .replaceAll(" ", "")
+              .toLowerCase()}-square@2x.png");
+            background-size: cover;
+            height: 18px;
+            width: 18px;
+            border-radius: 4px;
+          }
+          .icon_wrap {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: var(--green-95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+          }
+          button:hover .icon_wrap {
+            background-color: var(--green-80) !important;
           }
         `}
       </style>

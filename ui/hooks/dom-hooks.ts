@@ -80,16 +80,24 @@ export function useDelayContentChange<T>(
   return delayedContent
 }
 
+export const setLocalStorageItem = (key: string, value: string): void =>
+  localStorage.setItem(key, value)
+
+export const getLocalStorageItem = (
+  key: string,
+  defaultValue: string
+): string => localStorage.getItem(key) || defaultValue
+
 export function useLocalStorage(
   key: string,
   initialValue: string
 ): [string, React.Dispatch<React.SetStateAction<string>>] {
   const [value, setValue] = useState(() => {
-    return localStorage.getItem(key) || initialValue
+    return getLocalStorageItem(key, initialValue)
   })
 
   useEffect(() => {
-    localStorage.setItem(key, value)
+    setLocalStorageItem(key, value)
   }, [key, value])
 
   return [value, setValue]
