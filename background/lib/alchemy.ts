@@ -18,6 +18,7 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
+import getNFTsByOwners from "./simple-hash"
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
