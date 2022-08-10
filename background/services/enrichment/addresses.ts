@@ -22,7 +22,6 @@ export async function resolveAddressAnnotation(
     nameService.lookUpName(addressOnNetwork),
   ])
   return {
-    ...addressOnNetwork,
     balance,
     nameOnNetwork,
     nonce: BigInt(nonce),
