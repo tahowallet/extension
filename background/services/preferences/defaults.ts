@@ -18,6 +18,8 @@ const defaultPreferences: Preferences = {
       "https://tokenlist.aave.eth.link", // Aave-listed tokens and interest-bearing assets
       "https://raw.githubusercontent.com/compound-finance/token-list/master/compound.tokenlist.json", // Compound-listed tokens and interest-bearing assets
       "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json", // Polygon Default Tokens
+      "https://static.optimism.io/optimism.tokenlist.json", // Optimism Default Tokens
+      "https://bridge.arbitrum.io/token-list-42161.json", // Arbitrum Default tokens
     ],
   },
   currency: USD,
