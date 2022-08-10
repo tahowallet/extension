@@ -67,6 +67,12 @@ async function fetchNFTs(
   network: EVMNetwork
 ): Promise<NFTItem[]> {
   // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
+
+  // Today, only Polygon and Ethereum are supported
+  if (!["Polygon", "Ethereum"].includes(network.name)) {
+    return []
+  }
+
   const requestUrl = new URL(
     `https://${
       network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
@@ -76,11 +82,9 @@ async function fetchNFTs(
   requestUrl.searchParams.set("filters[]", "SPAM")
 
   const result = await (await fetch(requestUrl.toString())).json()
-  const filteredNFTs = result.ownedNfts.filter(
+  return result.ownedNfts.filter(
     (nft: NFTItem) => typeof nft.error === "undefined"
   )
-
-  return filteredNFTs
 }
 
 export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
