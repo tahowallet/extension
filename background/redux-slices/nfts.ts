@@ -2,20 +2,10 @@ import { createSlice } from "@reduxjs/toolkit"
 import logger from "../lib/logger"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
+import { getNFTs, NFTItem } from "../lib/alchemy"
 import { normalizeEVMAddress } from "../lib/utils"
 import { setSnackbarMessage } from "./ui"
 import { HexString } from "../types"
-
-export type NFTItem = {
-  error?: string
-  media: { gateway?: string }[]
-  id: {
-    tokenId: string
-  }
-  contract: { address: string }
-  title: string
-  chainID: number
-}
 
 export type NFTsState = {
   evm: {
@@ -24,6 +14,7 @@ export type NFTsState = {
     }
   }
 }
+export { NFTItem } from "../lib/alchemy"
 
 export const initialState = {
   evm: {},
@@ -62,31 +53,6 @@ export const { updateNFTs, deleteNFts } = NFTsSlice.actions
 
 export default NFTsSlice.reducer
 
-async function fetchNFTs(
-  address: string,
-  network: EVMNetwork
-): Promise<NFTItem[]> {
-  // @TODO: Move to alchemy.ts, remove hardcoded polygon or eth logic
-
-  // Today, only Polygon and Ethereum are supported
-  if (!["Polygon", "Ethereum"].includes(network.name)) {
-    return []
-  }
-
-  const requestUrl = new URL(
-    `https://${
-      network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-    }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
-  )
-  requestUrl.searchParams.set("owner", address)
-  requestUrl.searchParams.set("filters[]", "SPAM")
-
-  const result = await (await fetch(requestUrl.toString())).json()
-  return result.ownedNfts.filter(
-    (nft: NFTItem) => typeof nft.error === "undefined"
-  )
-}
-
 export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
   "nfts/fetchThenUpdateNFTsByNetwork",
   async (
@@ -103,7 +69,7 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
           addresses.map(async (address) =>
             Promise.all(
               networks.map(async (network) => {
-                const NFTs = await fetchNFTs(address, network)
+                const NFTs = await getNFTs({ address, network })
 
                 return {
                   address,
