@@ -29,7 +29,7 @@ import {
   SignDataRequest,
   parseSigningData,
 } from "../../utils/signing"
-import { SUPPORT_POLYGON } from "../../features"
+import { SUPPORT_OPTIMISM, SUPPORT_POLYGON } from "../../features"
 import {
   ActiveNetwork,
   getOrCreateDB,
@@ -246,16 +246,21 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
-        if (SUPPORT_POLYGON) {
-          const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-          const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
-          if (supportedNetwork) {
-            await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
-            return null
-          }
+        if (
+          !SUPPORT_OPTIMISM &&
+          toHexChainID((params[0] as SwitchEthereumChainParameter).chainId) ===
+            toHexChainID(10)
+        ) {
+          // Prevent users from accidentally switching to Optimism
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
-        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+        const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
+        if (supportedNetwork) {
+          await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
+          return null
+        }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
