@@ -367,9 +367,10 @@ export default class ChainService extends BaseService<Events> {
       from: partialRequest.from,
       to: partialRequest.to,
       value: partialRequest.value ?? 0n,
-      gasLimit: 6_000_000n,
+      gasLimit: partialRequest.gasLimit ?? 0n,
       input: partialRequest.input ?? null,
-      gasPrice: partialRequest.gasPrice ?? 1_000_000n,
+      gasPrice:
+        partialRequest.gasPrice ?? (await this.estimateGasPrice(network)),
       type: 0 as const,
       network,
       chainID: network.chainID,
@@ -760,6 +761,17 @@ export default class ChainService extends BaseService<Events> {
     // Add 10% more gas as a safety net
     const uppedEstimate = estimate.add(estimate.div(10))
     return BigInt(uppedEstimate.toString())
+  }
+
+  /**
+   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
+   * the base estimate returned by the provider.
+   */
+  async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
+    const estimate = await this.providerForNetworkOrThrow(network).getGasPrice()
+
+    // Add 10% more gas as a safety net
+    return BigInt(estimate.toString())
   }
 
   /**
