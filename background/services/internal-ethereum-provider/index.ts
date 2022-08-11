@@ -13,7 +13,6 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import {
   EVMNetwork,
-  SignedEIP1559Transaction,
   SignedTransaction,
   toHexChainID,
   TransactionRequest,

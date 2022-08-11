@@ -18,11 +18,7 @@ import {
   EIP712TypedData,
   UNIXTime,
 } from "../../types"
-import {
-  SignedEIP1559Transaction,
-  SignedTransaction,
-  TransactionRequestWithNonce,
-} from "../../networks"
+import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 import BaseService from "../base"
 import { FORK, MINUTE } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"

@@ -238,7 +238,7 @@ export type AlmostSignedEVMTransaction = EVMTransaction & {
  * An EVM transaction with signature fields filled in and ready for broadcast
  * to the network.
  */
-export type SignedEIP1559Transaction = EVMTransaction & {
+type SignedEIP1559Transaction = EVMTransaction & {
   r: string
   s: string
   v: number

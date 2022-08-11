@@ -9,7 +9,6 @@ import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 import {
   AnyEVMTransaction,
   EVMNetwork,
-  SignedEIP1559Transaction,
   AnyEVMBlock,
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,

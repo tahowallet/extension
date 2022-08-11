@@ -515,7 +515,7 @@ export default class ChainService extends BaseService<Events> {
     const populated = await this.populatePartialLegacyEVMTransactionRequest(
       network,
       {
-        ...(partialRequest as EnrichedLegacyTransactionSignatureRequest),
+        ...partialRequest,
       }
     )
     return populated

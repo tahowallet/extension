@@ -31,7 +31,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { AnyEVMTransaction, SignedEIP1559Transaction } from "./networks"
+import { AnyEVMTransaction, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -632,7 +632,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
-      async (transaction: SignedEIP1559Transaction) => {
+      async (transaction: SignedTransaction) => {
         this.chainService.broadcastSignedTransaction(transaction)
       }
     )
@@ -888,8 +888,6 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        // eslint-disable-next-line no-param-reassign
-        ;(payload as any).gasPrice = 1_000_000n
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
