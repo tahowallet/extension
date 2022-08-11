@@ -135,7 +135,7 @@ export type LegacyEVMTransaction = EVMTransaction & {
  * limit used to limit the gas expenditure on a transaction. This is used to
  * request a signed transaction, and does not include signature fields.
  *
- * Nonce is permitted to be `undefined` as Tally internals can and often does
+ * Nonce is permitted to be `undefined` as Tally internals can and often do
  * populate the nonce immediately before a request is signed.
  */
 export type LegacyEVMTransactionRequest = Pick<
