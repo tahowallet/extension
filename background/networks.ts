@@ -1,6 +1,7 @@
 import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
 import type { CoinGeckoAsset } from "./assets"
+import type { TransactionRequestWithFrom } from "./services/enrichment"
 
 /**
  * Each supported network family is generally incompatible with others from a
@@ -128,13 +129,17 @@ export type LegacyEVMTransaction = EVMTransaction & {
  * are used to post a transaction for inclusion are required, including the gas
  * limit used to limit the gas expenditure on a transaction. This is used to
  * request a signed transaction, and does not include signature fields.
+ *
+ * Nonce is permitted to be `undefined` as Tally internals can and often does
+ * populate the nonce immediately before a request is signed.
  */
 export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
-  "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value" | "network"
+  "gasPrice" | "type" | "from" | "to" | "input" | "value" | "network"
 > & {
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
+  nonce: number | undefined
 }
 
 /**
@@ -173,6 +178,12 @@ export type EIP1559TransactionRequest = Pick<
   chainID: EIP1559Transaction["network"]["chainID"]
   nonce: number | undefined
 }
+
+export type TransactionRequest =
+  | EIP1559TransactionRequest
+  | LegacyEVMTransactionRequest
+
+export type TransactionRequestWithNonce = TransactionRequest & { nonce: number }
 
 /**
  * EVM log metadata, including the contract address that generated the log, the
@@ -227,6 +238,20 @@ export type SignedEVMTransaction = EVMTransaction & {
   s: string
   v: number
 }
+
+/**
+ * A Legacy EVM transaction with signature fields filled in and ready for broadcast
+ * to the network.
+ */
+export type SignedLegacyEVMTransaction = LegacyEVMTransaction & {
+  r: string
+  s: string
+  v: number
+}
+
+export type SignedTransaction =
+  | SignedEVMTransaction
+  | SignedLegacyEVMTransaction
 
 /**
  * An EVM transaction that has all signature fields and has been included in a
@@ -317,4 +342,28 @@ export function toHexChainID(chainID: string | number): string {
     return chainID
   }
   return `0x${BigInt(chainID).toString(16)}`
+}
+
+export function isEIP1559TransactionRequest(
+  transactionRequest: AnyEVMTransaction | Partial<TransactionRequestWithFrom>
+): transactionRequest is EIP1559TransactionRequest {
+  if (
+    "maxFeePerGas" in transactionRequest &&
+    "maxPriorityFeePerGas" in transactionRequest
+  ) {
+    return true
+  }
+  return false
+}
+
+export function isEIP1559SignedTransaction(
+  transactionRequest: SignedTransaction
+): transactionRequest is SignedEVMTransaction {
+  if (
+    "maxFeePerGas" in transactionRequest &&
+    "maxPriorityFeePerGas" in transactionRequest
+  ) {
+    return true
+  }
+  return false
 }
