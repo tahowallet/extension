@@ -9,7 +9,7 @@ import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 import {
   AnyEVMTransaction,
   EVMNetwork,
-  SignedEVMTransaction,
+  SignedEIP1559Transaction,
   AnyEVMBlock,
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
@@ -17,6 +17,7 @@ import {
   isEIP1559TransactionRequest,
   TransactionRequest,
   isEIP1559SignedTransaction,
+  SignedTransaction,
 } from "../../networks"
 import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
@@ -197,7 +198,7 @@ export function transactionRequestFromEthersTransactionRequest(
 }
 
 export function ethersTransactionFromSignedTransaction(
-  tx: SignedEVMTransaction
+  tx: SignedTransaction
 ): EthersTransaction {
   const baseTx: EthersTransaction = {
     nonce: Number(tx.nonce),
@@ -293,7 +294,7 @@ export function transactionFromEthersTransaction(
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {
-    const signedTx: SignedEVMTransaction = {
+    const signedTx: SignedTransaction = {
       ...newTx,
       r: tx.r,
       s: tx.s,

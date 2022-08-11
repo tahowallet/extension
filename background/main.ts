@@ -34,7 +34,7 @@ import { HexString, KeyringTypes } from "./types"
 import {
   AnyEVMTransaction,
   isEIP1559EnrichedTransactionSignatureRequest,
-  SignedEVMTransaction,
+  SignedEIP1559Transaction,
   TransactionRequest,
 } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
@@ -130,7 +130,7 @@ import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
 import {
   EnrichedEVMTransaction,
   EnrichedLegacyTransactionSignatureRequest,
-  EnrichedTransactionRequest,
+  EnrichedEVMTransactionRequest,
 } from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -606,7 +606,7 @@ export default class Main extends BaseService<never> {
 
         if (isEIP1559EnrichedTransactionSignatureRequest(options)) {
           const populated =
-            await this.chainService.populatePartialEVMTransactionRequest(
+            await this.chainService.populatePartialEIP1559TransactionRequest(
               network,
               {
                 ...options,
@@ -637,7 +637,7 @@ export default class Main extends BaseService<never> {
             2 /* TODO desiredDecimals should be configurable */
           )
 
-        const enrichedPopulatedRequest: EnrichedTransactionRequest = {
+        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
           annotation,
         }
@@ -662,7 +662,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
-      async (transaction: SignedEVMTransaction) => {
+      async (transaction: SignedEIP1559Transaction) => {
         this.chainService.broadcastSignedTransaction(transaction)
       }
     )

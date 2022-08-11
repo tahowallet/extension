@@ -14,7 +14,7 @@ import {
 } from "ethers/lib/utils"
 import {
   sameNetwork,
-  SignedEVMTransaction,
+  SignedTransaction,
   TransactionRequestWithNonce,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
@@ -81,7 +81,7 @@ type Events = ServiceLifecycleEvents & {
   connected: ConnectedDevice
   disconnected: { id: string; type: LedgerType }
   address: { ledgerID: string; derivationPath: string; address: HexString }
-  signedTransaction: SignedEVMTransaction
+  signedTransaction: SignedTransaction
   signedData: string
   usbDeviceCount: number
 }
@@ -335,7 +335,7 @@ export default class LedgerService extends BaseService<Events> {
   async signTransaction(
     transactionRequest: TransactionRequestWithNonce,
     { deviceID, path: derivationPath }: LedgerAccountSigner
-  ): Promise<SignedEVMTransaction> {
+  ): Promise<SignedTransaction> {
     return this.runSerialized(async () => {
       try {
         if (!this.transport) {
@@ -391,7 +391,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Can only sign EIP-1559 conforming transactions")
         }
 
-        const signedTx: SignedEVMTransaction = {
+        const signedTx: SignedTransaction = {
           hash: tx.hash,
           from: tx.from,
           to: tx.to,

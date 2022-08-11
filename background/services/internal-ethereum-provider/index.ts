@@ -13,7 +13,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import {
   EVMNetwork,
-  SignedEVMTransaction,
+  SignedEIP1559Transaction,
   SignedTransaction,
   toHexChainID,
   TransactionRequest,
@@ -70,7 +70,7 @@ type DAppRequestEvent<T, E> = {
 type Events = ServiceLifecycleEvents & {
   transactionSignatureRequest: DAppRequestEvent<
     Partial<TransactionRequest> & { from: string; network: EVMNetwork },
-    SignedEVMTransaction
+    SignedTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<SignDataRequest, string>
@@ -325,7 +325,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
     const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
-    return new Promise<SignedEVMTransaction>((resolve, reject) => {
+    return new Promise<SignedTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,

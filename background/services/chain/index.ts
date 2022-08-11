@@ -425,7 +425,7 @@ export default class ChainService extends BaseService<Events> {
    * Note that if the partial request already has a defined nonce, it is not
    * cleared.
    */
-  async populatePartialEVMTransactionRequest(
+  async populatePartialEIP1559TransactionRequest(
     network: EVMNetwork,
     partialRequest: EnrichedEIP1559TransactionSignatureRequest
   ): Promise<{

@@ -26,8 +26,6 @@ import {
   SignTypedDataAnnotation,
   TransactionAnnotation,
   EnrichedSignTypedDataRequest,
-  LegacyEVMTransactionRequestWithFrom,
-  EIP1559TransactionRequestWithFrom,
   TransactionRequestWithFrom,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
@@ -394,9 +392,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
   async enrichTransactionSignature(
     network: EVMNetwork,
-    transaction:
-      | EIP1559TransactionRequestWithFrom
-      | LegacyEVMTransactionRequestWithFrom,
+    transaction: TransactionRequestWithFrom,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {

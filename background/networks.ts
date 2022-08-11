@@ -238,7 +238,7 @@ export type AlmostSignedEVMTransaction = EVMTransaction & {
  * An EVM transaction with signature fields filled in and ready for broadcast
  * to the network.
  */
-export type SignedEVMTransaction = EVMTransaction & {
+export type SignedEIP1559Transaction = EVMTransaction & {
   r: string
   s: string
   v: number
@@ -255,14 +255,14 @@ export type SignedLegacyEVMTransaction = LegacyEVMTransaction & {
 }
 
 export type SignedTransaction =
-  | SignedEVMTransaction
+  | SignedEIP1559Transaction
   | SignedLegacyEVMTransaction
 
 /**
  * An EVM transaction that has all signature fields and has been included in a
  * block.
  */
-export type SignedConfirmedEVMTransaction = SignedEVMTransaction &
+export type SignedConfirmedEVMTransaction = SignedEIP1559Transaction &
   ConfirmedEVMTransaction
 
 /**
@@ -272,7 +272,7 @@ export type AnyEVMTransaction =
   | EVMTransaction
   | ConfirmedEVMTransaction
   | AlmostSignedEVMTransaction
-  | SignedEVMTransaction
+  | SignedTransaction
   | FailedConfirmationEVMTransaction
 
 /**
@@ -368,7 +368,7 @@ export function isEIP1559TransactionRequest(
 
 export function isEIP1559SignedTransaction(
   transactionRequest: SignedTransaction
-): transactionRequest is SignedEVMTransaction {
+): transactionRequest is SignedEIP1559Transaction {
   if (
     "maxFeePerGas" in transactionRequest &&
     "maxPriorityFeePerGas" in transactionRequest

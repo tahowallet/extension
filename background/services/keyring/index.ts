@@ -19,7 +19,8 @@ import {
   UNIXTime,
 } from "../../types"
 import {
-  SignedEVMTransaction,
+  SignedEIP1559Transaction,
+  SignedTransaction,
   TransactionRequestWithNonce,
 } from "../../networks"
 import BaseService from "../base"
@@ -63,7 +64,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   address: string
   // TODO message was signed
-  signedTx: SignedEVMTransaction
+  signedTx: SignedTransaction
   signedData: string
 }
 
@@ -466,7 +467,7 @@ export default class KeyringService extends BaseService<Events> {
   async signTransaction(
     addressOnNetwork: AddressOnNetwork,
     txRequest: TransactionRequestWithNonce
-  ): Promise<SignedEVMTransaction> {
+  ): Promise<SignedTransaction> {
     this.requireUnlocked()
 
     const { address: account, network } = addressOnNetwork
@@ -510,11 +511,11 @@ export default class KeyringService extends BaseService<Events> {
         asset: network.baseAsset,
         network: USE_MAINNET_FORK ? FORK : network,
       }
-      return signedTx as unknown as SignedEVMTransaction
+      return signedTx as unknown as SignedTransaction
     }
 
     // TODO move this to a helper function
-    const signedTx: SignedEVMTransaction = {
+    const signedTx: SignedTransaction = {
       hash: tx.hash,
       from: tx.from,
       to: tx.to,

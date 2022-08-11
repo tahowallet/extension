@@ -21,7 +21,7 @@ import {
 } from "../networks"
 import {
   EnrichedEVMTransactionSignatureRequest,
-  EnrichedTransactionRequest,
+  EnrichedEVMTransactionRequest,
 } from "../services/enrichment"
 
 import { createBackgroundAsyncThunk } from "./utils"
@@ -53,7 +53,7 @@ export enum NetworkFeeTypeChosen {
 }
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
-  transactionRequest?: EnrichedTransactionRequest
+  transactionRequest?: EnrichedEVMTransactionRequest
   signedTransaction?: SignedTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean

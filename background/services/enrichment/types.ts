@@ -117,14 +117,14 @@ export type EnrichedLegacyTransactionRequest = LegacyEVMTransactionRequest & {
   annotation?: TransactionAnnotation
 }
 
-export type EnrichedTransactionRequest =
+export type EnrichedEVMTransactionRequest =
   | EnrichedEIP1559TransactionRequest
   | EnrichedLegacyTransactionRequest
 
-export type EIP1559TransactionRequestWithFrom =
+type EIP1559TransactionRequestWithFrom =
   | Partial<EIP1559TransactionRequest> & { from: string }
 
-export type LegacyEVMTransactionRequestWithFrom =
+type LegacyEVMTransactionRequestWithFrom =
   | Partial<LegacyEVMTransactionRequest> & { from: string }
 
 export type TransactionRequestWithFrom =
