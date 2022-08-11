@@ -13,6 +13,10 @@ import {
   AnyEVMBlock,
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
+  LegacyEVMTransactionRequest,
+  isEIP1559TransactionRequest,
+  TransactionRequest,
+  isEIP1559SignedTransaction,
 } from "../../networks"
 import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
@@ -87,7 +91,38 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
   }
 }
 
-export function eip1559TransactionRequestFromEthersTransactionRequest(
+export function ethersTransactionRequestFromLegacyTransactionRequest(
+  transaction: LegacyEVMTransactionRequest
+): EthersTransactionRequest {
+  return {
+    to: transaction.to,
+    data: transaction.input ?? undefined,
+    from: transaction.from,
+    type: transaction.type ?? undefined,
+    nonce: transaction.nonce,
+    gasPrice: transaction.gasPrice,
+    value: transaction.value,
+    chainId: parseInt(transaction.chainID, 10),
+    gasLimit: transaction.gasLimit,
+  }
+}
+
+export function ethersTransactionFromTransactionRequest(
+  transactionRequest: TransactionRequest
+): EthersTransactionRequest {
+  if (isEIP1559TransactionRequest(transactionRequest)) {
+    // EIP-1559 Transaction
+    return ethersTransactionRequestFromEIP1559TransactionRequest(
+      transactionRequest
+    )
+  }
+  // Legacy Transaction
+  return ethersTransactionRequestFromLegacyTransactionRequest(
+    transactionRequest
+  )
+}
+
+function eip1559TransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest
 ): Partial<EIP1559TransactionRequest> {
   // TODO What to do if transaction is not EIP1559?
@@ -120,30 +155,75 @@ export function eip1559TransactionRequestFromEthersTransactionRequest(
   }
 }
 
+function legacyEVMTransactionRequestFromEthersTransactionRequest(
+  transaction: EthersTransactionRequest
+): Partial<LegacyEVMTransactionRequest> {
+  // TODO What to do if transaction is not EIP1559?
+  return {
+    to: transaction.to,
+    input: transaction.data?.toString() ?? null,
+    from: transaction.from,
+    type: transaction.type as 0,
+    nonce:
+      typeof transaction.nonce !== "undefined"
+        ? parseInt(transaction.nonce.toString(), 16)
+        : undefined,
+    value:
+      typeof transaction.value !== "undefined"
+        ? BigInt(transaction.value.toString())
+        : undefined,
+    chainID: transaction.chainId?.toString(16),
+    gasLimit:
+      typeof transaction.gasLimit !== "undefined"
+        ? BigInt(transaction.gasLimit.toString())
+        : undefined,
+    gasPrice:
+      typeof transaction.gasPrice !== "undefined"
+        ? BigInt(transaction.gasPrice.toString())
+        : undefined,
+  }
+}
+
+export function transactionRequestFromEthersTransactionRequest(
+  ethersTransactionRequest: EthersTransactionRequest
+): Partial<TransactionRequest> {
+  if ("maxFeePerGas" in ethersTransactionRequest) {
+    return eip1559TransactionRequestFromEthersTransactionRequest(
+      ethersTransactionRequest
+    )
+  }
+  return legacyEVMTransactionRequestFromEthersTransactionRequest(
+    ethersTransactionRequest
+  )
+}
+
 export function ethersTransactionFromSignedTransaction(
   tx: SignedEVMTransaction
 ): EthersTransaction {
-  const baseTx = {
+  const baseTx: EthersTransaction = {
     nonce: Number(tx.nonce),
-    maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : undefined,
-    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-      ? BigNumber.from(tx.maxPriorityFeePerGas)
-      : undefined,
     to: tx.to,
-    from: tx.from,
     data: tx.input || "",
+    gasPrice: BigNumber.from(tx.gasPrice),
     type: tx.type,
     chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
 
-  return {
-    ...baseTx,
-    r: tx.r,
-    s: tx.s,
-    v: tx.v,
+  if (isEIP1559SignedTransaction(tx)) {
+    baseTx.maxFeePerGas = BigNumber.from(tx.maxFeePerGas)
+    baseTx.maxPriorityFeePerGas = BigNumber.from(tx.maxPriorityFeePerGas)
+    return {
+      ...baseTx,
+      r: tx.r,
+      from: tx.from,
+      s: tx.s,
+      v: tx.v,
+    }
   }
+
+  return baseTx
 }
 
 /**

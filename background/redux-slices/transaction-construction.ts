@@ -14,11 +14,14 @@ import {
   BlockPrices,
   EIP1559TransactionRequest,
   EVMNetwork,
-  SignedEVMTransaction,
+  isEIP1559TransactionRequest,
+  LegacyEVMTransactionRequest,
+  SignedTransaction,
+  TransactionRequest,
 } from "../networks"
 import {
-  EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
+  EnrichedTransactionRequest,
 } from "../services/enrichment"
 
 import { createBackgroundAsyncThunk } from "./utils"
@@ -50,8 +53,8 @@ export enum NetworkFeeTypeChosen {
 }
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
-  transactionRequest?: EnrichedEIP1559TransactionRequest
-  signedTransaction?: SignedEVMTransaction
+  transactionRequest?: EnrichedTransactionRequest
+  signedTransaction?: SignedTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
@@ -86,9 +89,9 @@ export const initialState: TransactionConstruction = {
 
 export type Events = {
   updateTransaction: EnrichedEVMTransactionSignatureRequest
-  requestSignature: SignOperation<EIP1559TransactionRequest>
+  requestSignature: SignOperation<TransactionRequest>
   signatureRejected: never
-  broadcastSignedTransaction: SignedEVMTransaction
+  broadcastSignedTransaction: SignedTransaction
 }
 
 export type GasOption = {
@@ -146,7 +149,11 @@ export const updateTransactionData = createBackgroundAsyncThunk(
 
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
-  async (request: SignOperation<EIP1559TransactionRequest>) => {
+  async (
+    request: SignOperation<
+      EIP1559TransactionRequest | LegacyEVMTransactionRequest
+    >
+  ) => {
     if (USE_MAINNET_FORK) {
       request.request.chainID = FORK.chainID
     }
@@ -165,27 +172,47 @@ const transactionSlice = createSlice({
         payload: { transactionRequest, transactionLikelyFails },
       }: {
         payload: {
-          transactionRequest: EIP1559TransactionRequest
+          transactionRequest: TransactionRequest
           transactionLikelyFails: boolean
         }
       }
-    ) => ({
-      ...state,
-      status: TransactionConstructionStatus.Loaded,
-      signedTransaction: undefined,
-      transactionRequest: {
-        ...transactionRequest,
-        maxFeePerGas:
+    ) => {
+      const newState = {
+        ...state,
+        status: TransactionConstructionStatus.Loaded,
+        signedTransaction: undefined,
+        transactionRequest: {
+          ...transactionRequest,
+        },
+        transactionLikelyFails,
+      }
+
+      if (
+        // We use two guards here to satisfy the compiler but due to the spread
+        // above we know that if one is an EIP1559 then the other one must be too
+        isEIP1559TransactionRequest(newState.transactionRequest) &&
+        isEIP1559TransactionRequest(transactionRequest)
+      ) {
+        const estimatedMaxFeePerGas =
           state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
             state.feeTypeSelected
-          ]?.maxFeePerGas ?? transactionRequest.maxFeePerGas,
-        maxPriorityFeePerGas:
+          ]?.maxFeePerGas
+
+        newState.transactionRequest.maxFeePerGas =
+          estimatedMaxFeePerGas ?? transactionRequest.maxFeePerGas
+
+        const estimatedMaxPriorityFeePerGas =
           state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
             state.feeTypeSelected
-          ]?.maxPriorityFeePerGas ?? transactionRequest.maxPriorityFeePerGas,
-      },
-      transactionLikelyFails,
-    }),
+          ]?.maxPriorityFeePerGas
+
+        newState.transactionRequest.maxPriorityFeePerGas =
+          estimatedMaxPriorityFeePerGas ??
+          transactionRequest.maxPriorityFeePerGas
+      }
+
+      return newState
+    },
     clearTransactionState: (
       state,
       { payload }: { payload: TransactionConstructionStatus }
@@ -212,17 +239,24 @@ const transactionSlice = createSlice({
 
         immerState.transactionRequest = {
           ...immerState.transactionRequest,
-          maxFeePerGas:
+        }
+
+        if (
+          immerState.transactionRequest &&
+          isEIP1559TransactionRequest(immerState.transactionRequest)
+        ) {
+          immerState.transactionRequest.maxFeePerGas =
             selectedFeesPerGas?.maxFeePerGas ??
-            immerState.transactionRequest.maxFeePerGas,
-          maxPriorityFeePerGas:
+            immerState.transactionRequest.maxFeePerGas
+
+          immerState.transactionRequest.maxFeePerGas =
             selectedFeesPerGas?.maxPriorityFeePerGas ??
-            immerState.transactionRequest.maxPriorityFeePerGas,
+            immerState.transactionRequest.maxPriorityFeePerGas
         }
       }
     },
 
-    signed: (state, { payload }: { payload: SignedEVMTransaction }) => ({
+    signed: (state, { payload }: { payload: SignedTransaction }) => ({
       ...state,
       status: TransactionConstructionStatus.Signed,
       signedTransaction: payload,
@@ -297,14 +331,14 @@ export default transactionSlice.reducer
 
 export const broadcastSignedTransaction = createBackgroundAsyncThunk(
   "transaction-construction/broadcast",
-  async (transaction: SignedEVMTransaction) => {
+  async (transaction: SignedTransaction) => {
     await emitter.emit("broadcastSignedTransaction", transaction)
   }
 )
 
 export const transactionSigned = createBackgroundAsyncThunk(
   "transaction-construction/transaction-signed",
-  async (transaction: SignedEVMTransaction, { dispatch, getState }) => {
+  async (transaction: SignedTransaction, { dispatch, getState }) => {
     await dispatch(signed(transaction))
 
     const { transactionConstruction } = getState() as {

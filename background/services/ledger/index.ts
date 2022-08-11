@@ -13,16 +13,16 @@ import {
   getAddress as ethersGetAddress,
 } from "ethers/lib/utils"
 import {
-  EIP1559TransactionRequest,
   sameNetwork,
   SignedEVMTransaction,
+  TransactionRequestWithNonce,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
-import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
@@ -333,7 +333,7 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    transactionRequest: EIP1559TransactionRequest & { nonce: number },
+    transactionRequest: TransactionRequestWithNonce,
     { deviceID, path: derivationPath }: LedgerAccountSigner
   ): Promise<SignedEVMTransaction> {
     return this.runSerialized(async () => {
@@ -347,9 +347,7 @@ export default class LedgerService extends BaseService<Events> {
         }
 
         const ethersTx =
-          ethersTransactionRequestFromEIP1559TransactionRequest(
-            transactionRequest
-          )
+          ethersTransactionFromTransactionRequest(transactionRequest)
 
         const serializedTx = serialize(
           ethersTx as UnsignedTransaction

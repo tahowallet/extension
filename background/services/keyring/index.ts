@@ -18,10 +18,13 @@ import {
   EIP712TypedData,
   UNIXTime,
 } from "../../types"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import {
+  SignedEVMTransaction,
+  TransactionRequestWithNonce,
+} from "../../networks"
 import BaseService from "../base"
 import { FORK, MINUTE } from "../../constants"
-import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { USE_MAINNET_FORK } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
@@ -462,7 +465,7 @@ export default class KeyringService extends BaseService<Events> {
    */
   async signTransaction(
     addressOnNetwork: AddressOnNetwork,
-    txRequest: EIP1559TransactionRequest & { nonce: number }
+    txRequest: TransactionRequestWithNonce
   ): Promise<SignedEVMTransaction> {
     this.requireUnlocked()
 
@@ -472,8 +475,8 @@ export default class KeyringService extends BaseService<Events> {
     const keyring = await this.#findKeyring(account)
 
     // ethers has a looser / slightly different request type
-    const ethersTxRequest =
-      ethersTransactionRequestFromEIP1559TransactionRequest(txRequest)
+    const ethersTxRequest = ethersTransactionFromTransactionRequest(txRequest)
+
     // unfortunately, ethers gives us a serialized signed tx here
     const signed = await keyring.signTransaction(account, ethersTxRequest)
 
@@ -489,7 +492,25 @@ export default class KeyringService extends BaseService<Events> {
       typeof tx.maxFeePerGas === "undefined" ||
       tx.type !== 2
     ) {
-      throw new Error("Can only sign EIP-1559 conforming transactions")
+      const signedTx = {
+        hash: tx.hash,
+        from: tx.from,
+        to: tx.to,
+        nonce: tx.nonce,
+        input: tx.data,
+        value: tx.value.toBigInt(),
+        type: tx.type as 0,
+        gasPrice: tx.gasPrice,
+        gasLimit: tx.gasLimit,
+        r: tx.r,
+        s: tx.s,
+        v: tx.v,
+        blockHash: null,
+        blockHeight: null,
+        asset: network.baseAsset,
+        network: USE_MAINNET_FORK ? FORK : network,
+      }
+      return signedTx as unknown as SignedEVMTransaction
     }
 
     // TODO move this to a helper function
