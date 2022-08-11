@@ -605,7 +605,6 @@ export default class Main extends BaseService<never> {
         let gasEstimationError: string | undefined
 
         if (isEIP1559EnrichedTransactionSignatureRequest(options)) {
-          // EIP-1559 Transaction
           const populated =
             await this.chainService.populatePartialEVMTransactionRequest(
               network,

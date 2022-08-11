@@ -111,7 +111,6 @@ export function ethersTransactionFromTransactionRequest(
   transactionRequest: TransactionRequest
 ): EthersTransactionRequest {
   if (isEIP1559TransactionRequest(transactionRequest)) {
-    // EIP-1559 Transaction
     return ethersTransactionRequestFromEIP1559TransactionRequest(
       transactionRequest
     )
