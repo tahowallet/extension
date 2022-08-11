@@ -1,7 +1,7 @@
 {
   "popupEdition": "Community Edition",
   "overview": {
-    "totalBalance": "Total balance",
+    "totalBalanceEverywhere": "Total balance on all accounts",
     "addresses": "Addresses",
     "assets": "Assets",
     "networks": "Networks",

@@ -15,8 +15,7 @@
       "asset": "Ativo",
       "balance": "Saldo",
       "price": "Preço"
-    },
-    "totalBalance": "Saldo total"
+    }
   },
   "passwordStrength": {
     "average": "Média",

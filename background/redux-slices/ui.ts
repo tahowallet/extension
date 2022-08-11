@@ -201,3 +201,8 @@ export const selectSlippageTolerance = createSelector(
   selectUI,
   (ui) => ui.slippageTolerance
 )
+
+export const selectInitializationTimeExpired = createSelector(
+  selectUI,
+  (ui) => ui.initializationLoadingTimeExpired
+)
