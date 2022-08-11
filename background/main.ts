@@ -31,12 +31,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import {
-  AnyEVMTransaction,
-  isEIP1559EnrichedTransactionSignatureRequest,
-  SignedEIP1559Transaction,
-  TransactionRequest,
-} from "./networks"
+import { AnyEVMTransaction, SignedEIP1559Transaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -129,7 +124,6 @@ import { deleteNFts } from "./redux-slices/nfts"
 import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
 import {
   EnrichedEVMTransaction,
-  EnrichedLegacyTransactionSignatureRequest,
   EnrichedEVMTransactionRequest,
 } from "./services/enrichment"
 
@@ -154,7 +148,6 @@ const devToolsSanitizer = (input: unknown) => {
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
-  ;(window as any).store = store
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -600,35 +593,12 @@ export default class Main extends BaseService<never> {
           values: { maxFeePerGas, maxPriorityFeePerGas },
         } = selectDefaultNetworkFeeSettings(this.store.getState())
 
-        let populatedRequest: TransactionRequest
-
-        let gasEstimationError: string | undefined
-
-        if (isEIP1559EnrichedTransactionSignatureRequest(options)) {
-          const populated =
-            await this.chainService.populatePartialEIP1559TransactionRequest(
-              network,
-              {
-                ...options,
-                maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-                maxPriorityFeePerGas:
-                  options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-              }
-            )
-          populatedRequest = populated.transactionRequest
-          gasEstimationError = populated.gasEstimationError
-        } else {
-          // Legacy Transaction
-          const populated =
-            await this.chainService.populatePartialLegacyEVMTransactionRequest(
-              network,
-              {
-                ...(options as EnrichedLegacyTransactionSignatureRequest),
-              }
-            )
-          populatedRequest = populated.transactionRequest
-          gasEstimationError = populated.gasEstimationError
-        }
+        const { transactionRequest: populatedRequest, gasEstimationError } =
+          await this.chainService.populatePartialTransactionRequest(
+            network,
+            { ...options },
+            { maxFeePerGas, maxPriorityFeePerGas }
+          )
 
         const { annotation } =
           await this.enrichmentService.enrichTransactionSignature(

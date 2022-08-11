@@ -20,6 +20,7 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
+  isEIP1559EnrichedTransactionSignatureRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -51,6 +52,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionSignatureRequest,
   EnrichedLegacyTransactionRequest,
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
@@ -355,7 +357,7 @@ export default class ChainService extends BaseService<Events> {
    * Note that if the partial request already has a defined nonce, it is not
    * cleared.
    */
-  async populatePartialLegacyEVMTransactionRequest(
+  private async populatePartialLegacyEVMTransactionRequest(
     network: EVMNetwork,
     partialRequest: EnrichedLegacyTransactionSignatureRequest
   ): Promise<{
@@ -426,7 +428,7 @@ export default class ChainService extends BaseService<Events> {
    * Note that if the partial request already has a defined nonce, it is not
    * cleared.
    */
-  async populatePartialEIP1559TransactionRequest(
+  private async populatePartialEIP1559TransactionRequest(
     network: EVMNetwork,
     partialRequest: EnrichedEIP1559TransactionSignatureRequest
   ): Promise<{
@@ -486,6 +488,37 @@ export default class ChainService extends BaseService<Events> {
     }
 
     return { transactionRequest, gasEstimationError }
+  }
+
+  async populatePartialTransactionRequest(
+    network: EVMNetwork,
+    partialRequest: EnrichedEVMTransactionSignatureRequest,
+    defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
+  ): Promise<{
+    transactionRequest: TransactionRequest
+    gasEstimationError: string | undefined
+  }> {
+    if (isEIP1559EnrichedTransactionSignatureRequest(partialRequest)) {
+      const populated = await this.populatePartialEIP1559TransactionRequest(
+        network,
+        {
+          ...partialRequest,
+          maxFeePerGas: partialRequest.maxFeePerGas ?? defaults.maxFeePerGas,
+          maxPriorityFeePerGas:
+            partialRequest.maxPriorityFeePerGas ??
+            defaults.maxPriorityFeePerGas,
+        }
+      )
+      return populated
+    }
+    // Legacy Transaction
+    const populated = await this.populatePartialLegacyEVMTransactionRequest(
+      network,
+      {
+        ...(partialRequest as EnrichedLegacyTransactionSignatureRequest),
+      }
+    )
+    return populated
   }
 
   /**
