@@ -804,7 +804,7 @@ export default class ChainService extends BaseService<Events> {
     const estimate = await this.providerForNetworkOrThrow(network).getGasPrice()
 
     // Add 10% more gas as a safety net
-    return BigInt(estimate.toString())
+    return (estimate.toBigInt() * 11n) / 10n
   }
 
   /**
