@@ -4,6 +4,7 @@ import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
   EVMNetwork,
+  LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { HexString, UNIXTime } from "../../types"
@@ -91,7 +92,19 @@ export type EnrichedEVMTransaction = AnyEVMTransaction & {
 }
 
 export type EnrichedEVMTransactionSignatureRequest =
-  (Partial<EIP1559TransactionRequest> & { from: string }) & {
+  | EnrichedEIP1559TransactionSignatureRequest
+  | EnrichedLegacyTransactionSignatureRequest
+
+export type EnrichedEIP1559TransactionSignatureRequest =
+  Partial<EIP1559TransactionRequest> & {
+    from: string
+    annotation?: TransactionAnnotation
+    network: EVMNetwork
+  }
+
+export type EnrichedLegacyTransactionSignatureRequest =
+  Partial<LegacyEVMTransactionRequest> & {
+    from: string
     annotation?: TransactionAnnotation
     network: EVMNetwork
   }
@@ -99,6 +112,24 @@ export type EnrichedEVMTransactionSignatureRequest =
 export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
   annotation?: TransactionAnnotation
 }
+
+export type EnrichedLegacyTransactionRequest = LegacyEVMTransactionRequest & {
+  annotation?: TransactionAnnotation
+}
+
+export type EnrichedTransactionRequest =
+  | EnrichedEIP1559TransactionRequest
+  | EnrichedLegacyTransactionRequest
+
+export type EIP1559TransactionRequestWithFrom =
+  | Partial<EIP1559TransactionRequest> & { from: string }
+
+export type LegacyEVMTransactionRequestWithFrom =
+  | Partial<LegacyEVMTransactionRequest> & { from: string }
+
+export type TransactionRequestWithFrom =
+  | EIP1559TransactionRequestWithFrom
+  | LegacyEVMTransactionRequestWithFrom
 
 export type TypedDataField = {
   value: string
