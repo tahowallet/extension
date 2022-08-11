@@ -31,7 +31,11 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { AnyEVMTransaction, SignedEVMTransaction } from "./networks"
+import {
+  AnyEVMTransaction,
+  SignedEVMTransaction,
+  TransactionRequest,
+} from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -106,7 +110,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, POLYGON } from "./constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -122,7 +126,11 @@ import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
 import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
-import { EnrichedEVMTransaction } from "./services/enrichment"
+import {
+  EnrichedEVMTransaction,
+  EnrichedLegacyTransactionSignatureRequest,
+  EnrichedTransactionRequest,
+} from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -145,6 +153,7 @@ const devToolsSanitizer = (input: unknown) => {
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
+  ;(window as any).store = store
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -590,16 +599,36 @@ export default class Main extends BaseService<never> {
           values: { maxFeePerGas, maxPriorityFeePerGas },
         } = selectDefaultNetworkFeeSettings(this.store.getState())
 
-        const { transactionRequest: populatedRequest, gasEstimationError } =
-          await this.chainService.populatePartialEVMTransactionRequest(
-            network,
-            {
-              ...options,
-              maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-              maxPriorityFeePerGas:
-                options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-            }
-          )
+        let populatedRequest: TransactionRequest
+
+        let gasEstimationError: string | undefined
+
+        if ("maxFeePerGas" in options) {
+          // EIP-1559 Transaction
+          const populated =
+            await this.chainService.populatePartialEVMTransactionRequest(
+              network,
+              {
+                ...options,
+                maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
+                maxPriorityFeePerGas:
+                  options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
+              }
+            )
+          populatedRequest = populated.transactionRequest
+          gasEstimationError = populated.gasEstimationError
+        } else {
+          // Legacy Transaction
+          const populated =
+            await this.chainService.populatePartialLegacyEVMTransactionRequest(
+              network,
+              {
+                ...(options as EnrichedLegacyTransactionSignatureRequest),
+              }
+            )
+          populatedRequest = populated.transactionRequest
+          gasEstimationError = populated.gasEstimationError
+        }
 
         const { annotation } =
           await this.enrichmentService.enrichTransactionSignature(
@@ -608,7 +637,7 @@ export default class Main extends BaseService<never> {
             2 /* TODO desiredDecimals should be configurable */
           )
 
-        const enrichedPopulatedRequest = {
+        const enrichedPopulatedRequest: EnrichedTransactionRequest = {
           ...populatedRequest,
           annotation,
         }
@@ -889,6 +918,8 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
+        // eslint-disable-next-line no-param-reassign
+        ;(payload as any).gasPrice = 1_000_000n
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
@@ -1100,7 +1131,7 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON].map(async (network) => {
+        [ETHEREUM, POLYGON, OPTIMISM].map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,

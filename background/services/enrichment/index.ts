@@ -2,9 +2,9 @@ import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
-  EIP1559TransactionRequest,
   EVMLog,
   EVMNetwork,
+  isEIP1559TransactionRequest,
 } from "../../networks"
 import {
   SmartContractFungibleAsset,
@@ -26,6 +26,9 @@ import {
   SignTypedDataAnnotation,
   TransactionAnnotation,
   EnrichedSignTypedDataRequest,
+  LegacyEVMTransactionRequestWithFrom,
+  EIP1559TransactionRequestWithFrom,
+  TransactionRequestWithFrom,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
 import {
@@ -113,8 +116,7 @@ export default class EnrichmentService extends BaseService<Events> {
     network: EVMNetwork,
     transaction:
       | AnyEVMTransaction
-      | (Partial<EIP1559TransactionRequest> & {
-          from: string
+      | (TransactionRequestWithFrom & {
           blockHash?: string
         }),
     desiredDecimals: number
@@ -126,20 +128,21 @@ export default class EnrichmentService extends BaseService<Events> {
 
     let hasInsufficientFunds = false
 
-    const { gasLimit, maxFeePerGas, maxPriorityFeePerGas, blockHash } =
-      transaction
-
-    if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
-      const gasFee = gasLimit * maxFeePerGas
-      const {
-        assetAmount: { amount: baseAssetBalance },
-      } = await this.chainService.getLatestBaseAccountBalance({
-        address: transaction.from,
-        network,
-      })
-      hasInsufficientFunds =
-        gasFee + (transaction.value ?? 0n) > baseAssetBalance
+    if (isEIP1559TransactionRequest(transaction)) {
+      const { gasLimit, maxFeePerGas, maxPriorityFeePerGas } = transaction
+      if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
+        const gasFee = gasLimit * maxFeePerGas
+        const {
+          assetAmount: { amount: baseAssetBalance },
+        } = await this.chainService.getLatestBaseAccountBalance({
+          address: transaction.from,
+          network,
+        })
+        hasInsufficientFunds =
+          gasFee + (transaction.value ?? 0n) > baseAssetBalance
+      }
     }
+    const { blockHash } = transaction
 
     if (blockHash) {
       block = await this.chainService.getBlockData(network, blockHash)
@@ -391,7 +394,9 @@ export default class EnrichmentService extends BaseService<Events> {
 
   async enrichTransactionSignature(
     network: EVMNetwork,
-    transaction: Partial<EIP1559TransactionRequest> & { from: string },
+    transaction:
+      | EIP1559TransactionRequestWithFrom
+      | LegacyEVMTransactionRequestWithFrom,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {

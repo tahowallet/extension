@@ -13,14 +13,15 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import {
-  EIP1559TransactionRequest,
   EVMNetwork,
   SignedEVMTransaction,
+  SignedTransaction,
   toHexChainID,
+  TransactionRequest,
 } from "../../networks"
 import {
-  eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
+  transactionRequestFromEthersTransactionRequest,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
@@ -68,7 +69,7 @@ type DAppRequestEvent<T, E> = {
 
 type Events = ServiceLifecycleEvents & {
   transactionSignatureRequest: DAppRequestEvent<
-    Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork },
+    Partial<TransactionRequest> & { from: string; network: EVMNetwork },
     SignedEVMTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
@@ -306,9 +307,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   private async signTransaction(
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
-  ) {
+  ): Promise<SignedTransaction> {
     const { from, ...convertedRequest } =
-      eip1559TransactionRequestFromEthersTransactionRequest({
+      transactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
         // directly, it will be overwritten below. If someone sends both and
         // they differ, may devops199 have mercy on their soul (but we will
